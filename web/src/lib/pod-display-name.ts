@@ -93,3 +93,15 @@ export function getPodDisplayName(
 export function getShortPodKey(podKey: string): string {
   return podKey.substring(0, 8);
 }
+
+/**
+ * Get a mention-safe name for a Pod — no whitespace, suitable for @mention text.
+ * Priority: sanitized alias (spaces → underscores) → ticket slug → short pod key.
+ */
+export function getMentionSafeName(pod: PodDisplayInfo): string {
+  if (pod.alias) {
+    return pod.alias.replace(/\s+/g, "_");
+  }
+  if (pod.ticket?.slug) return pod.ticket.slug;
+  return getShortPodKey(pod.pod_key);
+}

@@ -37,10 +37,13 @@ type MessageStore interface {
 	GetMessagesMentioning(ctx context.Context, channelID int64, podKey string, limit int) ([]*Message, bool, error)
 	GetRecentMessages(ctx context.Context, channelID int64, limit int) ([]*Message, error)
 	GetMessagesBefore(ctx context.Context, channelID int64, beforeID int64, limit int) ([]*Message, error)
-	UpdateMessageMetadata(ctx context.Context, messageID int64, metadata map[string]interface{}) error
 	GetMessageByID(ctx context.Context, messageID int64) (*Message, error)
-	UpdateMessageContent(ctx context.Context, messageID int64, content string) error
+	UpdateMessage(ctx context.Context, messageID int64, body string, content *MessageContent, mentions MessageMentions) error
+	UpdateMessageMentions(ctx context.Context, messageID int64, mentions MessageMentions) error
 	SoftDeleteMessage(ctx context.Context, messageID int64) error
+	SearchMessages(ctx context.Context, channelID int64, query string, limit int) ([]*Message, error)
+	SaveMessageEdit(ctx context.Context, edit *MessageEdit) error
+	GetMessageEdits(ctx context.Context, messageID int64) ([]*MessageEdit, error)
 }
 
 // MemberStore defines membership and read-state operations.

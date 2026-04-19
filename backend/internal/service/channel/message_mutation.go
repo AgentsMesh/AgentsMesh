@@ -12,7 +12,7 @@ import (
 )
 
 // EditMessage edits a message's content. Only the original sender can edit.
-func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderUserID int64, newContent string) (*channel.Message, error) {
+func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderUserID int64, newContent channel.MessageContent) (*channel.Message, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
 		return nil, err
@@ -20,6 +20,12 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 	if ch.IsArchived {
 		return nil, ErrChannelArchived
 	}
+
+	if err := newContent.Validate(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidContent, err)
+	}
+
+	newContent.SchemaVersion = 1
 
 	msg, err := s.repo.GetMessageByID(ctx, messageID)
 	if err != nil {
@@ -32,16 +38,33 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 		return nil, ErrNotMessageSender
 	}
 
-	if err := s.repo.UpdateMessageContent(ctx, messageID, newContent); err != nil {
+	newBody := extractBody(&newContent)
+	newMentions := extractMentions(&newContent)
+
+	// Save edit history before updating
+	edit := &channel.MessageEdit{
+		MessageID:       messageID,
+		EditorUserID:    &senderUserID,
+		PreviousBody:    msg.Body,
+		PreviousContent: msg.Content,
+	}
+	if err := s.repo.SaveMessageEdit(ctx, edit); err != nil {
+		slog.Error("failed to save message edit history", "message_id", messageID, "error", err)
+	}
+
+	if err := s.repo.UpdateMessage(ctx, messageID, newBody, &newContent, newMentions); err != nil {
 		return nil, err
 	}
 
-	s.publishChannelEvent(ch.OrganizationID, ch.ID, eventbus.EventChannelMessageEdited, map[string]interface{}{
-		"channel_id": channelID,
-		"id":         messageID,
-		"content":    newContent,
-		"edited_at":  time.Now().Format(time.RFC3339),
-	})
+	editedData := eventbus.ChannelMessageEditedData{
+		ID:        messageID,
+		ChannelID: channelID,
+		Body:      newBody,
+		Content:   &newContent,
+		Mentions:  newMentions,
+		EditedAt:  time.Now().Format(time.RFC3339),
+	}
+	s.publishChannelEvent(ch.OrganizationID, ch.ID, eventbus.EventChannelMessageEdited, editedData)
 
 	return s.repo.GetMessageByID(ctx, messageID)
 }
@@ -71,15 +94,16 @@ func (s *Service) DeleteMessage(ctx context.Context, channelID, messageID, sende
 		return err
 	}
 
-	s.publishChannelEvent(ch.OrganizationID, ch.ID, eventbus.EventChannelMessageDeleted, map[string]interface{}{
-		"channel_id": channelID,
-		"id":         messageID,
-	})
+	deletedData := eventbus.ChannelMessageDeletedData{
+		ID:        messageID,
+		ChannelID: channelID,
+	}
+	s.publishChannelEvent(ch.OrganizationID, ch.ID, eventbus.EventChannelMessageDeleted, deletedData)
 
 	return nil
 }
 
-func (s *Service) publishChannelEvent(orgID, channelID int64, eventType eventbus.EventType, data map[string]interface{}) {
+func (s *Service) publishChannelEvent(orgID, channelID int64, eventType eventbus.EventType, data interface{}) {
 	if s.eventBus == nil {
 		return
 	}

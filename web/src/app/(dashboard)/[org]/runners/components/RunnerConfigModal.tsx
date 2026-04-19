@@ -9,7 +9,7 @@ import { ShareDialog } from "@/components/shared/ShareDialog";
 import type { RunnerData } from "@/lib/api/runnerTypes";
 import { getRunnerService } from "@/lib/wasm-core";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 
 interface RunnerConfigModalProps {
   t: (key: string, params?: Record<string, string | number>) => string;

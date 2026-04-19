@@ -7,7 +7,7 @@ import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePod } from "@/stores/pod";
 import { useAcpSessionStore } from "@/stores/acpSession";
 import { usePodTitle } from "@/hooks/usePodTitle";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import {
   X,
   Maximize2,

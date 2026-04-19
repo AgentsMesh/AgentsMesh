@@ -1,9 +1,6 @@
 package channel
 
 import (
-	"database/sql/driver"
-	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
@@ -61,50 +58,21 @@ func (Channel) TableName() string {
 const (
 	MessageTypeText    = "text"
 	MessageTypeSystem  = "system"
-	MessageTypeCode    = "code"
-	MessageTypeCommand = "command"
 )
-
-// MessageMetadata represents optional message metadata
-type MessageMetadata map[string]interface{}
-
-// Scan implements sql.Scanner for MessageMetadata
-func (mm *MessageMetadata) Scan(value interface{}) error {
-	if value == nil {
-		*mm = nil
-		return nil
-	}
-	var bytes []byte
-	switch v := value.(type) {
-	case []byte:
-		bytes = v
-	case string:
-		bytes = []byte(v)
-	default:
-		return errors.New("unsupported type for Scan")
-	}
-	return json.Unmarshal(bytes, mm)
-}
-
-// Value implements driver.Valuer for MessageMetadata
-func (mm MessageMetadata) Value() (driver.Value, error) {
-	if mm == nil {
-		return nil, nil
-	}
-	return json.Marshal(mm)
-}
 
 // Message represents a message in a channel
 type Message struct {
 	ID        int64 `gorm:"primaryKey" json:"id"`
 	ChannelID int64 `gorm:"not null;index" json:"channel_id"`
 
-	SenderPod *string `gorm:"size:100" json:"sender_pod,omitempty"`
-	SenderUserID  *int64  `json:"sender_user_id,omitempty"`
+	SenderPod    *string `gorm:"size:100" json:"sender_pod,omitempty"`
+	SenderUserID *int64  `json:"sender_user_id,omitempty"`
 
 	MessageType string          `gorm:"size:50;not null;default:'text'" json:"message_type"`
-	Content     string          `gorm:"type:text;not null" json:"content"`
-	Metadata    MessageMetadata `gorm:"type:jsonb" json:"metadata,omitempty"`
+	Body        string          `gorm:"type:text;not null" json:"body"`
+	Content     *MessageContent `gorm:"type:jsonb" json:"content,omitempty"`
+	Mentions    MessageMentions `gorm:"type:jsonb;default:'{}'" json:"mentions"`
+	ReplyTo     *int64          `json:"reply_to,omitempty"`
 
 	EditedAt  *time.Time `gorm:"column:edited_at" json:"edited_at,omitempty"`
 	IsDeleted bool       `gorm:"default:false" json:"is_deleted,omitempty"`
@@ -112,9 +80,9 @@ type Message struct {
 	CreatedAt time.Time `gorm:"not null;default:now();index" json:"created_at"`
 
 	// Associations
-	Channel       *Channel       `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
-	SenderUser    *user.User     `gorm:"foreignKey:SenderUserID" json:"sender_user,omitempty"`
-	SenderPodInfo *agentpod.Pod  `gorm:"foreignKey:SenderPod;references:PodKey" json:"sender_pod_info,omitempty"`
+	Channel       *Channel      `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
+	SenderUser    *user.User    `gorm:"foreignKey:SenderUserID" json:"sender_user,omitempty"`
+	SenderPodInfo *agentpod.Pod `gorm:"foreignKey:SenderPod;references:PodKey" json:"sender_pod_info,omitempty"`
 }
 
 func (Message) TableName() string {

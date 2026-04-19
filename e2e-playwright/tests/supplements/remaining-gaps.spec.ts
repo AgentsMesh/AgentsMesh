@@ -1,6 +1,7 @@
 import { test, expect } from "../../fixtures/index";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
+import { textContent } from "../../helpers/test-data";
 
 /**
  * Remaining page and CRUD gap tests.
@@ -62,7 +63,7 @@ test.describe("Remaining Coverage Gaps", () => {
     // Send message
     const msgRes = await api.post(
       `/api/v1/orgs/${TEST_ORG_SLUG}/channels/${chId}/messages`,
-      { content: "Hello from E2E test" }
+      { content: textContent("Hello from E2E test") }
     );
     expect([200, 201]).toContain(msgRes.status);
 

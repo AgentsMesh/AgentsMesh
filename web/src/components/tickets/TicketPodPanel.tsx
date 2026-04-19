@@ -10,7 +10,7 @@ import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
 import { Terminal, ExternalLink, Plus } from "lucide-react";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 
 interface TicketPod {

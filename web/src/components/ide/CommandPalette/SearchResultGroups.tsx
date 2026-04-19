@@ -2,7 +2,7 @@
 
 import { Command } from "cmdk";
 import { Terminal, Ticket, FolderGit2, ArrowRight } from "lucide-react";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import type { PodSearchResult, TicketSearchResult, RepositorySearchResult } from "./types";
 
 interface SearchResultGroupsProps {

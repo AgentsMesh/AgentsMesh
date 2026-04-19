@@ -25,8 +25,10 @@ export function handleChannelEvent(event: RealtimeEvent, channelDebounceRef?: De
       msgState.onNewMessage({
         id: data.id, channel_id: data.channel_id, sender_pod: data.sender_pod,
         sender_user_id: data.sender_user_id,
-        message_type: data.message_type as "text" | "system" | "code" | "command",
-        content: data.content, metadata: data.metadata, created_at: data.created_at,
+        message_type: data.message_type,
+        body: data.body, content: data.content, mentions: data.mentions,
+        reply_to: data.reply_to, created_at: data.created_at,
+        ...(data.sender_pod_info ? { sender_pod_info: data.sender_pod_info } : {}),
         ...(data.sender_user_id && data.sender_name ? {
           sender_user: { id: data.sender_user_id, username: data.sender_name, name: data.sender_name },
         } : {}),
@@ -42,7 +44,7 @@ export function handleChannelEvent(event: RealtimeEvent, channelDebounceRef?: De
     }
     case "channel:message_edited": {
       const data = event.data as ChannelMessageEditedData;
-      msgState.updateMessage(data.channel_id, data);
+      msgState.updateMessage(data.channel_id, { id: data.id, body: data.body, content: data.content, mentions: data.mentions, edited_at: data.edited_at });
       break;
     }
     case "channel:message_deleted": {

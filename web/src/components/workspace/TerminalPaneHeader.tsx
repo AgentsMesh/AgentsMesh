@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePod } from "@/stores/pod";
 import { usePodTitle } from "@/hooks/usePodTitle";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import type { ConnectionStatus } from "@/stores/relayConnection";
 import {
   X,

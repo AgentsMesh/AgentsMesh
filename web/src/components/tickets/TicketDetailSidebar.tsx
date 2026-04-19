@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getTicketService } from "@/lib/wasm-core";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 
 interface TicketPod {

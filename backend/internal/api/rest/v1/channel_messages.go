@@ -52,11 +52,11 @@ func (h *ChannelHandler) ListMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"messages": messages, "has_more": hasMore})
 }
 
-// SendMessageRequest represents message send request
+// SendMessageRequest represents message send request with structured content
 type SendMessageRequest struct {
-	Content  string                        `json:"content" binding:"required"`
-	PodKey   string                        `json:"pod_key"`
-	Mentions []channelService.MentionInput `json:"mentions"`
+	Content channelDomain.MessageContent `json:"content" binding:"required"`
+	PodKey  string                       `json:"pod_key"`
+	ReplyTo *int64                       `json:"reply_to"`
 }
 
 // SendMessage sends a message to a channel
@@ -84,10 +84,14 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 		podKey = &req.PodKey
 	}
 
-	msg, err := h.channelService.SendMessage(c.Request.Context(), ch.ID, podKey, &tenant.UserID, "text", req.Content, nil, req.Mentions)
+	msg, err := h.channelService.SendMessage(c.Request.Context(), ch.ID, podKey, &tenant.UserID, req.Content, req.ReplyTo)
 	if err != nil {
 		if errors.Is(err, channelService.ErrNotMember) {
 			apierr.ForbiddenAccess(c)
+			return
+		}
+		if errors.Is(err, channelService.ErrEmptyContent) || errors.Is(err, channelService.ErrInvalidContent) {
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 			return
 		}
 		apierr.InternalError(c, "Failed to send message")
@@ -97,9 +101,9 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": msg})
 }
 
-// EditMessageRequest represents message edit request
+// EditMessageRequest represents message edit request with structured content
 type EditMessageRequest struct {
-	Content string `json:"content" binding:"required"`
+	Content channelDomain.MessageContent `json:"content" binding:"required"`
 }
 
 // EditMessage edits a channel message
@@ -132,6 +136,8 @@ func (h *ChannelHandler) EditMessage(c *gin.Context) {
 			apierr.ForbiddenAccess(c)
 		case errors.Is(err, channelService.ErrChannelArchived):
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Cannot edit messages in archived channel")
+		case errors.Is(err, channelService.ErrEmptyContent), errors.Is(err, channelService.ErrInvalidContent):
+			apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
 		default:
 			apierr.InternalError(c, "Failed to edit message")
 		}
@@ -172,4 +178,34 @@ func (h *ChannelHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
+}
+
+// SearchMessages searches channel messages by full-text query
+// GET /api/v1/organizations/:slug/channels/:id/messages/search?q=term&limit=20
+func (h *ChannelHandler) SearchMessages(c *gin.Context) {
+	ch, ok := h.requireChannelAccess(c)
+	if !ok {
+		return
+	}
+
+	query := c.Query("q")
+	if query == "" {
+		apierr.InvalidInput(c, "Search query is required")
+		return
+	}
+
+	limit := 20
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	messages, err := h.channelService.SearchMessages(c.Request.Context(), ch.ID, query, limit)
+	if err != nil {
+		apierr.InternalError(c, "Failed to search messages")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"messages": messages})
 }

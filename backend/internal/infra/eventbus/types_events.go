@@ -49,25 +49,42 @@ type PodAliasChangedData struct {
 	Alias  *string `json:"alias"`
 }
 
+// SenderPodAgent contains agent info for a sender pod.
+type SenderPodAgent struct {
+	Name string `json:"name"`
+}
+
+// SenderPodInfo contains resolved sender pod info for WS events.
+type SenderPodInfo struct {
+	PodKey string          `json:"pod_key"`
+	Alias  *string         `json:"alias,omitempty"`
+	Agent  *SenderPodAgent `json:"agent,omitempty"`
+}
+
 // ChannelMessageData represents the payload for channel message events
 type ChannelMessageData struct {
-	ID           int64          `json:"id"`
-	ChannelID    int64          `json:"channel_id"`
-	SenderPod    *string        `json:"sender_pod,omitempty"`
-	SenderUserID *int64         `json:"sender_user_id,omitempty"`
-	SenderName   string         `json:"sender_name,omitempty"`
-	MessageType  string         `json:"message_type"`
-	Content      string         `json:"content"`
-	Metadata     map[string]any `json:"metadata,omitempty"`
-	CreatedAt    string         `json:"created_at"`
+	ID            int64          `json:"id"`
+	ChannelID     int64          `json:"channel_id"`
+	SenderPod     *string        `json:"sender_pod,omitempty"`
+	SenderUserID  *int64         `json:"sender_user_id,omitempty"`
+	SenderName    string         `json:"sender_name,omitempty"`
+	SenderPodInfo *SenderPodInfo `json:"sender_pod_info,omitempty"`
+	MessageType   string         `json:"message_type"`
+	Body          string         `json:"body"`
+	Content       interface{}    `json:"content,omitempty"`
+	Mentions      interface{}    `json:"mentions,omitempty"`
+	ReplyTo       *int64         `json:"reply_to,omitempty"`
+	CreatedAt     string         `json:"created_at"`
 }
 
 // ChannelMessageEditedData represents the payload for message edit events
 type ChannelMessageEditedData struct {
-	ID        int64  `json:"id"`
-	ChannelID int64  `json:"channel_id"`
-	Content   string `json:"content"`
-	EditedAt  string `json:"edited_at"`
+	ID        int64       `json:"id"`
+	ChannelID int64       `json:"channel_id"`
+	Body      string      `json:"body"`
+	Content   interface{} `json:"content,omitempty"`
+	Mentions  interface{} `json:"mentions,omitempty"`
+	EditedAt  string      `json:"edited_at"`
 }
 
 // ChannelMessageDeletedData represents the payload for message delete events

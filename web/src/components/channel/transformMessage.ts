@@ -1,15 +1,15 @@
 import type { ChannelMessage } from "@/lib/api";
 import type { TransformedMessage } from "./types";
 
-/** Transform backend ChannelMessage to rendering-ready TransformedMessage */
 export function transformMessage(msg: ChannelMessage): TransformedMessage {
   return {
     id: msg.id,
+    body: msg.body,
     content: msg.content,
-    messageType: (msg.message_type ?? 'text') as TransformedMessage["messageType"],
-    metadata: msg.metadata,
+    messageType: msg.message_type,
+    mentions: msg.mentions,
     editedAt: msg.edited_at,
-    createdAt: msg.created_at ?? '',
+    createdAt: msg.created_at,
     pod: msg.sender_pod_info
       ? {
           podKey: msg.sender_pod_info.pod_key,
@@ -18,6 +18,8 @@ export function transformMessage(msg: ChannelMessage): TransformedMessage {
             ? { name: msg.sender_pod_info.agent.name }
             : undefined,
         }
+      : msg.sender_pod
+      ? { podKey: msg.sender_pod }
       : undefined,
     user: msg.sender_user
       ? {

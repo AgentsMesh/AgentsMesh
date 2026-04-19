@@ -1,15 +1,11 @@
-/**
- * Shared message types for channel components.
- * Extracted from the inline `Message` interface in MessageList.tsx
- * to enable reuse across MessageList, MessageBubble, and useChannelChat hook.
- */
+import type { MessageContent, MessageMentions } from "@/lib/api/channel-message-types";
 
-/** Backend-normalized message for rendering */
 export interface TransformedMessage {
   id: number;
-  content: string;
-  messageType: "text" | "system" | "code" | "command";
-  metadata?: Record<string, unknown>;
+  body: string;
+  content?: MessageContent;
+  messageType: string;
+  mentions?: MessageMentions;
   editedAt?: string;
   createdAt: string;
   pod?: {

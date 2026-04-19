@@ -80,25 +80,33 @@ export interface PodPerpetualChangedData {
 /**
  * Channel message event payload
  */
+import type { MessageContent, MessageMentions } from "@/lib/api/channel-message-types";
+
 export interface ChannelMessageData {
   id: number;
   channel_id: number;
   sender_pod?: string;
   sender_user_id?: number;
   sender_name?: string;
+  sender_pod_info?: {
+    pod_key: string;
+    alias?: string;
+    agent?: { name: string };
+  };
   message_type: string;
-  content: string;
-  metadata?: Record<string, unknown>;
+  body: string;
+  content?: MessageContent;
+  mentions?: MessageMentions;
+  reply_to?: number;
   created_at: string;
 }
 
-/**
- * Channel message edited event payload
- */
 export interface ChannelMessageEditedData {
   id: number;
   channel_id: number;
-  content: string;
+  body: string;
+  content?: MessageContent;
+  mentions?: MessageMentions;
   edited_at: string;
 }
 

@@ -23,10 +23,10 @@ func TestEditMessage_NotInChannel(t *testing.T) {
 		OrganizationID: 1, Name: "edit-ch2", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch1.ID, nil, &creator, "text", "hello", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch1.ID, nil, &creator, textContent("hello"), nil)
 
 	// Try editing a message from ch1 using ch2's ID
-	_, err := svc.EditMessage(ctx, ch2.ID, msg.ID, creator, "hack")
+	_, err := svc.EditMessage(ctx, ch2.ID, msg.ID, creator, textContent("hack"))
 	if err != ErrMessageNotFound {
 		t.Errorf("Expected ErrMessageNotFound, got %v", err)
 	}
@@ -44,7 +44,7 @@ func TestEditMessage_NilSenderUserID(t *testing.T) {
 	// System message has nil SenderUserID
 	msg, _ := svc.SendSystemMessage(ctx, ch.ID, "system msg")
 
-	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, 99, "hack")
+	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, 99, textContent("hack"))
 	if err != ErrNotMessageSender {
 		t.Errorf("Expected ErrNotMessageSender for nil sender, got %v", err)
 	}
@@ -55,7 +55,7 @@ func TestEditMessage_NonExistentChannel(t *testing.T) {
 	svc := newTestService(db)
 	ctx := context.Background()
 
-	_, err := svc.EditMessage(ctx, 99999, 1, 10, "content")
+	_, err := svc.EditMessage(ctx, 99999, 1, 10, textContent("content"))
 	if err != ErrChannelNotFound {
 		t.Errorf("Expected ErrChannelNotFound, got %v", err)
 	}
@@ -71,7 +71,7 @@ func TestDeleteMessage_ArchivedChannel(t *testing.T) {
 		OrganizationID: 1, Name: "del-archived", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "to-delete", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("to-delete"), nil)
 
 	svc.ArchiveChannel(ctx, ch.ID)
 
@@ -94,7 +94,7 @@ func TestDeleteMessage_NotInChannel(t *testing.T) {
 		OrganizationID: 1, Name: "del-ch2", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch1.ID, nil, &creator, "text", "hello", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch1.ID, nil, &creator, textContent("hello"), nil)
 
 	err := svc.DeleteMessage(ctx, ch2.ID, msg.ID, creator)
 	if err != ErrMessageNotFound {
@@ -159,9 +159,9 @@ func TestPublishChannelEvent_WithEventBus(t *testing.T) {
 		mu.Unlock()
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "test", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("test"), nil)
 
-	svc.EditMessage(ctx, ch.ID, msg.ID, creator, "edited")
+	svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("edited"))
 	time.Sleep(50 * time.Millisecond)
 
 	mu.Lock()
@@ -170,7 +170,7 @@ func TestPublishChannelEvent_WithEventBus(t *testing.T) {
 	}
 	mu.Unlock()
 
-	msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "del-target", nil, nil)
+	msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("del-target"), nil)
 	svc.DeleteMessage(ctx, ch.ID, msg2.ID, creator)
 	time.Sleep(50 * time.Millisecond)
 
@@ -196,7 +196,7 @@ func TestNewEventPublishHook_NilEventBus(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel: &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message: &channelDomain.Message{ID: 1, Content: "test"},
+		Message: &channelDomain.Message{ID: 1, Body: "test"},
 	}
 
 	err := hook(context.Background(), mc)

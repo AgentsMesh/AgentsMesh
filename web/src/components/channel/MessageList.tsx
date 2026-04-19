@@ -5,8 +5,10 @@ import { MessageSquare, Bot, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { MessageBubble } from "./MessageBubble";
 import { useMessageListScroll } from "./useMessageListScroll";
-import { getPodDisplayName, getShortPodKey } from "@/lib/pod-utils";
+import { getPodDisplayName, getShortPodKey } from "@/lib/pod-display-name";
+import { usePodStore, type Pod } from "@/stores/pod";
 import type { TransformedMessage } from "./types";
+import type { MessageContent } from "@/lib/api/channel-message-types";
 
 interface MessageListProps {
   messages: TransformedMessage[];
@@ -17,13 +19,14 @@ interface MessageListProps {
   onLoadMore?: () => void;
   onRetry?: () => void;
   currentUserId?: number;
-  onEditMessage?: (messageId: number, content: string) => Promise<void>;
+  onEditMessage?: (messageId: number, content: MessageContent) => Promise<void>;
   onDeleteMessage?: (messageId: number) => Promise<void>;
 }
 
-function getSenderName(msg: TransformedMessage): string {
+function getSenderName(msg: TransformedMessage, allPods: Pod[]): string {
   if (msg.pod) {
-    return getPodDisplayName({
+    const storePod = allPods.find((p) => p.pod_key === msg.pod!.podKey);
+    return getPodDisplayName(storePod ?? {
       pod_key: msg.pod.podKey,
       alias: msg.pod.alias,
       agent: msg.pod.agent ? { name: msg.pod.agent.name } : undefined,
@@ -51,6 +54,7 @@ export function MessageList({
   onDeleteMessage,
 }: MessageListProps) {
   const t = useTranslations("channels.messages");
+  const allPods = usePodStore((s) => s.pods);
   const {
     containerRef, bottomRef, isAtBottom, newMessageCount,
     handleScroll, scrollToBottom,
@@ -110,7 +114,7 @@ export function MessageList({
       return (
         <div key={message.id} data-message-id={message.id} className="flex justify-center py-2">
           <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
-            {message.content}
+            {message.body}
           </span>
         </div>
       );
@@ -124,27 +128,23 @@ export function MessageList({
       >
         <div className="flex-shrink-0 pt-0.5">
           {message.user?.avatarUrl ? (
-            /* User message: circular avatar per design */
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={message.user.avatarUrl} alt={message.user.username} className="w-8 h-8 rounded-full" />
           ) : isAgent ? (
-            /* Pod / agent message: square-ish avatar per design (6px radius) */
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <Bot className="w-4 h-4 text-primary-foreground" />
             </div>
           ) : (
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-              <span className="text-sm font-medium">{(getSenderName(message) || "?")[0].toUpperCase()}</span>
+              <span className="text-sm font-medium">{(getSenderName(message, allPods) || "?")[0].toUpperCase()}</span>
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <span className={`font-medium text-sm ${isAgent ? "font-mono" : ""}`}>{getSenderName(message)}</span>
+            <span className="font-medium text-sm">{getSenderName(message, allPods)}</span>
             {isAgent && message.pod && (
-              <span className="inline-flex items-center rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-                {getShortPodKey(message.pod.podKey)}
-              </span>
+              <span className="text-xs text-muted-foreground">{getShortPodKey(message.pod.podKey)}</span>
             )}
             <span className="text-xs text-muted-foreground">{formatTime(message.createdAt)}</span>
           </div>

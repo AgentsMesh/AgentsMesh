@@ -31,7 +31,7 @@ func NewPodPromptHook(router PodPromptRouter, msgWriter SystemMessageWriter) Pos
 			return nil
 		}
 
-		prompt := buildPodPrompt(mc.Message.Content, mc.Channel.Name, mc.Channel.ID, mc.Mentions.PodKeys)
+		prompt := buildPodPrompt(mc.Message.Body, mc.Channel.Name, mc.Channel.ID, mc.Mentions.PodKeys)
 
 		for _, podKey := range mc.Mentions.PodKeys {
 			// Skip if the message was sent by this pod (don't echo back)
@@ -64,7 +64,7 @@ func writeOfflineNotice(ctx context.Context, w SystemMessageWriter, channelID in
 	msg := &channelDomain.Message{
 		ChannelID:   channelID,
 		MessageType: channelDomain.MessageTypeSystem,
-		Content:     fmt.Sprintf("@%s is offline and cannot receive this message.", podKey),
+		Body:        fmt.Sprintf("@%s is offline and cannot receive this message.", podKey),
 	}
 	if err := w.CreateMessage(ctx, msg); err != nil {
 		slog.ErrorContext(ctx, "failed to write pod-offline system message", "error", err)

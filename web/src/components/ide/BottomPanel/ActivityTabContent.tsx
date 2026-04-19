@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { Terminal, ArrowRight, ArrowLeft } from "lucide-react";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import type { ActivityTabContentProps } from "./types";
 
 /**

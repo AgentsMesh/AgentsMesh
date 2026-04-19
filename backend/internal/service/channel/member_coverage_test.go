@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
-	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
 func TestGetNonMutedMemberUserIDs(t *testing.T) {
@@ -184,7 +183,7 @@ func TestGetMessages_AfterOnly(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "after-test"})
 
 	for i := 0; i < 5; i++ {
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "msg", channel.MessageMetadata{}, nil)
+		svc.SendMessage(ctx, ch.ID, nil, nil, textContent("msg"), nil)
 	}
 
 	allMsgs, _, _ := svc.GetMessages(ctx, ch.ID, nil, nil, 10)

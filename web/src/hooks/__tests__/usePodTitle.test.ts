@@ -14,7 +14,7 @@ vi.mock("@/stores/pod", () => ({
   useCurrentPod: vi.fn(() => null),
 }));
 
-vi.mock("@/lib/pod-utils", () => ({
+vi.mock("@/lib/pod-display-name", () => ({
   getPodDisplayName: (pod: { alias?: string; title?: string; pod_key: string }) =>
     pod.alias || pod.title || pod.pod_key.substring(0, 8),
   getShortPodKey: (podKey: string) => podKey.substring(0, 8),

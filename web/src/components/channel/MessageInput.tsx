@@ -7,26 +7,19 @@ import { useTranslations } from "next-intl";
 import { MentionDropdown } from "./MentionDropdown";
 import { useMentionCandidates, type MentionItem } from "@/hooks/useMentionCandidates";
 import { getMentionQuery } from "./mention";
-import type { MentionPayload } from "@/lib/api/channelTypes";
+import { buildMessageContent } from "./message-content-builder";
+import type { MessageContent } from "@/lib/api/channel-message-types";
 
-interface MessageInputProps {
-  onSend: (content: string, mentions?: MentionPayload[]) => void;
-  disabled?: boolean;
-  placeholder?: string;
-  /** Channel ID for fetching mention candidates */
-  channelId?: number | null;
+interface MentionRef {
+  entityType: string;
+  entityKey: string;
 }
 
-/**
- * Parse a MentionItem.id ("user:123" | "pod:my-key") into a structured MentionPayload.
- */
-function toMentionPayload(item: MentionItem): MentionPayload | null {
-  const colonIdx = item.id.indexOf(":");
-  if (colonIdx < 0) return null;
-  const type = item.id.slice(0, colonIdx);
-  const id = item.id.slice(colonIdx + 1);
-  if (type !== "user" && type !== "pod") return null;
-  return { type, id };
+interface MessageInputProps {
+  onSend: (content: MessageContent) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  channelId?: number | null;
 }
 
 export function MessageInput({
@@ -42,8 +35,8 @@ export function MessageInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Structured mention accumulator — collects payloads as user selects from dropdown
-  const selectedMentionsRef = useRef<Map<string, MentionPayload>>(new Map());
+  // Mention accumulator keyed by mentionText for reverse lookup at send time
+  const selectedMentionsRef = useRef<Map<string, MentionRef>>(new Map());
 
   // Mention state (for @ autocomplete UI only; actual routing is server-side)
   const [mentionVisible, setMentionVisible] = useState(false);
@@ -121,10 +114,14 @@ export function MessageInput({
       const mentionText = `@${item.mentionText} `;
       const newContent = before + mentionText + after;
 
-      // Collect structured mention data
-      const payload = toMentionPayload(item);
-      if (payload) {
-        selectedMentionsRef.current.set(item.id, payload);
+      // Collect structured mention data keyed by mentionText for reverse lookup
+      const colonIdx = item.id.indexOf(":");
+      if (colonIdx >= 0) {
+        const entityType = item.id.slice(0, colonIdx);
+        const entityKey = item.id.slice(colonIdx + 1);
+        if (entityType === "user" || entityType === "pod") {
+          selectedMentionsRef.current.set(item.mentionText, { entityType, entityKey });
+        }
       }
 
       setContent(newContent);
@@ -146,11 +143,8 @@ export function MessageInput({
     const trimmedContent = content.trim();
     if (!trimmedContent || disabled) return;
 
-    const mentions = selectedMentionsRef.current.size > 0
-      ? Array.from(selectedMentionsRef.current.values())
-      : undefined;
-
-    onSend(trimmedContent, mentions);
+    const messageContent = buildMessageContent(trimmedContent, selectedMentionsRef.current);
+    onSend(messageContent);
     setContent("");
     setMentionVisible(false);
     selectedMentionsRef.current.clear();

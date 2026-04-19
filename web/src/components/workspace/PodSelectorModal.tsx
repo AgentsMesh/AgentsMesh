@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { usePods } from "@/stores/pod";
 import { Button } from "@/components/ui/button";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 
 interface PodSelectorModalProps {
   openPodKeys: string[];

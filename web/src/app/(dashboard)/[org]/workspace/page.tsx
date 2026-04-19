@@ -10,7 +10,7 @@ import { WorkspaceEmptyState } from "@/components/workspace/WorkspaceEmptyState"
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { useTranslations } from "next-intl";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import type { PodData } from "@/lib/api";
 
 export default function WorkspacePage() {

@@ -106,7 +106,7 @@ func TestSendMessage_PostSendHookError(t *testing.T) {
 		OrganizationID: 1, Name: "hook-error",
 	})
 
-	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "test", nil, nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("test"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage should succeed despite hook error: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestGetMessages_WithAfterAndBefore(t *testing.T) {
 	})
 
 	for i := 0; i < 5; i++ {
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "msg", channel.MessageMetadata{}, nil)
+		svc.SendMessage(ctx, ch.ID, nil, nil, textContent("msg"), nil)
 	}
 
 	allMsgs, _, _ := svc.GetMessages(ctx, ch.ID, nil, nil, 10)
@@ -151,7 +151,7 @@ func TestGetMessagesByCursor_EmptyResult(t *testing.T) {
 		OrganizationID: 1, Name: "empty-cursor",
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "first", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("first"), nil)
 
 	msgs, hasMore, err := svc.GetMessagesByCursor(ctx, ch.ID, msg.ID, 10)
 	if err != nil {

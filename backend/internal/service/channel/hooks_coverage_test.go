@@ -13,7 +13,7 @@ func TestNewPodPromptHook_NilRouter(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, Name: "test"},
-		Message:  &channelDomain.Message{Content: "hello"},
+		Message:  &channelDomain.Message{Body: "hello"},
 		Mentions: &MentionResult{PodKeys: []string{"pod-a"}},
 	}
 
@@ -28,7 +28,7 @@ func TestNewPodPromptHook_NilMentions(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel: &channelDomain.Channel{ID: 1, Name: "test"},
-		Message: &channelDomain.Message{Content: "hello"},
+		Message: &channelDomain.Message{Body: "hello"},
 	}
 
 	err := hook(context.Background(), mc)
@@ -42,7 +42,7 @@ func TestNewPodPromptHook_EmptyPodKeys(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, Name: "test"},
-		Message:  &channelDomain.Message{Content: "hello"},
+		Message:  &channelDomain.Message{Body: "hello"},
 		Mentions: &MentionResult{PodKeys: []string{}},
 	}
 
@@ -58,7 +58,7 @@ func TestNewPodPromptHook_SendsPrompt(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 42, Name: "dev", OrganizationID: 1},
-		Message:  &channelDomain.Message{Content: "@abcd1234 fix bug", ChannelID: 42},
+		Message:  &channelDomain.Message{Body: "@abcd1234 fix bug", ChannelID: 42},
 		Mentions: &MentionResult{PodKeys: []string{"abcd1234efgh5678"}},
 	}
 
@@ -82,7 +82,7 @@ func TestNewPodPromptHook_SkipsSenderPod(t *testing.T) {
 	senderPod := "abcd1234efgh5678"
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, Name: "test"},
-		Message:  &channelDomain.Message{Content: "echo", SenderPod: &senderPod, ChannelID: 1},
+		Message:  &channelDomain.Message{Body: "echo", SenderPod: &senderPod, ChannelID: 1},
 		Mentions: &MentionResult{PodKeys: []string{"abcd1234efgh5678"}},
 	}
 
@@ -103,7 +103,7 @@ func TestNewPodPromptHook_OfflineNotice(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, Name: "test"},
-		Message:  &channelDomain.Message{Content: "hi", ChannelID: 1},
+		Message:  &channelDomain.Message{Body: "hi", ChannelID: 1},
 		Mentions: &MentionResult{PodKeys: []string{"offline-pod"}},
 	}
 
@@ -141,7 +141,7 @@ func TestNewEventPublishHook_WithMembers(t *testing.T) {
 	})
 
 	msg := &channelDomain.Message{
-		ID: 1, ChannelID: ch.ID, Content: "hello",
+		ID: 1, ChannelID: ch.ID, Body: "hello",
 		SenderUserID: &creator, MessageType: "text",
 	}
 

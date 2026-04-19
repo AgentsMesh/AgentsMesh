@@ -18,10 +18,9 @@ type PodLookup interface {
 	GetPodsByKeys(ctx context.Context, orgID int64, podKeys []string) ([]string, error)
 }
 
-// NewMentionValidatorHook creates a hook that validates structured mention declarations.
-// Unlike the old regex-based parser, this hook trusts the caller's structured data and
-// only verifies that the mentioned entities actually exist in the organization.
-// If validation removes invalid mentions, it syncs the metadata back to DB.
+// NewMentionValidatorHook validates that mentioned entities exist in the org.
+// Invalid mentions are pruned from the MentionResult (affecting notification routing)
+// and synced back to the persisted mentions field.
 func NewMentionValidatorHook(userLookup UserLookup, podLookup PodLookup, repo channelDomain.ChannelRepository) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if mc.Mentions == nil {
@@ -31,40 +30,33 @@ func NewMentionValidatorHook(userLookup UserLookup, podLookup PodLookup, repo ch
 		orgID := mc.Channel.OrganizationID
 		changed := false
 
-		// Validate user IDs belong to the organization
 		if len(mc.Mentions.UserIDs) > 0 && userLookup != nil {
 			validIDs, err := userLookup.ValidateUserIDs(ctx, orgID, mc.Mentions.UserIDs)
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to validate mentioned user IDs", "error", err)
+				slog.Error("failed to validate mentioned user IDs", "error", err)
 			} else if len(validIDs) != len(mc.Mentions.UserIDs) {
 				mc.Mentions.UserIDs = validIDs
 				changed = true
 			}
 		}
 
-		// Validate pod keys exist in the organization
 		if len(mc.Mentions.PodKeys) > 0 && podLookup != nil {
 			validKeys, err := podLookup.GetPodsByKeys(ctx, orgID, mc.Mentions.PodKeys)
 			if err != nil {
-				slog.ErrorContext(ctx, "failed to validate mentioned pod keys", "error", err)
+				slog.Error("failed to validate mentioned pod keys", "error", err)
 			} else if len(validKeys) != len(mc.Mentions.PodKeys) {
 				mc.Mentions.PodKeys = validKeys
 				changed = true
 			}
 		}
 
-		// If validation pruned some mentions, sync the corrected metadata back to DB
 		if changed && repo != nil {
-			meta := make(map[string]interface{})
-			if len(mc.Mentions.UserIDs) > 0 {
-				meta[MetaMentionedUsers] = mc.Mentions.UserIDs
+			mc.Message.Mentions = channelDomain.MessageMentions{
+				Pods:  mc.Mentions.PodKeys,
+				Users: mc.Mentions.UserIDs,
 			}
-			if len(mc.Mentions.PodKeys) > 0 {
-				meta[MetaMentionedPods] = mc.Mentions.PodKeys
-			}
-			mc.Message.Metadata = meta
-			if err := repo.UpdateMessageMetadata(ctx, mc.Message.ID, meta); err != nil {
-				slog.ErrorContext(ctx, "failed to update message metadata after validation", "error", err)
+			if err := repo.UpdateMessageMentions(ctx, mc.Message.ID, mc.Message.Mentions); err != nil {
+				slog.Error("failed to update message mentions after validation", "error", err)
 			}
 		}
 

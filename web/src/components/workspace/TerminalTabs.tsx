@@ -4,7 +4,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodTitle } from "@/hooks/usePodTitle";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import { useTerminalStatus } from "@/hooks/useTerminalStatus";
 import { Button } from "@/components/ui/button";
 import {

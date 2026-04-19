@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { MeshNode, getPodStatusInfo } from "@/stores/mesh";
 import { Button } from "@/components/ui/button";
 import {

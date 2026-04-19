@@ -1,6 +1,7 @@
 import { test, expect } from "../../fixtures/index";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
+import { textContent } from "../../helpers/test-data";
 
 const CHANNELS = `/api/v1/orgs/${TEST_ORG_SLUG}/channels`;
 
@@ -228,7 +229,7 @@ test.describe("Channel IM Group Model", () => {
     const adminToken = await api.loginAs(SECOND_USER.email, SECOND_USER.password);
     const msgRes = await api.postWithToken(
       `${CHANNELS}/${channel.id}/messages`,
-      { content: "should fail" },
+      { content: textContent("should fail") },
       adminToken,
     );
     expect(msgRes.status).toBe(403);
@@ -245,11 +246,11 @@ test.describe("Channel IM Group Model", () => {
 
     // Send
     const sendRes = await api.post(`${CHANNELS}/${channel.id}/messages`, {
-      content: "Hello from E2E",
+      content: textContent("Hello from E2E"),
     });
     expect(sendRes.status).toBe(201);
     const { message } = await sendRes.json();
-    expect(message.content).toBe("Hello from E2E");
+    expect(message.body).toBe("Hello from E2E");
 
     // Read
     const listRes = await api.get(`${CHANNELS}/${channel.id}/messages`);
@@ -269,18 +270,18 @@ test.describe("Channel IM Group Model", () => {
     const { channel } = await createRes.json();
 
     const sendRes = await api.post(`${CHANNELS}/${channel.id}/messages`, {
-      content: "original",
+      content: textContent("original"),
     });
     const { message } = await sendRes.json();
 
     // Edit
     const editRes = await api.put(
       `${CHANNELS}/${channel.id}/messages/${message.id}`,
-      { content: "edited" },
+      { content: textContent("edited") },
     );
     expect(editRes.status).toBe(200);
     const edited = await editRes.json();
-    expect(edited.message.content).toBe("edited");
+    expect(edited.message.body).toBe("edited");
 
     // Delete
     const delRes = await api.delete(`${CHANNELS}/${channel.id}/messages/${message.id}`);
@@ -304,9 +305,9 @@ test.describe("Channel IM Group Model", () => {
 
     // Creator sends messages
     await api.login();
-    const m1 = await api.post(`${CHANNELS}/${channel.id}/messages`, { content: "msg1" });
+    const m1 = await api.post(`${CHANNELS}/${channel.id}/messages`, { content: textContent("msg1") });
     const msg1 = await m1.json();
-    await api.post(`${CHANNELS}/${channel.id}/messages`, { content: "msg2" });
+    await api.post(`${CHANNELS}/${channel.id}/messages`, { content: textContent("msg2") });
 
     // Admin checks unread
     const unreadRes = await api.getWithToken(`${CHANNELS}/unread`, adminToken);

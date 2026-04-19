@@ -6,24 +6,17 @@ import (
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
-// MentionInput represents a structured mention declaration from the caller.
-// The sender explicitly declares who they are mentioning; the server validates, not parses.
-type MentionInput struct {
-	Type string `json:"type"` // "user" | "pod"
-	ID   string `json:"id"`   // user_id (string) or pod_key
-}
-
-// MentionResult holds validated @mention data
+// MentionResult holds validated @mention data extracted from structured content.
 type MentionResult struct {
-	UserIDs []int64  // mentioned user IDs
-	PodKeys []string // mentioned pod keys
+	UserIDs []int64
+	PodKeys []string
 }
 
-// MessageContext is passed through the PostSendHook pipeline
+// MessageContext is passed through the PostSendHook pipeline.
 type MessageContext struct {
 	Channel  *channelDomain.Channel
 	Message  *channelDomain.Message
-	Mentions *MentionResult // populated from structured MentionInput before hooks run
+	Mentions *MentionResult
 }
 
 // PostSendHook is a function executed after a message is persisted.

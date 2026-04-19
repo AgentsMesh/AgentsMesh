@@ -45,13 +45,13 @@ func TestSendMessage_EventBusIntegration(t *testing.T) {
 
 	senderPod := "test-pod-123"
 	senderUserID := int64(99)
-	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, &senderUserID, "text", "Hello from integration test", nil, nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, &senderUserID, textContent("Hello from integration test"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
 
-	if msg.Content != "Hello from integration test" {
-		t.Errorf("Content = %s, want Hello from integration test", msg.Content)
+	if msg.Body != "Hello from integration test" {
+		t.Errorf("Content = %s, want Hello from integration test", msg.Body)
 	}
 
 	time.Sleep(50 * time.Millisecond)
@@ -99,7 +99,7 @@ func TestSendMessage_EventBusIntegration_MultipleMessages(t *testing.T) {
 	})
 
 	for i := 0; i < 3; i++ {
-		if _, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Message content", nil, nil); err != nil {
+		if _, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("Message content"), nil); err != nil {
 			t.Fatalf("SendMessage %d failed: %v", i, err)
 		}
 	}
@@ -131,7 +131,7 @@ func TestSendMessage_ArchivedChannel_NoEvent(t *testing.T) {
 		eventCount++
 	})
 
-	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "Should fail", nil, nil)
+	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("Should fail"), nil)
 	if err != ErrChannelArchived {
 		t.Errorf("Expected ErrChannelArchived, got %v", err)
 	}
@@ -167,7 +167,7 @@ func TestEventPublishHook_TargetUserIDs(t *testing.T) {
 		mu.Unlock()
 	})
 
-	svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "targeted", nil, nil)
+	svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("targeted"), nil)
 	time.Sleep(50 * time.Millisecond)
 
 	mu.Lock()
@@ -211,7 +211,7 @@ func TestEventPublishHook_NilMemberProvider(t *testing.T) {
 		mu.Unlock()
 	})
 
-	svc.SendMessage(ctx, ch.ID, nil, nil, "text", "broadcast", nil, nil)
+	svc.SendMessage(ctx, ch.ID, nil, nil, textContent("broadcast"), nil)
 	time.Sleep(50 * time.Millisecond)
 
 	mu.Lock()

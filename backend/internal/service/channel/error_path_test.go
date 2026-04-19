@@ -204,7 +204,7 @@ func TestSendMessage_CreateMessageError(t *testing.T) {
 	})
 
 	repo.failOn["CreateMessage"] = true
-	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "fail", nil, nil)
+	_, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("fail"), nil)
 	if err != errInjected {
 		t.Errorf("Expected injected error, got %v", err)
 	}
@@ -250,10 +250,10 @@ func TestEditMessage_GetMessageError(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: 1, Name: "edit-get-fail", CreatedByUserID: &creator,
 	})
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "orig", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("orig"), nil)
 
 	repo.failOn["GetMessageByID"] = true
-	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, "new")
+	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("new"))
 	if err != errInjected {
 		t.Errorf("Expected injected error, got %v", err)
 	}
@@ -267,10 +267,10 @@ func TestEditMessage_UpdateContentError(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: 1, Name: "edit-upd-fail", CreatedByUserID: &creator,
 	})
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "orig", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("orig"), nil)
 
-	repo.failOn["UpdateMessageContent"] = true
-	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, "new")
+	repo.failOn["UpdateMessage"] = true
+	_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("new"))
 	if err != errInjected {
 		t.Errorf("Expected injected error, got %v", err)
 	}
@@ -284,7 +284,7 @@ func TestDeleteMessage_GetMessageError(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: 1, Name: "del-get-fail", CreatedByUserID: &creator,
 	})
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "orig", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("orig"), nil)
 
 	repo.failOn["GetMessageByID"] = true
 	err := svc.DeleteMessage(ctx, ch.ID, msg.ID, creator)
@@ -301,7 +301,7 @@ func TestDeleteMessage_SoftDeleteError(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: 1, Name: "del-soft-fail", CreatedByUserID: &creator,
 	})
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "orig", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("orig"), nil)
 
 	repo.failOn["SoftDeleteMessage"] = true
 	err := svc.DeleteMessage(ctx, ch.ID, msg.ID, creator)

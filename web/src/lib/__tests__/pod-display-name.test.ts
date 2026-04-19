@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getPodDisplayName, getShortPodKey } from "../pod-utils";
+import { getPodDisplayName, getShortPodKey, getMentionSafeName } from "../pod-display-name";
 
 describe("getShortPodKey", () => {
   it("returns first 8 characters of pod key", () => {
@@ -83,6 +83,27 @@ describe("getPodDisplayName", () => {
     ).toBe("A".repeat(17) + "...");
   });
 
+  it("truncates long ticket title to maxLength", () => {
+    const longTitle = "T".repeat(30);
+    expect(
+      getPodDisplayName({ pod_key: "k", ticket: { title: longTitle } }, 20)
+    ).toBe("T".repeat(17) + "...");
+  });
+
+  it("truncates long loop name to maxLength", () => {
+    const longName = "L".repeat(30);
+    expect(
+      getPodDisplayName({ pod_key: "k", loop: { name: longName } }, 20)
+    ).toBe("L".repeat(17) + "...");
+  });
+
+  it("truncates long OSC title to maxLength", () => {
+    const longTitle = "O".repeat(30);
+    expect(
+      getPodDisplayName({ pod_key: "k", title: longTitle }, 20)
+    ).toBe("O".repeat(17) + "...");
+  });
+
   it("skips null alias", () => {
     expect(
       getPodDisplayName({
@@ -91,5 +112,29 @@ describe("getPodDisplayName", () => {
         title: "Fallback Title",
       })
     ).toBe("Fallback Title");
+  });
+});
+
+describe("getMentionSafeName", () => {
+  it("returns alias as-is when no spaces", () => {
+    expect(getMentionSafeName({ pod_key: "k", alias: "MyBot" })).toBe("MyBot");
+  });
+
+  it("replaces spaces with underscores in alias", () => {
+    expect(getMentionSafeName({ pod_key: "k", alias: "My Bot Name" })).toBe("My_Bot_Name");
+  });
+
+  it("falls back to ticket slug when no alias", () => {
+    expect(getMentionSafeName({ pod_key: "k", ticket: { slug: "AM-42" } })).toBe("AM-42");
+  });
+
+  it("falls back to short pod key when no alias or ticket slug", () => {
+    expect(getMentionSafeName({ pod_key: "abcdefgh12345678" })).toBe("abcdefgh");
+  });
+
+  it("prefers alias over ticket slug", () => {
+    expect(
+      getMentionSafeName({ pod_key: "k", alias: "MyAlias", ticket: { slug: "AM-1" } })
+    ).toBe("MyAlias");
   });
 });

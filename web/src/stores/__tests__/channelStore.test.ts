@@ -41,7 +41,7 @@ const mockChannel2: Channel = {
 const mockMessage: ChannelMessage = {
   id: 1,
   channel_id: 1,
-  content: "Hello, world!",
+  body: "Hello, world!",
   message_type: "text",
   created_at: "2024-01-01T00:00:00Z",
 };

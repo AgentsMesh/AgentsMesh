@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
 import { TerminalPane } from "@/components/workspace/TerminalPane";
 import { Spinner } from "@/components/ui/spinner";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 
 export default function PopoutTerminalPage() {
   const { podKey } = useParams<{ podKey: string }>();

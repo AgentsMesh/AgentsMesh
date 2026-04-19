@@ -2,6 +2,7 @@ import { test, expect } from "../../fixtures/index";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
 import { pollUntil } from "../../helpers/retry";
+import { textContent } from "../../helpers/test-data";
 
 const PODS = `/api/v1/orgs/${TEST_ORG_SLUG}/pods`;
 const CHANNELS = `/api/v1/orgs/${TEST_ORG_SLUG}/channels`;
@@ -88,7 +89,7 @@ test.describe("Journey: Multi-Agent Collaboration", () => {
 
     // ── Step 8: Send message to channel ──
     const msgRes = await api.post(`${CHANNELS}/${chId}/messages`, {
-      content: "Pod A found a bug in the auth module. Pod B, please fix it.",
+      content: textContent("Pod A found a bug in the auth module. Pod B, please fix it."),
     });
     expect([200, 201]).toContain(msgRes.status);
 

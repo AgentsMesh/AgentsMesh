@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 )
@@ -40,20 +41,27 @@ func TestResolveSenderName(t *testing.T) {
 	tests := []struct {
 		name     string
 		pod      *string
+		podInfo  *agentpod.Pod
 		userID   *int64
 		resolver UserNameResolver
 		want     string
 	}{
-		{"Pod sender", strPtr("test-pod"), nil, nil, "test-pod"},
-		{"User with resolver", nil, intPtr(42), resolver, "alice"},
-		{"User without resolver", nil, intPtr(42), nil, "User#42"},
-		{"System (no sender)", nil, nil, nil, "System"},
+		{"Pod sender without alias", strPtr("test-pod"), nil, nil, nil, "test-pod"},
+		{"Pod sender with alias", strPtr("test-pod"), &agentpod.Pod{PodKey: "test-pod", Alias: strPtr("Agent Alice")}, nil, nil, "Agent Alice"},
+		{"Pod sender with empty alias", strPtr("test-pod"), &agentpod.Pod{PodKey: "test-pod", Alias: strPtr("")}, nil, nil, "test-pod"},
+		{"User with resolver", nil, nil, intPtr(42), resolver, "alice"},
+		{"User without resolver", nil, nil, intPtr(42), nil, "User#42"},
+		{"System (no sender)", nil, nil, nil, nil, "System"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mc := &MessageContext{
-				Message: &channelDomain.Message{SenderPod: tt.pod, SenderUserID: tt.userID},
+				Message: &channelDomain.Message{
+					SenderPod:     tt.pod,
+					SenderUserID:  tt.userID,
+					SenderPodInfo: tt.podInfo,
+				},
 			}
 			got := resolveSenderName(context.Background(), mc, tt.resolver)
 			if got != tt.want {
@@ -71,7 +79,7 @@ func TestNotificationHook_ExcludesSender(t *testing.T) {
 		Channel: &channelDomain.Channel{ID: 1, OrganizationID: 10, Name: "general"},
 		Message: &channelDomain.Message{
 			SenderUserID: intPtr(42),
-			Content:      "Hello world",
+			Body:         "Hello world",
 		},
 	}
 
@@ -98,7 +106,7 @@ func TestNotificationHook_MentionHighPriority(t *testing.T) {
 		Channel: &channelDomain.Channel{ID: 1, OrganizationID: 10, Name: "dev"},
 		Message: &channelDomain.Message{
 			SenderPod: strPtr("agent-pod"),
-			Content:   "Hey @alice check this out",
+			Body:      "Hey @alice check this out",
 		},
 		Mentions: &MentionResult{UserIDs: []int64{99}},
 	}
@@ -137,7 +145,7 @@ func TestNotificationHook_NilDispatcher(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel: &channelDomain.Channel{ID: 1, Name: "test"},
-		Message: &channelDomain.Message{Content: "hello"},
+		Message: &channelDomain.Message{Body: "hello"},
 	}
 
 	// Should not panic
@@ -158,7 +166,7 @@ func TestNotificationHook_TruncatesBody(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel: &channelDomain.Channel{ID: 1, OrganizationID: 10, Name: "ch"},
-		Message: &channelDomain.Message{Content: longContent},
+		Message: &channelDomain.Message{Body: longContent},
 	}
 
 	hook(context.Background(), mc)

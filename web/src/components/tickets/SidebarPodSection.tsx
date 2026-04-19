@@ -10,7 +10,7 @@ import { getTicketService } from "@/lib/wasm-core";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAuthStore } from "@/stores/auth";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { Play, Terminal, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";

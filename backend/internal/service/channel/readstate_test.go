@@ -19,7 +19,7 @@ func TestMarkRead_PublicChannelAutoJoins(t *testing.T) {
 	})
 
 	// Send a message so there's something to mark as read
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "hello", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("hello"), nil)
 
 	// newUser marks read on public channel → auto-joins
 	err := svc.MarkRead(ctx, ch.ID, newUser, msg.ID)
@@ -44,7 +44,7 @@ func TestMarkRead_PrivateChannelRejectsNonMember(t *testing.T) {
 		Visibility: channel.VisibilityPrivate,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "hello", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("hello"), nil)
 
 	err := svc.MarkRead(ctx, ch.ID, 99, msg.ID)
 	if err != ErrNotMember {
@@ -62,8 +62,8 @@ func TestMarkRead_CursorOnlyForward(t *testing.T) {
 		OrganizationID: 1, Name: "cursor-fwd", CreatedByUserID: &creator,
 	})
 
-	msg1, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "first", nil, nil)
-	msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "second", nil, nil)
+	msg1, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("first"), nil)
+	msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("second"), nil)
 
 	// Mark to msg2
 	svc.MarkRead(ctx, ch.ID, creator, msg2.ID)
@@ -133,7 +133,7 @@ func TestGetUnreadCounts(t *testing.T) {
 
 	// Creator sends 3 messages
 	for i := 0; i < 3; i++ {
-		svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "msg", nil, nil)
+		svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("msg"), nil)
 	}
 
 	// Member should have 3 unread
@@ -159,20 +159,20 @@ func TestEditMessage(t *testing.T) {
 		OrganizationID: 1, Name: "edit-test", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "original", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("original"), nil)
 
 	t.Run("sender can edit", func(t *testing.T) {
-		edited, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, "updated")
+		edited, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("updated"))
 		if err != nil {
 			t.Fatalf("EditMessage failed: %v", err)
 		}
-		if edited.Content != "updated" {
-			t.Errorf("Content = %s, want updated", edited.Content)
+		if edited.Body != "updated" {
+			t.Errorf("Content = %s, want updated", edited.Body)
 		}
 	})
 
 	t.Run("non-sender cannot edit", func(t *testing.T) {
-		_, err := svc.EditMessage(ctx, ch.ID, msg.ID, 99, "hack")
+		_, err := svc.EditMessage(ctx, ch.ID, msg.ID, 99, textContent("hack"))
 		if err != ErrNotMessageSender {
 			t.Errorf("Expected ErrNotMessageSender, got %v", err)
 		}
@@ -180,7 +180,7 @@ func TestEditMessage(t *testing.T) {
 
 	t.Run("archived channel rejects edit", func(t *testing.T) {
 		svc.ArchiveChannel(ctx, ch.ID)
-		_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, "fail")
+		_, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("fail"))
 		if err != ErrChannelArchived {
 			t.Errorf("Expected ErrChannelArchived, got %v", err)
 		}
@@ -198,7 +198,7 @@ func TestDeleteMessage(t *testing.T) {
 		OrganizationID: 1, Name: "delete-test", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "to-delete", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("to-delete"), nil)
 
 	t.Run("sender can delete", func(t *testing.T) {
 		err := svc.DeleteMessage(ctx, ch.ID, msg.ID, creator)
@@ -208,7 +208,7 @@ func TestDeleteMessage(t *testing.T) {
 	})
 
 	t.Run("non-sender cannot delete", func(t *testing.T) {
-		msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "another", nil, nil)
+		msg2, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("another"), nil)
 		err := svc.DeleteMessage(ctx, ch.ID, msg2.ID, 99)
 		if err != ErrNotMessageSender {
 			t.Errorf("Expected ErrNotMessageSender, got %v", err)

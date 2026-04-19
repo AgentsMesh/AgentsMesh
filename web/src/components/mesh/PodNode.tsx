@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { useParams, useRouter } from "next/navigation";
 import { getPodStatusInfo, type MeshNode } from "@/stores/mesh";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import PodContextMenu from "./PodContextMenu";
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuthStore } from "@/stores/auth";
-import { usePods } from "@/stores/pod";
-import { getOrgApiService, getChannelService } from "@/lib/wasm-getters";
-import type { OrganizationMember } from "@/lib/api/organizationTypes";
-import { getPodDisplayName, getShortPodKey } from "@/lib/pod-utils";
+import { usePodStore } from "@/stores/pod";
+import { organizationApi } from "@/lib/api/organization";
+import { channelApi } from "@/lib/api/channel";
+import { getPodDisplayName, getMentionSafeName, getShortPodKey } from "@/lib/pod-display-name";
 
 export interface MentionItem {
   /** Unique identifier: "user:id" or "pod:pod_key" */
@@ -22,6 +22,7 @@ export interface MentionItem {
 
 interface ChannelPodRaw {
   pod_key: string;
+  alias?: string;
   status: string;
 }
 
@@ -39,7 +40,7 @@ export function useMentionCandidates({
   enabled = true,
 }: UseMentionCandidatesOptions) {
   const { currentOrg, user } = useAuthStore();
-  const allPods = usePods();
+  const allPods = usePodStore((s) => s.pods);
   const [members, setMembers] = useState<MentionItem[]>([]);
   const [rawChannelPods, setRawChannelPods] = useState<ChannelPodRaw[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export function useMentionCandidates({
 
     async function fetchMembers() {
       try {
-        const response: { members: OrganizationMember[] } = JSON.parse(await getOrgApiService().list_members(orgSlug!));
+        const response = await organizationApi.listMembers(orgSlug!);
         if (cancelled) return;
 
         const memberItems: MentionItem[] = (response.members || [])
@@ -92,15 +93,13 @@ export function useMentionCandidates({
     async function fetchPods() {
       try {
         setLoading(true);
-        const response: { pods: ChannelPodRaw[]; total: number } = JSON.parse(
-          await getChannelService().get_channel_pods(BigInt(channelId!))
-        );
+        const response = await channelApi.getPods(channelId!);
         if (cancelled) return;
 
         const running = (response.pods || []).filter(
           (p) => p.status === "running" || p.status === "initializing"
         );
-        setRawChannelPods(running.map((p) => ({ pod_key: p.pod_key, status: p.status })));
+        setRawChannelPods(running.map((p) => ({ pod_key: p.pod_key, alias: p.alias, status: p.status })));
       } catch (error) {
         console.error("Failed to fetch pods for mentions:", error);
       } finally {
@@ -122,11 +121,14 @@ export function useMentionCandidates({
         const storePod = allPods.find((sp) => sp.pod_key === p.pod_key);
         const displayName = storePod
           ? getPodDisplayName(storePod)
-          : getShortPodKey(p.pod_key);
+          : p.alias || getShortPodKey(p.pod_key);
+        const mentionText = storePod
+          ? getMentionSafeName(storePod)
+          : (p.alias?.replace(/\s+/g, "_") || getShortPodKey(p.pod_key));
         return {
           id: `pod:${p.pod_key}`,
           type: "pod" as const,
-          mentionText: getShortPodKey(p.pod_key),
+          mentionText,
           displayName,
           description: `Pod ${p.status}`,
         };

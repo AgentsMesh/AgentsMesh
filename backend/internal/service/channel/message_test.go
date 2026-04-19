@@ -8,6 +8,16 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
+func textContent(text string) channel.MessageContent {
+	return channel.MessageContent{
+		Kind: "text",
+		Blocks: []channel.Block{{
+			Type:     "paragraph",
+			Elements: []channel.InlineElement{{Type: channel.InlineText, Text: text}},
+		}},
+	}
+}
+
 func TestSendMessage(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestService(db)
@@ -17,22 +27,22 @@ func TestSendMessage(t *testing.T) {
 
 	t.Run("send text message", func(t *testing.T) {
 		podKey := "test-pod"
-		msg, err := svc.SendMessage(ctx, created.ID, &podKey, nil, channel.MessageTypeText, "Hello", channel.MessageMetadata{}, nil)
-		if err != nil || msg.Content != "Hello" || msg.MessageType != channel.MessageTypeText {
+		msg, err := svc.SendMessage(ctx, created.ID, &podKey, nil, textContent("Hello"), nil)
+		if err != nil || msg.Body != "Hello" || msg.MessageType != channel.MessageTypeText {
 			t.Errorf("SendMessage failed: %v", err)
 		}
 	})
 
 	t.Run("send to archived channel", func(t *testing.T) {
 		svc.ArchiveChannel(ctx, created.ID)
-		_, err := svc.SendMessage(ctx, created.ID, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{}, nil)
+		_, err := svc.SendMessage(ctx, created.ID, nil, nil, textContent("Fail"), nil)
 		if err != ErrChannelArchived {
 			t.Errorf("Expected ErrChannelArchived, got %v", err)
 		}
 	})
 
 	t.Run("send to non-existent channel", func(t *testing.T) {
-		if _, err := svc.SendMessage(ctx, 99999, nil, nil, channel.MessageTypeText, "Fail", channel.MessageMetadata{}, nil); err == nil {
+		if _, err := svc.SendMessage(ctx, 99999, nil, nil, textContent("Fail"), nil); err == nil {
 			t.Error("Expected error for non-existent channel")
 		}
 	})
@@ -46,7 +56,7 @@ func TestGetMessages(t *testing.T) {
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "msgs-test"})
 
 	for i := 0; i < 5; i++ {
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "Msg"+string(rune('0'+i)), channel.MessageMetadata{}, nil)
+		svc.SendMessage(ctx, ch.ID, nil, nil, textContent("Msg"+string(rune('0'+i))), nil)
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -166,22 +176,27 @@ func TestEnhancedMessageService(t *testing.T) {
 	})
 
 	t.Run("send message as user", func(t *testing.T) {
-		msg, err := svc.SendMessageAsUser(ctx, ch.ID, 1, "User message", channel.MessageMetadata{}, nil)
+		msg, err := svc.SendMessageAsUser(ctx, ch.ID, 1, textContent("User message"))
 		if err != nil || msg.SenderUserID == nil || *msg.SenderUserID != 1 {
 			t.Error("SenderUserID not set correctly")
 		}
 	})
 
 	t.Run("send message as pod", func(t *testing.T) {
-		msg, err := svc.SendMessageAsPod(ctx, ch.ID, "test-pod", "Agent message", channel.MessageMetadata{}, nil)
+		msg, err := svc.SendMessageAsPod(ctx, ch.ID, "test-pod", textContent("Agent message"))
 		if err != nil || msg.SenderPod == nil || *msg.SenderPod != "test-pod" {
 			t.Error("SenderPod not set correctly")
 		}
 	})
 
 	t.Run("get messages mentioning", func(t *testing.T) {
-		// Structured mention: via MentionInput (JSONB metadata path)
-		svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeText, "hello structured", channel.MessageMetadata{}, []MentionInput{{Type: "pod", ID: "mention-pod"}})
+		content := textContent("hello structured")
+		content.Blocks[0].Elements = append(content.Blocks[0].Elements, channel.InlineElement{
+			Type:       channel.InlineMention,
+			EntityType: channel.EntityPod,
+			EntityKey:  "mention-pod",
+		})
+		svc.SendMessage(ctx, ch.ID, nil, nil, content, nil)
 		messages, _, err := svc.GetMessagesMentioning(ctx, ch.ID, "mention-pod", 10)
 		if err != nil || len(messages) < 1 {
 			t.Errorf("GetMessagesMentioning failed: %v, count=%d (want >=1)", err, len(messages))
@@ -206,13 +221,12 @@ func TestSendMessage_WithEventBus(t *testing.T) {
 		t.Fatalf("CreateChannel failed: %v", err)
 	}
 
-	// Test sending message without eventBus (should still work)
 	senderPod := "test-pod"
-	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, nil, "text", "Test message", nil, nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, &senderPod, nil, textContent("Test message"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
-	if msg.Content != "Test message" {
-		t.Errorf("Content = %s, want Test message", msg.Content)
+	if msg.Body != "Test message" {
+		t.Errorf("Body = %s, want Test message", msg.Body)
 	}
 }

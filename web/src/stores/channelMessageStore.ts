@@ -1,134 +1,210 @@
 import { create } from "zustand";
-import type { ChannelMessage, MentionPayload } from "@/lib/api/channelTypes";
+import { channelApi } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
-import { getChannelService } from "@/lib/wasm-core";
+import { useAuthStore } from "./auth";
+import { getCache, updateCache } from "./channelMessageTypes";
+import type { ChannelMessageState } from "./channelMessageTypes";
 
-export interface ChannelMessageCache {
-  messages: ChannelMessage[]; hasMore: boolean; loading: boolean; loadingMore: boolean; error: string | null;
-}
-export const EMPTY_CACHE: ChannelMessageCache = { messages: [], hasMore: false, loading: false, loadingMore: false, error: null };
+export { EMPTY_CACHE, type ChannelMessageCache } from "./channelMessageTypes";
+
+/** Number of messages to fetch on initial channel load (kept small for fast first paint). */
 export const INITIAL_MESSAGE_LIMIT = 20;
+
+/** Number of messages to fetch when loading older history. */
 export const LOAD_MORE_MESSAGE_LIMIT = 30;
 
-export interface ChannelMessageState {
-  cache: Record<number, ChannelMessageCache>; unreadCounts: Record<number, number>;
-  fetchMessages: (channelId: number, limit?: number, beforeId?: number) => Promise<void>;
-  sendMessage: (channelId: number, content: string, podKey?: string, mentions?: MentionPayload[]) => Promise<ChannelMessage>;
-  onNewMessage: (message: ChannelMessage) => void;
-  editMessage: (channelId: number, messageId: number, content: string) => Promise<void>;
-  deleteMessage: (channelId: number, messageId: number) => Promise<void>;
-  updateMessage: (channelId: number, data: Partial<ChannelMessage> & { id: number }) => void;
-  removeMessage: (channelId: number, messageId: number) => void;
-  fetchUnreadCounts: () => Promise<void>; markRead: (channelId: number, messageId: number) => Promise<void>;
-  muteChannel: (channelId: number, muted: boolean) => Promise<void>;
-  incrementUnread: (channelId: number) => void;
-  clearChannelUnread: (channelId: number) => void;
-  totalUnreadCount: () => number;
-}
+export const useChannelMessageStore = create<ChannelMessageState>((set, get) => ({
+  cache: {},
+  unreadCounts: {},
 
-const svc = () => getChannelService();
+  fetchMessages: async (channelId, limit = INITIAL_MESSAGE_LIMIT, beforeId) => {
+    const isLoadMore = beforeId !== undefined;
+    const current = getCache(get(), channelId);
+    if (isLoadMore ? current.loadingMore : current.loading) return; // dedup guard
 
-const getC = (s: ChannelMessageState, id: number) => s.cache[id] ?? EMPTY_CACHE;
-const setC = (s: ChannelMessageState, id: number, p: Partial<ChannelMessageCache>) => ({
-  cache: { ...s.cache, [id]: { ...getC(s, id), ...p } },
-});
+    set((state) =>
+      updateCache(state, channelId, isLoadMore ? { loadingMore: true } : { loading: true, error: null })
+    );
 
-function readMessages(channelId: number): { messages: ChannelMessage[]; hasMore: boolean } {
-  const raw = svc().get_messages_json(BigInt(channelId));
-  if (!raw) return { messages: [], hasMore: false };
-  const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-  return { messages: parsed.messages || [], hasMore: parsed.has_more ?? false };
-}
+    try {
+      const response = await channelApi.getMessages(channelId, limit, beforeId);
+      const newMessages = response.messages || [];
+      const hasMore = response.has_more ?? false;
 
-function readUnreadCounts(): Record<number, number> {
-  return JSON.parse(svc().unread_counts_json());
-}
-
-export const useChannelMessageStore = create<ChannelMessageState>((set, get) => {
-  return {
-    cache: {}, unreadCounts: {},
-
-    fetchMessages: async (channelId, limit = INITIAL_MESSAGE_LIMIT, beforeId) => {
-      const isMore = beforeId !== undefined;
-      const cur = getC(get(), channelId);
-      if (isMore ? cur.loadingMore : cur.loading) return;
-      set((s) => setC(s, channelId, isMore ? { loadingMore: true } : { loading: true, error: null }));
-      try {
-        await svc().fetch_messages(BigInt(channelId), limit, beforeId !== undefined ? BigInt(beforeId) : undefined);
-        const synced = readMessages(channelId);
-        set((s) => setC(s, channelId, { messages: synced.messages, hasMore: synced.hasMore, loading: false, loadingMore: false, error: null }));
-      } catch (e: unknown) { set((s) => setC(s, channelId, { loading: false, loadingMore: false, error: isMore ? null : getErrorMessage(e, "Unknown error") })); }
-    },
-
-    sendMessage: async (channelId, content, podKey, mentions) => {
-      const json = await svc().send_message(BigInt(channelId), JSON.stringify({ content, pod_key: podKey, message_type: "text", mentions }));
-      const msg = JSON.parse(json) as ChannelMessage;
-      set((s) => ({ ...setC(s, channelId, readMessages(channelId)), unreadCounts: readUnreadCounts() }));
-      return msg;
-    },
-
-    onNewMessage: (message) => {
-      svc().on_new_message(JSON.stringify(message));
-      const channelId = message.channel_id;
-      set((s) => ({ ...setC(s, channelId, readMessages(channelId)), unreadCounts: readUnreadCounts() }));
-    },
-
-    editMessage: async (channelId, messageId, content) => {
-      await svc().edit_message(BigInt(channelId), BigInt(messageId), content);
-      set((s) => setC(s, channelId, readMessages(channelId)));
-    },
-
-    deleteMessage: async (channelId, messageId) => {
-      await svc().delete_message(BigInt(channelId), BigInt(messageId));
-      set((s) => setC(s, channelId, readMessages(channelId)));
-    },
-
-    updateMessage: (channelId, data) => {
-      svc().update_message_local(BigInt(channelId), JSON.stringify(data));
-      set((s) => setC(s, channelId, readMessages(channelId)));
-    },
-
-    removeMessage: (channelId, messageId) => {
-      svc().remove_message_local(BigInt(channelId), BigInt(messageId));
-      set((s) => setC(s, channelId, readMessages(channelId)));
-    },
-
-    fetchUnreadCounts: async () => {
-      try {
-        await svc().fetch_unread_counts();
-        set({ unreadCounts: readUnreadCounts() });
-      } catch { /* silent */ }
-    },
-
-    markRead: async (channelId, messageId) => {
-      try {
-        await svc().mark_read(BigInt(channelId), BigInt(messageId));
-        set({ unreadCounts: readUnreadCounts() });
-      } catch { /* silent */ }
-    },
-
-    muteChannel: async (channelId, muted) => { await svc().mute_channel(BigInt(channelId), muted); },
-
-    incrementUnread: (channelId) => {
-      set((state) => ({
-        unreadCounts: {
-          ...state.unreadCounts,
-          [channelId]: (state.unreadCounts[channelId] ?? 0) + 1,
-        },
-      }));
-    },
-
-    clearChannelUnread: (channelId) => {
       set((state) => {
-        if (!(channelId in state.unreadCounts)) return {};
+        const existing = getCache(state, channelId);
+        return updateCache(state, channelId, {
+          messages: isLoadMore ? [...newMessages, ...existing.messages] : newMessages,
+          hasMore,
+          loading: false,
+          loadingMore: false,
+          error: null,
+        });
+      });
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error, "Unknown error");
+      console.error("Failed to fetch messages:", msg);
+      set((state) => updateCache(state, channelId, {
+        loading: false, loadingMore: false, error: isLoadMore ? null : msg,
+      }));
+    }
+  },
+
+  sendMessage: async (channelId, content, podKey) => {
+    try {
+      const response = await channelApi.sendMessage(channelId, content, podKey);
+      const msg = response.message;
+
+      // POST response may lack sender_user — backfill from auth store
+      if (!msg.sender_user && msg.sender_user_id) {
+        const authUser = useAuthStore.getState().user;
+        if (authUser && authUser.id === msg.sender_user_id) {
+          msg.sender_user = {
+            id: authUser.id,
+            username: authUser.username,
+            name: authUser.name,
+            avatar_url: authUser.avatar_url,
+          };
+        }
+      }
+
+      set((state) => {
+        const existing = getCache(state, channelId);
+        const idx = existing.messages.findIndex((m) => m.id === msg.id);
+        // WebSocket event may arrive before POST response — dedup by replacing
+        if (idx >= 0) {
+          const updated = [...existing.messages];
+          updated[idx] = msg;
+          return updateCache(state, channelId, { messages: updated });
+        }
+        return updateCache(state, channelId, { messages: [...existing.messages, msg] });
+      });
+      return msg;
+    } catch (error: unknown) {
+      console.error("Failed to send message:", getErrorMessage(error, "Unknown error"));
+      throw error;
+    }
+  },
+
+  addMessage: (channelId, message) => {
+    set((state) => {
+      const existing = getCache(state, channelId);
+      const idx = existing.messages.findIndex((m) => m.id === message.id);
+      if (idx >= 0) {
+        const prev = existing.messages[idx];
+        if (!prev.sender_user && message.sender_user) {
+          const updated = [...existing.messages];
+          updated[idx] = message;
+          return updateCache(state, channelId, { messages: updated });
+        }
+        return {};
+      }
+      return updateCache(state, channelId, { messages: [...existing.messages, message] });
+    });
+  },
+  editMessage: async (channelId, messageId, content) => {
+    try {
+      const response = await channelApi.editMessage(channelId, messageId, content);
+      set((state) => {
+        const existing = getCache(state, channelId);
+        return updateCache(state, channelId, {
+          messages: existing.messages.map((m) =>
+            m.id === messageId
+              ? { ...m, body: response.message.body, content: response.message.content, mentions: response.message.mentions, edited_at: response.message.edited_at }
+              : m
+          ),
+        });
+      });
+    } catch (error: unknown) {
+      console.error("Failed to edit message:", getErrorMessage(error, "Unknown error"));
+      throw error;
+    }
+  },
+  deleteMessage: async (channelId, messageId) => {
+    try {
+      await channelApi.deleteMessage(channelId, messageId);
+      set((state) => {
+        const existing = getCache(state, channelId);
+        return updateCache(state, channelId, {
+          messages: existing.messages.filter((m) => m.id !== messageId),
+        });
+      });
+    } catch (error: unknown) {
+      console.error("Failed to delete message:", getErrorMessage(error, "Unknown error"));
+      throw error;
+    }
+  },
+  updateMessage: (channelId, data) => {
+    set((state) => {
+      const existing = getCache(state, channelId);
+      return updateCache(state, channelId, {
+        messages: existing.messages.map((m) =>
+          m.id === data.id ? { ...m, body: data.body, content: data.content, mentions: data.mentions, edited_at: data.edited_at } : m
+        ),
+      });
+    });
+  },
+  removeMessage: (channelId, messageId) => {
+    set((state) => {
+      const existing = getCache(state, channelId);
+      return updateCache(state, channelId, {
+        messages: existing.messages.filter((m) => m.id !== messageId),
+      });
+    });
+  },
+  fetchUnreadCounts: async () => {
+    try {
+      const response = await channelApi.getUnreadCounts();
+      const counts: Record<number, number> = {};
+      for (const [key, value] of Object.entries(response.unread || {})) {
+        counts[Number(key)] = value;
+      }
+      set({ unreadCounts: counts });
+    } catch (error: unknown) {
+      console.error("Failed to fetch unread counts:", getErrorMessage(error, "Unknown error"));
+    }
+  },
+  markRead: async (channelId, messageId) => {
+    try {
+      await channelApi.markRead(channelId, messageId);
+      set((state) => {
         const counts = { ...state.unreadCounts };
         delete counts[channelId];
         return { unreadCounts: counts };
       });
-    },
+    } catch (error: unknown) {
+      console.error("Failed to mark channel as read:", getErrorMessage(error, "Unknown error"));
+    }
+  },
 
-    totalUnreadCount: () => {
-      return Object.values(get().unreadCounts).reduce((sum, c) => sum + c, 0);
-    },
-  };
-});
+  muteChannel: async (channelId, muted) => {
+    try {
+      await channelApi.mute(channelId, muted);
+    } catch (error: unknown) {
+      console.error("Failed to update mute setting:", getErrorMessage(error, "Unknown error"));
+      throw error;
+    }
+  },
+
+  incrementUnread: (channelId) => {
+    set((state) => ({
+      unreadCounts: {
+        ...state.unreadCounts,
+        [channelId]: (state.unreadCounts[channelId] || 0) + 1,
+      },
+    }));
+  },
+
+  clearChannelUnread: (channelId) => {
+    set((state) => {
+      if (!(channelId in state.unreadCounts)) return {};
+      const counts = { ...state.unreadCounts };
+      delete counts[channelId];
+      return { unreadCounts: counts };
+    });
+  },
+
+  totalUnreadCount: () => {
+    return Object.values(get().unreadCounts).reduce((sum, c) => sum + c, 0);
+  },
+}));

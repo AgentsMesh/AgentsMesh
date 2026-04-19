@@ -107,13 +107,13 @@ func TestSendMessage_PrivateChannelRejectsNonMember(t *testing.T) {
 	})
 
 	// Creator can send
-	_, err := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "hello", nil, nil)
+	_, err := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("hello"), nil)
 	if err != nil {
 		t.Errorf("Creator should be able to send: %v", err)
 	}
 
 	// Stranger cannot
-	_, err = svc.SendMessage(ctx, ch.ID, nil, &stranger, "text", "intruder", nil, nil)
+	_, err = svc.SendMessage(ctx, ch.ID, nil, &stranger, textContent("intruder"), nil)
 	if err != ErrNotMember {
 		t.Errorf("Expected ErrNotMember, got %v", err)
 	}
@@ -137,7 +137,7 @@ func TestSendMessage_PublicChannelAutoJoins(t *testing.T) {
 	}
 
 	// Sending auto-joins in public channels
-	_, err := svc.SendMessage(ctx, ch.ID, nil, &newUser, "text", "hi", nil, nil)
+	_, err := svc.SendMessage(ctx, ch.ID, nil, &newUser, textContent("hi"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}

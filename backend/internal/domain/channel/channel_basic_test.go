@@ -58,8 +58,6 @@ func TestMessageTypeConstants(t *testing.T) {
 	}{
 		{MessageTypeText, "text"},
 		{MessageTypeSystem, "system"},
-		{MessageTypeCode, "code"},
-		{MessageTypeCommand, "command"},
 	}
 
 	for _, tt := range tests {

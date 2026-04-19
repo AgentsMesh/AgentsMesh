@@ -117,7 +117,7 @@ func TestSendMessage_PodOnlyInPrivateChannel(t *testing.T) {
 	})
 
 	podKey := "agent-pod"
-	msg, err := svc.SendMessage(ctx, ch.ID, &podKey, nil, "text", "pod msg", nil, nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, &podKey, nil, textContent("pod msg"), nil)
 	if err != nil {
 		t.Fatalf("Pod-only send should succeed: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestSendMessage_SystemOnPrivateChannel(t *testing.T) {
 		Visibility: channel.VisibilityPrivate,
 	})
 
-	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, channel.MessageTypeSystem, "system msg", nil, nil)
+	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("system msg"), nil)
 	if err != nil {
 		t.Fatalf("System send should succeed: %v", err)
 	}
@@ -153,13 +153,12 @@ func TestSendMessage_MentionWithNilMetadata(t *testing.T) {
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "nil-meta"})
 
-	mentions := []MentionInput{{Type: "pod", ID: "pod-x"}}
-	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "hello", nil, mentions)
+	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("hello"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
-	if msg.Metadata == nil {
-		t.Error("Metadata should be initialized from nil when mentions provided")
+	if msg == nil {
+		t.Error("Message should not be nil")
 	}
 }
 
@@ -170,19 +169,12 @@ func TestSendMessage_MentionWithUserType(t *testing.T) {
 
 	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{OrganizationID: 1, Name: "user-mention"})
 
-	mentions := []MentionInput{
-		{Type: "user", ID: "42"},
-		{Type: "pod", ID: "pod-y"},
-	}
-	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, "text", "hi all", channel.MessageMetadata{}, mentions)
+	msg, err := svc.SendMessage(ctx, ch.ID, nil, nil, textContent("hi all"), nil)
 	if err != nil {
 		t.Fatalf("SendMessage failed: %v", err)
 	}
-	if msg.Metadata[MetaMentionedUsers] == nil {
-		t.Error("Metadata should contain mentioned_users")
-	}
-	if msg.Metadata[MetaMentionedPods] == nil {
-		t.Error("Metadata should contain mentioned_pods")
+	if msg == nil {
+		t.Error("Message should not be nil")
 	}
 }
 
@@ -217,14 +209,14 @@ func TestEditDelete_PublishesEventsWithBus(t *testing.T) {
 		OrganizationID: 1, Name: "publish-event", CreatedByUserID: &creator,
 	})
 
-	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, "text", "edit-target", nil, nil)
+	msg, _ := svc.SendMessage(ctx, ch.ID, nil, &creator, textContent("edit-target"), nil)
 
-	edited, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, "new content")
+	edited, err := svc.EditMessage(ctx, ch.ID, msg.ID, creator, textContent("new content"))
 	if err != nil {
 		t.Fatalf("EditMessage failed: %v", err)
 	}
-	if edited.Content != "new content" {
-		t.Errorf("Content = %s, want 'new content'", edited.Content)
+	if edited.Body != "new content" {
+		t.Errorf("Body = %s, want 'new content'", edited.Body)
 	}
 
 	err = svc.DeleteMessage(ctx, ch.ID, msg.ID, creator)

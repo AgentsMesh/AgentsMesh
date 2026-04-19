@@ -15,7 +15,7 @@ import type { RunnerData, RunnerPodData, SandboxStatus } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 
 interface RunnerPodsTabProps {
   runner: RunnerData;

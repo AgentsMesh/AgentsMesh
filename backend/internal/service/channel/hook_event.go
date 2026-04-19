@@ -11,13 +11,11 @@ import (
 )
 
 // MemberIDProvider resolves member user IDs for a channel.
-// Used by the event hook to attach TargetUserIDs for member-only delivery.
 type MemberIDProvider interface {
 	GetMemberUserIDs(ctx context.Context, channelID int64) ([]int64, error)
 }
 
 // NewEventPublishHook creates a hook that publishes channel:message events.
-// members is used to resolve channel member IDs for targeted WebSocket delivery.
 func NewEventPublishHook(eb *eventbus.EventBus, userNames UserNameResolver, members MemberIDProvider) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if eb == nil {
@@ -31,10 +29,24 @@ func NewEventPublishHook(eb *eventbus.EventBus, userNames UserNameResolver, memb
 			SenderUserID: mc.Message.SenderUserID,
 			SenderName:   resolveSenderName(ctx, mc, userNames),
 			MessageType:  mc.Message.MessageType,
+			Body:         mc.Message.Body,
 			Content:      mc.Message.Content,
-			Metadata:     mc.Message.Metadata,
+			Mentions:     mc.Message.Mentions,
+			ReplyTo:      mc.Message.ReplyTo,
 			CreatedAt:    mc.Message.CreatedAt.Format(time.RFC3339),
 		}
+
+		if mc.Message.SenderPodInfo != nil {
+			info := &eventbus.SenderPodInfo{PodKey: mc.Message.SenderPodInfo.PodKey}
+			if mc.Message.SenderPodInfo.Alias != nil {
+				info.Alias = mc.Message.SenderPodInfo.Alias
+			}
+			if mc.Message.SenderPodInfo.Agent != nil {
+				info.Agent = &eventbus.SenderPodAgent{Name: mc.Message.SenderPodInfo.Agent.Name}
+			}
+			msgData.SenderPodInfo = info
+		}
+
 		data, err := json.Marshal(msgData)
 		if err != nil {
 			slog.ErrorContext(ctx, "failed to marshal channel message event", "error", err)

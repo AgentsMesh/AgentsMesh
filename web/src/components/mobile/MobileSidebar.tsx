@@ -11,7 +11,7 @@ import { usePodStore } from "@/stores/pod";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 
 // Import sidebar content components
 import { WorkspaceSidebarContent } from "@/components/ide/sidebar/WorkspaceSidebarContent";

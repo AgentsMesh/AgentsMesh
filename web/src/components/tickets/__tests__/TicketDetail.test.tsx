@@ -74,7 +74,8 @@ vi.mock('@/components/ide/CreatePodModal', () => ({
   CreatePodModal: () => null,
 }))
 
-vi.mock('@/lib/pod-utils', () => ({
+// Mock pod display name helpers and AgentStatusBadge
+vi.mock('@/lib/pod-display-name', () => ({
   getPodDisplayName: (pod: { pod_key: string }) => pod.pod_key,
 }))
 vi.mock('@/components/shared/AgentStatusBadge', () => ({

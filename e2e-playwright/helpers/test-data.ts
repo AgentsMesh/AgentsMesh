@@ -40,3 +40,11 @@ export const HASH_PASSWORD123 =
 /** Password hash for 'devpass123' (bcrypt, matches seed data). */
 export const HASH_DEVPASS123 =
   "$2a$10$/95Zk1f1HFGXACwCb.bOw.d3vTjclw5NdGwQuK1Eaji6cDq0PuXp2";
+
+/** Build a structured MessageContent object for sending channel messages. */
+export function textContent(text: string) {
+  return {
+    kind: "text",
+    blocks: [{ type: "paragraph", elements: [{ type: "text", text }] }],
+  };
+}

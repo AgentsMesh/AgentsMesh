@@ -17,7 +17,7 @@ interface MessageActionsProps {
   messageId: number;
   content: string;
   isOwnMessage: boolean;
-  onEdit?: (messageId: number, content: string) => Promise<void>;
+  onEdit?: () => void;
   onDelete?: (messageId: number) => Promise<void>;
   onStartEdit: () => void;
 }

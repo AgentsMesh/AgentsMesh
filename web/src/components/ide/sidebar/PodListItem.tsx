@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { Pod } from "@/stores/pod";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import {

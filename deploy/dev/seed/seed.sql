@@ -318,4 +318,133 @@ BEGIN
     RAISE NOTICE '  - Repository: dev-org/demo-webapp (Gitea)';
     RAISE NOTICE '  - Repository: dev-org/demo-api (Gitea)';
 
+    -- =========================================================================
+    -- 9. 创建示例 Channel 和 Messages (各种消息结构)
+    -- =========================================================================
+    -- 展示新的结构化消息模型: body + content JSONB + mentions JSONB
+
+    DECLARE
+        v_ch_general_id BIGINT;
+        v_ch_dev_id BIGINT;
+    BEGIN
+
+    -- 9.1 General 频道
+    INSERT INTO channels (organization_id, name, description, visibility, created_by_user_id)
+    SELECT v_org_id, 'general', 'General discussion channel', 'public', v_user_id
+    WHERE NOT EXISTS (SELECT 1 FROM channels WHERE organization_id = v_org_id AND name = 'general')
+    RETURNING id INTO v_ch_general_id;
+
+    IF v_ch_general_id IS NULL THEN
+        SELECT id INTO v_ch_general_id FROM channels WHERE organization_id = v_org_id AND name = 'general';
+    END IF;
+
+    -- 9.2 Dev Discussion 频道
+    INSERT INTO channels (organization_id, name, description, visibility, created_by_user_id)
+    SELECT v_org_id, 'dev-discussion', 'Development team discussion', 'public', v_user_id
+    WHERE NOT EXISTS (SELECT 1 FROM channels WHERE organization_id = v_org_id AND name = 'dev-discussion')
+    RETURNING id INTO v_ch_dev_id;
+
+    IF v_ch_dev_id IS NULL THEN
+        SELECT id INTO v_ch_dev_id FROM channels WHERE organization_id = v_org_id AND name = 'dev-discussion';
+    END IF;
+
+    -- 频道成员
+    INSERT INTO channel_members (channel_id, user_id, role) VALUES (v_ch_general_id, v_user_id, 'creator') ON CONFLICT DO NOTHING;
+    INSERT INTO channel_members (channel_id, user_id, role) VALUES (v_ch_general_id, v_user2_id, 'member') ON CONFLICT DO NOTHING;
+    INSERT INTO channel_members (channel_id, user_id, role) VALUES (v_ch_general_id, v_admin_id, 'member') ON CONFLICT DO NOTHING;
+    INSERT INTO channel_members (channel_id, user_id, role) VALUES (v_ch_dev_id, v_user_id, 'creator') ON CONFLICT DO NOTHING;
+    INSERT INTO channel_members (channel_id, user_id, role) VALUES (v_ch_dev_id, v_user2_id, 'member') ON CONFLICT DO NOTHING;
+
+    -- 仅在频道消息为空时插入示例消息
+    IF NOT EXISTS (SELECT 1 FROM channel_messages WHERE channel_id = v_ch_general_id LIMIT 1) THEN
+
+    -- ── 纯文本消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user_id, 'text',
+     'Welcome to the general channel! This is where we discuss everything.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"Welcome to the general channel! This is where we discuss everything."}]}]}',
+     '{}');
+
+    -- ── 多段落消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user2_id, 'text',
+     E'I''ve been looking into the auth module.\nThere are a few issues we need to address.\nLet''s discuss in the next standup.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"I''ve been looking into the auth module."}]},{"type":"paragraph","elements":[{"type":"text","text":"There are a few issues we need to address."}]},{"type":"paragraph","elements":[{"type":"text","text":"Let''s discuss in the next standup."}]}]}',
+     '{}');
+
+    -- ── 富文本格式（bold, italic, code）──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user_id, 'text',
+     'The fix is in the handleAuth function — we need to validate the token before proceeding.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"The fix is in the "},{"type":"text","text":"handleAuth","bold":true},{"type":"text","text":" function — we need to "},{"type":"text","text":"validate the token","italic":true},{"type":"text","text":" before proceeding."}]}]}',
+     '{}');
+
+    -- ── 用户 @mention 消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user_id, 'text',
+     E'@devuser2 can you review the PR for the login flow?',
+     ('{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"mention","entity_type":"user","entity_key":"' || v_user2_id || '","display":"devuser2"},{"type":"text","text":" can you review the PR for the login flow?"}]}]}')::jsonb,
+     ('{"users":[' || v_user2_id || ']}')::jsonb);
+
+    -- ── 链接消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user2_id, 'text',
+     'Sure! Here is the PR link: Review PR #42',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"Sure! Here is the PR link: "},{"type":"link","text":"Review PR #42","url":"https://github.com/example/repo/pull/42"}]}]}',
+     '{}');
+
+    -- ── inline code 消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user_id, 'text',
+     'Try running npm install and then npm test to reproduce.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"Try running "},{"type":"text","text":"npm install","code":true},{"type":"text","text":" and then "},{"type":"text","text":"npm test","code":true},{"type":"text","text":" to reproduce."}]}]}',
+     '{}');
+
+    -- ── strikethrough 消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, v_user2_id, 'text',
+     'The deadline is Friday Monday — we got an extension.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"The deadline is "},{"type":"text","text":"Friday","strike":true},{"type":"text","text":" "},{"type":"text","text":"Monday","bold":true},{"type":"text","text":" — we got an extension."}]}]}',
+     '{}');
+
+    -- ── 系统消息 ──
+    INSERT INTO channel_messages (channel_id, message_type, body, content, mentions) VALUES
+    (v_ch_general_id, 'system',
+     'Dev User 2 joined the channel',
+     NULL,
+     '{}');
+
+    END IF;
+
+    -- dev-discussion 频道消息
+    IF NOT EXISTS (SELECT 1 FROM channel_messages WHERE channel_id = v_ch_dev_id LIMIT 1) THEN
+
+    -- ── 混合格式 + mention ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_dev_id, v_user_id, 'text',
+     E'@devuser2 I pushed a fix for the API timeout issue. The root cause was in the middleware — see the docs for details.',
+     ('{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"mention","entity_type":"user","entity_key":"' || v_user2_id || '","display":"devuser2"},{"type":"text","text":" I pushed a fix for the "},{"type":"text","text":"API timeout","bold":true},{"type":"text","text":" issue."}]},{"type":"paragraph","elements":[{"type":"text","text":"The root cause was in the "},{"type":"text","text":"middleware","code":true},{"type":"text","text":" — see the "},{"type":"link","text":"docs","url":"https://docs.example.com/middleware"},{"type":"text","text":" for details."}]}]}')::jsonb,
+     ('{"users":[' || v_user2_id || ']}')::jsonb);
+
+    -- ── 回复消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_dev_id, v_user2_id, 'text',
+     'Thanks! The fix looks clean. Approved.',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"Thanks! The fix looks "},{"type":"text","text":"clean","italic":true},{"type":"text","text":". "},{"type":"text","text":"Approved.","bold":true}]}]}',
+     '{}');
+
+    -- ── 带 linebreak 的消息 ──
+    INSERT INTO channel_messages (channel_id, sender_user_id, message_type, body, content, mentions) VALUES
+    (v_ch_dev_id, v_user_id, 'text',
+     E'Deployment checklist:\n1. Run migrations\n2. Verify health endpoints\n3. Monitor error rates',
+     '{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"Deployment checklist:"},{"type":"linebreak"},{"type":"text","text":"1. Run migrations"},{"type":"linebreak"},{"type":"text","text":"2. Verify health endpoints"},{"type":"linebreak"},{"type":"text","text":"3. Monitor error rates"}]}]}',
+     '{}');
+
+    END IF;
+
+    RAISE NOTICE '  - Channel: general (with sample messages)';
+    RAISE NOTICE '  - Channel: dev-discussion (with sample messages)';
+
+    END; -- inner DECLARE block
+
 END $$;

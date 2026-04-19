@@ -21,7 +21,7 @@ import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { toast } from "sonner";
-import { getPodDisplayName } from "@/lib/pod-utils";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AddRunnerModal } from "./modals/AddRunnerModal";
 import { ImportRepositoryModal } from "./modals/ImportRepositoryModal";
 

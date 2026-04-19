@@ -14,6 +14,7 @@ func registerChannelRoutes(rg *gin.RouterGroup, svc *Services) {
 		channels.POST("/:id/archive", channelHandler.ArchiveChannel)
 		channels.POST("/:id/unarchive", channelHandler.UnarchiveChannel)
 		channels.GET("/:id/messages", channelHandler.ListMessages)
+		channels.GET("/:id/messages/search", channelHandler.SearchMessages)
 		channels.POST("/:id/messages", channelHandler.SendMessage)
 		channels.PUT("/:id/messages/:msg_id", channelHandler.EditMessage)
 		channels.DELETE("/:id/messages/:msg_id", channelHandler.DeleteMessage)

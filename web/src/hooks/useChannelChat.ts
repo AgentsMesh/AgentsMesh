@@ -8,19 +8,19 @@
 
 import { useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuthStore } from "@/stores/auth";
-import { useChannelStore, useCurrentChannel, useChannelMessageStore } from "@/stores/channel";
+import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
 import { EMPTY_CACHE, LOAD_MORE_MESSAGE_LIMIT } from "@/stores/channelMessageStore";
-import { useMeshStore, useTopology, type ChannelInfo } from "@/stores/mesh";
+import { useMeshStore } from "@/stores/mesh";
 import { transformMessage } from "@/components/channel/transformMessage";
 import type { TransformedMessage } from "@/components/channel/types";
-import type { MentionPayload } from "@/lib/api/channelTypes";
+import type { MessageContent } from "@/lib/api/channel-message-types";
 
 interface UseChannelChatOptions {
   channelId: number;
 }
 
 interface UseChannelChatReturn {
-  currentChannel: import("@/stores/channelStore").Channel | null;
+  currentChannel: ReturnType<typeof useChannelStore.getState>["currentChannel"];
   channelLoading: boolean;
   messagesLoading: boolean;
   loadingMore: boolean;
@@ -31,8 +31,8 @@ interface UseChannelChatReturn {
   hasMore: boolean;
   currentUserId: number | undefined;
   handlePodsChanged: () => void;
-  handleSendMessage: (content: string, mentions?: MentionPayload[]) => Promise<void>;
-  handleEditMessage: (messageId: number, content: string) => Promise<void>;
+  handleSendMessage: (content: MessageContent) => Promise<void>;
+  handleEditMessage: (messageId: number, content: MessageContent) => Promise<void>;
   handleDeleteMessage: (messageId: number) => Promise<void>;
   handleLoadMore: () => void;
   handleRefresh: () => void;
@@ -41,7 +41,7 @@ interface UseChannelChatReturn {
 export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannelChatReturn {
   const currentUserId = useAuthStore((s) => s.user?.id);
 
-  const currentChannel = useCurrentChannel();
+  const currentChannel = useChannelStore((s) => s.currentChannel);
   const channelLoading = useChannelStore((s) => s.channelLoading);
   const fetchChannel = useChannelStore((s) => s.fetchChannel);
   const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
@@ -58,7 +58,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   const deleteMessage = useChannelMessageStore((s) => s.deleteMessage);
   const markRead = useChannelMessageStore((s) => s.markRead);
 
-  const topology = useTopology();
+  const topology = useMeshStore((s) => s.topology);
   const fetchTopology = useMeshStore((s) => s.fetchTopology);
 
   // Load channel and messages when channelId changes
@@ -106,7 +106,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   }, [channelId]);
 
   // Derive pod count and channel name from topology + currentChannel
-  const channelInfo: ChannelInfo | undefined = topology?.channels.find((c: ChannelInfo) => c.id === channelId);
+  const channelInfo = topology?.channels.find((c) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
   const channelName = currentChannel?.name || channelInfo?.name || "Channel";
 
@@ -116,9 +116,9 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   }, [fetchTopology, fetchChannel, channelId]);
 
   const handleSendMessage = useCallback(
-    async (content: string, mentions?: MentionPayload[]) => {
+    async (content: MessageContent) => {
       try {
-        await sendMessage(channelId, content, undefined, mentions);
+        await sendMessage(channelId, content);
       } catch (error) {
         console.error("Failed to send message:", error);
       }
@@ -127,7 +127,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   );
 
   const handleEditMessage = useCallback(
-    async (messageId: number, content: string) => {
+    async (messageId: number, content: MessageContent) => {
       await editMessage(channelId, messageId, content);
     },
     [channelId, editMessage]

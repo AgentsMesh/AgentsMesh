@@ -28,18 +28,18 @@ func TestChannelFlow_CreateAndSendMessage(t *testing.T) {
 	}
 
 	// Send two messages as a user
-	msg1, err := svc.SendMessageAsUser(ctx, ch.ID, userID, "hello world", nil, nil)
+	msg1, err := svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("hello world"))
 	if err != nil {
 		t.Fatalf("SendMessageAsUser(1): %v", err)
 	}
-	if msg1.Content != "hello world" {
-		t.Errorf("msg1 content = %q, want %q", msg1.Content, "hello world")
+	if msg1.Body != "hello world" {
+		t.Errorf("msg1 content = %q, want %q", msg1.Body, "hello world")
 	}
 	if msg1.MessageType != channelDomain.MessageTypeText {
 		t.Errorf("msg1 type = %s, want text", msg1.MessageType)
 	}
 
-	msg2, err := svc.SendMessageAsUser(ctx, ch.ID, userID, "second msg", nil, nil)
+	msg2, err := svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("second msg"))
 	if err != nil {
 		t.Fatalf("SendMessageAsUser(2): %v", err)
 	}
@@ -134,7 +134,7 @@ func TestChannelFlow_ArchiveBlocksMessages(t *testing.T) {
 	}
 
 	// Send succeeds before archive
-	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, "before archive", nil, nil); err != nil {
+	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("before archive")); err != nil {
 		t.Fatalf("SendMessageAsUser before archive: %v", err)
 	}
 
@@ -153,7 +153,7 @@ func TestChannelFlow_ArchiveBlocksMessages(t *testing.T) {
 	}
 
 	// Send should fail
-	_, err = svc.SendMessageAsUser(ctx, ch.ID, userID, "after archive", nil, nil)
+	_, err = svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("after archive"))
 	if err != ErrChannelArchived {
 		t.Errorf("expected ErrChannelArchived, got %v", err)
 	}
@@ -185,10 +185,10 @@ func TestChannelFlow_DeleteCascade(t *testing.T) {
 	}
 
 	// Add messages (SendMessageAsUser also auto-joins the user as a member)
-	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, "to be deleted", nil, nil); err != nil {
+	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("to be deleted")); err != nil {
 		t.Fatalf("SendMessageAsUser: %v", err)
 	}
-	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, "second msg", nil, nil); err != nil {
+	if _, err := svc.SendMessageAsUser(ctx, ch.ID, userID, textContent("second msg")); err != nil {
 		t.Fatalf("SendMessageAsUser(2): %v", err)
 	}
 

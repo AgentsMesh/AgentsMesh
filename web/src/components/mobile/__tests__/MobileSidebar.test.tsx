@@ -102,7 +102,7 @@ vi.mock("@/stores/pod", () => ({
 
 // Mock sonner and pod-utils
 vi.mock("sonner", () => ({ toast: { info: vi.fn() } }));
-vi.mock("@/lib/pod-utils", () => ({
+vi.mock("@/lib/pod-display-name", () => ({
   getPodDisplayName: (pod: { pod_key: string }) => pod.pod_key,
 }));
 

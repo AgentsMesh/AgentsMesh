@@ -32,14 +32,14 @@ func (m *mockPodLookup) GetPodsByKeys(_ context.Context, _ int64, _ []string) ([
 }
 
 type mockMetadataRepo struct {
-	channelDomain.ChannelRepository // embed to satisfy interface; only UpdateMessageMetadata is used
-	updatedMeta                     map[string]interface{}
+	channelDomain.ChannelRepository // embed to satisfy interface; only UpdateMessageMentions is used
+	updatedMentions                 channelDomain.MessageMentions
 	updateCalled                    bool
 }
 
-func (m *mockMetadataRepo) UpdateMessageMetadata(_ context.Context, _ int64, metadata map[string]interface{}) error {
+func (m *mockMetadataRepo) UpdateMessageMentions(_ context.Context, _ int64, mentions channelDomain.MessageMentions) error {
 	m.updateCalled = true
-	m.updatedMeta = metadata
+	m.updatedMentions = mentions
 	return nil
 }
 
@@ -50,7 +50,7 @@ func TestMentionValidatorHook_NilMentions(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel: &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message: &channelDomain.Message{ID: 1, Content: "hello"},
+		Message: &channelDomain.Message{ID: 1, Body: "hello"},
 	}
 
 	if err := hook(context.Background(), mc); err != nil {
@@ -68,7 +68,7 @@ func TestMentionValidatorHook_AllValid(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message:  &channelDomain.Message{ID: 100, Content: "hi @alice @pod-a"},
+		Message:  &channelDomain.Message{ID: 100, Body: "hi @alice @pod-a"},
 		Mentions: &MentionResult{UserIDs: []int64{1, 2}, PodKeys: []string{"pod-a", "pod-b"}},
 	}
 
@@ -78,7 +78,7 @@ func TestMentionValidatorHook_AllValid(t *testing.T) {
 
 	// All mentions are valid — no DB update needed
 	if repo.updateCalled {
-		t.Error("UpdateMessageMetadata should not be called when all mentions are valid")
+		t.Error("UpdateMessageMentions should not be called when all mentions are valid")
 	}
 	if len(mc.Mentions.UserIDs) != 2 {
 		t.Errorf("UserIDs = %v, want [1,2]", mc.Mentions.UserIDs)
@@ -98,7 +98,7 @@ func TestMentionValidatorHook_PrunesInvalidUsers(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message:  &channelDomain.Message{ID: 100, Content: "hi"},
+		Message:  &channelDomain.Message{ID: 100, Body: "hi"},
 		Mentions: &MentionResult{UserIDs: []int64{1, 2}, PodKeys: []string{"pod-a"}},
 	}
 
@@ -108,13 +108,13 @@ func TestMentionValidatorHook_PrunesInvalidUsers(t *testing.T) {
 
 	// Invalid user removed — metadata synced to DB
 	if !repo.updateCalled {
-		t.Error("UpdateMessageMetadata should be called when mentions are pruned")
+		t.Error("UpdateMessageMentions should be called when mentions are pruned")
 	}
 	if len(mc.Mentions.UserIDs) != 1 || mc.Mentions.UserIDs[0] != 1 {
 		t.Errorf("UserIDs = %v, want [1]", mc.Mentions.UserIDs)
 	}
-	if repo.updatedMeta[MetaMentionedUsers] == nil {
-		t.Error("metadata should contain mentioned_users")
+	if len(repo.updatedMentions.Users) == 0 {
+		t.Error("updated mentions should contain users")
 	}
 }
 
@@ -128,7 +128,7 @@ func TestMentionValidatorHook_PrunesInvalidPods(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message:  &channelDomain.Message{ID: 100, Content: "hi"},
+		Message:  &channelDomain.Message{ID: 100, Body: "hi"},
 		Mentions: &MentionResult{UserIDs: []int64{}, PodKeys: []string{"bad-pod"}},
 	}
 
@@ -137,7 +137,7 @@ func TestMentionValidatorHook_PrunesInvalidPods(t *testing.T) {
 	}
 
 	if !repo.updateCalled {
-		t.Error("UpdateMessageMetadata should be called when pods are pruned")
+		t.Error("UpdateMessageMentions should be called when pods are pruned")
 	}
 	if len(mc.Mentions.PodKeys) != 0 {
 		t.Errorf("PodKeys = %v, want []", mc.Mentions.PodKeys)
@@ -150,7 +150,7 @@ func TestMentionValidatorHook_NilLookups(t *testing.T) {
 
 	mc := &MessageContext{
 		Channel:  &channelDomain.Channel{ID: 1, OrganizationID: 10},
-		Message:  &channelDomain.Message{ID: 100, Content: "hi"},
+		Message:  &channelDomain.Message{ID: 100, Body: "hi"},
 		Mentions: &MentionResult{UserIDs: []int64{1}, PodKeys: []string{"pod-a"}},
 	}
 
