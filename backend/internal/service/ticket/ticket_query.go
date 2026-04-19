@@ -16,6 +16,7 @@ func (s *Service) GetTicket(ctx context.Context, ticketID int64) (*ticket.Ticket
 	if t == nil {
 		return nil, ErrTicketNotFound
 	}
+	s.hydrateContentFromBlock(ctx, t)
 	return t, nil
 }
 
@@ -28,6 +29,7 @@ func (s *Service) GetTicketBySlug(ctx context.Context, organizationID int64, slu
 	if t == nil {
 		return nil, ErrTicketNotFound
 	}
+	s.hydrateContentFromBlock(ctx, t)
 	return t, nil
 }
 

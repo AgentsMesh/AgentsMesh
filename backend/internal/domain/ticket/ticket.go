@@ -2,6 +2,8 @@ package ticket
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Ticket status constants
@@ -42,7 +44,12 @@ type Ticket struct {
 	Slug   string `gorm:"size:50;not null;uniqueIndex:idx_tickets_org_slug" json:"slug"` // e.g., "AM-123"
 
 	Title   string  `gorm:"size:500;not null" json:"title"`
-	Content *string `gorm:"type:text" json:"content,omitempty"` // Rich content (BlockNote JSON)
+	Content *string `gorm:"type:text" json:"content,omitempty"` // Deprecated: legacy BlockNote JSON. New writes go through ContentBlockID → Block Store `document` block.
+	// ContentBlockID references the Block Store document block that carries
+	// this ticket's rich content. No FK constraint — cross-aggregate coupling
+	// is enforced at the service layer (ticket deletion cascades into block
+	// deletion; stale content_block_id reads gracefully to empty).
+	ContentBlockID *uuid.UUID `gorm:"type:uuid;index:idx_tickets_content_block,where:content_block_id IS NOT NULL" json:"content_block_id,omitempty"`
 
 	Status   string  `gorm:"size:50;not null;default:'backlog';index" json:"status"`
 	Priority string  `gorm:"size:50;not null;default:'none'" json:"priority"`

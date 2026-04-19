@@ -45,6 +45,10 @@ web/.vercel
 web/*.tsbuildinfo
 web/next-env.d.ts
 
+# Playwright run artifacts — regenerated every run, never commit.
+web/test-results/
+web/playwright-report/
+
 # =========================
 # Backend (Go)
 # =========================

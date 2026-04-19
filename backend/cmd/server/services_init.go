@@ -195,6 +195,10 @@ func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Clie
 	if embedder := selectEmbedder(); embedder != nil {
 		blockstoreSvc.SetEmbedder(embedder)
 	}
+	// Ticket content now lives in Block Store as a `document` block.
+	// Inject the dependency here, after both services exist, so the ticket
+	// service can dispatch block ops inside its create/update/delete paths.
+	ticketSvc.SetBlockstore(blockstoreSvc)
 
 	return &serviceContainer{
 		auth:               authSvc,

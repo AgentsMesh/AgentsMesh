@@ -5,8 +5,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	blockstoreservice "github.com/anthropics/agentsmesh/backend/internal/service/blockstore"
 	"github.com/anthropics/agentsmesh/backend/pkg/blocknote"
 )
 
@@ -44,9 +46,31 @@ func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64,
 		}
 	}
 
-	// Convert BlockNote JSON content to plain text and apply line-range pagination
-	if ticketCopy.Content != nil && *ticketCopy.Content != "" {
-		plainText := blocknote.ToPlainText(*ticketCopy.Content)
+	// Resolve plain text. Preference order matches cost:
+	//   1. Inline t.Content — hydrated by GetTicket for block-backed tickets,
+	//      or the legacy inline value for pre-migration rows. Either way we
+	//      can flatten in memory with no extra DB hit.
+	//   2. Block Store fallback — ListTickets (used by search_tickets) skips
+	//      hydration to avoid N+1, so block-backed tickets arrive with
+	//      Content=nil and ContentBlockID set; pull block.Text directly.
+	//      Still O(N) block reads across a search result, but one per ticket
+	//      (not two), and only for block-backed rows.
+	plainText := ""
+	switch {
+	case ticketCopy.Content != nil && *ticketCopy.Content != "":
+		plainText = blocknote.ToPlainText(*ticketCopy.Content)
+	case t.ContentBlockID != nil && a.blockstoreService != nil:
+		actor := blockstoreservice.ActorContext{
+			OrgID: orgID, UserID: t.ReporterID,
+			ActorType: blockstore.ActorUser, ActorID: t.ReporterID,
+		}
+		block, err := a.blockstoreService.GetBlock(ctx, actor, *t.ContentBlockID)
+		if err == nil && block != nil && block.Text != nil {
+			plainText = *block.Text
+		}
+	}
+
+	if plainText != "" {
 		lines := strings.Split(plainText, "\n")
 		totalLines := len(lines)
 

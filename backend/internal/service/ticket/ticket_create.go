@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
+	"github.com/google/uuid"
 )
 
 // CreateTicket creates a new ticket.
@@ -22,10 +23,31 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 		status = ticket.TicketStatusBacklog
 	}
 
+	// When Block Store is wired, rich content is persisted as a `document`
+	// block and the ticket row stores only the block id. Legacy fallback:
+	// if blockstore isn't configured, keep Content inline on the ticket
+	// row (allows staged rollout or minimal test setups).
+	var (
+		contentBlockID *uuid.UUID
+		inlineContent  *string
+	)
+	if s.blockstore != nil && req.Content != nil {
+		id, err := s.writeContentBlock(ctx, req.OrganizationID, req.ReporterID, *req.Content)
+		if err != nil {
+			return nil, err
+		}
+		if id != uuid.Nil {
+			contentBlockID = &id
+		}
+	} else {
+		inlineContent = req.Content
+	}
+
 	t := &ticket.Ticket{
 		OrganizationID: req.OrganizationID,
 		Title:          req.Title,
-		Content:        req.Content,
+		Content:        inlineContent,
+		ContentBlockID: contentBlockID,
 		Status:         status,
 		Priority:       req.Priority,
 		DueDate:        req.DueDate,

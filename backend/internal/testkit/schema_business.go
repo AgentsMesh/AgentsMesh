@@ -70,6 +70,7 @@ func ticketTableDDLs() []string {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL DEFAULT 0, number INTEGER NOT NULL,
 			slug TEXT NOT NULL, title TEXT NOT NULL, content TEXT,
+			content_block_id TEXT,
 			status TEXT NOT NULL DEFAULT 'backlog',
 			priority TEXT NOT NULL DEFAULT 'none', severity TEXT,
 			estimate INTEGER, due_date DATETIME, started_at DATETIME, completed_at DATETIME,
