@@ -1,125 +1,94 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { usePodStore } from "../pod";
-import { mockPod, mockPod2, resetPodStore } from "./pod-test-utils";
+import { getApiClient, getPodService } from "@/lib/wasm-core";
+import { mockPod, resetPodStore } from "./pod-test-utils";
 
-vi.mock("@/lib/api", () => ({
-  podApi: {
-    list: vi.fn(),
-    get: vi.fn(),
-    create: vi.fn(),
-    terminate: vi.fn(),
-    updateAlias: vi.fn(),
-    updatePerpetual: vi.fn(),
-  },
-  ApiError: class extends Error {
-    status: number;
-    statusText: string;
-    constructor(s: number, t: string) { super(`API Error: ${s} ${t}`); this.name = "ApiError"; this.status = s; this.statusText = t; }
-  },
-}));
+interface MockClient {
+  org_path: ReturnType<typeof vi.fn>;
+  patch: ReturnType<typeof vi.fn>;
+}
 
-import { podApi } from "@/lib/api";
+interface MockService {
+  get_pod_json: ReturnType<typeof vi.fn>;
+  upsert_pod: ReturnType<typeof vi.fn>;
+  pods_json: ReturnType<typeof vi.fn>;
+}
 
-describe("Pod Store — updatePodPerpetual", () => {
-  beforeEach(resetPodStore);
+function client(): MockClient {
+  return getApiClient() as unknown as MockClient;
+}
 
-  it("should optimistically set perpetual=true", async () => {
-    usePodStore.setState({ pods: [{ ...mockPod, perpetual: false }] });
-    vi.mocked(podApi.updatePerpetual).mockResolvedValue({ message: "ok" });
+function svc(): MockService {
+  return getPodService() as unknown as MockService;
+}
 
-    await act(async () => {
-      await usePodStore.getState().updatePodPerpetual("pod-abc-123", true);
-    });
-
-    const pod = usePodStore.getState().pods.find(p => p.pod_key === "pod-abc-123");
-    expect(pod?.perpetual).toBe(true);
+beforeEach(() => {
+  resetPodStore();
+  // apiClient stubs
+  Object.assign(getApiClient(), {
+    org_path: vi.fn().mockImplementation((p: string) => `/api/v1/orgs/test/${p.replace(/^\//, "")}`),
+    patch: vi.fn().mockResolvedValue(JSON.stringify({ message: "ok" })),
   });
-
-  it("should optimistically set perpetual=false", async () => {
-    usePodStore.setState({ pods: [{ ...mockPod, perpetual: true }] });
-    vi.mocked(podApi.updatePerpetual).mockResolvedValue({ message: "ok" });
-
-    await act(async () => {
-      await usePodStore.getState().updatePodPerpetual("pod-abc-123", false);
-    });
-
-    const pod = usePodStore.getState().pods.find(p => p.pod_key === "pod-abc-123");
-    expect(pod?.perpetual).toBe(false);
-  });
-
-  it("should revert on API failure", async () => {
-    usePodStore.setState({ pods: [{ ...mockPod, perpetual: false }] });
-    vi.mocked(podApi.updatePerpetual).mockRejectedValue(new Error("Server error"));
-    vi.mocked(podApi.get).mockResolvedValue({ pod: { ...mockPod, perpetual: false } });
-
-    await act(async () => {
-      await expect(
-        usePodStore.getState().updatePodPerpetual("pod-abc-123", true)
-      ).rejects.toThrow("Server error");
-    });
-
-    const pod = usePodStore.getState().pods.find(p => p.pod_key === "pod-abc-123");
-    expect(pod?.perpetual).toBe(false);
-  });
-
-  it("should update currentPod when it matches", async () => {
-    const pod = { ...mockPod, perpetual: false };
-    usePodStore.setState({ pods: [pod], currentPod: pod });
-    vi.mocked(podApi.updatePerpetual).mockResolvedValue({ message: "ok" });
-
-    await act(async () => {
-      await usePodStore.getState().updatePodPerpetual("pod-abc-123", true);
-    });
-
-    expect(usePodStore.getState().currentPod?.perpetual).toBe(true);
-  });
-
-  it("should not affect other pods", async () => {
-    usePodStore.setState({ pods: [{ ...mockPod, perpetual: false }, mockPod2] });
-    vi.mocked(podApi.updatePerpetual).mockResolvedValue({ message: "ok" });
-
-    await act(async () => {
-      await usePodStore.getState().updatePodPerpetual("pod-abc-123", true);
-    });
-
-    expect(usePodStore.getState().pods.find(p => p.pod_key === "pod-def-456")?.perpetual).toBeUndefined();
+  // podService stubs — return target pod as JSON for get_pod_json
+  Object.assign(getPodService(), {
+    get_pod_json: vi.fn((key: string) =>
+      key === mockPod.pod_key ? JSON.stringify({ ...mockPod, perpetual: false }) : null,
+    ),
+    upsert_pod: vi.fn(),
+    pods_json: vi.fn().mockReturnValue("[]"),
   });
 });
 
-describe("Pod Store — updatePodPerpetualFromEvent", () => {
-  beforeEach(resetPodStore);
-
-  it("should update perpetual field on existing pod", () => {
-    usePodStore.setState({ pods: [{ ...mockPod, perpetual: false }] });
-
-    act(() => {
-      usePodStore.getState().updatePodPerpetualFromEvent("pod-abc-123", true);
+describe("Pod Store — updatePodPerpetual", () => {
+  it("calls ApiClient.patch and upserts the pod with new perpetual", async () => {
+    await act(async () => {
+      await usePodStore.getState().updatePodPerpetual(mockPod.pod_key, true);
     });
 
-    const pod = usePodStore.getState().pods.find(p => p.pod_key === "pod-abc-123");
-    expect(pod?.perpetual).toBe(true);
+    expect(client().org_path).toHaveBeenCalledWith(`/pods/${mockPod.pod_key}/perpetual`);
+    expect(client().patch).toHaveBeenCalledTimes(1);
+    const [, body] = client().patch.mock.calls[0];
+    expect(JSON.parse(body)).toEqual({ perpetual: true });
+
+    expect(svc().upsert_pod).toHaveBeenCalledTimes(1);
+    const [upsertBody] = svc().upsert_pod.mock.calls[0];
+    expect(JSON.parse(upsertBody).perpetual).toBe(true);
   });
 
-  it("should sync currentPod when matching", () => {
-    const pod = { ...mockPod, perpetual: false };
-    usePodStore.setState({ pods: [pod], currentPod: pod });
+  it("flips perpetual to false", async () => {
+    svc().get_pod_json.mockReturnValue(JSON.stringify({ ...mockPod, perpetual: true }));
 
-    act(() => {
-      usePodStore.getState().updatePodPerpetualFromEvent("pod-abc-123", true);
+    await act(async () => {
+      await usePodStore.getState().updatePodPerpetual(mockPod.pod_key, false);
     });
 
-    expect(usePodStore.getState().currentPod?.perpetual).toBe(true);
+    const [upsertBody] = svc().upsert_pod.mock.calls[0];
+    expect(JSON.parse(upsertBody).perpetual).toBe(false);
   });
 
-  it("should skip non-existent pod", () => {
-    usePodStore.setState({ pods: [mockPod] });
+  it("records the error and rethrows when the API call fails", async () => {
+    client().patch.mockRejectedValue(new Error("Server error"));
 
-    act(() => {
-      usePodStore.getState().updatePodPerpetualFromEvent("non-existent", true);
+    await act(async () => {
+      await expect(
+        usePodStore.getState().updatePodPerpetual(mockPod.pod_key, true),
+      ).rejects.toThrow("Server error");
     });
 
-    expect(usePodStore.getState().pods).toHaveLength(1);
-    expect(usePodStore.getState().pods[0].perpetual).toBeUndefined();
+    expect(svc().upsert_pod).not.toHaveBeenCalled();
+    expect(usePodStore.getState().error).toContain("Server error");
+  });
+
+  it("does nothing when the pod is not in WASM state", async () => {
+    svc().get_pod_json.mockReturnValue(null);
+
+    await act(async () => {
+      await usePodStore.getState().updatePodPerpetual("missing-pod", true);
+    });
+
+    // API was still called (the server is authoritative), but no local upsert.
+    expect(client().patch).toHaveBeenCalledTimes(1);
+    expect(svc().upsert_pod).not.toHaveBeenCalled();
   });
 });

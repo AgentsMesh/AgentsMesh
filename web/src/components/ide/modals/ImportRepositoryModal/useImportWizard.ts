@@ -130,7 +130,7 @@ export function useImportWizard({
         repositories: parsed.repositories || [],
         loadingRepos: false,
       }));
-    }).catch(err => {
+    }).catch((err: unknown) => {
       console.error("Failed to load repositories:", err);
       setState(s => ({
         ...s,

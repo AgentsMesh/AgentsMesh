@@ -25,8 +25,8 @@ export function useCommandPaletteSearch(search: string): SearchResults {
       setLoading(true);
       try {
         const [podsRes, ticketsRes, reposRes] = await Promise.all([
-          getPodService().fetch_pods(null, null, null, null, null).then(j => JSON.parse(j)).catch(() => ({ pods: [] })),
-          getTicketService().fetch_tickets(undefined, 500, undefined).then(j => JSON.parse(j)).catch(() => ({ tickets: [] })),
+          getPodService().fetch_pods(null, null, null, null, null).then((j: string) => JSON.parse(j)).catch(() => ({ pods: [] })),
+          getTicketService().fetch_tickets(undefined, 500, undefined).then((j: string) => JSON.parse(j)).catch(() => ({ tickets: [] })),
           getRepositoryService().list().then((j: string) => JSON.parse(j)).catch(() => ({ repositories: [] })),
         ]);
 

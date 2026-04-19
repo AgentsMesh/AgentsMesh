@@ -1,16 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/lib/api/base";
+import { ApiError } from "@/lib/api/api-types";
 import type { PoolContext } from "../relayConnectionWebSocket";
 import { reconnectConnection } from "../relayConnectionWebSocket";
 import type { RelayConnection, ConnectionHandle } from "../relayConnectionTypes";
+import type { IRelayTransport } from "../relayBackend";
 
-function makeMockWs(readyState = 3): WebSocket {
-  return { readyState, close: vi.fn(), onopen: null, onclose: null, onerror: null, onmessage: null, send: vi.fn() } as unknown as WebSocket;
+function makeMockTransport(open = false): IRelayTransport {
+  return {
+    get isOpen() { return open; },
+    get isClosed() { return !open; },
+    send: vi.fn(),
+    close: vi.fn(),
+  };
 }
 
 function makeMockConn(podKey: string, overrides: Partial<RelayConnection> = {}): RelayConnection {
   return {
-    ws: makeMockWs(3),
+    transport: makeMockTransport(true),
     podKey,
     status: "connected",
     lastActivity: Date.now(),
@@ -18,6 +24,8 @@ function makeMockConn(podKey: string, overrides: Partial<RelayConnection> = {}):
     reconnectAttempts: 0,
     reconnectTimer: null,
     disconnectTimer: null,
+    snapshotTimer: null,
+    snapshotReceived: false,
     relayUrl: "wss://relay.example.com",
     relayToken: "token",
     runnerDisconnected: false,

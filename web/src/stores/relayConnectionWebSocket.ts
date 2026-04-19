@@ -5,7 +5,7 @@
  */
 import { MsgType, encodeMessage, encodeResize } from "./relayProtocol";
 import type { RelayConnection, ConnectionHandle } from "./relayConnectionTypes";
-import { getRelayBackend } from "./relayBackend";
+import { getRelayBackend, type IRelayTransport } from "./relayBackend";
 import { dispatchRelayMessage, handleSnapshot, handleControl, handleRunnerDisconnected, handleRunnerReconnected } from "./relayConnectionHandlers";
 import { scheduleReconnect, scheduleSnapshotRetry, isNonRetryableError } from "./relayConnectionRetry";
 
@@ -164,6 +164,32 @@ export async function reconnectConnection(ctx: PoolContext, podKey: string): Pro
       return;
     }
     console.warn(`[Relay] Retryable error for ${podKey}, scheduling retry:`, error);
+    // Create a placeholder stub so scheduleReconnect can find the connection
+    // and the caller sees a visible "error" state in the UI while we wait
+    // to retry.
+    const stubTransport: IRelayTransport = {
+      get isOpen() { return false; },
+      get isClosed() { return true; },
+      send() {},
+      close() {},
+    };
+    const stub: RelayConnection = {
+      transport: stubTransport,
+      podKey,
+      status: "error",
+      lastActivity: Date.now(),
+      subscribers: subscribersCopy,
+      reconnectAttempts,
+      reconnectTimer: null,
+      disconnectTimer: null,
+      snapshotTimer: null,
+      snapshotReceived: false,
+      relayUrl: oldConn.relayUrl,
+      relayToken: oldConn.relayToken,
+      runnerDisconnected: oldConn.runnerDisconnected,
+    };
+    ctx.connections.set(podKey, stub);
+    ctx.notifyStatusChange(podKey);
     scheduleReconnect(
       (pk) => ctx.connections.get(pk),
       (pk) => reconnectConnection(ctx, pk),

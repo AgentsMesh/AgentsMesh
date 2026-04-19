@@ -21,8 +21,8 @@ export function useCapabilitiesData(repositoryId: number) {
   const loadSkills = useCallback(async (mounted?: { current: boolean }) => {
     try {
       const [orgRes, userRes] = await Promise.all([
-        getExtensionService().list_repo_skills(BigInt(repositoryId), "org").then(j => JSON.parse(j)),
-        getExtensionService().list_repo_skills(BigInt(repositoryId), "user").then(j => JSON.parse(j)),
+        getExtensionService().list_repo_skills(BigInt(repositoryId), "org").then((j: string) => JSON.parse(j)),
+        getExtensionService().list_repo_skills(BigInt(repositoryId), "user").then((j: string) => JSON.parse(j)),
       ]);
       if (mounted && !mounted.current) return;
       setOrgSkills(orgRes.skills || []);
@@ -36,8 +36,8 @@ export function useCapabilitiesData(repositoryId: number) {
   const loadMcpServers = useCallback(async (mounted?: { current: boolean }) => {
     try {
       const [orgRes, userRes] = await Promise.all([
-        getExtensionService().list_repo_mcp_servers(BigInt(repositoryId), "org").then(j => JSON.parse(j)),
-        getExtensionService().list_repo_mcp_servers(BigInt(repositoryId), "user").then(j => JSON.parse(j)),
+        getExtensionService().list_repo_mcp_servers(BigInt(repositoryId), "org").then((j: string) => JSON.parse(j)),
+        getExtensionService().list_repo_mcp_servers(BigInt(repositoryId), "user").then((j: string) => JSON.parse(j)),
       ]);
       if (mounted && !mounted.current) return;
       setOrgMcpServers(orgRes.mcp_servers || []);

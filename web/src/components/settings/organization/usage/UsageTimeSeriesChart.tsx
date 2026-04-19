@@ -64,7 +64,7 @@ export function UsageTimeSeriesChart({ data, t }: UsageTimeSeriesChartProps) {
             <Tooltip
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(value: any, name: any) => [formatTokenCount(Number(value)), name]}
-              labelFormatter={(label: string) => label}
+              labelFormatter={(label) => String(label ?? "")}
               contentStyle={{
                 backgroundColor: "hsl(var(--popover))",
                 border: "1px solid hsl(var(--border))",
