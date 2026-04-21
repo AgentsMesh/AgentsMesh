@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAutopilotStore } from "@/stores/autopilot";
+import { useAutopilotStore, useAutopilotThinking } from "@/stores/autopilot";
 import {
   AlertTriangle,
   CheckCircle,
@@ -39,7 +39,7 @@ export function HelpRequestPanel({
 }: HelpRequestPanelProps) {
   const approveAutopilotController = useAutopilotStore((s) => s.approveAutopilotController);
   // Reactive thinking selector — re-renders when this controller's thinking changes
-  const thinking = useAutopilotStore((s) => s.thinking[autopilotControllerKey] ?? null);
+  const thinking = useAutopilotThinking(autopilotControllerKey);
 
   // Only show when there's a help request
   if (!thinking?.help_request) {

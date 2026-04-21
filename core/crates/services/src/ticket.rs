@@ -220,7 +220,13 @@ impl TicketService {
         let resp = self.client
             .get_ticket_pods(slug, active_only)
             .await.map_err(|e| e.to_string())?;
+        self.state.write().unwrap().set_ticket_pods(slug, resp.pods.clone());
         serde_json::to_string(&resp).map_err(|e| e.to_string())
+    }
+
+    pub fn ticket_pods_json(&self, slug: &str) -> String {
+        let pods = self.state.read().unwrap().get_ticket_pods(slug);
+        serde_json::to_string(&pods).unwrap_or_else(|_| "[]".into())
     }
 
     pub async fn get_sub_tickets(&self, slug: &str) -> Result<String, String> {

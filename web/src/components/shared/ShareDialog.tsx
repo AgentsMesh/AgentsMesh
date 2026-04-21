@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFoo
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { grantApi, organizationApi } from "@/lib/api";
 import type { ResourceGrant, OrganizationMember } from "@/lib/api";
 
@@ -20,8 +20,8 @@ interface ShareDialogProps {
 
 export function ShareDialog({ open, onOpenChange, resourceType, resourceId }: ShareDialogProps) {
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
-  const currentUser = useAuthStore((s) => s.user);
+  const currentOrg = useCurrentOrg();
+  const currentUser = useCurrentUser();
 
   const [grants, setGrants] = useState<ResourceGrant[]>([]);
   const [members, setMembers] = useState<OrganizationMember[]>([]);

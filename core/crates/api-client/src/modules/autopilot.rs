@@ -4,7 +4,9 @@ use agentsmesh_types::*;
 
 impl ApiClient {
     pub async fn list_autopilots(&self) -> Result<AutopilotListResponse, ApiError> {
-        self.get(&self.org_path("/autopilot-controllers")).await
+        let list: Vec<AutopilotController> =
+            self.get(&self.org_path("/autopilot-controllers")).await?;
+        Ok(AutopilotListResponse { controllers: list })
     }
 
     pub async fn get_autopilot(&self, key: &str) -> Result<AutopilotController, ApiError> {

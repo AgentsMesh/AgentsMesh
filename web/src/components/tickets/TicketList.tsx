@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { Ticket } from "@/stores/ticket";
 
 interface TicketListProps {
@@ -29,7 +29,7 @@ const priorityConfig: Record<string, { icon: string; color: string; label: strin
 
 export function TicketList({ tickets, loading, onTicketClick }: TicketListProps) {
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

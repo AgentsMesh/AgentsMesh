@@ -5,8 +5,14 @@ import { ChannelLocalState } from "./channel_state";
 export class ElectronChannelService extends ChannelLocalState implements IChannelService {
   async fetch_channels(includeArchived?: boolean | null): Promise<string> {
     const result = await invoke<string>("channelFetchChannels", includeArchived);
-    const parsed = JSON.parse(result);
-    this._channelsCache = JSON.stringify(parsed.channels ?? []);
+    // Rust IPC returns the serialized `ChannelListResponse` envelope — unwrap
+    // so `channels_json()` hands callers a bare array (matches WASM shape).
+    try {
+      const parsed = JSON.parse(result) as { channels?: unknown[] };
+      this._channelsCache = JSON.stringify(Array.isArray(parsed.channels) ? parsed.channels : parsed);
+    } catch {
+      this._channelsCache = "[]";
+    }
     return result;
   }
 
@@ -17,9 +23,19 @@ export class ElectronChannelService extends ChannelLocalState implements IChanne
   }
 
   async fetch_messages(channelId: bigint, limit?: number | null, beforeId?: bigint | null): Promise<string> {
-    const result = await invoke<string>("channelFetchMessages", Number(channelId), limit, beforeId ? Number(beforeId) : null);
-    const parsed = JSON.parse(result);
-    this._messagesCache.set(String(channelId), JSON.stringify(parsed.messages ?? []));
+    const result = await invoke<string>(
+      "channelFetchMessages",
+      Number(channelId),
+      limit,
+      beforeId ? Number(beforeId) : null,
+    );
+    // Backend shape: { messages, has_more }. Mirror WASM cache format exactly
+    // so the shared store's `readMessages` sees the same payload on both.
+    const parsed = JSON.parse(result) as { messages?: unknown[]; has_more?: boolean };
+    this._messagesCache.set(String(channelId), {
+      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
+      has_more: parsed.has_more ?? false,
+    });
     return result;
   }
 
@@ -51,12 +67,19 @@ export class ElectronChannelService extends ChannelLocalState implements IChanne
 
   async send_message(channelId: bigint, json: string): Promise<string> {
     const result = await invoke<string>("channelSendMessage", Number(channelId), json);
+    // Rust service unwraps the `{message:{}}` envelope — result is the bare
+    // message JSON. Route through add_message so the de-dup logic runs.
     this.add_message(channelId, result);
     return result;
   }
 
   async edit_message(channelId: bigint, messageId: bigint, content: string): Promise<string> {
-    const result = await invoke<string>("channelEditMessage", Number(channelId), Number(messageId), content);
+    const result = await invoke<string>(
+      "channelEditMessage",
+      Number(channelId),
+      Number(messageId),
+      content,
+    );
     this.update_message_local(channelId, result);
     return result;
   }

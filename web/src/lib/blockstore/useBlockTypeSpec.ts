@@ -8,14 +8,14 @@ import {
   type BlockTypeSpec,
   type ColumnSpec,
 } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlocks, useBlockstoreStore } from "@/stores/blockstore";
 
 // useBlockTypeSpecs hydrates the workspace's full type registry by scanning
 // every block_type_def block currently in the store. Memoised on the ref
 // identity of s.blocks so it only recomputes when the block map itself
 // changes. Later revisions of the same type_key supersede earlier ones.
 export function useBlockTypeSpecs(workspaceID: string): Record<string, BlockTypeSpec> {
-  const blocks = useBlockstoreStore((s) => s.blocks);
+  const blocks = useBlocks();
   return useMemo(() => buildSpecMap(blocks, workspaceID), [blocks, workspaceID]);
 }
 

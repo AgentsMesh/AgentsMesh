@@ -1,27 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { getTicketService } from "@/lib/wasm-core";
+import { useTicketPods } from "@/hooks/useTicketPods";
+import type { TicketPodSummary } from "@/hooks/useTicketPods";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { Terminal, ExternalLink, Plus } from "lucide-react";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
-
-interface TicketPod {
-  pod_key: string;
-  status: string;
-  agent_status: string;
-  model?: string;
-  started_at?: string;
-  runner_id: number;
-  created_by_id: number;
-}
 
 interface TicketPodPanelProps {
   ticketSlug: string;
@@ -39,27 +30,16 @@ export default function TicketPodPanel({
   onPodCreated,
 }: TicketPodPanelProps) {
   const t = useTranslations();
-  const [pods, setPods] = useState<TicketPod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { pods, ready, refresh } = useTicketPods(ticketSlug);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   const fetchPods = useCallback(async () => {
     try {
-      const response = JSON.parse(await getTicketService().get_ticket_pods(ticketSlug, true));
-      setPods(response.pods || []);
+      await refresh();
     } catch (err: unknown) {
       console.error("Failed to fetch pods:", err);
     }
-  }, [ticketSlug]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await fetchPods();
-      setLoading(false);
-    };
-    loadData();
-  }, [fetchPods]);
+  }, [refresh]);
 
 
   const handlePodCreated = () => {
@@ -79,7 +59,7 @@ export default function TicketPodPanel({
     (s) => s.status !== "running" && s.status !== "initializing"
   ), [pods]);
 
-  if (loading) {
+  if (!ready) {
     return (
       <div className="p-4 border border-border rounded-lg">
         <div className="flex items-center justify-center py-8">
@@ -168,13 +148,13 @@ export default function TicketPodPanel({
 }
 
 interface PodItemProps {
-  pod: TicketPod;
+  pod: TicketPodSummary;
 }
 
 function PodItem({ pod }: PodItemProps) {
   const t = useTranslations();
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const addPane = useWorkspaceStore((s) => s.addPane);
   const isActive = pod.status === "running" || pod.status === "initializing";
 

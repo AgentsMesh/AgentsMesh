@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import type { Invitation } from "@/lib/api/invitationTypes";
@@ -20,7 +20,8 @@ interface MembersSettingsProps {
 
 export function MembersSettings({ t }: MembersSettingsProps) {
   const router = useRouter();
-  const { currentOrg, user } = useAuthStore();
+  const currentOrg = useCurrentOrg();
+  const user = useCurrentUser();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInviteDialog, setShowInviteDialog] = useState(false);

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use agentsmesh_persistence::{ChannelRepo, MessageRepo, StorageBackend};
-use agentsmesh_types::{Channel, ChannelMessage, MessagePreview, User};
+use agentsmesh_types::{Channel, ChannelMember, ChannelMessage, MessagePreview, Pod, User};
 
 const MAX_MESSAGES_PER_CHANNEL: usize = 500;
 const MAX_CACHED_CHANNELS: usize = 50;
@@ -31,6 +31,8 @@ pub struct ChannelState {
     unread_counts: HashMap<i64, u32>,
     mention_counts: HashMap<i64, u32>,
     last_messages: HashMap<i64, MessagePreview>,
+    members_by_channel: HashMap<i64, Vec<ChannelMember>>,
+    pods_by_channel: HashMap<i64, Vec<Pod>>,
     current_user: Option<User>,
     channel_repo: Option<ChannelRepo>,
     message_repo: Option<MessageRepo>,
@@ -45,6 +47,8 @@ impl ChannelState {
             unread_counts: HashMap::new(),
             mention_counts: HashMap::new(),
             last_messages: HashMap::new(),
+            members_by_channel: HashMap::new(),
+            pods_by_channel: HashMap::new(),
             current_user: None,
             channel_repo: None,
             message_repo: None,
@@ -62,6 +66,8 @@ impl ChannelState {
             unread_counts: HashMap::new(),
             mention_counts: HashMap::new(),
             last_messages: HashMap::new(),
+            members_by_channel: HashMap::new(),
+            pods_by_channel: HashMap::new(),
             current_user: None,
             channel_repo: Some(channel_repo),
             message_repo: Some(message_repo),
@@ -276,8 +282,8 @@ impl ChannelState {
         let preview = match msg.message_type.as_deref() {
             Some("code") => "[Code]".to_string(),
             Some("command") => "[Command]".to_string(),
-            Some("system") => truncate_str(&msg.content, PREVIEW_MAX_CHARS),
-            _ => truncate_str(&msg.content, PREVIEW_MAX_CHARS),
+            Some("system") => truncate_str(&msg.body, PREVIEW_MAX_CHARS),
+            _ => truncate_str(&msg.body, PREVIEW_MAX_CHARS),
         };
 
         MessagePreview {
@@ -312,8 +318,13 @@ impl ChannelState {
     }
 
     /// Handle a new incoming message (from realtime event).
-    /// Enriches sender, updates preview, increments unread if appropriate, adds to cache.
+    /// Enriches sender, updates preview, adds to cache.
     /// Returns true if the message was new (not a duplicate).
+    ///
+    /// Unread increment is the JS/handler's responsibility — it has first-hand
+    /// knowledge of `isSelf` (via auth store) and `isViewing` (via selected
+    /// channel id), which this layer would have to reconstruct and would risk
+    /// double-counting with the handler.
     pub fn on_new_message(&mut self, mut msg: ChannelMessage) -> bool {
         let channel_id = msg.channel_id;
 
@@ -323,26 +334,17 @@ impl ChannelState {
         // Update last message preview
         self.last_messages.insert(channel_id, Self::make_preview(&msg));
 
-        // Auto-increment unread if not own message and not current channel
-        let is_own = self.current_user_id()
-            .zip(msg.sender_user_id)
-            .is_some_and(|(me, sender)| me == sender);
-        let is_current = self.current_channel
-            .as_ref()
-            .is_some_and(|c| c.id == channel_id);
-
-        if !is_own && !is_current {
-            self.increment_unread(channel_id);
-        }
-
         self.add_message(channel_id, msg)
     }
 
     pub fn update_message(&mut self, channel_id: i64, message: ChannelMessage) {
         if let Some(cache) = self.message_cache.get_mut(&channel_id) {
             if let Some(m) = cache.messages.iter_mut().find(|m| m.id == message.id) {
-                // Merge: only overwrite fields that are present in the update
-                m.content = message.content;
+                // Merge: overwrite fields present in the update.
+                if !message.body.is_empty() { m.body = message.body; }
+                if message.content.is_some() { m.content = message.content; }
+                if message.mentions.is_some() { m.mentions = message.mentions; }
+                if message.reply_to.is_some() { m.reply_to = message.reply_to; }
                 if message.edited_at.is_some() { m.edited_at = message.edited_at; }
                 if message.metadata.is_some() { m.metadata = message.metadata; }
                 if message.sender_user.is_some() { m.sender_user = message.sender_user; }
@@ -493,6 +495,40 @@ impl ChannelState {
                 None => break,
             }
         }
+    }
+
+    // ── Channel members ──
+
+    pub fn set_channel_members(&mut self, channel_id: i64, members: Vec<ChannelMember>) {
+        self.members_by_channel.insert(channel_id, members);
+    }
+
+    pub fn get_channel_members(&self, channel_id: i64) -> Vec<ChannelMember> {
+        self.members_by_channel.get(&channel_id).cloned().unwrap_or_default()
+    }
+
+    pub fn remove_channel_member(&mut self, channel_id: i64, user_id: i64) {
+        if let Some(list) = self.members_by_channel.get_mut(&channel_id) {
+            list.retain(|m| m.user_id != user_id);
+        }
+    }
+
+    pub fn clear_channel_members(&mut self, channel_id: i64) {
+        self.members_by_channel.remove(&channel_id);
+    }
+
+    // ── Channel pods cache ──
+
+    pub fn set_channel_pods(&mut self, channel_id: i64, pods: Vec<Pod>) {
+        self.pods_by_channel.insert(channel_id, pods);
+    }
+
+    pub fn get_channel_pods(&self, channel_id: i64) -> Vec<Pod> {
+        self.pods_by_channel.get(&channel_id).cloned().unwrap_or_default()
+    }
+
+    pub fn clear_channel_pods(&mut self, channel_id: i64) {
+        self.pods_by_channel.remove(&channel_id);
     }
 }
 

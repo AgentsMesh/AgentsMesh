@@ -1,6 +1,6 @@
 import { Terminal as XTerm, IDisposable } from "@xterm/xterm";
 import { MutableRefObject } from "react";
-import { relayPool } from "@/stores/workspace";
+import { relayPool, useWorkspaceStore } from "@/stores/workspace";
 import type { ConnectionStatus } from "@/stores/relayConnection";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 
@@ -9,9 +9,18 @@ export interface TerminalConnection {
   unsubscribe: () => void;
 }
 
+function isPodGone(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err ?? "");
+  return /HTTP 404|Pod not found|RESOURCE_NOT_FOUND/i.test(msg);
+}
+
 /**
  * Subscribes to the terminal pool WebSocket, wiring incoming data
  * through the scheduler. Returns an AbortController for cleanup.
+ *
+ * Self-healing: if the server confirms the pod is gone (404), we drop
+ * the dead pane from the workspace so a stale localStorage snapshot
+ * doesn't keep spamming connect attempts every reload.
  */
 export function setupConnection(
   podKey: string,
@@ -38,6 +47,10 @@ export function setupConnection(
       connectionRef.current = handle;
     } catch (error) {
       if (abort.signal.aborted) return;
+      if (isPodGone(error)) {
+        useWorkspaceStore.getState().removePaneByPodKey(podKey);
+        return;
+      }
       console.error("Failed to connect terminal:", error);
       setConnectionStatus("error");
     }

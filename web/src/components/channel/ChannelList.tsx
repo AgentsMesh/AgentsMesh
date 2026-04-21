@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 
 interface Channel {
   id: number;
@@ -49,7 +49,7 @@ export function ChannelList({
   onUnarchive,
 }: ChannelListProps) {
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const [showArchived, setShowArchived] = useState(false);
 
   const filteredChannels = showArchived

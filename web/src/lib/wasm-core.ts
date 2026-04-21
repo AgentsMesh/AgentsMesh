@@ -43,9 +43,10 @@ export {
   getGitProviderState, getRepoState, getAutopilotState, getRelayManager,
   getBillingService, getRepositoryService, getExtensionService,
   getInvitationService, getApiKeyService, getBindingService,
+  getGrantService,
   getMessageService, getNotificationService, getPromoCodeService,
   getTokenUsageService, getSSOService, getUserApiService,
   getUserCredentialService, getOrgApiService, getAgentService,
   getTicketRelationsService, getFileService, getSupportTicketService,
-  getAuthApiService,
+  getAuthApiService, getBlockstoreService,
 } from "@agentsmesh/service-runtime";

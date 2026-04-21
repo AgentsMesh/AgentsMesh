@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlocks } from "@/stores/blockstore";
 
 import { BlockRenderer } from "./BlockRenderer";
 
@@ -15,7 +15,7 @@ export interface ListViewProps {
 // renders each with its registered component. Useful for "All tasks",
 // "All pages" style dashboards without nesting context.
 export function ListView({ workspaceID, blockType }: ListViewProps) {
-  const blocks = useBlockstoreStore((s) => s.blocks);
+  const blocks = useBlocks();
   const filtered = useMemo(
     () =>
       Object.values(blocks)

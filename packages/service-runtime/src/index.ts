@@ -6,6 +6,7 @@ export {
   getLoopService, getAutopilotService, getMeshService,
   getBillingService, getRepositoryService, getExtensionService,
   getInvitationService, getApiKeyService, getBindingService,
+  getGrantService,
   getMessageService, getNotificationService, getPromoCodeService,
   getTokenUsageService, getSSOService, getUserApiService,
   getUserCredentialService, getOrgApiService, getAgentService,
@@ -13,7 +14,7 @@ export {
   getAuthApiService, getRunnerState, getMeshState, getTicketState,
   getChannelState, getLoopState, getAcpManager, getOrgState,
   getUserState, getGitProviderState, getRepoState,
-  getAutopilotState, getRelayManager,
+  getAutopilotState, getRelayManager, getBlockstoreService,
 } from "./service-getters";
 
 export { setPlatformInit, ensurePlatformReady } from "./platform-init";

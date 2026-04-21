@@ -3,26 +3,14 @@
 import Link from "next/link";
 import { Ticket } from "@/stores/ticket";
 import type { TicketRelation } from "@/lib/api/ticketTypes";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, Circle, GitPullRequest, Clock, Terminal } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { getTicketService } from "@/lib/wasm-core";
+import { useTicketPods } from "@/hooks/useTicketPods";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { getShortPodKey } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
-
-interface TicketPod {
-  pod_key: string;
-  status: string;
-  agent_status: string;
-  model?: string;
-  started_at?: string;
-  runner_id: number;
-  created_by_id: number;
-}
 
 interface TicketDetailSidebarProps {
   ticket: Ticket;
@@ -51,26 +39,9 @@ export function TicketDetailSidebar({
   commentsSlot,
 }: TicketDetailSidebarProps) {
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const addPane = useWorkspaceStore((s) => s.addPane);
-  const [pods, setPods] = useState<TicketPod[]>([]);
-  const [podsLoading, setPodsLoading] = useState(true);
-
-  const fetchPods = useCallback(async () => {
-    setPodsLoading(true);
-    try {
-      const response = JSON.parse(await getTicketService().get_ticket_pods(ticketSlug, true));
-      setPods(response.pods || []);
-    } catch {
-      /* silent */
-    } finally {
-      setPodsLoading(false);
-    }
-  }, [ticketSlug]);
-
-  useEffect(() => {
-    fetchPods();
-  }, [fetchPods]);
+  const { pods, loading: podsLoading } = useTicketPods(ticketSlug);
 
   const activePods = pods.filter((p) => p.status === "running" || p.status === "initializing");
 
@@ -236,13 +207,16 @@ function RailEmpty({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-function ActivityRow({ time, text }: { time?: string; text: string }) {
-  if (!time) return null;
-  const date = new Date(time);
-  const diffMs = Date.now() - date.getTime();
+function formatRelative(time: string): string {
+  const diffMs = Date.now() - new Date(time).getTime();
   const hours = Math.floor(diffMs / (60 * 60 * 1000));
   const days = Math.floor(hours / 24);
-  const rel = days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : "just now";
+  return days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : "just now";
+}
+
+function ActivityRow({ time, text }: { time?: string; text: string }) {
+  if (!time) return null;
+  const rel = formatRelative(time);
   return (
     <li className="flex items-start gap-2 px-2">
       <Clock className="mt-0.5 h-3 w-3 flex-shrink-0 text-muted-foreground/60" />

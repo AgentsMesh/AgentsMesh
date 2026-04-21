@@ -1,46 +1,54 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { X, Radio, RefreshCw, LogIn, Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ChannelPodManager } from "./ChannelPodManager";
-import { ChannelMemberManager } from "./ChannelMemberManager";
-import { useChannelStore } from "@/stores/channel";
-import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Hash, Lock, Search, MoreHorizontal, LogIn } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useChannelStore, type Channel } from "@/stores/channel";
 
 interface ChannelHeaderProps {
   name: string;
-  description?: string;
-  podCount: number;
   channelId: number;
   visibility?: "public" | "private";
   isMember?: boolean;
+  podCount: number;
   memberCount?: number;
-  onClose?: () => void;
-  onRefresh?: () => void;
-  loading?: boolean;
+  ticket?: Channel["ticket"];
+  repository?: Channel["repository"];
+  onOpenSearch?: () => void;
+  /** Toggles the right-side drawer (Pods / Members / Linked / Document). */
+  onToggleRail?: () => void;
+  railOpen?: boolean;
   compact?: boolean;
-  onPodsChanged?: () => void;
 }
 
+/**
+ * Channel header — design/pages/channels.pastel `chan_header`. Left: `#` +
+ * name + subtitle (pods · members · linked · repo). Right: 🔍 search plus
+ * ⋯ "More" which opens/closes the right drawer (members are inside the
+ * drawer, no duplicate pill on the header).
+ */
 export function ChannelHeader({
   name,
-  description,
-  podCount,
   channelId,
   visibility = "public",
   isMember = true,
+  podCount,
   memberCount = 0,
-  onClose,
-  onRefresh,
-  loading,
+  ticket,
+  repository,
+  onOpenSearch,
+  onToggleRail,
+  railOpen = true,
   compact = false,
-  onPodsChanged,
 }: ChannelHeaderProps) {
   const t = useTranslations();
   const joinUserChannel = useChannelStore((s) => s.joinUserChannel);
   const [joining, setJoining] = useState(false);
+
+  const isPrivate = visibility === "private";
+  const Icon = isPrivate ? Lock : Hash;
 
   const handleJoin = async () => {
     setJoining(true);
@@ -51,95 +59,115 @@ export function ChannelHeader({
     }
   };
 
-  const isPrivate = visibility === "private";
-
   if (compact) {
     return (
-      <div className="flex items-center justify-between flex-1 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          {isPrivate ? (
-            <Lock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-          ) : (
-            <Radio className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 flex-shrink-0" />
-          )}
-          <span className="font-medium text-xs truncate">#{name}</span>
-          {isMember && (
-            <ChannelPodManager
-              channelId={channelId}
-              podCount={podCount}
-              compact
-              onPodsChanged={onPodsChanged}
-            />
-          )}
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {onRefresh && (
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onRefresh} disabled={loading}>
-              <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-            </Button>
-          )}
+      <div className="flex min-w-0 flex-1 items-center justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className={cn("h-3.5 w-3.5 flex-shrink-0", isPrivate ? "text-amber-500" : "text-muted-foreground")} />
+          <span className="truncate text-xs font-medium">{name}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-shrink-0 border-b border-border">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-            isPrivate ? "bg-amber-500/10" : "bg-blue-500/10"
-          )}>
-            {isPrivate ? (
-              <Lock className="w-4 h-4 text-amber-500" />
-            ) : (
-              <Radio className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+    <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-3">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Icon
+          className={cn(
+            "h-5 w-5 flex-shrink-0",
+            isPrivate ? "text-amber-500" : "text-muted-foreground",
+          )}
+          aria-hidden="true"
+        />
+        <div className="flex min-w-0 flex-col">
+          <h2 className="truncate text-base font-semibold text-foreground">{name}</h2>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>{t("channels.header.podsCount", { count: podCount })}</span>
+            <Dot />
+            <span>{t("channels.header.membersCount", { count: memberCount })}</span>
+            {ticket && (
+              <>
+                <Dot />
+                <span className="text-primary">
+                  {t("channels.header.linkedTo")} {ticket.slug}
+                </span>
+              </>
+            )}
+            {repository && (
+              <>
+                <Dot />
+                <span className="font-mono text-muted-foreground">{repository.name}</span>
+              </>
             )}
           </div>
-          <div className="min-w-0">
-            <h3 className="font-semibold text-sm truncate">#{name}</h3>
-            {description && (
-              <p className="text-xs text-muted-foreground truncate">{description}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isMember && (
-            <ChannelMemberManager
-              channelId={channelId}
-              memberCount={memberCount}
-            />
-          )}
-
-          {!isMember && !isPrivate && (
-            <Button size="sm" onClick={handleJoin} disabled={joining}>
-              <LogIn className="w-3.5 h-3.5 mr-1.5" />
-              {t("channels.actions.join")}
-            </Button>
-          )}
-
-          <ChannelPodManager
-            channelId={channelId}
-            podCount={podCount}
-            onPodsChanged={onPodsChanged}
-          />
-
-          {onRefresh && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRefresh} disabled={loading}>
-              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-            </Button>
-          )}
-
-          {onClose && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          )}
         </div>
       </div>
+
+      <div className="flex flex-shrink-0 items-center gap-1.5">
+        {!isMember && !isPrivate ? (
+          <Button size="sm" onClick={handleJoin} disabled={joining}>
+            <LogIn className="mr-1.5 h-3.5 w-3.5" />
+            {t("channels.actions.join")}
+          </Button>
+        ) : (
+          <>
+            <HeaderIconButton
+              onClick={onOpenSearch}
+              label={t("channels.header.search")}
+              testId="channel-header-search"
+            >
+              <Search className="h-3.5 w-3.5" />
+            </HeaderIconButton>
+            <HeaderIconButton
+              onClick={onToggleRail}
+              label={t("channels.header.more")}
+              testId="channel-header-more"
+              active={railOpen}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </HeaderIconButton>
+          </>
+        )}
+      </div>
     </div>
+  );
+}
+
+function Dot() {
+  return <span aria-hidden="true" className="text-border">·</span>;
+}
+
+function HeaderIconButton({
+  children,
+  onClick,
+  label,
+  testId,
+  active,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  label: string;
+  testId?: string;
+  active?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      data-testid={testId}
+      className={cn(
+        "inline-flex h-[30px] min-w-[30px] items-center justify-center rounded-md border px-2 transition-colors",
+        active
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-background text-foreground hover:bg-muted",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

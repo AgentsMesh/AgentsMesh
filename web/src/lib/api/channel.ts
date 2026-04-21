@@ -1,10 +1,9 @@
-import { request, orgPath } from "./base";
 import type { MessageContent, MessageMentions } from "./channel-message-types";
+import { getChannelService } from "@/lib/wasm-core";
 
 export type { MessageContent, MessageMentions } from "./channel-message-types";
 export type { InlineElement, Block } from "./channel-message-types";
 
-// Channel types
 export interface ChannelData {
   id: number;
   organization_id: number;
@@ -53,108 +52,63 @@ export interface ChannelMessage {
   };
 }
 
-// Channels API
+// All channel operations route through Rust (WASM SSOT).
+// list/get/create/getMessages/sendMessage are consumed directly by stores (channelStore/channelMessageStore)
+// via svc().xxx — they are not re-exported here to avoid duplicate wrappers.
 export const channelApi = {
-  list: (filters?: {
-    repository_id?: number;
-    ticket_slug?: string;
-    include_archived?: boolean;
-  }) => {
-    const params = new URLSearchParams();
-    if (filters?.repository_id) params.append("repository_id", String(filters.repository_id));
-    if (filters?.ticket_slug) params.append("ticket_slug", filters.ticket_slug);
-    if (filters?.include_archived) params.append("include_archived", "true");
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return request<{ channels: ChannelData[]; total: number }>(`${orgPath("/channels")}${query}`);
+  update: async (id: number, data: { name?: string; description?: string; document?: string }) => {
+    const json = await getChannelService().update_channel(BigInt(id), JSON.stringify(data));
+    return { channel: JSON.parse(json) as ChannelData };
   },
 
-  get: (id: number) =>
-    request<{ channel: ChannelData }>(`${orgPath("/channels")}/${id}`),
-
-  create: (data: {
-    name: string;
-    description?: string;
-    document?: string;
-    repository_id?: number;
-    ticket_slug?: string;
-    visibility?: "public" | "private";
-    member_ids?: number[];
-  }) =>
-    request<{ channel: ChannelData }>(orgPath("/channels"), {
-      method: "POST",
-      body: data,
-    }),
-
-  update: (id: number, data: { name?: string; description?: string; document?: string }) =>
-    request<{ channel: ChannelData }>(`${orgPath("/channels")}/${id}`, {
-      method: "PUT",
-      body: data,
-    }),
-
-  archive: (id: number) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/archive`, { method: "POST" }),
-
-  unarchive: (id: number) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/unarchive`, { method: "POST" }),
-
-  getMessages: (id: number, limit?: number, beforeId?: number) => {
-    const params = new URLSearchParams();
-    if (limit) params.append("limit", String(limit));
-    if (beforeId) params.append("before_id", String(beforeId));
-    const query = params.toString() ? `?${params.toString()}` : "";
-    return request<{ messages: ChannelMessage[]; has_more: boolean }>(`${orgPath("/channels")}/${id}/messages${query}`);
+  archive: async (id: number) => {
+    await getChannelService().archive_channel(BigInt(id));
+    return { message: "ok" };
   },
 
-  sendMessage: (id: number, content: MessageContent, podKey?: string) =>
-    request<{ message: ChannelMessage }>(`${orgPath("/channels")}/${id}/messages`, {
-      method: "POST",
-      body: { content, ...(podKey ? { pod_key: podKey } : {}) },
-    }),
+  unarchive: async (id: number) => {
+    await getChannelService().unarchive_channel(BigInt(id));
+    return { message: "ok" };
+  },
 
-  getPods: (id: number) =>
-    request<{
+  searchMessages: async (id: number, q: string, limit = 20) => {
+    const json = await getChannelService().search_channel_messages(BigInt(id), q, limit);
+    return JSON.parse(json) as { messages: ChannelMessage[] };
+  },
+
+  getPods: async (id: number) => {
+    const json = await getChannelService().get_channel_pods(BigInt(id));
+    return JSON.parse(json) as {
       pods: Array<{ id: number; pod_key: string; alias?: string; status: string; agent_status: string }>;
       total: number;
-    }>(`${orgPath("/channels")}/${id}/pods`),
+    };
+  },
 
-  joinPod: (id: number, podKey: string) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/pods`, { method: "POST", body: { pod_key: podKey } }),
+  joinPod: async (id: number, podKey: string) => {
+    await getChannelService().join_channel(BigInt(id), podKey);
+    return { message: "ok" };
+  },
 
-  leavePod: (id: number, podKey: string) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/pods/${podKey}`, { method: "DELETE" }),
+  leavePod: async (id: number, podKey: string) => {
+    await getChannelService().leave_channel(BigInt(id), podKey);
+    return { message: "ok" };
+  },
 
-  markRead: (id: number, messageId: number) =>
-    request<{ status: string }>(`${orgPath("/channels")}/${id}/read`, { method: "POST", body: { message_id: messageId } }),
+  inviteMembers: async (id: number, userIds: number[]) => {
+    await getChannelService().invite_channel_members(BigInt(id), JSON.stringify(userIds));
+    return { message: "ok" };
+  },
 
-  getUnreadCounts: () =>
-    request<{ unread: Record<string, number> }>(orgPath("/channels/unread")),
+  removeMember: async (id: number, userId: number) => {
+    await getChannelService().remove_channel_member(BigInt(id), BigInt(userId));
+    return { message: "ok" };
+  },
 
-  mute: (id: number, muted: boolean) =>
-    request<{ status: string }>(`${orgPath("/channels")}/${id}/mute`, { method: "POST", body: { muted } }),
-
-  editMessage: (channelId: number, messageId: number, content: MessageContent) =>
-    request<{ message: ChannelMessage }>(`${orgPath("/channels")}/${channelId}/messages/${messageId}`, {
-      method: "PUT",
-      body: { content },
-    }),
-
-  deleteMessage: (channelId: number, messageId: number) =>
-    request<{ status: string }>(`${orgPath("/channels")}/${channelId}/messages/${messageId}`, { method: "DELETE" }),
-
-  joinChannel: (id: number) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/join`, { method: "POST" }),
-
-  leaveChannel: (id: number) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/leave`, { method: "POST" }),
-
-  inviteMembers: (id: number, userIds: number[]) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/members`, { method: "POST", body: { user_ids: userIds } }),
-
-  removeMember: (id: number, userId: number) =>
-    request<{ message: string }>(`${orgPath("/channels")}/${id}/members/${userId}`, { method: "DELETE" }),
-
-  listMembers: (id: number) =>
-    request<{ members: Array<{ channel_id: number; user_id: number; role: string; is_muted: boolean; joined_at: string }>; total: number }>(
-      `${orgPath("/channels")}/${id}/members`
-    ),
+  listMembers: async (id: number) => {
+    const json = await getChannelService().fetch_channel_members(BigInt(id));
+    return JSON.parse(json) as {
+      members: Array<{ channel_id: number; user_id: number; role: string; is_muted: boolean; joined_at: string }>;
+      total: number;
+    };
+  },
 };

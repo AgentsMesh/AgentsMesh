@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { __resetChannelPodsCacheForTests } from "../useChannelPods";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useMentionCandidates } from "../useMentionCandidates";
 
@@ -8,6 +9,12 @@ vi.mock("@/stores/auth", () => ({
     currentOrg: { slug: "test-org" },
     user: { id: 1 },
   }),
+  useCurrentUser: () => ({ id: 1, email: "u@e.com", username: "u" }),
+  useCurrentOrg: () => ({ id: 1, name: "TestOrg", slug: "test-org" }),
+  useAuthOrganizations: () => [],
+  readCurrentUser: () => ({ id: 1, email: "u@e.com", username: "u" }),
+  readCurrentOrg: () => ({ id: 1, name: "TestOrg", slug: "test-org" }),
+  readOrganizations: () => [],
 }));
 
 const mockPods = [
@@ -16,6 +23,7 @@ const mockPods = [
 vi.mock("@/stores/pod", () => ({
   usePodStore: (selector: (s: { pods: typeof mockPods }) => unknown) =>
     selector({ pods: mockPods }),
+  usePods: () => mockPods,
 }));
 
 vi.mock("@/lib/pod-display-name", () => ({
@@ -35,15 +43,36 @@ vi.mock("@/lib/api/organization", () => ({
   },
 }));
 
+// Override wasm-core so Rust ChannelService (SSOT) reflects fetch outcomes:
+// `get_channel_pods` seeds cache on success; `channel_pods_json` reads it.
+const CHANNEL_PODS_FIXTURE = [
+  { id: 1, pod_key: "pk-bot", alias: "MyBot", status: "running", agent_status: "idle" },
+  { id: 2, pod_key: "pk-stopped", status: "terminated", agent_status: "idle" },
+  { id: 3, pod_key: "pk-init", alias: null, status: "initializing", agent_status: "idle" },
+];
+const channelPodsCache = new Map<number, typeof CHANNEL_PODS_FIXTURE>();
+vi.mock("@/lib/wasm-core", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/wasm-core")>("@/lib/wasm-core");
+  return {
+    ...actual,
+    getChannelService: () => ({
+      get_channel_pods: async (id: bigint) => {
+        const num = Number(id);
+        channelPodsCache.set(num, CHANNEL_PODS_FIXTURE);
+        return JSON.stringify({ pods: CHANNEL_PODS_FIXTURE });
+      },
+      channel_pods_json: (id: bigint) => JSON.stringify(channelPodsCache.get(Number(id)) ?? []),
+    }),
+  };
+});
+
 vi.mock("@/lib/api/channel", () => ({
   channelApi: {
-    getPods: vi.fn().mockResolvedValue({
-      pods: [
-        { id: 1, pod_key: "pk-bot", alias: "MyBot", status: "running", agent_status: "idle" },
-        { id: 2, pod_key: "pk-stopped", status: "terminated", agent_status: "idle" },
-        { id: 3, pod_key: "pk-init", alias: null, status: "initializing", agent_status: "idle" },
-      ],
-      total: 3,
+    getPods: vi.fn(async (id: number) => {
+      // Simulate the real path: channelApi.getPods goes through WASM which
+      // caches the response in Rust ChannelState. Mirror that here.
+      channelPodsCache.set(id, CHANNEL_PODS_FIXTURE);
+      return { pods: CHANNEL_PODS_FIXTURE, total: CHANNEL_PODS_FIXTURE.length };
     }),
   },
 }));
@@ -51,6 +80,8 @@ vi.mock("@/lib/api/channel", () => ({
 describe("useMentionCandidates", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetChannelPodsCacheForTests();
+    channelPodsCache.clear();
   });
 
   it("returns empty when disabled", () => {

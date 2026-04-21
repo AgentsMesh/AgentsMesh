@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import type { OrganizationMember } from "@/lib/api";
 import { getOrgApiService } from "@/lib/wasm-getters";
 
@@ -29,7 +29,7 @@ export function MentionPopover({
   onSelect,
   onClose,
 }: MentionPopoverProps) {
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   // Track prev query to reset selectedIndex when query changes (derived state pattern)
   const [selectedIndex, setSelectedIndex] = useState(0);

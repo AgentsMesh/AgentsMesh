@@ -8,16 +8,9 @@ import { cn } from "@/lib/utils";
 import { channelApi } from "@/lib/api/channel";
 import { organizationApi } from "@/lib/api/organization";
 import type { OrganizationMember } from "@/lib/api/organization";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg } from "@/stores/auth";
+import { useChannelMembers, useChannelStore } from "@/stores/channelStore";
 import { useTranslations } from "next-intl";
-
-interface ChannelMember {
-  channel_id: number;
-  user_id: number;
-  role: string;
-  is_muted: boolean;
-  joined_at: string;
-}
 
 interface ChannelMemberManagerProps {
   channelId: number;
@@ -31,10 +24,10 @@ export function ChannelMemberManager({
   onMembersChanged,
 }: ChannelMemberManagerProps) {
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
 
   const [open, setOpen] = useState(false);
-  const [members, setMembers] = useState<ChannelMember[]>([]);
+  const members = useChannelMembers(channelId);
   const [orgMembers, setOrgMembers] = useState<OrganizationMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -44,8 +37,9 @@ export function ChannelMemberManager({
     const load = async () => {
       setLoading(true);
       try {
-        const chRes = await channelApi.listMembers(channelId);
-        setMembers(chRes.members || []);
+        // Warm Rust cache; `useChannelMembers` picks it up via tick bump.
+        await channelApi.listMembers(channelId);
+        useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
         if (currentOrg?.slug) {
           const orgRes = await organizationApi.listMembers(currentOrg.slug);
           setOrgMembers(orgRes.members || []);
@@ -69,8 +63,7 @@ export function ChannelMemberManager({
       setActionLoading(userId);
       try {
         await channelApi.inviteMembers(channelId, [userId]);
-        const res = await channelApi.listMembers(channelId);
-        setMembers(res.members || []);
+        useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
         onMembersChanged?.();
       } catch (error) {
         console.error("Failed to invite member:", error);
@@ -86,8 +79,7 @@ export function ChannelMemberManager({
       setActionLoading(userId);
       try {
         await channelApi.removeMember(channelId, userId);
-        const res = await channelApi.listMembers(channelId);
-        setMembers(res.members || []);
+        useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
         onMembersChanged?.();
       } catch (error) {
         console.error("Failed to remove member:", error);
@@ -108,6 +100,9 @@ export function ChannelMemberManager({
       <PopoverTrigger asChild>
         <button
           type="button"
+          aria-label={t("channels.header.members")}
+          title={t("channels.header.members")}
+          data-testid="channel-header-members"
           className="flex items-center gap-1.5 px-2 py-1 bg-muted rounded-md hover:bg-muted/80 transition-colors"
         >
           <Users className="w-3.5 h-3.5 text-muted-foreground" />

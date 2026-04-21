@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { organizationApi } from "@/lib/api/organization";
 import type { OrganizationMember } from "@/lib/api/organization";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 
 interface MemberSelectorProps {
@@ -15,7 +15,7 @@ interface MemberSelectorProps {
 
 export function MemberSelector({ selectedIds, onChange }: MemberSelectorProps) {
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const [orgMembers, setOrgMembers] = useState<OrganizationMember[]>([]);
   const [search, setSearch] = useState("");
 

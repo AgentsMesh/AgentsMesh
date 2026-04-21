@@ -1,34 +1,41 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { DocumentView } from "@/components/blocks/DocumentView";
 import { SearchPanel } from "@/components/blocks/search/SearchPanel";
-import { WorkspaceBreadcrumb } from "@/components/blocks/WorkspaceBreadcrumb";
-import { Button } from "@/components/ui/button";
+import { BlocksDocHeader } from "@/components/blocks/BlocksDocHeader";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { getErrorMessage } from "@/lib/utils";
 import { blockstoreApi } from "@/lib/api/blockstoreApi";
 import type { Workspace } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
-// Side-effect: registers reconnect handler + event handler hooks for store.
+import { useBlocks, useBlockstoreStore } from "@/stores/blockstore";
 import "@/stores/blockstoreSubscribe";
+
+function pageMeta(block: { data?: { title?: unknown; icon?: unknown }; text?: string | null } | undefined) {
+  if (!block) return { title: "Untitled", icon: undefined as string | undefined };
+  const t = block.data?.title;
+  const title = typeof t === "string" && t.trim() ? t : block.text?.trim() || "Untitled";
+  const icon = typeof block.data?.icon === "string" ? (block.data.icon as string) : undefined;
+  return { title, icon };
+}
 
 export default function BlockstorePage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const wsParam = searchParams.get("ws");
+  const pageParam = searchParams.get("page");
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const blocks = useBlocks();
 
-  // hydrate runs on first load and on every workspace switch — extracted so
-  // the initial EnsureDefault path and WorkspaceBreadcrumb.onSelect share
-  // the same "set active + warm the store with type_defs" sequence.
   const hydrate = async (ws: Workspace) => {
     setWorkspace(ws);
+    useBlockstoreStore.getState().actions.setActiveWorkspaceId(ws.id);
     void useBlockstoreStore.getState().actions.loadTypeDefs(ws.id);
   };
 
@@ -36,10 +43,6 @@ export default function BlockstorePage() {
     let cancelled = false;
     (async () => {
       try {
-        // `?ws=<id>` lets callers (notably the E2E suite) target a specific
-        // workspace instead of auto-ensuring the default one. The id is
-        // matched against the listed workspaces so a bad id falls back to
-        // the default rather than 404'ing the whole page.
         let ws: Workspace | null = null;
         if (wsParam) {
           const list = await blockstoreApi.listWorkspaces();
@@ -70,29 +73,38 @@ export default function BlockstorePage() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (error) {
-    return <div className="p-6 text-sm text-destructive">{error}</div>;
-  }
+  const rootId = workspace?.root_block_id ?? null;
+  const selectedPageID = pageParam ?? rootId;
 
-  if (!workspace || !workspace.root_block_id) {
-    return <CenteredSpinner />;
-  }
+  const rootMeta = useMemo(() => pageMeta(rootId ? blocks[rootId] : undefined), [rootId, blocks]);
+  const currentMeta = useMemo(
+    () => pageMeta(selectedPageID ? blocks[selectedPageID] : undefined),
+    [selectedPageID, blocks],
+  );
+
+  if (error) return <div className="p-6 text-sm text-destructive">{error}</div>;
+  if (!workspace || !rootId || !selectedPageID) return <CenteredSpinner />;
 
   return (
-    <>
-      <div className="flex items-center justify-between gap-2 px-8 pt-4">
-        <WorkspaceBreadcrumb current={workspace} onSelect={(ws) => void hydrate(ws)} />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSearchOpen(true)}
-          className="gap-2 text-xs"
-        >
-          <span>Search</span>
-          <kbd className="rounded border bg-muted px-1 text-[10px]">⌘K</kbd>
-        </Button>
-      </div>
-      <DocumentView workspaceID={workspace.id} rootBlockID={workspace.root_block_id} />
+    <div className="flex h-full min-h-0 w-full">
+      <main className="flex min-w-0 flex-1 flex-col">
+        <BlocksDocHeader
+          rootTitle={rootMeta.title}
+          rootIcon={rootMeta.icon}
+          currentTitle={currentMeta.title}
+          currentIcon={currentMeta.icon}
+          isRoot={selectedPageID === rootId}
+          onAddBlock={() => setMenuOpen(true)}
+        />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <DocumentView
+            workspaceID={workspace.id}
+            rootBlockID={selectedPageID}
+            menuOpen={menuOpen}
+            onMenuOpenChange={setMenuOpen}
+          />
+        </div>
+      </main>
       <SearchPanel
         workspaceID={workspace.id}
         open={searchOpen}
@@ -104,6 +116,6 @@ export default function BlockstorePage() {
           setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
         }}
       />
-    </>
+    </div>
   );
 }

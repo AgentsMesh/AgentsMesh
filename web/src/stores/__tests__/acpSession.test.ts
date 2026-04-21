@@ -1,16 +1,21 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAcpSessionStore } from "../acpSession";
+import {
+  useAcpSessionStore,
+  readAcpSession,
+  __resetAcpSessionsForTests,
+} from "../acpSession";
+import { EMPTY_SESSION } from "../acpSessionTypes";
 
 const POD = "pod-1";
 const SID = "sess-1";
 
 function getSession() {
-  return useAcpSessionStore.getState().sessions[POD];
+  return readAcpSession(POD) ?? EMPTY_SESSION;
 }
 
 describe("acpSession store", () => {
   beforeEach(() => {
-    useAcpSessionStore.setState({ sessions: {} });
+    __resetAcpSessionsForTests();
   });
 
   describe("addContentChunk aggregation", () => {
@@ -119,9 +124,8 @@ describe("acpSession store", () => {
     it("is a no-op for non-existent session", () => {
       const store = useAcpSessionStore.getState();
       store.markLastMessageComplete("nonexistent");
-      // syncSession creates EMPTY_SESSION entry even when WASM returns null
-      const session = useAcpSessionStore.getState().sessions["nonexistent"];
-      expect(session.messages).toEqual([]);
+      // In the SSOT model, a no-op write leaves the session absent.
+      expect(readAcpSession("nonexistent")).toBeNull();
     });
 
     it("is a no-op for empty messages", () => {
@@ -145,7 +149,7 @@ describe("acpSession store", () => {
       const store = useAcpSessionStore.getState();
       store.addContentChunk(POD, SID, "data", "assistant");
       store.clearSession(POD);
-      expect(getSession()).toBeUndefined();
+      expect(readAcpSession(POD)).toBeNull();
     });
   });
 

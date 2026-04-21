@@ -56,8 +56,9 @@ func (Channel) TableName() string {
 
 // Message type constants
 const (
-	MessageTypeText    = "text"
-	MessageTypeSystem  = "system"
+	MessageTypeText       = "text"
+	MessageTypeAttachment = "attachment"
+	MessageTypeSystem     = "system"
 )
 
 // Message represents a message in a channel

@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth";
 import { runnerAuthApi, RunnerAuthStatus } from "@/lib/api/runner";
 import { organizationApi, OrganizationData } from "@/lib/api/organization";
-import { ApiError } from "@/lib/api/base";
+import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import { useTranslations } from "next-intl";
 import { LoadingScreen, ErrorScreen, ExpiredScreen, SuccessScreen, BrandLogo } from "./StatusScreens";

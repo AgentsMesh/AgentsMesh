@@ -1,12 +1,11 @@
 "use client";
 
 import React from "react";
-import { useShallow } from "zustand/react/shallow";
 
 import type { Block, JSONMap } from "@/lib/api/blockstoreTypes";
 import { BLOCK_TYPE_COLUMN } from "@/lib/api/blockstoreTypes";
 import { cn } from "@/lib/utils";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useNestChildren, useRefs, useBlocks } from "@/stores/blockstore";
 
 import { BlockRenderer, NestChildren } from "../BlockRenderer";
 import { BlockChrome } from "../editor/BlockChrome";
@@ -18,14 +17,14 @@ import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 // data.width (0..1 fractional).
 export function ColumnListRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
-  const refIDs = useBlockstoreStore(useShallow((s) => s.nestChildren[block.id]));
-  const refs = useBlockstoreStore(useShallow((s) => s.refs));
-  const blocks = useBlockstoreStore(useShallow((s) => s.blocks));
+  const refIDs = useNestChildren(block.id);
+  const refs = useRefs();
+  const blocks = useBlocks();
 
-  const columns: Block[] = (refIDs ?? [])
-    .map((rid) => refs[rid]?.to_id)
-    .filter((id): id is string => Boolean(id))
-    .map((id) => blocks[id])
+  const columns: Block[] = refIDs
+    .map((rid: number) => refs[rid]?.to_id)
+    .filter((id: string | undefined): id is string => Boolean(id))
+    .map((id: string) => blocks[id])
     .filter((b): b is Block => Boolean(b) && b.type === BLOCK_TYPE_COLUMN);
 
   const handleDelete = () => {

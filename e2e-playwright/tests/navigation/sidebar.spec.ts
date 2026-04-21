@@ -13,7 +13,7 @@ test.describe("Sidebar Navigation", () => {
   });
 
   test("navigate between main sections via activity bar", async ({ page }) => {
-    const sections: NavSection[] = ["runners", "settings", "workspace"];
+    const sections: NavSection[] = ["infra", "settings", "workspace"];
 
     for (const section of sections) {
       await sidebar.navigateTo(section);
@@ -27,7 +27,7 @@ test.describe("Sidebar Navigation", () => {
       "workspace",
       "tickets",
       "channels",
-      "runners",
+      "infra",
       "settings",
     ];
 
@@ -37,9 +37,9 @@ test.describe("Sidebar Navigation", () => {
     }
   });
 
-  test("navigate to runners and back to workspace", async ({ page }) => {
-    await sidebar.navigateTo("runners");
-    expect(page.url()).toContain(`/${TEST_ORG_SLUG}/runners`);
+  test("navigate to infra and back to workspace", async ({ page }) => {
+    await sidebar.navigateTo("infra");
+    expect(page.url()).toContain(`/${TEST_ORG_SLUG}/infra`);
 
     await sidebar.navigateTo("workspace");
     expect(page.url()).toContain(`/${TEST_ORG_SLUG}/workspace`);

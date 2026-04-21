@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useBlockTypeSpecs } from "@/lib/blockstore/useBlockTypeSpec";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlockstoreStore, useBlock } from "@/stores/blockstore";
 
 import { BlockRenderer } from "./BlockRenderer";
 import { buildAddOptions } from "./editor/documentAddOptions";
@@ -16,16 +16,31 @@ import { useBlockstoreDispatch } from "./editor/useBlockstoreDispatch";
 export interface DocumentViewProps {
   workspaceID: string;
   rootBlockID: string;
+  /** Controlled slash-menu visibility — the Blocks page lifts this so the
+   *  doc header's "+ Block" CTA can toggle the same menu. */
+  menuOpen?: boolean;
+  onMenuOpenChange?: (open: boolean) => void;
 }
 
 // DocumentView is Phase 1's primary rendering surface: a recursive tree of
 // blocks rooted at a single page, with an "add block" control at the bottom.
 // The catalog of what the add-block button lists lives in documentAddOptions
 // so this file stays focused on lifecycle + layout.
-export function DocumentView({ workspaceID, rootBlockID }: DocumentViewProps) {
-  const root = useBlockstoreStore((s) => s.blocks[rootBlockID]);
+export function DocumentView({
+  workspaceID,
+  rootBlockID,
+  menuOpen: menuOpenProp,
+  onMenuOpenChange,
+}: DocumentViewProps) {
+  const root = useBlock(rootBlockID);
   const dispatch = useBlockstoreDispatch(workspaceID);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isControlled = menuOpenProp !== undefined;
+  const menuOpen = isControlled ? (menuOpenProp as boolean) : internalOpen;
+  const setMenuOpen = (next: boolean) => {
+    if (!isControlled) setInternalOpen(next);
+    onMenuOpenChange?.(next);
+  };
   const dynamicSpecs = useBlockTypeSpecs(workspaceID);
 
   useEffect(() => {
@@ -52,7 +67,7 @@ export function DocumentView({ workspaceID, rootBlockID }: DocumentViewProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setMenuOpen((v) => !v)}
+          onClick={() => setMenuOpen(!menuOpen)}
         >
           + Add block
         </Button>

@@ -1,4 +1,4 @@
-import { request, orgPath } from "./base";
+import { getGrantService } from "@/lib/wasm-core";
 
 export interface ResourceGrant {
   id: number;
@@ -11,29 +11,19 @@ export interface ResourceGrant {
   granted_by_user?: { id: number; email: string; username: string; name?: string };
 }
 
-const resourcePlural: Record<string, string> = {
-  pod: "pods",
-  runner: "runners",
-  repository: "repositories",
-};
-
-function grantPath(resourceType: string, resourceId: string, suffix = "") {
-  const plural = resourcePlural[resourceType] || `${resourceType}s`;
-  return orgPath(`/${plural}/${resourceId}/grants${suffix}`);
-}
-
 export const grantApi = {
-  list: (resourceType: string, resourceId: string) =>
-    request<{ grants: ResourceGrant[] }>(grantPath(resourceType, resourceId)),
+  list: async (resourceType: string, resourceId: string) => {
+    const json = await getGrantService().list(resourceType, resourceId);
+    return JSON.parse(json) as { grants: ResourceGrant[] };
+  },
 
-  grant: (resourceType: string, resourceId: string, userId: number) =>
-    request<{ grant: ResourceGrant }>(grantPath(resourceType, resourceId), {
-      method: "POST",
-      body: { user_id: userId },
-    }),
+  grant: async (resourceType: string, resourceId: string, userId: number) => {
+    const json = await getGrantService().grant(resourceType, resourceId, BigInt(userId));
+    return JSON.parse(json) as { grant: ResourceGrant };
+  },
 
-  revoke: (resourceType: string, resourceId: string, grantId: number) =>
-    request<{ message: string }>(grantPath(resourceType, resourceId, `/${grantId}`), {
-      method: "DELETE",
-    }),
+  revoke: async (resourceType: string, resourceId: string, grantId: number) => {
+    await getGrantService().revoke(resourceType, resourceId, BigInt(grantId));
+    return { message: "ok" };
+  },
 };

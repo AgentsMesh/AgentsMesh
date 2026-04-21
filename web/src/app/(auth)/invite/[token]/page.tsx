@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import type { InvitationInfo } from "@/lib/api/invitationTypes";
 import { getInvitationService, getOrgApiService } from "@/lib/wasm-getters";
 import { initWasmCore } from "@/lib/wasm-core";
@@ -18,7 +18,9 @@ interface PageParams {
 export default function InvitePage({ params }: { params: Promise<PageParams> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { user, setOrganizations, setCurrentOrg } = useAuthStore();
+  const user = useCurrentUser();
+  const setOrganizations = useAuthStore((s) => s.setOrganizations);
+  const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
   const [invitation, setInvitation] = useState<InvitationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);

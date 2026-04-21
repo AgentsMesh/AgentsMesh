@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::LoopRunStatus;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LoopData {
     #[serde(default)]
     pub id: i64,
@@ -60,7 +60,7 @@ pub struct LoopData {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LoopRunData {
     pub id: i64,
     #[serde(default)]

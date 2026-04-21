@@ -145,6 +145,19 @@ export function createAcpManager() {
       return JSON.stringify(s);
     },
 
+    _seed: (podKey: string, partial: Partial<AcpSession>) => {
+      const merged: AcpSession = {
+        messages: partial.messages ?? [],
+        tool_calls: partial.tool_calls ?? {},
+        plan: partial.plan ?? [],
+        thinkings: partial.thinkings ?? [],
+        logs: partial.logs ?? [],
+        state: partial.state ?? 'idle',
+        pending_permissions: partial.pending_permissions ?? [],
+      };
+      sessions.set(podKey, merged);
+    },
+
     _reset: () => { sessions.clear(); },
   };
 }

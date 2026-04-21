@@ -507,5 +507,12 @@
       "loadFailed": "Failed to load data. Please try again.",
       "sendFailed": "Failed to send message. Please try again."
     }
+  },
+  "errors": {
+    "unexpected": "Something went wrong",
+    "notFound": "Page not found",
+    "goBack": "Go back",
+    "reload": "Reload",
+    "home": "Home"
   }
 }

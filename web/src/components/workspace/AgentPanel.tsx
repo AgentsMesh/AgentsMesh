@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceStore, type SplitDirection } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSessionField } from "@/stores/acpSession";
 import { usePodStatus } from "@/hooks";
 import { useAcpRelay } from "@/hooks/useAcpRelay";
 import { useTerminalStatus } from "@/hooks/useTerminalStatus";
@@ -51,7 +51,7 @@ export function AgentPanel({
   const splitPane = useWorkspaceStore((s) => s.splitPane);
   const panes = useWorkspaceStore((s) => s.panes);
   const initProgress = usePodStore((state) => state.initProgress[podKey]);
-  const session = useAcpSessionStore((s) => s.sessions[podKey]);
+  const pendingPermissions = useAcpSessionField(podKey, (s) => s.pendingPermissions);
 
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
@@ -119,11 +119,10 @@ export function AgentPanel({
           <div className="flex-1 overflow-y-auto p-4">
             <AcpActivityStream podKey={podKey} />
           </div>
-          {session?.pendingPermissions &&
-            session.pendingPermissions.length > 0 && (
+          {pendingPermissions.length > 0 && (
               <AcpPermissionDialog
                 podKey={podKey}
-                permissions={session.pendingPermissions}
+                permissions={pendingPermissions}
               />
             )}
           <AcpPromptInput podKey={podKey} />

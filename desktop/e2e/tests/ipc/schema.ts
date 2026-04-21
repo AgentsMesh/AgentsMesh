@@ -4070,5 +4070,167 @@ export const ipcSchema: IpcMethodSchema[] = [
       }
     ],
     "returnType": "String"
+  },
+  {
+    "name": "blockstore_apply_ops",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "req_json",
+        "type": "String"
+      }
+    ],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_list_workspaces",
+    "group": "blockstore",
+    "params": [],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_ensure_default_workspace",
+    "group": "blockstore",
+    "params": [],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_load_subtree",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      },
+      {
+        "name": "root_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "()"
+  },
+  {
+    "name": "blockstore_load_type_defs",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "()"
+  },
+  {
+    "name": "blockstore_catchup",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "()"
+  },
+  {
+    "name": "blockstore_semantic_search",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      },
+      {
+        "name": "req_json",
+        "type": "String"
+      }
+    ],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_apply_remote_op",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "op_json",
+        "type": "String"
+      }
+    ],
+    "returnType": "()"
+  },
+  {
+    "name": "blockstore_workspaces_json",
+    "group": "blockstore",
+    "params": [],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_get_block_json",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "id",
+        "type": "String"
+      }
+    ],
+    "returnType": "Option<String"
+  },
+  {
+    "name": "blockstore_list_children_json",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "parent_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_list_backlinks_json",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "target_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_type_defs_json",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "String"
+  },
+  {
+    "name": "blockstore_last_op_id",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      }
+    ],
+    "returnType": "i64"
+  },
+  {
+    "name": "blockstore_set_last_op_id",
+    "group": "blockstore",
+    "params": [
+      {
+        "name": "workspace_id",
+        "type": "String"
+      },
+      {
+        "name": "id",
+        "type": "i64"
+      }
+    ],
+    "returnType": "()"
   }
 ];

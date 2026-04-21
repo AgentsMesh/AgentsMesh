@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useLoopStore, useLoops, LoopData } from "@/stores/loop";
 import { LoopCreateDialog } from "@/components/loops/LoopCreateDialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export function LoopsSidebarContent({ className }: { className?: string }) {
   const t = useTranslations();
   const router = useRouter();
   const pathname = usePathname();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const loops = useLoops();
   const loading = useLoopStore((s) => s.loading);
   const fetchLoops = useLoopStore((s) => s.fetchLoops);

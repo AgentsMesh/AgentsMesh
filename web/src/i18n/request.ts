@@ -2,6 +2,7 @@ import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
 import {
   LOCALE_COOKIE,
+  MESSAGE_NAMESPACES,
   defaultLocale,
   isValidLocale,
   getLocaleFromHeaders,
@@ -20,23 +21,9 @@ export default getRequestConfig(async () => {
     locale = getLocaleFromHeaders(headersList.get("accept-language"));
   }
 
-  const files = await Promise.all([
-    import(`@/messages/${locale}/common.json`),
-    import(`@/messages/${locale}/auth.json`),
-    import(`@/messages/${locale}/landing.json`),
-    import(`@/messages/${locale}/app.json`),
-    import(`@/messages/${locale}/settings.json`),
-    import(`@/messages/${locale}/ide.json`),
-    import(`@/messages/${locale}/repositories.json`),
-    import(`@/messages/${locale}/runners.json`),
-    import(`@/messages/${locale}/docs.json`),
-    import(`@/messages/${locale}/content.json`),
-    import(`@/messages/${locale}/extensions.json`),
-    import(`@/messages/${locale}/loops.json`),
-    import(`@/messages/${locale}/channels.json`),
-    import(`@/messages/${locale}/blockstore.json`),
-    import(`@/messages/${locale}/infra.json`),
-  ]);
+  const files = await Promise.all(
+    MESSAGE_NAMESPACES.map((ns) => import(`@/messages/${locale}/${ns}.json`)),
+  );
 
   const messages = Object.assign({}, ...files.map((f) => f.default));
   return { locale, messages };

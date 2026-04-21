@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { useAuthStore } from "@/stores/auth";
-import { usePodStore } from "@/stores/pod";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
+import { usePods } from "@/stores/pod";
 import { organizationApi } from "@/lib/api/organization";
-import { channelApi } from "@/lib/api/channel";
+import { useChannelPods } from "@/hooks/useChannelPods";
 import { getPodDisplayName, getMentionSafeName, getShortPodKey } from "@/lib/pod-display-name";
 
 export interface MentionItem {
@@ -39,13 +39,25 @@ export function useMentionCandidates({
   channelId,
   enabled = true,
 }: UseMentionCandidatesOptions) {
-  const { currentOrg, user } = useAuthStore();
-  const allPods = usePodStore((s) => s.pods);
+  const currentOrg = useCurrentOrg();
+  const user = useCurrentUser();
+  const allPods = usePods();
   const [members, setMembers] = useState<MentionItem[]>([]);
-  const [rawChannelPods, setRawChannelPods] = useState<ChannelPodRaw[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch organization members
+  const { pods: sharedChannelPods, loading: podsLoading } = useChannelPods(
+    enabled ? channelId : null,
+  );
+  const rawChannelPods = useMemo<ChannelPodRaw[]>(
+    () =>
+      sharedChannelPods
+        .filter((p) => p.status === "running" || p.status === "initializing")
+        .map((p) => ({ pod_key: p.pod_key, alias: p.alias, status: p.status })),
+    [sharedChannelPods],
+  );
+
+  // Fetch organization members (channel pod fetching is delegated to
+  // `useChannelPods` so multiple subscribers share one network call).
   const orgSlug = currentOrg?.slug;
   useEffect(() => {
     if (!enabled || !orgSlug) return;
@@ -58,14 +70,14 @@ export function useMentionCandidates({
         if (cancelled) return;
 
         const memberItems: MentionItem[] = (response.members || [])
-          .filter((m) => m.user && m.user.id !== user?.id)
-          .map((m) => ({
-            id: `user:${m.user!.id}`,
+          .filter((m: { user?: { id: number } }) => m.user && m.user.id !== user?.id)
+          .map((m: { user: { id: number; username: string; name?: string; avatar_url?: string } }) => ({
+            id: `user:${m.user.id}`,
             type: "user" as const,
-            mentionText: m.user!.username,
-            displayName: m.user!.name || m.user!.username,
-            description: m.user!.email,
-            avatarUrl: m.user!.avatar_url,
+            mentionText: m.user.username,
+            displayName: m.user.name || m.user.username,
+            description: (m.user as { email?: string }).email,
+            avatarUrl: m.user.avatar_url,
           }));
 
         setMembers(memberItems);
@@ -81,38 +93,7 @@ export function useMentionCandidates({
     };
   }, [orgSlug, enabled, user?.id]);
 
-  // Fetch channel pods (running only) — store raw data
-  useEffect(() => {
-    if (!enabled || !channelId) {
-      setRawChannelPods([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    async function fetchPods() {
-      try {
-        setLoading(true);
-        const response = await channelApi.getPods(channelId!);
-        if (cancelled) return;
-
-        const running = (response.pods || []).filter(
-          (p) => p.status === "running" || p.status === "initializing"
-        );
-        setRawChannelPods(running.map((p) => ({ pod_key: p.pod_key, alias: p.alias, status: p.status })));
-      } catch (error) {
-        console.error("Failed to fetch pods for mentions:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchPods();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [channelId, enabled]);
+  // Fetch channel pods is handled by `useChannelPods` above (cached, deduped).
 
   // Derive pod mention items from raw data + pod store (reactive to alias changes)
   const pods: MentionItem[] = useMemo(
@@ -141,5 +122,5 @@ export function useMentionCandidates({
     [members, pods]
   );
 
-  return { candidates, members, pods, loading };
+  return { candidates, members, pods, loading: loading || podsLoading };
 }

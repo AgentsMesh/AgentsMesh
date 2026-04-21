@@ -2,13 +2,14 @@
 
 import React from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Copy, GripVertical, Lock, LockOpen, Trash } from "lucide-react";
+import { Copy, GripVertical, Lock, LockOpen, MessageSquare, Trash } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { JSONMap } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlockstoreStore, useBlock } from "@/stores/blockstore";
 
 import { useDragHandle } from "./SortableNest";
+import { BlockCommentsPopover } from "./BlockCommentsPopover";
 
 export interface BlockChromeProps {
   children: React.ReactNode;
@@ -21,9 +22,11 @@ export interface BlockChromeProps {
 
 // BlockChrome wraps a block renderer and provides:
 //  - a left-side drag handle (consumes SortableNest listeners)
-//  - a right-side hover toolbar (lock indicator + duplicate + delete)
-//  - a right-click ContextMenu (duplicate / make private|public / delete)
+//  - a right-side hover toolbar (lock indicator + comment + duplicate + delete)
+//  - a right-click ContextMenu (comment / duplicate / make private|public / delete)
 //  - selection ring on modifier+click when blockID is set
+// Clicking Comment pins the block to the right-rail comments panel; it never
+// expands inline inside the document flow.
 export function BlockChrome({
   children,
   onDelete,
@@ -33,14 +36,17 @@ export function BlockChrome({
   blockID,
 }: BlockChromeProps) {
   const dragListeners = useDragHandle();
-  const block = useBlockstoreStore((s) => (blockID ? s.blocks[blockID] : undefined));
+  const block = useBlock(blockID);
   const selected = useBlockstoreStore((s) =>
     blockID ? s.selectedBlockIDs.includes(blockID) : false,
   );
   const toggleSelection = useBlockstoreStore((s) => s.actions.toggleSelection);
+  const activeCommentBlockID = useBlockstoreStore((s) => s.activeCommentBlockID);
+  const setActiveComment = useBlockstoreStore((s) => s.actions.setActiveCommentBlockID);
 
   const acl = (block?.meta?.acl as JSONMap | undefined) ?? {};
   const isPrivate = acl.visibility === "private";
+  const isCommentActive = !!blockID && activeCommentBlockID === blockID;
 
   const handleClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!blockID) return;
@@ -48,6 +54,11 @@ export function BlockChrome({
     e.preventDefault();
     e.stopPropagation();
     toggleSelection(blockID);
+  };
+
+  const handleToggleComment = () => {
+    if (!blockID) return;
+    setActiveComment(isCommentActive ? null : blockID);
   };
 
   return (
@@ -58,6 +69,7 @@ export function BlockChrome({
           className={cn(
             "group relative rounded",
             selected && "bg-primary/10 ring-2 ring-primary/60",
+            isCommentActive && "ring-2 ring-primary/40",
             isPrivate && "bg-amber-50/60",
             className,
           )}
@@ -72,6 +84,13 @@ export function BlockChrome({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
           {children}
+          {isCommentActive && blockID && block?.workspace_id && (
+            <BlockCommentsPopover
+              blockID={blockID}
+              workspaceID={block.workspace_id}
+              onClose={() => setActiveComment(null)}
+            />
+          )}
           <div className="pointer-events-none absolute -right-1 top-0 flex items-center gap-0.5 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
             {isPrivate && (
               <span
@@ -81,6 +100,13 @@ export function BlockChrome({
                 <Lock className="h-3 w-3" />
               </span>
             )}
+            <ToolbarButton
+              onClick={handleToggleComment}
+              aria-label="Comment"
+              aria-pressed={isCommentActive}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+            </ToolbarButton>
             <ToolbarButton onClick={onDuplicate} aria-label="Duplicate block">
               <Copy className="h-3.5 w-3.5" />
             </ToolbarButton>
@@ -92,6 +118,9 @@ export function BlockChrome({
       </ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content className="z-50 min-w-[160px] rounded-md border border-border bg-popover p-1 shadow-md">
+          <ContextMenuItem onSelect={handleToggleComment}>
+            <MessageSquare className="mr-2 h-3.5 w-3.5" /> Comment
+          </ContextMenuItem>
           <ContextMenuItem onSelect={onDuplicate}>Duplicate</ContextMenuItem>
           {onToggleVisibility && (
             isPrivate ? (

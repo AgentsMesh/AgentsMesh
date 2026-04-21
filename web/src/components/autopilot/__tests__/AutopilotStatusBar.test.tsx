@@ -19,10 +19,13 @@ vi.mock("@/stores/autopilot", () => ({
       stopAutopilotController: mockStopAutopilotController,
       takeoverAutopilotController: mockTakeoverAutopilotController,
       handbackAutopilotController: mockHandbackAutopilotController,
-      thinking: { "test-key-123": mockThinking } as Record<string, AutopilotThinking | null>,
     };
     return selector ? selector(state) : state;
   },
+  useAutopilotThinking: (key: string | null | undefined) =>
+    key === "test-key-123" ? mockThinking : null,
+  useAutopilotIterations: () => [],
+  useAutopilotThinkingHistory: () => [],
 }));
 
 // Helper to create mock controller

@@ -27,19 +27,45 @@ function updateCtrlInWasm(key: string, updater: (c: Ctrl) => Ctrl) {
 
 export function useAutopilotControllers(): Ctrl[] {
   const tick = useAutopilotStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => JSON.parse(svc().controllers_json()), [tick]);
 }
 
 export function useCurrentAutopilotController(): Ctrl | null {
   const tick = useAutopilotStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => parseWasmAny<Ctrl>(svc().current_controller_json()), [tick]);
+}
+
+export function useAutopilotIterations(key: string | null | undefined): AutopilotIteration[] {
+  const tick = useAutopilotStore((s) => s._tick);
+  return useMemo(() => {
+    if (!key) return [];
+    return parseWasmAny<AutopilotIteration[]>(svc().get_iterations_json(key)) ?? [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, key]);
+}
+
+export function useAutopilotThinking(key: string | null | undefined): AutopilotThinking | null {
+  const tick = useAutopilotStore((s) => s._tick);
+  return useMemo(() => {
+    if (!key) return null;
+    return parseWasmAny<AutopilotThinking>(svc().get_thinking_json(key)) ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, key]);
+}
+
+export function useAutopilotThinkingHistory(key: string | null | undefined): AutopilotThinking[] {
+  const tick = useAutopilotStore((s) => s._tick);
+  return useMemo(() => {
+    if (!key) return [];
+    return parseWasmAny<AutopilotThinking[]>(svc().get_thinking_history_json(key)) ?? [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, key]);
 }
 
 interface AutopilotState {
   _tick: number;
-  iterations: Record<string, AutopilotIteration[]>;
-  thinking: Record<string, AutopilotThinking | null>;
-  thinkingHistory: Record<string, AutopilotThinking[]>;
   loading: boolean; error: string | null;
 }
 
@@ -61,12 +87,10 @@ interface AutopilotActions {
   removeAutopilotController: (key: string) => void;
   clearError: () => void;
   getAutopilotControllerByPodKey: (podKey: string) => Ctrl | undefined;
-  getThinking: (key: string) => AutopilotThinking | null;
-  getThinkingHistory: (key: string) => AutopilotThinking[];
 }
 
 export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set, get) => ({
-  _tick: 0, iterations: {}, thinking: {}, thinkingHistory: {}, loading: false, error: null,
+  _tick: 0, loading: false, error: null,
 
   fetchAutopilotControllers: async () => {
     set({ loading: true, error: null });
@@ -125,11 +149,8 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
   },
 
   fetchIterations: async (key) => {
-    try {
-      await svc().fetch_iterations(key);
-      const parsed = parseWasmAny<AutopilotIteration[]>(svc().get_iterations_json(key));
-      set((s) => ({ iterations: { ...s.iterations, [key]: parsed || [] } }));
-    } catch (e) { set({ error: getErrorMessage(e, "Failed to fetch iterations") }); }
+    try { await svc().fetch_iterations(key); bump(); }
+    catch (e) { set({ error: getErrorMessage(e, "Failed to fetch iterations") }); }
   },
 
   updateAutopilotControllerStatus: (key, phase, cur, max, cbState, cbReason) => {
@@ -142,18 +163,12 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
 
   addIteration: (key, iter) => {
     svc().add_iteration(key, JSON.stringify(iter));
-    const parsed = parseWasmAny<AutopilotIteration[]>(svc().get_iterations_json(key));
-    set((s) => ({ iterations: { ...s.iterations, [key]: parsed || [] } }));
+    bump();
   },
 
   updateThinking: (key, t) => {
     svc().update_thinking(key, JSON.stringify(t));
-    const thinking = parseWasmAny<AutopilotThinking>(svc().get_thinking_json(key));
-    const history = parseWasmAny<AutopilotThinking[]>(svc().get_thinking_history_json(key));
-    set((s) => ({
-      thinking: { ...s.thinking, [key]: thinking },
-      thinkingHistory: { ...s.thinkingHistory, [key]: history || [] },
-    }));
+    bump();
   },
 
   setCurrentAutopilotController: (c) => { svc().set_current_controller(c ? JSON.stringify(c) : ""); bump(); },
@@ -165,9 +180,6 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
     if (val && ACTIVE.includes(val.phase)) return val;
     return undefined;
   },
-
-  getThinking: (key) => get().thinking[key] || null,
-  getThinkingHistory: (key) => get().thinkingHistory[key] || [],
 }));
 
 reconnectRegistry.register({

@@ -94,12 +94,18 @@ test.describe("Journey: Git Workflow", () => {
     // Pod should reference the repo (exact field depends on API)
     expect(podDetail.status).toBe(200);
 
-    // ── Step 8: Verify runner capacity increased ──
-    const runnerCheck = await api.get(
-      `/api/v1/orgs/${TEST_ORG_SLUG}/runners/${runners[0].id}`
+    // ── Step 8: Verify runner has this pod associated ──
+    // We can't assert `runner.current_pods >= 1` directly — the runner's own
+    // heartbeat can race with the server-side IncrementPods write and clobber
+    // the count back to 0 before the REST read lands. Instead, assert via the
+    // pods list scoped to this runner, which is the authoritative source.
+    const runnerPods = await api.get(
+      `/api/v1/orgs/${TEST_ORG_SLUG}/pods?runner_id=${runners[0].id}`,
     );
-    const runnerInfo = await runnerCheck.json();
-    expect(runnerInfo.runner?.current_pods).toBeGreaterThanOrEqual(1);
+    expect(runnerPods.status).toBe(200);
+    const { pods: podList } = await runnerPods.json();
+    expect(Array.isArray(podList)).toBe(true);
+    expect(podList.some((p: { pod_key: string }) => p.pod_key === podKey)).toBe(true);
 
     // ── Step 9: Terminate pod ──
     const termRes = await api.post(`${PODS}/${podKey}/terminate`, {});

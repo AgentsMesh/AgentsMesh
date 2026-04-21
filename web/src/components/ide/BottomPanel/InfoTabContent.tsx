@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import type { PodData } from "@/lib/api/pod";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { getPodStatusInfo } from "@/stores/mesh";
-import { usePodStore } from "@/stores/pod";
+import { usePods } from "@/stores/pod";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { InfoRow } from "./InfoRow";
 import { RelatedPodsList } from "./RelatedPodsList";
@@ -42,7 +42,7 @@ export function InfoTabContent({
   orgSlug,
   t,
 }: InfoTabContentProps) {
-  const pods = usePodStore((s) => s.pods);
+  const pods = usePods();
   const relatedPods = getRelatedPods(pods, pod);
 
   if (!selectedPodKey) {
@@ -133,7 +133,7 @@ export function InfoTabContent({
             icon={<FolderGit2 className="w-3 h-3" />}
             label={t("ide.bottomPanel.infoTab.repository")}
             value={pod.repository.slug}
-            href={orgSlug ? `/${orgSlug}/repositories/${pod.repository.id}` : undefined}
+            href={orgSlug ? `/${orgSlug}/infra?tab=repositories&id=${pod.repository.id}` : undefined}
           />
         )}
 
@@ -189,7 +189,7 @@ export function InfoTabContent({
         <InfoRow
           icon={<Clock className="w-3 h-3" />}
           label={t("ide.bottomPanel.infoTab.createdAt")}
-          value={new Date(pod.created_at).toLocaleString()}
+          value={pod.created_at ? new Date(pod.created_at).toLocaleString() : "-"}
         />
 
         {/* Error */}

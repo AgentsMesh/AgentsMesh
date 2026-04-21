@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useMemo } from "react";
 import { initWasmCore, getAuthManager, getApiClient } from "@/lib/wasm-core";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -23,9 +24,7 @@ interface Organization {
 }
 
 interface AuthState {
-  user: User | null;
-  currentOrg: Organization | null;
-  organizations: Organization[];
+  _tick: number;
   _hasHydrated: boolean;
   error: string | null;
 
@@ -43,28 +42,72 @@ interface AuthState {
   clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  user: null,
-  currentOrg: null,
-  organizations: [],
+const mgr = () => getAuthManager();
+const client = () => getApiClient();
+const bump = () => useAuthStore.setState((s) => ({ _tick: s._tick + 1 }));
+
+// Selector helpers: Rust is SSOT — these read from AuthManager on every tick.
+
+function parseJson<T>(raw: unknown): T | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    if (raw === "") return null;
+    try { return JSON.parse(raw) as T; } catch { return null; }
+  }
+  return raw as T;
+}
+
+export function readCurrentUser(): User | null {
+  try { return parseJson<User>(mgr().get_current_user_json()); } catch { return null; }
+}
+
+export function readCurrentOrg(): Organization | null {
+  try { return parseJson<Organization>(mgr().get_current_org_json()); } catch { return null; }
+}
+
+export function readOrganizations(): Organization[] {
+  try {
+    const raw = mgr().get_organizations_json();
+    if (!raw) return [];
+    return JSON.parse(raw) as Organization[];
+  } catch { return []; }
+}
+
+export function useCurrentUser(): User | null {
+  const tick = useAuthStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => readCurrentUser(), [tick]);
+}
+
+export function useCurrentOrg(): Organization | null {
+  const tick = useAuthStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => readCurrentOrg(), [tick]);
+}
+
+export function useAuthOrganizations(): Organization[] {
+  const tick = useAuthStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => readOrganizations(), [tick]);
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  _tick: 0,
   _hasHydrated: false,
   error: null,
 
   login: async (email, password) => {
     await initWasmCore();
     try {
-      const mgr = getAuthManager();
-      const sessionJson = await mgr.login(email, password);
+      const sessionJson = await mgr().login(email, password);
       const session = JSON.parse(sessionJson);
 
-      const client = getApiClient();
-      client.set_token(session.token, session.refresh_token);
-      set({ user: session.user, error: null });
+      client().set_token(session.token, session.refresh_token);
 
-      const orgsJson = await mgr.fetch_organizations();
+      const orgsJson = await mgr().fetch_organizations();
       const orgs: Organization[] = JSON.parse(orgsJson);
-      set({ organizations: orgs, currentOrg: orgs[0] || null });
-      if (orgs[0]) client.set_org_slug(orgs[0].slug);
+      if (orgs[0]) client().set_org_slug(orgs[0].slug);
+      bump();
     } catch (e) {
       set({ error: getErrorMessage(e, "Login failed") });
       throw e;
@@ -74,31 +117,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   fetchOrganizations: async () => {
     await initWasmCore();
     try {
-      const orgsJson = await getAuthManager().fetch_organizations();
-      const orgs: Organization[] = JSON.parse(orgsJson);
-      set({ organizations: orgs });
-      if (!get().currentOrg && orgs.length > 0) {
-        set({ currentOrg: orgs[0] });
-        getApiClient().set_org_slug(orgs[0].slug);
-      }
+      await mgr().fetch_organizations();
+      const current = readCurrentOrg();
+      if (current) client().set_org_slug(current.slug);
+      bump();
     } catch (e) {
       set({ error: getErrorMessage(e, "Failed to fetch organizations") });
     }
   },
 
   switchOrg: (slug) => {
-    getAuthManager().switch_org(slug);
-    getApiClient().set_org_slug(slug);
-    const org = get().organizations.find((o) => o.slug === slug);
-    if (org) set({ currentOrg: org });
+    mgr().switch_org(slug);
+    client().set_org_slug(slug);
+    bump();
   },
 
   refreshSession: async () => {
     await initWasmCore();
     try {
-      const tokenJson = await getAuthManager().refresh_token();
+      const tokenJson = await mgr().refresh_token();
       const { token, refresh_token } = JSON.parse(tokenJson);
-      getApiClient().set_token(token, refresh_token);
+      client().set_token(token, refresh_token);
     } catch (e) {
       set({ error: getErrorMessage(e, "Session refresh failed") });
       throw e;
@@ -107,32 +146,42 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setAuth: (token, user, refreshToken) => {
     try {
-      const client = getApiClient();
-      client.set_token(token, refreshToken || "");
+      client().set_token(token, refreshToken || "");
+      // Persist user into Rust AuthManager so selectors see it immediately.
+      mgr().apply_session(JSON.stringify({
+        token,
+        refresh_token: refreshToken || "",
+        user,
+      }));
     } catch { /* WASM not ready yet */ }
-    set({ user, error: null });
+    set({ error: null });
+    bump();
   },
 
   setOrganizations: (organizations) => {
-    set({ organizations });
-    if (!get().currentOrg && organizations.length > 0) {
-      set({ currentOrg: organizations[0] });
-      try { getApiClient().set_org_slug(organizations[0].slug); } catch { /* noop */ }
+    try { mgr().set_organizations(JSON.stringify(organizations)); } catch { /* noop */ }
+    const current = readCurrentOrg();
+    if (current) {
+      try { client().set_org_slug(current.slug); } catch { /* noop */ }
     }
+    bump();
   },
 
   setCurrentOrg: (org) => {
-    set({ currentOrg: org });
-    try { getApiClient().set_org_slug(org.slug); } catch { /* noop */ }
+    try { mgr().set_current_org(JSON.stringify(org)); } catch { /* noop */ }
+    try { client().set_org_slug(org.slug); } catch { /* noop */ }
+    bump();
   },
 
   logout: () => {
-    try { getAuthManager().logout().catch(() => {}); } catch { /* noop */ }
-    try { getApiClient().clear_auth(); } catch { /* noop */ }
-    set({ user: null, currentOrg: null, organizations: [], error: null });
+    try { mgr().logout().catch(() => {}); } catch { /* noop */ }
+    try { mgr().clear_session(); } catch { /* noop */ }
+    try { client().clear_auth(); } catch { /* noop */ }
+    set({ error: null });
+    bump();
   },
 
-  isAuthenticated: () => !!get().user,
+  isAuthenticated: () => readCurrentUser() !== null,
   setHasHydrated: (state) => set({ _hasHydrated: state }),
   clearError: () => set({ error: null }),
 }));

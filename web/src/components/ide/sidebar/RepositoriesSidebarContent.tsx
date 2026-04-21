@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { RepositoryData } from "@/lib/api";
 import { getRepositoryService } from "@/lib/wasm-core";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
   const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
 
   // State
   const [repositories, setRepositories] = useState<RepositoryData[]>([]);

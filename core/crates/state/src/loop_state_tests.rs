@@ -11,6 +11,7 @@ fn make_loop(slug: &str, name: &str, enabled: bool) -> LoopData {
         last_run_at: None,
         created_at: None,
         updated_at: None,
+        ..Default::default()
     }
 }
 
@@ -22,6 +23,7 @@ fn make_run(id: i64, loop_slug: &str, status: LoopRunStatus) -> LoopRunData {
         started_at: Some("2026-01-01T00:00:00Z".into()),
         completed_at: None,
         error_message: None,
+        ..Default::default()
     }
 }
 

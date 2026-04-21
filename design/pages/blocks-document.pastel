@@ -1,6 +1,10 @@
 // Blocks — structured knowledge graph + indicators.
-// Master-detail: sidebar (pages tree + search) + main (document editor with mixed block types).
-// Shows: paragraph, heading, task, view (table), summary (KPI cards), embed(ticket), mention(pod).
+// Master-detail: sidebar (search + pages tree + indicator types + triggers footer)
+//                + main (document editor with mixed block types).
+// Aligned with code reality: no workspace chip (single workspace per org),
+// no realtime collaborator presence (not implemented yet).
+// Shows: paragraph, heading, task, view (table), summary (KPI cards),
+// mention(pod), embed(ticket) — all rendered today.
 
 canvas "blocks" {
     width      = 2000
@@ -23,6 +27,8 @@ component blk_nav_icon(icon) {
 component blk_section_divider() { shape { type = rectangle, width = 24, height = 1, fill = #D0D7DE } }
 
 // --- Sidebar page tree row ---
+// `depth` is a left indent in px. Root page (workspace.root_block_id) renders
+// at depth=0; nested pages recurse with depth+12 per level.
 component page_node(icon, label, depth, is_active) {
     frame {
         width   = fill
@@ -34,6 +40,17 @@ component page_node(icon, label, depth, is_active) {
         text "›" { size = 10, color = #868F99 }
         text icon  { size = 12, color = #656D76 }
         text label { size = 13, color = #1F2328 }
+    }
+}
+
+// --- Indicator type row — color dot + mono slug + count of instances ---
+component type_row(color_dot, slug, count) {
+    frame row {
+        width = fill, layout = horizontal, gap = 8, align = center, padding = [3, 0]
+        frame dot { width = 8, height = 8, radius = 2, fill = color_dot }
+        text slug { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
+        frame spacer { width = fill }
+        text count { size = 10, color = #868F99, family = "JetBrains Mono" }
     }
 }
 
@@ -124,43 +141,31 @@ frame root {
                 use blk_nav_icon("👤")
             }
 
-            // === Sidebar ===
+            // === Sidebar — search + pages tree + indicator types ===
+            // Note: no workspace chip. Org is the workspace boundary; there's
+            // exactly one workspace per org and the user never needs to choose.
             frame sidebar {
-                width = 300, height = fill, fill = #F6F8FA, stroke = [1, #D0D7DE]
+                width = 280, height = fill, fill = #F6F8FA, stroke = [1, #D0D7DE]
                 layout = vertical
 
-                // Workspace chip + search
+                // Search (triggers the ⌘K SearchPanel on focus/click)
                 frame top_area {
                     width = fill, padding = 12, layout = vertical, gap = 8
-
-                    frame workspace_chip {
-                        width = fill, padding = [6, 10], radius = 6
-                        fill = #FFFFFF, stroke = [1, #D0D7DE]
-                        layout = horizontal, align = center, gap = 8
-
-                        frame avatar { width = 20, height = 20, radius = 4, fill = #0969DA
-                            layout = horizontal, justify = center, align = center
-                            text "D" { size = 10, weight = semibold, color = #FFFFFF }
-                        }
-                        frame stack { layout = vertical, gap = 0, width = fill
-                            text "Dev Workspace"   { size = 12, weight = medium, color = #1F2328 }
-                            text "blocks-default"  { size = 10, color = #868F99, family = "JetBrains Mono" }
-                        }
-                        text "⌵" { size = 11, color = #656D76 }
-                    }
 
                     frame search {
                         width = fill, height = 30, padding = [0, 10], radius = 6
                         fill = #FFFFFF, stroke = [1, #D0D7DE]
                         layout = horizontal, align = center, gap = 8
                         text "🔍" { size = 12, color = #868F99 }
-                        text "Search blocks · memory · ⌘K" { size = 12, color = #868F99 }
+                        text "Search blocks · semantic · ⌘K" { size = 12, color = #868F99 }
                     }
                 }
 
-                // Pages tree
+                // === Pages tree ===
+                // Rooted at workspace.root_block_id. Nested pages are discovered
+                // by walking nest refs and picking children whose block.type = "page".
                 frame pages_header {
-                    width = fill, padding = [12, 16, 6, 16]
+                    width = fill, padding = [4, 16, 6, 16]
                     layout = horizontal, justify = space-between, align = center
                     text "PAGES" { size = 10, weight = semibold, color = #868F99, text-transform = uppercase, letter-spacing = 1.5 }
                     text "+" { size = 14, color = #656D76 }
@@ -168,17 +173,19 @@ frame root {
                 frame pages_tree {
                     width = fill, padding = [0, 4], layout = vertical, gap = 1
 
-                    use page_node("📖", "Team Dashboard", 0, #E4E9EE)
-                    use page_node("◆",  "Q4 OKRs",        8, transparent)
-                    use page_node("◆",  "Weekly standup", 8, transparent)
-                    use page_node("◆",  "Incident log",   8, transparent)
-                    use page_node("📘", "Runbooks",       0, transparent)
-                    use page_node("◆",  "Deploy rotation",8, transparent)
-                    use page_node("◆",  "On-call SOP",    8, transparent)
-                    use page_node("📗", "Agent memory",   0, transparent)
-                    use page_node("◆",  "Decision log",   8, transparent)
+                    // Root page (workspace.root_block_id) — always present.
+                    use page_node("📖", "Home", 0, #E4E9EE)
+                    // Nested pages via nest refs (block.type = "page").
+                    use page_node("◆",  "Q4 OKRs",        12, transparent)
+                    use page_node("◆",  "Weekly standup", 12, transparent)
+                    use page_node("◆",  "Incident log",   12, transparent)
+                    use page_node("◆",  "Runbooks",       12, transparent)
+                    use page_node("◆",  "Decision log",   12, transparent)
                 }
 
+                // === Indicator types (block_type_def) ===
+                // Dynamic. Populated from useBlockTypeSpec / listTypeDefs.
+                // Count = number of block instances with that type in the workspace.
                 frame types_header {
                     width = fill, padding = [16, 16, 6, 16]
                     layout = horizontal, justify = space-between, align = center
@@ -188,33 +195,16 @@ frame root {
                 frame types_list {
                     width = fill, padding = [0, 16], layout = vertical, gap = 4
 
-                    frame t1 { layout = horizontal, gap = 8, align = center
-                        frame dot { width = 8, height = 8, radius = 2, fill = #8250DF }
-                        text "okr"           { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
-                        frame spacer { width = fill }
-                        text "12" { size = 10, color = #868F99, family = "JetBrains Mono" }
-                    }
-                    frame t2 { layout = horizontal, gap = 8, align = center
-                        frame dot { width = 8, height = 8, radius = 2, fill = #1A7F37 }
-                        text "task"          { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
-                        frame spacer { width = fill }
-                        text "48" { size = 10, color = #868F99, family = "JetBrains Mono" }
-                    }
-                    frame t3 { layout = horizontal, gap = 8, align = center
-                        frame dot { width = 8, height = 8, radius = 2, fill = #D29922 }
-                        text "incident"      { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
-                        frame spacer { width = fill }
-                        text "3"  { size = 10, color = #868F99, family = "JetBrains Mono" }
-                    }
-                    frame t4 { layout = horizontal, gap = 8, align = center
-                        frame dot { width = 8, height = 8, radius = 2, fill = #0969DA }
-                        text "metric"        { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
-                        frame spacer { width = fill }
-                        text "6"  { size = 10, color = #868F99, family = "JetBrains Mono" }
-                    }
+                    use type_row(#8250DF, "okr",      "12")
+                    use type_row(#1A7F37, "task",     "48")
+                    use type_row(#D29922, "incident", "3")
+                    use type_row(#0969DA, "metric",   "6")
                 }
 
                 frame spacer { height = fill }
+
+                // Triggers — trigger_def block type is implemented; count comes
+                // from `block.type = "trigger_def"` in the workspace.
                 frame sidebar_footer {
                     width = fill, padding = [10, 12], stroke = [1, #D0D7DE]
                     layout = horizontal, align = center, gap = 8
@@ -227,11 +217,13 @@ frame root {
                 }
             }
 
-            // === Main: document editor for "Team Dashboard" ===
+            // === Main: document editor for the currently selected page ===
             frame main {
                 width = fill, height = fill, fill = #FFFFFF, layout = vertical
 
-                // Doc header
+                // Doc header — breadcrumb + title + primary CTA.
+                // No "Default Workspace" chip here: org = workspace, the only
+                // context the breadcrumb needs is the page path.
                 frame doc_header {
                     width = fill, padding = [16, 48, 8, 48]
                     layout = vertical, gap = 6
@@ -239,6 +231,8 @@ frame root {
                     frame bc {
                         layout = horizontal, gap = 8, align = center
                         text "Pages"        { size = 12, color = #868F99 }
+                        text "›"            { size = 12, color = #AFB8C1 }
+                        text "Home"         { size = 12, color = #868F99 }
                         text "›"            { size = 12, color = #AFB8C1 }
                         text "Team Dashboard"{ size = 12, weight = medium, color = #1F2328 }
                     }
@@ -250,12 +244,6 @@ frame root {
                             text "Team Dashboard" { size = 26, weight = semibold, color = #1F2328 }
                         }
                         frame actions { layout = horizontal, gap = 8, align = center
-                            frame btn_share {
-                                height = 30, padding = [0, 12], radius = 6
-                                fill = #FFFFFF, stroke = [1, #D0D7DE]
-                                layout = horizontal, justify = center, align = center
-                                text "Share" { size = 13, color = #1F2328 }
-                            }
                             frame btn_add {
                                 height = 30, padding = [0, 14], radius = 6, fill = #0969DA
                                 layout = horizontal, justify = center, align = center, gap = 6
@@ -264,47 +252,23 @@ frame root {
                             }
                         }
                     }
-
-                    // Realtime collaborators
-                    frame collab_row {
-                        layout = horizontal, gap = 6, align = center
-
-                        frame avatars { layout = horizontal, gap = 0
-                            frame a1 { width = 22, height = 22, radius = 999, fill = #0969DA
-                                stroke = [2, #FFFFFF]
-                                layout = horizontal, justify = center, align = center
-                                text "D" { size = 10, weight = semibold, color = #FFFFFF }
-                            }
-                            frame a2 { width = 22, height = 22, radius = 999, fill = #3FB950
-                                stroke = [2, #FFFFFF]
-                                layout = horizontal, justify = center, align = center
-                                text "C" { size = 10, weight = semibold, color = #FFFFFF, family = "JetBrains Mono" }
-                            }
-                            frame a3 { width = 22, height = 22, radius = 999, fill = #58A6FF
-                                stroke = [2, #FFFFFF]
-                                layout = horizontal, justify = center, align = center
-                                text "D" { size = 10, weight = semibold, color = #FFFFFF, family = "JetBrains Mono" }
-                            }
-                        }
-                        text "Dev User · pod-abc-123 · pod-def-456 are editing now" { size = 12, color = #868F99 }
-                    }
                 }
 
                 shape hrd { type = rectangle, width = 1572, height = 1, fill = #E4E9EE }
 
-                // Document body (scrollable in real UI, showing rendered blocks here)
+                // Document body — scrollable stream of rendered blocks.
                 frame doc_body {
                     width = fill, height = fill, padding = [16, 48]
                     layout = vertical, gap = 16
 
-                    // heading-2 block
+                    // heading-2
                     text "This quarter at a glance" { size = 19, weight = semibold, color = #1F2328 }
 
-                    // paragraph block
+                    // paragraph
                     text "Everything below is live — OKRs, tasks, metrics update via the block store. Agents can edit these too."
                         { size = 13, color = #656D76, wrap = true, width = 1550, line-height = 20 }
 
-                    // summary row (3 KPI cards)
+                    // summary row (3 KPI cards) — `summary` block, summary_columns aggregation
                     frame summary_row {
                         width = fill, layout = horizontal, gap = 16
 
@@ -313,17 +277,16 @@ frame root {
                         use kpi_card("Incidents this month", "3",   "stable",         #656D76, #FFF8C5)
                     }
 
-                    // heading-3 block
+                    // heading-3
                     text "Q4 OKRs · view block" { size = 15, weight = semibold, color = #1F2328, padding = [8, 0, 0, 0] }
 
-                    // view block (table)
+                    // view block (table) — layout switcher: Table / Kanban / Timeline / Tree / Gallery
                     frame view_block {
                         width = fill, radius = 8
                         stroke = [1, #D0D7DE]
                         layout = vertical, gap = 0
                         fill = #FFFFFF
 
-                        // view header (toolbar)
                         frame view_tb {
                             width = fill, padding = [8, 12]
                             fill = #F6F8FA
@@ -342,6 +305,12 @@ frame root {
                                     frame l { padding = [3, 8], radius = 4
                                         text "Timeline" { size = 11, color = #656D76 }
                                     }
+                                    frame tr { padding = [3, 8], radius = 4
+                                        text "Tree"     { size = 11, color = #656D76 }
+                                    }
+                                    frame g { padding = [3, 8], radius = 4
+                                        text "Gallery"  { size = 11, color = #656D76 }
+                                    }
                                 }
                                 text "type:okr" { size = 11, color = #0550AE, family = "JetBrains Mono" }
                                 text "filter: quarter=Q4" { size = 11, color = #656D76, family = "JetBrains Mono" }
@@ -350,7 +319,6 @@ frame root {
                             text "Edit view →" { size = 12, color = #0969DA }
                         }
 
-                        // table header
                         frame th {
                             width = fill, padding = [6, 8]
                             fill = #FAFBFC, stroke = [1, #E4E9EE]
@@ -362,7 +330,6 @@ frame root {
                             use table_cell("Quarter",         140)
                         }
 
-                        // rows
                         frame r1 { width = fill, layout = horizontal, stroke = [0, transparent]
                             use table_cell("Ship authentication v2",    620)
                             use table_cell("Dev User",                  180)
@@ -412,7 +379,6 @@ frame root {
                             use table_cell("Q4 2026",                   140)
                         }
 
-                        // view footer (count + agg)
                         frame view_footer {
                             width = fill, padding = [6, 12]
                             fill = #FAFBFC, stroke = [1, #E4E9EE]
@@ -425,7 +391,7 @@ frame root {
                         }
                     }
 
-                    // heading-3 block
+                    // heading-3
                     text "Weekly tasks · task block list" { size = 15, weight = semibold, color = #1F2328, padding = [8, 0, 0, 0] }
 
                     // task block list
@@ -437,7 +403,7 @@ frame root {
                         use task_row(#FFFFFF, "Draft Q1 OKR candidates — share by Friday",     "todo",   #F6F8FA, #656D76, "D", #0969DA)
                     }
 
-                    // Slash menu hint (subtle)
+                    // Slash menu hint
                     frame hint {
                         padding = [12, 0, 0, 0]
                         layout = horizontal, gap = 6, align = center

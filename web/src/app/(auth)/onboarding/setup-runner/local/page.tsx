@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import type { RunnerData, RunnerListResponse } from "@/lib/api/runnerTypes";
 import { isApiErrorCode } from "@/lib/api/errors";
 import { getRunnerService } from "@/lib/wasm-core";
@@ -17,7 +17,7 @@ import { SetupSteps } from "./components/SetupSteps";
 export default function LocalRunnerSetupPage() {
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const serverUrl = useServerUrl();
   const [token, setToken] = useState<string | null>(null);
   const [tokenCopied, setTokenCopied] = useState(false);

@@ -2,6 +2,7 @@
   "channels": {
     "emptyState": "Select a channel to start chatting",
     "emptyStateHint": "Choose a channel from the sidebar to view messages and collaborate with your team",
+    "archivedBanner": "This channel is archived — sending messages is disabled",
     "sidebar": {
       "searchPlaceholder": "Search channels...",
       "createChannel": "New Channel",
@@ -10,7 +11,10 @@
       "hideArchived": "Hide archived",
       "noChannels": "No channels yet",
       "noMatch": "No channels match your search",
-      "podsCount": "{count} pods"
+      "podsCount": "{count} pods",
+      "groupActive": "Active",
+      "groupLinked": "Linked",
+      "groupQuiet": "Quiet"
     },
     "createDialog": {
       "title": "Create Channel",
@@ -31,6 +35,34 @@
       "join": "Join",
       "leave": "Leave",
       "joinToParticipate": "Join this channel to view messages and participate"
+    },
+    "header": {
+      "podsCount": "{count} pods",
+      "membersCount": "{count} members",
+      "linkedTo": "Linked to",
+      "search": "Search messages",
+      "members": "Members",
+      "settings": "Channel settings",
+      "more": "More"
+    },
+    "rightRail": {
+      "pods": "PODS",
+      "members": "MEMBERS",
+      "linked": "LINKED",
+      "document": "DOCUMENT",
+      "podsEmpty": "No pods yet",
+      "documentEmpty": "No document yet"
+    },
+    "composer": {
+      "placeholder": "Message #{channel} — use @ to mention a pod or member",
+      "mention": "Mention",
+      "attach": "Attach file",
+      "send": "Send",
+      "formatBold": "Bold",
+      "formatItalic": "Italic",
+      "formatStrike": "Strikethrough",
+      "formatCode": "Inline code",
+      "formatLink": "Link"
     },
     "members": {
       "title": "Channel Members",
@@ -58,6 +90,38 @@
       "deleteConfirmDescription": "Are you sure you want to delete this message? This action cannot be undone.",
       "delete": "Delete",
       "moreActions": "More"
+    },
+    "search": {
+      "title": "Search messages",
+      "titleFor": "Search in #{channel}",
+      "placeholder": "Type keywords...",
+      "empty": "No matching messages",
+      "resultCount": "{count} results"
+    },
+    "settings": {
+      "title": "Channel settings",
+      "tabs": {
+        "basic": "Basic",
+        "archive": "Archive"
+      },
+      "name": "Channel name",
+      "description": "Description",
+      "descriptionPlaceholder": "What is this channel about?",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saved": "Saved",
+      "saveFailed": "Failed to save",
+      "archive": "Archive channel",
+      "unarchive": "Unarchive channel",
+      "archiveHint": "Archiving hides the channel from members but preserves all messages.",
+      "unarchiveHint": "This channel is currently archived. Unarchiving restores member access.",
+      "archived": "Archived",
+      "unarchived": "Unarchived",
+      "archiveFailed": "Archive operation failed"
+    },
+    "attachment": {
+      "download": "Download attachment",
+      "preview": "Preview attachment"
     }
   }
 }

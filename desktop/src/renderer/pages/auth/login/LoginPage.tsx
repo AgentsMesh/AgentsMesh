@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
-import { ApiError } from "@/lib/api/base";
+import { ApiError } from "@/lib/api/api-types";
 import { ssoApi } from "@/lib/api/sso";
 import type { SSOConfig } from "@/lib/api/sso";
 import { useTranslations } from "next-intl";

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useIDEStore } from "@/stores/ide";
 import {
   Terminal,
@@ -25,7 +25,7 @@ export function useCommands(t: (key: string) => string): {
   actionCommands: CommandItemData[];
 } {
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const logout = useAuthStore((s) => s.logout);
   const setActiveActivity = useIDEStore((s) => s.setActiveActivity);
   const orgSlug = currentOrg?.slug || "";
@@ -81,27 +81,27 @@ export function useCommands(t: (key: string) => string): {
         },
       },
       {
-        id: "nav-repositories",
+        id: "nav-infra-repositories",
         category: "navigation",
         label: t("commandPalette.goToRepositories"),
         description: t("commandPalette.repositoriesDescription"),
         icon: <FolderGit2 className="w-4 h-4" />,
-        keywords: ["git", "repos", "code"],
+        keywords: ["git", "repos", "code", "infra"],
         action: () => {
-          setActiveActivity("repositories");
-          router.push(`/${orgSlug}/repositories`);
+          setActiveActivity("infra");
+          router.push(`/${orgSlug}/infra?tab=repositories`);
         },
       },
       {
-        id: "nav-runners",
+        id: "nav-infra-runners",
         category: "navigation",
         label: t("commandPalette.goToRunners"),
         description: t("commandPalette.runnersDescription"),
         icon: <Server className="w-4 h-4" />,
-        keywords: ["compute", "resources", "agents"],
+        keywords: ["compute", "resources", "agents", "infra"],
         action: () => {
-          setActiveActivity("runners");
-          router.push(`/${orgSlug}/runners`);
+          setActiveActivity("infra");
+          router.push(`/${orgSlug}/infra?tab=runners`);
         },
       },
       {

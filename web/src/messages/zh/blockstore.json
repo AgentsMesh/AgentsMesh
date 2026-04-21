@@ -11,5 +11,12 @@
     "taskHint": "待办项",
     "list": "列表",
     "listHint": "项目容器"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "删除页面",
+      "deletePageTitle": "确认删除页面？",
+      "deletePageDesc": "\"{title}\" 及其下所有 block 将被删除，此操作不可撤销。"
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ApiError } from "@/lib/api/base";
+import { ApiError } from "@/lib/api/api-types";
 import { isNonRetryableError } from "../relayConnectionRetry";
 
 describe("isNonRetryableError", () => {

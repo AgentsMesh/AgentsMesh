@@ -1,81 +1,84 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Channel } from "@/stores/channel";
-import { Hash, Archive, Lock } from "lucide-react";
+import type { Channel, ChannelLastMessage } from "@/stores/channel";
+import { formatRelativeShort } from "@/lib/format-relative-time";
+import { Lock } from "lucide-react";
 
 interface ChannelListItemProps {
   channel: Channel;
   isSelected: boolean;
   unreadCount?: number;
+  lastMessage?: ChannelLastMessage | null;
   onClick: () => void;
 }
 
 /**
- * Individual channel item in the sidebar list.
- * Shows active pod indicator (green dot) when channel has running pods.
+ * Channel row in the sidebar list — matches design/pages/channels.pastel
+ * `channel_row` + `channel_row_active`: hash + name + last message preview +
+ * short time + unread dot. Private channels use the lock icon in place of #.
  */
-export function ChannelListItem({ channel, isSelected, unreadCount = 0, onClick }: ChannelListItemProps) {
-  const runningPodCount =
-    channel.pods?.filter((p) => p.status === "running" || p.status === "initializing").length ?? 0;
-  const hasActivePods = runningPodCount > 0;
-
+export function ChannelListItem({
+  channel,
+  isSelected,
+  unreadCount = 0,
+  lastMessage,
+  onClick,
+}: ChannelListItemProps) {
+  const hasUnread = unreadCount > 0 && !isSelected;
   const isPrivate = channel.visibility === "private";
-  const isNonMember = !channel.is_member;
+  const preview = lastMessage
+    ? lastMessage.sender_name
+      ? `${lastMessage.sender_name}: ${lastMessage.content_preview}`
+      : lastMessage.content_preview
+    : channel.description ?? "";
+  const time = formatRelativeShort(lastMessage?.timestamp ?? channel.updated_at);
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 px-3 py-2 cursor-pointer rounded-md mx-1 transition-colors",
-        "hover:bg-muted/50",
-        isSelected && "bg-muted",
-        isNonMember && "opacity-60"
-      )}
+    <button
+      type="button"
       onClick={onClick}
+      className={cn(
+        "group flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left transition-colors",
+        isSelected ? "bg-muted" : "hover:bg-muted/50",
+      )}
     >
-      <div className="relative shrink-0">
-        {isPrivate ? (
-          <Lock className="w-4 h-4 text-muted-foreground" />
-        ) : (
-          <Hash className="w-4 h-4 text-muted-foreground" />
+      <span
+        className={cn(
+          "shrink-0 font-mono text-[14px]",
+          isSelected ? "font-semibold text-foreground" : "text-muted-foreground/70",
         )}
-        {/* Green dot for active pods */}
-        {hasActivePods && (
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full ring-1 ring-background" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium truncate">{channel.name}</span>
-          {channel.is_archived && (
-            <Archive className="w-3 h-3 text-muted-foreground shrink-0" />
+      >
+        {isPrivate ? <Lock className="h-3.5 w-3.5" /> : "#"}
+      </span>
+
+      <span className="min-w-0 flex-1 flex flex-col gap-0.5">
+        <span className="flex items-center justify-between gap-2">
+          <span
+            className={cn(
+              "truncate text-[13px]",
+              isSelected ? "font-semibold text-foreground" : "text-foreground",
+            )}
+          >
+            {channel.name}
+          </span>
+          {time && (
+            <span className="shrink-0 text-[10px] text-muted-foreground/70">{time}</span>
           )}
-        </div>
-        {channel.description && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
-            {channel.description}
-          </p>
+        </span>
+        {preview && (
+          <span className="truncate text-[11px] text-muted-foreground/70">
+            {preview}
+          </span>
         )}
-      </div>
-      {/* Unread badge */}
-      {unreadCount > 0 && !isSelected && (
-        <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-primary text-primary-foreground shrink-0">
-          {unreadCount > 99 ? "99+" : unreadCount}
-        </span>
-      )}
-      {channel.pods && channel.pods.length > 0 && (
-        <span
-          className={cn(
-            "text-xs px-1.5 py-0.5 rounded-full shrink-0",
-            hasActivePods
-              ? "text-green-700 dark:text-green-400 bg-green-500/10"
-              : "text-muted-foreground bg-muted/50"
-          )}
-        >
-          {channel.pods.length}
-        </span>
-      )}
-    </div>
+      </span>
+
+      <span className="flex w-2 shrink-0 justify-center">
+        {hasUnread && (
+          <span className="h-1.5 w-1.5 rounded-full bg-destructive" aria-label="unread" />
+        )}
+      </span>
+    </button>
   );
 }
 

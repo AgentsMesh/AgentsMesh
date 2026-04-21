@@ -4,7 +4,7 @@ import { lazy, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { X, ExternalLink, Clock, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export interface TicketDetailPaneProps {
 export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneProps) {
   const t = useTranslations();
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const { ticket, loading, error, handleStatusChange, handleTitleChange, handleRepositoryChange } = useTicketPaneData(slug);
   const { subTickets, relations, commits } = useTicketExtraData(slug, !!ticket);
 

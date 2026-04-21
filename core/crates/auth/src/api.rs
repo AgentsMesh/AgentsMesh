@@ -150,7 +150,7 @@ impl AuthManager {
         Ok(())
     }
 
-    fn apply_session(&self, session: &AuthSession) {
+    pub fn apply_session(&self, session: &AuthSession) {
         self.state.write().unwrap_or_else(|e| e.into_inner()).apply_session(session);
         self.persist();
     }

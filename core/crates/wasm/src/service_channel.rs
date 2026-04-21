@@ -180,4 +180,28 @@ impl WasmChannelService {
     pub async fn get_channel_pods(&self, id: i64) -> Result<String, String> {
         self.0.get_channel_pods(id).await
     }
+
+    pub fn channel_pods_json(&self, id: i64) -> String {
+        self.0.channel_pods_json(id)
+    }
+
+    pub async fn fetch_channel_members(&self, id: i64) -> Result<String, String> {
+        self.0.fetch_channel_members(id).await
+    }
+
+    pub async fn invite_channel_members(&self, id: i64, user_ids_json: String) -> Result<(), String> {
+        self.0.invite_channel_members(id, &user_ids_json).await
+    }
+
+    pub async fn remove_channel_member(&self, id: i64, user_id: i64) -> Result<(), String> {
+        self.0.remove_channel_member(id, user_id).await
+    }
+
+    pub fn channel_members_json(&self, id: i64) -> String {
+        self.0.channel_members_json(id)
+    }
+
+    pub async fn search_channel_messages(&self, id: i64, q: &str, limit: Option<u32>) -> Result<String, String> {
+        self.0.search_channel_messages(id, q, limit).await
+    }
 }

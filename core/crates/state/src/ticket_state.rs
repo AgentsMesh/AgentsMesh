@@ -1,7 +1,8 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use agentsmesh_persistence::{StorageBackend, TicketRepo};
-use agentsmesh_types::{BoardColumn, Label, Ticket, TicketPriority, TicketStatus};
+use agentsmesh_types::{BoardColumn, Label, Pod, Ticket, TicketPriority, TicketStatus};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ViewMode {
@@ -15,6 +16,7 @@ pub struct TicketState {
     labels: Vec<Label>,
     board_columns: Vec<BoardColumn>,
     view_mode: ViewMode,
+    pods_by_ticket_slug: HashMap<String, Vec<Pod>>,
     repo: Option<TicketRepo>,
 }
 
@@ -26,7 +28,8 @@ impl TicketState {
     pub fn new() -> Self {
         Self {
             tickets: Vec::new(), current_ticket: None, labels: Vec::new(),
-            board_columns: Vec::new(), view_mode: ViewMode::List, repo: None,
+            board_columns: Vec::new(), view_mode: ViewMode::List,
+            pods_by_ticket_slug: HashMap::new(), repo: None,
         }
     }
 
@@ -35,7 +38,8 @@ impl TicketState {
         let tickets = repo.list_tickets().unwrap_or_default();
         Self {
             tickets, current_ticket: None, labels: Vec::new(),
-            board_columns: Vec::new(), view_mode: ViewMode::List, repo: Some(repo),
+            board_columns: Vec::new(), view_mode: ViewMode::List,
+            pods_by_ticket_slug: HashMap::new(), repo: Some(repo),
         }
     }
 
@@ -173,6 +177,20 @@ impl TicketState {
 
     pub fn set_current_ticket(&mut self, ticket: Option<Ticket>) { self.current_ticket = ticket; }
     pub fn get_current_ticket(&self) -> Option<&Ticket> { self.current_ticket.as_ref() }
+
+    // --- Pods per ticket cache ---
+
+    pub fn set_ticket_pods(&mut self, slug: &str, pods: Vec<Pod>) {
+        self.pods_by_ticket_slug.insert(slug.to_string(), pods);
+    }
+
+    pub fn get_ticket_pods(&self, slug: &str) -> Vec<Pod> {
+        self.pods_by_ticket_slug.get(slug).cloned().unwrap_or_default()
+    }
+
+    pub fn clear_ticket_pods(&mut self, slug: &str) {
+        self.pods_by_ticket_slug.remove(slug);
+    }
 }
 
 impl Default for TicketState {

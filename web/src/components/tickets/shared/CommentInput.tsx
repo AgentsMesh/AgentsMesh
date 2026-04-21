@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Send, X, Loader2 } from "lucide-react";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import { MentionPopover } from "./MentionPopover";
 
 interface CommentInputProps {
@@ -46,7 +46,7 @@ export function CommentInput({
   onCancel,
 }: CommentInputProps) {
   const t = useTranslations();
-  const { user } = useAuthStore();
+  const user = useCurrentUser();
   const isEditMode = initialContent !== undefined;
   const [content, setContent] = useState(initialContent || "");
   const [submitting, setSubmitting] = useState(false);

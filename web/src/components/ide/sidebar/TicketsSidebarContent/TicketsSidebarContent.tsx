@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTicketStore, useTickets, useBoardColumns } from "@/stores/ticket";
 import { TicketCreateDialog } from "@/components/tickets";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import type { TicketsSidebarContentProps } from "./types";
 export function TicketsSidebarContent({ className }: TicketsSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const viewMode = useTicketStore((s) => s.viewMode);
   const allTickets = useTickets();
   const fetchTickets = useTicketStore((s) => s.fetchTickets);

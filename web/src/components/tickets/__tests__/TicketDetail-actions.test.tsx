@@ -18,6 +18,12 @@ vi.mock('@/stores/auth', () => ({
     currentOrg: { slug: 'test-org' },
     user: { id: 1, username: 'john' },
   }),
+  useCurrentUser: () => ({ id: 1, email: 'u@e.com', username: 'john' }),
+  useCurrentOrg: () => ({ id: 1, name: 'TestOrg', slug: 'test-org' }),
+  useAuthOrganizations: () => [],
+  readCurrentUser: () => ({ id: 1, email: 'u@e.com', username: 'john' }),
+  readCurrentOrg: () => ({ id: 1, name: 'TestOrg', slug: 'test-org' }),
+  readOrganizations: () => [],
 }))
 
 const mockTicketStoreState: Record<string, unknown> = {}

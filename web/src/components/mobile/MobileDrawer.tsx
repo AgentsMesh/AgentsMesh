@@ -7,7 +7,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 import { useIDEStore, ACTIVITIES, type ActivityType } from "@/stores/ide";
 import { getDefaultRoute } from "@/lib/default-route";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthOrganizations, useCurrentOrg, useCurrentUser, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import {
   Terminal,
@@ -42,8 +42,11 @@ export function MobileDrawer({ className }: MobileDrawerProps) {
   const router = useRouter();
   const { activeActivity, setActiveActivity, mobileDrawerOpen, setMobileDrawerOpen } =
     useIDEStore();
-  const { currentOrg, organizations, setCurrentOrg, user, logout } =
-    useAuthStore();
+  const currentOrg = useCurrentOrg();
+  const organizations = useAuthOrganizations();
+  const user = useCurrentUser();
+  const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
+  const logout = useAuthStore((s) => s.logout);
   const params = useParams();
   const t = useTranslations();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";

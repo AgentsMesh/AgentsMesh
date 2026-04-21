@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import {
+  __seedAcpSessionForTests,
+  __resetAcpSessionsForTests,
+  readAcpSession,
+} from "@/stores/acpSession";
 import { EMPTY_SESSION } from "@/stores/acpSessionTypes";
 import { AcpPermissionDialog } from "@/components/workspace/acp/AcpPermissionDialog";
 import { relayPool } from "@/stores/relayConnection";
@@ -18,7 +22,7 @@ describe("AcpPermissionDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(relayPool.isConnected).mockReturnValue(true);
-    useAcpSessionStore.setState({ sessions: {} });
+    __resetAcpSessionsForTests();
   });
 
   const perms = [
@@ -41,9 +45,7 @@ describe("AcpPermissionDialog", () => {
 
   it("sends approve command and removes permission", () => {
     vi.useFakeTimers();
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [...perms] } },
-    });
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [...perms] });
 
     render(<AcpPermissionDialog podKey={POD} permissions={perms} />);
     fireEvent.click(screen.getByText("Approve"));
@@ -54,16 +56,14 @@ describe("AcpPermissionDialog", () => {
       approved: true,
     });
 
-    const s = useAcpSessionStore.getState().sessions[POD];
+    const s = readAcpSession(POD) ?? EMPTY_SESSION;
     expect(s.pendingPermissions).toHaveLength(0);
     vi.useRealTimers();
   });
 
   it("sends deny command and removes permission", () => {
     vi.useFakeTimers();
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [...perms] } },
-    });
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [...perms] });
 
     render(<AcpPermissionDialog podKey={POD} permissions={perms} />);
     fireEvent.click(screen.getByText("Deny"));
@@ -146,10 +146,8 @@ describe("AcpPermissionDialog", () => {
       }),
       description: "Question",
     };
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [askPerm] } },
-    });
-    const permsFromStore = useAcpSessionStore.getState().sessions[POD].pendingPermissions;
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [askPerm] });
+    const permsFromStore = (readAcpSession(POD) ?? EMPTY_SESSION).pendingPermissions;
 
     render(<AcpPermissionDialog podKey={POD} permissions={permsFromStore} />);
     fireEvent.click(screen.getByText("OptionA"));
@@ -167,9 +165,7 @@ describe("AcpPermissionDialog", () => {
 
   it("auto-denies permission after timeout", () => {
     vi.useFakeTimers();
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [...perms] } },
-    });
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [...perms] });
 
     render(<AcpPermissionDialog podKey={POD} permissions={perms} />);
 
@@ -185,9 +181,7 @@ describe("AcpPermissionDialog", () => {
 
   it("Always Allow sends updatedInput with _alwaysAllow flag", () => {
     vi.useFakeTimers();
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [...perms] } },
-    });
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [...perms] });
 
     render(<AcpPermissionDialog podKey={POD} permissions={perms} />);
     fireEvent.click(screen.getByText("Always Allow"));
@@ -223,10 +217,8 @@ describe("AcpPermissionDialog", () => {
       }),
       description: "Pick features",
     };
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [askPerm] } },
-    });
-    const permsFromStore = useAcpSessionStore.getState().sessions[POD].pendingPermissions;
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [askPerm] });
+    const permsFromStore = (readAcpSession(POD) ?? EMPTY_SESSION).pendingPermissions;
 
     render(<AcpPermissionDialog podKey={POD} permissions={permsFromStore} />);
     fireEvent.click(screen.getByText("Auth"));
@@ -258,10 +250,8 @@ describe("AcpPermissionDialog", () => {
       }),
       description: "Pick framework",
     };
-    useAcpSessionStore.setState({
-      sessions: { [POD]: { ...EMPTY_SESSION, pendingPermissions: [askPerm] } },
-    });
-    const permsFromStore = useAcpSessionStore.getState().sessions[POD].pendingPermissions;
+    __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, pendingPermissions: [askPerm] });
+    const permsFromStore = (readAcpSession(POD) ?? EMPTY_SESSION).pendingPermissions;
 
     render(<AcpPermissionDialog podKey={POD} permissions={permsFromStore} />);
     const customInput = screen.getByPlaceholderText("Other...");

@@ -87,6 +87,12 @@ vi.mock("@/stores/auth", () => ({
     selector({
       currentOrg: { name: "TestOrg", slug: "test-org" },
     }),
+  useCurrentUser: () => ({ id: 1, email: "u@e.com", username: "u" }),
+  useCurrentOrg: () => ({ id: 1, name: "TestOrg", slug: "test-org" }),
+  useAuthOrganizations: () => [],
+  readCurrentUser: () => ({ id: 1, email: "u@e.com", username: "u" }),
+  readCurrentOrg: () => ({ id: 1, name: "TestOrg", slug: "test-org" }),
+  readOrganizations: () => [],
 }));
 vi.mock("@/stores/workspace", () => ({
   useWorkspaceStore: (selector: (s: Record<string, unknown>) => unknown) =>

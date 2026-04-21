@@ -23,12 +23,12 @@ import { WorkspacePage } from "@/pages/dashboard/workspace/WorkspacePage";
 import { TicketsPage } from "@/pages/dashboard/tickets/TicketsPage";
 import { TicketDetailPage } from "@/pages/dashboard/tickets/TicketDetailPage";
 import { ChannelsPage } from "@/pages/dashboard/channels/ChannelsPage";
-import { RunnersPage } from "@/pages/dashboard/runners/RunnersPage";
 import { RunnerDetailPage } from "@/pages/dashboard/runner-detail/RunnerDetailPage";
 import { LoopsPage } from "@/pages/dashboard/loops/LoopsPage";
 import { LoopDetailPage } from "@/pages/dashboard/loop-detail/LoopDetailPage";
 import { MeshPage } from "@/pages/dashboard/mesh/MeshPage";
-import { RepositoriesPage } from "@/pages/dashboard/repositories/RepositoriesPage";
+import { BlocksPage } from "@/pages/dashboard/blocks/BlocksPage";
+import { InfraPage } from "@/pages/dashboard/infra/InfraPage";
 import { RepositoryDetailPage } from "@/pages/dashboard/repository-detail/RepositoryDetailPage";
 import { SettingsPage } from "@/pages/dashboard/settings/OrgSettingsPage";
 
@@ -44,6 +44,10 @@ import { SupportTicketDetailPage } from "@/pages/support/detail/SupportDetailPag
 
 // Popout
 import { PopoutTerminalPage } from "@/pages/popout/terminal/PopoutTerminalPage";
+
+// Route-level error boundary — prevents uncaught render errors from wedging
+// the whole window (HashRouter has no server-side fallback in Electron).
+import { RouteErrorBoundary } from "@/pages/RouteErrorBoundary";
 
 export const router = createBrowserRouter([
   // Auth routes (no shell)
@@ -74,18 +78,21 @@ export const router = createBrowserRouter([
   {
     path: "/:org",
     element: <DashboardShell><Outlet /></DashboardShell>,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate to="workspace" replace /> },
       { path: "workspace", element: <WorkspacePage /> },
       { path: "tickets", element: <TicketsPage /> },
       { path: "tickets/:slug", element: <TicketDetailPage /> },
       { path: "channels", element: <ChannelsPage /> },
-      { path: "runners", element: <RunnersPage /> },
+      { path: "runners", element: <Navigate to="../infra?tab=runners" replace /> },
       { path: "runners/:id", element: <RunnerDetailPage /> },
       { path: "loops", element: <LoopsPage /> },
       { path: "loops/:slug", element: <LoopDetailPage /> },
       { path: "mesh", element: <MeshPage /> },
-      { path: "repositories", element: <RepositoriesPage /> },
+      { path: "blocks", element: <BlocksPage /> },
+      { path: "infra", element: <InfraPage /> },
+      { path: "repositories", element: <Navigate to="../infra?tab=repositories" replace /> },
       { path: "repositories/:id", element: <RepositoryDetailPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],
@@ -95,6 +102,7 @@ export const router = createBrowserRouter([
   {
     path: "/settings",
     element: <DashboardShell><Outlet /></DashboardShell>,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <PersonalSettingsPage /> },
       { path: "general", element: <GeneralSettingsPage /> },
@@ -107,6 +115,7 @@ export const router = createBrowserRouter([
   {
     path: "/support",
     element: <DashboardShell><Outlet /></DashboardShell>,
+    errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <SupportPage /> },
       { path: ":id", element: <SupportTicketDetailPage /> },
@@ -114,7 +123,9 @@ export const router = createBrowserRouter([
   },
 
   // Root redirect — auth-aware
-  { path: "/", element: <RootRedirect /> },
+  { path: "/", element: <RootRedirect />, errorElement: <RouteErrorBoundary /> },
+  // 404 fallback
+  { path: "*", element: <RouteErrorBoundary /> },
 ]);
 
 function RootRedirect() {

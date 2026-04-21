@@ -10,11 +10,14 @@ const mockIterations: Record<string, AutopilotIteration[]> = {};
 vi.mock("@/stores/autopilot", () => ({
   useAutopilotStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
-      iterations: mockIterations,
       fetchIterations: mockFetchIterations,
     };
     return selector ? selector(state) : state;
   },
+  useAutopilotIterations: (key: string | null | undefined) =>
+    key ? (mockIterations[key] ?? []) : [],
+  useAutopilotThinking: () => null,
+  useAutopilotThinkingHistory: () => [],
 }));
 
 // Helper to create mock iteration

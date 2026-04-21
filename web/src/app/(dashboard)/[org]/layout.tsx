@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthOrganizations, useAuthStore } from "@/stores/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { getDefaultRoute } from "@/lib/default-route";
 
@@ -13,7 +13,10 @@ import { getDefaultRoute } from "@/lib/default-route";
 export default function OrgLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const router = useRouter();
-  const { organizations, currentOrg, setCurrentOrg, _hasHydrated } = useAuthStore();
+  const organizations = useAuthOrganizations();
+  const currentOrg = useCurrentOrg();
+  const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const orgSlug = params.org as string;
 

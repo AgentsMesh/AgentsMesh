@@ -21,6 +21,9 @@ vi.mock("@/stores/autopilot", () => ({
     };
     return selector ? selector(state) : state;
   },
+  useAutopilotThinking: () => null,
+  useAutopilotIterations: () => [],
+  useAutopilotThinkingHistory: () => [],
 }));
 
 // Helper to create mock controller

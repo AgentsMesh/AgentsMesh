@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSession } from "@/stores/acpSession";
 import type { AcpToolCall, AcpThinking, AcpLog } from "@/stores/acpSession";
 import { AcpToolCallCard } from "./AcpToolCallCard";
 import { Markdown } from "@/components/ui/markdown";
@@ -19,7 +19,7 @@ type TimelineItem =
   | { kind: "log"; key: string; timestamp: number; data: AcpLog };
 
 export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
-  const session = useAcpSessionStore((s) => s.sessions[podKey]);
+  const session = useAcpSession(podKey);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Build a unified timeline: messages + toolCalls + thinkings, sorted by timestamp.

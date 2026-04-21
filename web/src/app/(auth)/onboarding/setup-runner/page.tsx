@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
 
 export default function SetupRunnerPage() {
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
 
   const handleSkip = () => {
     if (currentOrg) {

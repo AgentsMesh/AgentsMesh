@@ -14,10 +14,13 @@ vi.mock("@/stores/autopilot", () => ({
     const state = {
       getAutopilotControllerByPodKey: (podKey: string) =>
         mockController?.pod_key === podKey ? mockController : undefined,
-      thinking: mockThinkingMap,
     };
     return selector ? selector(state) : state;
   },
+  useAutopilotThinking: (key: string | null | undefined) =>
+    key ? (mockThinkingMap[key] ?? null) : null,
+  useAutopilotIterations: () => [],
+  useAutopilotThinkingHistory: () => [],
 }));
 
 vi.mock("@/stores/ide", () => ({

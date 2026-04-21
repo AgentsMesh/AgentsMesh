@@ -17,7 +17,7 @@ import { TicketPriority } from "@/lib/api/ticketTypes";
 import { getTicketService } from "@/lib/wasm-core";
 import type { OrganizationMember } from "@/lib/api/organizationTypes";
 import { getOrgApiService } from "@/lib/wasm-getters";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { RepositorySelect } from "@/components/common/RepositorySelect";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ export function TicketCreateDialog({
 }: TicketCreateDialogProps) {
   const t = useTranslations();
   const { isMobile } = useBreakpoint();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [members, setMembers] = useState<OrganizationMember[]>([]);

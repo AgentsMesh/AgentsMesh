@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Send, StopCircle } from "lucide-react";
 import { relayPool } from "@/stores/relayConnection";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSessionField } from "@/stores/acpSession";
 import { AcpPermissionModeSelector } from "./AcpPermissionModeSelector";
 
 interface AcpPromptInputProps {
@@ -14,7 +14,7 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const sessionState = useAcpSessionStore((s) => s.sessions[podKey]?.state);
+  const sessionState = useAcpSessionField(podKey, (s) => s.state);
   const isProcessing = sessionState === "processing" || sessionState === "waiting_permission";
 
   const handleSend = useCallback(() => {

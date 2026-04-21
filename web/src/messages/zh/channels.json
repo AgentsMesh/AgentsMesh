@@ -2,15 +2,19 @@
   "channels": {
     "emptyState": "选择一个频道开始聊天",
     "emptyStateHint": "从侧边栏选择一个频道，查看消息并与团队协作",
+    "archivedBanner": "此频道已归档，无法发送消息",
     "sidebar": {
       "searchPlaceholder": "搜索频道...",
       "createChannel": "新建频道",
       "refresh": "刷新",
-      "showArchived": "显示已归档",
+      "showArchived": "查看已归档 →",
       "hideArchived": "隐藏已归档",
       "noChannels": "暂无频道",
       "noMatch": "没有匹配的频道",
-      "podsCount": "{count} 个 Pod"
+      "podsCount": "{count} 个 Pod",
+      "groupActive": "活跃",
+      "groupLinked": "关联",
+      "groupQuiet": "安静"
     },
     "createDialog": {
       "title": "创建频道",
@@ -31,6 +35,34 @@
       "join": "加入",
       "leave": "离开",
       "joinToParticipate": "加入此频道以查看消息并参与讨论"
+    },
+    "header": {
+      "podsCount": "{count} 个 Pod",
+      "membersCount": "{count} 位成员",
+      "linkedTo": "关联",
+      "search": "搜索消息",
+      "members": "成员",
+      "settings": "频道设置",
+      "more": "更多"
+    },
+    "rightRail": {
+      "pods": "PODS",
+      "members": "MEMBERS",
+      "linked": "LINKED",
+      "document": "DOCUMENT",
+      "podsEmpty": "暂无 Pod",
+      "documentEmpty": "暂无文档"
+    },
+    "composer": {
+      "placeholder": "发送消息到 #{channel} — 使用 @ 提及 Pod 或成员",
+      "mention": "提及",
+      "attach": "附件",
+      "send": "发送",
+      "formatBold": "加粗",
+      "formatItalic": "斜体",
+      "formatStrike": "删除线",
+      "formatCode": "行内代码",
+      "formatLink": "链接"
     },
     "members": {
       "title": "频道成员",
@@ -58,6 +90,38 @@
       "deleteConfirmDescription": "确定要删除这条消息吗？此操作无法撤销。",
       "delete": "删除",
       "moreActions": "更多"
+    },
+    "search": {
+      "title": "搜索消息",
+      "titleFor": "在 #{channel} 中搜索",
+      "placeholder": "输入关键字...",
+      "empty": "没有匹配的消息",
+      "resultCount": "{count} 条结果"
+    },
+    "settings": {
+      "title": "频道设置",
+      "tabs": {
+        "basic": "基本",
+        "archive": "归档"
+      },
+      "name": "频道名称",
+      "description": "描述",
+      "descriptionPlaceholder": "这个频道用于什么？",
+      "save": "保存",
+      "cancel": "取消",
+      "saved": "已保存",
+      "saveFailed": "保存失败",
+      "archive": "归档此频道",
+      "unarchive": "恢复此频道",
+      "archiveHint": "归档后频道对成员隐藏，但保留所有历史消息。",
+      "unarchiveHint": "频道当前处于归档状态，恢复后成员可重新访问。",
+      "archived": "已归档",
+      "unarchived": "已恢复",
+      "archiveFailed": "归档操作失败"
+    },
+    "attachment": {
+      "download": "下载附件",
+      "preview": "预览附件"
     }
   }
 }

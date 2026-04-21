@@ -63,7 +63,7 @@ describe("Channel Store", () => {
       searchQuery: "",
       showArchived: false,
     });
-    useChannelMessageStore.setState({ cache: {}, unreadCounts: {} });
+    useChannelMessageStore.setState({ cache: {}, _unreadTick: 0 });
   });
 
   describe("initial state", () => {
@@ -224,10 +224,10 @@ describe("Channel Store", () => {
 
     it("should not affect per-channel message cache", () => {
       useChannelMessageStore.setState({
-        cache: { 1: { messages: [mockMessage], hasMore: false, loading: false, loadingMore: false, error: null } },
+        cache: { 1: { loading: false, loadingMore: false, error: "keep-me" } },
       });
       act(() => { useChannelStore.getState().setCurrentChannel(mockChannel); });
-      expect(useChannelMessageStore.getState().cache[1]?.messages).toHaveLength(1);
+      expect(useChannelMessageStore.getState().cache[1]?.error).toBe("keep-me");
     });
   });
 

@@ -303,10 +303,14 @@ impl ChannelService {
         serde_json::to_string(&msg).map_err(|e| e.to_string())
     }
 
+    /// Edit a message. `content_json` is the raw JSON string of the structured
+    /// MessageContent AST (frontend sends exactly what the server schema expects).
     pub async fn edit_message(
-        &self, channel_id: i64, message_id: i64, content: &str,
+        &self, channel_id: i64, message_id: i64, content_json: &str,
     ) -> Result<String, String> {
-        let req = EditChannelMessageRequest { content: content.to_string() };
+        let content: serde_json::Value = serde_json::from_str(content_json)
+            .map_err(|e| format!("invalid content JSON: {e}"))?;
+        let req = EditChannelMessageRequest { content };
         let msg: ChannelMessage = self.client
             .edit_channel_message(channel_id, message_id, &req)
             .await.map_err(|e| e.to_string())?;
@@ -351,6 +355,54 @@ impl ChannelService {
     pub async fn get_channel_pods(&self, id: i64) -> Result<String, String> {
         let resp = self.client
             .get_channel_pods(id)
+            .await.map_err(|e| e.to_string())?;
+        self.state.write().unwrap().set_channel_pods(id, resp.pods.clone());
+        serde_json::to_string(&resp).map_err(|e| e.to_string())
+    }
+
+    pub fn channel_pods_json(&self, id: i64) -> String {
+        let pods = self.state.read().unwrap().get_channel_pods(id);
+        serde_json::to_string(&pods).unwrap_or_else(|_| "[]".into())
+    }
+
+    pub async fn fetch_channel_members(&self, id: i64) -> Result<String, String> {
+        let resp = self.client
+            .list_channel_members(id)
+            .await.map_err(|e| e.to_string())?;
+        self.state.write().unwrap().set_channel_members(id, resp.members.clone());
+        serde_json::to_string(&resp).map_err(|e| e.to_string())
+    }
+
+    pub async fn invite_channel_members(&self, id: i64, user_ids_json: &str) -> Result<(), String> {
+        let user_ids: Vec<i64> = serde_json::from_str(user_ids_json).map_err(|e| e.to_string())?;
+        let req = agentsmesh_types::InviteChannelMembersRequest { user_ids };
+        self.client
+            .invite_channel_members(id, &req)
+            .await.map_err(|e| e.to_string())?;
+        // Server returns only ack; refresh cache by fetching updated list.
+        let fresh = self.client
+            .list_channel_members(id)
+            .await.map_err(|e| e.to_string())?;
+        self.state.write().unwrap().set_channel_members(id, fresh.members);
+        Ok(())
+    }
+
+    pub async fn remove_channel_member(&self, id: i64, user_id: i64) -> Result<(), String> {
+        self.client
+            .remove_channel_member(id, user_id)
+            .await.map_err(|e| e.to_string())?;
+        self.state.write().unwrap().remove_channel_member(id, user_id);
+        Ok(())
+    }
+
+    pub fn channel_members_json(&self, id: i64) -> String {
+        let members = self.state.read().unwrap().get_channel_members(id);
+        serde_json::to_string(&members).unwrap_or_else(|_| "[]".into())
+    }
+
+    pub async fn search_channel_messages(&self, id: i64, q: &str, limit: Option<u32>) -> Result<String, String> {
+        let resp = self.client
+            .search_channel_messages(id, q, limit)
             .await.map_err(|e| e.to_string())?;
         serde_json::to_string(&resp).map_err(|e| e.to_string())
     }

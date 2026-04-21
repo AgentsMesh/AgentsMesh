@@ -1,18 +1,20 @@
-import type { Block, BlockOp, BlockRef, Workspace } from "@/lib/api/blockstoreTypes";
+import type { Block, BlockRef, Workspace } from "@/lib/api/blockstoreTypes";
 
+// UI-only state. All block/ref/workspace data lives in Rust BlockstoreService
+// and is read through selectors; this store only tracks transient UI signals.
 export interface BlockstoreState {
-  workspaces: Record<string, Workspace>;
-  blocks: Record<string, Block>;
-  refs: Record<number, BlockRef>;
-  /** parent block id → sorted list of nest-child ref ids (by order_key) */
-  nestChildren: Record<string, number[]>;
-  /** target block id → list of backlink ref ids (non-nest) */
-  backlinks: Record<string, number[]>;
-  /** per-workspace progress marker for WS subscription catch-up */
-  lastOpId: Record<string, number>;
+  _tick: number;
+
   /** Transient one-shot focus request. A renderer whose block id matches grabs
    *  the DOM focus on next render and clears the signal so it fires exactly once. */
   pendingFocusBlockID: string | null;
+  /** The workspace the Blocks page is currently viewing. Sidebar + main
+   *  read from this so the master-detail layout stays in sync without
+   *  prop-drilling through IDEShell. */
+  activeWorkspaceId: string | null;
+  /** Block whose comments are currently shown in the right rail. Null when
+   *  no block is selected; the rail then shows an empty state. */
+  activeCommentBlockID: string | null;
   /** Selected block ids for batch operations (delete / duplicate / move). */
   selectedBlockIDs: string[];
   loading: boolean;
@@ -27,17 +29,8 @@ export interface BlockstoreActions {
   loadSubtree(workspaceID: string, rootID: string): Promise<void>;
   loadTypeDefs(workspaceID: string): Promise<void>;
   catchup(workspaceID: string): Promise<void>;
-
-  // Upsert helpers used by both local-dispatch and remote-op code paths.
-  upsertBlock(b: Block): void;
-  upsertRef(r: BlockRef): void;
-  removeBlock(id: string): void;
-  removeRef(refID: number): void;
-  updateBlockFields(id: string, fields: Partial<Block>): void;
-  updateRefFields(refID: number, fields: Partial<BlockRef>): void;
-
-  // Op application (remote stream): translates op.forward into store mutations.
-  applyRemoteOp(op: BlockOp): void;
+  setActiveWorkspaceId(id: string | null): void;
+  setActiveCommentBlockID(id: string | null): void;
 
   setLastOpId(workspaceID: string, id: number): void;
   /** Mark a block as "should grab focus on next render". */
@@ -61,3 +54,10 @@ export function compareOrderKey(a: BlockRef | undefined, b: BlockRef | undefined
   if (ak > bk) return 1;
   return 0;
 }
+
+export type BlocksMap = Record<string, Block>;
+export type RefsMap = Record<number, BlockRef>;
+export type ChildrenIndex = Record<string, number[]>;
+export type BacklinksIndex = Record<string, number[]>;
+export type WorkspacesMap = Record<string, Workspace>;
+export type LastOpIdMap = Record<string, number>;

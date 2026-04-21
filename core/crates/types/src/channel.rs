@@ -13,6 +13,12 @@ pub struct Channel {
     #[serde(default)]
     pub is_archived: bool,
     #[serde(default)]
+    pub visibility: Option<String>,
+    #[serde(default)]
+    pub is_member: bool,
+    #[serde(default)]
+    pub member_count: Option<i64>,
+    #[serde(default)]
     pub organization_id: Option<i64>,
     #[serde(default)]
     pub document: Option<String>,
@@ -50,7 +56,18 @@ pub struct SenderAgentInfo {
 pub struct ChannelMessage {
     pub id: i64,
     pub channel_id: i64,
-    pub content: String,
+    /// Plain-text projection of `content`, derived server-side. Always present.
+    #[serde(default)]
+    pub body: String,
+    /// Structured message content (AST blocks + inline elements). JSON, opaque to Rust.
+    #[serde(default)]
+    pub content: Option<serde_json::Value>,
+    /// Structured mentions (pods / users / channel). JSON, opaque to Rust.
+    #[serde(default)]
+    pub mentions: Option<serde_json::Value>,
+    /// ID of the message being replied to, if any.
+    #[serde(default)]
+    pub reply_to: Option<i64>,
     #[serde(default)]
     pub sender_user: Option<User>,
     #[serde(default)]
@@ -61,8 +78,10 @@ pub struct ChannelMessage {
     pub sender_pod_info: Option<SenderPodInfo>,
     #[serde(default)]
     pub message_type: Option<String>,
+    /// Deprecated: kept to tolerate legacy payloads. Prefer `sender_pod`.
     #[serde(default)]
     pub pod_key: Option<String>,
+    /// Deprecated: moved into `content`. Kept to tolerate legacy payloads.
     #[serde(default)]
     pub metadata: Option<serde_json::Value>,
     #[serde(default)]
@@ -98,17 +117,24 @@ pub struct UpdateChannelRequest {
     pub description: Option<String>,
 }
 
+/// Request body for POST /channels/{id}/messages.
+///
+/// `content` is the structured AST (schema_version + kind + blocks[] +
+/// inline elements). The backend derives `body` from it and stores both.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SendChannelMessageRequest {
-    pub content: String,
+    pub content: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pod_key: Option<String>,
-    pub message_type: Option<String>,
-    pub mentions: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_to: Option<i64>,
 }
 
+/// Request body for PUT /channels/{id}/messages/{msgId}. Same shape as
+/// SendChannelMessageRequest minus addressing fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EditChannelMessageRequest {
-    pub content: String,
+    pub content: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -124,6 +150,26 @@ pub struct MuteChannelRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChannelListResponse {
     pub channels: Vec<Channel>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelMember {
+    pub channel_id: i64,
+    pub user_id: i64,
+    pub role: String,
+    pub is_muted: bool,
+    pub joined_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelMemberListResponse {
+    pub members: Vec<ChannelMember>,
+    pub total: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InviteChannelMembersRequest {
+    pub user_ids: Vec<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -170,7 +216,10 @@ mod tests {
     #[test]
     fn channel_message_roundtrip() {
         let msg = ChannelMessage {
-            id: 100, channel_id: 1, content: "Hello from agent".into(),
+            id: 100, channel_id: 1,
+            body: "Hello from agent".into(),
+            content: Some(serde_json::json!({"schema_version": 1, "kind": "ast", "blocks": []})),
+            mentions: None, reply_to: None,
             sender_user: Some(User { id: 1, email: "a@b.com".into(), username: "u".into(), name: None, avatar_url: None }),
             sender_user_id: Some(1), sender_pod: Some("pod-1".into()),
             sender_pod_info: Some(SenderPodInfo { pod_key: "pod-1".into(), alias: Some("my-agent".into()), agent: Some(SenderAgentInfo { name: "claude".into() }) }),
@@ -180,21 +229,42 @@ mod tests {
         };
         let json = serde_json::to_string(&msg).unwrap();
         let decoded: ChannelMessage = serde_json::from_str(&json).unwrap();
-        assert_eq!(decoded.content, "Hello from agent");
+        assert_eq!(decoded.body, "Hello from agent");
+        assert!(decoded.content.is_some());
         assert!(decoded.sender_user.is_some());
         assert_eq!(decoded.sender_pod_info.unwrap().agent.unwrap().name, "claude");
     }
 
     #[test]
     fn channel_message_minimal() {
-        let json = r#"{"id":1,"channel_id":2,"content":"hi"}"#;
+        let json = r#"{"id":1,"channel_id":2,"body":"hi"}"#;
         let msg: ChannelMessage = serde_json::from_str(json).unwrap();
         assert_eq!(msg.channel_id, 2);
+        assert_eq!(msg.body, "hi");
+        assert!(msg.content.is_none());
+        assert!(msg.mentions.is_none());
+        assert!(msg.reply_to.is_none());
         assert!(msg.sender_user.is_none());
-        assert!(msg.sender_pod.is_none());
-        assert!(msg.sender_pod_info.is_none());
-        assert!(msg.metadata.is_none());
-        assert!(msg.edited_at.is_none());
+    }
+
+    #[test]
+    fn channel_message_with_structured_content() {
+        let json = r#"{
+            "id": 1, "channel_id": 2, "body": "Hey @alice",
+            "content": {"schema_version": 1, "kind": "ast", "blocks": [
+                {"type": "paragraph", "elements": [
+                    {"type": "text", "text": "Hey "},
+                    {"type": "mention", "entity_type": "user", "entity_key": "alice", "display": "alice"}
+                ]}
+            ]},
+            "mentions": {"users": ["alice"]},
+            "reply_to": 99
+        }"#;
+        let msg: ChannelMessage = serde_json::from_str(json).unwrap();
+        assert_eq!(msg.body, "Hey @alice");
+        assert!(msg.content.is_some());
+        assert_eq!(msg.reply_to, Some(99));
+        assert!(msg.mentions.is_some());
     }
 
     #[test]

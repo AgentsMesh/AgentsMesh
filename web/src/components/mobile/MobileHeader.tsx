@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Menu, PanelRight } from "lucide-react";
@@ -21,7 +21,7 @@ export function MobileHeader({ className, title, actions }: MobileHeaderProps) {
   const activeActivity = useIDEStore((s) => s.activeActivity);
   const setMobileDrawerOpen = useIDEStore((s) => s.setMobileDrawerOpen);
   const setMobileSidebarOpen = useIDEStore((s) => s.setMobileSidebarOpen);
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const params = useParams();
   const t = useTranslations();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";

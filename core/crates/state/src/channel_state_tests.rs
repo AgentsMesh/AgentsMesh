@@ -3,7 +3,7 @@ use crate::channel_state::{ChannelSortMode, ChannelState};
 use agentsmesh_types::*;
 
 fn ch(id: i64, name: &str) -> Channel { Channel { id, name: name.into(), description: None, is_archived: false, organization_id: None, document: None, repository_id: None, ticket_id: None, ticket_slug: None, created_by_pod: None, created_by_user_id: None, created_at: None, updated_at: None } }
-fn msg(id: i64, ch: i64, content: &str) -> ChannelMessage { ChannelMessage { id, channel_id: ch, content: content.into(), sender_user: None, sender_user_id: None, sender_pod: None, sender_pod_info: None, message_type: None, pod_key: None, metadata: None, edited_at: None, is_deleted: None, created_at: None } }
+fn msg(id: i64, ch: i64, content: &str) -> ChannelMessage { ChannelMessage { id, channel_id: ch, body: content.into(), content: None, mentions: None, reply_to: None, sender_user: None, sender_user_id: None, sender_pod: None, sender_pod_info: None, message_type: None, pod_key: None, metadata: None, edited_at: None, is_deleted: None, created_at: None } }
 fn msg_with_sender(id: i64, ch: i64, content: &str, user_id: i64, username: &str) -> ChannelMessage {
     let mut m = msg(id, ch, content);
     m.sender_user_id = Some(user_id);
@@ -25,7 +25,7 @@ fn msg_with_time(id: i64, ch: i64, content: &str, time: &str) -> ChannelMessage 
 #[test] fn add_message() { let mut s = ChannelState::new(); s.add_message(1, msg(100,1,"hi")); assert_eq!(s.get_messages(1).unwrap().messages.len(), 1); }
 #[test] fn add_message_dedup() { let mut s = ChannelState::new(); s.add_message(1, msg(100,1,"hi")); s.add_message(1, msg(100,1,"dup")); assert_eq!(s.get_messages(1).unwrap().messages.len(), 1); }
 #[test] fn add_message_returns_true_for_new() { let mut s = ChannelState::new(); assert!(s.add_message(1, msg(100,1,"hi"))); assert!(!s.add_message(1, msg(100,1,"dup"))); }
-#[test] fn update_message() { let mut s = ChannelState::new(); s.add_message(1, msg(100,1,"old")); s.update_message(1, msg(100,1,"new")); assert_eq!(s.get_messages(1).unwrap().messages[0].content, "new"); }
+#[test] fn update_message() { let mut s = ChannelState::new(); s.add_message(1, msg(100,1,"old")); s.update_message(1, msg(100,1,"new")); assert_eq!(s.get_messages(1).unwrap().messages[0].body, "new"); }
 #[test] fn update_message_no_cache() { let mut s = ChannelState::new(); s.update_message(1, msg(100,1,"x")); assert!(s.get_messages(1).is_none()); }
 #[test] fn remove_message() { let mut s = ChannelState::new(); s.add_message(1, msg(100,1,"a")); s.add_message(1, msg(101,1,"b")); s.remove_message(1, 100); assert_eq!(s.get_messages(1).unwrap().messages.len(), 1); }
 #[test] fn set_messages() { let mut s = ChannelState::new(); s.set_messages(1, vec![msg(1,1,"a"), msg(2,1,"b")], true); let c = s.get_messages(1).unwrap(); assert_eq!(c.messages.len(), 2); assert!(c.has_more); }

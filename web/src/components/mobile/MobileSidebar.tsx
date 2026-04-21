@@ -5,7 +5,7 @@ import { Drawer } from "vaul";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { X } from "lucide-react";
@@ -94,7 +94,7 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
   const activeActivity = useIDEStore((s) => s.activeActivity);
   const mobileSidebarOpen = useIDEStore((s) => s.mobileSidebarOpen);
   const setMobileSidebarOpen = useIDEStore((s) => s.setMobileSidebarOpen);
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const addPane = useWorkspaceStore((s) => s.addPane);
   const fetchPods = usePodStore((s) => s.fetchPods);
 

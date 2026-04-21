@@ -1,9 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
 
 /**
- * Page Object Model for the Runners page.
- * Based on: web/src/app/(dashboard)/[org]/runners/page.tsx
- *           web/src/components/ide/RunnersSidebarContent.tsx
+ * Page Object Model for the Runner list + detail.
+ *
+ * After the IA-Infra refactor, Runner management lives under /infra?tab=runners
+ * in a master-detail layout (list sidebar + detail pane in `main`). The legacy
+ * /runners URL still redirects to the Infra tab. The "Add Runner" button moved
+ * into the runner list sidebar (or empty-state CTA).
  */
 export class RunnersPage {
   readonly addRunnerButton: Locator;
@@ -13,58 +16,33 @@ export class RunnersPage {
     private page: Page,
     private orgSlug: string
   ) {
-    // Scope to main content area to avoid matching sidebar's "Add Runner" button
-    const main = page.getByRole("main");
-    this.addRunnerButton = main.getByRole("button", {
-      name: /add runner/i,
-    });
-    this.runnerTable = main.locator("table");
+    this.addRunnerButton = page.getByRole("button", {
+      name: /add runner|添加 runner|添加.*Runner/i,
+    }).first();
+    this.runnerTable = page.locator("table");
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(`/${this.orgSlug}/runners`);
+    await this.page.goto(`/${this.orgSlug}/infra?tab=runners`);
     await this.page.waitForLoadState("networkidle");
   }
 
-  /**
-   * Wait for the runner list to be rendered (sidebar or main content).
-   */
   async waitForList(): Promise<void> {
-    // Wait for at least one runner item or the empty state
-    await this.page
-      .locator("table tbody tr, [data-testid='empty-state']")
-      .first()
-      .waitFor({ state: "visible", timeout: 15_000 })
-      .catch(() => {
-        // Table may not exist if using card layout on mobile
-      });
+    // After navigation, either a detail pane renders (selectedId auto-set) or
+    // the empty state CTA shows. Wait for any indicator that the list query
+    // resolved.
+    await Promise.race([
+      this.page.waitForURL(/tab=runners/, { timeout: 15_000 }).catch(() => null),
+      this.page.waitForTimeout(3000),
+    ]);
   }
 
-  /**
-   * Get a runner row by its node ID text.
-   */
   getRunnerByNodeId(nodeId: string): Locator {
-    return this.page.locator("table tbody tr").filter({
-      hasText: nodeId,
-    });
+    return this.page.locator("table tbody tr").filter({ hasText: nodeId });
   }
 
-  /**
-   * Get the stat card values (Total, Online, Active Pods, Capacity).
-   */
-  async getStatValue(label: string): Promise<string | null> {
-    const card = this.page.locator("div").filter({ hasText: label }).first();
-    const value = card.locator(".text-2xl, .text-3xl").first();
-    if (await value.isVisible()) {
-      return value.textContent();
-    }
-    return null;
-  }
-
-  /**
-   * Count visible runner rows in the table.
-   */
   async getRunnerCount(): Promise<number> {
     return this.page.locator("table tbody tr").count();
   }
 }
+

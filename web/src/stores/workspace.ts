@@ -150,6 +150,17 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         mobileActiveIndex: state.mobileActiveIndex,
         terminalFontSize: state.terminalFontSize,
       }),
+      // Guard against corrupted / pre-v4 localStorage that serialised
+      // `panes: null`. Default zustand merge would then shadow the `[]`
+      // initial value, breaking every `.find()` in the store.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<WorkspaceState>;
+        return {
+          ...current,
+          ...p,
+          panes: Array.isArray(p.panes) ? p.panes : current.panes,
+        };
+      },
       onRehydrateStorage: () => (state) => { state?.setHasHydrated(true); },
     }
   )

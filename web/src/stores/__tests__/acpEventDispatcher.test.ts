@@ -1,17 +1,22 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import {
+  useAcpSessionStore,
+  readAcpSession,
+  __resetAcpSessionsForTests,
+} from "@/stores/acpSession";
+import { EMPTY_SESSION } from "@/stores/acpSessionTypes";
 import { dispatchAcpRelayEvent } from "@/stores/acpEventDispatcher";
 import { MsgType } from "@/stores/relayProtocol";
 
 const POD = "pod-e2e";
 
 function getSession() {
-  return useAcpSessionStore.getState().sessions[POD];
+  return readAcpSession(POD) ?? EMPTY_SESSION;
 }
 
 describe("acpEventDispatcher", () => {
   beforeEach(() => {
-    useAcpSessionStore.setState({ sessions: {} });
+    __resetAcpSessionsForTests();
   });
 
   describe("AcpEvent routing", () => {
@@ -152,8 +157,8 @@ describe("acpEventDispatcher", () => {
         sessionId: "s1",
       });
 
-      // Should not crash
-      expect(getSession()).toBeUndefined();
+      // Should not crash; no session created
+      expect(readAcpSession(POD)).toBeNull();
     });
 
     it("handles malformed payload without crashing", () => {

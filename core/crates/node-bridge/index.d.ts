@@ -2,6 +2,12 @@
 /* eslint-disable */
 export declare class AppState {
   constructor(baseUrl: string, storageDir: string)
+  apiGet(endpoint: string): Promise<string>
+  apiPost(endpoint: string, body: string): Promise<string>
+  apiPut(endpoint: string, body: string): Promise<string>
+  apiPatch(endpoint: string, body: string): Promise<string>
+  apiDelete(endpoint: string): Promise<string>
+  apiOrgPath(path: string): string
   authLogin(email: string, password: string): Promise<string>
   authLogout(): Promise<void>
   authRefreshToken(): Promise<string>
@@ -13,6 +19,10 @@ export declare class AppState {
   authGetCurrentUserJson(): string | null
   authGetCurrentOrgJson(): string | null
   authGetOrganizationsJson(): string
+  authApplySession(sessionJson: string): void
+  authSetOrganizations(orgsJson: string): void
+  authSetCurrentOrg(orgJson: string): void
+  authClearSession(): void
   agentListAgents(): Promise<string>
   agentGetConfigSchema(agentSlug: string): Promise<string>
   agentListUserConfigs(): Promise<string>
@@ -93,6 +103,26 @@ export declare class AppState {
   bindingGetPendingBindings(): Promise<string>
   bindingGetBoundPods(): Promise<string>
   bindingCheckBinding(targetPod: string): Promise<string>
+  blockstoreApplyOps(reqJson: string): Promise<string>
+  blockstoreListWorkspaces(): Promise<string>
+  blockstoreEnsureDefaultWorkspace(): Promise<string>
+  blockstoreLoadSubtree(workspaceId: string, rootId: string): Promise<void>
+  blockstoreLoadTypeDefs(workspaceId: string): Promise<void>
+  blockstoreCatchup(workspaceId: string): Promise<void>
+  blockstoreSemanticSearch(workspaceId: string, reqJson: string): Promise<string>
+  blockstoreApplyRemoteOp(opJson: string): Promise<void>
+  blockstoreWorkspacesJson(): Promise<string>
+  blockstoreGetBlockJson(id: string): Promise<string | null>
+  blockstoreListChildrenJson(parentId: string): Promise<string>
+  blockstoreListBacklinksJson(targetId: string): Promise<string>
+  blockstoreTypeDefsJson(workspaceId: string): Promise<string>
+  blockstoreLastOpId(workspaceId: string): Promise<number>
+  blockstoreSetLastOpId(workspaceId: string, id: number): Promise<void>
+  blockstoreBlocksJson(): Promise<string>
+  blockstoreRefsJson(): Promise<string>
+  blockstoreNestChildrenJson(): Promise<string>
+  blockstoreBacklinksJson(): Promise<string>
+  blockstoreLastOpIdsJson(): Promise<string>
   channelChannelsJson(): Promise<string>
   channelCurrentChannelJson(): Promise<string>
   channelGetChannelJson(id: number): Promise<string>
@@ -128,6 +158,12 @@ export declare class AppState {
   channelMarkRead(channelId: number, messageId: number): Promise<void>
   channelMuteChannel(channelId: number, muted: boolean): Promise<void>
   channelGetChannelPods(id: number): Promise<string>
+  channelChannelPodsJson(id: number): Promise<string>
+  channelFetchChannelMembers(id: number): Promise<string>
+  channelInviteChannelMembers(id: number, userIdsJson: string): Promise<void>
+  channelRemoveChannelMember(id: number, userId: number): Promise<void>
+  channelChannelMembersJson(id: number): Promise<string>
+  channelSearchChannelMessages(id: number, q: string, limit?: number | undefined | null): Promise<string>
   channelSetCurrentUser(userJson: string): Promise<void>
   channelSetCurrentUserId(userId?: number | undefined | null): Promise<void>
   channelSetMessages(channelId: number, json: string, hasMore: boolean): Promise<void>
@@ -164,6 +200,9 @@ export declare class AppState {
   extensionInstallSkillFromUpload(repoId: number, fileData: Array<number>, fileName: string, scope?: string | undefined | null): Promise<string>
   filePresignUpload(json: string): Promise<string>
   fileUploadFile(fileData: Array<number>, filename: string, contentType: string): Promise<string>
+  grantList(resourceType: string, resourceId: string): Promise<string>
+  grantCreate(resourceType: string, resourceId: string, userId: number): Promise<string>
+  grantRevoke(resourceType: string, resourceId: string, grantId: number): Promise<void>
   invitationList(): Promise<string>
   invitationCreate(json: string): Promise<string>
   invitationRevoke(id: number): Promise<void>
@@ -317,6 +356,7 @@ export declare class AppState {
   ticketCreateLabel(name: string, color: string, repositoryId?: number | undefined | null): Promise<string>
   ticketDeleteLabel(id: number): Promise<void>
   ticketGetTicketPods(slug: string, activeOnly?: boolean | undefined | null): Promise<string>
+  ticketTicketPodsJson(slug: string): Promise<string>
   ticketGetSubTickets(slug: string): Promise<string>
   ticketRelationsListRelations(slug: string): Promise<string>
   ticketRelationsCreateRelation(slug: string, json: string): Promise<string>
@@ -329,6 +369,7 @@ export declare class AppState {
   ticketRelationsCreateComment(slug: string, json: string): Promise<string>
   ticketRelationsUpdateComment(slug: string, commentId: number, json: string): Promise<string>
   ticketRelationsDeleteComment(slug: string, commentId: number): Promise<void>
+  tokenUsageGetDashboard(startTime?: string | undefined | null, endTime?: string | undefined | null, agentSlug?: string | undefined | null, userId?: number | undefined | null, model?: string | undefined | null, granularity?: string | undefined | null): Promise<string>
   userGetMe(): Promise<string>
   userGetOrganizations(): Promise<string>
   userCredentialListGitCredentials(): Promise<string>
@@ -354,5 +395,4 @@ export declare class AppState {
   userCredentialSetDefaultRepoProvider(id: number): Promise<void>
   userCredentialTestRepoProvider(id: number): Promise<void>
   userCredentialListProviderRepositories(id: number, page?: number | undefined | null, perPage?: number | undefined | null, search?: string | undefined | null): Promise<string>
-  tokenUsageGetDashboard(startTime?: string | undefined | null, endTime?: string | undefined | null, agentSlug?: string | undefined | null, userId?: number | undefined | null, model?: string | undefined | null, granularity?: string | undefined | null): Promise<string>
 }

@@ -13,14 +13,19 @@ const IntlContext = createContext<IntlContextValue>({
   messages: {},
 });
 
-function getNestedValue(obj: unknown, path: string): string | undefined {
+function getNestedRaw(obj: unknown, path: string): unknown {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
     if (current == null || typeof current !== "object") return undefined;
     current = (current as Record<string, unknown>)[key];
   }
-  return typeof current === "string" ? current : undefined;
+  return current;
+}
+
+function getNestedString(obj: unknown, path: string): string | undefined {
+  const v = getNestedRaw(obj, path);
+  return typeof v === "string" ? v : undefined;
 }
 
 function interpolate(template: string, values?: Record<string, unknown>): string {
@@ -49,12 +54,13 @@ export function useTranslations(namespace?: string): TranslateFunction {
 
   const scopedMessages = useMemo(() => {
     if (!namespace) return messages;
-    return (getNestedValue(messages, namespace) as unknown as Messages) ?? {};
+    const scoped = getNestedRaw(messages, namespace);
+    return (scoped && typeof scoped === "object" ? scoped : {}) as Messages;
   }, [messages, namespace]);
 
   const t = useCallback(
     (key: string, values?: Record<string, unknown>): string => {
-      const value = getNestedValue(scopedMessages, key);
+      const value = getNestedString(scopedMessages, key);
       if (value === undefined) {
         return namespace ? `${namespace}.${key}` : key;
       }
@@ -64,8 +70,8 @@ export function useTranslations(namespace?: string): TranslateFunction {
   ) as TranslateFunction;
 
   t.rich = t;
-  t.raw = (key: string) => getNestedValue(scopedMessages, key) ?? key;
-  t.has = (key: string) => getNestedValue(scopedMessages, key) !== undefined;
+  t.raw = (key: string) => getNestedString(scopedMessages, key) ?? key;
+  t.has = (key: string) => getNestedString(scopedMessages, key) !== undefined;
 
   return t;
 }

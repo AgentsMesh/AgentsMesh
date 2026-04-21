@@ -10,7 +10,7 @@ import {
   type RealtimeEvent,
   type ConnectionState,
 } from "@/lib/realtime";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, readCurrentOrg } from "@/stores/auth";
 import { getAuthManager } from "@/lib/wasm-core";
 import { getWsBaseUrl } from "@/lib/env";
 
@@ -25,7 +25,8 @@ function buildEventsWsUrl(orgSlug: string, token: string): string {
 export function useRealtimeConnection() {
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("disconnected");
-  const { currentOrg, user } = useAuthStore();
+  const currentOrg = useCurrentOrg();
+  const user = useCurrentUser();
   const managerRef = useRef(getEventSubscriptionManager());
 
   // Connect and subscribe to state changes when org/user are available
@@ -41,7 +42,7 @@ export function useRealtimeConnection() {
     const manager = getEventSubscriptionManager();
     managerRef.current = manager;
     manager.connect(() => {
-      const { currentOrg: o } = useAuthStore.getState();
+      const o = readCurrentOrg();
       const t = getAuthManager().get_token?.();
       return o && t ? buildEventsWsUrl(o.slug, t) : "";
     });
@@ -62,13 +63,13 @@ export function useRealtimeConnection() {
   }, [currentOrg?.id, user]);
 
   const reconnect = useCallback(() => {
-    const { currentOrg: org } = useAuthStore.getState();
+    const org = readCurrentOrg();
     const t = getAuthManager().get_token?.();
     if (!org || !t) return;
     resetEventSubscriptionManager();
     managerRef.current = getEventSubscriptionManager();
     managerRef.current.connect(() => {
-      const { currentOrg: o } = useAuthStore.getState();
+      const o = readCurrentOrg();
       const tk = getAuthManager().get_token?.();
       return o && tk ? buildEventsWsUrl(o.slug, tk) : "";
     });

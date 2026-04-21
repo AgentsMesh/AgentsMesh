@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { useMemo } from "react";
 import { ApiError } from "@/lib/api/api-types";
 import { reconnectRegistry } from "@/lib/realtime";
-import { useAuthStore } from "@/stores/auth";
+import { readCurrentUser, useAuthStore } from "@/stores/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { initWasmCore, getPodService, getApiClient } from "@/lib/wasm-core";
 import type { PodState, Pod } from "./podTypes";
@@ -77,7 +77,7 @@ export const usePodStore = create<PodState>((set, get) => ({
     await initWasmCore();
     set({ loading: true, error: null, currentSidebarFilter: statusFilter });
     try {
-      const uid = statusFilter === "mine" ? useAuthStore.getState().user?.id ?? null : null;
+      const uid = statusFilter === "mine" ? readCurrentUser()?.id ?? null : null;
       const userId = uid != null ? BigInt(uid) : null;
       const json = await getPodService().fetch_sidebar_pods(statusFilter, userId);
       const { total, hasMore } = JSON.parse(json);
@@ -93,7 +93,7 @@ export const usePodStore = create<PodState>((set, get) => ({
     await initWasmCore();
     set({ loadingMore: true });
     try {
-      const uid = currentSidebarFilter === "mine" ? useAuthStore.getState().user?.id ?? null : null;
+      const uid = currentSidebarFilter === "mine" ? readCurrentUser()?.id ?? null : null;
       const userId = uid != null ? BigInt(uid) : null;
       const pods: Pod[] = JSON.parse(getPodService().pods_json());
       const json = await getPodService().load_more_pods(currentSidebarFilter, userId, BigInt(pods.length));

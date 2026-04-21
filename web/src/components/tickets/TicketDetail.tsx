@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTicketStore, useCurrentTicket, TicketStatus } from "@/stores/ticket";
 import { useTicketExtraData } from "./hooks";
 import { LabelsList, CommentsList, SubTicketsList, RelationsList, CommitsList } from "./shared";
@@ -23,7 +23,7 @@ interface TicketDetailProps {
 export function TicketDetail({ slug }: TicketDetailProps) {
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
 
   // Use individual selectors to prevent re-renders from unrelated store changes
   // (e.g., fetchTickets() triggered by WebSocket events sets shared `loading`)

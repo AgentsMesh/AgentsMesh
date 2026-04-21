@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
 import { TerminalPane } from "@/components/workspace/TerminalPane";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,7 +11,8 @@ import { getShortPodKey } from "@/lib/pod-display-name";
 export default function PopoutTerminalPage() {
   const { podKey } = useParams<{ podKey: string }>();
   const router = useRouter();
-  const { user, _hasHydrated } = useAuthStore();
+  const user = useCurrentUser();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   // Redirect to login if not authenticated
   useEffect(() => {

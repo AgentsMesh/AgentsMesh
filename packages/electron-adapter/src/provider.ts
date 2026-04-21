@@ -25,33 +25,73 @@ import { ElectronTokenUsageService } from './token_usage';
 import { ElectronPromoCodeService } from './promocode';
 import { ElectronAuthApiService } from './auth_api';
 import { ElectronAuthService } from './auth';
+import { ElectronBlockstoreService } from './blockstore';
+import { invoke } from './invoke';
 import {
-  ElectronPodState, ElectronRunnerState, ElectronMeshState, ElectronTicketState,
-  ElectronChannelState, ElectronLoopState, ElectronAutopilotState, ElectronOrgState,
-  ElectronUserState, ElectronGitProviderState, ElectronRepoState,
+  ElectronOrgState, ElectronUserState, ElectronGitProviderState, ElectronRepoState,
   ElectronAcpManager, ElectronRelayManager,
 } from './state_adapters';
 
+/**
+ * Mirrors `WasmApiClient` shape for legacy callers that still go through
+ * `lib/api/base.request`. Every raw HTTP method delegates to node-bridge IPC
+ * handlers (`api_get` / `api_post` / ...), which call the shared Rust
+ * `ApiClient` with auth token + org slug already bound on the native side.
+ */
 class ElectronApiClientProxy {
+  private orgSlug: string | undefined;
   set_token(_token: string, _refresh: string) {}
-  set_org_slug(_slug: string) {}
-  clear_auth() {}
-  get_org_slug(): string | undefined { return undefined; }
+  set_org_slug(slug: string) { this.orgSlug = slug || undefined; }
+  clear_auth() { this.orgSlug = undefined; }
+  get_org_slug(): string | undefined { return this.orgSlug; }
   get_token(): string | undefined { return undefined; }
-  org_path(path: string): string { return path; }
+  /** Must match Rust `ApiClient::org_path`. */
+  org_path(path: string): string {
+    return this.orgSlug ? `/api/v1/orgs/${this.orgSlug}${path}` : `/api/v1${path}`;
+  }
+
+  async get(endpoint: string): Promise<string> {
+    return invoke<string>("apiGet", endpoint);
+  }
+  async post(endpoint: string, body: string): Promise<string> {
+    return invoke<string>("apiPost", endpoint, body ?? "");
+  }
+  async put(endpoint: string, body: string): Promise<string> {
+    return invoke<string>("apiPut", endpoint, body ?? "");
+  }
+  async patch(endpoint: string, body: string): Promise<string> {
+    return invoke<string>("apiPatch", endpoint, body ?? "");
+  }
+  async delete(endpoint: string): Promise<string> {
+    return invoke<string>("apiDelete", endpoint);
+  }
 }
 
 export function createElectronServiceProvider(baseUrl = '') {
+  // Services carry the full state (each IXxxService is a superset of IXxxState).
+  // The provider returns the same instance for both keys so renderer readers
+  // that grab `xxxState` see the cache Service writes to on fetch / upsert.
+  // This is what makes Pod / Runner / Mesh / Ticket / Loop / Autopilot actually
+  // populate in desktop first-load — previously `xxxState` was a stub class
+  // returning `"[]"` that shadowed the real data.
+  const podService = new ElectronPodService();
+  const runnerService = new ElectronRunnerService();
+  const ticketService = new ElectronTicketService();
+  const channelService = new ElectronChannelService();
+  const loopService = new ElectronLoopService();
+  const autopilotService = new ElectronAutopilotService();
+  const meshService = new ElectronMeshService();
+
   return {
     apiClient: new ElectronApiClientProxy(),
     authManager: new ElectronAuthService(baseUrl),
-    podService: new ElectronPodService(),
-    runnerService: new ElectronRunnerService(),
-    ticketService: new ElectronTicketService(),
-    channelService: new ElectronChannelService(),
-    loopService: new ElectronLoopService(),
-    autopilotService: new ElectronAutopilotService(),
-    meshService: new ElectronMeshService(),
+    podService,
+    runnerService,
+    ticketService,
+    channelService,
+    loopService,
+    autopilotService,
+    meshService,
     billingService: new ElectronBillingService(),
     extensionService: new ElectronExtensionService(),
     repositoryService: new ElectronRepositoryService(),
@@ -71,13 +111,15 @@ export function createElectronServiceProvider(baseUrl = '') {
     tokenUsageService: new ElectronTokenUsageService(),
     promoCodeService: new ElectronPromoCodeService(),
     authApiService: new ElectronAuthApiService(),
-    podState: new ElectronPodState(),
-    runnerState: new ElectronRunnerState(),
-    meshState: new ElectronMeshState(),
-    ticketState: new ElectronTicketState(),
-    channelState: new ElectronChannelState(),
-    loopState: new ElectronLoopState(),
-    autopilotState: new ElectronAutopilotState(),
+    blockstoreService: new ElectronBlockstoreService(),
+    // State facets — share the Service instance, not a separate stub.
+    podState: podService,
+    runnerState: runnerService,
+    meshState: meshService,
+    ticketState: ticketService,
+    channelState: channelService,
+    loopState: loopService,
+    autopilotState: autopilotService,
     orgState: new ElectronOrgState(),
     userState: new ElectronUserState(),
     gitProviderState: new ElectronGitProviderState(),

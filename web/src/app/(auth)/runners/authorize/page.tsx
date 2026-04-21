@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useAuthOrganizations, useAuthStore } from "@/stores/auth";
 import { getRunnerService, initWasmCore } from "@/lib/wasm-core";
 import type { RunnerAuthStatus } from "@/lib/api/runnerTypes";
 import type { OrganizationData } from "@/lib/api/organizationTypes";
@@ -21,7 +21,10 @@ export default function RunnerAuthorizePage() {
   const searchParams = useSearchParams();
   const authKey = searchParams.get("key");
 
-  const { user, organizations, setOrganizations, _hasHydrated } = useAuthStore();
+  const user = useCurrentUser();
+  const organizations = useAuthOrganizations();
+  const setOrganizations = useAuthStore((s) => s.setOrganizations);
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [authStatus, setAuthStatus] = useState<RunnerAuthStatus | null>(null);
   const [selectedOrg, setSelectedOrg] = useState<OrganizationData | null>(null);

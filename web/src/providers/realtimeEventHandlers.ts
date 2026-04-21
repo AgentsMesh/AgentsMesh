@@ -3,7 +3,7 @@ import { useRunnerStore } from "@/stores/runner";
 import { getTicketService, getPodService, parseWasmAny } from "@/lib/wasm-core";
 import { useTicketStore } from "@/stores/ticket";
 import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
-import { useAuthStore } from "@/stores/auth";
+import { readCurrentUser } from "@/stores/auth";
 import type { PodData } from "@/lib/api/pod";
 import type {
   RealtimeEvent, RunnerStatusData, TicketStatusChangedData,
@@ -22,7 +22,7 @@ export function handleChannelEvent(event: RealtimeEvent, channelDebounceRef?: De
   switch (event.type) {
     case "channel:message": {
       const data = event.data as ChannelMessageData;
-      msgState.onNewMessage({
+      msgState.addMessage(data.channel_id, {
         id: data.id, channel_id: data.channel_id, sender_pod: data.sender_pod,
         sender_user_id: data.sender_user_id,
         message_type: data.message_type,
@@ -33,7 +33,7 @@ export function handleChannelEvent(event: RealtimeEvent, channelDebounceRef?: De
           sender_user: { id: data.sender_user_id, username: data.sender_name, name: data.sender_name },
         } : {}),
       });
-      const currentUserId = useAuthStore.getState().user?.id;
+      const currentUserId = readCurrentUser()?.id;
       const viewingChannelId = useChannelStore.getState().selectedChannelId;
       const isSelf = currentUserId != null && data.sender_user_id === currentUserId;
       const isViewing = viewingChannelId === data.channel_id;

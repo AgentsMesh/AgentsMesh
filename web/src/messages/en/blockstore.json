@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "Delete page",
+      "deletePageTitle": "Delete page?",
+      "deletePageDesc": "\"{title}\" and its blocks will be removed. This cannot be undone."
+    }
   }
 }

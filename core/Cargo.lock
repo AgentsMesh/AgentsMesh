@@ -15,6 +15,7 @@ dependencies = [
  "tokio",
  "tokio-test",
  "tracing",
+ "urlencoding",
  "wiremock",
 ]
 

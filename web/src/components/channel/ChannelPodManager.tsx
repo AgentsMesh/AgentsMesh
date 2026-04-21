@@ -1,22 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bot, Plus, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { channelApi } from "@/lib/api/channel";
-import { usePodStore } from "@/stores/pod";
+import { usePods, usePodStore } from "@/stores/pod";
+import { useChannelPods, invalidateChannelPods } from "@/hooks/useChannelPods";
 import { getPodDisplayName, getShortPodKey } from "@/lib/pod-display-name";
 import { useTranslations } from "next-intl";
-
-interface ChannelPod {
-  id: number;
-  pod_key: string;
-  alias?: string;
-  status: string;
-  agent_status: string;
-}
 
 interface ChannelPodManagerProps {
   channelId: number;
@@ -30,6 +23,8 @@ interface ChannelPodManagerProps {
 /**
  * Popover component for managing pods in a channel.
  * Shows joined pods and allows adding/removing active pods.
+ * Uses `useChannelPods` for the joined-pod list so the fetch is shared with
+ * `useMentionCandidates` / `ChannelRightRail` — one network call per channel.
  */
 export function ChannelPodManager({
   channelId,
@@ -38,35 +33,19 @@ export function ChannelPodManager({
   onPodsChanged,
 }: ChannelPodManagerProps) {
   const t = useTranslations();
-  const allPods = usePodStore((s) => s.pods);
+  const allPods = usePods();
   const fetchPods = usePodStore((s) => s.fetchPods);
 
   const [open, setOpen] = useState(false);
-  const [channelPods, setChannelPods] = useState<ChannelPod[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { pods: channelPods, loading, refresh } = useChannelPods(open ? channelId : null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Fetch channel pods and active pods when popover opens
+  // When popover opens, make sure the running-pod store is warm too (for the
+  // "available to add" list). The channel-pods side is handled by the hook.
   useEffect(() => {
     if (!open) return;
-
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [channelPodsRes] = await Promise.all([
-          channelApi.getPods(channelId),
-          fetchPods({ status: "running" }),
-        ]);
-        setChannelPods(channelPodsRes.pods || []);
-      } catch (error) {
-        console.error("Failed to load pod data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [open, channelId, fetchPods]);
+    void fetchPods({ status: "running" });
+  }, [open, fetchPods]);
 
   // Filter active pods not yet in the channel
   const joinedKeys = new Set(channelPods.map((p) => p.pod_key));
@@ -82,9 +61,8 @@ export function ChannelPodManager({
       setActionLoading(podKey);
       try {
         await channelApi.joinPod(channelId, podKey);
-        // Refresh channel pods
-        const res = await channelApi.getPods(channelId);
-        setChannelPods(res.pods || []);
+        invalidateChannelPods(channelId);
+        await refresh();
         onPodsChanged?.();
       } catch (error) {
         console.error("Failed to add pod to channel:", error);
@@ -92,7 +70,7 @@ export function ChannelPodManager({
         setActionLoading(null);
       }
     },
-    [channelId, onPodsChanged]
+    [channelId, onPodsChanged, refresh]
   );
 
   // Remove pod from channel
@@ -101,9 +79,8 @@ export function ChannelPodManager({
       setActionLoading(podKey);
       try {
         await channelApi.leavePod(channelId, podKey);
-        // Refresh channel pods
-        const res = await channelApi.getPods(channelId);
-        setChannelPods(res.pods || []);
+        invalidateChannelPods(channelId);
+        await refresh();
         onPodsChanged?.();
       } catch (error) {
         console.error("Failed to remove pod from channel:", error);
@@ -111,7 +88,7 @@ export function ChannelPodManager({
         setActionLoading(null);
       }
     },
-    [channelId, onPodsChanged]
+    [channelId, onPodsChanged, refresh]
   );
 
   // Find pod detail from store

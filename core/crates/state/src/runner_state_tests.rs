@@ -13,6 +13,7 @@ fn make_runner(id: i64, name: &str, status: RunnerStatus, enabled: bool, max: i3
         host_info: None,
         created_at: None,
         updated_at: None,
+        ..Default::default()
     }
 }
 

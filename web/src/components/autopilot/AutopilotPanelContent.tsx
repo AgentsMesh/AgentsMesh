@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAutopilotStore, useAutopilotControllers, type AutopilotController } from "@/stores/autopilot";
+import { useAutopilotControllers, useAutopilotThinking, type AutopilotController } from "@/stores/autopilot";
 import { Brain, ListChecks, History, Bot, Terminal } from "lucide-react";
 import {
   ThinkingTab,
@@ -29,9 +29,7 @@ export function AutopilotPanelContent({ podKey, className }: AutopilotPanelConte
     ? controllers.find((c: AutopilotController) => c.pod_key === podKey && activePhases.includes(c.phase))
     : undefined;
   const autopilotControllerKey = autopilotController?.autopilot_controller_key;
-  const thinking = useAutopilotStore((s) =>
-    autopilotControllerKey ? s.thinking[autopilotControllerKey] ?? null : null
-  );
+  const thinking = useAutopilotThinking(autopilotControllerKey);
 
   // Auto switch to thinking tab when help is needed
   const decisionType = thinking?.decision_type;

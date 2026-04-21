@@ -4,7 +4,7 @@ import React from "react";
 import { Link as LinkIcon } from "lucide-react";
 
 import type { Block } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlock } from "@/stores/blockstore";
 
 import { BlockRenderer } from "../BlockRenderer";
 import { BlockChrome } from "../editor/BlockChrome";
@@ -18,7 +18,7 @@ import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 export function SyncedBlockRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const sourceID = (block.data?.source_id as string | undefined) ?? "";
-  const source = useBlockstoreStore((s) => (sourceID ? s.blocks[sourceID] : undefined));
+  const source = useBlock(sourceID || null);
   const selfRef = sourceID === block.id;
 
   const handleDelete = () => {

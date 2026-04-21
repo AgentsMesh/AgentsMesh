@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { useMeshStore, useTopology, type MeshNode } from "@/stores/mesh";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ const STATUS_META: Record<string, { labelKey: string; color: string }> = {
 
 export function MeshSidebarContent({ className }: MeshSidebarContentProps) {
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const topology = useTopology();
   const fetchTopology = useMeshStore((s) => s.fetchTopology);
 

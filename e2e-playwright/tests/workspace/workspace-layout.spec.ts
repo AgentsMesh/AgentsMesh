@@ -43,7 +43,10 @@ test.describe("Workspace Layout", () => {
    */
   test("navigate to workspace via sidebar", async ({ page }) => {
     const sidebar = new SidebarPage(page, TEST_ORG_SLUG);
-    await page.goto(`/${TEST_ORG_SLUG}/runners`);
+    // Start from infra instead of legacy /runners — the redirect chain through
+    // /runners → /infra?tab=runners → /infra?tab=runners&id=<n> can exceed
+    // playwright's goto timeout.
+    await page.goto(`/${TEST_ORG_SLUG}/infra?tab=runners`);
     await page.waitForLoadState("networkidle");
 
     await sidebar.dismissDevOverlay();

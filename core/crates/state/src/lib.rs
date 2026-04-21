@@ -3,6 +3,8 @@ pub mod acp_session;
 pub mod acp_types;
 pub mod app_state;
 pub mod autopilot_state;
+pub mod blockstore_apply;
+pub mod blockstore_state;
 pub mod channel_state;
 pub mod event_dispatch;
 mod persist_helpers;
@@ -20,6 +22,8 @@ pub mod user_state;
 mod acp_session_tests;
 #[cfg(test)]
 mod acp_dispatch_tests;
+#[cfg(test)]
+mod blockstore_state_tests;
 #[cfg(test)]
 mod channel_state_tests;
 #[cfg(test)]

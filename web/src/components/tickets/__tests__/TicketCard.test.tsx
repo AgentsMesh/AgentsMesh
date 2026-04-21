@@ -16,6 +16,12 @@ vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
     currentOrg: { slug: 'test-org' },
   }),
+  useCurrentUser: () => ({ id: 1, email: 'u@e.com', username: 'u' }),
+  useCurrentOrg: () => ({ id: 1, name: 'TestOrg', slug: 'test-org' }),
+  useAuthOrganizations: () => [],
+  readCurrentUser: () => ({ id: 1, email: 'u@e.com', username: 'u' }),
+  readCurrentOrg: () => ({ id: 1, name: 'TestOrg', slug: 'test-org' }),
+  readOrganizations: () => [],
 }))
 
 describe('TicketCard Component', () => {

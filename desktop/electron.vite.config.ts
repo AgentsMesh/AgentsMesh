@@ -39,8 +39,16 @@ export default defineConfig({
         { find: "@/stores", replacement: resolve(webSrc, "stores") },
         { find: "@/hooks", replacement: resolve(webSrc, "hooks") },
         { find: "@/components", replacement: resolve(webSrc, "components") },
+        // env.ts must resolve to the desktop-specific version so it picks up
+        // the preload-exposed apiUrl instead of `window.location.origin`.
+        { find: /^@\/lib\/env$/, replacement: resolve(desktopSrc, "lib/env") },
         { find: "@/lib", replacement: resolve(webSrc, "lib") },
         { find: "@/messages", replacement: resolve(webSrc, "messages") },
+        // `@/app/...` is the Next.js app-router path; some shared components
+        // (e.g. InfraRepositoryDetail) import ./components co-located with the
+        // route file. Fall back to the web source tree so those imports resolve.
+        { find: "@/app", replacement: resolve(webSrc, "app") },
+        { find: "@/providers", replacement: resolve(webSrc, "providers") },
         { find: "@", replacement: desktopSrc },
         { find: "next/navigation", replacement: resolve(desktopSrc, "shims/next-navigation") },
         { find: "next/link", replacement: resolve(desktopSrc, "shims/next-link") },

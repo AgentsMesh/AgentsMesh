@@ -308,22 +308,19 @@ frame root {
                         }
                     }
 
+                    // Header actions — search + more. The "⋯" toggles the right
+                    // drawer; member count lives inside the drawer (no duplicate
+                    // pill on the header).
                     frame actions { layout = horizontal, gap = 6, align = center
                         frame btn_search {
                             width = 30, height = 30, radius = 6, fill = #FFFFFF, stroke = [1, #D0D7DE]
                             layout = horizontal, justify = center, align = center
                             text "🔍" { size = 13 }
                         }
-                        frame btn_members {
-                            height = 30, padding = [0, 10], radius = 6, fill = #FFFFFF, stroke = [1, #D0D7DE]
-                            layout = horizontal, justify = center, align = center, gap = 4
-                            text "👥" { size = 12 }
-                            text "5" { size = 12, color = #656D76, family = "JetBrains Mono" }
-                        }
-                        frame btn_settings {
-                            width = 30, height = 30, radius = 6, fill = #FFFFFF, stroke = [1, #D0D7DE]
+                        frame btn_more {
+                            width = 30, height = 30, radius = 6, fill = #DDF4FF, stroke = [1, #0969DA]
                             layout = horizontal, justify = center, align = center
-                            text "⚙" { size = 13 }
+                            text "⋯" { size = 16, color = #0969DA, weight = semibold }
                         }
                     }
                 }
@@ -479,6 +476,30 @@ frame root {
                                     text "demo-api"              { size = 12, weight = medium, color = #1F2328, family = "JetBrains Mono" }
                                     text "main · 5 open PRs"     { size = 11, color = #868F99 }
                                 }
+                            }
+                        }
+
+                        // Document — channel.document preview + ⚙ entry to the
+                        // channel settings modal (rename / archive). Lives here
+                        // instead of on the header to keep top-bar minimal.
+                        frame section_document { layout = vertical, gap = 8
+                            frame header_row {
+                                width = fill, layout = horizontal, justify = space-between, align = center
+                                text "DOCUMENT" { size = 10, weight = semibold, color = #868F99, text-transform = uppercase, letter-spacing = 1.5 }
+                                frame btn_settings {
+                                    width = 18, height = 18, radius = 4
+                                    layout = horizontal, justify = center, align = center
+                                    text "⚙" { size = 11, color = #656D76 }
+                                }
+                            }
+                            frame doc_card {
+                                width = fill, padding = 10, radius = 6
+                                fill = #FFFFFF, stroke = [1, #E4E9EE]
+                                layout = horizontal, gap = 8, align = start
+
+                                text "📄" { size = 12 }
+                                text "Owned by backend. Agents follow auth-middleware.md conventions."
+                                    { size = 12, color = #1F2328, wrap = true, width = 212, line-height = 18 }
                             }
                         }
                     }

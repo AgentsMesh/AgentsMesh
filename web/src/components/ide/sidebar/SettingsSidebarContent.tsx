@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { getAgentService } from "@/lib/wasm-core";
 import type { AgentData } from "@/lib/api";
@@ -39,7 +39,7 @@ interface TabItem {
 export function SettingsSidebarContent({ className }: SettingsSidebarContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const t = useTranslations();
 
   const currentScope: SettingsScope = (searchParams.get("scope") as SettingsScope) || "personal";

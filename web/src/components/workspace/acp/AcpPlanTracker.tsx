@@ -1,13 +1,13 @@
 "use client";
 
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSessionField } from "@/stores/acpSession";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function AcpPlanTracker({ podKey }: { podKey: string }) {
-  const plan = useAcpSessionStore((s) => s.sessions[podKey]?.plan);
+  const plan = useAcpSessionField(podKey, (s) => s.plan);
 
-  if (!plan || plan.length === 0) return null;
+  if (plan.length === 0) return null;
 
   return (
     <div className="border-b px-4 py-2">

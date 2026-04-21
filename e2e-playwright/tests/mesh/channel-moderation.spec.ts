@@ -33,15 +33,22 @@ test.describe("Channel Moderation API", () => {
     });
     channelId = (await createRes.json()).channel?.id;
 
+    // Channel messages now require structured AST content (schema v1). A plain
+    // string is rejected with 400; we construct a minimal text block.
+    const textContent = (text: string) => ({
+      kind: "text",
+      blocks: [{ type: "paragraph", elements: [{ type: "text", text }] }],
+    });
+
     const sendRes = await api.post(`/api/v1/orgs/${TEST_ORG_SLUG}/channels/${channelId}/messages`, {
-      content: "E2E test message",
+      content: textContent("E2E test message"),
     });
     expect([200, 201]).toContain(sendRes.status);
     const msgId = (await sendRes.json()).message?.id;
 
     if (msgId) {
       const editRes = await api.put(`/api/v1/orgs/${TEST_ORG_SLUG}/channels/${channelId}/messages/${msgId}`, {
-        content: "E2E edited message",
+        content: textContent("E2E edited message"),
       });
       expect(editRes.status).toBe(200);
 

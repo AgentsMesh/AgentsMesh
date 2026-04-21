@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSession } from "@/stores/acpSession";
 import { ChevronDown, ChevronRight, ArrowDown, ArrowUp, Bug } from "lucide-react";
 
 interface AcpDebugPanelProps {
@@ -22,7 +22,7 @@ interface DebugEntry {
  */
 export function AcpDebugPanel({ podKey }: AcpDebugPanelProps) {
   const [open, setOpen] = useState(false);
-  const session = useAcpSessionStore((s) => s.sessions[podKey]);
+  const session = useAcpSession(podKey);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const entries = useMemo<DebugEntry[]>(() => {

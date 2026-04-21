@@ -117,6 +117,10 @@ impl WasmTicketService {
         self.0.get_ticket_pods(slug, active_only).await
     }
 
+    pub fn ticket_pods_json(&self, slug: &str) -> String {
+        self.0.ticket_pods_json(slug)
+    }
+
     pub async fn get_sub_tickets(&self, slug: &str) -> Result<String, String> {
         self.0.get_sub_tickets(slug).await
     }

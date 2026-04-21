@@ -1,29 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Ticket } from "@/stores/ticket";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { getTicketService } from "@/lib/wasm-core";
+import { useTicketPods, invalidateTicketPods, type TicketPodSummary } from "@/hooks/useTicketPods";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { Play, Terminal, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface TicketPod {
-  pod_key: string;
-  status: string;
-  agent_status: string;
-  model?: string;
-  started_at?: string;
-  runner_id: number;
-  created_by_id: number;
-}
 
 export function SidebarPodSection({
   ticket,
@@ -34,25 +24,18 @@ export function SidebarPodSection({
 }) {
   const t = useTranslations();
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const addPane = useWorkspaceStore((s) => s.addPane);
 
-  const [pods, setPods] = useState<TicketPod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { pods, loading, refresh } = useTicketPods(ticketSlug);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const fetchPods = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = JSON.parse(await getTicketService().get_ticket_pods(ticketSlug, true));
-      setPods(response.pods || []);
-    } catch { /* silently fail */ }
-    finally { setLoading(false); }
-  }, [ticketSlug]);
+  const handlePodCreated = useCallback(() => {
+    setShowCreateModal(false);
+    invalidateTicketPods(ticketSlug);
+    void refresh();
+  }, [refresh, ticketSlug]);
 
-  useEffect(() => { fetchPods(); }, [fetchPods]);
-
-  const handlePodCreated = () => { setShowCreateModal(false); fetchPods(); };
   const handleConnect = (podKey: string) => {
     addPane(podKey);
     router.push(`/${currentOrg?.slug}/workspace`);
@@ -98,7 +81,7 @@ export function SidebarPodSection({
 }
 
 function PodList({ activePods, inactivePods, onConnect, onOpenInNewTab }: {
-  activePods: TicketPod[]; inactivePods: TicketPod[];
+  activePods: TicketPodSummary[]; inactivePods: TicketPodSummary[];
   onConnect: (key: string) => void; onOpenInNewTab: (key: string) => void;
 }) {
   const t = useTranslations();
@@ -126,7 +109,7 @@ function PodList({ activePods, inactivePods, onConnect, onOpenInNewTab }: {
 }
 
 function SidebarPodItem({ pod, onConnect, onOpenInNewTab }: {
-  pod: TicketPod; onConnect: () => void; onOpenInNewTab: () => void;
+  pod: TicketPodSummary; onConnect: () => void; onOpenInNewTab: () => void;
 }) {
   const t = useTranslations();
   const isActive = pod.status === "running" || pod.status === "initializing";

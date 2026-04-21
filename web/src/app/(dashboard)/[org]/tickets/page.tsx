@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTicketStore, useFilteredTickets, Ticket, TicketStatus } from "@/stores/ticket";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { TicketKeyboardHandler } from "@/components/tickets";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
@@ -13,7 +13,7 @@ import { ListViewLayout, BoardViewLayout } from "./components";
 export default function TicketsPage() {
   const t = useTranslations();
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
 
   // Use individual selectors to prevent re-renders from unrelated store changes
   const viewMode = useTicketStore(state => state.viewMode);

@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, MessageSquare, Activity, Bot, GitPullRequest, Info } from "lucide-react";
 import { AutopilotPanelContent } from "@/components/autopilot";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useBottomPanelData } from "./useBottomPanelData";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
 
@@ -30,7 +30,7 @@ export function BottomPanel({ className }: { className?: string }) {
   const setBottomPanelHeight = useIDEStore((s) => s.setBottomPanelHeight);
   const setBottomPanelTab = useIDEStore((s) => s.setBottomPanelTab);
   const toggleBottomPanel = useIDEStore((s) => s.toggleBottomPanel);
-  const orgSlug = useAuthStore((s) => s.currentOrg)?.slug || "";
+  const orgSlug = useCurrentOrg()?.slug || "";
 
   const {
     selectedPodKey, currentPod, activeAutopilot, topology, fetchTopology,

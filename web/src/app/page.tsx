@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import {
   Navbar,
   HeroSection,
@@ -18,7 +18,9 @@ import { getDefaultRoute } from "@/lib/default-route";
 
 export default function Home() {
   const router = useRouter();
-  const { user, currentOrg, _hasHydrated } = useAuthStore();
+  const user = useCurrentUser();
+  const currentOrg = useCurrentOrg();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   // Determine if we should redirect based on auth state
   const shouldRedirect = useMemo(() => {

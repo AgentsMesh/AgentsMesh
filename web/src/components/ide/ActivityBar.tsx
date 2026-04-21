@@ -12,8 +12,8 @@ import {
 } from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
 import { useIDEStore, ACTIVITIES, type ActivityType } from "@/stores/ide";
-import { useAuthStore } from "@/stores/auth";
-import { useChannelMessageStore } from "@/stores/channelMessageStore";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
+import { useTotalUnreadCount } from "@/stores/channelMessageStore";
 import { useTranslations } from "next-intl";
 import {
   Terminal,
@@ -52,12 +52,12 @@ interface ActivityBarProps {
 export function ActivityBar({ className }: ActivityBarProps) {
   const activeActivity = useIDEStore((s) => s.activeActivity);
   const setActiveActivity = useIDEStore((s) => s.setActiveActivity);
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const params = useParams();
   const pathname = usePathname();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";
   const t = useTranslations();
-  const totalChannelUnread = useChannelMessageStore((s) => s.totalUnreadCount());
+  const totalChannelUnread = useTotalUnreadCount();
 
   const getActivityRoute = (activity: ActivityType): string => {
     switch (activity) {

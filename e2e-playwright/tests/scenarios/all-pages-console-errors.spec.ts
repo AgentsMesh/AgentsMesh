@@ -85,6 +85,27 @@ test.describe("All Pages Console Error Validation", () => {
     assertNoWasmErrors(errors);
   });
 
+  test("blocks page: no console errors", async ({ page }) => {
+    const errors = consoleErrorCollector(page);
+    await page.goto(`/${TEST_ORG_SLUG}/blocks`);
+    await page.waitForLoadState("networkidle");
+    assertNoWasmErrors(errors);
+  });
+
+  test("infra page (repositories tab): no console errors", async ({ page }) => {
+    const errors = consoleErrorCollector(page);
+    await page.goto(`/${TEST_ORG_SLUG}/infra?tab=repositories`);
+    await page.waitForLoadState("networkidle");
+    assertNoWasmErrors(errors);
+  });
+
+  test("infra page (runners tab): no console errors", async ({ page }) => {
+    const errors = consoleErrorCollector(page);
+    await page.goto(`/${TEST_ORG_SLUG}/infra?tab=runners`);
+    await page.waitForLoadState("networkidle");
+    assertNoWasmErrors(errors);
+  });
+
   // ── Personal Settings Tabs ──
 
   test("settings/personal/general: no console errors", async ({ page }) => {

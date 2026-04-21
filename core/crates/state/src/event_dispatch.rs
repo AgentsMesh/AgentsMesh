@@ -228,6 +228,7 @@ mod tests {
             id: 1, name: "r1".into(), status: RunnerStatus::Offline,
             version: None, max_concurrent_pods: 4, active_pod_count: 0,
             is_enabled: true, host_info: None, created_at: None, updated_at: None,
+            ..Default::default()
         }]);
         dispatch(&mut s, &make_event(EventType::RunnerOnline, json!({"id":1})));
         assert_eq!(s.runners.get_runner(1).unwrap().status, RunnerStatus::Online);

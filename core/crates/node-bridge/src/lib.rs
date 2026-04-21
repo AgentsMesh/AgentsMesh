@@ -29,6 +29,7 @@ pub struct AppState {
     extension: Arc<Mutex<ExtensionService>>,
     repository: Arc<Mutex<RepositoryService>>,
     invitation: Arc<Mutex<InvitationService>>,
+    grant: Arc<Mutex<GrantService>>,
     apikey: Arc<Mutex<ApiKeyService>>,
     binding: Arc<Mutex<BindingService>>,
     message: Arc<Mutex<MessageService>>,
@@ -37,13 +38,13 @@ pub struct AppState {
     user: Arc<Mutex<UserApiService>>,
     user_credential: Arc<Mutex<UserCredentialService>>,
     agent: Arc<Mutex<AgentService>>,
-    sso: Arc<Mutex<SSOService>>,
     file: Arc<Mutex<FileService>>,
     support_ticket: Arc<Mutex<SupportTicketService>>,
     ticket_relations: Arc<Mutex<TicketRelationsService>>,
     token_usage: Arc<Mutex<TokenUsageService>>,
-    promocode: Arc<Mutex<PromoCodeService>>,
     auth_api: Arc<Mutex<AuthApiService>>,
+    blockstore: Arc<Mutex<BlockstoreService>>,
+    client: Arc<ApiClient>,
 }
 
 #[napi]
@@ -70,6 +71,7 @@ impl AppState {
             extension: Arc::new(Mutex::new(ExtensionService::new(c.clone()))),
             repository: Arc::new(Mutex::new(RepositoryService::new(c.clone()))),
             invitation: Arc::new(Mutex::new(InvitationService::new(c.clone()))),
+            grant: Arc::new(Mutex::new(GrantService::new(c.clone()))),
             apikey: Arc::new(Mutex::new(ApiKeyService::new(c.clone()))),
             binding: Arc::new(Mutex::new(BindingService::new(c.clone()))),
             message: Arc::new(Mutex::new(MessageService::new(c.clone()))),
@@ -78,14 +80,68 @@ impl AppState {
             user: Arc::new(Mutex::new(UserApiService::new(c.clone()))),
             user_credential: Arc::new(Mutex::new(UserCredentialService::new(c.clone()))),
             agent: Arc::new(Mutex::new(AgentService::new(c.clone()))),
-            sso: Arc::new(Mutex::new(SSOService::new(c.clone()))),
             file: Arc::new(Mutex::new(FileService::new(c.clone()))),
             support_ticket: Arc::new(Mutex::new(SupportTicketService::new(c.clone()))),
             ticket_relations: Arc::new(Mutex::new(TicketRelationsService::new(c.clone()))),
             token_usage: Arc::new(Mutex::new(TokenUsageService::new(c.clone()))),
-            promocode: Arc::new(Mutex::new(PromoCodeService::new(c.clone()))),
-            auth_api: Arc::new(Mutex::new(AuthApiService::new(c))),
+            auth_api: Arc::new(Mutex::new(AuthApiService::new(c.clone()))),
+            blockstore: Arc::new(Mutex::new(BlockstoreService::new(
+                c.clone(),
+                blockstore_state::BlockstoreState::new(),
+            ))),
+            client: c,
         })
+    }
+
+    // ===== Raw HTTP (legacy callers that bypass typed services) =====
+    #[napi]
+    pub async fn api_get(&self, endpoint: String) -> napi::Result<String> {
+        let v: serde_json::Value = self.client.get(&endpoint).await.map_err(err)?;
+        serde_json::to_string(&v).map_err(err)
+    }
+
+    #[napi]
+    pub async fn api_post(&self, endpoint: String, body: String) -> napi::Result<String> {
+        let payload: serde_json::Value = if body.is_empty() {
+            serde_json::Value::Null
+        } else {
+            serde_json::from_str(&body).map_err(err)?
+        };
+        let v: serde_json::Value = self.client.post(&endpoint, &payload).await.map_err(err)?;
+        serde_json::to_string(&v).map_err(err)
+    }
+
+    #[napi]
+    pub async fn api_put(&self, endpoint: String, body: String) -> napi::Result<String> {
+        let payload: serde_json::Value = if body.is_empty() {
+            serde_json::Value::Null
+        } else {
+            serde_json::from_str(&body).map_err(err)?
+        };
+        let v: serde_json::Value = self.client.put(&endpoint, &payload).await.map_err(err)?;
+        serde_json::to_string(&v).map_err(err)
+    }
+
+    #[napi]
+    pub async fn api_patch(&self, endpoint: String, body: String) -> napi::Result<String> {
+        let payload: serde_json::Value = if body.is_empty() {
+            serde_json::Value::Null
+        } else {
+            serde_json::from_str(&body).map_err(err)?
+        };
+        let v: serde_json::Value = self.client.patch(&endpoint, &payload).await.map_err(err)?;
+        serde_json::to_string(&v).map_err(err)
+    }
+
+    #[napi]
+    pub async fn api_delete(&self, endpoint: String) -> napi::Result<String> {
+        let v: serde_json::Value = self.client.delete(&endpoint).await.map_err(err)?;
+        serde_json::to_string(&v).map_err(err)
+    }
+
+    #[napi]
+    pub fn api_org_path(&self, path: String) -> String {
+        self.client.org_path(&path)
     }
 
     // ===== Auth =====
@@ -146,6 +202,36 @@ impl AppState {
     pub fn auth_get_organizations_json(&self) -> String {
         serde_json::to_string(&self.auth.get_organizations()).unwrap_or_default()
     }
+
+    #[napi]
+    pub fn auth_apply_session(&self, session_json: String) -> napi::Result<()> {
+        let session: agentsmesh_types::AuthSession = serde_json::from_str(&session_json).map_err(err)?;
+        self.auth.apply_session(&session);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn auth_set_organizations(&self, orgs_json: String) -> napi::Result<()> {
+        let orgs: Vec<agentsmesh_types::Organization> = serde_json::from_str(&orgs_json).map_err(err)?;
+        self.auth.replace_organizations(orgs);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn auth_set_current_org(&self, org_json: String) -> napi::Result<()> {
+        if org_json.is_empty() {
+            self.auth.set_current_org_direct(None);
+        } else {
+            let org: agentsmesh_types::Organization = serde_json::from_str(&org_json).map_err(err)?;
+            self.auth.set_current_org_direct(Some(org));
+        }
+        Ok(())
+    }
+
+    #[napi]
+    pub fn auth_clear_session(&self) {
+        self.auth.clear();
+    }
 }
 
-mod commands_gen;
+mod commands;

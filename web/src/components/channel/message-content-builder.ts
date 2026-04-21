@@ -53,6 +53,7 @@ function parseInlineElements(
   line: string,
   mentionByText: Map<string, MentionRef>
 ): InlineElement[] {
+  // Split by mention first; Markdown inline is then tokenised per plain chunk.
   const mentionRegex = /(@[\w.\-]+)/g;
   const parts = line.split(mentionRegex);
   const elements: InlineElement[] = [];
@@ -71,9 +72,47 @@ function parseInlineElements(
         });
         continue;
       }
+      elements.push({ type: "text", text: part });
+      continue;
     }
-    elements.push({ type: "text", text: part });
+    elements.push(...tokeniseMarkdown(part));
   }
 
   return elements;
+}
+
+/**
+ * Minimal inline-Markdown tokenizer. Supports: **bold**, *italic*, ~~strike~~,
+ * `code`, [text](url). Unmatched fragments fall through as plain text so the
+ * Toolbar's wrap buttons always produce something renderable even on partial
+ * input.
+ */
+const MD_INLINE = /\*\*([^*]+?)\*\*|\*([^*]+?)\*|~~([^~]+?)~~|`([^`]+?)`|\[([^\]]+?)\]\((\S+?)\)/g;
+
+export function tokeniseMarkdown(text: string): InlineElement[] {
+  const out: InlineElement[] = [];
+  let lastIdx = 0;
+  MD_INLINE.lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = MD_INLINE.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      out.push({ type: "text", text: text.slice(lastIdx, match.index) });
+    }
+    if (match[1] !== undefined) {
+      out.push({ type: "text", text: match[1], style: { bold: true } });
+    } else if (match[2] !== undefined) {
+      out.push({ type: "text", text: match[2], style: { italic: true } });
+    } else if (match[3] !== undefined) {
+      out.push({ type: "text", text: match[3], style: { strike: true } });
+    } else if (match[4] !== undefined) {
+      out.push({ type: "text", text: match[4], style: { code: true } });
+    } else if (match[5] !== undefined && match[6] !== undefined) {
+      out.push({ type: "link", text: match[5], url: match[6] });
+    }
+    lastIdx = MD_INLINE.lastIndex;
+  }
+  if (lastIdx < text.length) {
+    out.push({ type: "text", text: text.slice(lastIdx) });
+  }
+  return out.length > 0 ? out : [{ type: "text", text }];
 }

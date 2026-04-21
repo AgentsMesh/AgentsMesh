@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import type { Block, ViewFilter, ViewSort, ViewSpec } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlocks } from "@/stores/blockstore";
 
 /**
  * Resolves the concrete block list that a `view` block should project over.
@@ -11,7 +11,7 @@ import { useBlockstoreStore } from "@/stores/blockstore";
  * store — the server stays dumb about view semantics.
  */
 export function useViewBlocks(spec: ViewSpec, workspaceID: string): Block[] {
-  const blocks = useBlockstoreStore((s) => s.blocks);
+  const blocks = useBlocks();
   return useMemo(() => {
     // Tier 3: cross-type views union multiple source types. The single
     // source_type stays as the primary/default; source_types extends it.

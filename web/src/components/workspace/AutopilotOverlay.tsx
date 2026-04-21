@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useAutopilotStore } from "@/stores/autopilot";
+import { useAutopilotStore, useAutopilotThinking } from "@/stores/autopilot";
 import { useIDEStore } from "@/stores/ide";
 import {
   CircuitBreakerAlert,
@@ -26,11 +26,7 @@ export function AutopilotOverlay({ podKey }: AutopilotOverlayProps) {
   const setBottomPanelTab = useIDEStore((s) => s.setBottomPanelTab);
 
   const autopilotControllerKey = autopilotController?.autopilot_controller_key;
-  const thinking = useAutopilotStore((state) =>
-    autopilotControllerKey
-      ? (state.thinking[autopilotControllerKey] ?? null)
-      : null
-  );
+  const thinking = useAutopilotThinking(autopilotControllerKey);
 
   // Auto-open BottomPanel Autopilot tab when help is needed
   useEffect(() => {

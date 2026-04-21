@@ -19,10 +19,12 @@ test.describe("Runner List Page", () => {
     await runnersPage.goto();
     await runnersPage.waitForList();
 
-    // Page should have navigated to runners
-    expect(page.url()).toContain(`/${TEST_ORG_SLUG}/runners`);
+    // After the IA-Infra refactor, the runners list lives under /infra?tab=runners
+    // (the legacy /runners URL redirects there). Auto-select then adds ?id=<n>.
+    expect(page.url()).toContain(`/${TEST_ORG_SLUG}/infra`);
+    expect(page.url()).toContain("tab=runners");
 
-    // The "Add Runner" button should be visible
+    // The "Add Runner" button should be visible (in sidebar or detail header).
     await expect(runnersPage.addRunnerButton).toBeVisible();
   });
 

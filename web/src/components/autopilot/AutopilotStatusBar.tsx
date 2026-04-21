@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useAutopilotStore, AutopilotController, AutopilotThinking } from "@/stores/autopilot";
+import { useAutopilotStore, useAutopilotThinking, AutopilotController, AutopilotThinking } from "@/stores/autopilot";
 import {
   Play,
   Pause,
@@ -109,8 +109,8 @@ export function AutopilotStatusBar({
   const handbackAutopilotController = useAutopilotStore((s) => s.handbackAutopilotController);
 
   // Reactive thinking selector — re-renders when this controller's thinking changes
-  const thinking: AutopilotThinking | null = useAutopilotStore(
-    (s) => s.thinking[autopilotController.autopilot_controller_key] ?? null
+  const thinking: AutopilotThinking | null = useAutopilotThinking(
+    autopilotController.autopilot_controller_key,
   );
 
   const phaseInfo = phaseConfig[autopilotController.phase];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Server, FolderGit2 } from "lucide-react";
 
 export function InfrastructureOverview() {
   const router = useRouter();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const t = useTranslations();
   const orgSlug = currentOrg?.slug;
 

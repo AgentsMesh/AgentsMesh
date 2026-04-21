@@ -1,26 +1,31 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useAuthStore } from '../auth'
+import {
+  useAuthStore,
+  readCurrentUser,
+  readCurrentOrg,
+  readOrganizations,
+} from '../auth'
+import { getAuthManager } from '@/lib/wasm-core'
+
+const mgr = () => getAuthManager() as unknown as { _reset: () => void }
 
 describe('useAuthStore', () => {
   beforeEach(() => {
-    useAuthStore.setState({
-      user: null,
-      currentOrg: null,
-      organizations: [],
-    })
+    mgr()._reset()
+    useAuthStore.setState({ _tick: 0, _hasHydrated: false, error: null })
   })
 
   describe('initial state', () => {
     it('should have null user', () => {
-      expect(useAuthStore.getState().user).toBeNull()
+      expect(readCurrentUser()).toBeNull()
     })
 
     it('should have null currentOrg', () => {
-      expect(useAuthStore.getState().currentOrg).toBeNull()
+      expect(readCurrentOrg()).toBeNull()
     })
 
     it('should have empty organizations', () => {
-      expect(useAuthStore.getState().organizations).toEqual([])
+      expect(readOrganizations()).toEqual([])
     })
   })
 
@@ -28,14 +33,14 @@ describe('useAuthStore', () => {
     it('should set user', () => {
       const user = { id: 1, email: 'test@example.com', username: 'testuser', name: 'Test User' }
       useAuthStore.getState().setAuth('test-token', user)
-      expect(useAuthStore.getState().user).toEqual(user)
+      expect(readCurrentUser()).toEqual(user)
     })
 
     it('should handle user without optional fields', () => {
       const user = { id: 1, email: 'test@example.com', username: 'testuser' }
       useAuthStore.getState().setAuth('test-token', user)
-      expect(useAuthStore.getState().user).toEqual(user)
-      expect(useAuthStore.getState().user?.name).toBeUndefined()
+      expect(readCurrentUser()).toEqual(user)
+      expect(readCurrentUser()?.name).toBeUndefined()
     })
   })
 
@@ -46,7 +51,7 @@ describe('useAuthStore', () => {
         { id: 2, name: 'Org 2', slug: 'org-2', role: 'member' },
       ]
       useAuthStore.getState().setOrganizations(orgs)
-      expect(useAuthStore.getState().organizations).toEqual(orgs)
+      expect(readOrganizations()).toEqual(orgs)
     })
 
     it('should auto-select first org if none selected', () => {
@@ -55,24 +60,24 @@ describe('useAuthStore', () => {
         { id: 2, name: 'Org 2', slug: 'org-2', role: 'member' },
       ]
       useAuthStore.getState().setOrganizations(orgs)
-      expect(useAuthStore.getState().currentOrg).toEqual(orgs[0])
+      expect(readCurrentOrg()).toEqual(orgs[0])
     })
 
     it('should not change currentOrg if already selected', () => {
       const existingOrg = { id: 3, name: 'Existing', slug: 'existing', role: 'admin' }
-      useAuthStore.setState({ currentOrg: existingOrg })
+      useAuthStore.getState().setCurrentOrg(existingOrg)
       const orgs = [
         { id: 1, name: 'Org 1', slug: 'org-1', role: 'owner' },
         { id: 2, name: 'Org 2', slug: 'org-2', role: 'member' },
       ]
       useAuthStore.getState().setOrganizations(orgs)
-      expect(useAuthStore.getState().currentOrg).toEqual(existingOrg)
+      expect(readCurrentOrg()).toEqual(existingOrg)
     })
 
     it('should handle empty organizations array', () => {
       useAuthStore.getState().setOrganizations([])
-      expect(useAuthStore.getState().organizations).toEqual([])
-      expect(useAuthStore.getState().currentOrg).toBeNull()
+      expect(readOrganizations()).toEqual([])
+      expect(readCurrentOrg()).toBeNull()
     })
   })
 
@@ -80,22 +85,20 @@ describe('useAuthStore', () => {
     it('should set current organization', () => {
       const org = { id: 1, name: 'Test Org', slug: 'test-org', role: 'owner' }
       useAuthStore.getState().setCurrentOrg(org)
-      expect(useAuthStore.getState().currentOrg).toEqual(org)
+      expect(readCurrentOrg()).toEqual(org)
     })
   })
 
   describe('logout', () => {
     it('should clear all auth state', () => {
-      useAuthStore.setState({
-        user: { id: 1, email: 'test@example.com', username: 'testuser' },
-        currentOrg: { id: 1, name: 'Org', slug: 'org', role: 'owner' },
-        organizations: [{ id: 1, name: 'Org', slug: 'org', role: 'owner' }],
-      })
+      const user = { id: 1, email: 'test@example.com', username: 'testuser' }
+      const org = { id: 1, name: 'Org', slug: 'org', role: 'owner' }
+      useAuthStore.getState().setAuth('token', user)
+      useAuthStore.getState().setOrganizations([org])
       useAuthStore.getState().logout()
-      const state = useAuthStore.getState()
-      expect(state.user).toBeNull()
-      expect(state.currentOrg).toBeNull()
-      expect(state.organizations).toEqual([])
+      expect(readCurrentUser()).toBeNull()
+      expect(readCurrentOrg()).toBeNull()
+      expect(readOrganizations()).toEqual([])
     })
   })
 
@@ -105,12 +108,14 @@ describe('useAuthStore', () => {
     })
 
     it('should return true when user exists', () => {
-      useAuthStore.setState({ user: { id: 1, email: 'test@example.com', username: 'testuser' } })
+      const user = { id: 1, email: 'test@example.com', username: 'testuser' }
+      useAuthStore.getState().setAuth('token', user)
       expect(useAuthStore.getState().isAuthenticated()).toBe(true)
     })
 
     it('should return false after logout', () => {
-      useAuthStore.setState({ user: { id: 1, email: 'test@example.com', username: 'testuser' } })
+      const user = { id: 1, email: 'test@example.com', username: 'testuser' }
+      useAuthStore.getState().setAuth('token', user)
       useAuthStore.getState().logout()
       expect(useAuthStore.getState().isAuthenticated()).toBe(false)
     })

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { IntlProvider as ReactIntlProvider } from "next-intl";
-import { type Locale, defaultLocale, locales, isValidLocale } from "@/lib/i18n/config";
+import { type Locale, defaultLocale, locales, isValidLocale, MESSAGE_NAMESPACES } from "@/lib/i18n/config";
 
 const LOCALE_STORAGE_KEY = "app_locale";
 
@@ -23,13 +23,10 @@ function getSavedLocale(): Locale {
 }
 
 async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
-  const modules = [
-    "common", "auth", "landing", "app", "settings", "ide",
-    "repositories", "runners", "docs", "content", "extensions",
-    "loops", "channels",
-  ];
+  // Namespace list lives in @/lib/i18n/config — web and desktop share the
+  // same source to prevent "raw key shows instead of translation" drift.
   const files = await Promise.all(
-    modules.map((m) => import(`@/messages/${locale}/${m}.json`).catch(() => ({ default: {} })))
+    MESSAGE_NAMESPACES.map((m) => import(`@/messages/${locale}/${m}.json`).catch(() => ({ default: {} })))
   );
   return Object.assign({}, ...files.map((f) => f.default));
 }

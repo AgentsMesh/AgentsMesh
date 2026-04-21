@@ -11,6 +11,7 @@ const mockPods = [
 vi.mock("@/stores/pod", () => ({
   usePodStore: (selector: (s: { pods: typeof mockPods }) => unknown) =>
     selector({ pods: mockPods }),
+  usePods: () => mockPods,
 }));
 
 vi.mock("@/lib/pod-display-name", () => ({

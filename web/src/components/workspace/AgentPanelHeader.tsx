@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePod } from "@/stores/pod";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import { useAcpSessionField } from "@/stores/acpSession";
 import { usePodTitle } from "@/hooks/usePodTitle";
 import { getShortPodKey } from "@/lib/pod-display-name";
 import {
@@ -38,9 +38,7 @@ export function AgentPanelHeader({
   onClose,
 }: AgentPanelHeaderProps) {
   const title = usePodTitle(podKey);
-  const sessionState = useAcpSessionStore(
-    (s) => s.sessions[podKey]?.state ?? "idle"
-  );
+  const sessionState = useAcpSessionField(podKey, (s) => s.state);
 
   const statusColor = (() => {
     switch (sessionState) {

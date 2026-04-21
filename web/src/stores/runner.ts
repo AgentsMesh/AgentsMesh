@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useMemo } from "react";
-import type { RunnerData, GRPCRegistrationToken } from "@/lib/api";
+import type { RunnerData } from "@/lib/api";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getRunnerService } from "@/lib/wasm-core";
@@ -9,15 +9,13 @@ export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 export type Runner = RunnerData;
 
 interface RunnerState {
-  _tick: number; tokens: GRPCRegistrationToken[]; loading: boolean; error: string | null;
+  _tick: number; loading: boolean; error: string | null;
   fetchRunners: (status?: RunnerStatus) => Promise<void>;
   fetchAvailableRunners: () => Promise<void>;
   fetchRunner: (id: number) => Promise<void>;
   updateRunner: (id: number, data: { description?: string; max_concurrent_pods?: number; is_enabled?: boolean; tags?: string[] }) => Promise<Runner>;
   deleteRunner: (id: number) => Promise<void>;
   createToken: (data?: { name?: string; labels?: string[]; max_uses?: number; expires_in_days?: number }) => Promise<string>;
-  fetchTokens: () => Promise<void>;
-  deleteToken: (id: number) => Promise<void>;
   setCurrentRunner: (runner: Runner | null) => void;
   updateRunnerStatus: (runnerId: number, status: RunnerStatus) => void;
   clearError: () => void;
@@ -28,11 +26,13 @@ const bump = () => useRunnerStore.setState((s) => ({ _tick: s._tick + 1 }));
 
 export function useRunners(): Runner[] {
   const tick = useRunnerStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => JSON.parse(svc().runners_json()), [tick]);
 }
 
 export function useAvailableRunners(): Runner[] {
   const tick = useRunnerStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => JSON.parse(svc().available_runners_json()), [tick]);
 }
 
@@ -41,11 +41,12 @@ export function useCurrentRunner(): Runner | null {
   return useMemo(() => {
     const raw = svc().current_runner_json();
     return raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 }
 
 export const useRunnerStore = create<RunnerState>((set, get) => ({
-  _tick: 0, tokens: [], loading: false, error: null,
+  _tick: 0, loading: false, error: null,
 
   fetchRunners: async (status) => {
     set({ loading: true, error: null });
@@ -91,19 +92,6 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
       const resp: { token: string } = JSON.parse(json);
       return resp.token;
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to create token") }); throw e; }
-  },
-
-  fetchTokens: async () => {
-    try {
-      const json = await svc().fetch_tokens();
-      const resp: { tokens: GRPCRegistrationToken[] } = JSON.parse(json);
-      set({ tokens: resp.tokens || [] });
-    } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch tokens") }); }
-  },
-
-  deleteToken: async (id) => {
-    try { await svc().delete_token(BigInt(id)); set((s) => ({ tokens: s.tokens.filter((t) => t.id !== id) })); }
-    catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to delete token") }); throw e; }
   },
 
   setCurrentRunner: (runner) => {

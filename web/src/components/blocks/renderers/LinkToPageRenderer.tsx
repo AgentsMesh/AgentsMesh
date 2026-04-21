@@ -4,7 +4,7 @@ import React from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import type { Block } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlock } from "@/stores/blockstore";
 
 import { BlockChrome } from "../editor/BlockChrome";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
@@ -16,7 +16,7 @@ import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 export function LinkToPageRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const targetID = (block.data?.target_id as string | undefined) ?? "";
-  const target = useBlockstoreStore((s) => (targetID ? s.blocks[targetID] : undefined));
+  const target = useBlock(targetID || null);
 
   const handleDelete = () => {
     void dispatch.detachChild(block.id);

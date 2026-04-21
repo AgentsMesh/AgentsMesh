@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAutopilotStore } from "@/stores/autopilot";
+import { useAutopilotThinking } from "@/stores/autopilot";
 import { Brain, ListChecks, History, X } from "lucide-react";
 import { ThinkingTab } from "./ThinkingTab";
 import { ProgressTab } from "./ProgressTab";
@@ -27,9 +27,7 @@ export function AutopilotFloatingPanel({
   const [activeTab, setActiveTab] = React.useState<"thinking" | "progress" | "history">("thinking");
 
   // Reactive thinking selector — re-renders when this controller's thinking changes
-  const thinking = useAutopilotStore(
-    (s) => s.thinking[autopilotController.autopilot_controller_key] ?? null
-  );
+  const thinking = useAutopilotThinking(autopilotController.autopilot_controller_key);
 
   // Auto switch to thinking tab when help is needed
   React.useEffect(() => {

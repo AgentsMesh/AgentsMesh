@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { Search, Command as CommandIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -24,7 +24,7 @@ import type { CommandPaletteProps, CommandItemData, PodSearchResult, TicketSearc
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
   const addPane = useWorkspaceStore((s) => s.addPane);
   const [search, setSearch] = useState("");
 

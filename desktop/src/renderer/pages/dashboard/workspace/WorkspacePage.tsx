@@ -4,12 +4,11 @@ import { toast } from "sonner";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { WorkspaceManager } from "@/components/workspace";
-import { Button } from "@/components/ui/button";
+import { WorkspaceEmptyState } from "@/components/workspace/WorkspaceEmptyState";
 import { CenteredSpinner } from "@/components/ui/spinner";
-import { Terminal, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
-import { getShortPodKey } from "@/lib/pod-utils";
+import { getShortPodKey } from "@/lib/pod-display-name";
 import type { PodData } from "@/lib/api";
 
 export function WorkspacePage() {
@@ -26,7 +25,6 @@ export function WorkspacePage() {
     addPane(podKey);
   }, [addPane]);
 
-  // Handle pod creation: synchronously insert into store + open terminal
   const handlePodCreated = useCallback((pod?: PodData) => {
     setShowCreateModal(false);
     if (!pod?.pod_key) return;
@@ -36,11 +34,9 @@ export function WorkspacePage() {
     });
     handleOpenPod(pod.pod_key);
 
-    // Synchronously insert new pod into sidebar list (prepend for immediate visibility)
     usePodStore.getState().upsertPod(pod);
   }, [t, handleOpenPod]);
 
-  // Handle ?pod=xxx query param to auto-open a pod
   useEffect(() => {
     if (!_hasHydrated) return;
 
@@ -62,30 +58,19 @@ export function WorkspacePage() {
     return <CenteredSpinner />;
   }
 
-  // Empty state when no terminals are open
   if (panes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8">
-        <Terminal className="w-16 h-16 mb-4 text-muted-foreground/30" />
-        <h2 className="text-xl font-semibold mb-2">{t("workspace.noTerminalsOpen")}</h2>
-        <p className="text-muted-foreground text-center mb-6 max-w-md">
-          {t("workspace.noTerminalsDescription")}
-        </p>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          {t("workspace.createNewPod")}
-        </Button>
-
+      <>
+        <WorkspaceEmptyState onCreatePod={() => setShowCreateModal(true)} />
         <CreatePodModal
           open={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           onCreated={handlePodCreated}
         />
-      </div>
+      </>
     );
   }
 
-  // Terminal workspace
   return (
     <div className="flex flex-col h-full">
       <WorkspaceManager className="flex-1" />

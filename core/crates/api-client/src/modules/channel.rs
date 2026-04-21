@@ -147,4 +147,44 @@ impl ApiClient {
         self.post(&self.org_path(&format!("/channels/{id}/mute")), data)
             .await
     }
+
+    pub async fn list_channel_members(
+        &self,
+        id: i64,
+    ) -> Result<ChannelMemberListResponse, ApiError> {
+        self.get(&self.org_path(&format!("/channels/{id}/members")))
+            .await
+    }
+
+    pub async fn invite_channel_members(
+        &self,
+        id: i64,
+        data: &InviteChannelMembersRequest,
+    ) -> Result<EmptyResponse, ApiError> {
+        self.post(&self.org_path(&format!("/channels/{id}/members")), data)
+            .await
+    }
+
+    pub async fn remove_channel_member(
+        &self,
+        id: i64,
+        user_id: i64,
+    ) -> Result<EmptyResponse, ApiError> {
+        self.delete(&self.org_path(&format!("/channels/{id}/members/{user_id}")))
+            .await
+    }
+
+    pub async fn search_channel_messages(
+        &self,
+        id: i64,
+        q: &str,
+        limit: Option<u32>,
+    ) -> Result<serde_json::Value, ApiError> {
+        let lim = limit.unwrap_or(20);
+        let path = self.org_path(&format!(
+            "/channels/{id}/messages/search?q={}&limit={lim}",
+            urlencoding::encode(q)
+        ));
+        self.get(&path).await
+    }
 }

@@ -5,14 +5,14 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { TicketDetail } from "@/components/tickets";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 
 export default function TicketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const slug = params.slug as string;
 
   return (

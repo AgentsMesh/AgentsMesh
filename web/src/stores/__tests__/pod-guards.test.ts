@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { usePodStore, SIDEBAR_STATUS_MAP, Pod } from "../pod";
 import { useAuthStore } from "../auth";
+import { getAuthManager } from "@/lib/wasm-core";
 import { getPodService } from "@/lib/wasm-core";
 import { mockPod, mockPod2, resetPodStore, seedPods, readPods } from "./pod-test-utils";
 
@@ -123,7 +124,7 @@ describe("Pod Store — fetchSidebarPods", () => {
   });
 
   it("should pass mine filter with current user id", async () => {
-    useAuthStore.setState({ user: { id: 42, email: "test@test.com", username: "test" } });
+    getAuthManager().apply_session(JSON.stringify({ token: "t", refresh_token: "r", user: { id: 42, email: "test@test.com", username: "test" } }));
     mockSidebar([mockPod], 1);
 
     await act(async () => {
@@ -135,7 +136,7 @@ describe("Pod Store — fetchSidebarPods", () => {
   });
 
   it("should pass mine filter with null user when not logged in", async () => {
-    useAuthStore.setState({ user: null });
+    (getAuthManager() as unknown as { _reset: () => void })._reset();
     mockSidebar([], 0);
 
     await act(async () => {
@@ -235,7 +236,7 @@ describe("Pod Store — loadMorePods", () => {
   });
 
   it("should pass mine filter with current user id", async () => {
-    useAuthStore.setState({ user: { id: 42, email: "test@test.com", username: "test" } });
+    getAuthManager().apply_session(JSON.stringify({ token: "t", refresh_token: "r", user: { id: 42, email: "test@test.com", username: "test" } }));
     seedPods(mockPod);
     usePodStore.setState({ podHasMore: true, currentSidebarFilter: "mine" });
     mockLoadMore([mockPod2], 2);

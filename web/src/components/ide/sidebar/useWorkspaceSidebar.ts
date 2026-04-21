@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore, usePods, Pod, SIDEBAR_STATUS_MAP } from "@/stores/pod";
 import { useRunnerStore, useRunners } from "@/stores/runner";
@@ -12,8 +12,8 @@ export function useWorkspaceSidebar(
   t: (key: string, params?: Record<string, string>) => string,
   onTerminatePod?: () => void,
 ) {
-  const currentOrg = useAuthStore((s) => s.currentOrg);
-  const user = useAuthStore((s) => s.user);
+  const currentOrg = useCurrentOrg();
+  const user = useCurrentUser();
   const isAdmin = currentOrg?.role === "owner" || currentOrg?.role === "admin";
   const pods = usePods();
   const loading = usePodStore((s) => s.loading);

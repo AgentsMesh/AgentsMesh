@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import { useShallow } from "zustand/react/shallow";
-
 import type { Block, BlockRef } from "@/lib/api/blockstoreTypes";
 import {
   BLOCK_TYPE_AUDIO,
@@ -34,7 +32,7 @@ import {
   BLOCK_TYPE_VIDEO,
   BLOCK_TYPE_VIEW,
 } from "@/lib/api/blockstoreTypes";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlock, useNestChildren, useRefs } from "@/stores/blockstore";
 
 import { PageRenderer } from "./renderers/PageRenderer";
 import { ParagraphRenderer } from "./renderers/ParagraphRenderer";
@@ -74,7 +72,7 @@ export interface BlockRendererProps {
 // Central dispatch: block.type → registered component.
 // Adding a new block type is one case-branch; no other site needs changing.
 export function BlockRenderer({ blockID, depth = 0 }: BlockRendererProps) {
-  const block = useBlockstoreStore(useShallow((s) => s.blocks[blockID]));
+  const block = useBlock(blockID);
   if (!block) return null;
   switch (block.type) {
     case BLOCK_TYPE_PAGE:
@@ -161,9 +159,9 @@ function UnknownBlock({ block }: { block: Block }) {
 // order_key. Children are wrapped in a SortableNest so drag-reordering within
 // the same parent is handled automatically.
 export function NestChildren({ parentID, depth }: { parentID: string; depth: number }) {
-  const refIDs = useBlockstoreStore(useShallow((s) => s.nestChildren[parentID]));
-  const refs = useBlockstoreStore(useShallow((s) => s.refs));
-  const parent = useBlockstoreStore(useShallow((s) => s.blocks[parentID]));
+  const refIDs = useNestChildren(parentID);
+  const refs = useRefs();
+  const parent = useBlock(parentID);
   if (!refIDs || refIDs.length === 0 || !parent) return null;
   return (
     <div className="flex flex-col gap-1">

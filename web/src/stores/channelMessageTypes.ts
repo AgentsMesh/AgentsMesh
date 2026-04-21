@@ -1,16 +1,15 @@
 import type { ChannelMessage, MessageContent, MessageMentions } from "@/lib/api";
 
+// UI-only cache state. Actual messages/hasMore live in Rust (ChannelService)
+// and are read through selectors; the cache here just tracks loading + error
+// per channel so the UI can show spinners and retry banners.
 export interface ChannelMessageCache {
-  messages: ChannelMessage[];
-  hasMore: boolean;
   loading: boolean;
   loadingMore: boolean;
   error: string | null;
 }
 
 export const EMPTY_CACHE: ChannelMessageCache = {
-  messages: [],
-  hasMore: false,
   loading: false,
   loadingMore: false,
   error: null,
@@ -18,7 +17,12 @@ export const EMPTY_CACHE: ChannelMessageCache = {
 
 export interface ChannelMessageState {
   cache: Record<number, ChannelMessageCache>;
-  unreadCounts: Record<number, number>;
+  /** Bumped whenever Rust message data mutates. Selectors subscribe to this
+   *  to re-derive `messages/hasMore` from `svc().get_messages_json(...)`. */
+  _messagesTick: number;
+  /** Bumped whenever Rust unread/mention counters mutate. Separate tick so
+   *  message re-reads don't thrash unread-count selectors. */
+  _unreadTick: number;
 
   fetchMessages: (channelId: number, limit?: number, beforeId?: number) => Promise<void>;
   sendMessage: (
@@ -37,7 +41,6 @@ export interface ChannelMessageState {
   muteChannel: (channelId: number, muted: boolean) => Promise<void>;
   incrementUnread: (channelId: number) => void;
   clearChannelUnread: (channelId: number) => void;
-  totalUnreadCount: () => number;
 }
 
 export function getCache(state: ChannelMessageState, channelId: number): ChannelMessageCache {

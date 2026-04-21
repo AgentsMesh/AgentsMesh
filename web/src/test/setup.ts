@@ -66,17 +66,43 @@ vi.mock('@/lib/wasm-core', () => {
     org_path: fn((p: string) => `/api/v1/orgs/test-org${p}`),
   }
 
+  const authBox: { user: unknown; current_org: unknown; organizations: unknown[] } = {
+    user: null, current_org: null, organizations: [],
+  };
   const mockAuth = {
     login: fn().mockResolvedValue('{"token":"t","refresh_token":"r","user":{"id":1,"email":"test@test.com","username":"test"}}'),
     logout: fn().mockResolvedValue(undefined),
     refresh_token: fn().mockResolvedValue('{"token":"t2","refresh_token":"r2"}'),
     fetch_organizations: fn().mockResolvedValue('[]'),
     switch_org: fn(),
-    is_authenticated: fn(() => false),
+    is_authenticated: fn(() => authBox.user !== null),
     get_token: fn(),
-    get_current_user_json: fn(),
-    get_current_org_json: fn(),
-    get_organizations_json: fn(() => '[]'),
+    get_current_user_json: fn(() => authBox.user ? JSON.stringify(authBox.user) : null),
+    get_current_org_json: fn(() => authBox.current_org ? JSON.stringify(authBox.current_org) : null),
+    get_organizations_json: fn(() => JSON.stringify(authBox.organizations)),
+    apply_session: fn((sessionJson: string) => {
+      try {
+        const s = JSON.parse(sessionJson);
+        authBox.user = s.user ?? null;
+      } catch { /* noop */ }
+    }),
+    set_organizations: fn((orgsJson: string) => {
+      try {
+        const orgs = JSON.parse(orgsJson);
+        authBox.organizations = Array.isArray(orgs) ? orgs : [];
+        if (authBox.current_org == null && authBox.organizations.length > 0) {
+          authBox.current_org = authBox.organizations[0];
+        }
+      } catch { /* noop */ }
+    }),
+    set_current_org: fn((orgJson: string) => {
+      if (orgJson === '') { authBox.current_org = null; return; }
+      try { authBox.current_org = JSON.parse(orgJson); } catch { /* noop */ }
+    }),
+    clear_session: fn(() => {
+      authBox.user = null; authBox.current_org = null; authBox.organizations = [];
+    }),
+    _reset: () => { authBox.user = null; authBox.current_org = null; authBox.organizations = []; },
   }
 
   // --- Pod state / service ---
@@ -317,10 +343,9 @@ vi.mock('@/lib/wasm-core', () => {
       if (!msgs.some((m) => m.id === msg.id)) {
         msgs.push(msg)
         h.channel.msgs.set(k, { json: JSON.stringify(msgs), hasMore: entry?.hasMore ?? false })
+        return true
       }
-      // Increment unread (mimics Rust on_new_message behavior)
-      h.channel.unread.set(k, (h.channel.unread.get(k) || 0) + 1)
-      return true
+      return false
     }),
     update_message: fn((chId: bigint, json: string) => {
       const k = cKey(chId); const entry = h.channel.msgs.get(k); if (!entry) return
@@ -380,6 +405,12 @@ vi.mock('@/lib/wasm-core', () => {
     fetch_unread_counts: fn().mockResolvedValue('{}'),
     mark_read: fn().mockResolvedValue(undefined),
     mute_channel: fn().mockResolvedValue(undefined),
+    fetch_channel_members: fn().mockResolvedValue('{"members":[],"total":0}'),
+    invite_channel_members: fn().mockResolvedValue(undefined),
+    remove_channel_member: fn().mockResolvedValue(undefined),
+    channel_members_json: fn(() => '[]'),
+    get_channel_pods: fn().mockResolvedValue('{"pods":[]}'),
+    channel_pods_json: fn(() => '[]'),
     update_message_local: fn((chId: bigint, json: string) => {
       const k = cKey(chId); const entry = h.channel.msgs.get(k); if (!entry) return
       const msg = JSON.parse(json); const msgs = JSON.parse(entry.json) as { id: number }[]
@@ -499,6 +530,8 @@ vi.mock('@/lib/wasm-core', () => {
     fetch_labels: fn().mockResolvedValue(JSON.stringify({ labels: [] })),
     get_sub_tickets: fn().mockResolvedValue(JSON.stringify({ sub_tickets: [] })),
     get_pods: fn().mockResolvedValue(JSON.stringify({ pods: [] })),
+    get_ticket_pods: fn().mockResolvedValue(JSON.stringify({ pods: [] })),
+    ticket_pods_json: fn(() => '[]'),
   }
 
   // --- Mesh state ---

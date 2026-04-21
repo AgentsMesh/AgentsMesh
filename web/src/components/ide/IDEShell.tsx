@@ -17,6 +17,7 @@ import { MeshSidebarContent } from "./sidebar/MeshSidebarContent";
 import { ChannelsSidebarContent } from "./sidebar/ChannelsSidebarContent";
 import { LoopsSidebarContent } from "./sidebar/LoopsSidebarContent";
 import { SettingsSidebarContent } from "./sidebar/SettingsSidebarContent";
+import { BlocksSidebar } from "@/components/blocks/BlocksSidebar";
 import { useIDEStore, type ActivityType } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
@@ -65,6 +66,8 @@ function getSidebarContent(
       return <MeshSidebarContent />;
     case "loops":
       return <LoopsSidebarContent />;
+    case "blocks":
+      return <BlocksSidebar />;
     case "infra":
       return (
         <InfraSidebarContent

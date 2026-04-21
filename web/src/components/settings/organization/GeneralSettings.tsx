@@ -8,7 +8,7 @@ import { FormField } from "@/components/ui/form-field";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { getOrgApiService } from "@/lib/wasm-getters";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthOrganizations, useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 
 export type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
@@ -24,8 +24,8 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
   const [deleting, setDeleting] = useState(false);
   useEffect(() => { if (org?.name && !name) setName(org.name); }, [org?.name]);
   const router = useRouter();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
-  const organizations = useAuthStore((s) => s.organizations);
+  const currentOrg = useCurrentOrg();
+  const organizations = useAuthOrganizations();
   const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
   const setOrganizations = useAuthStore((s) => s.setOrganizations);
 

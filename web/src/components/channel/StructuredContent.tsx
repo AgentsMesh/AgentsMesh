@@ -1,7 +1,7 @@
 "use client";
 
 import type { MessageContent, Block, InlineElement } from "@/lib/api/channel-message-types";
-import { usePodStore } from "@/stores/pod";
+import { usePods } from "@/stores/pod";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { cn } from "@/lib/utils";
 
@@ -139,7 +139,7 @@ function TextSpan({ element }: { element: InlineElement }) {
 }
 
 function MentionSpan({ element }: { element: InlineElement }) {
-  const allPods = usePodStore((s) => s.pods);
+  const allPods = usePods();
 
   let displayName = element.display ?? element.entity_key ?? "unknown";
 

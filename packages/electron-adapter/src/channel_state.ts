@@ -1,12 +1,28 @@
+// Channel state mirror for Electron. Shapes must align with the WASM service
+// so the shared web store (read via get_messages_json, channels_json, etc.)
+// receives identical payloads from both platforms.
+interface MessageCacheEntry {
+  messages: unknown[];
+  has_more: boolean;
+}
+
 export class ChannelLocalState {
   _channelsCache = "[]";
-  _currentChannelCache: string | null = null;
-  _messagesCache = new Map<string, string>();
+  /** Current selected channel id — callers resolve the full object on read
+   *  so updates to _channelsCache propagate without reassigning here. */
+  _currentChannelId: number | null = null;
+  // Per-channel `{ messages, has_more }` — matches Rust ChannelService.get_messages_json.
+  _messagesCache = new Map<string, MessageCacheEntry>();
   _unreadCountsCache = "{}";
   _mentionCountsCache = "{}";
 
   channels_json(): string { return this._channelsCache; }
-  current_channel_json(): unknown { return this._currentChannelCache; }
+  current_channel_json(): unknown {
+    if (this._currentChannelId == null) return null;
+    const chs = JSON.parse(this._channelsCache) as { id: number }[];
+    const c = chs.find(x => x.id === this._currentChannelId);
+    return c ? JSON.stringify(c) : null;
+  }
   unread_counts_json(): string { return this._unreadCountsCache; }
   mention_counts_json(): string { return this._mentionCountsCache; }
 
@@ -17,10 +33,16 @@ export class ChannelLocalState {
   }
 
   get_messages_json(channelId: bigint): unknown {
-    return this._messagesCache.get(String(channelId)) ?? null;
+    const entry = this._messagesCache.get(String(channelId));
+    if (!entry) return null;
+    return JSON.stringify(entry);
   }
 
-  get_last_message_json(_channelId: bigint): unknown { return null; }
+  get_last_message_json(channelId: bigint): unknown {
+    const entry = this._messagesCache.get(String(channelId));
+    if (!entry || entry.messages.length === 0) return null;
+    return JSON.stringify(entry.messages[entry.messages.length - 1]);
+  }
 
   get_unread_count(channelId: bigint): number {
     const counts = JSON.parse(this._unreadCountsCache) as Record<string, number>;
@@ -51,12 +73,22 @@ export class ChannelLocalState {
   }
 
   set_channels(json: string): void { this._channelsCache = json; }
-  set_current_channel(id?: bigint | null): void { this._currentChannelCache = id != null ? String(id) : null; }
+  set_current_channel(id?: bigint | null): void { this._currentChannelId = id != null ? Number(id) : null; }
   set_current_user(_json: string): void {}
   set_current_user_id(_id?: bigint | null): void {}
   set_unread_counts(json: string): void { this._unreadCountsCache = json; }
   set_mention_counts(json: string): void { this._mentionCountsCache = json; }
-  set_messages(channelId: bigint, json: string, _hasMore: boolean): void { this._messagesCache.set(String(channelId), json); }
+
+  set_messages(channelId: bigint, json: string, hasMore: boolean): void {
+    // Accept either a bare array JSON or the wrapped { messages, has_more } shape.
+    let messages: unknown[];
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) messages = parsed;
+    else if (parsed && Array.isArray(parsed.messages)) messages = parsed.messages;
+    else messages = [];
+    this._messagesCache.set(String(channelId), { messages, has_more: hasMore });
+  }
+
   set_last_message(_channelId: bigint, _json: string): void {}
 
   add_channel_local(json: string): void {
@@ -79,34 +111,56 @@ export class ChannelLocalState {
 
   add_message(channelId: bigint, json: string): void {
     const key = String(channelId);
-    const msgs = JSON.parse(this._messagesCache.get(key) ?? "[]") as unknown[];
-    msgs.push(JSON.parse(json));
-    this._messagesCache.set(key, JSON.stringify(msgs));
+    const entry = this._messagesCache.get(key) ?? { messages: [], has_more: false };
+    const msg = JSON.parse(json) as { id: number };
+    // De-dup by id — realtime + REST echo can land in any order.
+    if (!entry.messages.some((m) => (m as { id: number }).id === msg.id)) {
+      entry.messages.push(msg);
+    }
+    this._messagesCache.set(key, entry);
   }
 
   remove_message_local(channelId: bigint, messageId: bigint): void {
     const key = String(channelId);
-    const msgs = JSON.parse(this._messagesCache.get(key) ?? "[]") as { id: number }[];
-    this._messagesCache.set(key, JSON.stringify(msgs.filter(x => x.id !== Number(messageId))));
+    const entry = this._messagesCache.get(key);
+    if (!entry) return;
+    entry.messages = entry.messages.filter((m) => (m as { id: number }).id !== Number(messageId));
+    this._messagesCache.set(key, entry);
   }
 
   update_message_local(channelId: bigint, json: string): void {
     const key = String(channelId);
-    const msg = JSON.parse(json) as { id: number };
-    const msgs = JSON.parse(this._messagesCache.get(key) ?? "[]") as { id: number }[];
-    const idx = msgs.findIndex(x => x.id === msg.id);
-    if (idx >= 0) msgs[idx] = msg;
-    this._messagesCache.set(key, JSON.stringify(msgs));
+    const entry = this._messagesCache.get(key);
+    if (!entry) return;
+    const patch = JSON.parse(json) as { id: number };
+    const idx = entry.messages.findIndex((m) => (m as { id: number }).id === patch.id);
+    // Merge rather than replace so partial updates (e.g. edited_at only) don't
+    // wipe sender / content fields already in cache.
+    if (idx >= 0) entry.messages[idx] = { ...(entry.messages[idx] as object), ...patch };
+    this._messagesCache.set(key, entry);
   }
 
-  prepend_messages(channelId: bigint, json: string, _hasMore: boolean): void {
+  prepend_messages(channelId: bigint, json: string, hasMore: boolean): void {
     const key = String(channelId);
-    const existing = JSON.parse(this._messagesCache.get(key) ?? "[]") as unknown[];
+    const entry = this._messagesCache.get(key) ?? { messages: [], has_more: false };
     const newer = JSON.parse(json) as unknown[];
-    this._messagesCache.set(key, JSON.stringify([...newer, ...existing]));
+    entry.messages = [...newer, ...entry.messages];
+    entry.has_more = hasMore;
+    this._messagesCache.set(key, entry);
   }
 
-  on_new_message(_json: string): boolean { return false; }
+  // Realtime arrival — mirror Rust ChannelState.on_new_message which adds + dedups.
+  on_new_message(json: string): boolean {
+    const msg = JSON.parse(json) as { id: number; channel_id: number };
+    const key = String(msg.channel_id);
+    const entry = this._messagesCache.get(key) ?? { messages: [], has_more: false };
+    if (entry.messages.some((m) => (m as { id: number }).id === msg.id)) {
+      return false;
+    }
+    entry.messages.push(msg);
+    this._messagesCache.set(key, entry);
+    return true;
+  }
 
   increment_unread(channelId: bigint): void {
     const counts = JSON.parse(this._unreadCountsCache) as Record<string, number>;
@@ -134,6 +188,7 @@ export class ChannelLocalState {
 
   select_channel(id?: bigint | null): unknown {
     this.set_current_channel(id);
-    return this.get_channel_json(id!);
+    if (id == null) return null;
+    return this.get_channel_json(id);
   }
 }

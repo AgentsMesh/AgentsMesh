@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { ResponsiveShell } from "@/components/layout";
 import { Spinner } from "@/components/ui/spinner";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
@@ -18,7 +18,8 @@ export default function DashboardShell({
 }) {
   const router = useRouter();
   const [wasmReady, setWasmReady] = useState(false);
-  const { user, currentOrg } = useAuthStore();
+  const user = useCurrentUser();
+  const currentOrg = useCurrentOrg();
   const { permission, showNotification, requestPermission } = useBrowserNotification();
 
   useEffect(() => {

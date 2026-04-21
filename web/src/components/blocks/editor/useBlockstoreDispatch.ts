@@ -14,7 +14,12 @@ import {
 import { keyAfter, keyBetween } from "@/lib/blockstore/fractionalIndex";
 import { randomUUID } from "@/lib/blockstore/uuid";
 import { dispatchOps } from "@/stores/blockstoreDispatch";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import {
+  readBlock,
+  readRefs,
+  readNestChildren,
+  useBlockstoreStore,
+} from "@/stores/blockstore";
 
 // useBlockstoreDispatch hands block renderers a small, typed API so they don't
 // need to know about OpEnvelope construction or fractional indexing.
@@ -32,7 +37,7 @@ function makeDispatcher(workspaceID: string) {
      * changes. Omitting `opts.text` leaves the top-level text untouched.
      */
     async updateBlockData(id: string, patch: JSONMap, opts?: { text?: string | null }) {
-      const existing = useBlockstoreStore.getState().blocks[id];
+      const existing = readBlock(id);
       const nextData = { ...(existing?.data ?? {}), ...patch };
       const op = updateBlockOp({
         id,
@@ -44,14 +49,14 @@ function makeDispatcher(workspaceID: string) {
 
     /** Merge a partial meta patch (ACL, tags, etc.) onto the block. */
     async updateBlockMeta(id: string, patch: JSONMap) {
-      const existing = useBlockstoreStore.getState().blocks[id];
+      const existing = readBlock(id);
       const nextMeta = { ...(existing?.meta ?? {}), ...patch };
       await dispatchOps(workspaceID, [updateBlockOp({ id, meta: nextMeta })]);
     },
 
     /** Convenience: flip a block's meta.acl.visibility. */
     async setBlockVisibility(id: string, visibility: "workspace" | "private") {
-      const existing = useBlockstoreStore.getState().blocks[id];
+      const existing = readBlock(id);
       const currentACL = (existing?.meta?.acl as JSONMap | undefined) ?? {};
       const nextACL: JSONMap = { ...currentACL, visibility };
       const nextMeta = { ...(existing?.meta ?? {}), acl: nextACL };
@@ -103,8 +108,8 @@ function makeDispatcher(workspaceID: string) {
     },
 
     async moveChild(childID: string, newParentID: string, afterChildID: string | null, beforeChildID: string | null) {
-      const state = useBlockstoreStore.getState();
-      const nestRefID = Object.values(state.refs).find(
+      const refs = readRefs();
+      const nestRefID = Object.values(refs).find(
         (r) => r.rel === "nest" && r.to_id === childID,
       )?.id;
       if (!nestRefID) return;
@@ -124,8 +129,8 @@ function makeDispatcher(workspaceID: string) {
     },
 
     async detachChild(childID: string) {
-      const state = useBlockstoreStore.getState();
-      const nestRefID = Object.values(state.refs).find(
+      const refs = readRefs();
+      const nestRefID = Object.values(refs).find(
         (r) => r.rel === "nest" && r.to_id === childID,
       )?.id;
       if (!nestRefID) return;
@@ -133,8 +138,7 @@ function makeDispatcher(workspaceID: string) {
     },
 
     async duplicate(blockID: string) {
-      const state = useBlockstoreStore.getState();
-      const source = state.blocks[blockID];
+      const source = readBlock(blockID);
       if (!source) return null;
       const parent = nestParentOf(blockID);
       if (!parent) return null;
@@ -164,33 +168,36 @@ function makeDispatcher(workspaceID: string) {
 }
 
 function lastChildOrderKey(parentID: string): string | null {
-  const state = useBlockstoreStore.getState();
-  const refIDs = state.nestChildren[parentID];
+  const nestChildren = readNestChildren();
+  const refs = readRefs();
+  const refIDs = nestChildren[parentID];
   if (!refIDs || refIDs.length === 0) return null;
-  const last = state.refs[refIDs[refIDs.length - 1]];
+  const last = refs[refIDs[refIDs.length - 1]];
   return last?.order_key ?? null;
 }
 
 function childOrderKey(parentID: string, childID: string): string | null {
-  const state = useBlockstoreStore.getState();
-  const refIDs = state.nestChildren[parentID] ?? [];
+  const nestChildren = readNestChildren();
+  const refs = readRefs();
+  const refIDs = nestChildren[parentID] ?? [];
   for (const rid of refIDs) {
-    const r = state.refs[rid];
+    const r = refs[rid];
     if (r?.to_id === childID) return r.order_key ?? null;
   }
   return null;
 }
 
 function nestParentOf(childID: string): { id: string } | null {
-  const state = useBlockstoreStore.getState();
-  for (const r of Object.values(state.refs)) {
+  const refs = readRefs();
+  for (const r of Object.values(refs)) {
     if (r.rel === "nest" && r.to_id === childID) return { id: r.from_id };
   }
   return null;
 }
 
 function nestSiblingIDs(parentID: string): string[] {
-  const state = useBlockstoreStore.getState();
-  const refIDs = state.nestChildren[parentID] ?? [];
-  return refIDs.map((rid) => state.refs[rid]?.to_id).filter((id): id is string => Boolean(id));
+  const nestChildren = readNestChildren();
+  const refs = readRefs();
+  const refIDs: number[] = nestChildren[parentID] ?? [];
+  return refIDs.map((rid: number) => refs[rid]?.to_id).filter((id): id is string => Boolean(id));
 }

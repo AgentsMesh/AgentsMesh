@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import {
+  __seedAcpSessionForTests,
+  __resetAcpSessionsForTests,
+} from "@/stores/acpSession";
 import { EMPTY_SESSION } from "@/stores/acpSessionTypes";
 import type { AcpSessionState } from "@/stores/acpSessionTypes";
 import { AcpActivityStream } from "@/components/workspace/acp/AcpActivityStream";
@@ -8,14 +11,12 @@ import { AcpActivityStream } from "@/components/workspace/acp/AcpActivityStream"
 const POD = "pod-stream";
 
 function seedSession(partial: Partial<AcpSessionState>) {
-  useAcpSessionStore.setState({
-    sessions: { [POD]: { ...EMPTY_SESSION, ...partial } },
-  });
+  __seedAcpSessionForTests(POD, { ...EMPTY_SESSION, ...partial });
 }
 
 describe("AcpActivityStream", () => {
   beforeEach(() => {
-    useAcpSessionStore.setState({ sessions: {} });
+    __resetAcpSessionsForTests();
   });
 
   it("shows waiting message when no session exists", () => {

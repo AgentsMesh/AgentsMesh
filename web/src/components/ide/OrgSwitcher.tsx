@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthOrganizations, useAuthStore } from "@/stores/auth";
 import { useIDEStore } from "@/stores/ide";
 import { Check, Plus, Building2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -11,8 +11,8 @@ import { useTranslations } from "next-intl";
 export function OrgSwitcher() {
   const router = useRouter();
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
-  const organizations = useAuthStore((s) => s.organizations);
+  const currentOrg = useCurrentOrg();
+  const organizations = useAuthOrganizations();
   const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);
   const activeActivity = useIDEStore((s) => s.activeActivity);
 

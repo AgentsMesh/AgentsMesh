@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useAutopilotStore } from "@/stores/autopilot";
+import { useAutopilotThinking, useAutopilotThinkingHistory } from "@/stores/autopilot";
 import {
   Brain,
   CheckCircle,
@@ -87,10 +87,9 @@ export function AutopilotThinkingPanel({
   showHistory = false,
 }: AutopilotThinkingPanelProps) {
   // Reactive selectors — re-render when this controller's thinking/history changes
-  const thinking = useAutopilotStore((s) => s.thinking[autopilotControllerKey] ?? null);
-  const history = useAutopilotStore((s) =>
-    showHistory ? s.thinkingHistory[autopilotControllerKey] ?? EMPTY_HISTORY : EMPTY_HISTORY
-  );
+  const thinking = useAutopilotThinking(autopilotControllerKey);
+  const historyAll = useAutopilotThinkingHistory(autopilotControllerKey);
+  const history = showHistory ? historyAll : EMPTY_HISTORY;
 
   if (!thinking) {
     return (

@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use agentsmesh_types::User;
+use agentsmesh_types::{Organization, User};
 
 use crate::error::AuthError;
 use crate::state::{AuthState, STORAGE_KEY};
@@ -29,6 +29,32 @@ impl AuthManager {
 
     pub fn current_user(&self) -> Option<User> {
         self.state.read().unwrap_or_else(|e| e.into_inner()).user.clone()
+    }
+
+    /// Replace the organizations list. Promotes first to current_org if none set.
+    pub fn replace_organizations(&self, orgs: Vec<Organization>) {
+        {
+            let mut s = self.state.write().unwrap_or_else(|e| e.into_inner());
+            s.organizations = orgs.clone();
+            if s.current_org.is_none() {
+                if let Some(first) = orgs.into_iter().next() {
+                    s.current_org = Some(first);
+                }
+            }
+        }
+        self.persist();
+    }
+
+    /// Set or clear current organization (None clears).
+    pub fn set_current_org_direct(&self, org: Option<Organization>) {
+        self.state.write().unwrap_or_else(|e| e.into_inner()).current_org = org;
+        self.persist();
+    }
+
+    /// Clear entire auth state (token, user, orgs). Persists cleared state.
+    pub fn clear(&self) {
+        self.state.write().unwrap_or_else(|e| e.into_inner()).clear();
+        self.persist();
     }
 
     pub fn restore_session(&self) -> Result<bool, AuthError> {

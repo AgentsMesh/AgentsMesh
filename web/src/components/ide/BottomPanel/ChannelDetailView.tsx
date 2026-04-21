@@ -46,17 +46,14 @@ export function ChannelDetailView({
         <div className="flex-1 min-w-0">
           <ChannelHeader
             name={chat.channelName}
-            description={chat.currentChannel?.description}
             podCount={chat.podCount}
             channelId={channelId}
             visibility={visibility}
             isMember={isMember}
             memberCount={chat.currentChannel?.member_count}
-            onClose={onBack}
-            onRefresh={chat.handleRefresh}
-            loading={chat.messagesLoading}
+            ticket={chat.currentChannel?.ticket}
+            repository={chat.currentChannel?.repository}
             compact
-            onPodsChanged={handlePodsChanged}
           />
         </div>
       </div>

@@ -47,13 +47,9 @@ export default function ChannelsPage() {
     );
   }
 
-  // Desktop: chat panel
   return (
     <div className="h-full w-full">
-      <ChannelChatPanel
-        channelId={selectedChannelId}
-        onClose={handleClose}
-      />
+      <ChannelChatPanel channelId={selectedChannelId} />
     </div>
   );
 }

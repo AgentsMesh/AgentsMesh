@@ -4,7 +4,7 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 
 // Filter out unresolved docker-entrypoint.sh placeholders (e.g. "__POSTHOG_KEY__")
 function resolveEnv(val: string | undefined): string {
@@ -53,7 +53,8 @@ function PostHogPageView() {
  */
 function PostHogIdentify() {
   const ph = usePostHog();
-  const { user, currentOrg } = useAuthStore();
+  const user = useCurrentUser();
+  const currentOrg = useCurrentOrg();
 
   useEffect(() => {
     if (!ph) return;

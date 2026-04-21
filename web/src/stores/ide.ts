@@ -133,6 +133,12 @@ export const ACTIVITIES: ActivityConfig[] = [
     mobileOrder: 1,
   },
   {
+    id: "blocks",
+    label: "Blocks",
+    icon: "blocks",
+    mobileVisible: false,
+  },
+  {
     id: "workspace",
     label: "Workspace",
     icon: "terminal",
@@ -159,12 +165,6 @@ export const ACTIVITIES: ActivityConfig[] = [
     icon: "network",
     mobileVisible: true,
     mobileOrder: 4,
-  },
-  {
-    id: "blocks",
-    label: "Blocks",
-    icon: "blocks",
-    mobileVisible: false,
   },
   {
     id: "infra",

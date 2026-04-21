@@ -3,12 +3,9 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { useAutopilotStore, AutopilotIteration } from "@/stores/autopilot";
+import { useAutopilotStore, useAutopilotIterations, AutopilotIteration } from "@/stores/autopilot";
 import { History, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import { iterationPhaseConfig } from "./types";
-
-// Stable empty array to avoid infinite re-render when key is missing from iterations map.
-const EMPTY_ITERATIONS: AutopilotIteration[] = [];
 
 interface IterationItemProps {
   iteration: AutopilotIteration;
@@ -95,9 +92,7 @@ interface HistoryTabProps {
  * HistoryTab - Displays the iteration history for an autopilot session
  */
 export function HistoryTab({ autopilotControllerKey }: HistoryTabProps) {
-  const controllerIterations = useAutopilotStore(
-    (s) => s.iterations[autopilotControllerKey] ?? EMPTY_ITERATIONS
-  );
+  const controllerIterations = useAutopilotIterations(autopilotControllerKey);
   const fetchIterations = useAutopilotStore((s) => s.fetchIterations);
 
   React.useEffect(() => {

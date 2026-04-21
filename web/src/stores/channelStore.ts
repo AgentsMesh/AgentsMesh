@@ -23,12 +23,53 @@ export function useChannels(): Channel[] {
   return useMemo(() => JSON.parse(svc().channels_json()) as Channel[], [tick]);
 }
 
+export interface ChannelLastMessage {
+  sender_name: string;
+  content_preview: string;
+  message_type?: string;
+  timestamp: string;
+}
+
+/** Read the cached last-message preview for a channel (from WASM `last_messages` map). */
+export function getLastMessage(channelId: number): ChannelLastMessage | null {
+  const raw = svc().get_last_message_json(BigInt(channelId));
+  if (!raw) return null;
+  try {
+    return typeof raw === "string" ? (JSON.parse(raw) as ChannelLastMessage) : (raw as ChannelLastMessage);
+  } catch {
+    return null;
+  }
+}
+
 export function useCurrentChannel(): Channel | null {
   const tick = useChannelStore((s) => s._tick);
   return useMemo(() => {
     const v = svc().current_channel_json();
     return v ? (typeof v === "string" ? JSON.parse(v) : v) : null;
   }, [tick]);
+}
+
+export interface ChannelMember {
+  channel_id: number;
+  user_id: number;
+  role: string;
+  is_muted: boolean;
+  joined_at: string;
+}
+
+/** Members of a given channel. Rust ChannelService caches the list per channel
+ *  in state; the hook re-reads whenever `_tick` bumps (fetch / invite / remove). */
+export function useChannelMembers(channelId: number | null | undefined): ChannelMember[] {
+  const tick = useChannelStore((s) => s._tick);
+  return useMemo(() => {
+    if (channelId == null) return [];
+    try {
+      return JSON.parse(svc().channel_members_json(BigInt(channelId))) as ChannelMember[];
+    } catch {
+      return [];
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, channelId]);
 }
 
 interface ChannelState {

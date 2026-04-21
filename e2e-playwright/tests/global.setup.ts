@@ -16,14 +16,21 @@ setup("authenticate as test user", async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await page.goto(`${getWebBaseUrl()}/login`);
-  await page.locator("#email").fill(TEST_USER.email);
-  await page.locator("#password").fill(TEST_USER.password);
-  await page.locator('button[type="submit"]').click();
+  const attempt = async (timeoutMs: number) => {
+    await page.goto(`${getWebBaseUrl()}/login`, { waitUntil: "domcontentloaded" });
+    await page.locator("#email").waitFor({ state: "visible", timeout: timeoutMs });
+    await page.locator("#email").fill(TEST_USER.email);
+    await page.locator("#password").fill(TEST_USER.password);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: timeoutMs });
+  };
 
-  await page.waitForURL((url) => !url.pathname.includes("/login"), {
-    timeout: 15_000,
-  });
+  try {
+    await attempt(15_000);
+  } catch {
+    clearAuthRateLimit();
+    await attempt(30_000);
+  }
 
   await context.storageState({ path: AUTH_FILE });
   await context.close();

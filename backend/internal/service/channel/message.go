@@ -30,7 +30,8 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 
 	content.SchemaVersion = 1
 	body := extractBody(&content)
-	if strings.TrimSpace(body) == "" {
+	hasAttachment := strings.TrimSpace(content.AttachmentKey) != ""
+	if strings.TrimSpace(body) == "" && !hasAttachment {
 		return nil, ErrEmptyContent
 	}
 	mentions := extractMentions(&content)
@@ -50,11 +51,16 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 		}
 	}
 
+	messageType := channel.MessageTypeText
+	if hasAttachment && strings.TrimSpace(body) == "" {
+		messageType = channel.MessageTypeAttachment
+	}
+
 	msg := &channel.Message{
 		ChannelID:    channelID,
 		SenderPod:    senderPod,
 		SenderUserID: senderUserID,
-		MessageType:  channel.MessageTypeText,
+		MessageType:  messageType,
 		Body:         body,
 		Content:      &content,
 		Mentions:     mentions,

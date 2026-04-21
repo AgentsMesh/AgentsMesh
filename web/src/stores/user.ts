@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useMemo } from "react";
 import { getUserState } from "@/lib/wasm-core";
 
 export interface UserIdentity {
@@ -31,14 +32,14 @@ export interface UserProfile extends User {
   }>;
 }
 
-function readProfile(): UserProfile | null {
+export function readProfile(): UserProfile | null {
   const val = getUserState().profile_json();
   if (!val) return null;
   return typeof val === "string" ? JSON.parse(val) : val;
 }
 
 interface UserState {
-  profile: UserProfile | null;
+  _tick: number;
   isLoading: boolean;
   error: string | null;
   setProfile: (profile: UserProfile | null) => void;
@@ -50,24 +51,32 @@ interface UserState {
   reset: () => void;
 }
 
+const bump = () => useUserStore.setState((s) => ({ _tick: s._tick + 1 }));
+
+export function useUserProfile(): UserProfile | null {
+  const tick = useUserStore((s) => s._tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => readProfile(), [tick]);
+}
+
 export const useUserStore = create<UserState>((set) => ({
-  profile: null, isLoading: false, error: null,
+  _tick: 0, isLoading: false, error: null,
 
   setProfile: (profile) => {
     getUserState().set_profile(profile ? JSON.stringify(profile) : "");
-    set({ profile: readProfile() });
+    bump();
   },
 
   updateProfile: (updates) => {
     const cur = readProfile();
     if (!cur) return;
     getUserState().set_profile(JSON.stringify({ ...cur, ...updates }));
-    set({ profile: readProfile() });
+    bump();
   },
 
   addIdentity: (identity) => {
     getUserState().add_identity(JSON.stringify(identity));
-    set({ profile: readProfile() });
+    bump();
   },
 
   removeIdentity: (provider) => {
@@ -77,7 +86,7 @@ export const useUserStore = create<UserState>((set) => ({
       ...cur,
       identities: cur.identities.filter((i) => i.provider !== provider),
     }));
-    set({ profile: readProfile() });
+    bump();
   },
 
   setLoading: (isLoading) => set({ isLoading }),
@@ -85,6 +94,6 @@ export const useUserStore = create<UserState>((set) => ({
 
   reset: () => {
     getUserState().set_profile("");
-    set({ profile: null, isLoading: false, error: null });
+    set({ _tick: 0, isLoading: false, error: null });
   },
 }));

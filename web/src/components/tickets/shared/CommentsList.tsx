@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Reply, Pencil, Trash2 } from "lucide-react";
 import type { TicketComment } from "@/lib/api/ticketTypes";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import { CommentInput } from "./CommentInput";
 
 interface CommentsListProps {
@@ -104,7 +104,7 @@ export function CommentsList({
   className,
 }: CommentsListProps) {
   const t = useTranslations();
-  const { user } = useAuthStore();
+  const user = useCurrentUser();
   const { dialogProps, confirm } = useConfirmDialog();
   const [replyTo, setReplyTo] = useState<{
     id: number;

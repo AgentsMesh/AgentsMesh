@@ -113,6 +113,7 @@ export function MentionDropdown({
   return (
     <div
       ref={listRef}
+      data-testid="mention-dropdown"
       className="absolute z-50 w-64 max-h-48 overflow-y-auto rounded-lg border bg-popover shadow-lg"
       style={{
         bottom: position.top,

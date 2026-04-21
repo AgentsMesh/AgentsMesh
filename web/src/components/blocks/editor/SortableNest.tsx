@@ -6,7 +6,7 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { readNestChildren, readRefs } from "@/stores/blockstore";
 import { keyBetween } from "@/lib/blockstore/fractionalIndex";
 import { updateRefOp } from "@/lib/blockstore/opBuilder";
 import { dispatchOps } from "@/stores/blockstoreDispatch";
@@ -75,17 +75,18 @@ async function reorderNest(
   movedRefID: number,
   targetRefID: number,
 ) {
-  const state = useBlockstoreStore.getState();
-  const refIDs = state.nestChildren[parentID] ?? [];
+  const nestChildren = readNestChildren();
+  const refs = readRefs();
+  const refIDs: number[] = nestChildren[parentID] ?? [];
   const fromIdx = refIDs.indexOf(movedRefID);
   const toIdx = refIDs.indexOf(targetRefID);
   if (fromIdx < 0 || toIdx < 0) return;
 
   // Compute the new neighbours as if the moved item were removed first.
-  const without = refIDs.filter((id) => id !== movedRefID);
+  const without = refIDs.filter((id: number) => id !== movedRefID);
   const insertAt = without.indexOf(targetRefID) + (fromIdx < toIdx ? 1 : 0);
-  const beforeKey = insertAt > 0 ? state.refs[without[insertAt - 1]]?.order_key ?? null : null;
-  const afterKey = insertAt < without.length ? state.refs[without[insertAt]]?.order_key ?? null : null;
+  const beforeKey = insertAt > 0 ? refs[without[insertAt - 1]]?.order_key ?? null : null;
+  const afterKey = insertAt < without.length ? refs[without[insertAt]]?.order_key ?? null : null;
   const newKey = keyBetween(beforeKey, afterKey);
 
   await dispatchOps(workspaceID, [

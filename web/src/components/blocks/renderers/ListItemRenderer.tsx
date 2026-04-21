@@ -14,7 +14,7 @@ import { CommentsSection } from "../editor/CommentsSection";
 import { EditableText } from "../editor/EditableText";
 import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useRefs, useNestChildrenIndex, useBlocks } from "@/stores/blockstore";
 
 // ListItemRenderer handles both bulleted and numbered items. Bullet is a
 // plain "•"; number is derived from the item's position among siblings of
@@ -70,27 +70,28 @@ export function ListItemRenderer({ block, depth }: { block: Block; depth: number
 //               numbered_list_item. Gaps in numbering (e.g. a paragraph
 //               between two numbered items) restart counting per cluster.
 function useListMarker(blockID: string, numbered: boolean): string {
-  return useBlockstoreStore((s) => {
-    if (!numbered) return "•";
-    // Find the parent of this block via its nest ref.
-    const selfRef = Object.values(s.refs).find(
-      (r) => r.rel === "nest" && r.to_id === blockID,
-    );
-    if (!selfRef) return "1.";
-    const parentID = selfRef.from_id;
-    const childRefIDs = s.nestChildren[parentID] ?? [];
-    let counter = 0;
-    for (const refID of childRefIDs) {
-      const ref = s.refs[refID];
-      if (!ref) continue;
-      const child = s.blocks[ref.to_id];
-      if (child?.type !== BLOCK_TYPE_NUMBERED_LIST_ITEM) {
-        counter = 0;
-        continue;
-      }
-      counter += 1;
-      if (child.id === blockID) return `${counter}.`;
+  const refs = useRefs();
+  const nestChildren = useNestChildrenIndex();
+  const blocks = useBlocks();
+  if (!numbered) return "•";
+  // Find the parent of this block via its nest ref.
+  const selfRef = Object.values(refs).find(
+    (r) => r.rel === "nest" && r.to_id === blockID,
+  );
+  if (!selfRef) return "1.";
+  const parentID = selfRef.from_id;
+  const childRefIDs: number[] = nestChildren[parentID] ?? [];
+  let counter = 0;
+  for (const refID of childRefIDs) {
+    const ref = refs[refID];
+    if (!ref) continue;
+    const child = blocks[ref.to_id];
+    if (child?.type !== BLOCK_TYPE_NUMBERED_LIST_ITEM) {
+      counter = 0;
+      continue;
     }
-    return "1.";
-  });
+    counter += 1;
+    if (child.id === blockID) return `${counter}.`;
+  }
+  return "1.";
 }

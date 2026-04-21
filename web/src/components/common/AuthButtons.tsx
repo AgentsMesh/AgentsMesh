@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 
 interface AuthButtonsProps {
@@ -33,7 +33,9 @@ export function AuthButtons({
   onClick,
   className,
 }: AuthButtonsProps) {
-  const { user, currentOrg, _hasHydrated } = useAuthStore();
+  const user = useCurrentUser();
+  const currentOrg = useCurrentOrg();
+  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isLoggedIn = _hasHydrated && !!user;
   const consoleHref = currentOrg?.slug
     ? `/${currentOrg.slug}/workspace`

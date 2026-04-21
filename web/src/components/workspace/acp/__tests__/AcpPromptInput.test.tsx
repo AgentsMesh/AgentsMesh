@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { AcpPromptInput } from "@/components/workspace/acp/AcpPromptInput";
-import { useAcpSessionStore } from "@/stores/acpSession";
+import {
+  __seedAcpSessionForTests,
+  __resetAcpSessionsForTests,
+} from "@/stores/acpSession";
 import { EMPTY_SESSION } from "@/stores/acpSessionTypes";
 import { relayPool } from "@/stores/relayConnection";
 
@@ -16,7 +19,7 @@ describe("AcpPromptInput", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(relayPool.isConnected).mockReturnValue(true);
-    useAcpSessionStore.setState({ sessions: {} });
+    __resetAcpSessionsForTests();
   });
 
   it("renders input with correct placeholder", () => {
@@ -79,9 +82,7 @@ describe("AcpPromptInput", () => {
   });
 
   it("sends interrupt command when cancel button is clicked during processing", () => {
-    useAcpSessionStore.setState({
-      sessions: { "pod-1": { ...EMPTY_SESSION, state: "processing" } },
-    });
+    __seedAcpSessionForTests("pod-1", { ...EMPTY_SESSION, state: "processing" });
 
     const { container } = render(<AcpPromptInput podKey="pod-1" />);
     const cancelBtn = container.querySelector("button[title='Cancel']");

@@ -82,3 +82,45 @@ export function permReqToWasm(req: AcpPermissionRequest): string {
     description: req.description,
   });
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toolCallToWasmObj(tc: AcpToolCall): Record<string, any> {
+  return {
+    id: tc.toolCallId,
+    name: tc.toolName,
+    status: tc.status,
+    args: tc.argumentsJson ? JSON.parse(tc.argumentsJson) : null,
+    result_text: tc.resultText,
+    error_message: tc.errorMessage,
+    success: tc.success,
+    timestamp: tc.timestamp,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function permReqToWasmObj(req: AcpPermissionRequest): Record<string, any> {
+  return {
+    id: req.requestId,
+    tool_name: req.toolName,
+    args: req.argumentsJson ? JSON.parse(req.argumentsJson) : null,
+    description: req.description,
+  };
+}
+
+/** Inverse of sessionFromWasm — converts JS-shape session back to the wasm
+ *  object the AcpManager understands. Test-only helper for seeding state. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function wasmFromSession(s: AcpSessionState): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toolCalls: Record<string, any> = {};
+  for (const [k, v] of Object.entries(s.toolCalls)) toolCalls[k] = toolCallToWasmObj(v);
+  return {
+    messages: s.messages,
+    tool_calls: toolCalls,
+    plan: s.plan,
+    thinkings: s.thinkings,
+    logs: s.logs,
+    state: s.state,
+    pending_permissions: s.pendingPermissions.map(permReqToWasmObj),
+  };
+}

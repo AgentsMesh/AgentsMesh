@@ -129,6 +129,7 @@ mod tests {
             host_info: Some(serde_json::json!({"os": "linux"})),
             created_at: Some("2026-01-01T00:00:00Z".into()),
             updated_at: None,
+            ..Default::default()
         };
         let json = serde_json::to_string(&runner).unwrap();
         let decoded: Runner = serde_json::from_str(&json).unwrap();
@@ -164,6 +165,7 @@ mod tests {
             host_info: Some(serde_json::json!({"arch": "arm64", "cores": 8})),
             created_at: None,
             updated_at: None,
+            ..Default::default()
         };
         let json = serde_json::to_string(&runner).unwrap();
         let decoded: Runner = serde_json::from_str(&json).unwrap();

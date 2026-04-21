@@ -3,18 +3,19 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores/auth";
-import { useChannelStore, useChannels, useChannelMessageStore } from "@/stores/channel";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
+import {
+  useChannelStore,
+  useChannels,
+  useChannelMessageStore,
+  useUnreadCounts,
+  getLastMessage,
+  type Channel,
+  type ChannelLastMessage,
+} from "@/stores/channel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  RefreshCw,
-  Plus,
-  Archive,
-  Loader2,
-  MessageSquare,
-} from "lucide-react";
+import { Search, Plus, Loader2, MessageSquare, RefreshCw } from "lucide-react";
 import { ChannelListItem } from "./ChannelListItem";
 import { CreateChannelDialog } from "@/components/channel";
 
@@ -22,9 +23,46 @@ interface ChannelsSidebarContentProps {
   className?: string;
 }
 
+/**
+ * Activity-weighted group the channel belongs to. Mirrors the design's
+ * "Active / Linked / Quiet" sections:
+ *   - Active: has any message in the last 24h
+ *   - Linked: tied to a ticket or repository (and not Active)
+ *   - Quiet:  everything else
+ */
+type ChannelGroup = "active" | "linked" | "quiet";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function classifyChannel(
+  channel: Channel,
+  lastMsg: ChannelLastMessage | null,
+  now: number,
+): ChannelGroup {
+  const ts = lastMsg?.timestamp ?? channel.updated_at;
+  if (ts) {
+    const t = new Date(ts).getTime();
+    if (!Number.isNaN(t) && now - t < DAY_MS) return "active";
+  }
+  if (channel.ticket || channel.repository) return "linked";
+  return "quiet";
+}
+
+function SectionLabel({ children, count }: { children: string; count?: number }) {
+  return (
+    <div className="flex items-baseline justify-between px-4 pt-3 pb-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+        {children}
+      </span>
+      {typeof count === "number" && count > 0 && (
+        <span className="font-mono text-[10px] text-muted-foreground">{count}</span>
+      )}
+    </div>
+  );
+}
+
 export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProps) {
   const t = useTranslations();
-  const currentOrg = useAuthStore((s) => s.currentOrg);
+  const currentOrg = useCurrentOrg();
 
   const channels = useChannels();
   const loading = useChannelStore((s) => s.loading);
@@ -35,14 +73,14 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
   const setSelectedChannelId = useChannelStore((s) => s.setSelectedChannelId);
   const setSearchQuery = useChannelStore((s) => s.setSearchQuery);
   const setShowArchived = useChannelStore((s) => s.setShowArchived);
+  const _tick = useChannelStore((s) => s._tick);
 
-  const unreadCounts = useChannelMessageStore((s) => s.unreadCounts);
+  const unreadCounts = useUnreadCounts();
   const fetchUnreadCounts = useChannelMessageStore((s) => s.fetchUnreadCounts);
 
-  const [refreshing, setRefreshing] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Load channels and unread counts on mount
   useEffect(() => {
     if (currentOrg) {
       fetchChannels({ includeArchived: true });
@@ -50,11 +88,9 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     }
   }, [currentOrg, fetchChannels, fetchUnreadCounts]);
 
-  // Filter channels: show member channels by default, all visible when searching
-  const filteredChannels = useMemo(() => {
+  const visible = useMemo(() => {
     return channels.filter((channel) => {
       if (!showArchived && channel.is_archived) return false;
-      // When not searching, only show channels the user is a member of
       if (!searchQuery && !channel.is_member) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -66,6 +102,34 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     });
   }, [channels, searchQuery, showArchived]);
 
+  const grouped = useMemo(() => {
+    const now = Date.now();
+    const rows = visible.map((ch) => {
+      const lastMsg = getLastMessage(ch.id);
+      return { channel: ch, lastMsg, group: classifyChannel(ch, lastMsg, now) };
+    });
+    rows.sort((a, b) => {
+      const ta = a.lastMsg?.timestamp ?? a.channel.updated_at ?? "";
+      const tb = b.lastMsg?.timestamp ?? b.channel.updated_at ?? "";
+      return tb.localeCompare(ta);
+    });
+    return {
+      active: rows.filter((r) => r.group === "active"),
+      linked: rows.filter((r) => r.group === "linked"),
+      quiet: rows.filter((r) => r.group === "quiet"),
+    };
+    // `_tick` is the WASM store invalidator — re-derive on any channel event.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, _tick]);
+
+  const handleChannelCreated = useCallback(
+    (channelId: number) => {
+      setShowCreateDialog(false);
+      setSelectedChannelId(channelId);
+    },
+    [setSelectedChannelId],
+  );
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -75,86 +139,95 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     }
   }, [fetchChannels]);
 
-  const handleChannelCreated = useCallback((channelId: number) => {
-    setShowCreateDialog(false);
-    setSelectedChannelId(channelId);
-  }, [setSelectedChannelId]);
+  const renderGroup = (label: string, rows: typeof grouped.active) => {
+    if (rows.length === 0) return null;
+    return (
+      <>
+        <SectionLabel count={rows.length}>{label}</SectionLabel>
+        <div className="flex flex-col gap-0.5 px-2">
+          {rows.map(({ channel, lastMsg }) => (
+            <ChannelListItem
+              key={channel.id}
+              channel={channel}
+              isSelected={selectedChannelId === channel.id}
+              unreadCount={unreadCounts[channel.id] || 0}
+              lastMessage={lastMsg}
+              onClick={() => setSelectedChannelId(channel.id)}
+            />
+          ))}
+        </div>
+      </>
+    );
+  };
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
-      {/* Search */}
-      <div className="px-2 py-2">
+    <div className={cn("flex h-full flex-col", className)}>
+      {/* Search + CTA */}
+      <div className="flex flex-col gap-2 px-3 pb-2 pt-3">
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={t("channels.sidebar.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 text-sm"
+            className="h-8 pl-8 text-[13px]"
           />
         </div>
-      </div>
-
-      {/* Actions bar */}
-      <div className="flex items-center justify-between px-2 pb-2">
         <Button
           size="sm"
-          variant="outline"
-          className="h-7 text-xs gap-1"
           onClick={() => setShowCreateDialog(true)}
+          className="h-8 w-full gap-1.5 text-[13px]"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="h-3.5 w-3.5" />
           {t("channels.sidebar.createChannel")}
         </Button>
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className={cn("h-7 w-7 p-0", showArchived && "text-primary")}
-            onClick={() => setShowArchived(!showArchived)}
-            title={showArchived ? t("channels.sidebar.hideArchived") : t("channels.sidebar.showArchived")}
-          >
-            <Archive className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 w-7 p-0"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            title={t("channels.sidebar.refresh")}
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-          </Button>
-        </div>
       </div>
 
-      {/* Channel list */}
-      <div className="flex-1 overflow-y-auto border-t border-border">
+      {/* Groups */}
+      <div className="flex-1 overflow-y-auto">
         {loading && channels.length === 0 ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-        ) : filteredChannels.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <MessageSquare className="w-8 h-8 text-muted-foreground/50 mb-2" />
+        ) : visible.length === 0 ? (
+          <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
+            <MessageSquare className="mb-2 h-8 w-8 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
-              {searchQuery ? t("channels.sidebar.noMatch") : t("channels.sidebar.noChannels")}
+              {searchQuery
+                ? t("channels.sidebar.noMatch")
+                : t("channels.sidebar.noChannels")}
             </p>
           </div>
         ) : (
-          <div className="py-1">
-            {filteredChannels.map((channel) => (
-              <ChannelListItem
-                key={channel.id}
-                channel={channel}
-                isSelected={selectedChannelId === channel.id}
-                unreadCount={unreadCounts[channel.id] || 0}
-                onClick={() => setSelectedChannelId(channel.id)}
-              />
-            ))}
+          <div className="pb-3">
+            {renderGroup(t("channels.sidebar.groupActive"), grouped.active)}
+            {renderGroup(t("channels.sidebar.groupLinked"), grouped.linked)}
+            {renderGroup(t("channels.sidebar.groupQuiet"), grouped.quiet)}
           </div>
         )}
+      </div>
+
+      {/* Footer: archive toggle + refresh */}
+      <div className="flex items-center justify-between border-t border-border px-3 py-2.5 text-[12px]">
+        <button
+          type="button"
+          onClick={() => setShowArchived(!showArchived)}
+          className="text-primary hover:underline"
+        >
+          {showArchived
+            ? t("channels.sidebar.hideArchived")
+            : t("channels.sidebar.showArchived")}
+        </button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-6 w-6 p-0 text-muted-foreground"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          title={t("channels.sidebar.refresh")}
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+        </Button>
       </div>
 
       <CreateChannelDialog

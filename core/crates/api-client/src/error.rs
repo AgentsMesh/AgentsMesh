@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ApiError {
-    #[error("HTTP {status}: {status_text}")]
+    #[error("HTTP {status}: {}", Self::describe_http(status_text, server_message.as_deref(), code.as_deref()))]
     Http {
         status: u16,
         status_text: String,
@@ -30,6 +30,15 @@ impl ApiError {
         match self {
             ApiError::Http { status, .. } => Some(*status),
             _ => None,
+        }
+    }
+
+    fn describe_http(status_text: &str, server_message: Option<&str>, code: Option<&str>) -> String {
+        match (server_message, code) {
+            (Some(msg), Some(c)) => format!("{msg} [{c}]"),
+            (Some(msg), None) => msg.to_string(),
+            (None, Some(c)) => format!("{status_text} [{c}]"),
+            (None, None) => status_text.to_string(),
         }
     }
 }

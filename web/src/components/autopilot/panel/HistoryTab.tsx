@@ -4,12 +4,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { History, FileText, ChevronDown, ChevronRight } from "lucide-react";
-import { useAutopilotStore, type AutopilotIteration } from "@/stores/autopilot";
+import { useAutopilotStore, useAutopilotIterations, type AutopilotIteration } from "@/stores/autopilot";
 import { iterationPhaseConfig } from "./config";
-
-// Stable empty array to avoid infinite re-render when key is missing from iterations map.
-// Inline `|| []` creates a new reference on every getSnapshot → useSyncExternalStore loop.
-const EMPTY_ITERATIONS: AutopilotIteration[] = [];
 
 interface HistoryTabProps {
   autopilotControllerKey: string;
@@ -82,9 +78,7 @@ function IterationItem({ iteration }: { iteration: AutopilotIteration }) {
 }
 
 export function HistoryTab({ autopilotControllerKey }: HistoryTabProps) {
-  const controllerIterations = useAutopilotStore(
-    (s) => s.iterations[autopilotControllerKey] ?? EMPTY_ITERATIONS
-  );
+  const controllerIterations = useAutopilotIterations(autopilotControllerKey);
   const fetchIterations = useAutopilotStore((s) => s.fetchIterations);
 
   React.useEffect(() => {

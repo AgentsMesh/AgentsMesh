@@ -116,6 +116,41 @@ impl WasmAuthManager {
         serde_json::to_string(&self.manager.get_organizations()).unwrap_or_default()
     }
 
+    /// Apply an already-obtained AuthSession (SSO / register callback path).
+    /// Writes token + refresh_token + user into Rust AuthState and persists.
+    pub fn apply_session(&self, session_json: &str) -> Result<(), String> {
+        let session: agentsmesh_types::AuthSession = serde_json::from_str(session_json)
+            .map_err(|e| e.to_string())?;
+        self.manager.apply_session(&session);
+        Ok(())
+    }
+
+    /// Replace the organizations list (e.g. after a refetch outside fetch_organizations).
+    /// Also promotes the first org to current_org if none is set.
+    pub fn set_organizations(&self, orgs_json: &str) -> Result<(), String> {
+        let orgs: Vec<agentsmesh_types::Organization> = serde_json::from_str(orgs_json)
+            .map_err(|e| e.to_string())?;
+        self.manager.replace_organizations(orgs);
+        Ok(())
+    }
+
+    /// Set or clear current organization. Empty json string clears it.
+    pub fn set_current_org(&self, org_json: &str) -> Result<(), String> {
+        if org_json.is_empty() {
+            self.manager.set_current_org_direct(None);
+        } else {
+            let org: agentsmesh_types::Organization = serde_json::from_str(org_json)
+                .map_err(|e| e.to_string())?;
+            self.manager.set_current_org_direct(Some(org));
+        }
+        Ok(())
+    }
+
+    /// Clear all session data (logout without API call). Useful for test reset.
+    pub fn clear_session(&self) {
+        self.manager.clear();
+    }
+
     pub fn get_token(&self) -> Option<String> { AuthTokenStore::get_token(&self.manager) }
     pub fn get_refresh_token(&self) -> Option<String> { AuthTokenStore::get_refresh_token(&self.manager) }
 }

@@ -497,5 +497,12 @@
       "loadFailed": "加载数据失败，请重试",
       "sendFailed": "发送消息失败，请重试"
     }
+  },
+  "errors": {
+    "unexpected": "出错了",
+    "notFound": "页面未找到",
+    "goBack": "返回",
+    "reload": "刷新",
+    "home": "回到首页"
   }
 }

@@ -9,7 +9,7 @@ import {
   getMobileActivities,
   type ActivityType,
 } from "@/stores/ide";
-import { useAuthStore } from "@/stores/auth";
+import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import {
   Terminal,
@@ -36,7 +36,7 @@ interface MobileTabBarProps {
 export function MobileTabBar({ className }: MobileTabBarProps) {
   const { activeActivity, setActiveActivity, setMobileMoreMenuOpen } =
     useIDEStore();
-  const { currentOrg } = useAuthStore();
+  const currentOrg = useCurrentOrg();
   const params = useParams();
   const t = useTranslations();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";

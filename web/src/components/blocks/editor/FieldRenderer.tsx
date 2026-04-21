@@ -4,7 +4,7 @@ import React from "react";
 
 import type { ColumnSpec, JSONMap, SelectOption } from "@/lib/api/blockstoreTypes";
 import { cn } from "@/lib/utils";
-import { useBlockstoreStore } from "@/stores/blockstore";
+import { useBlock } from "@/stores/blockstore";
 
 import { UserPicker } from "./UserPicker";
 
@@ -188,7 +188,7 @@ function UserField({ value, onChange, readOnly }: {
 function BlockRefField({ value, onChange, readOnly }: {
   value: string; onChange: (v: string) => void; readOnly?: boolean;
 }) {
-  const target = useBlockstoreStore((s) => (value ? s.blocks[value] : undefined));
+  const target = useBlock(value || null);
   const display = target
     ? (((target.data as JSONMap).title as string | undefined) ?? target.text ?? value)
     : value || "pick block…";

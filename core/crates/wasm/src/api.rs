@@ -196,6 +196,11 @@ impl WasmApiClient {
         crate::service_mesh::WasmMeshService::new(self.client.clone(), state)
     }
 
+    pub fn create_blockstore_service(&self) -> crate::service_blockstore::WasmBlockstoreService {
+        let state = agentsmesh_state::blockstore_state::BlockstoreState::new();
+        crate::service_blockstore::WasmBlockstoreService::new(self.client.clone(), state)
+    }
+
     pub fn create_billing_service(&self) -> crate::service_billing::WasmBillingService {
         crate::service_billing::WasmBillingService::new(self.client.clone())
     }
@@ -210,6 +215,10 @@ impl WasmApiClient {
 
     pub fn create_invitation_service(&self) -> crate::service_invitation::WasmInvitationService {
         crate::service_invitation::WasmInvitationService::new(self.client.clone())
+    }
+
+    pub fn create_grant_service(&self) -> crate::service_grant::WasmGrantService {
+        crate::service_grant::WasmGrantService::new(self.client.clone())
     }
 
     pub fn create_apikey_service(&self) -> crate::service_apikey::WasmApiKeyService {
