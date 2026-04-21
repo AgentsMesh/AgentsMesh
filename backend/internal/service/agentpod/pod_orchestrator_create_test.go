@@ -306,6 +306,9 @@ func TestCreatePod_SessionID_SetForNormalMode(t *testing.T) {
 	// Session ID should be set on the pod
 	assert.NotNil(t, result.Pod.SessionID)
 	assert.NotEmpty(t, *result.Pod.SessionID)
+	assert.Contains(t, coord.lastCmd.LaunchArgs, "--session-id")
+	assert.Contains(t, coord.lastCmd.LaunchArgs, *result.Pod.SessionID)
+	assert.NotContains(t, coord.lastCmd.LaunchArgs, "--resume")
 }
 
 // ==================== CredentialProfileID DB Storage Tests ====================

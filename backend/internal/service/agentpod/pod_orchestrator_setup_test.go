@@ -180,6 +180,8 @@ func newTestProvider() *mockAgentConfigProvider {
 AGENT claude
 EXECUTABLE claude
 MCP ON
+arg "--session-id" config.session_id when config.session_id != "" and not config.resume_enabled
+arg "--resume" config.resume_session when config.resume_enabled
 PROMPT_POSITION prepend
 `
 	return &mockAgentConfigProvider{

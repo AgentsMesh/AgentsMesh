@@ -249,6 +249,9 @@ func TestCreatePod_ResumeMode_SessionReused(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, result.Pod.SessionID)
 	assert.Equal(t, "my-session-id", *result.Pod.SessionID)
+	assert.Contains(t, coord.lastCmd.LaunchArgs, "--resume")
+	assert.Contains(t, coord.lastCmd.LaunchArgs, "my-session-id")
+	assert.NotContains(t, coord.lastCmd.LaunchArgs, "--session-id")
 }
 
 func TestCreatePod_ResumeMode_NoSessionID_GeneratesNew(t *testing.T) {
@@ -302,6 +305,9 @@ func TestCreatePod_ResumeMode_DisableResumeAgentSession(t *testing.T) {
 
 	require.NoError(t, err)
 	// When ResumeAgentSession is false, resume_enabled/resume_session should NOT be set
+	assert.NotContains(t, coord.lastCmd.LaunchArgs, "--resume")
+	// Resume-mode create never injects config.session_id, so --session-id must stay off
+	assert.NotContains(t, coord.lastCmd.LaunchArgs, "--session-id")
 }
 
 func TestCreatePod_ResumeMode_CompletedPod(t *testing.T) {
