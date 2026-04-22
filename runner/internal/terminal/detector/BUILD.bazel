@@ -1,0 +1,54 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "detector",
+    srcs = [
+        "agent_state.go",
+        "detector_test_helper.go",
+        "multi_signal_confidence.go",
+        "multi_signal_config.go",
+        "multi_signal_detector.go",
+        "multi_signal_notify.go",
+        "multi_signal_screen.go",
+        "output_activity_detector.go",
+        "prompt_detector.go",
+        "prompt_patterns.go",
+        "state_detector.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/terminal/detector",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/safego",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":detector",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "detector_test",
+    srcs = [
+        "detector_aider_test.go",
+        "detector_claude_test.go",
+        "detector_codex_test.go",
+        "detector_cursor_test.go",
+        "detector_false_positive_test.go",
+        "detector_gemini_test.go",
+        "detector_generic_test.go",
+        "detector_opencode_test.go",
+        "detector_signal_test.go",
+        "multi_signal_detector_subscribe_test.go",
+        "multi_signal_detector_test.go",
+        "output_activity_detector_test.go",
+        "prompt_detector_test.go",
+    ],
+    embed = [":detector"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

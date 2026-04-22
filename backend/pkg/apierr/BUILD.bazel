@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "apierr",
+    srcs = [
+        "apierr.go",
+        "codes.go",
+        "helpers.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/apierr",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_gin_gonic_gin//:gin"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":apierr",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "apierr_test",
+    srcs = ["apierr_test.go"],
+    embed = [":apierr"],
+    deps = [
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

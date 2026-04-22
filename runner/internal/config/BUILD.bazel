@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "config",
+    srcs = [
+        "config.go",
+        "config_grpc.go",
+        "config_paths.go",
+        "config_types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/config",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/textutil",
+        "@com_github_spf13_viper//:viper",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "config_test",
+    srcs = [
+        "config_defaults_test.go",
+        "config_grpc_test.go",
+        "config_paths_test.go",
+        "config_relay_test.go",
+        "config_validation_test.go",
+    ],
+    embed = [":config"],
+    deps = [
+        "//runner/internal/textutil",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

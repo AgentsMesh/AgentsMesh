@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "invitation",
+    srcs = [
+        "invitation_accept.go",
+        "invitation_create.go",
+        "invitation_query.go",
+        "service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/invitation",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/invitation",
+        "//backend/internal/domain/organization",
+        "//backend/internal/infra/email",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":invitation",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "invitation_test",
+    srcs = ["invitation_integration_test.go"],
+    embed = [":invitation"],
+    deps = [
+        "//backend/internal/domain/invitation",
+        "//backend/internal/domain/organization",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

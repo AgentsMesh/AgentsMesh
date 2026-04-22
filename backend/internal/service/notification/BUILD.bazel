@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "notification",
+    srcs = [
+        "dispatcher.go",
+        "dispatcher_delivery.go",
+        "preference_store.go",
+        "resolver.go",
+        "resolver_channel.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/notification",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/internal/domain/notification"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":notification",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "notification_test",
+    srcs = [
+        "dispatcher_dispatch_test.go",
+        "dispatcher_test.go",
+        "notification_integration_test.go",
+        "preference_store_test.go",
+        "resolver_test.go",
+    ],
+    embed = [":notification"],
+    deps = [
+        "//backend/internal/domain/notification",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

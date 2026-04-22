@@ -1,0 +1,19 @@
+// go.work — unifies AgentsMesh's 5 Go modules so Bazel + gazelle can resolve
+// cross-module imports (backend → proto, backend → agentfile, runner → proto)
+// without the per-module `replace` directives previously needed.
+//
+// Listed modules:
+//   backend/    — REST/gRPC API server
+//   runner/     — pod orchestration daemon
+//   relay/      — WebSocket relay service
+//   agentfile/  — AgentFile DSL parser
+//   proto/      — generated gRPC/protobuf stubs
+go 1.25.0
+
+use (
+	./agentfile
+	./backend
+	./proto
+	./relay
+	./runner
+)

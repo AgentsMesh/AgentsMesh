@@ -1,0 +1,66 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "aggregator",
+    srcs = [
+        "adaptive_delay.go",
+        "backpressure.go",
+        "frame_buffer.go",
+        "frame_buffer_limit.go",
+        "frame_buffer_utils.go",
+        "frame_detector.go",
+        "frame_sequences.go",
+        "fullredraw_throttler.go",
+        "fullredraw_throttler_internal.go",
+        "fullredraw_throttler_options.go",
+        "output_router.go",
+        "pty_logger.go",
+        "smart_aggregator.go",
+        "smart_aggregator_flush.go",
+        "smart_aggregator_options.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/logger"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":aggregator",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "aggregator_test",
+    srcs = [
+        "adaptive_delay_test.go",
+        "backpressure_test.go",
+        "frame_buffer_basic_test.go",
+        "frame_buffer_fullredraw_test.go",
+        "frame_buffer_limit_test.go",
+        "frame_buffer_utf8_test.go",
+        "frame_detector_analyze_test.go",
+        "frame_detector_discard_test.go",
+        "frame_detector_flush_test.go",
+        "frame_detector_helpers_test.go",
+        "frame_detector_strip_test.go",
+        "fullredraw_throttler_bandwidth_test.go",
+        "fullredraw_throttler_basic_test.go",
+        "fullredraw_throttler_delay_test.go",
+        "output_router_test.go",
+        "smart_aggregator_backpressure_test.go",
+        "smart_aggregator_basic_test.go",
+        "smart_aggregator_concurrent_test.go",
+        "smart_aggregator_frame_test.go",
+        "smart_aggregator_serialize_test.go",
+        "smart_aggregator_size_test.go",
+        "smart_aggregator_stress_test.go",
+        "smart_aggregator_throttle_basic_test.go",
+        "smart_aggregator_throttle_recovery_test.go",
+    ],
+    embed = [":aggregator"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

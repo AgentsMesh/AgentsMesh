@@ -1,0 +1,41 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "process",
+    srcs = [
+        "darwin.go",
+        "health_unix.go",
+        "health_windows.go",
+        "inspector.go",
+        "kill_tree_unix.go",
+        "kill_tree_windows.go",
+        "linux.go",
+        "windows.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/process",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":process",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "process_test",
+    srcs = [
+        "kill_tree_windows_test.go",
+        "process_cross_test.go",
+        "process_test.go",
+        "windows_test.go",
+    ],
+    embed = [":process"],
+    deps = select({
+        "@rules_go//go/platform:windows": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "//conditions:default": [],
+    }),
+)

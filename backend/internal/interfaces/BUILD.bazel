@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "interfaces",
+    srcs = [
+        "connection_manager.go",
+        "pki.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/interfaces",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/internal/infra/pki"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":interfaces",
+    visibility = ["//backend:__subpackages__"],
+)

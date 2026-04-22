@@ -1,0 +1,55 @@
+###############################################################################
+# AgentsMesh — root BUILD file.
+#
+# Exports top-level config files so they can be referenced from nested
+# BUILD files (e.g. `//:go.work`, `//:pnpm-lock.yaml`). Adds workspace-level
+# targets: `buildifier` (formatter), `gazelle` (Go BUILD gen, Phase 1+).
+###############################################################################
+
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
+load("@gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/anthropics/agentsmesh
+# gazelle:proto disable_global
+# gazelle:go_naming_convention import_alias
+
+exports_files(
+    [
+        ".bazelrc",
+        ".bazelignore",
+        "go.work",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# `bazel run //:gazelle` regenerates BUILD.bazel files for every Go package
+# under backend/, runner/, relay/, agentfile/, proto/.
+gazelle(name = "gazelle")
+
+# Runs buildifier on every BUILD/MODULE/.bzl file. CI enforces this via
+# `bazel run //:buildifier_check`.
+buildifier(
+    name = "buildifier",
+    exclude_patterns = [
+        "./.git/*",
+        "./.claude/*",
+        "./node_modules/*",
+        "./clients/**/node_modules/*",
+        "./**/target/*",
+    ],
+    lint_mode = "fix",
+    mode = "fix",
+)
+
+buildifier(
+    name = "buildifier_check",
+    exclude_patterns = [
+        "./.git/*",
+        "./.claude/*",
+        "./node_modules/*",
+        "./clients/**/node_modules/*",
+        "./**/target/*",
+    ],
+    lint_mode = "warn",
+    mode = "check",
+)

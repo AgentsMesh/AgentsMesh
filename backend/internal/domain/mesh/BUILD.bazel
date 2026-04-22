@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mesh",
+    srcs = [
+        "mesh.go",
+        "repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/mesh",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/runner",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mesh",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "mesh_test",
+    srcs = ["mesh_test.go"],
+    embed = [":mesh"],
+)

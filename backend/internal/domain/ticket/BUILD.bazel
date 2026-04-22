@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ticket",
+    srcs = [
+        "assignee.go",
+        "board.go",
+        "comment.go",
+        "commit.go",
+        "label.go",
+        "merge_request.go",
+        "mr_sync_repository.go",
+        "relation.go",
+        "repository.go",
+        "ticket.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/ticket",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/user",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ticket",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "ticket_test",
+    srcs = [
+        "ticket_benchmark_test.go",
+        "ticket_constants_test.go",
+        "ticket_entity_test.go",
+        "ticket_label_test.go",
+        "ticket_mr_test.go",
+        "ticket_relation_test.go",
+    ],
+    embed = [":ticket"],
+)

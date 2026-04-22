@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rest",
+    srcs = ["router.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/rest",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/rest/internal",
+        "//backend/internal/api/rest/v1:rest",
+        "//backend/internal/api/rest/v1/admin",
+        "//backend/internal/api/rest/v1/webhooks",
+        "//backend/internal/api/rest/ws",
+        "//backend/internal/config",
+        "//backend/internal/infra/database",
+        "//backend/internal/infra/email",
+        "//backend/internal/middleware",
+        "//backend/internal/service/admin",
+        "//backend/pkg/apierr",
+        "@com_github_gin_contrib_cors//:cors",
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@io_gorm_gorm//:gorm",
+        "@io_opentelemetry_go_contrib_instrumentation_github_com_gin_gonic_gin_otelgin//:otelgin",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":rest",
+    visibility = ["//backend:__subpackages__"],
+)

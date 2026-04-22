@@ -1,0 +1,4 @@
+# Placeholder — Web/TS macros land here in Phase 4.
+#   next.bzl      → next_app      (Next.js build/dev/start, ported from AIO)
+#   next_oci.bzl  → next_oci      (Next.js → OCI image)
+#   electron.bzl  → electron_app  (Electron Forge → .app bundle, new)

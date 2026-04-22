@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cache",
+    srcs = [
+        "downloader.go",
+        "extract.go",
+        "skill_cache.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/cache",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//proto/gen/go/runner/v1:runner"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cache",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "cache_test",
+    srcs = [
+        "downloader_internal_test.go",
+        "downloader_test.go",
+        "skill_cache_extract_errors_test.go",
+        "skill_cache_extract_test.go",
+        "skill_cache_test.go",
+        "skill_cache_verify_test.go",
+    ],
+    embed = [":cache"],
+    deps = [
+        "//proto/gen/go/runner/v1:runner",
+        "//runner/internal/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

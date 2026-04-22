@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "invitation",
+    srcs = ["invitation.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/invitation",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":invitation",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "invitation_test",
+    srcs = ["invitation_test.go"],
+    embed = [":invitation"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

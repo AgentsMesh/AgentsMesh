@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "stripe",
+    srcs = [
+        "provider.go",
+        "provider_manage.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment/stripe",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/types",
+        "@com_github_stripe_stripe_go_v76//:stripe-go",
+        "@com_github_stripe_stripe_go_v76//billingportal/session",
+        "@com_github_stripe_stripe_go_v76//checkout/session",
+        "@com_github_stripe_stripe_go_v76//customer",
+        "@com_github_stripe_stripe_go_v76//refund",
+        "@com_github_stripe_stripe_go_v76//subscription",
+        "@com_github_stripe_stripe_go_v76//webhook",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":stripe",
+    visibility = ["//backend:__subpackages__"],
+)

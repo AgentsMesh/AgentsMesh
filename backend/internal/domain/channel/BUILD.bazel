@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "channel",
+    srcs = [
+        "binding_model.go",
+        "binding_repository.go",
+        "channel.go",
+        "member.go",
+        "message_content.go",
+        "message_content_validation.go",
+        "message_edit.go",
+        "read_state.go",
+        "repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/channel",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/user",
+        "@com_github_lib_pq//:pq",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":channel",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "channel_test",
+    srcs = [
+        "channel_basic_test.go",
+        "channel_binding_test.go",
+        "channel_message_test.go",
+        "channel_permission_test.go",
+        "message_content_validation_test.go",
+    ],
+    embed = [":channel"],
+    deps = ["@com_github_lib_pq//:pq"],
+)

@@ -1,0 +1,45 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "parser",
+    srcs = [
+        "ast.go",
+        "ast_decl.go",
+        "ast_expr.go",
+        "ast_stmt.go",
+        "parser.go",
+        "parser_decl.go",
+        "parser_decl_extra.go",
+        "parser_expr.go",
+        "parser_stmt.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/parser",
+    visibility = ["//visibility:public"],
+    deps = ["//agentfile/lexer"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":parser",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "parser_test",
+    srcs = [
+        "parser_comprehensive_test.go",
+        "parser_coverage_test.go",
+        "parser_defense_test.go",
+        "parser_errorpaths_test.go",
+        "parser_finalcover_test.go",
+        "parser_full_test.go",
+        "parser_mode_credential_test.go",
+        "parser_test.go",
+    ],
+    embed = [":parser"],
+    deps = [
+        "//agentfile/lexer",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

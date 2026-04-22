@@ -1,0 +1,43 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mesh",
+    srcs = ["service.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/mesh",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/channel",
+        "//backend/internal/domain/mesh",
+        "//backend/internal/service/agentpod",
+        "//backend/internal/service/binding",
+        "//backend/internal/service/channel",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mesh",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "mesh_test",
+    srcs = [
+        "mesh_integration_test.go",
+        "service_basic_test.go",
+        "service_batch_test.go",
+        "service_channel_test.go",
+        "service_setup_test.go",
+    ],
+    embed = [":mesh"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/mesh",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

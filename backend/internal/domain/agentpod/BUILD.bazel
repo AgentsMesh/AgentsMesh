@@ -1,0 +1,39 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "agentpod",
+    srcs = [
+        "autopilot_commands.go",
+        "autopilot_controller.go",
+        "autopilot_iteration.go",
+        "pod.go",
+        "pod_commands.go",
+        "pod_helpers.go",
+        "repository.go",
+        "settings.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/agent",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/domain/runner",
+        "//backend/internal/domain/ticket",
+        "//backend/internal/domain/user",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":agentpod",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "agentpod_test",
+    srcs = [
+        "pod_test.go",
+        "settings_test.go",
+    ],
+    embed = [":agentpod"],
+)

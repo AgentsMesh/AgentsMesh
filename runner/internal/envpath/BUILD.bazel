@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "envpath",
+    srcs = [
+        "envpath.go",
+        "envpath_unix.go",
+        "envpath_windows.go",
+        "paths.go",
+        "paths_unix.go",
+        "paths_windows.go",
+        "shell_unix.go",
+        "shell_windows.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/envpath",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":envpath",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "envpath_test",
+    srcs = [
+        "envpath_test.go",
+        "paths_test.go",
+    ],
+    embed = [":envpath"],
+)

@@ -1,0 +1,78 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "blockstore",
+    srcs = [
+        "acl.go",
+        "apply_ops.go",
+        "apply_ops_types.go",
+        "block_create.go",
+        "block_delete.go",
+        "block_update.go",
+        "clock.go",
+        "embedding.go",
+        "embedding_refresh.go",
+        "export.go",
+        "openai_embedder.go",
+        "payload_decode.go",
+        "query.go",
+        "ref_add.go",
+        "ref_remove.go",
+        "ref_update.go",
+        "semantic_search.go",
+        "service_types.go",
+        "time_travel.go",
+        "trigger_dispatch.go",
+        "trigger_fire.go",
+        "trigger_predicate.go",
+        "trigger_types.go",
+        "type_resolver.go",
+        "validation.go",
+        "webhook_url_guard.go",
+        "workspace_service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/blockstore",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/blockstore",
+        "//backend/internal/infra/blockstore",
+        "//backend/internal/infra/otel",
+        "@com_github_google_uuid//:uuid",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockstore",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "blockstore_test",
+    srcs = [
+        "acl_integration_test.go",
+        "acl_test.go",
+        "apply_ops_integration_test.go",
+        "cascade_delete_integration_test.go",
+        "indicator_lifecycle_integration_test.go",
+        "openai_embedder_test.go",
+        "ref_add_integration_test.go",
+        "schema_invariants_test.go",
+        "semantic_search_integration_test.go",
+        "trigger_engine_integration_test.go",
+        "trigger_engine_test.go",
+        "type_registration_integration_test.go",
+        "webhook_url_guard_test.go",
+    ],
+    embed = [":blockstore"],
+    deps = [
+        "//backend/internal/domain/blockstore",
+        "//backend/internal/infra/blockstore",
+        "//backend/internal/testkit",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

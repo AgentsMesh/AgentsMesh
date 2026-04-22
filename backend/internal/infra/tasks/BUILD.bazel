@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tasks",
+    srcs = [
+        "pipeline_watcher.go",
+        "pipeline_watcher_process.go",
+        "pipeline_watcher_query.go",
+        "pipeline_watcher_types.go",
+        "pipeline_watcher_watch.go",
+        "scheduler.go",
+        "scheduler_exec.go",
+        "worker.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/tasks",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["@com_github_redis_go_redis_v9//:go-redis"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tasks",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "tasks_test",
+    srcs = [
+        "scheduler_integration_test.go",
+        "worker_integration_test.go",
+    ],
+    embed = [":tasks"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

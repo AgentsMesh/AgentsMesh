@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "channel",
+    srcs = [
+        "channel.go",
+        "channel_events.go",
+        "channel_io.go",
+        "channel_lifecycle.go",
+        "channel_manager.go",
+        "channel_manager_connect.go",
+        "channel_manager_types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/relay/internal/channel",
+    visibility = ["//relay:__subpackages__"],
+    deps = [
+        "//relay/internal/protocol",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":channel",
+    visibility = ["//relay:__subpackages__"],
+)
+
+go_test(
+    name = "channel_test",
+    srcs = [
+        "channel_buffer_test.go",
+        "channel_edge_test.go",
+        "channel_forwarding_test.go",
+        "channel_manager_test.go",
+        "channel_race_test.go",
+        "channel_test.go",
+        "helpers_test.go",
+    ],
+    embed = [":channel"],
+    deps = [
+        "//relay/internal/protocol",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)

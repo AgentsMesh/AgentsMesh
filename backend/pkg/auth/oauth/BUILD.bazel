@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "oauth",
+    srcs = [
+        "oauth.go",
+        "oauth_providers.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/auth/oauth",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":oauth",
+    visibility = ["//visibility:public"],
+)

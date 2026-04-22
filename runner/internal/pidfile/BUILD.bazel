@@ -1,0 +1,138 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pidfile",
+    srcs = [
+        "pidfile.go",
+        "pidfile_unix.go",
+        "pidfile_windows.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/pidfile",
+    visibility = ["//runner:__subpackages__"],
+    deps = select({
+        "@rules_go//go/platform:aix": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:android": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:darwin": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:dragonfly": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:freebsd": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:illumos": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:ios": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:js": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:linux": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:netbsd": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:openbsd": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:osx": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:plan9": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:qnx": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:solaris": [
+            "//runner/internal/process",
+        ],
+        "@rules_go//go/platform:windows": [
+            "//runner/internal/process",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pidfile",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "pidfile_test",
+    srcs = ["pidfile_test.go"],
+    embed = [":pidfile"],
+    deps = select({
+        "@rules_go//go/platform:aix": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:android": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:darwin": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:dragonfly": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:freebsd": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:illumos": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:ios": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:js": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:linux": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:netbsd": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:openbsd": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:osx": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:plan9": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:qnx": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "@rules_go//go/platform:solaris": [
+            "@com_github_stretchr_testify//assert",
+            "@com_github_stretchr_testify//require",
+        ],
+        "//conditions:default": [],
+    }),
+)

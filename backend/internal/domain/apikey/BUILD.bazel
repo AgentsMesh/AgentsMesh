@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "apikey",
+    srcs = [
+        "apikey.go",
+        "repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/apikey",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":apikey",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "apikey_test",
+    srcs = ["apikey_test.go"],
+    embed = [":apikey"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

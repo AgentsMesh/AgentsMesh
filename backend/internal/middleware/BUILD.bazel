@@ -1,0 +1,57 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "middleware",
+    srcs = [
+        "admin.go",
+        "apikey.go",
+        "audit.go",
+        "audit_actions.go",
+        "audit_query.go",
+        "audit_types.go",
+        "auth.go",
+        "ratelimit.go",
+        "tenant.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/middleware",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/internal/infra/database",
+        "//backend/pkg/apierr",
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":middleware",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "middleware_test",
+    srcs = [
+        "admin_test.go",
+        "apikey_helpers_test.go",
+        "apikey_test.go",
+        "audit_test.go",
+        "ratelimit_test.go",
+        "tenant_test.go",
+    ],
+    embed = [":middleware"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/internal/infra/database",
+        "//backend/pkg/apierr",
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

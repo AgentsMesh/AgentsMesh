@@ -1,0 +1,63 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "admin",
+    srcs = [
+        "promo_code_crud.go",
+        "promo_code_query.go",
+        "promo_code_status.go",
+        "promo_code_types.go",
+        "service.go",
+        "service_audit.go",
+        "service_dashboard.go",
+        "service_organizations.go",
+        "service_runners.go",
+        "service_users.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/admin",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/admin",
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/organization",
+        "//backend/internal/domain/promocode",
+        "//backend/internal/domain/runner",
+        "//backend/internal/domain/user",
+        "//backend/internal/infra/database",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":admin",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "admin_test",
+    srcs = [
+        "admin_integration_test.go",
+        "service_audit_test.go",
+        "service_dashboard_test.go",
+        "service_mock_test.go",
+        "service_organization_test.go",
+        "service_pagination_test.go",
+        "service_runner_test.go",
+        "service_user_test.go",
+    ],
+    embed = [":admin"],
+    deps = [
+        "//backend/internal/domain/admin",
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/organization",
+        "//backend/internal/domain/runner",
+        "//backend/internal/domain/user",
+        "//backend/internal/infra/database",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_driver_sqlite//:sqlite",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+    ],
+)

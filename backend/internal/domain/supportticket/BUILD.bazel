@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "supportticket",
+    srcs = [
+        "repository.go",
+        "supportticket.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/supportticket",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/internal/domain/user"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":supportticket",
+    visibility = ["//backend:__subpackages__"],
+)

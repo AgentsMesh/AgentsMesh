@@ -1,0 +1,36 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "database",
+    srcs = [
+        "database.go",
+        "interface.go",
+        "mock_db.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/database",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "@com_github_uptrace_opentelemetry_go_extra_otelgorm//:otelgorm",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+        "@io_gorm_plugin_dbresolver//:dbresolver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":database",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "database_test",
+    srcs = ["database_test.go"],
+    embed = [":database"],
+    deps = [
+        "//backend/internal/config",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

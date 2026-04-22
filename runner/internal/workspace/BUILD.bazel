@@ -1,0 +1,48 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "workspace",
+    srcs = [
+        "interface.go",
+        "preparer.go",
+        "repo_auth.go",
+        "workspace.go",
+        "workspace_utils.go",
+        "worktree_create.go",
+        "worktree_remove.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/workspace",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/envfilter",
+        "//runner/internal/envpath",
+        "//runner/internal/fsutil",
+        "//runner/internal/logger",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":workspace",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "workspace_test",
+    srcs = [
+        "cleanup_worktree_test.go",
+        "create_worktree_test.go",
+        "ensure_repo_test.go",
+        "extract_repo_test.go",
+        "find_repo_test.go",
+        "git_config_test.go",
+        "list_worktree_test.go",
+        "manager_test.go",
+        "preparation_context_test.go",
+        "preparer_test.go",
+        "remove_worktree_test.go",
+        "script_step_test.go",
+    ],
+    embed = [":workspace"],
+    deps = ["//runner/internal/testutil"],
+)

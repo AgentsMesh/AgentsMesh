@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "serialize",
+    srcs = [
+        "serialize.go",
+        "serialize_expr.go",
+        "serialize_stmt.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/serialize",
+    visibility = ["//visibility:public"],
+    deps = ["//agentfile/parser"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":serialize",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "serialize_test",
+    srcs = [
+        "serialize_merge_test.go",
+        "serialize_mode_credential_test.go",
+        "serialize_test.go",
+    ],
+    embed = [":serialize"],
+    deps = [
+        "//agentfile/eval",
+        "//agentfile/extract",
+        "//agentfile/merge",
+        "//agentfile/parser",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,53 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "vt",
+    srcs = [
+        "cell.go",
+        "csi.go",
+        "screen.go",
+        "serialize_handler.go",
+        "serialize_history.go",
+        "serialize_options.go",
+        "serialize_sgr.go",
+        "serialize_vt.go",
+        "sgr.go",
+        "virtual_terminal.go",
+        "vt_api.go",
+        "vt_char.go",
+        "vt_escape.go",
+        "vt_snapshot.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/terminal/vt",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/safego",
+        "@com_github_mattn_go_runewidth//:go-runewidth",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":vt",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "vt_test",
+    srcs = [
+        "serialize_attr_test.go",
+        "serialize_basic_test.go",
+        "serialize_color_test.go",
+        "serialize_edge_test.go",
+        "serialize_history_test.go",
+        "serialize_underline_test.go",
+        "serialize_xterm_test.go",
+        "virtual_terminal_basic_test.go",
+        "virtual_terminal_cursor_test.go",
+        "virtual_terminal_erase_test.go",
+        "virtual_terminal_osc_test.go",
+        "virtual_terminal_utf8_test.go",
+    ],
+    embed = [":vt"],
+)

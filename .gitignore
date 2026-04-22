@@ -25,6 +25,13 @@
 **/node_modules/
 
 # =========================
+# Bazel
+# =========================
+bazel-*
+.bazel-cache/
+.bazelrc.local
+
+# =========================
 # Frontend (Next.js / Web)
 # =========================
 clients/web/node_modules/

@@ -1,0 +1,4 @@
+# Bzlmod-only workspace — this file stays empty. All external dependencies
+# are declared in MODULE.bazel. Kept around because some tooling still
+# probes for a WORKSPACE file.
+workspace(name = "agentsmesh")

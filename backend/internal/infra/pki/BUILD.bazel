@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "pki",
+    srcs = [
+        "revocation.go",
+        "service.go",
+        "service_issue.go",
+        "service_server.go",
+        "service_validate.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/pki",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":pki",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "pki_test",
+    srcs = [
+        "service_integration_test.go",
+        "service_test.go",
+    ],
+    embed = [":pki"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

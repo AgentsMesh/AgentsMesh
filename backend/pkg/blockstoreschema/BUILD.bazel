@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "blockstoreschema",
+    srcs = [
+        "tool_crud.go",
+        "tool_sugar.go",
+        "tools.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/blockstoreschema",
+    visibility = ["//visibility:public"],
+    deps = ["//backend/internal/domain/blockstore"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockstoreschema",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "relay_heartbeat.go",
+        "relay_query.go",
+        "relay_registration.go",
+        "relay_routes.go",
+        "relay_types.go",
+        "relay_unregistration.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/rest/internal",
+    visibility = ["//backend/internal/api/rest:__subpackages__"],
+    deps = [
+        "//backend/internal/infra/acme",
+        "//backend/internal/service/geo",
+        "//backend/internal/service/relay",
+        "//backend/pkg/apierr",
+        "@com_github_gin_gonic_gin//:gin",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":internal",
+    visibility = ["//backend/internal/api/rest:__subpackages__"],
+)
+
+go_test(
+    name = "internal_test",
+    srcs = [
+        "relay_handler_query_test.go",
+        "relay_handler_test.go",
+        "relay_registration_test.go",
+    ],
+    embed = [":internal"],
+    deps = [
+        "//backend/internal/service/relay",
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

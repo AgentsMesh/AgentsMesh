@@ -1,0 +1,36 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runnerlog",
+    srcs = ["service.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/runnerlog",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/runnerlog",
+        "//backend/internal/infra/storage",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runnerlog",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "runnerlog_test",
+    srcs = [
+        "runnerlog_integration_test.go",
+        "service_test.go",
+    ],
+    embed = [":runnerlog"],
+    deps = [
+        "//backend/internal/domain/runnerlog",
+        "//backend/internal/infra",
+        "//backend/internal/infra/storage",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

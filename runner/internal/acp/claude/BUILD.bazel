@@ -1,0 +1,41 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "claude",
+    srcs = [
+        "control_request.go",
+        "handler.go",
+        "transport.go",
+        "types.go",
+        "user.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/acp/claude",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/acp"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":claude",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "claude_test",
+    srcs = [
+        "control_request_test.go",
+        "edge_test.go",
+        "helper_test.go",
+        "stream_test.go",
+        "transport_askuser_integration_test.go",
+        "transport_control_request_test.go",
+        "transport_test.go",
+        "user_test.go",
+    ],
+    embed = [":claude"],
+    deps = [
+        "//runner/internal/acp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

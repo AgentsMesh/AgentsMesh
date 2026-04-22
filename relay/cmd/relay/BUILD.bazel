@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "relay_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/anthropics/agentsmesh/relay/cmd/relay",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//relay/internal/config",
+        "//relay/internal/otel",
+        "//relay/internal/server",
+    ],
+)
+
+go_binary(
+    name = "relay",
+    embed = [":relay_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sso",
+    srcs = [
+        "repository.go",
+        "sso.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/sso",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sso",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "sso_test",
+    srcs = ["sso_test.go"],
+    embed = [":sso"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

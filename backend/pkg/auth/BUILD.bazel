@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "jwt.go",
+        "oauth_gitee.go",
+        "oauth_github.go",
+        "oauth_gitlab.go",
+        "oauth_google.go",
+        "oauth_types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/auth",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_golang_jwt_jwt_v5//:jwt"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auth",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = ["jwt_test.go"],
+    embed = [":auth"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,18 @@
+# Paths Bazel's workspace scanner should skip. Keeps `bazel query //...`
+# and `bazel build //...` from walking into generated / cached trees.
+node_modules
+target
+clients/core/target
+clients/core/ios-framework
+clients/core/pkg
+clients/ios/Packages/AgentsMeshCore/Sources/AgentsMeshCoreFFI/AgentsMeshCore.xcframework
+clients/ios/AgentsMesh.xcodeproj
+clients/ios/DerivedData
+clients/ios/Packages/AgentsMeshCore/.build
+clients/ios/Packages/AgentsMeshFeatures/.build
+clients/web/.next
+clients/web-admin/.next
+clients/desktop/out
+clients/desktop/dist
+.git
+.claude

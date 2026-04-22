@@ -1,0 +1,63 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sso",
+    srcs = [
+        "auth.go",
+        "auth_provider.go",
+        "config_response.go",
+        "config_update.go",
+        "config_write.go",
+        "service.go",
+        "types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/sso",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/sso",
+        "//backend/pkg/auth/sso",
+        "//backend/pkg/crypto",
+        "@com_github_crewjam_saml//:saml",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sso",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "sso_test",
+    srcs = [
+        "auth_flow_extra_test.go",
+        "auth_flow_test.go",
+        "auth_test.go",
+        "config_response_test.go",
+        "config_update_extra_test.go",
+        "config_update_test.go",
+        "config_write_test.go",
+        "coverage_gap_config_test.go",
+        "coverage_gap_test.go",
+        "mock_repo_test.go",
+        "provider_build_oidc_test.go",
+        "provider_build_test.go",
+        "service_test.go",
+        "sso_integration_test.go",
+    ],
+    embed = [":sso"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/sso",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "//backend/pkg/auth/sso",
+        "//backend/pkg/crypto",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

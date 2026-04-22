@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tokenusage",
+    srcs = [
+        "repository.go",
+        "token_usage.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/tokenusage",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tokenusage",
+    visibility = ["//backend:__subpackages__"],
+)

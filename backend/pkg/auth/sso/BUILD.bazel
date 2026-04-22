@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sso",
+    srcs = [
+        "ldap.go",
+        "oidc.go",
+        "provider.go",
+        "saml.go",
+        "saml_helpers.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/auth/sso",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_coreos_go_oidc_v3//oidc",
+        "@com_github_crewjam_saml//:saml",
+        "@com_github_go_ldap_ldap_v3//:ldap",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sso",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,3 @@
+# Placeholder — iOS macros land here in Phase 3b and Phase 5.
+#   rust_xcframework.bzl → rust_xcframework  (Rust crate → .xcframework + Swift bindings)
+#   ios_product.bzl      → ios_product       (Declarative iOS app target, ported from AIO)

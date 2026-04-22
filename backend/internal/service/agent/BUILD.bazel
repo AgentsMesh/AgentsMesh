@@ -1,0 +1,77 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "agent",
+    srcs = [
+        "agent_service.go",
+        "composite_provider.go",
+        "config_builder.go",
+        "config_builder_agentfile.go",
+        "config_builder_eval.go",
+        "config_builder_schema.go",
+        "config_builder_types.go",
+        "credential_profile_crud.go",
+        "credential_profile_query.go",
+        "credential_profile_types.go",
+        "credential_profile_update.go",
+        "message_query.go",
+        "message_retry.go",
+        "message_send.go",
+        "message_types.go",
+        "types.go",
+        "user_config_service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/agent",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//agentfile/eval",
+        "//agentfile/extract",
+        "//agentfile/parser",
+        "//backend/internal/domain/agent",
+        "//backend/internal/domain/extension",
+        "//backend/internal/service/extension",
+        "//backend/pkg/crypto",
+        "//proto/gen/go/runner/v1:runner",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":agent",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "agent_test",
+    srcs = [
+        "agent_service_test.go",
+        "composite_provider_test.go",
+        "config_builder_agentfile_test.go",
+        "config_builder_integration_test.go",
+        "config_builder_sandbox_test.go",
+        "config_builder_schema_test.go",
+        "config_builder_test.go",
+        "credential_profile_service_errors_test.go",
+        "credential_profile_service_list_test.go",
+        "credential_profile_service_test.go",
+        "custom_agent_test.go",
+        "message_service_delivery_test.go",
+        "message_service_errors_test.go",
+        "message_service_query_test.go",
+        "message_service_test.go",
+        "service_test.go",
+        "user_config_service_test.go",
+    ],
+    embed = [":agent"],
+    deps = [
+        "//backend/internal/domain/agent",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "//backend/pkg/crypto",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_driver_sqlite//:sqlite",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+    ],
+)

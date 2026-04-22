@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "blockstore",
+    srcs = [
+        "entity_block.go",
+        "entity_embedding.go",
+        "entity_op.go",
+        "entity_ref.go",
+        "entity_workspace.go",
+        "errors.go",
+        "jsondata.go",
+        "op_kind.go",
+        "repository.go",
+        "type_bootstrap.go",
+        "type_bootstrap_content_specs.go",
+        "type_bootstrap_media_specs.go",
+        "type_bootstrap_system_specs.go",
+        "type_spec.go",
+        "type_validation.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/blockstore",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["@com_github_google_uuid//:uuid"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockstore",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "blockstore_test",
+    srcs = [
+        "chart_validation_test.go",
+        "domain_test.go",
+    ],
+    embed = [":blockstore"],
+)

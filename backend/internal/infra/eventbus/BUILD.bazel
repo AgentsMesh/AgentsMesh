@@ -1,0 +1,53 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "eventbus",
+    srcs = [
+        "event_factory.go",
+        "eventbus.go",
+        "eventbus_publish.go",
+        "eventbus_subscribe.go",
+        "registry.go",
+        "types.go",
+        "types_events.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/eventbus",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "@com_github_google_uuid//:uuid",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eventbus",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "eventbus_test",
+    srcs = [
+        "eventbus_basic_test.go",
+        "eventbus_dispatch_test.go",
+        "eventbus_publish_test.go",
+        "eventbus_redis_org_test.go",
+        "eventbus_redis_publish_test.go",
+        "eventbus_redis_setup_test.go",
+        "eventbus_redis_subscriber_test.go",
+        "eventbus_subscribe_test.go",
+        "registry_test.go",
+        "types_data_mr_test.go",
+        "types_data_pipeline_test.go",
+        "types_data_test.go",
+        "types_test.go",
+    ],
+    embed = [":eventbus"],
+    deps = [
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_redis_go_redis_v9//:go-redis",
+    ],
+)

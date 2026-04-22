@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "i18n",
+    srcs = [
+        "i18n.go",
+        "middleware.go",
+    ],
+    embedsrcs = [
+        "locales/en.json",
+        "locales/zh-CN.json",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/i18n",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_gin_gonic_gin//:gin"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":i18n",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "i18n_test",
+    srcs = ["i18n_test.go"],
+    embed = [":i18n"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

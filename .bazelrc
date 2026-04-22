@@ -1,0 +1,62 @@
+###############################################################################
+# Global Bazel config — AgentsMesh
+#
+# Invariant: settings here apply to every command. Use `build:<config>` for
+# opt-in configs invoked via `--config=<name>`. Local overrides live in
+# `.bazelrc.local` (gitignored).
+###############################################################################
+
+# Bzlmod is the single source of truth for external deps.
+common --enable_bzlmod
+
+# Show timestamps + progress so long Bazel actions don't look stuck.
+common --show_timestamps
+build --show_progress_rate_limit=5
+
+# Keep going on errors so a single broken target doesn't mask others.
+build --keep_going
+
+# Performance: persistent caches outside the workspace for faster rebuilds.
+build --disk_cache=~/.cache/bazel-disk
+build --repository_cache=~/.cache/bazel-repo
+
+# pnpm creates symlink forests inside node_modules/ — Bazel's sandbox has
+# to tolerate those for `aspect_rules_js` to work (Phase 4).
+common --allow_unresolved_symlinks
+
+# Java runtime for Bazel's own build actions (used by some rulesets).
+build --java_runtime_version=remotejdk_21
+
+# Test ergonomics.
+test --test_output=errors
+test --test_summary=detailed
+
+###############################################################################
+# Language-specific configs (populated by subsequent Phases)
+###############################################################################
+
+# Phase 1 (Go) — pure builds without CGO so backends stay statically linked.
+build --@rules_go//go/config:pure
+
+# Phase 2 (Rust) — release config with thin LTO.
+# build:rust-release --compilation_mode=opt
+# build:rust-release --@rules_rust//:extra_rustc_flags=-Copt-level=3,-Clto=thin
+
+###############################################################################
+# CI
+###############################################################################
+
+build:ci --disk_cache=
+build:ci --repository_cache=/root/.cache/bazel-repo
+build:ci --color=yes
+build:ci --stamp
+
+###############################################################################
+# Platform cross-compile presets (populated in Phase 6)
+###############################################################################
+
+# build:linux_amd64 --platforms=@rules_go//go/toolchain:linux_amd64
+# build:linux_arm64 --platforms=@rules_go//go/toolchain:linux_arm64
+
+# Optional local overrides.
+try-import %workspace%/.bazelrc.local

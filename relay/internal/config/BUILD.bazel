@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "config",
+    srcs = ["config.go"],
+    importpath = "github.com/anthropics/agentsmesh/relay/internal/config",
+    visibility = ["//relay:__subpackages__"],
+    deps = ["@com_github_spf13_viper//:viper"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//relay:__subpackages__"],
+)
+
+go_test(
+    name = "config_test",
+    srcs = ["config_test.go"],
+    embed = [":config"],
+)

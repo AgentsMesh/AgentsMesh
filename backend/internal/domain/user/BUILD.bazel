@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "user",
+    srcs = [
+        "git_credential.go",
+        "repository.go",
+        "repository_provider.go",
+        "user.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/user",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":user",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "user_test",
+    srcs = ["user_test.go"],
+    embed = [":user"],
+)

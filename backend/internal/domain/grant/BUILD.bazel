@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grant",
+    srcs = [
+        "grant.go",
+        "repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/grant",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/internal/domain/user"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":grant",
+    visibility = ["//backend:__subpackages__"],
+)

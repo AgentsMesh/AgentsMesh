@@ -1,0 +1,74 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "channel",
+    srcs = [
+        "access.go",
+        "authz.go",
+        "binding.go",
+        "channel_pods.go",
+        "hook_event.go",
+        "hook_mention.go",
+        "hook_notification.go",
+        "hook_pod_prompt.go",
+        "hooks.go",
+        "member.go",
+        "member_event.go",
+        "message.go",
+        "message_mutation.go",
+        "service.go",
+        "service_lifecycle.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/channel",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/channel",
+        "//backend/internal/domain/notification",
+        "//backend/internal/infra/eventbus",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":channel",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "channel_test",
+    srcs = [
+        "access_test.go",
+        "binding_test.go",
+        "channel_integration_test.go",
+        "channel_test.go",
+        "channel_update_test.go",
+        "edge_cases_test.go",
+        "error_path_test.go",
+        "eventbus_test.go",
+        "extract_test.go",
+        "hook_mention_test.go",
+        "hook_notification_test.go",
+        "hook_pod_prompt_test.go",
+        "hooks_coverage_test.go",
+        "member_coverage_test.go",
+        "membership_test.go",
+        "message_test.go",
+        "mock_repo_test.go",
+        "mutation_coverage_test.go",
+        "readstate_test.go",
+        "service_coverage_test.go",
+        "test_helper_test.go",
+    ],
+    embed = [":channel"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/channel",
+        "//backend/internal/domain/notification",
+        "//backend/internal/infra",
+        "//backend/internal/infra/eventbus",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

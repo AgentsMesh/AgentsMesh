@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "envfilter",
+    srcs = ["envfilter.go"],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/envfilter",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":envfilter",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "envfilter_test",
+    srcs = ["envfilter_test.go"],
+    embed = [":envfilter"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

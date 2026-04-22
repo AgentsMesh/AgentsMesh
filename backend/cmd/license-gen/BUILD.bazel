@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "license-gen_lib",
+    srcs = [
+        "crypto.go",
+        "main.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/cmd/license-gen",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "license-gen",
+    embed = [":license-gen_lib"],
+    visibility = ["//visibility:public"],
+)

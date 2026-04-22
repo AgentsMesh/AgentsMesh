@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "fsutil",
+    srcs = [
+        "remove.go",
+        "remove_unix.go",
+        "remove_windows.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/fsutil",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":fsutil",
+    visibility = ["//runner:__subpackages__"],
+)

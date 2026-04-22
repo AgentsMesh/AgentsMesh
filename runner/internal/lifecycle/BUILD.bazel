@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lifecycle",
+    srcs = [
+        "notify_linux.go",
+        "notify_other.go",
+        "services.go",
+        "watchdog.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/lifecycle",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/logger"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lifecycle",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "lifecycle_test",
+    srcs = [
+        "services_test.go",
+        "watchdog_test.go",
+    ],
+    embed = [":lifecycle"],
+)

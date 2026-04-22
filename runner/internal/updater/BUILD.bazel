@@ -1,0 +1,77 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "updater",
+    srcs = [
+        "checker.go",
+        "detector.go",
+        "file_ops.go",
+        "graceful.go",
+        "graceful_apply.go",
+        "graceful_schedule.go",
+        "progress.go",
+        "updater.go",
+        "updater_backup.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/updater",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/process",
+        "@com_github_creativeprojects_go_selfupdate//:go-selfupdate",
+        "@com_github_masterminds_semver_v3//:semver",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":updater",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "updater_test",
+    srcs = [
+        "checker_callbacks_test.go",
+        "checker_docheck_mock_test.go",
+        "checker_docheck_test.go",
+        "checker_mock_test.go",
+        "checker_run_test.go",
+        "checker_test.go",
+        "detector_test.go",
+        "file_ops_test.go",
+        "graceful_apply_mock_test.go",
+        "graceful_apply_test.go",
+        "graceful_force_mock_test.go",
+        "graceful_force_test.go",
+        "graceful_mock_test.go",
+        "graceful_reliability_checker_test.go",
+        "graceful_reliability_health_test.go",
+        "graceful_reliability_rollback_test.go",
+        "graceful_reliability_state_test.go",
+        "graceful_restart_mock_test.go",
+        "graceful_restart_test.go",
+        "graceful_schedule_test.go",
+        "graceful_state_test.go",
+        "graceful_test.go",
+        "graceful_wait_test.go",
+        "mock_test.go",
+        "progress_console_test.go",
+        "progress_spinner_test.go",
+        "progress_test.go",
+        "updater_apply_test.go",
+        "updater_download_test.go",
+        "updater_e2e_test.go",
+        "updater_file_test.go",
+        "updater_mock_test.go",
+        "updater_options_test.go",
+        "updater_test.go",
+        "updater_version_test.go",
+    ],
+    embed = [":updater"],
+    deps = [
+        "//runner/internal/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "job",
+    srcs = [
+        "renewal_reminder.go",
+        "scheduler.go",
+        "subscription_freeze.go",
+        "subscription_renew.go",
+        "subscription_renew_alipay.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/job",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/infra/email",
+        "//backend/internal/service/payment",
+        "//backend/internal/service/payment/types",
+        "@io_gorm_gorm//:gorm",
+        "@io_opentelemetry_go_otel//:otel",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":job",
+    visibility = ["//backend:__subpackages__"],
+)

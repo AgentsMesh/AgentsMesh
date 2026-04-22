@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "extension",
+    srcs = [
+        "installed_mcp_server.go",
+        "installed_skill.go",
+        "mcp_market_item.go",
+        "repository.go",
+        "skill_market_item.go",
+        "skill_registry.go",
+        "skill_registry_override.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/extension",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":extension",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "extension_test",
+    srcs = [
+        "models_mcp_test.go",
+        "models_skill_test.go",
+        "models_test.go",
+    ],
+    embed = [":extension"],
+)

@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "monitor",
+    srcs = [
+        "monitor_check.go",
+        "monitor_pod.go",
+        "monitor_subscription.go",
+        "monitor_types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/monitor",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/process",
+        "//runner/internal/safego",
+        "//runner/internal/terminal/detector",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":monitor",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "monitor_test",
+    srcs = [
+        "claude_basic_test.go",
+        "claude_check_test.go",
+        "claude_children_test.go",
+        "claude_mock_test.go",
+        "claude_registration_test.go",
+    ],
+    embed = [":monitor"],
+    deps = ["//runner/internal/terminal/detector"],
+)

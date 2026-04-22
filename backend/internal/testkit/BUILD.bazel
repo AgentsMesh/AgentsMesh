@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "testkit",
+    srcs = [
+        "context.go",
+        "db.go",
+        "eventbus.go",
+        "factory.go",
+        "schema_billing.go",
+        "schema_blockstore.go",
+        "schema_business.go",
+        "schema_core.go",
+        "schema_runner.go",
+        "schema_support.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/testkit",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/middleware",
+        "@com_github_gin_gonic_gin//:gin",
+        "@io_gorm_driver_sqlite//:sqlite",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testkit",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "testkit_test",
+    srcs = ["testkit_test.go"],
+    deps = [
+        ":testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

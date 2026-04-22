@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = ["types.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment/types",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/internal/domain/billing"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":types",
+    visibility = ["//backend:__subpackages__"],
+)

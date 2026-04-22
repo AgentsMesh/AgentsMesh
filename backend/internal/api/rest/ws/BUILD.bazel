@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ws",
+    srcs = ["events.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/rest/ws",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/infra/websocket",
+        "//backend/internal/middleware",
+        "//backend/pkg/apierr",
+        "@com_github_gin_gonic_gin//:gin",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":ws",
+    visibility = ["//backend:__subpackages__"],
+)

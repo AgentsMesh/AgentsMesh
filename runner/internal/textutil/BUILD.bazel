@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "textutil",
+    srcs = ["textutil.go"],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/textutil",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":textutil",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "textutil_test",
+    srcs = ["textutil_test.go"],
+    embed = [":textutil"],
+)

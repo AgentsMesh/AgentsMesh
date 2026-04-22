@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "merge",
+    srcs = ["merge.go"],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/merge",
+    visibility = ["//visibility:public"],
+    deps = ["//agentfile/parser"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":merge",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "merge_test",
+    srcs = [
+        "merge_comprehensive_test.go",
+        "merge_finalcover_test.go",
+        "merge_integration_test.go",
+        "merge_mode_credential_test.go",
+        "merge_test.go",
+    ],
+    embed = [":merge"],
+    deps = [
+        "//agentfile/eval",
+        "//agentfile/extract",
+        "//agentfile/parser",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

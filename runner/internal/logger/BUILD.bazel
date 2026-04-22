@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "logger",
+    srcs = [
+        "logger.go",
+        "logger_multi_handler.go",
+        "logger_rotating_writer.go",
+        "logger_rotation.go",
+        "module.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/logger",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":logger",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "logger_test",
+    srcs = ["logger_test.go"],
+    embed = [":logger"],
+)

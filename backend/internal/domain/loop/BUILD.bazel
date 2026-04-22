@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "loop",
+    srcs = [
+        "loop.go",
+        "loop_autopilot_config.go",
+        "loop_run.go",
+        "loop_run_params.go",
+        "loop_run_repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/loop",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":loop",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "loop_test",
+    srcs = [
+        "loop_run_test.go",
+        "loop_test.go",
+    ],
+    embed = [":loop"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

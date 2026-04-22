@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "codex",
+    srcs = [
+        "handler.go",
+        "transport.go",
+        "transport_internal.go",
+        "types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/acp/codex",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/acp"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":codex",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "codex_test",
+    srcs = [
+        "coverage_test.go",
+        "handler_test.go",
+        "helper_test.go",
+        "integration_test.go",
+        "transport_test.go",
+    ],
+    embed = [":codex"],
+    deps = ["//runner/internal/acp"],
+)

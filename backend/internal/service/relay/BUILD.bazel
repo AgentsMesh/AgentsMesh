@@ -1,0 +1,68 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "relay",
+    srcs = [
+        "affinity.go",
+        "dns_service.go",
+        "health_checker.go",
+        "load_balancer.go",
+        "load_balancer_geo.go",
+        "manager.go",
+        "manager_heartbeat.go",
+        "manager_unregister.go",
+        "relay_info.go",
+        "stats.go",
+        "store_interface.go",
+        "store_redis_relay.go",
+        "token.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/relay",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/infra/cache",
+        "//backend/internal/infra/dns",
+        "//backend/internal/service/geo",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_redis_go_redis_v9//:go-redis",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":relay",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "relay_test",
+    srcs = [
+        "dns_service_crud_test.go",
+        "dns_service_mock_test.go",
+        "dns_service_sanitize_test.go",
+        "manager_affinity_test.go",
+        "manager_availability_test.go",
+        "manager_basic_test.go",
+        "manager_concurrent_test.go",
+        "manager_config_test.go",
+        "manager_geo_test.go",
+        "manager_health_test.go",
+        "manager_integration_test.go",
+        "manager_register_test.go",
+        "manager_select_test.go",
+        "store_manager_test.go",
+        "store_mock_test.go",
+        "store_redis_test.go",
+        "test_helper_test.go",
+        "token_test.go",
+    ],
+    embed = [":relay"],
+    deps = [
+        "//backend/internal/infra/cache",
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

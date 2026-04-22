@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "cache",
+    srcs = [
+        "keys.go",
+        "redis.go",
+        "redis_pubsub.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/cache",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["@com_github_redis_go_redis_v9//:go-redis"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":cache",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "cache_test",
+    srcs = ["cache_test.go"],
+    embed = [":cache"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

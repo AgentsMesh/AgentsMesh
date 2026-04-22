@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "backend",
+    srcs = [
+        "client.go",
+        "client_cert.go",
+        "client_handlers.go",
+        "client_send.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/relay/internal/backend",
+    visibility = ["//relay:__subpackages__"],
+    deps = ["@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":backend",
+    visibility = ["//relay:__subpackages__"],
+)
+
+go_test(
+    name = "backend_test",
+    srcs = [
+        "client_ip_test.go",
+        "client_test.go",
+        "client_tls_test.go",
+    ],
+    embed = [":backend"],
+)

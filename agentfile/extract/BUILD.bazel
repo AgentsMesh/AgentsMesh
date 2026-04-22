@@ -1,0 +1,32 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "extract",
+    srcs = ["extractor.go"],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/extract",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//agentfile",
+        "//agentfile/parser",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":extract",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "extract_test",
+    srcs = [
+        "extractor_coverage_test.go",
+        "extractor_test.go",
+    ],
+    embed = [":extract"],
+    deps = [
+        "//agentfile/parser",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

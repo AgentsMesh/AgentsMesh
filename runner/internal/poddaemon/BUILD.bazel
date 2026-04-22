@@ -1,0 +1,117 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "poddaemon",
+    srcs = [
+        "cmdline.go",
+        "daemon.go",
+        "daemon_io.go",
+        "daemon_process.go",
+        "daemon_process_unix.go",
+        "daemon_process_windows.go",
+        "daemon_pty.go",
+        "daemon_pty_io.go",
+        "daemon_start_unix.go",
+        "daemon_start_windows.go",
+        "doc.go",
+        "ipc.go",
+        "manager.go",
+        "protocol.go",
+        "state.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/poddaemon",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/envfilter",
+        "//runner/internal/process",
+        "//runner/internal/safego",
+    ] + select({
+        "@rules_go//go/platform:aix": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:android": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:darwin": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:dragonfly": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:freebsd": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:illumos": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:ios": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:js": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:linux": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:netbsd": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:openbsd": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:osx": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:plan9": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:qnx": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:solaris": [
+            "@com_github_creack_pty//:pty",
+        ],
+        "@rules_go//go/platform:windows": [
+            "@com_github_userexistserror_conpty//:conpty",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":poddaemon",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "poddaemon_test",
+    srcs = [
+        "cmdline_test.go",
+        "daemon_connect_test.go",
+        "daemon_io_error_test.go",
+        "daemon_io_test.go",
+        "daemon_orphan_test.go",
+        "daemon_process_windows_test.go",
+        "daemon_pty_io_test.go",
+        "daemon_pty_race_test.go",
+        "daemon_pty_test.go",
+        "daemon_start_windows_test.go",
+        "daemon_test.go",
+        "helpers_test.go",
+        "ipc_test.go",
+        "manager_test.go",
+        "protocol_test.go",
+        "state_test.go",
+    ],
+    embed = [":poddaemon"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ] + select({
+        "@rules_go//go/platform:windows": [
+            "//runner/internal/process",
+        ],
+        "//conditions:default": [],
+    }),
+)

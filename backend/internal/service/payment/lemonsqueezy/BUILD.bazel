@@ -1,0 +1,42 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lemonsqueezy",
+    srcs = [
+        "checkout.go",
+        "provider.go",
+        "subscription.go",
+        "webhook.go",
+        "webhook_types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment/lemonsqueezy",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/types",
+        "@com_github_ndolestudio_lemonsqueezy_go//:lemonsqueezy-go",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lemonsqueezy",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "lemonsqueezy_test",
+    srcs = [
+        "provider_api_test.go",
+        "provider_parse_test.go",
+        "provider_signature_test.go",
+        "provider_webhook_test.go",
+    ],
+    embed = [":lemonsqueezy"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/types",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "config",
+    srcs = [
+        "config.go",
+        "config_infra.go",
+        "config_oauth.go",
+        "config_payment.go",
+        "config_relay.go",
+        "config_server.go",
+        "config_url.go",
+        "env.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/config",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":config",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "config_test",
+    srcs = ["config_test.go"],
+    embed = [":config"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

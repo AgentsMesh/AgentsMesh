@@ -1,0 +1,60 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "repository",
+    srcs = [
+        "interfaces.go",
+        "merge_requests.go",
+        "service.go",
+        "service_create.go",
+        "service_sync.go",
+        "webhook_query.go",
+        "webhook_registration.go",
+        "webhook_service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/repository",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/infra/git",
+        "//backend/internal/service/user",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":repository",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "repository_test",
+    srcs = [
+        "repository_integration_test.go",
+        "service_crud_test.go",
+        "service_query_test.go",
+        "service_setup_test.go",
+        "service_webhook_injection_test.go",
+        "webhook_config_test.go",
+        "webhook_repository_test.go",
+        "webhook_service_test.go",
+        "webhook_status_test.go",
+        "webhook_test_setup_test.go",
+        "webhook_token_test.go",
+        "webhook_url_test.go",
+        "webhook_verify_test.go",
+    ],
+    embed = [":repository"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/domain/user",
+        "//backend/internal/infra",
+        "//backend/internal/service/user",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

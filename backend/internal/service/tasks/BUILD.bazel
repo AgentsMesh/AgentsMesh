@@ -1,0 +1,39 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tasks",
+    srcs = [
+        "manager.go",
+        "manager_health.go",
+        "pipeline_poller.go",
+        "task_processor.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/tasks",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/infra/git",
+        "//backend/internal/infra/tasks",
+        "@com_github_redis_go_redis_v9//:go-redis",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":tasks",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "tasks_test",
+    srcs = [
+        "manager_test.go",
+        "pipeline_poller_test.go",
+        "task_processor_test.go",
+    ],
+    embed = [":tasks"],
+    deps = [
+        "//backend/internal/infra/tasks",
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_redis_go_redis_v9//:go-redis",
+    ],
+)

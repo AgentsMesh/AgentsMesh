@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runnerlog",
+    srcs = [
+        "repository.go",
+        "runnerlog.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/runnerlog",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runnerlog",
+    visibility = ["//backend:__subpackages__"],
+)

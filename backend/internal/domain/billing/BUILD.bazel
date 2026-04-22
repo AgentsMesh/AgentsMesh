@@ -1,0 +1,44 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "billing",
+    srcs = [
+        "constants.go",
+        "invoice.go",
+        "lemonsqueezy.go",
+        "license.go",
+        "license_repository.go",
+        "order.go",
+        "plan.go",
+        "plan_price.go",
+        "repository.go",
+        "subscription.go",
+        "transaction.go",
+        "usage.go",
+        "webhook_event.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/billing",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":billing",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "billing_test",
+    srcs = [
+        "billing_benchmark_test.go",
+        "constants_test.go",
+        "invoice_test.go",
+        "license_test.go",
+        "order_test.go",
+        "plan_test.go",
+        "subscription_test.go",
+        "transaction_test.go",
+        "usage_test.go",
+    ],
+    embed = [":billing"],
+)

@@ -1,0 +1,30 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "blockstore",
+    srcs = [
+        "op_publisher.go",
+        "repo.go",
+        "repo_embedding_reads.go",
+        "repo_embedding_writes.go",
+        "repo_reads.go",
+        "repo_tree.go",
+        "repo_writes.go",
+        "repo_writes_block.go",
+        "repo_writes_ref.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/blockstore",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/blockstore",
+        "//backend/internal/infra/eventbus",
+        "@com_github_google_uuid//:uuid",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockstore",
+    visibility = ["//backend:__subpackages__"],
+)

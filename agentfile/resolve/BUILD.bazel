@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resolve",
+    srcs = ["resolve.go"],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/resolve",
+    visibility = ["//visibility:public"],
+    deps = ["//agentfile/parser"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resolve",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resolve_test",
+    srcs = ["resolve_test.go"],
+    embed = [":resolve"],
+    deps = [
+        "//agentfile/parser",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

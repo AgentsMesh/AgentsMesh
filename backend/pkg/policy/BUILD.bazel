@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "policy",
+    srcs = [
+        "definitions.go",
+        "policy.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/policy",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":policy",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "policy_test",
+    srcs = ["policy_test.go"],
+    embed = [":policy"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

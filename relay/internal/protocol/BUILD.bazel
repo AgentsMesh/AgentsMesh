@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "protocol",
+    srcs = ["message.go"],
+    importpath = "github.com/anthropics/agentsmesh/relay/internal/protocol",
+    visibility = ["//relay:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":protocol",
+    visibility = ["//relay:__subpackages__"],
+)
+
+go_test(
+    name = "protocol_test",
+    srcs = ["message_test.go"],
+    embed = [":protocol"],
+)

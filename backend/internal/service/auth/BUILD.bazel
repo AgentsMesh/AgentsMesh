@@ -1,0 +1,64 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "auth_oauth.go",
+        "auth_password.go",
+        "auth_sso.go",
+        "auth_types.go",
+        "oauth_gitee.go",
+        "oauth_github.go",
+        "oauth_gitlab.go",
+        "oauth_google.go",
+        "token_generate.go",
+        "token_revoke.go",
+        "token_validate.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/auth",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/internal/service/user",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":auth",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "auth_lifecycle_integration_test.go",
+        "integration_test.go",
+        "service_login_test.go",
+        "service_misc_test.go",
+        "service_oauth_callback_test.go",
+        "service_oauth_login_test.go",
+        "service_oauth_state_test.go",
+        "service_oauth_url_test.go",
+        "service_register_test.go",
+        "service_setup_test.go",
+        "service_sso_login_test.go",
+        "service_token_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/internal/infra",
+        "//backend/internal/service/user",
+        "//backend/internal/testkit",
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

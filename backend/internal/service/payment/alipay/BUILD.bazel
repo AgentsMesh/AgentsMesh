@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "alipay",
+    srcs = [
+        "provider.go",
+        "provider_agreement.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment/alipay",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/types",
+        "@com_github_smartwalle_alipay_v3//:alipay",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":alipay",
+    visibility = ["//backend:__subpackages__"],
+)

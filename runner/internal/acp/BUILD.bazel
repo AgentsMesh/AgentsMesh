@@ -1,0 +1,56 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "acp",
+    srcs = [
+        "client.go",
+        "client_internal.go",
+        "client_session.go",
+        "handler.go",
+        "jsonrpc.go",
+        "mcp_bridge.go",
+        "reader.go",
+        "request_tracker.go",
+        "transport.go",
+        "transport_acp.go",
+        "types.go",
+        "writer.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/acp",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":acp",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "acp_test",
+    srcs = [
+        "client_integration_error_test.go",
+        "client_integration_extra_test.go",
+        "client_integration_mock_modes_test.go",
+        "client_integration_mock_multi_test.go",
+        "client_integration_mock_test.go",
+        "client_integration_permission_deny_test.go",
+        "client_integration_permission_test.go",
+        "client_integration_test.go",
+        "client_integration_transport_test.go",
+        "client_integration_updates_test.go",
+        "client_integration_validate_test.go",
+        "client_session_state_test.go",
+        "client_session_test.go",
+        "handler_complete_test.go",
+        "handler_nil_callback_test.go",
+        "handler_test.go",
+        "handler_thinking_test.go",
+        "jsonrpc_test.go",
+        "mcp_bridge_test.go",
+        "reader_test.go",
+        "writer_error_test.go",
+        "writer_test.go",
+    ],
+    embed = [":acp"],
+)

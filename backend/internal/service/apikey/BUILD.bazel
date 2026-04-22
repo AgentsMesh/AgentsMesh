@@ -1,0 +1,54 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "apikey",
+    srcs = [
+        "apikey_create.go",
+        "apikey_query.go",
+        "apikey_update.go",
+        "apikey_validate.go",
+        "interface.go",
+        "middleware_adapter.go",
+        "service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/apikey",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/apikey",
+        "//backend/internal/middleware",
+        "@com_github_redis_go_redis_v9//:go-redis",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":apikey",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "apikey_test",
+    srcs = [
+        "apikey_create_test.go",
+        "apikey_db_error_test.go",
+        "apikey_integration_test.go",
+        "apikey_query_test.go",
+        "apikey_update_test.go",
+        "apikey_validate_redis_test.go",
+        "apikey_validate_test.go",
+        "middleware_adapter_test.go",
+        "service_setup_test.go",
+    ],
+    embed = [":apikey"],
+    deps = [
+        "//backend/internal/domain/apikey",
+        "//backend/internal/infra",
+        "//backend/internal/middleware",
+        "//backend/internal/testkit",
+        "@com_github_alicebob_miniredis_v2//:miniredis",
+        "@com_github_redis_go_redis_v9//:go-redis",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

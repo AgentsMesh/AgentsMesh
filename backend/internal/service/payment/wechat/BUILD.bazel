@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "wechat",
+    srcs = [
+        "provider.go",
+        "provider_operations.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment/wechat",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/types",
+        "@com_github_wechatpay_apiv3_wechatpay_go//core",
+        "@com_github_wechatpay_apiv3_wechatpay_go//core/option",
+        "@com_github_wechatpay_apiv3_wechatpay_go//services/payments/native",
+        "@com_github_wechatpay_apiv3_wechatpay_go//services/refunddomestic",
+        "@com_github_wechatpay_apiv3_wechatpay_go//utils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":wechat",
+    visibility = ["//backend:__subpackages__"],
+)

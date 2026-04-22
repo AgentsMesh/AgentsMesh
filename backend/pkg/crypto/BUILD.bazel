@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "crypto",
+    srcs = ["crypto.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/crypto",
+    visibility = ["//visibility:public"],
+    deps = ["@org_golang_x_crypto//bcrypt"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":crypto",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "crypto_test",
+    srcs = ["crypto_test.go"],
+    embed = [":crypto"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

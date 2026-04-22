@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = [
+        "service.go",
+        "service_management.go",
+        "service_restart.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/service",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/config",
+        "//runner/internal/envpath",
+        "//runner/internal/logger",
+        "//runner/internal/pidfile",
+        "//runner/internal/runner",
+        "@com_github_kardianos_service//:service",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":service",
+    visibility = ["//runner:__subpackages__"],
+)

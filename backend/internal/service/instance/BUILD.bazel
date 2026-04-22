@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "instance",
+    srcs = ["org_provider.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/instance",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["@com_github_redis_go_redis_v9//:go-redis"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":instance",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "instance_test",
+    srcs = ["org_provider_test.go"],
+    embed = [":instance"],
+    deps = [
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testutil",
+    srcs = [
+        "commands_unix.go",
+        "commands_windows.go",
+        "root_unix.go",
+        "root_windows.go",
+        "scripts_unix.go",
+        "scripts_windows.go",
+        "testutil.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/testutil",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testutil",
+    visibility = ["//runner:__subpackages__"],
+)

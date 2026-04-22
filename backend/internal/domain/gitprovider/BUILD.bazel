@@ -1,0 +1,27 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "gitprovider",
+    srcs = [
+        "gitprovider.go",
+        "repository_repo.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":gitprovider",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "gitprovider_test",
+    srcs = [
+        "gitprovider_repo_test.go",
+        "gitprovider_test.go",
+        "webhook_config_gorm_test.go",
+    ],
+    embed = [":gitprovider"],
+)

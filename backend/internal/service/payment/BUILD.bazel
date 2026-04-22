@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "payment",
+    srcs = [
+        "factory.go",
+        "provider.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/payment",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "//backend/internal/service/payment/alipay",
+        "//backend/internal/service/payment/lemonsqueezy",
+        "//backend/internal/service/payment/license",
+        "//backend/internal/service/payment/mock",
+        "//backend/internal/service/payment/stripe",
+        "//backend/internal/service/payment/types",
+        "//backend/internal/service/payment/wechat",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":payment",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "payment_test",
+    srcs = ["factory_test.go"],
+    embed = [":payment"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

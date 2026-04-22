@@ -1,0 +1,28 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "runner",
+    srcs = [
+        "affinity.go",
+        "certificate.go",
+        "repository.go",
+        "runner.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/runner",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":runner",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "runner_test",
+    srcs = [
+        "runner_hostinfo_test.go",
+        "runner_status_test.go",
+    ],
+    embed = [":runner"],
+)

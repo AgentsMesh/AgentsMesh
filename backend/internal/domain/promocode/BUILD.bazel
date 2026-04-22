@@ -1,0 +1,24 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "promocode",
+    srcs = [
+        "promocode.go",
+        "repository.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/promocode",
+    visibility = ["//backend:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":promocode",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "promocode_test",
+    srcs = ["promocode_test.go"],
+    embed = [":promocode"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

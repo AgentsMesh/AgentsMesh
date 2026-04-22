@@ -1,0 +1,45 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "relay",
+    srcs = [
+        "client.go",
+        "client_connection.go",
+        "client_loops.go",
+        "client_reconnect.go",
+        "client_send.go",
+        "interface.go",
+        "mock_client.go",
+        "protocol.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/relay",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/otel",
+        "//runner/internal/safego",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":relay",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "relay_test",
+    srcs = [
+        "client_loops_test.go",
+        "client_reconnect_test.go",
+        "client_test.go",
+        "client_token_test.go",
+        "protocol_test.go",
+    ],
+    embed = [":relay"],
+    deps = [
+        "@com_github_gorilla_websocket//:websocket",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

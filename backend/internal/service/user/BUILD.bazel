@@ -1,0 +1,55 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "user",
+    srcs = [
+        "git_credential_default.go",
+        "git_credential_service.go",
+        "git_credential_ssh.go",
+        "git_credential_types.go",
+        "interface.go",
+        "mock_service.go",
+        "repository_provider_crud.go",
+        "repository_provider_token.go",
+        "repository_provider_update.go",
+        "service.go",
+        "user_auth.go",
+        "user_oauth.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/user",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/pkg/crypto",
+        "@org_golang_x_crypto//bcrypt",
+        "@org_golang_x_crypto//ssh",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":user",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "user_test",
+    srcs = [
+        "mock_auth_test.go",
+        "mock_basic_test.go",
+        "mock_identity_test.go",
+        "service_auth_test.go",
+        "service_oauth_test.go",
+        "service_setup_test.go",
+        "user_lifecycle_integration_test.go",
+    ],
+    embed = [":user"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

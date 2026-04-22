@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "license",
+    srcs = [
+        "license_activation.go",
+        "license_status.go",
+        "license_types.go",
+        "license_verification.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/license",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/billing",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":license",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "license_test",
+    srcs = ["license_test.go"],
+    embed = [":license"],
+    deps = [
+        "//backend/internal/config",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

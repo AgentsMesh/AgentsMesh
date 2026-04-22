@@ -1,0 +1,49 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "eval",
+    srcs = [
+        "apply_removes.go",
+        "builtins.go",
+        "context.go",
+        "eval_decl.go",
+        "eval_expr.go",
+        "evaluator.go",
+        "evaluator_helpers.go",
+        "values.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/eval",
+    visibility = ["//visibility:public"],
+    deps = ["//agentfile/parser"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":eval",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "eval_test",
+    srcs = [
+        "apply_removes_test.go",
+        "builtins_test.go",
+        "eval_agentfile_fixture_test.go",
+        "eval_coverage_test.go",
+        "eval_deepcover_test.go",
+        "eval_errorpaths_test.go",
+        "eval_final_cover_test.go",
+        "eval_full_test.go",
+        "eval_mode_credential_test.go",
+        "eval_permission_mode_test.go",
+        "eval_shortcircuit_test.go",
+        "evaluator_test.go",
+        "values_test.go",
+    ],
+    embed = [":eval"],
+    deps = [
+        "//agentfile/parser",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

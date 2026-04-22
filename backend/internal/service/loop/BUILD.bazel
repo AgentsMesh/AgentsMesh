@@ -1,0 +1,77 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "loop",
+    srcs = [
+        "loop_orchestrator.go",
+        "loop_orchestrator_agentfile.go",
+        "loop_orchestrator_completion.go",
+        "loop_orchestrator_events.go",
+        "loop_orchestrator_monitoring.go",
+        "loop_orchestrator_notify.go",
+        "loop_orchestrator_start.go",
+        "loop_orchestrator_trigger.go",
+        "loop_run_resolve.go",
+        "loop_run_service.go",
+        "loop_run_service_query.go",
+        "loop_run_status_resolver.go",
+        "loop_scheduler.go",
+        "loop_scheduler_cron.go",
+        "loop_service.go",
+        "loop_service_crud.go",
+        "loop_service_delete.go",
+        "loop_service_update.go",
+        "loop_service_validation.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/loop",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//agentfile/serialize",
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/domain/loop",
+        "//backend/internal/infra/eventbus",
+        "//backend/internal/service/agentpod",
+        "//backend/internal/service/instance",
+        "//backend/internal/service/ticket",
+        "@com_github_robfig_cron_v3//:cron",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":loop",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "loop_test",
+    srcs = [
+        "loop_cross_unit_integration_test.go",
+        "loop_lifecycle_integration_test.go",
+        "loop_orchestrator_agentfile_test.go",
+        "loop_run_service_test.go",
+        "loop_run_status_resolver_test.go",
+        "loop_service_test.go",
+        "loop_workflow_integration_extra_test.go",
+        "loop_workflow_integration_test.go",
+        "mock_ticket_repo_test.go",
+    ],
+    embed = [":loop"],
+    deps = [
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/domain/loop",
+        "//backend/internal/domain/ticket",
+        "//backend/internal/domain/user",
+        "//backend/internal/infra",
+        "//backend/internal/infra/eventbus",
+        "//backend/internal/service/agentpod",
+        "//backend/internal/service/ticket",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

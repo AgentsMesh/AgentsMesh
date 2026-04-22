@@ -1,0 +1,3 @@
+# Placeholder — Docker/OCI macros land here in Phase 1 and Phase 6.
+#   go_oci_image.bzl  → go_oci_image  (Go binary → distroless OCI, ported from AIO)
+#   onprem_bundle.bzl → onprem_bundle (aggregate OCI tarballs → single tar.gz)

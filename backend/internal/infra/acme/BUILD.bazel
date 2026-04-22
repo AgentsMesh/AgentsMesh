@@ -1,0 +1,28 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "acme",
+    srcs = [
+        "dns_provider.go",
+        "manager.go",
+        "manager_certificate.go",
+        "manager_storage.go",
+        "manager_user.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/acme",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/infra/dns",
+        "@com_github_go_acme_lego_v4//certcrypto",
+        "@com_github_go_acme_lego_v4//certificate",
+        "@com_github_go_acme_lego_v4//challenge/dns01",
+        "@com_github_go_acme_lego_v4//lego",
+        "@com_github_go_acme_lego_v4//registration",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":acme",
+    visibility = ["//backend:__subpackages__"],
+)

@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+# gazelle-managed root of the `agentfile` Go module.
+
+go_library(
+    name = "agentfile",
+    srcs = [
+        "agentspec.go",
+        "format.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/agentfile",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":agentfile",
+    visibility = ["//visibility:public"],
+)

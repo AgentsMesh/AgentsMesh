@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "blockstore",
+    srcs = [
+        "client.go",
+        "client_ops.go",
+        "client_query.go",
+        "types.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/blockstore",
+    visibility = ["//runner:__subpackages__"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":blockstore",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "blockstore_test",
+    srcs = ["client_test.go"],
+    embed = [":blockstore"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

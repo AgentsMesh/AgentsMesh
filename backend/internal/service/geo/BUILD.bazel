@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "geo",
+    srcs = [
+        "distance.go",
+        "resolver.go",
+        "resolver_mmdb.go",
+        "resolver_noop.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/geo",
+    visibility = ["//backend:__subpackages__"],
+    deps = ["@com_github_oschwald_maxminddb_golang//:maxminddb-golang"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":geo",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "geo_test",
+    srcs = [
+        "distance_test.go",
+        "resolver_test.go",
+    ],
+    embed = [":geo"],
+    deps = [
+        "@com_github_maxmind_mmdbwriter//:mmdbwriter",
+        "@com_github_maxmind_mmdbwriter//mmdbtype",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "lexer",
+    srcs = [
+        "lexer.go",
+        "lexer_readers.go",
+        "token.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/agentfile/lexer",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":lexer",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "lexer_test",
+    srcs = [
+        "lexer_edge_test.go",
+        "lexer_finalcover_test.go",
+        "lexer_test.go",
+    ],
+    embed = [":lexer"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

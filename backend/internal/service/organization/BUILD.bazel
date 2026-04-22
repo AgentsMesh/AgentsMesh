@@ -1,0 +1,48 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "organization",
+    srcs = [
+        "interface.go",
+        "mock_service.go",
+        "mock_service_member.go",
+        "service.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/organization",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/billing",
+        "//backend/internal/domain/organization",
+        "//backend/internal/domain/user",
+        "//backend/internal/middleware",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":organization",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "organization_test",
+    srcs = [
+        "mock_crud_test.go",
+        "mock_helper_test.go",
+        "mock_member_test.go",
+        "mock_role_test.go",
+        "org_lifecycle_integration_test.go",
+        "service_member_test.go",
+        "service_role_test.go",
+        "service_setup_test.go",
+    ],
+    embed = [":organization"],
+    deps = [
+        "//backend/internal/domain/organization",
+        "//backend/internal/infra",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "console",
+    srcs = [
+        "handlers.go",
+        "log_buffer.go",
+        "server.go",
+    ],
+    embedsrcs = ["static/index.html"],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/console",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/config",
+        "//runner/internal/logger",
+        "//runner/internal/safego",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":console",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "console_test",
+    srcs = ["handlers_test.go"],
+    embed = [":console"],
+    deps = ["//runner/internal/config"],
+)

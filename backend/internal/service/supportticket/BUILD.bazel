@@ -1,0 +1,50 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "supportticket",
+    srcs = [
+        "service.go",
+        "service_admin.go",
+        "service_attachment.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/service/supportticket",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/supportticket",
+        "//backend/internal/infra/storage",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":supportticket",
+    visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "supportticket_test",
+    srcs = [
+        "service_admin_test.go",
+        "service_attachment_dberr_test.go",
+        "service_attachment_test.go",
+        "service_attachment_url_test.go",
+        "service_helper_test.go",
+        "service_message_test.go",
+        "service_setup_test.go",
+        "service_test.go",
+        "supportticket_integration_test.go",
+    ],
+    embed = [":supportticket"],
+    deps = [
+        "//backend/internal/config",
+        "//backend/internal/domain/supportticket",
+        "//backend/internal/infra",
+        "//backend/internal/infra/storage",
+        "//backend/internal/testkit",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_gorm_gorm//:gorm",
+    ],
+)
