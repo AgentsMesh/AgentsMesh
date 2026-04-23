@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# DEPRECATED --- Bazel migration
-# Replacement: bazel build //clients/core/crates/ffi:AgentsMeshCore
-# Kept until .github/workflows/bazel.yml is authoritative, then delete.
-#
 # Build AgentsMeshCore.xcframework for iOS (device + simulator universal).
+#
+# Invocation:
+#   bazel run //clients/core/crates/ffi:AgentsMeshCore        (primary)
+#   bash     clients/core/scripts/build-ios-xcframework.sh     (direct)
 #
 # Output:
 #   clients/core/ios-framework/AgentsMeshCore.xcframework
@@ -19,7 +19,18 @@ set -euo pipefail
 CRATE=agentsmesh-ffi
 LIB=libagentsmesh_ffi.a
 MODULE=AgentsMeshCore
-WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Resolve the crate workspace:
+#  - `bazel run` sets BUILD_WORKSPACE_DIRECTORY to the repo root; the
+#    runfiles execroot doesn't contain Cargo.toml, so we jump back to
+#    the real checkout.
+#  - Direct invocation computes the workspace from the script path.
+if [ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]; then
+    WORKSPACE="$BUILD_WORKSPACE_DIRECTORY/clients/core"
+else
+    WORKSPACE="$(cd "$(dirname "$0")/.." && pwd)"
+fi
+
 TARGET_DIR="$WORKSPACE/target"
 OUT="$WORKSPACE/ios-framework"
 GENERATED="$OUT/Generated"
