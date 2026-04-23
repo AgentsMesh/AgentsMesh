@@ -112,5 +112,8 @@ go_oci_image(
         "8080/tcp",
         "9443/tcp",
     ],
-    repository = "registry.corp.agentsmesh.ai/backend",
+    repositories = {
+        "dockerhub": "agentsmesh/backend",
+        "agentsmesh": "registry.agentsmesh.ai/agentsmesh/backend",
+    },
 )

@@ -47,5 +47,8 @@ go_binary(
 go_oci_image(
     name = "image",
     binary = ":runner",
-    repository = "registry.corp.agentsmesh.ai/runner",
+    repositories = {
+        "dockerhub": "agentsmesh/runner",
+        "agentsmesh": "registry.agentsmesh.ai/agentsmesh/runner",
+    },
 )

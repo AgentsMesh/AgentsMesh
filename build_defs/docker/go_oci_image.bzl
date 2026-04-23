@@ -1,8 +1,10 @@
 """OCI image macro for AgentsMesh Go services.
 
-Adapted from `~/Works/AIO/AIO/DevOps/BuildSystem/Server/oci.bzl`. Produces
-one oci_image + local `_tarball` (for `docker load`), and a `_push` target
-for any service that specifies `repository`.
+Produces an OCI image (distroless-based), a local `_tarball` for
+`docker load`, and one `_push_<key>` target per registry in
+`repositories`. Tag stamping plugs into `ci/workspace_status.sh` via
+Bazel's `--stamp --workspace_status_command=...` flags so the tag list
+comes from the CI environment, not the BUILD file.
 
 Usage:
     load("//build_defs/docker:go_oci_image.bzl", "go_oci_image")
@@ -11,11 +13,19 @@ Usage:
         name = "image",
         binary = ":server",
         exposed_ports = ["8080/tcp"],
-        repository = "registry.corp.agentsmesh.ai/backend",
+        repositories = {
+            "dockerhub":  "agentsmesh/backend",
+            "agentsmesh": "registry.agentsmesh.ai/agentsmesh/backend",
+        },
     )
 
-Replaces:
-    ci/backend.Dockerfile, ci/runner.Dockerfile, ci/relay.Dockerfile
+    # Produces:
+    #   :image                   — oci_image
+    #   :image_tarball           — oci_load (docker load)
+    #   :image_push_dockerhub    — oci_push to Docker Hub
+    #   :image_push_agentsmesh   — oci_push to AgentsMesh registry
+
+Replaces: ci/backend.Dockerfile, ci/runner.Dockerfile, ci/relay.Dockerfile.
 """
 
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
@@ -29,26 +39,24 @@ def go_oci_image(
         env = {},
         exposed_ports = [],
         labels = {},
+        repositories = {},
         repository = None,
         visibility = ["//visibility:public"]):
-    """Bundle a Go binary into an OCI image.
-
-    Outputs:
-        :<name>              oci_image (base = distroless/static)
-        :<name>_tarball      oci_load target (`bazel run` → docker load)
-        :<name>_push         oci_push (only if `repository` is set)
-
-    The binary lives at `/app/<binary_name>` inside the image and runs as
-    the non-root user baked into distroless.
+    """Bundle a Go binary into a distroless OCI image + push targets.
 
     Args:
         name: Target name.
         binary: Label of the `go_binary` to embed.
         base: OCI base image, defaults to distroless/static.
-        env: Environment variables set inside the container.
+        env: Environment variables inside the container.
         exposed_ports: Ports to expose on the image.
         labels: OCI labels to add to the image.
-        repository: Remote registry repo URL (optional); enables `_push`.
+        repositories: Dict mapping registry key → full repo URL. Every
+            entry becomes a `:name_push_<key>` target. `bazel run` one
+            of them with `--stamp --workspace_status_command=...` to
+            push with the CI-provided version tag.
+        repository: Back-compat single-registry form; equivalent to
+            `repositories = {"default": repository}`. Prefer the dict.
         visibility: Standard visibility.
     """
     binary_name = binary.split(":")[-1]
@@ -79,20 +87,44 @@ def go_oci_image(
         visibility = visibility,
     )
 
-    if repository:
-        # Tags file expanded at build time. BUILD_EMBED_LABEL comes from
-        # `--embed_label=<sha>` in CI; falls back to "0.0.0" locally.
+    # Normalize single-repo back-compat form.
+    repos = dict(repositories)
+    if repository and not repos:
+        repos["default"] = repository
+
+    if repos:
+        # Tag list: always `latest`, plus the stamped version + minor.
+        # Duplicate values are harmless — oci_push de-dups tags and the
+        # registry just re-tags the manifest.
         expand_template(
             name = name + "_tags",
             out = name + "_tags.txt",
-            stamp_substitutions = {"0.0.0": "{{BUILD_EMBED_LABEL}}"},
-            template = ["latest", "0.0.0"],
+            template = [
+                "latest",
+                "STAMP_VERSION",
+                "STAMP_MINOR",
+            ],
+            stamp_substitutions = {
+                "STAMP_VERSION": "{{STABLE_IMAGE_VERSION}}",
+                "STAMP_MINOR": "{{STABLE_IMAGE_MINOR}}",
+            },
         )
 
-        oci_push(
+        for reg_key in sorted(repos.keys()):
+            oci_push(
+                name = "{}_push_{}".format(name, reg_key),
+                image = ":" + name,
+                remote_tags = ":" + name + "_tags",
+                repository = repos[reg_key],
+                visibility = visibility,
+            )
+
+        # Back-compat alias — first registry's push under the legacy
+        # `:name_push` name. Pick `default` if present, else the first
+        # alphabetical key.
+        back_compat_key = "default" if "default" in repos else sorted(repos.keys())[0]
+        native.alias(
             name = name + "_push",
-            image = ":" + name,
-            remote_tags = ":" + name + "_tags",
-            repository = repository,
+            actual = ":{}_push_{}".format(name, back_compat_key),
             visibility = visibility,
         )

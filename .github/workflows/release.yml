@@ -4,21 +4,13 @@
 # rollout (US West + CN) plus GoReleaser for the runner CLI.
 #
 # Image build strategy:
-#   - backend / runner / relay: via `docker/build-push-action` today.
-#     Bazel alternatives exist (`//backend/cmd/server:image_push`,
-#     etc. — see build_defs/docker/go_oci_image.bzl) but their
-#     `repository` attributes are pinned to registry.corp.agentsmesh.ai
-#     and don't yet emit the dual-registry + semver tag set that
-#     docker/metadata-action generates. Migration to rules_oci push
-#     is tracked in the "TODO: oci-images" comment at the bottom of
-#     bazel.yml.
-#   - web / web-admin: TEMPORARILY DISABLED. The Dockerfiles COPY
-#     pnpm-lock.yaml from the per-service context (./clients/web); the
-#     Bazel migration moved pnpm-lock to the workspace root. Merging
-#     a web change to main will skip the image build (and the deploy
-#     step that depends on it will be skipped by the `changes` filter
-#     producing no-op). Fix path: Bazel-native next_app() image target
-#     or a Dockerfile rewrite that COPYs from the repo root.
+#   - backend / runner / relay: Bazel-native via rules_oci. Each
+#     service has `//<path>:image_push_dockerhub` and
+#     `:image_push_agentsmesh` targets; tag list (latest + version +
+#     minor) is stamped from `ci/workspace_status.sh` which reads the
+#     IMAGE_VERSION + IMAGE_MINOR env vars this workflow sets.
+#   - web / web-admin: still docker/build-push-action; disabled in the
+#     matrix until the Bazel next_app() image target lands.
 
 name: Release
 
@@ -29,10 +21,8 @@ on:
       - "v*"
 
 env:
-  REGISTRY: registry.agentsmesh.ai
-  DOCKERHUB_NAMESPACE: agentsmesh
-  GO_VERSION: "1.25"
-  REGISTRY_PREFIX: "registry.agentsmesh.ai/library/"
+  DOCKERHUB_REGISTRY: docker.io
+  AGENTSMESH_REGISTRY: registry.agentsmesh.ai
 
 jobs:
   # ===========================================================================
@@ -73,92 +63,101 @@ jobs:
               - 'backend/migrations/**'
 
   # ===========================================================================
-  # Build and push Docker images (only changed services)
+  # Compute version tag once — shared by every build-images matrix shard.
+  # ===========================================================================
+
+  version:
+    name: Compute Version Tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.compute.outputs.version }}
+      minor: ${{ steps.compute.outputs.minor }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: compute
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # v1.2.3 → version=1.2.3, minor=1.2
+            full="${GITHUB_REF#refs/tags/v}"
+            minor="${full%.*}"
+          else
+            # main push → version=sha-abc1234, minor=latest (deduplicates
+            # against the always-on 'latest' tag but harmless)
+            full="sha-${GITHUB_SHA::7}"
+            minor="latest"
+          fi
+          echo "version=${full}" >> "$GITHUB_OUTPUT"
+          echo "minor=${minor}" >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Build + push Docker images via Bazel rules_oci (dual-registry).
   # ===========================================================================
 
   build-images:
     name: Build ${{ matrix.service }}
     runs-on: ubuntu-latest
+    needs: version
     strategy:
       fail-fast: false
       matrix:
         include:
           - service: backend
-            dockerfile: ci/backend.Dockerfile
-            context: .
-            use_ecr: true
-          # web + web-admin Dockerfiles COPY pnpm-lock.yaml from the
-          # per-service context (./clients/web). After the Bazel
-          # migration the lockfile lives at the workspace root, so
-          # `npm i` falls back and chokes on `workspace:*` deps.
-          # Re-enable once the Bazel OCI targets (//clients/web:image,
-          # //clients/web-admin:image) are wired, or after the
-          # Dockerfiles are rewritten to COPY from the repo root.
+            target: //backend/cmd/server:image
+          # web + web-admin skipped during Bazel migration — no
+          # next_app() OCI target yet. Track in "TODO: oci-images"
+          # at the bottom of bazel.yml.
           - service: runner
-            dockerfile: ci/runner.Dockerfile
-            context: .
-            use_ecr: true
+            target: //runner/cmd/runner:image
           - service: relay
-            dockerfile: ci/relay.Dockerfile
-            context: .
-            use_ecr: true
+            target: //relay/cmd/relay:image
     outputs:
-      version: ${{ steps.version.outputs.tag }}
+      version: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v6
-
-      - name: Set version tag
-        id: version
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - uses: bazel-contrib/setup-bazel@0.9.1
+        with:
+          bazelisk-cache: true
+          disk-cache: true
+          repository-cache: true
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v4
         with:
+          registry: ${{ env.DOCKERHUB_REGISTRY }}
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Log in to AgentsMesh Registry
         uses: docker/login-action@v4
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.AGENTSMESH_REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-        with:
-          driver-opts: |
-            image=registry.agentsmesh.ai/library/buildkit:buildx-stable-1
+      # rules_oci's oci_push reads ~/.docker/config.json for auth, so
+      # the two `docker login` steps above already provisioned creds.
+      # bazel run invokes the push action which tags via the stamped
+      # ci/workspace_status.sh keys.
+      - name: Push to Docker Hub
+        env:
+          IMAGE_VERSION: ${{ needs.version.outputs.version }}
+          IMAGE_MINOR: ${{ needs.version.outputs.minor }}
+        run: |
+          bazel run \
+            --stamp \
+            --workspace_status_command=ci/workspace_status.sh \
+            ${{ matrix.target }}_push_dockerhub
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: |
-            ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}
-            ${{ env.REGISTRY }}/agentsmesh/${{ matrix.service }}
-          tags: |
-            # main branch: short sha + latest
-            type=sha,enable={{is_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            # version tags: v1.0.0, v1.0
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GO_VERSION=${{ env.GO_VERSION }}
-            REGISTRY_PREFIX=${{ matrix.use_ecr && env.REGISTRY_PREFIX || '' }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-          platforms: linux/amd64
+      - name: Push to AgentsMesh Registry
+        env:
+          IMAGE_VERSION: ${{ needs.version.outputs.version }}
+          IMAGE_MINOR: ${{ needs.version.outputs.minor }}
+        run: |
+          bazel run \
+            --stamp \
+            --workspace_status_command=ci/workspace_status.sh \
+            ${{ matrix.target }}_push_agentsmesh
 
   # ===========================================================================
   # Deploy US West production (independent parallel jobs, changes-based)
@@ -293,7 +292,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.25"
           cache-dependency-path: runner/go.sum
 
       - name: Install rcodesign (macOS code signing)

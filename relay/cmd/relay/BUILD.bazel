@@ -24,5 +24,8 @@ go_oci_image(
     name = "image",
     binary = ":relay",
     exposed_ports = ["8090/tcp"],
-    repository = "registry.corp.agentsmesh.ai/relay",
+    repositories = {
+        "dockerhub": "agentsmesh/relay",
+        "agentsmesh": "registry.agentsmesh.ai/agentsmesh/relay",
+    },
 )
