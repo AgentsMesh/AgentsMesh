@@ -1,0 +1,15 @@
+{
+  "name": "agentsmesh-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "agentsmesh_wasm_bg.wasm",
+    "agentsmesh_wasm.js",
+    "agentsmesh_wasm.d.ts"
+  ],
+  "main": "agentsmesh_wasm.js",
+  "types": "agentsmesh_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

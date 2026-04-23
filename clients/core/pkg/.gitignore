@@ -1,0 +1,8 @@
+# wasm-pack regenerates these; we commit them so pnpm workspace link
+# resolves in fresh checkouts (CI, cold clones) without needing a Rust
+# toolchain + wasm-pack install just to run `pnpm install`.
+#
+# Track: package.json, *.js, *.d.ts, *.wasm, BUILD.bazel
+# Ignore: transient wasm-pack scratch files
+.wasm-pack.log
+*.tmp
