@@ -61,15 +61,15 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 	{
 		ticketsRead.GET("", ticketHandler.ListTickets)
 		ticketsRead.GET("/board", ticketHandler.GetBoard)
-		ticketsRead.GET("/:slug", ticketHandler.GetTicket)
+		ticketsRead.GET("/:ticket_slug", ticketHandler.GetTicket)
 	}
 	ticketsWrite := rg.Group("/tickets")
 	ticketsWrite.Use(middleware.RequireScope("tickets:write"))
 	{
 		ticketsWrite.POST("", ticketHandler.CreateTicket)
-		ticketsWrite.PUT("/:slug", ticketHandler.UpdateTicket)
-		ticketsWrite.PATCH("/:slug/status", ticketHandler.UpdateTicketStatus)
-		ticketsWrite.DELETE("/:slug", ticketHandler.DeleteTicket)
+		ticketsWrite.PUT("/:ticket_slug", ticketHandler.UpdateTicket)
+		ticketsWrite.PATCH("/:ticket_slug/status", ticketHandler.UpdateTicketStatus)
+		ticketsWrite.DELETE("/:ticket_slug", ticketHandler.DeleteTicket)
 	}
 
 	// Channel routes
