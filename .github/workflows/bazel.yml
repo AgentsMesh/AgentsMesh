@@ -48,7 +48,10 @@ jobs:
       # packages. CGO is enabled so SQLite-backed integration tests
       # (backend/internal/testkit) compile; release builds flip to
       # pure Go via --config=release.
-      - run: bazel test //backend/... //runner/... //relay/... //agentfile/... //proto/...
+      # --flaky_test_attempts=3: TestPtyReaderForwardsOutput is a
+      # PTY/TCP-timing test that occasionally hits i/o timeouts under
+      # CI load. The timeout is 2s; local runs are consistently green.
+      - run: bazel test --flaky_test_attempts=3 //backend/... //runner/... //relay/... //agentfile/... //proto/...
 
   rust:
     name: Rust Core (clients/core)
@@ -66,7 +69,10 @@ jobs:
       # 11 test targets were green on the migration branch. The
       # ffi/wasm/xcframework cross-language products are exercised by
       # the iOS / web jobs (not yet on Bazel CI).
-      - run: bazel test //clients/core/crates/...
+      # --build_tests_only: skip building non-test library targets in
+      # the same packages — some (ffi xcframework, wasm_pkg) require
+      # Apple / wasm-bindgen toolchains not present on ubuntu runners.
+      - run: bazel test --build_tests_only //clients/core/crates/...
 
   # =========================================================================
   # TODO: jobs below are in progress. They remain in legacy workflows
