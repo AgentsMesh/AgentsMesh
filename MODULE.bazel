@@ -348,14 +348,15 @@ bazel_dep(name = "rules_apple", version = "4.1.1", repo_name = "build_bazel_rule
 # `rules_apple` upstream doesn't yet support `rules_swift@3.0.2` (needed for
 # Swift 6 concurrency on iOS 17). Stone maintains a fork pinned to the same
 # SHA as the AIO project so we don't multiply the maintenance surface.
-git_override(
+archive_override(
     module_name = "rules_apple",
-    # Pinned to a concrete commit so Bazel caches the checkout and
-    # doesn't hit `git fetch origin master` on every build — GitHub's
-    # fork endpoint has been flaky with HTTP 500s. Bump by updating
-    # this SHA; the AIO project keeps the same fork in lockstep.
-    commit = "44d64ce8c540b60b72f17e87a61099c20d36be6d",
-    remote = "https://github.com/yishuiliunian/rules_apple.git",
+    # CDN-cached tarball at a concrete commit. Previously used
+    # git_override(branch="master"), which re-ran `git fetch` on every
+    # build — GitHub's repo endpoint has returned sporadic HTTP 500s
+    # for the fork and tripped random CI jobs. archive_override keeps
+    # the download out of the git protocol entirely.
+    strip_prefix = "rules_apple-44d64ce8c540b60b72f17e87a61099c20d36be6d",
+    urls = ["https://github.com/yishuiliunian/rules_apple/archive/44d64ce8c540b60b72f17e87a61099c20d36be6d.tar.gz"],
 )
 
 # Swift Package Manager bridge for external deps (TCA, SwiftTerm, etc.).
