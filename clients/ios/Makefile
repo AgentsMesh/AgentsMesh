@@ -1,42 +1,43 @@
-# DEPRECATED --- Bazel migration
-# Replacement: //clients/ios:AgentsMesh (build) and //clients/ios:AgentsMesh_xcodeproj (IDE)
-# Kept until .github/workflows/bazel.yml is authoritative, then delete.
-#
 # AgentsMesh iOS — build helpers.
 #
-# Why symlinks: `Package.swift` cannot reach files outside its root, and we
-# don't want to duplicate the ~18k-line Rust-generated Swift bindings or the
-# multi-hundred-MB XCFramework into the Swift package. Instead, we symlink
-# them in after `build-ios-xcframework.sh` has produced them.
+# The XCFramework + Swift glue come from Bazel
+# (//clients/core/crates/ffi:AgentsMeshCore). SPM `Package.swift` can't
+# reach files outside its package root, so `link-core` symlinks the
+# Bazel outputs into the expected SPM paths.
 #
 # CI uses the same recipes via `make ios-setup`.
 
-WORKTREE := $(shell cd ../.. && pwd)
-CORE_OUT := $(WORKTREE)/clients/core/ios-framework
-PKG_CORE := Packages/AgentsMeshCore/Sources
+WORKTREE  := $(shell cd ../.. && pwd)
+BAZEL_OUT := $(WORKTREE)/bazel-bin/clients/core/crates/ffi
+PKG_CORE  := Packages/AgentsMeshCore/Sources
 
 .PHONY: help ios-setup xcframework link-core project check-sim clean
 
 help:
-	@echo "make xcframework   - build AgentsMeshCore.xcframework via cargo"
+	@echo "make xcframework   - build AgentsMeshCore.xcframework via Bazel"
 	@echo "make link-core     - symlink xcframework + Swift bindings into SPM tree"
 	@echo "make project       - generate AgentsMesh.xcodeproj via xcodegen"
 	@echo "make ios-setup     - xcframework + link-core + project (one-shot)"
 	@echo "make check-sim     - build for iOS Simulator via xcodebuild"
 	@echo "make clean         - remove symlinks and build artifacts"
 
+# Delegates to the Bazel pipeline in build_defs/ios/rust_xcframework.bzl.
+# Tree-artifact output:
+#   $(BAZEL_OUT)/AgentsMeshCore.xcframework/        (iOS slices + Info.plist)
+#   $(BAZEL_OUT)/AgentsMeshCore_bindings_out/AgentsMeshCore.swift
 xcframework:
-	bash $(WORKTREE)/clients/core/scripts/build-ios-xcframework.sh
+	bazel build //clients/core/crates/ffi:AgentsMeshCore \
+	            //clients/core/crates/ffi:AgentsMeshCore_swift
 
 link-core:
 	@mkdir -p $(PKG_CORE)/AgentsMeshCore/Generated
 	@rm -f $(PKG_CORE)/AgentsMeshCore/Generated/AgentsMeshCore.swift
 	@rm -rf $(PKG_CORE)/AgentsMeshCoreFFI/AgentsMeshCore.xcframework
-	ln -s $(CORE_OUT)/Generated/AgentsMeshCore.swift \
+	ln -s $(BAZEL_OUT)/AgentsMeshCore_bindings_out/AgentsMeshCore.swift \
 	      $(PKG_CORE)/AgentsMeshCore/Generated/AgentsMeshCore.swift
-	ln -s $(CORE_OUT)/AgentsMeshCore.xcframework \
+	ln -s $(BAZEL_OUT)/AgentsMeshCore.xcframework \
 	      $(PKG_CORE)/AgentsMeshCoreFFI/AgentsMeshCore.xcframework
-	@echo "Linked Swift bindings + XCFramework into SPM tree."
+	@echo "Linked Bazel outputs into SPM tree."
 
 project:
 	xcodegen generate
@@ -56,4 +57,3 @@ clean:
 	rm -rf $(PKG_CORE)/AgentsMeshCoreFFI/AgentsMeshCore.xcframework
 	rm -rf Packages/AgentsMeshCore/.build Packages/AgentsMeshFeatures/.build
 	rm -rf AgentsMesh.xcodeproj DerivedData
-

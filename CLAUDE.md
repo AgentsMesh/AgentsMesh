@@ -141,19 +141,22 @@ rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
 brew install xcodegen        # generates AgentsMesh.xcodeproj
 
 # Build AgentsMeshCore.xcframework (consumed by clients/ios SPM package)
-bash clients/core/scripts/build-ios-xcframework.sh
+bazel build //clients/core/crates/ffi:AgentsMeshCore
 
 # Or one-shot (xcframework + symlink into SPM + xcodegen):
-cd clients/ios && make ios-setup && xcodegen
+cd clients/ios && make ios-setup
 
 # Then open in Xcode:
 open AgentsMesh.xcodeproj
 ```
 
-Output:
-- `clients/core/ios-framework/AgentsMeshCore.xcframework/` — device + universal-sim slices
-- `clients/core/ios-framework/Generated/AgentsMeshCore.swift` — Swift glue (~18k lines)
-- `clients/core/ios-framework/Headers/` — C headers + module.modulemap
+Bazel tree artifact:
+- `bazel-bin/clients/core/crates/ffi/AgentsMeshCore.xcframework/` — device + universal-sim slices + `Info.plist`
+- `bazel-bin/clients/core/crates/ffi/AgentsMeshCore_bindings_out/AgentsMeshCore.swift` — Swift glue (~18k lines)
+
+`make link-core` symlinks those two into the SPM tree at
+`clients/ios/Packages/AgentsMeshCore/Sources/AgentsMeshCoreFFI/` and
+`.../AgentsMeshCore/Generated/` respectively.
 
 Layout:
 - `clients/ios/Packages/AgentsMeshCore/` — SPM facade: CoreBridge (singleton),
