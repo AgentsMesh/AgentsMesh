@@ -26,14 +26,13 @@ const enableStandalone = process.env.BAZEL_BUILD === "standalone";
 const nextConfig: NextConfig = {
   ...(enableStandalone ? { output: "standalone" as const } : {}),
 
-  // Type / lint checks live in their own Bazel jobs ("Web lint +
-  // type-check + vitest" via pnpm). Don't re-run them inside
-  // `next build` — Next's build path hits a stricter JSX-inference
-  // pass that flags pre-existing implicit-any sites the top-level
-  // `tsc --noEmit` already accepts. Cleanup is a follow-up; the
-  // production image build passes via ignore-build-errors.
+  // Type checks live in the separate "Web (lint + type-check +
+  // vitest)" Bazel job (plain `pnpm type-check`). Don't re-run them
+  // inside `next build` — the Next.js build path hits a stricter
+  // JSX-inference pass that flags pre-existing implicit-any sites the
+  // top-level `tsc --noEmit` already accepts. Cleanup is a follow-up;
+  // the production image build passes via ignore-build-errors.
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
 
   // Workspace packages ship their raw .ts sources (see
   // packages/service-runtime/BUILD.bazel for why). Tell Next.js to
