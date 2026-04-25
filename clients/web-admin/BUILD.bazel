@@ -37,13 +37,17 @@ ts_project(
         [
             "src/**/*.ts",
             "src/**/*.tsx",
+            "src/**/*.json",
         ],
+        allow_empty = True,
         exclude = [
             "src/**/*.test.ts",
             "src/**/*.test.tsx",
         ],
     ),
-    declaration = True,
+    allow_js = True,
+    no_emit = True,
+    resolve_json_module = True,
     tsconfig = "tsconfig.json",
     deps = ["//:node_modules"],
 )

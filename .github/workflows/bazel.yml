@@ -168,24 +168,9 @@ jobs:
           bazelisk-cache: true
           disk-cache: true
           repository-cache: true
-      # Lint + Vitest run via Bazel. Type-check stays on shell because
-      # `//clients/web:src` ts_project still fails on pre-existing
-      # implicit-any sites — not in scope for this PR.
-      - uses: pnpm/action-setup@v5
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Type check
-        working-directory: clients/web
-        run: node ../../node_modules/typescript/bin/tsc --noEmit
-      - name: Lint + Vitest (Bazel)
-        run: bazel test //clients/web:lint //clients/web:unit
+      # Lint, type-check + Vitest all run via Bazel.
+      - name: Lint + Type-check + Vitest (Bazel)
+        run: bazel test //clients/web:lint //clients/web:unit && bazel build //clients/web:src //clients/web-admin:src
 
   web-admin:
     name: Web-Admin (lint)

@@ -104,9 +104,7 @@ go test -v ./internal/service/... -run TestAuth  # Run specific test
 ### Web (Next.js)
 
 web + web-admin 的依赖统一放在根 `package.json`（per-app package.json 已删，
-两者也已从 `pnpm-workspace.yaml` 移除）。Lint + 单测走 Bazel；type-check
-仍在 shell（`//clients/web:src` ts_project 有 legacy implicit-any 错误，
-单独跟踪）：
+两者也已从 `pnpm-workspace.yaml` 移除）。Lint / type-check / 单测全部走 Bazel：
 
 ```bash
 pnpm install                              # Install at repo root (one-shot)
@@ -114,11 +112,9 @@ bazel run //clients/web:next_dev          # Dev server (preferred)
 bazel build //clients/web:image           # Production OCI image
 bazel test //clients/web:unit             # Vitest (1510 tests)
 bazel test //clients/web:lint             # ESLint
+bazel build //clients/web:src             # tsc --noEmit (type check)
 bazel test //clients/web-admin:lint       # ESLint web-admin
-
-# Type check (no Bazel target yet — legacy errors)
-(cd clients/web && node ../../node_modules/typescript/bin/tsc --noEmit)
-(cd clients/web-admin && node ../../node_modules/typescript/bin/tsc --noEmit)
+bazel build //clients/web-admin:src       # tsc --noEmit web-admin
 
 # Dev server shell alternative (for IDE / non-Bazel workflows)
 (cd clients/web && node ../../node_modules/next/dist/bin/next dev --turbopack)
@@ -130,6 +126,7 @@ bazel test //clients/web-admin:lint       # ESLint web-admin
 bazel run //clients/web-admin:next_dev
 bazel build //clients/web-admin:image
 bazel test //clients/web-admin:lint
+bazel build //clients/web-admin:src
 ```
 
 ### Runner (Go)
