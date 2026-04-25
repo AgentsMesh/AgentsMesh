@@ -103,7 +103,7 @@ export interface IAuthManager {
   login(email: string, password: string): Promise<string>;
   logout(): Promise<void>;
   refresh_token(): Promise<string>;
-  restore_session(): boolean;
+  restore_session(): boolean | Promise<boolean>;
   switch_org(slug: string): void;
   readonly base_url: string;
 }

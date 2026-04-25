@@ -1,13 +1,15 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library")
-load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//build_defs/web:electron.bzl", "electron_app")
 load("//build_defs/web:playwright.bzl", "playwright_test")
 load("//build_defs/web:ts.bzl", "ts_project")
 
-npm_link_all_packages(name = "node_modules")
-
 # Main-process TS (lives in `src/main/`). Produces a Node-loadable
 # bundle; electron-vite handles any esbuild tweaks we need.
+#
+# Tagged `manual` because the desktop renderer aliases `@/stores`,
+# `@/lib`, etc. to clients/web/src via electron.vite.config.ts —
+# tsc by itself can't resolve those without complex path
+# replication. The canonical type-check pipeline runs inside
+# `electron-vite build` (Phase B). These targets stay for ad-hoc
+# `bazel build //clients/desktop:main` invocations.
 ts_project(
     name = "main",
     srcs = glob([
@@ -15,12 +17,11 @@ ts_project(
         "src/preload/**/*.ts",
     ]),
     declaration = True,
+    tags = ["manual"],
     tsconfig = "tsconfig.json",
-    deps = [":node_modules"],
+    deps = ["//:node_modules"],
 )
 
-# Renderer (React/SwiftUI-adjacent Electron renderer). Built via
-# electron-vite downstream; we just package the TS here.
 ts_project(
     name = "renderer",
     srcs = glob([
@@ -28,24 +29,9 @@ ts_project(
         "src/renderer/**/*.tsx",
     ]),
     declaration = True,
+    tags = ["manual"],
     tsconfig = "tsconfig.json",
-    deps = [":node_modules"],
-)
-
-# Assemble the Electron on-disk layout. The N-API native addon is
-# pulled in from the Rust crate under clients/core/.
-electron_app(
-    name = "desktop",
-    main = ":main",
-    napi_addon = "//clients/core/crates/node-bridge",
-    renderer = ":renderer",
-    visibility = ["//visibility:public"],
-)
-
-js_library(
-    name = "app",
-    srcs = [":desktop_app"],
-    visibility = ["//visibility:public"],
+    deps = ["//:node_modules"],
 )
 
 # Desktop Playwright e2e suite (Electron-hosted). Tagged `manual + e2e`
@@ -80,26 +66,17 @@ playwright_test(
         # Root-linked @playwright/test (single version across the repo
         # via pnpm overrides — see build_defs/web/playwright.bzl).
         "//:node_modules/@playwright/test",
-        # Electron binary lives under this package's own node_modules
-        # link — `_electron.launch()` resolves `require('electron')`
-        # from the caller (e2e spec) directory.
-        ":node_modules/electron",
-        # Workspace link to the napi addon. After the node-bridge
-        # npm_package switched to pre-built sources (not the cdylib
-        # target), this label no longer triggers a Rust compile in the
-        # sandbox, and Bazel materializes the `.node` binary as part of
-        # `clients/desktop/node_modules/@agentsmesh/node-bridge/` in the
-        # runfiles tree — exactly where `require('@agentsmesh/node-bridge')`
-        # from the Electron main process will look.
-        ":node_modules/@agentsmesh/node-bridge",
-        # Shared helpers/fixtures from web/e2e-playwright (desktop specs
-        # reach them via relative imports `../../../web/e2e-playwright/...`).
+        # Electron binary lives in root node_modules (Phase C hoist).
+        # `_electron.launch()` walks up from CWD to find it.
+        "//:node_modules/electron",
+        # Workspace link to the napi addon.
+        "//:node_modules/@agentsmesh/node-bridge",
+        # Shared helpers/fixtures from web/e2e-playwright.
         "//clients/web/e2e-playwright:shared_fixtures",
     ] + glob(
         [
-            # Pre-built Electron app (produced by `pnpm -C clients/desktop build`).
+            # Pre-built Electron app (produced by electron-vite build).
             "out/**",
-            # dotenv + other runtime configs the Electron main reads.
             ".env*",
         ],
         allow_empty = True,

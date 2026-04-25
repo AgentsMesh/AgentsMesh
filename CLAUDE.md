@@ -103,8 +103,9 @@ go test -v ./internal/service/... -run TestAuth  # Run specific test
 
 ### Web (Next.js)
 
-web + web-admin 的依赖统一放在根 `package.json`（per-app package.json 已删，
-两者也已从 `pnpm-workspace.yaml` 移除）。Lint / type-check / 单测全部走 Bazel：
+所有前端的依赖（web / web-admin / desktop）统一放在根 `package.json`。
+Per-app `package.json` 已删（desktop 仅留 thin shell 满足 electron-builder
+读 `name`/`version`/`main` 的需求）。Lint / type-check / 单测全部走 Bazel：
 
 ```bash
 pnpm install                              # Install at repo root (one-shot)
@@ -127,6 +128,28 @@ bazel run //clients/web-admin:next_dev
 bazel build //clients/web-admin:image
 bazel test //clients/web-admin:lint
 bazel build //clients/web-admin:src
+```
+
+### Desktop (Electron)
+
+Desktop 也走单根 `package.json`（thin shell 仅含 `name`/`version`/`main`，
+所有 deps 在根）。Build via electron-vite + electron-builder（暂时通过
+node binary 调用，rules_electron full Bazel 化是 follow-up）：
+
+```bash
+# Dev
+(cd clients/desktop && node ../../node_modules/electron-vite/bin/electron-vite.js dev)
+
+# Production build (out/main, out/preload, out/renderer)
+(cd clients/desktop && node ../../node_modules/electron-vite/bin/electron-vite.js build)
+
+# Package (.dmg / .exe / .AppImage)
+(cd clients/desktop && \
+  node ../../node_modules/electron-vite/bin/electron-vite.js build && \
+  node ../../node_modules/electron-builder/cli.js)
+
+# E2E (requires `out/` already built)
+bazel test //clients/desktop:e2e --test_tag_filters=e2e
 ```
 
 ### Runner (Go)

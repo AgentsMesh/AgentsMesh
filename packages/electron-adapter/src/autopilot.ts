@@ -13,7 +13,7 @@ export class ElectronAutopilotService implements IAutopilotService {
 
   get_controller_by_pod_key_json(podKey: string): unknown {
     const ctrls = JSON.parse(this._controllersCache) as { podKey: string }[];
-    const c = ctrls.find(x => x.pod_key === podKey);
+    const c = ctrls.find(x => x.podKey === podKey);
     return c ? JSON.stringify(c) : null;
   }
 
