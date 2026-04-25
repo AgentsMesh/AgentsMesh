@@ -803,8 +803,10 @@ start_frontend() {
     info "启动前端服务 (端口: $web_port)..."
     local saved_dir="$PWD"
     cd "$web_dir"
-    # `pnpm exec next` 从根 node_modules 找 next CLI，无需 per-package package.json。
-    pnpm exec next dev --turbopack --port "$web_port" > "$log_file" 2>&1 < /dev/null &
+    # web 不再是 pnpm workspace member（Phase A 迁移把 package.json 合到根），
+    # `pnpm exec` 从这里跑会报 ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE。
+    # 直接通过 root node_modules 里链接的 next 二进制启动。
+    node ../../node_modules/next/dist/bin/next dev --turbopack --port "$web_port" > "$log_file" 2>&1 < /dev/null &
     disown $!
     cd "$saved_dir"
 
@@ -877,7 +879,7 @@ start_admin_frontend() {
     info "启动 Admin Console (端口: $web_admin_port)..."
     local saved_dir="$PWD"
     cd "$web_admin_dir"
-    pnpm exec next dev --port "$web_admin_port" > "$log_file" 2>&1 < /dev/null &
+    node ../../node_modules/next/dist/bin/next dev --port "$web_admin_port" > "$log_file" 2>&1 < /dev/null &
     disown $!
     cd "$saved_dir"
 

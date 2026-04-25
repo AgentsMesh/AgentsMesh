@@ -103,8 +103,8 @@ go test -v ./internal/service/... -run TestAuth  # Run specific test
 
 ### Web (Next.js)
 
-web + web-admin 的依赖统一放在根 `package.json`（per-app package.json 已删），
-开发走 Bazel 或 `pnpm exec`：
+web + web-admin 的依赖统一放在根 `package.json`（per-app package.json 已删，
+两者也已从 `pnpm-workspace.yaml` 移除），开发走 Bazel 或直接 node 调用：
 
 ```bash
 pnpm install                              # Install at repo root (one-shot)
@@ -112,10 +112,12 @@ bazel run //clients/web:next_dev          # Dev server (preferred)
 bazel build //clients/web:image           # Production OCI image
 bazel test //clients/web:unit             # Vitest (1510 tests)
 
-# Shell alternatives (CWD = app dir)
-(cd clients/web && pnpm exec next dev --turbopack)
-(cd clients/web && pnpm exec eslint .)
-(cd clients/web && pnpm exec tsc --noEmit)
+# Shell alternatives — 注意：不能用 pnpm exec（CWD 不是 pnpm
+# workspace member 会报 ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE）；
+# 直接走 root node_modules 里的二进制。
+(cd clients/web && node ../../node_modules/next/dist/bin/next dev --turbopack)
+(cd clients/web && node ../../node_modules/eslint/bin/eslint.js .)
+(cd clients/web && node ../../node_modules/typescript/bin/tsc --noEmit)
 ```
 
 ### Web-Admin (Next.js)
@@ -123,8 +125,8 @@ bazel test //clients/web:unit             # Vitest (1510 tests)
 ```bash
 bazel run //clients/web-admin:next_dev
 bazel build //clients/web-admin:image
-(cd clients/web-admin && pnpm exec eslint .)
-(cd clients/web-admin && pnpm exec tsc --noEmit)
+(cd clients/web-admin && node ../../node_modules/eslint/bin/eslint.js .)
+(cd clients/web-admin && node ../../node_modules/typescript/bin/tsc --noEmit)
 ```
 
 ### Runner (Go)

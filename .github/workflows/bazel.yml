@@ -181,16 +181,19 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      # web/web-admin deps hoisted to root package.json — the per-app
-      # `pnpm lint` / `pnpm type-check` scripts are gone, so invoke the
-      # binaries directly via `pnpm exec` with the app dir as CWD so
-      # eslint.config.mjs / tsconfig.json resolve.
+      # web/web-admin no longer have their own package.json — they're
+      # not pnpm workspace members anymore (Phase A migration moved
+      # all deps to root). `pnpm exec` from inside their dirs fails
+      # with ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE; invoke node directly
+      # against the binaries linked into root `node_modules` instead.
+      # Configs (eslint.config.mjs, tsconfig.json) still resolve from
+      # CWD.
       - name: Lint
         working-directory: clients/web
-        run: pnpm exec eslint .
+        run: node ../../node_modules/eslint/bin/eslint.js .
       - name: Type check
         working-directory: clients/web
-        run: pnpm exec tsc --noEmit
+        run: node ../../node_modules/typescript/bin/tsc --noEmit
       # Vitest runs under Bazel (//clients/web:unit wraps vitest_test).
       - name: Vitest (Bazel)
         run: bazel test //clients/web:unit
@@ -214,7 +217,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Lint
         working-directory: clients/web-admin
-        run: pnpm exec eslint .
+        run: node ../../node_modules/eslint/bin/eslint.js .
       # `pnpm build` is covered by the docker-verify job
       # (`bazel build //clients/web-admin:image`) — no duplicate build here.
 
