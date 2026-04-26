@@ -157,6 +157,12 @@ vitest_test(
     data = [
         "tsconfig.json",
         "//:node_modules",
+        # First-party Bazel-managed links that vitest needs to resolve
+        # at runtime via Node's `node_modules/<name>` walk.
+        "//:node_modules/@agentsmesh/electron-adapter",
+        "//:node_modules/@agentsmesh/service-interface",
+        "//:node_modules/@agentsmesh/service-runtime",
+        "//:node_modules/agentsmesh-wasm",
         "//:package_json_bin",
     ] + glob(
         [
