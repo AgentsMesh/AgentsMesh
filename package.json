@@ -91,6 +91,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/coverage-v8": "4.0.18",
+    "dotenv": "^16.5.0",
     "electron": "^33",
     "electron-builder": "^25",
     "electron-vite": "^6.0.0-beta.1",

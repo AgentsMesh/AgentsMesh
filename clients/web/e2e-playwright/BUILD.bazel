@@ -29,10 +29,10 @@ playwright_test(
     ),
     config = "playwright.config.ts",
     data = [
-        "package.json",
         # Pull @playwright/test from the root node_modules link — the
-        # e2e-playwright directory is not a pnpm importer, so node
-        # resolves up the tree to `<runfiles>/_main/node_modules/`.
+        # e2e-playwright directory is not a pnpm importer (no
+        # package.json), so node resolves up the tree to
+        # `<runfiles>/_main/node_modules/`.
         "//:node_modules/@playwright/test",
     ],
 )
