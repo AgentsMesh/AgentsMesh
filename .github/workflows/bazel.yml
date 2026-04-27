@@ -412,17 +412,13 @@ jobs:
 
   desktop-e2e:
     name: E2E (Desktop — Electron)
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    runs-on: macos-14
+    timeout-minutes: 60
     needs: smoke
-    # Electron-under-xvfb on shared GHA runners has been chronically slow
-    # (`electron.launch: Timeout 120000ms exceeded`) — process cold-start
-    # plus Chromium GPU init plus the chromium-headless-shell download
-    # consistently overshoot Playwright's per-test timeout. Track the run
-    # but don't gate the PR on it; the suite is fully green locally and
-    # under macOS hosted runners, so the value here is observability, not
-    # blocking.
-    continue-on-error: true
+    # macOS runner picks up Electron natively (no xvfb / chrome-sandbox
+    # gymnastics) — same surface as a developer's machine. Docker isn't
+    # preinstalled on hosted macOS, so we bring it up via Colima before
+    # running `dev.sh --backend-only`.
     steps:
       - uses: actions/checkout@v4
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -431,17 +427,14 @@ jobs:
           disk-cache: true
           repository-cache: true
 
-      - name: Install Electron headless deps + Xvfb
-        # Electron on Linux needs a virtual display + the libgtk/libnss
-        # cluster. Playwright's `_electron.launch` spawns the Electron
-        # binary directly so we wrap the test runner with `xvfb-run`.
-        # `libasound2t64` is the post-time_t-transition rename used by
-        # Ubuntu 24+ (the runner distro). Older Ubuntu fallback would
-        # be `libasound2`, but ubuntu-latest tracks 24+.
+      - name: Install Docker (Colima)
+        # Colima ships a containerd-backed Docker daemon. ~60-90s cold
+        # start; we cache the bazel disk anyway so the tradeoff is fine.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            xvfb libgtk-3-0 libnss3 libxss1 libasound2t64 libgbm1
+          brew install colima docker docker-compose
+          colima start --cpu 4 --memory 8 --disk 30
+          docker version
+          docker compose version
 
       - name: Bring up dev backend stack
         working-directory: deploy/dev
@@ -475,12 +468,9 @@ jobs:
           HTTP_PORT: ${{ steps.ports.outputs.HTTP_PORT }}
           POSTGRES_PORT: ${{ steps.ports.outputs.POSTGRES_PORT }}
           COMPOSE_PROJECT_NAME: ${{ steps.ports.outputs.COMPOSE_PROJECT_NAME }}
-        # `xvfb-run` provides a headless X display for Electron's
-        # browser-window. The Playwright test BUILD already wires
-        # `:out`, `@playwright/test`, `electron`, and `node-bridge` as
-        # data; no extra runfiles needed.
+        # macOS Electron launches natively; no xvfb wrapper needed.
         run: |
-          xvfb-run -a bazel test //clients/desktop:e2e \
+          bazel test //clients/desktop:e2e \
             --test_tag_filters=e2e \
             --test_output=errors \
             --test_env=HTTP_PORT \
