@@ -347,10 +347,12 @@ jobs:
       - name: Install Playwright chromium-headless-shell
         run: |
           # Resolve via Bazel-managed playwright (single-version pin).
+          # `//:node_modules/playwright` is the npm_link_all_packages
+          # target. Force-fetch it before grepping the output_base.
+          bazel build //:node_modules/playwright
           PW_CLI=$(find $(bazel info output_base)/external -path '*playwright/cli.js' -type f 2>/dev/null | head -1)
           if [ -z "$PW_CLI" ]; then
-            bazel build @npm//playwright
-            PW_CLI=$(find $(bazel info output_base)/external -path '*playwright/cli.js' -type f | head -1)
+            echo "playwright cli.js not found in output_base"; exit 1
           fi
           node "$PW_CLI" install chromium-headless-shell
 
