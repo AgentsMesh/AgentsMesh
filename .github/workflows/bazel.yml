@@ -412,13 +412,14 @@ jobs:
 
   desktop-e2e:
     name: E2E (Desktop — Electron)
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
     needs: smoke
-    # macOS runner picks up Electron natively (no xvfb / chrome-sandbox
-    # gymnastics) — same surface as a developer's machine. Docker isn't
-    # preinstalled on hosted macOS, so we bring it up via Colima before
-    # running `dev.sh --backend-only`.
+    # macos-15 (M1 arm64, with Apple Virtualization framework) is the
+    # only hosted runner where Colima's `vz` driver works without
+    # nested virt. macos-14 fails with `error starting vm: ... exit
+    # status 1` because the underlying VM nesting isn't enabled there.
+    # macos-13 (Intel) is deprecated.
     steps:
       - uses: actions/checkout@v4
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -428,11 +429,15 @@ jobs:
           repository-cache: true
 
       - name: Install Docker (Colima)
-        # Colima ships a containerd-backed Docker daemon. ~60-90s cold
-        # start; we cache the bazel disk anyway so the tradeoff is fine.
+        # Colima ships a containerd-backed Docker daemon. Use vz driver
+        # (Apple Virtualization framework) for native macOS-on-macOS
+        # hardware accel; QEMU fallback would be ~5x slower.
         run: |
-          brew install colima docker docker-compose
-          colima start --cpu 4 --memory 8 --disk 30
+          brew install colima docker docker-compose docker-buildx
+          mkdir -p ~/.docker/cli-plugins
+          ln -sfn $(brew --prefix)/opt/docker-buildx/bin/docker-buildx \
+                  ~/.docker/cli-plugins/docker-buildx
+          colima start --vm-type=vz --cpu 4 --memory 8 --disk 30
           docker version
           docker compose version
 
