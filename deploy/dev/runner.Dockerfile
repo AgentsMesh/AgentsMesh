@@ -57,11 +57,16 @@ RUN npm install -g opencode-ai
 # 5. Loopal - Self-built AI coding agent
 #    Install script has a trap/scope bug (unbound $tmpdir in EXIT handler);
 #    download, patch, and run.
+#    Best-effort: raw.githubusercontent.com rate-limits unauth requests
+#    (CI runners frequently hit 403). Loopal isn't required for the
+#    backend / runner / relay surface tested by e2e — let the build
+#    continue and surface the warning instead of breaking compose up.
 RUN curl -fsSL -o /tmp/loopal-install.sh \
-      https://raw.githubusercontent.com/AgentsMesh/Loopal/main/install/install.sh && \
-    sed -i "s/trap 'rm -rf \"\$tmpdir\"' EXIT/trap 'rm -rf \"\${tmpdir:-}\"' EXIT/" /tmp/loopal-install.sh && \
-    INSTALL_DIR=/usr/local/bin bash /tmp/loopal-install.sh && \
-    rm -f /tmp/loopal-install.sh
+      https://raw.githubusercontent.com/AgentsMesh/Loopal/main/install/install.sh \
+      && sed -i "s/trap 'rm -rf \"\$tmpdir\"' EXIT/trap 'rm -rf \"\${tmpdir:-}\"' EXIT/" /tmp/loopal-install.sh \
+      && INSTALL_DIR=/usr/local/bin bash /tmp/loopal-install.sh \
+      && rm -f /tmp/loopal-install.sh \
+      || echo "WARN: Loopal install skipped (network / rate-limit)"
 
 # Verify installations
 RUN echo "=== Verifying AI CLI installations ===" && \
@@ -69,8 +74,8 @@ RUN echo "=== Verifying AI CLI installations ===" && \
     codex --version && \
     gemini --version && \
     which opencode && echo "OpenCode installed at $(which opencode)" && \
-    loopal --version && \
-    echo "=== All AI CLI tools installed ==="
+    (loopal --version || echo "WARN: loopal not installed") && \
+    echo "=== AI CLI tool check complete ==="
 
 # ============================================
 # Create non-root user for security
