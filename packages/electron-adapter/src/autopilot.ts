@@ -12,8 +12,8 @@ export class ElectronAutopilotService implements IAutopilotService {
   current_controller_json(): unknown { return this._currentControllerCache; }
 
   get_controller_by_pod_key_json(podKey: string): unknown {
-    const ctrls = JSON.parse(this._controllersCache) as { podKey: string }[];
-    const c = ctrls.find(x => x.podKey === podKey);
+    const ctrls = JSON.parse(this._controllersCache) as { pod_key: string }[];
+    const c = ctrls.find(x => x.pod_key === podKey);
     return c ? JSON.stringify(c) : null;
   }
 

@@ -2,6 +2,7 @@ package rest
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest/internal"
@@ -41,15 +42,43 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	}))
 
 	// CORS configuration
+	// gin-contrib/cors does an exact-string match against AllowOrigins, so
+	// the literal "null" origin (sent by Electron renderer when loading
+	// out/renderer/index.html via file://) never matches the configured
+	// host:port allowlist. Use AllowOriginFunc to accept "null" / file://
+	// in addition to the configured allowlist; preserves the prod
+	// allowlist semantics while letting desktop renderers connect.
+	allowed := cfg.Server.CORSAllowedOrigins
+	if len(allowed) == 0 {
+		allowed = []string{"*"}
+	}
+	allowedSet := make(map[string]struct{}, len(allowed))
+	wildcardAll := false
+	for _, o := range allowed {
+		if o == "*" {
+			wildcardAll = true
+		}
+		allowedSet[o] = struct{}{}
+	}
 	corsConfig := cors.Config{
-		AllowOrigins:     cfg.Server.CORSAllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Organization-Slug", "X-API-Key"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
-	}
-	if len(corsConfig.AllowOrigins) == 0 {
-		corsConfig.AllowOrigins = []string{"*"}
+		AllowOriginFunc: func(origin string) bool {
+			if wildcardAll {
+				return true
+			}
+			if _, ok := allowedSet[origin]; ok {
+				return true
+			}
+			// Electron file:// loader sends Origin: null; some browsers
+			// also send file:// directly. Accept both for desktop.
+			if origin == "null" || strings.HasPrefix(origin, "file://") {
+				return true
+			}
+			return false
+		},
 	}
 	r.Use(cors.New(corsConfig))
 

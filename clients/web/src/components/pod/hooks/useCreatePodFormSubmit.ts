@@ -17,7 +17,7 @@ export async function submitCreatePod(params: {
 }): Promise<PodData | null> {
   const { selectedAgent, alias, perpetual, selectedRunnerId, agentfileLayer, options } = params;
 
-  const response = JSON.parse(await getPodService().create_pod(JSON.stringify({
+  const pod: PodData = JSON.parse(await getPodService().create_pod(JSON.stringify({
     agent_slug: selectedAgent,
     runner_id: selectedRunnerId || undefined,
     alias: alias.trim() || undefined,
@@ -28,5 +28,5 @@ export async function submitCreatePod(params: {
     perpetual: perpetual || undefined,
   })));
 
-  return response.pod || null;
+  return pod || null;
 }

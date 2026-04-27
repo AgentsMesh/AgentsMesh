@@ -10,8 +10,8 @@ export class ElectronMeshService implements IMeshService {
 
   get_node_json(podKey: string): unknown {
     if (!this._topologyCache) return null;
-    const topo = JSON.parse(this._topologyCache) as { nodes?: { podKey: string }[] };
-    const n = topo.nodes?.find(x => x.podKey === podKey);
+    const topo = JSON.parse(this._topologyCache) as { nodes?: { pod_key: string }[] };
+    const n = topo.nodes?.find(x => x.pod_key === podKey);
     return n ? JSON.stringify(n) : null;
   }
 
