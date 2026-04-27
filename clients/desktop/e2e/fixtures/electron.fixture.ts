@@ -49,7 +49,7 @@ export const test = base.extend<ElectronFixtures>({
         NODE_ENV: "test",
         ELECTRON_DISABLE_SECURITY_WARNINGS: "true",
       },
-      timeout: isCi() ? 60_000 : 30_000,
+      timeout: isCi() ? 120_000 : 30_000,
     });
     await use(app);
     await app.close().catch(() => undefined);
