@@ -346,16 +346,15 @@ jobs:
 
       - name: Install Playwright chromium-headless-shell
         run: |
-          # Resolve via Bazel-managed playwright (single-version pin).
-          # `@playwright/test` is the npm package the repo actually uses;
-          # `playwright` is its peer-dep that aspect_rules_js fetches as
-          # a transitive — `cli.js` ships in the transitive copy.
-          # Force-fetch to populate the bazel external tree, then locate
-          # the CLI via find.
+          # `playwright/cli.js` lives under bazel-bin's
+          # `.aspect_rules_js/playwright@<ver>/...` tree, not in
+          # output_base/external. Force-fetch the link target, then grep
+          # the bazel-bin tree.
           bazel build //:node_modules/@playwright/test
-          PW_CLI=$(find $(bazel info output_base)/external -path '*playwright/cli.js' -type f 2>/dev/null | head -1)
+          PW_CLI=$(find $(bazel info bazel-bin)/node_modules/.aspect_rules_js \
+            -path '*playwright/cli.js' -type f 2>/dev/null | head -1)
           if [ -z "$PW_CLI" ]; then
-            echo "playwright cli.js not found in output_base"; exit 1
+            echo "playwright cli.js not found under bazel-bin"; exit 1
           fi
           node "$PW_CLI" install chromium-headless-shell
 
