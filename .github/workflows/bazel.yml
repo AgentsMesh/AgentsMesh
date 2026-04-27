@@ -337,7 +337,7 @@ jobs:
       - name: Wait for backend health
         run: |
           for i in {1..40}; do
-            if curl -sf "http://localhost:${{ steps.ports.outputs.HTTP_PORT }}/api/health" > /dev/null; then
+            if curl -sf "http://localhost:${{ steps.ports.outputs.HTTP_PORT }}/health" > /dev/null; then
               echo "backend ready"; exit 0
             fi
             sleep 3
@@ -448,7 +448,7 @@ jobs:
       - name: Wait for backend health
         run: |
           for i in {1..40}; do
-            if curl -sf "http://localhost:${{ steps.ports.outputs.HTTP_PORT }}/api/health" > /dev/null; then
+            if curl -sf "http://localhost:${{ steps.ports.outputs.HTTP_PORT }}/health" > /dev/null; then
               echo "backend ready"; exit 0
             fi
             sleep 3
