@@ -36,8 +36,13 @@ export const test = base.extend<ElectronFixtures>({
   skipAuthRestore: [false, { option: true }],
 
   electronApp: async ({ userDataDir }, use) => {
+    // Linux CI Electron needs `--no-sandbox` (no suid-sandbox helper)
+    // and `--disable-dev-shm-usage` (tiny /dev/shm tmpfs on the runner).
+    const ciArgs = isCi() && process.platform === "linux"
+      ? ["--no-sandbox", "--disable-dev-shm-usage"]
+      : [];
     const app = await electron.launch({
-      args: [getElectronMainPath(), `--user-data-dir=${userDataDir}`],
+      args: [getElectronMainPath(), `--user-data-dir=${userDataDir}`, ...ciArgs],
       env: {
         ...process.env,
         AGENTSMESH_API_URL: getApiBaseUrl(),

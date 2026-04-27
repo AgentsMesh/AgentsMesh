@@ -17,8 +17,16 @@ setup("authenticate as test user (Electron)", async () => {
   const userDataDir = getUserDataDir();
   rmSync(userDataDir, { recursive: true, force: true });
 
+  // Linux CI Electron needs `--no-sandbox` (the suid-sandbox helper
+  // isn't installed) and `--disable-dev-shm-usage` (CI runners ship
+  // a tiny tmpfs for /dev/shm — Chromium runs out of GPU shared
+  // memory and aborts before BrowserWindow opens).
+  const ciArgs = isCi() && process.platform === "linux"
+    ? ["--no-sandbox", "--disable-dev-shm-usage"]
+    : [];
+
   const app = await electron.launch({
-    args: [getElectronMainPath(), `--user-data-dir=${userDataDir}`],
+    args: [getElectronMainPath(), `--user-data-dir=${userDataDir}`, ...ciArgs],
     env: {
       ...process.env,
       AGENTSMESH_API_URL: getApiBaseUrl(),
