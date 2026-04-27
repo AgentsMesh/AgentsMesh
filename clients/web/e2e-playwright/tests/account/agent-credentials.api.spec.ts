@@ -21,6 +21,9 @@ test.describe("Agent Credentials API", () => {
    * TC-AGENTCRED-002: Create agent credential profile
    */
   test("create agent credential profile", async ({ api, db }) => {
+    db.cleanup(
+      `DELETE FROM user_agent_credential_profiles WHERE name = 'E2E Agent Cred Test'`
+    );
     // Use the correct route: /agents/:slug instead of /types/:slug
     const res = await api.post("/api/v1/users/agent-credentials/agents/claude-code", {
       name: "E2E Agent Cred Test",

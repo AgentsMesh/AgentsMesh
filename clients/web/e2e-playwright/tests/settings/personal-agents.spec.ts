@@ -35,6 +35,9 @@ test.describe("Personal Agent Configuration", () => {
    * TC-AGENT-003: Add custom API credential
    */
   test("add and delete custom API credential", async ({ api, db }) => {
+    db.cleanup(
+      `DELETE FROM user_agent_credential_profiles WHERE name = 'E2E Test Credential'`
+    );
     const res = await api.post("/api/v1/users/agent-credentials/agents/claude-code", {
       name: "E2E Test Credential",
       description: "Test credential for E2E",

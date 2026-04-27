@@ -3,6 +3,7 @@ import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
 import { pollUntil } from "../../helpers/retry";
 import { textContent } from "../../helpers/test-data";
+import { terminateAllPods } from "../../helpers/pod-cleanup";
 
 const PODS = `/api/v1/orgs/${TEST_ORG_SLUG}/pods`;
 const CHANNELS = `/api/v1/orgs/${TEST_ORG_SLUG}/channels`;
@@ -15,7 +16,6 @@ test.describe("Journey: Multi-Agent Collaboration", () => {
   test.beforeEach(async () => { clearAuthRateLimit(); });
 
   test.afterAll(async () => {
-    const { terminateAllPods } = await import("../../helpers/pod-cleanup");
     await terminateAllPods();
   });
 

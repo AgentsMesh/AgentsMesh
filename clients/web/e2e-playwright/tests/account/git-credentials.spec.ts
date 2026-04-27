@@ -22,6 +22,7 @@ test.describe("Git Credentials API", () => {
    * TC-GITCRED-002: Create PAT credential
    */
   test("create PAT credential", async ({ api, db }) => {
+    db.cleanup(`DELETE FROM user_git_credentials WHERE name = 'E2E Test PAT'`);
     const res = await api.post("/api/v1/users/git-credentials", {
       name: "E2E Test PAT",
       credential_type: "pat",

@@ -30,6 +30,7 @@ setup("authenticate as test user (Electron)", async () => {
 
   try {
     const page = await app.firstWindow();
+    page.on("pageerror", (err) => console.log(`[pageerror]`, err.message));
     await page.waitForLoadState("domcontentloaded");
 
     await page.waitForSelector("input#email", { timeout: 30_000 });

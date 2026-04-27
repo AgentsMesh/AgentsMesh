@@ -2,6 +2,7 @@ import { test, expect } from "../../fixtures/index";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
 import { pollUntil } from "../../helpers/retry";
+import { terminateAllPods } from "../../helpers/pod-cleanup";
 
 const PODS = `/api/v1/orgs/${TEST_ORG_SLUG}/pods`;
 const RUNNERS = `/api/v1/orgs/${TEST_ORG_SLUG}/runners`;
@@ -14,7 +15,6 @@ test.describe("Journey: Runner Scaling", () => {
   test.beforeEach(async () => { clearAuthRateLimit(); });
 
   test.afterAll(async () => {
-    const { terminateAllPods } = await import("../../helpers/pod-cleanup");
     await terminateAllPods();
   });
 

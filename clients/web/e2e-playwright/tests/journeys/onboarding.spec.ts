@@ -1,6 +1,7 @@
 import { test, expect } from "../../fixtures/index";
 import { clearAuthRateLimit } from "../../helpers/redis";
 import { CLEANUP } from "../../helpers/test-data";
+import { DbFixture } from "../../fixtures/db.fixture";
 
 /**
  * Journey: New User Onboarding
@@ -16,7 +17,6 @@ test.describe("Journey: New User Onboarding", () => {
 
   test.beforeAll(async ({}, testInfo) => {
     // Pre-clean any leftover data
-    const { DbFixture } = await import("../../fixtures/db.fixture");
     const db = new DbFixture();
     try { db.cleanup(CLEANUP.userAndOrgsByEmail(EMAIL)); } catch { /* */ }
   });
