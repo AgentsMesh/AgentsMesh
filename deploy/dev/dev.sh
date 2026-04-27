@@ -388,8 +388,9 @@ run_migrations() {
     if echo "$migrate_result" | grep -q "no change"; then
         info "数据库已是最新版本"
     elif echo "$migrate_result" | grep -q "^error"; then
-        # 如果迁移失败，可能是部分迁移已手动完成，尝试逐个跳过
-        warn "迁移遇到错误，尝试继续..."
+        # 输出真实错误信息以便排查 — 之前这里被吞掉了
+        error "迁移失败:"
+        echo "$migrate_result" | sed 's/^/    /'
         local current_version
         current_version=$(docker exec "$backend_container" migrate \
             -path /app/migrations \
@@ -401,13 +402,19 @@ run_migrations() {
         latest_version=$(ls -1 "$MIGRATIONS_DIR"/*.up.sql 2>/dev/null | \
             sed 's/.*\/\([0-9]*\)_.*/\1/' | sort -n | tail -1)
 
-        if [[ -n "$latest_version" && "$current_version" != "$latest_version" ]]; then
-            # 尝试强制设置到最新版本（仅在开发环境使用）
-            warn "跳过失败的迁移，强制设置版本为 $latest_version"
+        # `force` 只在迁移已经手动 / 之前的运行应用成功、但 schema_migrations
+        # 表残留 dirty=true 的情况下安全。CI fresh DB 里 current_version=0
+        # 时强制跳到 latest_version 会导致 backend 启动后 schema 完全空白
+        # （e2e 第一次跑暴露了这个）。只有 current_version > 0 时才 force。
+        if [[ -n "$latest_version" && "$current_version" != "0" && "$current_version" != "$latest_version" ]]; then
+            warn "已有部分迁移应用 (version=$current_version)，强制设置到 $latest_version 后继续"
             docker exec "$backend_container" migrate \
                 -path /app/migrations \
                 -database "$db_url" \
                 force "$latest_version" 2>/dev/null || true
+        else
+            error "Fresh database — refusing to force version. Fix the migration and rerun."
+            return 1
         fi
     else
         success "数据库迁移完成"
