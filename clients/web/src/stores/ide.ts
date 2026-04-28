@@ -119,16 +119,20 @@ export interface ActivityConfig {
   id: ActivityType;
   label: string;
   icon: string;
+  /** Visual grouping in the desktop ActivityBar — items in the same group render
+   *  contiguously; a divider separates groups. */
+  group: "comm" | "build" | "ops" | "system";
   mobileVisible: boolean; // Show in mobile bottom tab bar
   mobileOrder?: number; // Order in mobile tab bar (lower = first)
 }
 
 export const ACTIVITIES: ActivityConfig[] = [
-  // ─── Core pillars ───
+  // ─── Group 1 · Communicate (channels / blocks / mesh) ───
   {
     id: "channels",
     label: "Channels",
     icon: "message-square",
+    group: "comm",
     mobileVisible: true,
     mobileOrder: 1,
   },
@@ -136,47 +140,55 @@ export const ACTIVITIES: ActivityConfig[] = [
     id: "blocks",
     label: "Blocks",
     icon: "blocks",
-    mobileVisible: false,
-  },
-  {
-    id: "workspace",
-    label: "Workspace",
-    icon: "terminal",
-    mobileVisible: true,
-    mobileOrder: 2,
-  },
-  // ─── Orchestration / supporting infra ───
-  {
-    id: "tickets",
-    label: "Tickets",
-    icon: "ticket",
-    mobileVisible: true,
-    mobileOrder: 3,
-  },
-  {
-    id: "loops",
-    label: "Loops",
-    icon: "repeat",
+    group: "comm",
     mobileVisible: false,
   },
   {
     id: "mesh",
     label: "Mesh",
     icon: "network",
+    group: "comm",
+    mobileVisible: true,
+    mobileOrder: 2,
+  },
+  // ─── Group 2 · Build (workspace / tickets / loops) ───
+  {
+    id: "workspace",
+    label: "Workspace",
+    icon: "terminal",
+    group: "build",
+    mobileVisible: true,
+    mobileOrder: 3,
+  },
+  {
+    id: "tickets",
+    label: "Tickets",
+    icon: "ticket",
+    group: "build",
     mobileVisible: true,
     mobileOrder: 4,
   },
   {
+    id: "loops",
+    label: "Loops",
+    icon: "repeat",
+    group: "build",
+    mobileVisible: false,
+  },
+  // ─── Group 3 · Operate (infra) ───
+  {
     id: "infra",
     label: "Infra",
     icon: "layers",
+    group: "ops",
     mobileVisible: false,
   },
-  // ─── Bottom ───
+  // ─── Bottom · system ───
   {
     id: "settings",
     label: "Settings",
     icon: "settings",
+    group: "system",
     mobileVisible: false,
   },
 ];

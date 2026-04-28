@@ -106,7 +106,7 @@ export function ActivityBar({ className }: ActivityBarProps) {
     <TooltipProvider delayDuration={300}>
       <aside
         className={cn(
-          "w-12 bg-background border-r border-border flex flex-col",
+          "w-[68px] bg-background border-r border-border flex flex-col",
           className
         )}
       >
@@ -115,44 +115,47 @@ export function ActivityBar({ className }: ActivityBarProps) {
           <OrgSwitcher />
         </div>
 
-        <nav className="flex-1 flex flex-col items-center py-2 gap-1">
+        <nav className="flex-1 flex flex-col items-center py-2 gap-0.5">
           {mainActivities.map((activity, idx) => {
             const Icon = ICON_MAP[activity.icon] || Terminal;
             const isActive = activeActivity === activity.id;
             const showBadge = activity.id === "channels" && totalChannelUnread > 0;
 
-            // Divider between core (channels/workspace/blocks) and orchestration.
+            // Divider between adjacent items in different groups.
             const prev = mainActivities[idx - 1];
-            const isOrchestration = ["tickets", "loops", "mesh", "infra"].includes(activity.id);
-            const prevIsCore = prev && ["channels", "workspace", "blocks"].includes(prev.id);
-            const showDivider = isOrchestration && prevIsCore;
+            const showDivider = prev && prev.group !== activity.group;
 
             return (
               <React.Fragment key={activity.id}>
                 {showDivider && (
-                  <div className="my-1 h-px w-6 bg-border" aria-hidden="true" />
+                  <div className="my-1 h-px w-8 bg-border" aria-hidden="true" />
                 )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
                       href={getActivityRoute(activity.id)}
                       className={cn(
-                        "w-10 h-10 flex items-center justify-center rounded-md transition-colors relative",
+                        "w-full px-1 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-md transition-colors relative",
                         isActive
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                          ? "text-foreground bg-muted"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
                       )}
                       onClick={() => setActiveActivity(activity.id)}
                     >
                       {isActive && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r" />
                       )}
-                      <Icon className="w-5 h-5" />
-                      {showBadge && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 text-[9px] font-bold rounded-full bg-destructive text-destructive-foreground flex items-center justify-center leading-none">
-                          {totalChannelUnread > 99 ? "99+" : totalChannelUnread}
-                        </span>
-                      )}
+                      <div className="relative">
+                        <Icon className="w-5 h-5" />
+                        {showBadge && (
+                          <span className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-0.5 text-[9px] font-bold rounded-full bg-destructive text-destructive-foreground flex items-center justify-center leading-none">
+                            {totalChannelUnread > 99 ? "99+" : totalChannelUnread}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] leading-tight font-medium truncate max-w-full">
+                        {t(`ide.activities.${activity.id}`)}
+                      </span>
                     </Link>
                   </TooltipTrigger>
                   <TooltipPortal>
@@ -169,22 +172,25 @@ export function ActivityBar({ className }: ActivityBarProps) {
           })}
         </nav>
 
-        <nav className="flex flex-col items-center py-2 gap-1 border-t border-border">
+        <nav className="flex flex-col items-center py-2 gap-0.5 border-t border-border">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 href="/support"
                 className={cn(
-                  "w-10 h-10 flex items-center justify-center rounded-md transition-colors relative",
+                  "w-full px-1 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-md transition-colors relative",
                   pathname.startsWith("/support")
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "text-foreground bg-muted"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 )}
               >
                 {pathname.startsWith("/support") && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r" />
                 )}
                 <LifeBuoy className="w-5 h-5" />
+                <span className="text-[10px] leading-tight font-medium truncate max-w-full">
+                  {t("support.title")}
+                </span>
               </Link>
             </TooltipTrigger>
             <TooltipPortal>
@@ -203,9 +209,12 @@ export function ActivityBar({ className }: ActivityBarProps) {
                 href="https://discord.gg/3RcX7VBbH9"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 flex items-center justify-center rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+                className="w-full px-1 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/60"
               >
                 <CircleHelp className="w-5 h-5" />
+                <span className="text-[10px] leading-tight font-medium truncate max-w-full">
+                  {t("ide.activities.help")}
+                </span>
               </a>
             </TooltipTrigger>
             <TooltipPortal>
@@ -228,10 +237,10 @@ export function ActivityBar({ className }: ActivityBarProps) {
                   <Link
                     href={getActivityRoute(activity.id)}
                     className={cn(
-                      "w-10 h-10 flex items-center justify-center rounded-md transition-colors relative",
+                      "w-full px-1 py-1.5 flex flex-col items-center justify-center gap-0.5 rounded-md transition-colors relative",
                       isActive
-                        ? "text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        ? "text-foreground bg-muted"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     )}
                     onClick={() => setActiveActivity(activity.id)}
                   >
@@ -239,6 +248,9 @@ export function ActivityBar({ className }: ActivityBarProps) {
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-primary rounded-r" />
                     )}
                     <Icon className="w-5 h-5" />
+                    <span className="text-[10px] leading-tight font-medium truncate max-w-full">
+                      {t(`ide.activities.${activity.id}`)}
+                    </span>
                   </Link>
                 </TooltipTrigger>
                 <TooltipPortal>
