@@ -34,6 +34,7 @@ go_library(
         "//backend/internal/service/agentpod",
         "//backend/internal/service/instance",
         "//backend/internal/service/ticket",
+        "//backend/pkg/slugkit",
         "@com_github_robfig_cron_v3//:cron",
         "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
     ],

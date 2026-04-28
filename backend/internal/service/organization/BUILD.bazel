@@ -7,6 +7,7 @@ go_library(
         "mock_service.go",
         "mock_service_member.go",
         "service.go",
+        "service_personal.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/service/organization",
     visibility = ["//backend:__subpackages__"],
@@ -15,6 +16,7 @@ go_library(
         "//backend/internal/domain/organization",
         "//backend/internal/domain/user",
         "//backend/internal/middleware",
+        "//backend/pkg/slugkit",
     ],
 )
 
@@ -33,11 +35,13 @@ go_test(
         "mock_role_test.go",
         "org_lifecycle_integration_test.go",
         "service_member_test.go",
+        "service_personal_test.go",
         "service_role_test.go",
         "service_setup_test.go",
     ],
     embed = [":organization"],
     deps = [
+        "//backend/internal/domain/billing",
         "//backend/internal/domain/organization",
         "//backend/internal/infra",
         "//backend/internal/testkit",

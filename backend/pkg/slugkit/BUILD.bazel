@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "slugkit",
+    srcs = [
+        "errors.go",
+        "generator.go",
+        "reserved.go",
+        "rules.go",
+        "sanitize.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/slugkit",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":slugkit",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "slugkit_test",
+    srcs = [
+        "reserved_sync_test.go",
+        "slug_test.go",
+    ],
+    embed = [":slugkit"],
+)
