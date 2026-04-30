@@ -451,10 +451,22 @@ start_backend_host() {
     export OTEL_SERVICE_NAME=agentsmesh-backend
     export OTEL_TRACES_SAMPLER_ARG=1.0
 
+    # Pre-build before launching so the launcher's `bazel run` step is
+    # binary-cached and only does the runtime exec. Lets `_wait_http`'s
+    # health budget cover real startup time, not Bazel compile time —
+    # critical on cold-cache CI where the first compile can take 5+ min.
+    info "构建 backend 二进制 (bazel build)..."
+    (cd "$repo_root" && bazel build //backend/cmd/server:server) || {
+        error "Backend 构建失败"
+        return 1
+    }
+
     _launch_ibazel backend //backend/cmd/server:server
 
-    if ! _wait_http "http://localhost:${BACKEND_HTTP_PORT}/health" backend 60; then
+    if ! _wait_http "http://localhost:${BACKEND_HTTP_PORT}/health" backend 90; then
         error "Backend 启动失败，查看日志: $(_runtime_dir)/backend/backend.log"
+        echo "--- backend.log (last 80 lines) ---" >&2
+        tail -80 "$(_runtime_dir)/backend/backend.log" >&2 || true
         return 1
     fi
     success "Backend 已就绪 (host :${BACKEND_HTTP_PORT}, gRPC :${BACKEND_GRPC_PORT})"
@@ -462,6 +474,7 @@ start_backend_host() {
 
 start_relay_host() {
     source "$ENV_FILE"
+    local repo_root="$SCRIPT_DIR/../.."
     # relay reads SERVER_PORT (not SERVER_ADDRESS like backend) — see
     # relay/internal/config/config.go.
     export SERVER_HOST="0.0.0.0"
@@ -482,10 +495,18 @@ start_relay_host() {
     export OTEL_SERVICE_NAME=agentsmesh-relay
     export OTEL_TRACES_SAMPLER_ARG=1.0
 
+    info "构建 relay 二进制 (bazel build)..."
+    (cd "$repo_root" && bazel build //relay/cmd/relay:relay) || {
+        error "Relay 构建失败"
+        return 1
+    }
+
     _launch_ibazel relay //relay/cmd/relay:relay
 
-    if ! _wait_http "http://localhost:${RELAY_HTTP_PORT}/health" relay 30; then
+    if ! _wait_http "http://localhost:${RELAY_HTTP_PORT}/health" relay 60; then
         error "Relay 启动失败，查看日志: $(_runtime_dir)/relay/relay.log"
+        echo "--- relay.log (last 80 lines) ---" >&2
+        tail -80 "$(_runtime_dir)/relay/relay.log" >&2 || true
         return 1
     fi
     success "Relay 已就绪 (host :${RELAY_HTTP_PORT})"

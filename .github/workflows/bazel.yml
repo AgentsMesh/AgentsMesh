@@ -398,11 +398,20 @@ jobs:
           # Stage the bazel-built xcframework next to the Swift glue
           # (both live under bazel-bin/). Use ditto to preserve the
           # read-only tree artifact permissions; `zip` chokes on them.
+          #
+          # Re-resolve the bazel-bin path here. The intermediate
+          # `Build iOS app` step builds under a different configuration
+          # (host-tool → ios-arm64), which flips the bazel-bin symlink
+          # to a stale bazel-out/<config>/bin/ root that no longer
+          # contains the xcframework. `bazel cquery --output=files`
+          # gives the exact, configuration-correct path on disk.
           mkdir -p dist
-          ditto bazel-bin/clients/core/crates/ffi/AgentsMeshCore.xcframework \
-                dist/AgentsMeshCore.xcframework
-          cp bazel-bin/clients/core/crates/ffi/AgentsMeshCore_bindings_out/AgentsMeshCore.swift \
-             dist/AgentsMeshCore.swift
+          xcframework_path=$(bazel cquery --output=files //clients/core/crates/ffi:AgentsMeshCore | head -1)
+          swift_glue_path=$(bazel cquery --output=files //clients/core/crates/ffi:AgentsMeshCore_bindings_out | head -1)
+          # cquery on a tree-artifact target returns the directory itself;
+          # for the bindings filegroup it returns one .swift file.
+          ditto "$xcframework_path" dist/AgentsMeshCore.xcframework
+          cp "$swift_glue_path" dist/AgentsMeshCore.swift
           cd dist && zip -r AgentsMeshCore-xcframework.zip \
                           AgentsMeshCore.xcframework AgentsMeshCore.swift
       - name: Upload artifact
