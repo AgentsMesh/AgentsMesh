@@ -29,8 +29,8 @@ go_test(
     # slug-reserved migration. They have to be in runfiles for the test to
     # see them under Bazel sandbox.
     data = [
-        "//clients/web/src/lib/slug:reserved.ts",
         "//backend/migrations:slug_reserved_migrations",
+        "//clients/web/src/lib/slug:reserved.ts",
     ],
     embed = [":slugkit"],
 )
