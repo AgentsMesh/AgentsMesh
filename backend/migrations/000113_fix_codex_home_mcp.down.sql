@@ -1,0 +1,3 @@
+-- Restore the previous Codex AgentFile that wrote legacy workspace/.codex/mcp.json.
+UPDATE agents SET agentfile_source = E'# === Identity ===\nAGENT codex\nEXECUTABLE codex\n\n# === Mode ===\nMODE pty\nMODE acp "app-server"\n\n# === Configuration ===\nCONFIG approval_mode SELECT("untrusted", "on-request", "never") = "untrusted"\n\n# === Environment ===\nENV OPENAI_API_KEY SECRET OPTIONAL\n\n# === Prompt ===\nPROMPT_POSITION prepend\n\n# === Capabilities ===\nMCP ON\n\n# === Build Logic ===\narg "--ask-for-approval" config.approval_mode when config.approval_mode != "" and mode != "acp"\n\nif mcp.enabled {\n  mkdir sandbox.work_dir + "/.codex"\n  file sandbox.work_dir + "/.codex/mcp.json" json({ mcpServers: mcp.servers })\n}\n'
+WHERE slug = 'codex-cli';

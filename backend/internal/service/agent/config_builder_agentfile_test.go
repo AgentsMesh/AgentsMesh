@@ -2,8 +2,11 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
+	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -113,4 +116,106 @@ SCRIPT`,
 	assert.Equal(t, `echo "from agentfile"`, cmd.SandboxConfig.PreparationScript)
 	assert.Equal(t, int32(45), cmd.SandboxConfig.PreparationTimeout)
 	assert.Equal(t, "https://github.com/org/repo.git", cmd.SandboxConfig.HttpCloneUrl)
+}
+
+func TestBuildFromAgentfile_CodexHomeConfigAndSkillResources(t *testing.T) {
+	db := setupConfigBuilderTestDB(t)
+
+	db.Exec(`INSERT INTO agents (slug, name, launch_command, is_builtin, is_active, agentfile_source)
+		VALUES ('codex-cli', 'Codex CLI', 'codex', 1, 1, 'AGENT codex
+EXECUTABLE codex
+MODE pty')`)
+
+	repoID := int64(42)
+	provider := createTestProvider(db)
+	builder := NewConfigBuilder(provider)
+	builder.SetExtensionProvider(&mockExtensionProvider{
+		mcpServers: []*extension.InstalledMcpServer{
+			{
+				Slug:          "stdio-tool",
+				TransportType: extension.TransportTypeStdio,
+				Command:       "node",
+				Args:          json.RawMessage(`["server.js"]`),
+				EnvVars:       json.RawMessage(`{"API_KEY":"secret"}`),
+				IsEnabled:     true,
+			},
+		},
+		skills: []*extensionservice.ResolvedSkill{
+			{
+				Slug:        "repo-skill",
+				ContentSha:  "sha123",
+				DownloadURL: "https://storage.example.com/repo-skill.tar.gz",
+				PackageSize: 1234,
+			},
+		},
+	})
+
+	cmd, err := builder.BuildPodCommand(context.Background(), &ConfigBuildRequest{
+		AgentSlug:      "codex-cli",
+		OrganizationID: 1,
+		UserID:         2,
+		RepositoryID:   &repoID,
+		PodKey:         "pod-codex",
+		MCPPort:        19000,
+		MergedAgentfileSource: `# === Identity ===
+AGENT codex
+EXECUTABLE codex
+
+# === Mode ===
+MODE pty
+MODE acp "app-server"
+
+# === Configuration ===
+CONFIG approval_mode SELECT("untrusted", "on-request", "never") = "untrusted"
+
+# === Environment ===
+ENV OPENAI_API_KEY SECRET OPTIONAL
+ENV CODEX_HOME = sandbox.root + "/codex-home"
+
+# === Prompt ===
+PROMPT_POSITION prepend
+
+# === Capabilities ===
+MCP ON
+
+# === Build Logic ===
+arg "--ask-for-approval" config.approval_mode when config.approval_mode != "" and mode != "acp"
+
+if mcp.enabled {
+  file sandbox.root + "/codex-home/config.toml" codex_mcp_toml(mcp.servers)
+}`,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, cmd)
+	assert.Equal(t, "{{sandbox_root}}/codex-home", cmd.EnvVars["CODEX_HOME"])
+	assert.Len(t, cmd.FilesToCreate, 1)
+	assert.Equal(t, "{{sandbox_root}}/codex-home/config.toml", cmd.FilesToCreate[0].Path)
+	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh]")
+	assert.Contains(t, cmd.FilesToCreate[0].Content, `url = "http://127.0.0.1:19000/mcp"`)
+	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh.http_headers]")
+	assert.NotContains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh.headers]")
+	assert.Contains(t, cmd.FilesToCreate[0].Content, `X-Pod-Key = "pod-codex"`)
+	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.stdio-tool]")
+	assert.Contains(t, cmd.FilesToCreate[0].Content, `command = "node"`)
+
+	require.Len(t, cmd.ResourcesToDownload, 1)
+	assert.Equal(t, "sha123", cmd.ResourcesToDownload[0].Sha)
+	assert.Equal(t, "https://storage.example.com/repo-skill.tar.gz", cmd.ResourcesToDownload[0].DownloadUrl)
+	assert.Equal(t, "{{.sandbox.root_path}}/codex-home/skills/repo-skill", cmd.ResourcesToDownload[0].TargetPath)
+	assert.Equal(t, "skill_package", cmd.ResourcesToDownload[0].ResourceType)
+	assert.Equal(t, int64(1234), cmd.ResourcesToDownload[0].SizeBytes)
+}
+
+type mockExtensionProvider struct {
+	mcpServers []*extension.InstalledMcpServer
+	skills     []*extensionservice.ResolvedSkill
+}
+
+func (m *mockExtensionProvider) GetEffectiveMcpServers(_ context.Context, _, _, _ int64, _ string) ([]*extension.InstalledMcpServer, error) {
+	return m.mcpServers, nil
+}
+
+func (m *mockExtensionProvider) GetEffectiveSkills(_ context.Context, _, _, _ int64, _ string) ([]*extensionservice.ResolvedSkill, error) {
+	return m.skills, nil
 }

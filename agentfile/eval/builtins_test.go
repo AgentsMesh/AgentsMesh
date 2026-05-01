@@ -97,6 +97,62 @@ func TestBuiltinMCPTransform_Codex(t *testing.T) {
 	assert.Equal(t, "http://localhost:19000/mcp", srv["url"])
 }
 
+func TestBuiltinCodexMCPTOML_HTTPAndStdio(t *testing.T) {
+	servers := map[string]interface{}{
+		"agentsmesh": map[string]interface{}{
+			"type": "http",
+			"url":  "http://127.0.0.1:19000/mcp",
+			"headers": map[string]interface{}{
+				"X-Pod-Key": "pod-1",
+			},
+		},
+		"node-server": map[string]interface{}{
+			"command": "node",
+			"args":    []interface{}{"server.js", "--flag"},
+			"env": map[string]interface{}{
+				"API_KEY": "secret",
+			},
+		},
+	}
+
+	result, err := builtinCodexMCPTOML(servers)
+	require.NoError(t, err)
+	toml := result.(string)
+
+	assert.Contains(t, toml, "[mcp_servers.agentsmesh]")
+	assert.Contains(t, toml, `type = "http"`)
+	assert.Contains(t, toml, `url = "http://127.0.0.1:19000/mcp"`)
+	assert.Contains(t, toml, "[mcp_servers.agentsmesh.http_headers]")
+	assert.NotContains(t, toml, "[mcp_servers.agentsmesh.headers]")
+	assert.Contains(t, toml, `X-Pod-Key = "pod-1"`)
+	assert.Contains(t, toml, "[mcp_servers.node-server]")
+	assert.Contains(t, toml, `command = "node"`)
+	assert.Contains(t, toml, `args = ["server.js", "--flag"]`)
+	assert.Contains(t, toml, "[mcp_servers.node-server.env]")
+	assert.Contains(t, toml, `API_KEY = "secret"`)
+}
+
+func TestBuiltinCodexMCPTOML_EscapesStringsAndQuotedKeys(t *testing.T) {
+	servers := map[string]interface{}{
+		"my.server": map[string]interface{}{
+			"command": "node",
+			"args":    []string{`a"b`, "line\nbreak"},
+			"env": map[string]string{
+				"api.key": `x\y`,
+			},
+		},
+	}
+
+	result, err := builtinCodexMCPTOML(servers)
+	require.NoError(t, err)
+	toml := result.(string)
+
+	assert.Contains(t, toml, `[mcp_servers."my.server"]`)
+	assert.Contains(t, toml, `args = ["a\"b", "line\nbreak"]`)
+	assert.Contains(t, toml, `[mcp_servers."my.server".env]`)
+	assert.Contains(t, toml, `"api.key" = "x\\y"`)
+}
+
 func TestBuiltinJSON_Error(t *testing.T) {
 	_, err := builtinJSON() // no args
 	assert.Error(t, err)
@@ -137,6 +193,11 @@ func TestBuiltinLen_ArgCount(t *testing.T) {
 
 func TestBuiltinMCPTransform_ArgCount(t *testing.T) {
 	_, err := builtinMCPTransform(map[string]interface{}{}) // needs 2
+	assert.Error(t, err)
+}
+
+func TestBuiltinCodexMCPTOML_ArgCount(t *testing.T) {
+	_, err := builtinCodexMCPTOML()
 	assert.Error(t, err)
 }
 

@@ -141,7 +141,7 @@ func filterMcpServersByAgent(servers []*extension.InstalledMcpServer, agentSlug 
 			continue
 		}
 		for _, allowed := range filter {
-			if allowed == agentSlug {
+			if agentSlugMatches(allowed, agentSlug) {
 				result = append(result, srv)
 				break
 			}
@@ -173,11 +173,31 @@ func filterSkillsByAgent(skills []*extension.InstalledSkill, agentSlug string) [
 			continue
 		}
 		for _, allowed := range filter {
-			if allowed == agentSlug {
+			if agentSlugMatches(allowed, agentSlug) {
 				result = append(result, skill)
 				break
 			}
 		}
 	}
 	return result
+}
+
+func agentSlugMatches(filterValue, actual string) bool {
+	if filterValue == actual {
+		return true
+	}
+	aliases := map[string][]string{
+		"codex-cli":   {"codex"},
+		"codex":       {"codex-cli"},
+		"claude-code": {"claude"},
+		"claude":      {"claude-code"},
+		"gemini-cli":  {"gemini"},
+		"gemini":      {"gemini-cli"},
+	}
+	for _, alias := range aliases[actual] {
+		if filterValue == alias {
+			return true
+		}
+	}
+	return false
 }

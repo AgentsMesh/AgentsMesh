@@ -22,8 +22,8 @@ func TestGetEffectiveMcpServers_AgentFilter_MatchingAgent(t *testing.T) {
 					Slug:         "filtered-server",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
-						Slug:            "filtered-server",
+						ID:          100,
+						Slug:        "filtered-server",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
@@ -54,8 +54,8 @@ func TestGetEffectiveMcpServers_AgentFilter_NonMatchingAgent(t *testing.T) {
 					Slug:         "claude-only-server",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
-						Slug:            "claude-only-server",
+						ID:          100,
+						Slug:        "claude-only-server",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
@@ -70,6 +70,34 @@ func TestGetEffectiveMcpServers_AgentFilter_NonMatchingAgent(t *testing.T) {
 	}
 	if len(servers) != 0 {
 		t.Fatalf("expected 0 servers (filtered out), got %d", len(servers))
+	}
+}
+
+func TestGetEffectiveMcpServers_AgentFilter_AliasMatches(t *testing.T) {
+	repo := &svcMockRepo{
+		getEffectiveMcpServersFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error) {
+			return []*extension.InstalledMcpServer{
+				{
+					ID:           1,
+					Slug:         "codex-server",
+					MarketItemID: int64Ptr(100),
+					MarketItem: &extension.McpMarketItem{
+						ID:          100,
+						Slug:        "codex-server",
+						AgentFilter: json.RawMessage(`["codex"]`),
+					},
+				},
+			}, nil
+		},
+	}
+	svc := newTestService(repo, &svcMockStorage{}, nil)
+
+	servers, err := svc.GetEffectiveMcpServers(context.Background(), 1, 2, 3, "codex-cli")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(servers) != 1 {
+		t.Fatalf("expected alias match to include server, got %d", len(servers))
 	}
 }
 
@@ -107,8 +135,8 @@ func TestGetEffectiveMcpServers_AgentFilter_NullFilterAllowsAll(t *testing.T) {
 					Slug:         "universal-server",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
-						Slug:            "universal-server",
+						ID:          100,
+						Slug:        "universal-server",
 						AgentFilter: nil, // null = all agents
 					},
 				},
@@ -136,8 +164,8 @@ func TestGetEffectiveMcpServers_AgentFilter_EmptySlugDisablesFilter(t *testing.T
 					Slug:         "claude-only",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
-						Slug:            "claude-only",
+						ID:          100,
+						Slug:        "claude-only",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
@@ -165,8 +193,8 @@ func TestGetEffectiveMcpServers_AgentFilter_MultipleAgents(t *testing.T) {
 					Slug:         "multi-agent-server",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
-						Slug:            "multi-agent-server",
+						ID:          100,
+						Slug:        "multi-agent-server",
 						AgentFilter: json.RawMessage(`["claude-code", "aider"]`),
 					},
 				},
@@ -213,7 +241,7 @@ func TestGetEffectiveMcpServers_AgentFilter_MixedServers(t *testing.T) {
 					Slug:         "claude-only",
 					MarketItemID: int64Ptr(100),
 					MarketItem: &extension.McpMarketItem{
-						ID:              100,
+						ID:          100,
 						AgentFilter: json.RawMessage(`["claude-code"]`),
 					},
 				},
@@ -222,7 +250,7 @@ func TestGetEffectiveMcpServers_AgentFilter_MixedServers(t *testing.T) {
 					Slug:         "universal",
 					MarketItemID: int64Ptr(101),
 					MarketItem: &extension.McpMarketItem{
-						ID:              101,
+						ID:          101,
 						AgentFilter: nil,
 					},
 				},

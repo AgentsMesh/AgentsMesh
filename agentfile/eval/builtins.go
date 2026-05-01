@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 // RegisterBuiltins registers all built-in functions into the context.
@@ -13,6 +14,7 @@ func RegisterBuiltins(ctx *Context) {
 	ctx.Builtins["json_parse"] = builtinJSONParse
 	ctx.Builtins["json_merge"] = builtinJSONMerge
 	ctx.Builtins["mcp_transform"] = builtinMCPTransform
+	ctx.Builtins["codex_mcp_toml"] = builtinCodexMCPTOML
 	ctx.Builtins["str_replace"] = builtinStrReplace
 	ctx.Builtins["str_contains"] = builtinStrContains
 	ctx.Builtins["str_join"] = builtinStrJoin
@@ -119,6 +121,163 @@ func transformMCPServer(srv map[string]interface{}, format string) map[string]in
 		// (Codex MCP is handled via -c args, not file)
 	}
 	return out
+}
+
+// codex_mcp_toml(config) serializes MCP server config to Codex Rust config.toml.
+func builtinCodexMCPTOML(args ...interface{}) (interface{}, error) {
+	if len(args) != 1 {
+		return nil, fmt.Errorf("codex_mcp_toml: expected 1 argument, got %d", len(args))
+	}
+	servers, ok := args[0].(map[string]interface{})
+	if !ok {
+		return "", nil
+	}
+
+	names := make([]string, 0, len(servers))
+	for name := range servers {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	var b strings.Builder
+	for _, name := range names {
+		srv, ok := servers[name].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if b.Len() > 0 {
+			b.WriteByte('\n')
+		}
+		fmt.Fprintf(&b, "[mcp_servers.%s]\n", tomlKey(name))
+		writeTomlStringField(&b, "type", srv["type"])
+		writeTomlStringField(&b, "url", srv["url"])
+		writeTomlStringField(&b, "command", srv["command"])
+		writeTomlStringArrayField(&b, "args", srv["args"])
+		headers := srv["headers"]
+		if headers == nil {
+			headers = srv["http_headers"]
+		}
+		writeTomlSubTable(&b, name, "http_headers", headers)
+		writeTomlSubTable(&b, name, "env", srv["env"])
+	}
+
+	return b.String(), nil
+}
+
+func writeTomlStringField(b *strings.Builder, key string, val interface{}) {
+	s, ok := val.(string)
+	if !ok || s == "" {
+		return
+	}
+	fmt.Fprintf(b, "%s = %s\n", tomlKey(key), tomlString(s))
+}
+
+func writeTomlStringArrayField(b *strings.Builder, key string, val interface{}) {
+	items, ok := toStringSlice(val)
+	if !ok || len(items) == 0 {
+		return
+	}
+	quoted := make([]string, 0, len(items))
+	for _, item := range items {
+		quoted = append(quoted, tomlString(item))
+	}
+	fmt.Fprintf(b, "%s = [%s]\n", tomlKey(key), strings.Join(quoted, ", "))
+}
+
+func writeTomlSubTable(b *strings.Builder, serverName, tableName string, val interface{}) {
+	fields, ok := toStringMap(val)
+	if !ok || len(fields) == 0 {
+		return
+	}
+	keys := make([]string, 0, len(fields))
+	for key := range fields {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	fmt.Fprintf(b, "\n[mcp_servers.%s.%s]\n", tomlKey(serverName), tomlKey(tableName))
+	for _, key := range keys {
+		if fields[key] == "" {
+			continue
+		}
+		fmt.Fprintf(b, "%s = %s\n", tomlKey(key), tomlString(fields[key]))
+	}
+}
+
+func toStringSlice(val interface{}) ([]string, bool) {
+	switch v := val.(type) {
+	case []string:
+		return v, true
+	case []interface{}:
+		items := make([]string, 0, len(v))
+		for _, item := range v {
+			items = append(items, toString(item))
+		}
+		return items, true
+	default:
+		return nil, false
+	}
+}
+
+func toStringMap(val interface{}) (map[string]string, bool) {
+	switch v := val.(type) {
+	case map[string]string:
+		return v, true
+	case map[string]interface{}:
+		result := make(map[string]string, len(v))
+		for key, item := range v {
+			result[key] = toString(item)
+		}
+		return result, true
+	default:
+		return nil, false
+	}
+}
+
+func tomlString(s string) string {
+	var b strings.Builder
+	b.WriteByte('"')
+	for _, r := range s {
+		switch r {
+		case '\\':
+			b.WriteString(`\\`)
+		case '"':
+			b.WriteString(`\"`)
+		case '\b':
+			b.WriteString(`\b`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\f':
+			b.WriteString(`\f`)
+		case '\r':
+			b.WriteString(`\r`)
+		default:
+			if r < 0x20 {
+				fmt.Fprintf(&b, `\u%04X`, r)
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	b.WriteByte('"')
+	return b.String()
+}
+
+func tomlKey(s string) string {
+	if s == "" {
+		return `""`
+	}
+	for i, r := range s {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '-') {
+			return tomlString(s)
+		}
+		if i == 0 && unicode.IsDigit(r) {
+			return tomlString(s)
+		}
+	}
+	return s
 }
 
 func builtinStrReplace(args ...interface{}) (interface{}, error) {

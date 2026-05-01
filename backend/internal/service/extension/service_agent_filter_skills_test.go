@@ -26,12 +26,12 @@ func TestGetEffectiveSkills_AgentFilter_MatchingAgent(t *testing.T) {
 					PackageSize:   1024,
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              100,
-						Slug:            "filtered-skill",
+						ID:          100,
+						Slug:        "filtered-skill",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
-						ContentSha:      "abc123",
-						StorageKey:      "skills/filtered-skill/v1.tar.gz",
-						PackageSize:     1024,
+						ContentSha:  "abc123",
+						StorageKey:  "skills/filtered-skill/v1.tar.gz",
+						PackageSize: 1024,
 					},
 				},
 			}, nil
@@ -65,12 +65,12 @@ func TestGetEffectiveSkills_AgentFilter_NonMatchingAgent(t *testing.T) {
 					PackageSize:   1024,
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              100,
-						Slug:            "claude-only-skill",
+						ID:          100,
+						Slug:        "claude-only-skill",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
-						ContentSha:      "abc123",
-						StorageKey:      "skills/claude-only-skill/v1.tar.gz",
-						PackageSize:     1024,
+						ContentSha:  "abc123",
+						StorageKey:  "skills/claude-only-skill/v1.tar.gz",
+						PackageSize: 1024,
 					},
 				},
 			}, nil
@@ -84,6 +84,41 @@ func TestGetEffectiveSkills_AgentFilter_NonMatchingAgent(t *testing.T) {
 	}
 	if len(resolved) != 0 {
 		t.Fatalf("expected 0 skills (filtered out), got %d", len(resolved))
+	}
+}
+
+func TestGetEffectiveSkills_AgentFilter_AliasMatches(t *testing.T) {
+	repo := &svcMockRepo{
+		getEffectiveSkillsFn: func(_ context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error) {
+			return []*extension.InstalledSkill{
+				{
+					ID:            1,
+					Slug:          "codex-skill",
+					InstallSource: "market",
+					ContentSha:    "abc123",
+					StorageKey:    "skills/codex-skill/v1.tar.gz",
+					PackageSize:   1024,
+					MarketItemID:  int64Ptr(100),
+					MarketItem: &extension.SkillMarketItem{
+						ID:          100,
+						Slug:        "codex-skill",
+						AgentFilter: json.RawMessage(`["codex"]`),
+						ContentSha:  "abc123",
+						StorageKey:  "skills/codex-skill/v1.tar.gz",
+						PackageSize: 1024,
+					},
+				},
+			}, nil
+		},
+	}
+	svc := newTestService(repo, &svcMockStorage{}, nil)
+
+	resolved, err := svc.GetEffectiveSkills(context.Background(), 1, 2, 3, "codex-cli")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(resolved) != 1 {
+		t.Fatalf("expected alias match to include skill, got %d", len(resolved))
 	}
 }
 
@@ -129,12 +164,12 @@ func TestGetEffectiveSkills_AgentFilter_NullFilterAllowsAll(t *testing.T) {
 					PackageSize:   512,
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              100,
-						Slug:            "universal-skill",
+						ID:          100,
+						Slug:        "universal-skill",
 						AgentFilter: nil,
-						ContentSha:      "ghi789",
-						StorageKey:      "skills/universal-skill/v1.tar.gz",
-						PackageSize:     512,
+						ContentSha:  "ghi789",
+						StorageKey:  "skills/universal-skill/v1.tar.gz",
+						PackageSize: 512,
 					},
 				},
 			}, nil
@@ -165,12 +200,12 @@ func TestGetEffectiveSkills_AgentFilter_EmptySlugDisablesFilter(t *testing.T) {
 					PackageSize:   1024,
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              100,
-						Slug:            "claude-only-skill",
+						ID:          100,
+						Slug:        "claude-only-skill",
 						AgentFilter: json.RawMessage(`["claude-code"]`),
-						ContentSha:      "abc123",
-						StorageKey:      "skills/claude-only-skill/v1.tar.gz",
-						PackageSize:     1024,
+						ContentSha:  "abc123",
+						StorageKey:  "skills/claude-only-skill/v1.tar.gz",
+						PackageSize: 1024,
 					},
 				},
 			}, nil
@@ -201,11 +236,11 @@ func TestGetEffectiveSkills_AgentFilter_MixedSkills(t *testing.T) {
 					PackageSize:   100,
 					MarketItemID:  int64Ptr(100),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              100,
+						ID:          100,
 						AgentFilter: json.RawMessage(`["claude-code"]`),
-						ContentSha:      "sha1",
-						StorageKey:      "skills/claude-only/v1.tar.gz",
-						PackageSize:     100,
+						ContentSha:  "sha1",
+						StorageKey:  "skills/claude-only/v1.tar.gz",
+						PackageSize: 100,
 					},
 				},
 				{
@@ -217,11 +252,11 @@ func TestGetEffectiveSkills_AgentFilter_MixedSkills(t *testing.T) {
 					PackageSize:   200,
 					MarketItemID:  int64Ptr(101),
 					MarketItem: &extension.SkillMarketItem{
-						ID:              101,
+						ID:          101,
 						AgentFilter: nil,
-						ContentSha:      "sha2",
-						StorageKey:      "skills/universal/v1.tar.gz",
-						PackageSize:     200,
+						ContentSha:  "sha2",
+						StorageKey:  "skills/universal/v1.tar.gz",
+						PackageSize: 200,
 					},
 				},
 				{
