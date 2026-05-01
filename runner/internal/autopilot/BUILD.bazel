@@ -31,7 +31,7 @@ go_library(
     importpath = "github.com/anthropics/agentsmesh/runner/internal/autopilot",
     visibility = ["//runner:__subpackages__"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "//runner/internal/acp",
         "//runner/internal/agents/claude",
         "//runner/internal/logger",
@@ -75,7 +75,7 @@ go_test(
     ],
     embed = [":autopilot"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "//runner/internal/testutil",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

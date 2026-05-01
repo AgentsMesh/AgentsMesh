@@ -44,7 +44,7 @@ go_library(
     importpath = "github.com/anthropics/agentsmesh/runner/internal/client",
     visibility = ["//runner:__subpackages__"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "//runner/internal/envpath",
         "//runner/internal/logger",
         "//runner/internal/otel",
@@ -101,7 +101,7 @@ go_test(
     ],
     embed = [":client"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@org_golang_google_grpc//:grpc",

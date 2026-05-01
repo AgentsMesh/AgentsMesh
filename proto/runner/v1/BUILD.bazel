@@ -1,0 +1,37 @@
+load("@rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# Bazel-native protobuf + gRPC code generation for runner.v1.
+#
+# Replaces the previous `buf generate` workflow (proto/Makefile + buf.yaml +
+# buf.gen.yaml) which produced source-tree `.pb.go` files via remote plugins.
+# Bazel now invokes hermetic protoc + protoc-gen-go + protoc-gen-go-grpc
+# itself, so editing `runner.proto` triggers re-generation automatically on
+# every `bazel build` — no manual `make generate` step.
+#
+# `importpath` is intentionally `proto/gen/go/runner/v1` (not the
+# colocated `proto/runner/v1`) to match the 196 existing Go imports across
+# backend/ and runner/ left over from the legacy buf layout. Renaming the
+# import path would cascade through every consumer for zero benefit.
+#
+# IDE / `go run` continue to read source-tree `proto/gen/go/runner/v1/*.pb.go`
+# (committed). Drift between Bazel output and the committed mirror is caught
+# by the `bazel test //proto/runner/v1:runner_go_proto_diff_test` follow-up
+# (see proto/gen/go/runner/v1/BUILD.bazel).
+
+proto_library(
+    name = "runner_proto",
+    srcs = ["runner.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "runner_go_proto",
+    compilers = [
+        "@rules_go//proto:go_proto",
+        "@rules_go//proto:go_grpc_v2",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1",
+    proto = ":runner_proto",
+    visibility = ["//visibility:public"],
+)

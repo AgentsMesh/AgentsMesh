@@ -47,7 +47,7 @@ go_library(
         "//backend/internal/service/agent",
         "//backend/internal/service/user",
         "//backend/pkg/crypto",
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "@com_github_google_uuid//:uuid",
     ],
 )
@@ -101,7 +101,7 @@ go_test(
         "//backend/internal/service/user",
         "//backend/internal/testkit",
         "//backend/pkg/crypto",
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@io_gorm_gorm//:gorm",

@@ -62,7 +62,7 @@ go_library(
     importpath = "github.com/anthropics/agentsmesh/runner/internal/runner",
     visibility = ["//runner:__subpackages__"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "//runner/internal/acp",
         "//runner/internal/agentkit",
         "//runner/internal/agents/aider",
@@ -169,7 +169,7 @@ go_test(
     ],
     embed = [":runner"],
     deps = [
-        "//proto/gen/go/runner/v1:runner",
+        "//proto/runner/v1:runner_go_proto",
         "//runner/internal/acp",
         "//runner/internal/agentkit",
         "//runner/internal/autopilot",
