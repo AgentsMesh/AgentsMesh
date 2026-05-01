@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
+	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -183,21 +184,42 @@ arg "--ask-for-approval" config.approval_mode when config.approval_mode != "" an
 
 if mcp.enabled {
   file sandbox.root + "/codex-home/config.toml" codex_mcp_toml(mcp.servers)
+
+  mkdir sandbox.work_dir + "/.codex"
+  file sandbox.work_dir + "/.codex/mcp.json" json({ mcpServers: mcp.servers })
 }`,
 	})
 
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 	assert.Equal(t, "{{sandbox_root}}/codex-home", cmd.EnvVars["CODEX_HOME"])
-	assert.Len(t, cmd.FilesToCreate, 1)
-	assert.Equal(t, "{{sandbox_root}}/codex-home/config.toml", cmd.FilesToCreate[0].Path)
-	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh]")
-	assert.Contains(t, cmd.FilesToCreate[0].Content, `url = "http://127.0.0.1:19000/mcp"`)
-	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh.http_headers]")
-	assert.NotContains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.agentsmesh.headers]")
-	assert.Contains(t, cmd.FilesToCreate[0].Content, `X-Pod-Key = "pod-codex"`)
-	assert.Contains(t, cmd.FilesToCreate[0].Content, "[mcp_servers.stdio-tool]")
-	assert.Contains(t, cmd.FilesToCreate[0].Content, `command = "node"`)
+	assert.Len(t, cmd.FilesToCreate, 3)
+
+	files := map[string]*runnerv1.FileToCreate{}
+	for _, f := range cmd.FilesToCreate {
+		files[f.Path] = f
+	}
+
+	require.Contains(t, files, "{{work_dir}}/.codex")
+	assert.True(t, files["{{work_dir}}/.codex"].IsDirectory)
+
+	require.Contains(t, files, "{{sandbox_root}}/codex-home/config.toml")
+	codexToml := files["{{sandbox_root}}/codex-home/config.toml"].Content
+	assert.Contains(t, codexToml, "[mcp_servers.agentsmesh]")
+	assert.Contains(t, codexToml, `url = "http://127.0.0.1:19000/mcp"`)
+	assert.Contains(t, codexToml, "[mcp_servers.agentsmesh.http_headers]")
+	assert.NotContains(t, codexToml, "[mcp_servers.agentsmesh.headers]")
+	assert.Contains(t, codexToml, `X-Pod-Key = "pod-codex"`)
+	assert.Contains(t, codexToml, "[mcp_servers.stdio-tool]")
+	assert.Contains(t, codexToml, `command = "node"`)
+
+	require.Contains(t, files, "{{work_dir}}/.codex/mcp.json")
+	legacyMcpJSON := files["{{work_dir}}/.codex/mcp.json"].Content
+	assert.Contains(t, legacyMcpJSON, `"mcpServers"`)
+	assert.Contains(t, legacyMcpJSON, `"agentsmesh"`)
+	assert.Contains(t, legacyMcpJSON, `"headers"`)
+	assert.Contains(t, legacyMcpJSON, `"X-Pod-Key":"pod-codex"`)
+	assert.NotContains(t, legacyMcpJSON, `"http_headers"`)
 
 	require.Len(t, cmd.ResourcesToDownload, 1)
 	assert.Equal(t, "sha123", cmd.ResourcesToDownload[0].Sha)
