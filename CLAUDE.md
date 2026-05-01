@@ -4,12 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AgentsMesh is **The AI Agent Workforce Platform** — where teams scale beyond headcount. It supports Claude Code, Codex CLI, Gemini CLI, Aider, and more. It consists of four main components:
+AgentsMesh is **The AI Agent Workforce Platform** — where teams scale beyond headcount. It supports Claude Code, Codex CLI, Gemini CLI, Aider, and more.
 
-- **Backend**: Go API server (Gin + GORM)
-- **Web**: Next.js frontend (App Router + TypeScript + Tailwind CSS)
-- **Web-Admin**: Admin Console frontend (Next.js + Tailwind CSS) - internal management interface
-- **Runner**: Go daemon that executes AI agent tasks in isolated PTY environments
+### Components
+
+Server-side (Go):
+- **Backend** (`backend/`): API server (Gin + GORM). REST for clients, gRPC + mTLS to Runner. Owns auth, org/team/user, pod lifecycle, ticket/channel, billing, PKI for runner certs. PostgreSQL + Redis.
+- **Relay** (`relay/`): WebSocket relay for the terminal data plane. Browser / Desktop / iOS ↔ Relay ↔ Runner (binary protocol). Backend never touches PTY bytes.
+- **Runner** (`runner/`): Self-hosted daemon. Connects to Backend via gRPC bidi stream. Spawns isolated PTY pods that run the actual AI agents (Claude Code / Codex / Aider / …).
+
+Client-side:
+- **Rust Core** (`clients/core/`): **Business-logic SSOT.** 10 crates compiled to WASM (Web / Desktop) + native dylib via UniFFI (iOS XCFramework). Owns the authoritative cache, DTOs, and services — auth, blockstore, channels, tickets, mesh, autopilot. Front-ends are thin views over it. **Modify state in Rust, not in Zustand / TCA / etc.**
+- **Web** (`clients/web/`): Next.js (App Router + TS + Tailwind). Loads `agentsmesh-wasm` at boot; UI state mirrors Rust selectors via `_tick` triggers.
+- **Web-Admin** (`clients/web-admin/`): Next.js admin console mounted at `/admin`. Internal-only — gated on `is_system_admin`.
+- **Desktop** (`clients/desktop/`): Electron + electron-vite. Renderer reuses `clients/web` source; main-process node-bridge proxies IPC to the same Rust Core (native NAPI build).
+- **iOS** (`clients/ios/`): SwiftUI + TCA. Consumes the Rust Core via UniFFI-generated Swift bindings. Same DTOs, same services, ~zero duplicated business logic.
 
 ## Development Environment
 
