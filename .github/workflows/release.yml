@@ -429,26 +429,44 @@ jobs:
   # Per-OS matrix because electron-builder calls native packagers
   # (`hdiutil` on macOS, `nsis` on Windows, AppImage on Linux). Output
   # is uploaded as a Release asset alongside the Runner CLI.
+  #
+  # `needs: [release]` because we attach desktop installers to the same
+  # GitHub Release the runner CLI created — `gh release upload` requires
+  # the release to already exist. `--clobber` makes it idempotent on
+  # rerun.
   # ===========================================================================
 
   desktop-package:
     name: Desktop ${{ matrix.os.label }}
     if: startsWith(github.ref, 'refs/tags/v')
+    needs: [release]
     runs-on: ${{ matrix.os.runner }}
     timeout-minutes: 45
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         os:
           - label: macOS
             runner: macos-14
-            artifact: AgentsMesh-*.dmg
+            # `latest-mac.yml` ships next to the dmg/zip so electron-
+            # updater can poll the release for new versions.
+            installers: |
+              AgentsMesh-*.dmg
+              AgentsMesh-*.zip
+              latest-mac.yml
           - label: Windows
             runner: windows-latest
-            artifact: AgentsMesh*.exe
+            installers: |
+              AgentsMesh*.exe
+              latest.yml
           - label: Linux
             runner: ubuntu-latest
-            artifact: AgentsMesh-*.AppImage
+            installers: |
+              AgentsMesh-*.AppImage
+              agentsmesh*.deb
+              latest-linux.yml
     steps:
       - uses: actions/checkout@v6
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -456,25 +474,77 @@ jobs:
           bazelisk-cache: true
           disk-cache: true
           repository-cache: true
+
+      # `electron_builder_app(version = ...)` writes into the synthesised
+      # package.json that electron-builder consumes for installer file
+      # names. Bazel's `write_file` can't read `--stamp` STABLE_* keys,
+      # so we patch the literal at workflow time. The `DESKTOP_VERSION_STAMP`
+      # marker in BUILD.bazel keys the sed to the next `version = "..."`
+      # line, so bumping the dev placeholder doesn't drift the regex.
+      - name: Stamp desktop version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF#refs/tags/v}"
+          # `sed -E /marker/{n;s/.../.../}` — match marker, advance one
+          # line (the `version =` line), substitute. Works on both BSD
+          # (macOS runner) and GNU sed.
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+              sed -i '' -E '/DESKTOP_VERSION_STAMP/{n;s/version = "[^"]+"/version = "'"$version"'"/;}' clients/desktop/BUILD.bazel
+          else
+              sed -i -E '/DESKTOP_VERSION_STAMP/{n;s/version = "[^"]+"/version = "'"$version"'"/;}' clients/desktop/BUILD.bazel
+          fi
+          grep -A1 DESKTOP_VERSION_STAMP clients/desktop/BUILD.bazel
+
       # `:dist` runs the full electron-vite + electron-builder pipeline.
       # Sandbox is bypassed for the action (hdiutil / nsis / AppImage
       # need real filesystem access), but Bazel's input/output graph
       # still tracks the closure. ~3:30 from cold cache, dominated by
       # the 100MB electron download.
-      - name: Build :dist
+      #
+      # codesign / notarization plumbing is macOS-only — Windows nsis
+      # and Linux AppImage signing live behind separate cert flows
+      # (WIN_CSC_LINK + GPG keys) we haven't wired yet. Inheriting the
+      # macOS pfx via CSC_LINK on a Windows runner would make
+      # electron-builder try to use it as an Authenticode cert and
+      # fail; gate by runner OS.
+      - name: Build :dist (macOS)
+        if: matrix.os.runner == 'macos-14'
         shell: bash
         run: bazel build //clients/desktop:dist --build_tag_filters=electron_builder
         env:
-          # codesign / notarization plumbing — env-driven so secrets
-          # don't have to live in electron-builder.yml. Only set on
-          # macOS runner; ignored elsewhere.
           CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_API_KEY }}
-      - name: Upload installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: AgentsMesh-Desktop-${{ matrix.os.label }}
-          path: bazel-bin/clients/desktop/dist/${{ matrix.os.artifact }}
-          retention-days: 30
+
+      - name: Build :dist (non-macOS)
+        if: matrix.os.runner != 'macos-14'
+        shell: bash
+        run: bazel build //clients/desktop:dist --build_tag_filters=electron_builder
+
+      # Attach installers + electron-updater metadata to the GitHub
+      # Release the `release` job created. Single matrix shard's worth
+      # per call; `--clobber` lets reruns overwrite without erroring.
+      - name: Upload installers to Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: bazel-bin/clients/desktop/dist
+        run: |
+          set -euo pipefail
+          ls -la
+          tag="${GITHUB_REF#refs/tags/}"
+          files=()
+          while IFS= read -r pattern; do
+              [ -z "$pattern" ] && continue
+              for f in $pattern; do
+                  [ -f "$f" ] && files+=("$f")
+              done
+          done <<< "${{ matrix.os.installers }}"
+          if [ ${#files[@]} -eq 0 ]; then
+              echo "ERROR: no installers matched any pattern; refusing to noop." >&2
+              exit 1
+          fi
+          echo "Uploading: ${files[*]}"
+          gh release upload "$tag" --clobber "${files[@]}"

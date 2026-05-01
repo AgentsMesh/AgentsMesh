@@ -57,6 +57,10 @@ electron_builder_app(
     out = ":out",
     config = "electron-builder.yml",
     electron_main = "./out/main/index.js",
+    # release.yml stamps this on tag builds via sed; the marker comment
+    # above lets the sed pattern key off semantics, not the literal
+    # number, so bumping the dev placeholder doesn't break stamping.
+    # DESKTOP_VERSION_STAMP
     version = "0.1.0",
 )
 
