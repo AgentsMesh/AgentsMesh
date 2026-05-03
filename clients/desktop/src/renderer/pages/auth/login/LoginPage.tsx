@@ -14,6 +14,7 @@ import { Logo } from "@/components/common";
 import { OAuthButtons } from "./OAuthButtons";
 import { SSOSection } from "./SSOSection";
 import { Divider } from "./Divider";
+import { AuthShell } from "./AuthShell";
 
 function navigateToWorkspace(push: (url: string) => void) {
   // Read from Rust SSOT (helpers), not Zustand state — web's auth store
@@ -110,7 +111,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <AuthShell>
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
@@ -194,6 +195,6 @@ export function LoginPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
