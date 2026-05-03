@@ -318,9 +318,9 @@ jobs:
       - run: bazel build ${{ matrix.target }}
 
   desktop:
-    name: Desktop (lint + electron-vite build)
+    name: Desktop (lint + electron-vite + dist smoke)
     runs-on: macos-14
-    timeout-minutes: 25
+    timeout-minutes: 35
     needs: smoke
     steps:
       - uses: actions/checkout@v4
@@ -339,10 +339,32 @@ jobs:
       # for desktop changes.
       - name: Build :out
         run: bazel build //clients/desktop:out
-      # `:dist` (electron-builder dmg/zip packaging) is heavy
-      # (~100MB electron download + ~3:30 wallclock from cold cache)
-      # and macOS-only. It's gated to release.yml; PRs only verify
-      # `:out` to keep the matrix fast.
+      # `:dist` smoke test — runs electron-builder end-to-end on macOS to
+      # catch config rot in `electron-builder.yml` + the
+      # `electron_builder_app` macro before a release tag triggers
+      # release.yml. Without this gate, `mac.identity: null` style bugs
+      # silently produce unsigned installers in production while CI
+      # stays green. We disable codesign auto-discovery — the secret
+      # certs aren't exposed to PR jobs by design — so this validates
+      # packaging logic only, not signing wiring (release.yml exercises
+      # the latter on tag push).
+      - name: Smoke :dist (unsigned packaging)
+        run: bazel build //clients/desktop:dist --build_tag_filters=electron_builder --action_env=CSC_IDENTITY_AUTO_DISCOVERY
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Verify dist artifacts
+        run: |
+          set -euo pipefail
+          cd bazel-bin/clients/desktop/dist
+          ls -la
+          # macOS smoke produces dmg + zip per arch + latest-mac.yml.
+          # arm64 + x64 → 2 dmg, 2 zip, 1 yml minimum.
+          dmgs=$(ls AgentsMesh-*.dmg 2>/dev/null | wc -l | tr -d ' ')
+          zips=$(ls AgentsMesh-*.zip 2>/dev/null | wc -l | tr -d ' ')
+          [[ -f latest-mac.yml ]] || { echo "::error::missing latest-mac.yml"; exit 1; }
+          [[ "$dmgs" -ge 2 ]] || { echo "::error::expected ≥2 dmg, got $dmgs"; exit 1; }
+          [[ "$zips" -ge 2 ]] || { echo "::error::expected ≥2 zip, got $zips"; exit 1; }
+          echo "✓ $dmgs dmg + $zips zip + latest-mac.yml"
 
   ios-xcframework:
     name: Build iOS XCFramework + app

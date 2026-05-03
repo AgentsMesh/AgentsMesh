@@ -63,9 +63,16 @@ mac:
         - x64
   hardenedRuntime: true
   gatekeeperAssess: false
-  # codesign / notarization wired via env vars in CI:
-  # CSC_LINK / CSC_KEY_PASSWORD / APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD
-  identity: null
+  # codesign + notarization are driven by env vars in CI:
+  #   CSC_LINK / CSC_KEY_PASSWORD              → Developer ID Application cert
+  #   APPLE_API_KEY / APPLE_API_KEY_ID /
+  #   APPLE_API_ISSUER                         → notarytool API key path
+  # Leave `identity` unset so electron-builder auto-discovers from CSC_LINK
+  # (an explicit `null` here disables signing entirely — the cert env vars
+  # are silently ignored, and the resulting .dmg/.zip won't pass Gatekeeper).
+  # Entitlements default to electron-builder's bundled darwin profile,
+  # which already enables JIT + unsigned-executable-memory for the V8
+  # runtime; override here if/when we need extra capabilities.
 
 win:
   target:
@@ -73,6 +80,14 @@ win:
       arch:
         - x64
         - arm64
+  # Authenticode signing wired through CSC_LINK / CSC_KEY_PASSWORD on
+  # Windows runners (release.yml passes WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD
+  # via those env names — electron-builder uses the same variable names
+  # cross-platform). When the secrets are absent the build still produces
+  # an unsigned NSIS — useful for PR-time smoke, but production tags must
+  # have them set.
+  signingHashAlgorithms:
+    - sha256
 
 linux:
   target:
@@ -80,9 +95,13 @@ linux:
       arch:
         - x64
         - arm64
+    # arm64 .deb mirrors AppImage so we can ship Linux/arm64 desktop
+    # users a native package without forcing AppImage. AppImage stays
+    # universal-arch; deb is per-arch by convention.
     - target: deb
       arch:
         - x64
+        - arm64
   category: Development
 
 dmg:

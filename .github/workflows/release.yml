@@ -502,24 +502,73 @@ jobs:
       # still tracks the closure. ~3:30 from cold cache, dominated by
       # the 100MB electron download.
       #
-      # codesign / notarization plumbing is macOS-only — Windows nsis
-      # and Linux AppImage signing live behind separate cert flows
-      # (WIN_CSC_LINK + GPG keys) we haven't wired yet. Inheriting the
-      # macOS pfx via CSC_LINK on a Windows runner would make
-      # electron-builder try to use it as an Authenticode cert and
-      # fail; gate by runner OS.
+      # Signing matrix:
+      #   macOS  — CSC_LINK from MACOS_CERTIFICATE; notarization via
+      #            APPLE_API_KEY (path to .p8 decoded below) +
+      #            APPLE_API_KEY_ID + APPLE_API_ISSUER. We use the
+      #            App Store Connect API key path because the .p8 secret
+      #            already exists for the Runner CLI rcodesign flow.
+      #   Windows — CSC_LINK from WIN_CSC_LINK (Authenticode .pfx) +
+      #             WIN_CSC_KEY_PASSWORD. electron-builder reuses the
+      #             same env names cross-platform.
+      #   Linux  — unsigned (AppImage GPG + .deb signing not wired).
+      #
+      # Bazel's exec sandbox strips arbitrary host env from actions; the
+      # `--action_env` flags below allowlist the signing vars so they
+      # reach the electron-builder subprocess inside the action.
+      - name: Stage macOS notarization API key
+        if: matrix.os.runner == 'macos-14'
+        shell: bash
+        env:
+          APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${APPLE_API_KEY_B64:-}" ]]; then
+            echo "WARN: APPLE_API_KEY secret not set — notarization will be skipped." >&2
+            exit 0
+          fi
+          mkdir -p "$RUNNER_TEMP/apple"
+          # @electron/notarize (electron-builder's notarization driver)
+          # accepts APPLE_API_KEY as a file path, not the .p8 contents.
+          # Decode here, then expose the path via $GITHUB_ENV for the
+          # build step that follows.
+          echo "$APPLE_API_KEY_B64" | base64 --decode > "$RUNNER_TEMP/apple/AuthKey.p8"
+          chmod 0600 "$RUNNER_TEMP/apple/AuthKey.p8"
+          echo "APPLE_API_KEY=$RUNNER_TEMP/apple/AuthKey.p8" >> "$GITHUB_ENV"
+
       - name: Build :dist (macOS)
         if: matrix.os.runner == 'macos-14'
         shell: bash
-        run: bazel build //clients/desktop:dist --build_tag_filters=electron_builder
+        run: |
+          bazel build //clients/desktop:dist \
+            --build_tag_filters=electron_builder \
+            --action_env=CSC_LINK \
+            --action_env=CSC_KEY_PASSWORD \
+            --action_env=APPLE_API_KEY \
+            --action_env=APPLE_API_KEY_ID \
+            --action_env=APPLE_API_ISSUER
         env:
           CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
+          # APPLE_API_KEY is exported to $GITHUB_ENV by the previous
+          # step (path to the decoded .p8 file).
 
-      - name: Build :dist (non-macOS)
-        if: matrix.os.runner != 'macos-14'
+      - name: Build :dist (Windows)
+        if: matrix.os.runner == 'windows-latest'
+        shell: bash
+        run: |
+          bazel build //clients/desktop:dist \
+            --build_tag_filters=electron_builder \
+            --action_env=CSC_LINK \
+            --action_env=CSC_KEY_PASSWORD
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+      - name: Build :dist (Linux)
+        if: matrix.os.runner == 'ubuntu-latest'
         shell: bash
         run: bazel build //clients/desktop:dist --build_tag_filters=electron_builder
 
