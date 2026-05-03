@@ -117,3 +117,21 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
+
+# Autoupdate metadata: electron-builder generates `latest-mac.yml` /
+# `latest.yml` / `latest-linux.yml` in the dist tree only when a publish
+# provider is configured. The metadata is what electron-updater clients
+# poll for new releases — without it, autoupdate is dead.
+#
+# We name the GitHub repo explicitly because the synthesised package.json
+# (build_defs/web/internal_package.bzl writes only name/version/main, no
+# `repository` field), so electron-builder can't infer it. Publishing
+# itself is driven by release.yml's `gh release upload` step (--clobber
+# attaches dmg + zip + this metadata to the tag's release); electron-
+# builder's own auto-publish never runs because we don't pass a
+# GH_TOKEN to the bazel action — the `gh release upload` shell step is
+# the SSOT for what lands on the release.
+publish:
+  provider: github
+  owner: AgentsMesh
+  repo: AgentsMesh
