@@ -53,7 +53,11 @@ electron_vite_build(
 # in via `--build_tag_filters=electron_builder` per OS runner.
 electron_builder_app(
     name = "dist",
-    package_name = "agentsmesh-desktop",
+    # `agentsmesh` (lowercase, npm-compliant) is the synthesised
+    # package.json `name` field — internal-only. The user-visible
+    # brand "AgentsMesh" lives in electron-builder.yml's `productName`
+    # and propagates to CFBundleName / CFBundleDisplayName / app.getName().
+    package_name = "agentsmesh",
     out = ":out",
     config = "electron-builder.yml",
     electron_main = "./out/main/index.js",
