@@ -53,10 +53,17 @@ electron_vite_build(
 # in via `--build_tag_filters=electron_builder` per OS runner.
 electron_builder_app(
     name = "dist",
-    package_name = "desktop",
+    package_name = "agentsmesh-desktop",
     out = ":out",
     config = "electron-builder.yml",
     electron_main = "./out/main/index.js",
+    # `build/icon.png` is the source of truth for the macOS .icns,
+    # Windows .ico and Linux PNG icons — electron-builder derives all
+    # three from a single 512×512 PNG when `directories.buildResources`
+    # points at the same `build/` directory. Without this in extra_srcs
+    # the icon never lands in the Bazel staging sandbox and installers
+    # fall back to the generic Electron diamond.
+    extra_srcs = ["build/icon.png"],
     # release.yml stamps this on tag builds via sed; the marker comment
     # above lets the sed pattern key off semantics, not the literal
     # number, so bumping the dev placeholder doesn't break stamping.
