@@ -29,7 +29,7 @@ func (a *GRPCRunnerAdapter) mcpMemoryRetrieve(ctx context.Context, tc *middlewar
 	if err != nil {
 		return nil, newMcpError(400, "workspace_id must be a uuid")
 	}
-	hits, svcErr := a.blockstoreService.SemanticSearch(ctx, actorFromTenant(tc), blockstoreservice.SearchInput{
+	hits, svcErr := a.blockstoreService.SemanticSearch(ctx, actorFromTenant(ctx, tc), blockstoreservice.SearchInput{
 		WorkspaceID: wsID,
 		Query:       params.Query,
 		TopK:        params.TopK,
@@ -62,7 +62,7 @@ func (a *GRPCRunnerAdapter) mcpBlockListTypes(ctx context.Context, tc *middlewar
 	if err != nil {
 		return nil, newMcpError(400, "workspace_id must be a uuid")
 	}
-	specs, svcErr := a.blockstoreService.ListRegisteredTypes(ctx, actorFromTenant(tc), wsID)
+	specs, svcErr := a.blockstoreService.ListRegisteredTypes(ctx, actorFromTenant(ctx, tc), wsID)
 	if svcErr != nil {
 		return nil, blockstoreErrToMcp(svcErr)
 	}

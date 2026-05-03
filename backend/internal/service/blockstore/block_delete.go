@@ -52,6 +52,7 @@ func (s *Service) applyDeleteBlock(
 		Payload:     blockstore.JSONMap(raw),
 		Forward:     blockstore.JSONMap{"id": p.ID},
 		Inverse:     inverse,
+		Context:     buildOpContext(actor),
 		AppliedAt:   timeNowUTC(),
 	}, nil
 }

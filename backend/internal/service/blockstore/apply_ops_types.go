@@ -9,11 +9,42 @@ import "github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 // See runner_adapter_mcp_block.go for why UserID is always the human creator
 // even when ActorType == "agent" (权限跟着人走 — permission follows the human,
 // ActorType/ActorID are audit-only).
+//
+// Audit metadata (TraceID/RequestID/IP/UserAgent) is filled by REST middleware
+// (otelgin span + gin headers) and the gRPC interceptor (otelgrpc span +
+// peer info). It lands in BlockOp.Context (DB column added by migration
+// 000118) so a single SQL query can stitch a write back to its originating
+// HTTP request, agent prompt, or trigger fire chain.
 type ActorContext struct {
 	UserID    int64
 	OrgID     int64
 	ActorType string // ActorUser, ActorAgent, ActorSystem
 	ActorID   int64  // user_id when ActorType == ActorUser
+
+	TraceID   string // OTel trace id (32-char hex). Empty when no span in ctx.
+	RequestID string // Aliases TraceID until an X-Request-ID middleware lands.
+	IP        string // Client IP (gin.ClientIP / gRPC peer). Empty for system.
+	UserAgent string // HTTP/gRPC user-agent. Empty for system.
+}
+
+// buildOpContext serialises audit metadata from the actor into the JSONB
+// slot reserved by migration 000118 (block_ops.context). Empty fields are
+// omitted so audit consumers can rely on key presence.
+func buildOpContext(actor ActorContext) blockstore.JSONMap {
+	ctx := blockstore.JSONMap{}
+	if actor.TraceID != "" {
+		ctx["trace_id"] = actor.TraceID
+	}
+	if actor.RequestID != "" {
+		ctx["request_id"] = actor.RequestID
+	}
+	if actor.IP != "" {
+		ctx["ip"] = actor.IP
+	}
+	if actor.UserAgent != "" {
+		ctx["user_agent"] = actor.UserAgent
+	}
+	return ctx
 }
 
 // ApplyOpsInput is the top-level request payload. A non-empty IdempotencyKey

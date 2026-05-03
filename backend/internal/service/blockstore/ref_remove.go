@@ -49,6 +49,7 @@ func (s *Service) applyRemoveRef(
 		Payload:     blockstore.JSONMap(raw),
 		Forward:     blockstore.JSONMap{"ref_id": p.RefID},
 		Inverse:     inverse,
+		Context:     buildOpContext(actor),
 		AppliedAt:   timeNowUTC(),
 	}, nil
 }

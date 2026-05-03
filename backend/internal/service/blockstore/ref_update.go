@@ -80,6 +80,7 @@ func (s *Service) applyUpdateRef(
 		Payload:     blockstore.JSONMap(raw),
 		Forward:     forward,
 		Inverse:     inverse,
+		Context:     buildOpContext(actor),
 		AppliedAt:   timeNowUTC(),
 	}, nil
 }

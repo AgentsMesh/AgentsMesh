@@ -56,6 +56,8 @@ go_test(
         "acl_test.go",
         "apply_ops_integration_test.go",
         "cascade_delete_integration_test.go",
+        "correlation_integration_test.go",
+        "correlation_test.go",
         "indicator_lifecycle_integration_test.go",
         "openai_embedder_test.go",
         "ref_add_integration_test.go",

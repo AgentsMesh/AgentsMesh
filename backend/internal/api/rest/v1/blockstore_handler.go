@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // BlockstoreHandler serves the `/blocks/*` family of endpoints.
@@ -25,18 +27,40 @@ func NewBlockstoreHandler(svc *blockstoreservice.Service) *BlockstoreHandler {
 // actorFrom builds the service-layer ActorContext from the gin context.
 // Phase 1 treats every authenticated caller as a user; Agent / Runner signed
 // tokens can override ActorType in Phase 2 when we add token-bound middleware.
+//
+// Audit metadata (TraceID/RequestID/IP/UserAgent) is populated from the OTel
+// span (otelgin middleware injects per-request) plus gin's client IP and
+// User-Agent header. They flow through ApplyOps into BlockOp.Context for
+// audit + forensics. RequestID currently aliases TraceID — when we add an
+// X-Request-ID middleware they can diverge.
 func actorFrom(c *gin.Context) (blockstoreservice.ActorContext, bool) {
 	tc := middleware.GetTenant(c)
 	if tc == nil {
 		apierr.AbortUnauthorized(c, apierr.AUTH_REQUIRED, "tenant context missing")
 		return blockstoreservice.ActorContext{}, false
 	}
+	traceID := traceIDFromContext(c.Request.Context())
 	return blockstoreservice.ActorContext{
 		UserID:    tc.UserID,
 		OrgID:     tc.OrganizationID,
 		ActorType: blockstore.ActorUser,
 		ActorID:   tc.UserID,
+		TraceID:   traceID,
+		RequestID: traceID,
+		IP:        c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
 	}, true
+}
+
+// traceIDFromContext returns the active OTel trace id as a 32-char hex
+// string, or "" when no valid span is present (e.g., tests that bypass the
+// otelgin middleware). Both REST and gRPC paths call this so audit metadata
+// in BlockOp.Context lines up across transports.
+func traceIDFromContext(ctx context.Context) string {
+	if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
+		return sc.TraceID().String()
+	}
+	return ""
 }
 
 // translateErr maps domain errors to HTTP apierr responses. Uses errors.Is

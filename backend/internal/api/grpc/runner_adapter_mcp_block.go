@@ -19,40 +19,10 @@ import (
 // ActorType="agent" (TenantContext.PodID is populated by authenticatePod on
 // the gRPC path), calls the blockstore service, and returns an interface{}
 // result plus an optional *mcpError.
-
-// actorFromTenant builds an ActorContext for block store calls.
 //
-// Permission model is "权限跟着人走 / 资源跟着组织走" — there is NO standalone
-// agent principal; every action an agent takes is authorised as though the
-// pod's creator took it. That's why:
-//   - actor.UserID always carries tc.UserID (set by authenticatePod from
-//     pod.CreatedByID on the gRPC path, or from the JWT on the REST path).
-//     ACL checks (allows(actor.UserID, block.CreatedBy)) and block.CreatedBy
-//     writes both run against this user id.
-//   - actor.ActorType / actor.ActorID are **audit-only fields** on block_ops.
-//     They record "a write happened via an agent in pod N" without affecting
-//     who the write is attributed to. This lets forensics distinguish human
-//     vs agent vs system origins after the fact, while keeping the
-//     permission graph anchored on human users.
-//
-// The REST path sets ActorType=user, ActorID=UserID for a cohesive audit
-// trail on browser-driven writes.
-func actorFromTenant(tc *middleware.TenantContext) blockstoreservice.ActorContext {
-	if tc.PodID != nil {
-		return blockstoreservice.ActorContext{
-			OrgID:     tc.OrganizationID,
-			UserID:    tc.UserID, // pod creator — authoritative for ACL
-			ActorType: blockstore.ActorAgent,
-			ActorID:   *tc.PodID, // audit trail: which pod made the call
-		}
-	}
-	return blockstoreservice.ActorContext{
-		OrgID:     tc.OrganizationID,
-		UserID:    tc.UserID,
-		ActorType: blockstore.ActorUser,
-		ActorID:   tc.UserID,
-	}
-}
+// Actor extraction (actorFromTenant + ctx helpers) lives in
+// runner_adapter_mcp_block_actor.go so this file stays focused on
+// dispatch / error mapping.
 
 // applyOpsPayload carries a workspace_id + idempotency_key plus a single
 // primitive op. Runner-side tools map exactly one tool call to one op; batch
@@ -95,7 +65,7 @@ func (a *GRPCRunnerAdapter) applyOneWithParams(
 	if params.WorkspaceID == "" {
 		return nil, newMcpError(400, "workspace_id is required")
 	}
-	res, svcErr := a.blockstoreService.ApplyOps(ctx, actorFromTenant(tc), blockstoreservice.ApplyOpsInput{
+	res, svcErr := a.blockstoreService.ApplyOps(ctx, actorFromTenant(ctx, tc), blockstoreservice.ApplyOpsInput{
 		WorkspaceID:    params.WorkspaceID,
 		IdempotencyKey: params.IdempotencyKey,
 		Ops: []blockstoreservice.OpEnvelope{

@@ -95,6 +95,7 @@ func (s *Service) applyCreateBlock(
 		Payload:     blockstore.JSONMap(raw),
 		Forward:     forward,
 		Inverse:     inverse,
+		Context:     buildOpContext(actor),
 		AppliedAt:   now,
 	}, nil
 }

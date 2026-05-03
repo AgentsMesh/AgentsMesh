@@ -3,9 +3,13 @@ package grpc
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/otel/trace"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/peer"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
@@ -24,7 +28,7 @@ func TestActorFromTenant_AgentWhenPodIDPresent(t *testing.T) {
 		UserID:         100,
 		PodID:          &podID,
 	}
-	a := actorFromTenant(tc)
+	a := actorFromTenant(context.Background(), tc)
 	assert.Equal(t, int64(7), a.OrgID)
 	// The permission-bearing field: UserID must reflect the pod creator so
 	// ACL checks and block.CreatedBy resolve against a real human — the
@@ -42,10 +46,52 @@ func TestActorFromTenant_UserFallbackWhenPodIDAbsent(t *testing.T) {
 		UserID:         100,
 		// PodID nil — this is the REST path or a misconfigured gRPC call.
 	}
-	a := actorFromTenant(tc)
+	a := actorFromTenant(context.Background(), tc)
 	assert.Equal(t, blockstore.ActorUser, a.ActorType)
 	assert.Equal(t, tc.UserID, a.ActorID,
 		"fallback must still give a meaningful ActorID for the audit trail")
+}
+
+// TestActorFromTenant_PopulatesCorrelationFromCtx verifies the audit
+// envelope (TraceID/RequestID/IP/UserAgent) flows from the gRPC ctx into
+// the ActorContext so downstream BlockOp.Context inherits the same trace
+// id as the otelgrpc-attached span. This is the gRPC-side mirror of the
+// REST otelgin path.
+func TestActorFromTenant_PopulatesCorrelationFromCtx(t *testing.T) {
+	traceID, _ := trace.TraceIDFromHex("4bf92f3577b34da6a3ce929d0e0e4736")
+	spanID, _ := trace.SpanIDFromHex("00f067aa0ba902b7")
+	sc := trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     spanID,
+		TraceFlags: trace.FlagsSampled,
+	})
+	ctx := trace.ContextWithSpanContext(context.Background(), sc)
+	ctx = peer.NewContext(ctx, &peer.Peer{
+		Addr: &net.TCPAddr{IP: net.ParseIP("10.0.0.5"), Port: 51234},
+	})
+	ctx = metadata.NewIncomingContext(ctx, metadata.Pairs("user-agent", "agentsmesh-runner/0.42"))
+
+	tc := &middleware.TenantContext{OrganizationID: 7, UserID: 100}
+	a := actorFromTenant(ctx, tc)
+
+	assert.Equal(t, "4bf92f3577b34da6a3ce929d0e0e4736", a.TraceID,
+		"trace id must round-trip from otelgrpc span into ActorContext")
+	assert.Equal(t, a.TraceID, a.RequestID,
+		"request id aliases trace id until X-Request-Id propagates through MCP")
+	assert.Equal(t, "10.0.0.5:51234", a.IP)
+	assert.Equal(t, "agentsmesh-runner/0.42", a.UserAgent)
+}
+
+// TestActorFromTenant_EmptyCorrelationOnRawCtx ensures no panic + empty
+// strings when ctx has no span / no peer / no metadata — the case unit
+// tests hit when constructing actor directly from context.Background().
+func TestActorFromTenant_EmptyCorrelationOnRawCtx(t *testing.T) {
+	tc := &middleware.TenantContext{OrganizationID: 1, UserID: 2}
+	a := actorFromTenant(context.Background(), tc)
+	assert.Empty(t, a.TraceID)
+	assert.Empty(t, a.RequestID)
+	assert.Empty(t, a.IP)
+	assert.Empty(t, a.UserAgent)
 }
 
 func TestBlockstoreErrToMcp_Mapping(t *testing.T) {

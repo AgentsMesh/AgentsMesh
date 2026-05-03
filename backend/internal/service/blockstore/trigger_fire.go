@@ -76,11 +76,18 @@ func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blo
 	// lands on a real user (required for ACL private to resolve). ActorType
 	// stays system because the CALL is system-originated — the user didn't
 	// manually run ApplyOps; but the resource belongs to them.
+	//
+	// Correlation propagates from the originating op so a single trace id
+	// covers "user write → trigger → agent_event" — the audit consumer can
+	// stitch the chain together by trace_id without joining op id chains.
+	traceID := traceIDFromOp(op)
 	actor := ActorContext{
 		OrgID:     ws.OrganizationID,
 		UserID:    t.CreatedBy,
 		ActorType: blockstore.ActorSystem,
 		ActorID:   t.CreatedBy,
+		TraceID:   traceID,
+		RequestID: traceID,
 	}
 	if _, err := s.ApplyOps(ctx, actor, in); err != nil {
 		s.logger.Warn("blockstore.trigger.agent_event_write_failed",
@@ -123,6 +130,12 @@ func (s *Service) fireWebhook(ctx context.Context, t TriggerDef, target *blockst
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	// Stitch this webhook into the trace chain: receivers logging X-Trace-Id
+	// will land in the same OpenTelemetry trace as the originating op, no
+	// joins required. Header name lower-cased for canonical-form compliance.
+	if traceID := traceIDFromOp(op); traceID != "" {
+		req.Header.Set("X-Trace-Id", traceID)
+	}
 	for k, v := range t.Action.Headers {
 		req.Header.Set(k, v)
 	}
@@ -140,4 +153,21 @@ func (s *Service) fireWebhook(ctx context.Context, t TriggerDef, target *blockst
 	}
 	s.logger.Debug("blockstore.trigger.webhook_fired",
 		"trigger", t.Name, "status", resp.StatusCode)
+}
+
+// traceIDFromOp extracts the originating OTel trace id from an op's
+// Context JSONB. Returns "" when absent (older ops written before audit
+// metadata landed, or system writes whose ctx had no span).
+func traceIDFromOp(op *blockstore.BlockOp) string {
+	if op == nil || op.Context == nil {
+		return ""
+	}
+	v, ok := op.Context["trace_id"]
+	if !ok {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return ""
 }

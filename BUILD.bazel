@@ -15,6 +15,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:prefix github.com/anthropics/agentsmesh
 # gazelle:proto disable_global
 # gazelle:go_naming_convention import_alias
+# gazelle:resolve go github.com/anthropics/agentsmesh/proto/gen/go/runner/v1 //proto/runner/v1:runner_go_proto
 
 # Workspace-root node_modules link. aspect_rules_js requires this in
 # the root BUILD so that sub-package references like

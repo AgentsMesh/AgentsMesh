@@ -82,6 +82,7 @@ func (s *Service) applyUpdateBlock(
 		Payload:     blockstore.JSONMap(raw),
 		Forward:     forward,
 		Inverse:     inverse,
+		Context:     buildOpContext(actor),
 		AppliedAt:   now,
 	}, nil
 }
