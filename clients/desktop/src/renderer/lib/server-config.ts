@@ -31,11 +31,11 @@ const DEFAULT_CONFIG: ServerConfig = {
   customUrl: "",
 };
 
-function readRaw(): ServerConfig {
-  if (typeof window === "undefined") return { ...DEFAULT_CONFIG };
+function readRaw(): ServerConfig | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_CONFIG };
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ServerConfig>;
     return {
       kind: parsed.kind === "custom" ? "custom" : "cloud",
@@ -43,7 +43,7 @@ function readRaw(): ServerConfig {
       customUrl: typeof parsed.customUrl === "string" ? parsed.customUrl : "",
     };
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return null;
   }
 }
 
@@ -53,7 +53,7 @@ function writeRaw(cfg: ServerConfig): void {
 }
 
 export function getConfig(): ServerConfig {
-  return readRaw();
+  return readRaw() ?? { ...DEFAULT_CONFIG };
 }
 
 export function getCloudInfo(): { label: string; url: string } {
@@ -62,12 +62,20 @@ export function getCloudInfo(): { label: string; url: string } {
 
 /**
  * Resolves the URL the renderer should hit. Returns null when the
- * user is in custom mode but hasn't entered a valid URL yet — env.ts
- * falls back to its own default in that case so the app still loads
- * (the user fixes their config from the Server Settings dialog).
+ * user hasn't made an explicit choice yet — env.ts then falls back
+ * to the preload-bridge default (AGENTSMESH_API_URL the main process
+ * was launched with), which is what dev / e2e / packaged users want
+ * out of the box. Only returns a URL once the user has actively
+ * picked one through the Server Settings dialog (saveConfig writes
+ * the localStorage entry).
+ *
+ * In custom mode the URL is also nullable when the saved value is
+ * malformed — env.ts again falls back rather than 404'ing every
+ * request against an invalid origin.
  */
 export function getActiveUrl(): string | null {
   const cfg = readRaw();
+  if (!cfg) return null;
   if (cfg.kind === "cloud") return CLOUD_URL;
   if (cfg.kind === "custom" && isValidServerUrl(cfg.customUrl)) return cfg.customUrl;
   return null;
