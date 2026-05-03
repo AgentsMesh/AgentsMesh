@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
@@ -6,137 +6,126 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  listServers, getSelectedId, selectServer, addServer, updateServer,
-  removeServer, isValidServerUrl, type Server,
-// Relative path — desktop-only state, see AuthShell.tsx for context.
+  getConfig, getCloudInfo, saveConfig, isValidServerUrl,
 } from "../../../lib/server-config";
 
 /**
- * Picker + CRUD dialog for the desktop server list. Selecting a
- * different server reloads the window so every in-flight fetch /
- * WebSocket re-resolves through env.ts → server-config — there's no
- * way to swap the API URL of a running session safely while sockets
- * are open and zustand state references the old origin.
+ * Two-mode picker: AgentsMesh Cloud (built-in) or 自定义服务器 (custom).
+ * The custom URL/label inputs only appear when 自定义服务器 is selected,
+ * so the dialog stays uncluttered for the 95% of users who just want
+ * the cloud option. Saving + Connect reloads the window so env.ts re-
+ * resolves the active URL on the next render — there's no clean way
+ * to hot-swap the API origin while sockets/fetches are in flight.
+ *
+ * The form lives in a separate component (ServerSettingsForm) that
+ * renders only when `open` is true. State initialisers there read the
+ * current config on mount, sidestepping the "setState in useEffect"
+ * pattern lint forbids — every open cycle gets a fresh form.
  */
 export function ServerSettingsModal({ open, onOpenChange }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
 }) {
   const t = useTranslations();
-  const [version, setVersion] = useState(0);
-  const refresh = () => setVersion((v) => v + 1);
-  const servers = listServers();
-  void version;
-  const selectedId = getSelectedId();
-  const hasUserEntries = servers.some((s) => !s.readonly);
-
-  const [draft, setDraft] = useState<{ id?: string; label: string; url: string } | null>(null);
-  const [error, setError] = useState("");
-
-  // First time the dialog opens (and nothing custom is configured yet),
-  // surface the URL input directly so the user doesn't have to hunt
-  // for the "Add server" button. Once they have at least one custom
-  // entry, the dialog defaults back to the picker view.
-  useEffect(() => {
-    if (open && !draft && !hasUserEntries) {
-      setDraft({ label: "", url: "https://" });
-    }
-    if (!open) {
-      setDraft(null);
-      setError("");
-    }
-  }, [open, hasUserEntries, draft]);
-
-  const startAdd = () => { setDraft({ label: "", url: "https://" }); setError(""); };
-  const startEdit = (s: Server) => { setDraft({ id: s.id, label: s.label, url: s.url }); setError(""); };
-  const cancelEdit = () => { setDraft(null); setError(""); };
-
-  const handleSelect = (id: string) => { selectServer(id); refresh(); };
-
-  const handleSave = () => {
-    if (!draft) return;
-    if (!draft.label.trim()) { setError(t("auth.loginPage.serverLabelRequired")); return; }
-    if (!isValidServerUrl(draft.url)) { setError(t("auth.loginPage.serverInvalidUrl")); return; }
-    if (draft.id) updateServer(draft.id, { label: draft.label, url: draft.url });
-    else addServer({ label: draft.label, url: draft.url });
-    setDraft(null); setError(""); refresh();
-  };
-
-  const handleRemove = (id: string) => { removeServer(id); refresh(); };
-
-  const handleConnect = () => { onOpenChange(false); window.location.reload(); };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("auth.loginPage.serverSettingsTitle")}</DialogTitle>
         </DialogHeader>
-        <DialogBody className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t("auth.loginPage.serverSettingsDesc")}</p>
-          <ul className="space-y-2">
-            {servers.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 rounded-md border border-border p-3">
-                <input
-                  type="radio"
-                  name="server"
-                  className="h-4 w-4"
-                  checked={s.id === selectedId}
-                  onChange={() => handleSelect(s.id)}
-                  aria-label={s.label}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-sm font-medium text-foreground">{s.label}</div>
-                  <div className="truncate text-xs text-muted-foreground">{s.url}</div>
-                </div>
-                {!s.readonly && (
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => startEdit(s)}>
-                      {t("auth.loginPage.serverEdit")}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleRemove(s.id)}>
-                      {t("auth.loginPage.serverRemove")}
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          {draft ? (
-            <div className="space-y-2 rounded-md border border-dashed border-border p-3">
-              <Input
-                placeholder={t("auth.loginPage.serverLabel")}
-                value={draft.label}
-                onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-              />
-              <Input
-                placeholder={t("auth.loginPage.serverUrlPlaceholder")}
-                value={draft.url}
-                onChange={(e) => setDraft({ ...draft, url: e.target.value })}
-              />
-              {error && <p className="text-xs text-destructive">{error}</p>}
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                  {t("common.cancel")}
-                </Button>
-                <Button size="sm" onClick={handleSave}>
-                  {t("common.save")}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button variant="outline" size="sm" onClick={startAdd}>
-              {t("auth.loginPage.serverAdd")}
-            </Button>
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {t("common.close")}
-          </Button>
-          <Button onClick={handleConnect}>{t("auth.loginPage.serverConnect")}</Button>
-        </DialogFooter>
+        {open && <ServerSettingsForm onClose={() => onOpenChange(false)} />}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ServerSettingsForm({ onClose }: { onClose: () => void }) {
+  const t = useTranslations();
+  const cloud = getCloudInfo();
+  const [draft, setDraft] = useState(getConfig);
+  const [error, setError] = useState("");
+
+  const setKind = (kind: "cloud" | "custom") => setDraft((d) => ({ ...d, kind }));
+
+  const handleConnect = () => {
+    if (draft.kind === "custom") {
+      if (!draft.customLabel.trim()) {
+        setError(t("auth.loginPage.serverLabelRequired"));
+        return;
+      }
+      if (!isValidServerUrl(draft.customUrl)) {
+        setError(t("auth.loginPage.serverInvalidUrl"));
+        return;
+      }
+    }
+    saveConfig(draft);
+    onClose();
+    window.location.reload();
+  };
+
+  return (
+    <>
+      <DialogBody className="space-y-4">
+        <p className="text-sm text-muted-foreground">{t("auth.loginPage.serverSettingsDesc")}</p>
+
+        <label className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
+          draft.kind === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+        }`}>
+          <input type="radio" name="kind" className="h-4 w-4"
+            checked={draft.kind === "cloud"} onChange={() => setKind("cloud")} />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-foreground">{cloud.label}</div>
+            <div className="truncate text-xs text-muted-foreground">{cloud.url}</div>
+          </div>
+        </label>
+
+        <label className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
+          draft.kind === "custom" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+        }`}>
+          <input type="radio" name="kind" className="h-4 w-4"
+            checked={draft.kind === "custom"} onChange={() => setKind("custom")} />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-foreground">
+              {t("auth.loginPage.serverCustom")}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              {t("auth.loginPage.serverCustomDesc")}
+            </div>
+          </div>
+        </label>
+
+        {draft.kind === "custom" && (
+          <div className="space-y-2 rounded-md border border-dashed border-border p-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">
+                {t("auth.loginPage.serverLabel")}
+              </label>
+              <Input
+                placeholder={t("auth.loginPage.serverLabelPlaceholder")}
+                value={draft.customLabel}
+                onChange={(e) => setDraft({ ...draft, customLabel: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">
+                {t("auth.loginPage.serverUrl")}
+              </label>
+              <Input
+                placeholder={t("auth.loginPage.serverUrlPlaceholder")}
+                value={draft.customUrl}
+                onChange={(e) => setDraft({ ...draft, customUrl: e.target.value })}
+              />
+            </div>
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <Button variant="ghost" onClick={onClose}>
+          {t("common.cancel")}
+        </Button>
+        <Button onClick={handleConnect}>{t("auth.loginPage.serverConnect")}</Button>
+      </DialogFooter>
+    </>
   );
 }
