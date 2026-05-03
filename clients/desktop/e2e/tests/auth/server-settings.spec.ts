@@ -105,6 +105,10 @@ test.describe("Auth · server settings", () => {
 
   test("cancel: dialog closes without persisting changes", async ({ page }) => {
     const login = new LoginPage(page);
+    // The previous test logged in, so the shared Electron page may
+    // already be on the dashboard route. Force navigation back to
+    // /login so the AuthShell + Server Settings entry are reachable.
+    await login.goto();
     await login.expectOnLoginPage();
 
     await page.getByRole("button", { name: /服务器设置|Server settings/ }).click();
