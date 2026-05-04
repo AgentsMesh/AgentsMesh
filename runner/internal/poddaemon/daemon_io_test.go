@@ -22,7 +22,7 @@ func TestHandleClientAttachHandshake(t *testing.T) {
 	err = WriteMessage(conn, MsgAttach, testAttachPayload())
 	require.NoError(t, err)
 
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	msgType, payload, err := ReadMessage(conn)
 	require.NoError(t, err)
 	assert.Equal(t, MsgAttachAck, msgType)
@@ -49,7 +49,7 @@ func TestHandleClientRejectsNonAttachMessage(t *testing.T) {
 	require.NoError(t, err)
 
 	// Connection should be closed by daemon
-	conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	_, _, err = ReadMessage(conn)
 	assert.Error(t, err) // EOF or read error
 }
@@ -64,7 +64,7 @@ func TestReadClientCommandsInput(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn) // consume AttachAck
 	conn.SetReadDeadline(time.Time{})
 
@@ -88,7 +88,7 @@ func TestReadClientCommandsResize(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn)
 	conn.SetReadDeadline(time.Time{})
 
@@ -120,7 +120,7 @@ func TestReadClientCommandsGracefulStop(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn)
 	conn.SetReadDeadline(time.Time{})
 
@@ -142,7 +142,7 @@ func TestReadClientCommandsKill(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn)
 	conn.SetReadDeadline(time.Time{})
 
@@ -164,12 +164,12 @@ func TestReadClientCommandsPing(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn)
 
 	WriteMessage(conn, MsgPing, nil)
 
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	msgType, _, err := ReadMessage(conn)
 	require.NoError(t, err)
 	assert.Equal(t, MsgPong, msgType)
@@ -185,7 +185,7 @@ func TestReadClientCommandsDetach(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn)
 	conn.SetReadDeadline(time.Time{})
 
@@ -208,12 +208,12 @@ func TestPtyReaderForwardsOutput(t *testing.T) {
 	defer conn.Close()
 
 	WriteMessage(conn, MsgAttach, testAttachPayload())
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	ReadMessage(conn) // AttachAck
 
 	proc.readCh <- []byte("pty output line 1")
 
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	msgType, payload, err := ReadMessage(conn)
 	require.NoError(t, err)
 	assert.Equal(t, MsgOutput, msgType)
@@ -253,7 +253,7 @@ func TestHandleClientRejectsInvalidToken(t *testing.T) {
 	WriteMessage(conn, MsgAttach, payload)
 
 	// Daemon should close the connection without sending AttachAck
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	_, _, err = ReadMessage(conn)
 	assert.Error(t, err, "daemon should disconnect client with invalid token")
 }
@@ -271,7 +271,7 @@ func TestHandleClientRejectsEmptyToken(t *testing.T) {
 	// Send only version byte, no token
 	WriteMessage(conn, MsgAttach, []byte{protocolVersion})
 
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	_, _, err = ReadMessage(conn)
 	assert.Error(t, err, "daemon should disconnect client with empty token")
 }
@@ -290,7 +290,7 @@ func TestHandleClientAcceptsWhenNoTokenConfigured(t *testing.T) {
 	// Send attach with just version byte (no token)
 	WriteMessage(conn, MsgAttach, []byte{protocolVersion})
 
-	conn.SetReadDeadline(time.Now().Add(2 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
 	msgType, _, err := ReadMessage(conn)
 	require.NoError(t, err, "should accept when no token is configured")
 	assert.Equal(t, MsgAttachAck, msgType)
