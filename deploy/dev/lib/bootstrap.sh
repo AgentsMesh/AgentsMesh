@@ -10,11 +10,12 @@
 # Re-runs are idempotent (existing data → skip).
 
 # Generic docker-exec health probe. Polls `docker exec $container $check_cmd`
-# at 2s intervals up to 30 attempts.
+# at 2s intervals up to 240 attempts (8min) — cold CI pulls + first-start
+# init can run well past 60s.
 wait_for_service() {
     local container="$1"
     local check_cmd="$2"
-    local max_retries=30
+    local max_retries=240
 
     for ((i=1; i<=max_retries; i++)); do
         if docker exec "$container" $check_cmd &>/dev/null; then
