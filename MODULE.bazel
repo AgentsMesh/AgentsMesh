@@ -235,7 +235,6 @@ crate.spec(
     package = "dirs",
     version = "6",
 )
-
 crate.spec(
     package = "sha2",
     version = "0.10",

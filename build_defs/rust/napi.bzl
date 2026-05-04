@@ -43,11 +43,14 @@ load("@rules_rust//rust:defs.bzl", "rust_shared_library")
 
 _NAPI_LINKER_FLAGS = select({
     "@platforms//os:macos": [
-        "-C", "link-arg=-undefined",
-        "-C", "link-arg=dynamic_lookup",
+        "-C",
+        "link-arg=-undefined",
+        "-C",
+        "link-arg=dynamic_lookup",
     ],
     "@platforms//os:linux": [
-        "-C", "link-arg=-Wl,--unresolved-symbols=ignore-all",
+        "-C",
+        "link-arg=-Wl,--unresolved-symbols=ignore-all",
     ],
     "@platforms//os:windows": [],
     "//conditions:default": [],
@@ -101,7 +104,7 @@ def napi_rust_library(
     # per-platform names are spelled out below; the `alias` ensures
     # consumers see only the slice that matches the current build.
     if binary_name:
-        for plat_label, suffix in _PLATFORM_SUFFIXES.items():
+        for suffix in _PLATFORM_SUFFIXES.values():
             out_name = "{}.{}.node".format(binary_name, suffix)
             native.genrule(
                 name = "_{}_rename_{}".format(name, suffix.replace("-", "_")),
