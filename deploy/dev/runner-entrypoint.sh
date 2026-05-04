@@ -61,10 +61,17 @@ generate_runner_cert() {
     echo "▶ generate_runner_cert: CERTS_DIR=$CERTS_DIR SSL_DIR=$SSL_DIR"
     mkdir -p "$CERTS_DIR"
     ls -la "$CERTS_DIR" >&2 || true
-    if [[ -f "$CERTS_DIR/runner.crt" && -f "$CERTS_DIR/runner.key" ]]; then
+    # All three files must be present and non-empty: a partial state from a
+    # previous failed run (e.g. SSL_DIR/ca.crt arrived after `wait_for_backend`
+    # returned but before openssl signed the runner cert) leaves zero-byte
+    # runner.crt + runner.key while ca.crt is missing entirely. Don't trust
+    # that, regenerate from scratch.
+    if [[ -s "$CERTS_DIR/runner.crt" && -s "$CERTS_DIR/runner.key" && -s "$CERTS_DIR/ca.crt" ]]; then
         echo "✓ Runner 证书已存在"
         return 0
     fi
+    rm -f "$CERTS_DIR/runner.crt" "$CERTS_DIR/runner.key" "$CERTS_DIR/ca.crt" \
+          "$CERTS_DIR/ca.srl" "$CERTS_DIR/runner.csr" "$CERTS_DIR/runner_ext.cnf"
     if [[ ! -f "$SSL_DIR/ca.crt" || ! -f "$SSL_DIR/ca.key" ]]; then
         echo "✗ CA 证书未找到: $SSL_DIR" >&2
         ls -la "$SSL_DIR" >&2 || true
