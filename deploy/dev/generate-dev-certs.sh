@@ -73,7 +73,7 @@ openssl x509 -req -days 365 -in "${SSL_DIR}/server.csr" \
 rm -f "${SSL_DIR}/server.csr" "${SSL_DIR}/server_ext.cnf" "${SSL_DIR}/ca.srl"
 
 # Set permissions
-chmod 600 "${SSL_DIR}/ca.key" "${SSL_DIR}/server.key"
+chmod 644 "${SSL_DIR}/ca.key" "${SSL_DIR}/server.key"
 chmod 644 "${SSL_DIR}/ca.crt" "${SSL_DIR}/server.crt"
 
 echo ""
