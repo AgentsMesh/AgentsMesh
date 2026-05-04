@@ -342,7 +342,7 @@ func (m *MockDB) Reset() {
 
 func getTableName(value interface{}) string {
 	t := reflect.TypeOf(value)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	return t.Name()
@@ -350,7 +350,7 @@ func getTableName(value interface{}) string {
 
 func setID(value interface{}, id int64) {
 	v := reflect.ValueOf(value)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 	if v.Kind() != reflect.Struct {
