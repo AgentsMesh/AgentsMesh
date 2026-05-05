@@ -7,14 +7,13 @@ replace github.com/anthropics/agentsmesh/proto => ../proto
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/UserExistsError/conpty v0.1.4
-	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/kardianos/service v1.2.4
 	github.com/mattn/go-runewidth v0.0.21
-	github.com/pelletier/go-toml/v2 v2.3.0
+	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
