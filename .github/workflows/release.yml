@@ -47,12 +47,24 @@ jobs:
               - 'backend/**'
               - 'proto/**'
               - 'agentfile/**'
+              - 'build_defs/docker/**'
+              - 'MODULE.bazel'
+              - 'MODULE.bazel.lock'
             web:
               - 'clients/web/**'
+              - 'build_defs/web/**'
+              - 'MODULE.bazel'
+              - 'MODULE.bazel.lock'
             web-admin:
               - 'clients/web-admin/**'
+              - 'build_defs/web/**'
+              - 'MODULE.bazel'
+              - 'MODULE.bazel.lock'
             relay:
               - 'relay/**'
+              - 'build_defs/docker/**'
+              - 'MODULE.bazel'
+              - 'MODULE.bazel.lock'
             migrations:
               - 'backend/migrations/**'
 

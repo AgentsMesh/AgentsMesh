@@ -945,7 +945,7 @@
     "@@rules_oci+//oci:extensions.bzl%oci": {
       "general": {
         "bzlTransitiveDigest": "m5CaKTCnSQra32tL1Wy7xwRpB8nsAE7OSh4++9xURBg=",
-        "usagesDigest": "R1eGXxq72fBZx7wrDVUKYR2IRaTVzB5rGbDwz9H41l0=",
+        "usagesDigest": "D545NRuKwngtgsqPuv0ISZnpoGlmUHn8CUHjlMshT3w=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -954,9 +954,9 @@
             "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
             "attributes": {
               "scheme": "https",
-              "registry": "gcr.io",
-              "repository": "distroless/static-debian12",
-              "identifier": "latest",
+              "registry": "index.docker.io",
+              "repository": "library/alpine",
+              "identifier": "3.19",
               "platform": "linux/amd64",
               "target_name": "distroless_static_linux_amd64",
               "bazel_tags": []
@@ -966,9 +966,9 @@
             "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
             "attributes": {
               "scheme": "https",
-              "registry": "gcr.io",
-              "repository": "distroless/static-debian12",
-              "identifier": "latest",
+              "registry": "index.docker.io",
+              "repository": "library/alpine",
+              "identifier": "3.19",
               "platform": "linux/arm64/v8",
               "target_name": "distroless_static_linux_arm64_v8",
               "bazel_tags": []
@@ -979,9 +979,9 @@
             "attributes": {
               "target_name": "distroless_static",
               "scheme": "https",
-              "registry": "gcr.io",
-              "repository": "distroless/static-debian12",
-              "identifier": "latest",
+              "registry": "index.docker.io",
+              "repository": "library/alpine",
+              "identifier": "3.19",
               "platforms": {
                 "@@platforms//cpu:x86_64": "@distroless_static_linux_amd64",
                 "@@platforms//cpu:arm64": "@distroless_static_linux_arm64_v8"

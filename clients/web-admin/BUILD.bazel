@@ -75,7 +75,13 @@ next_app(
 
 next_oci_image(
     name = "image",
-    exposed_ports = ["3000/tcp"],
+    # Prod swarm stack defines a `curl -f http://localhost:3001/`
+    # healthcheck for web-admin. Next.js defaults to PORT=3000, which
+    # would mismatch the probe → unhealthy → SIGTERM loop. Pin
+    # PORT=3001 in the image so the runtime listener and the
+    # healthcheck address match without a per-deployment env override.
+    env = {"PORT": "3001"},
+    exposed_ports = ["3001/tcp"],
     repositories = {
         "agentsmesh": "registry.agentsmesh.ai/agentsmesh/web-admin",
         "dockerhub": "agentsmesh/web-admin",

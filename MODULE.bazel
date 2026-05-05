@@ -60,18 +60,27 @@ bazel_dep(name = "rules_oci", version = "2.0.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "aspect_bazel_lib", version = "2.19.2")
 
-# Base image for all Go services. distroless/static gives us a ~2 MB image
-# (zero shell/libc, nonroot user baked in). Multi-arch to support amd64 +
-# arm64 deployment without per-target overrides.
+# Base image for all Go services. We use Alpine 3.19 (not distroless)
+# because the swarm stack's healthcheck spec is `wget --spider …`, and
+# distroless/static ships neither wget nor curl. Switching to Alpine
+# restores parity with the legacy GoReleaser/Dockerfile setup
+# (`FROM alpine:3.19`) — `addgroup -g 1000 -S app …` user invariants
+# are now reproduced by `go_oci_image.bzl` (uid 1000 + chown /app
+# /data). Image size is ~7MB heavier than distroless/static but layer
+# sharing absorbs most of it. Multi-arch (amd64 + arm64).
+#
+# The repo is still named `distroless_static` for backward
+# compatibility with `base = "@distroless_static"` callers — only the
+# upstream image identity changed.
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "distroless_static",
-    image = "gcr.io/distroless/static-debian12",
+    image = "docker.io/library/alpine",
     platforms = [
         "linux/amd64",
         "linux/arm64/v8",
     ],
-    tag = "latest",
+    tag = "3.19",
 )
 use_repo(
     oci,
