@@ -156,8 +156,8 @@ async fn handle_text_message<R: Runtime>(
 }
 
 fn send_ping(sender: &WsSender) -> bool {
-    let ts = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
+    let ts = web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as i64;
     let ping = serde_json::to_string(&PingMessage::new(ts)).unwrap_or_default();

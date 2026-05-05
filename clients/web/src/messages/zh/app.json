@@ -112,6 +112,17 @@
       "newTicket": "新建",
       "export": "导出"
     },
+    "rail": {
+      "workingPods": "工作中的 Pod",
+      "noPods": "暂无活跃的 Pod",
+      "subTickets": "子 Ticket",
+      "noSubTickets": "暂无子 Ticket",
+      "pullRequests": "Pull Request",
+      "noPRs": "暂未关联 PR",
+      "activity": "动态",
+      "activityCreated": "Ticket 已创建",
+      "activityUpdated": "Ticket 已更新"
+    },
     "list": {
       "ticket": "Ticket",
       "assignees": "负责人",

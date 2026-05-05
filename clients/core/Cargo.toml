@@ -70,6 +70,9 @@ js-sys = "0.3"
 web-sys = { version = "0.3", features = ["console"] }
 console_error_panic_hook = "0.1"
 
+# Cross-platform time (std::time on native, performance.now on wasm32)
+web-time = "1"
+
 # Internal crates
 agentsmesh-protocol = { path = "crates/protocol" }
 agentsmesh-types = { path = "crates/types" }

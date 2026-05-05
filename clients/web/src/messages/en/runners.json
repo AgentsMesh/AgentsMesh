@@ -177,7 +177,8 @@
         "collecting": "Collecting",
         "uploading": "Uploading",
         "completed": "Completed",
-        "failed": "Failed"
+        "failed": "Failed",
+        "unknown": "Unknown"
       },
       "download": "Download",
       "size": "Size",

@@ -16,6 +16,7 @@ rust_library(
         "@crates//:thiserror",
         "@crates//:tokio",
         "@crates//:tracing",
+        "@crates//:web-time",
     ],
 )
 

@@ -19,6 +19,7 @@ rust_library(
         "@crates//:serde_json",
         "@crates//:thiserror",
         "@crates//:tracing",
+        "@crates//:web-time",
     ],
 )
 

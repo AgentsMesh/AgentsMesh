@@ -353,6 +353,12 @@ crate.spec(
     package = "console_error_panic_hook",
     version = "0.1",
 )
+
+# Cross-platform time — std::time on native, performance.now on wasm32.
+crate.spec(
+    package = "web-time",
+    version = "1",
+)
 crate.from_specs(
     supported_platform_triples = [
         "aarch64-apple-darwin",

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
+use web_time::Instant;
 
 use agentsmesh_protocol::{encode_json_message, encode_message, MsgType};
 use agentsmesh_transport::runtime::{PlatformRuntime, Runtime, TaskHandle};

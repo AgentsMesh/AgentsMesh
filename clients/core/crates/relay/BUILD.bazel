@@ -20,6 +20,7 @@ rust_library(
         "@crates//:tokio",
         "@crates//:tracing",
         "@crates//:urlencoding",
+        "@crates//:web-time",
     ],
 )
 
