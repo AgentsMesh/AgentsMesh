@@ -7,7 +7,6 @@ replace github.com/anthropics/agentsmesh/proto => ../proto
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/UserExistsError/conpty v0.1.4
-	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/google/uuid v1.6.0
@@ -31,7 +30,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.43.0
 	golang.org/x/term v0.41.0
 	golang.org/x/time v0.15.0
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.81.0
 	google.golang.org/grpc/security/advancedtls v1.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -46,7 +45,7 @@ require (
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-fed/httpsig v1.1.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
