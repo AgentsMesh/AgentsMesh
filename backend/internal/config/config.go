@@ -7,19 +7,19 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Redis    RedisConfig
-	JWT      JWTConfig
-	OAuth    OAuthConfig
-	Webhook  WebhookConfig
-	Log      LogConfig
-	Email    EmailConfig
-	Storage  StorageConfig
-	Payment  PaymentConfig
-	PKI      PKIConfig
-	GRPC     GRPCConfig
-	Admin    AdminConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	Redis       RedisConfig
+	JWT         JWTConfig
+	OAuth       OAuthConfig
+	Webhook     WebhookConfig
+	Log         LogConfig
+	Email       EmailConfig
+	Storage     StorageConfig
+	Payment     PaymentConfig
+	PKI         PKIConfig
+	GRPC        GRPCConfig
+	Admin       AdminConfig
 	Relay       RelayConfig
 	Marketplace MarketplaceConfig
 
@@ -110,9 +110,16 @@ func Load() (*Config, error) {
 
 		// Logging Configuration
 		Log: LogConfig{
-			Level:      getEnv("LOG_LEVEL", "info"),
-			Format:     getEnv("LOG_FORMAT", "text"),
-			FilePath:   getEnv("LOG_FILE", "logs/agentsmesh.log"),
+			Level:  getEnv("LOG_LEVEL", "info"),
+			Format: getEnv("LOG_FORMAT", "text"),
+			// stdout-only by default — container runtimes (docker/swarm/k8s)
+			// already collect stdout via the configured logging driver
+			// (loki/json-file/etc). The previous default `logs/agentsmesh.log`
+			// required the working directory to be writable, which broke
+			// distroless+nonroot images. Set LOG_FILE explicitly when an
+			// on-disk log file is actually wanted (and ensure the path is
+			// writable by the container's user).
+			FilePath:   getEnv("LOG_FILE", ""),
 			MaxSizeMB:  getEnvInt("LOG_MAX_SIZE_MB", 100),
 			MaxBackups: getEnvInt("LOG_MAX_BACKUPS", 5),
 		},
@@ -237,4 +244,3 @@ func (c *Config) WarnInsecureDefaults() {
 		}
 	}
 }
-
