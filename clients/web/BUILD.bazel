@@ -110,9 +110,6 @@ _SRC_FILES = glob(
         "src/**/*.test.ts",
         "src/**/*.test.tsx",
     ],
-) + glob(
-    ["public/**/*"],
-    allow_empty = True,
 )
 
 # Runtime data bundle the Next.js build needs: config files, package
@@ -139,7 +136,10 @@ _NEXT_DATA = [
     "//:node_modules/agentsmesh-wasm",
     "//:package_json_bin",
     "//clients/core/pkg",
-]
+] + glob(
+    ["public/**/*"],
+    allow_empty = True,
+)
 
 next_app(
     name = "next",

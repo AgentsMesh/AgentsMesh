@@ -14,6 +14,7 @@ interface RunnerLogsCardProps {
 }
 
 const ACTIVE_STATUSES = ["pending", "collecting", "uploading"];
+const KNOWN_STATUSES = ["pending", "collecting", "uploading", "completed", "failed"];
 const POLL_INTERVAL = 5000;
 
 /**
@@ -179,7 +180,7 @@ function DownloadLink({ url, label }: { url: string; label: string }) {
   );
 }
 
-function LogStatusBadge({ status }: { status: string }) {
+function LogStatusBadge({ status }: { status: string | undefined }) {
   const t = useTranslations();
 
   const styles: Record<string, string> = {
@@ -190,12 +191,13 @@ function LogStatusBadge({ status }: { status: string }) {
     failed: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   };
 
-  const key = `runners.logs.status.${status}` as Parameters<typeof t>[0];
+  const safeStatus = status && KNOWN_STATUSES.includes(status) ? status : "unknown";
+  const key = `runners.logs.status.${safeStatus}` as Parameters<typeof t>[0];
   const label = t(key);
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || "bg-muted text-muted-foreground"}`}>
-      {ACTIVE_STATUSES.includes(status) && (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[safeStatus] || "bg-muted text-muted-foreground"}`}>
+      {safeStatus !== "unknown" && ACTIVE_STATUSES.includes(safeStatus) && (
         <Loader2 className="w-3 h-3 mr-1 animate-spin" />
       )}
       {label}

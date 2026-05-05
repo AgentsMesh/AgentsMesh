@@ -170,7 +170,7 @@ async fn disconnect_inner_removes_all_state() {
         inner.connections.insert("pod1".to_string(), conn);
         inner
             .last_inputs
-            .insert("pod1".to_string(), ("x".to_string(), std::time::Instant::now()));
+            .insert("pod1".to_string(), ("x".to_string(), web_time::Instant::now()));
         inner.resize_debounce.insert("pod1".to_string(), resize_handle);
     }
 
