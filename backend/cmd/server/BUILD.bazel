@@ -86,6 +86,13 @@ go_library(
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    # CGO_ENABLED=0 — produce a statically-linked binary so the image can
+    # stay on `distroless/static` (no glibc / ld-linux loader). Without
+    # this, the binary is dynamically linked against
+    # /lib64/ld-linux-x86-64.so.2 and the container exec fails with
+    # `no such file or directory` on startup (kernel reporting the
+    # missing ELF interpreter, not the binary itself).
+    pure = "on",
     visibility = ["//visibility:public"],
 )
 

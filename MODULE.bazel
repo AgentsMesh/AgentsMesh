@@ -81,11 +81,18 @@ use_repo(
 )
 
 # Base image for Node.js services (Next.js web + web-admin). We pull
-# Debian-based `node:20-slim` instead of a distroless image here
-# because `js_image_layer` wraps the `js_binary` in a bash launcher
-# (to set BAZEL_BINDIR and resolve runfiles), and Google's
-# `distroless/nodejs20` ships neither bash nor sh. Multi-arch so the
-# Next.js images still release to both amd64 and arm64 hosts.
+# Debian-based `node:20` (full bookworm, not -slim) instead of a
+# distroless image here because:
+#  1. `js_image_layer` wraps the `js_binary` in a bash launcher (to set
+#     BAZEL_BINDIR and resolve runfiles), and Google's `distroless/nodejs20`
+#     ships neither bash nor sh.
+#  2. The prod swarm stack defines a `curl -f http://localhost:3000/`
+#     healthcheck. `node:20-slim` strips curl/wget; `node:20` (default
+#     bookworm) ships both. Keeping the full image lets the healthcheck
+#     work without taking a runtime dependency on the deploy repo's
+#     compose yml.
+# Multi-arch so the Next.js images still release to both amd64 and arm64
+# hosts.
 oci.pull(
     name = "distroless_nodejs",
     image = "docker.io/library/node",
@@ -93,7 +100,7 @@ oci.pull(
         "linux/amd64",
         "linux/arm64/v8",
     ],
-    tag = "20-slim",
+    tag = "20",
 )
 use_repo(
     oci,

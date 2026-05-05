@@ -41,6 +41,10 @@ go_library(
 go_binary(
     name = "runner",
     embed = [":runner_lib"],
+    # CGO_ENABLED=0 — keep the binary statically linked so it can run on
+    # the distroless/static base (no glibc). See
+    # //backend/cmd/server:BUILD.bazel for the full rationale.
+    pure = "on",
     visibility = ["//visibility:public"],
 )
 
