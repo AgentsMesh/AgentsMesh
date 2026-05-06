@@ -302,28 +302,33 @@ jobs:
       # Bazel's exec sandbox strips arbitrary host env from actions; the
       # `--action_env` flags below allowlist the signing vars so they
       # reach the electron-builder subprocess inside the action.
-      # Stage both Apple credentials before invoking electron-builder.
-      # Two reasons we go through file paths instead of feeding the
-      # base64 secrets straight into env vars:
+      # Set up macOS signing.
       #
-      #   1. `CSC_LINK` accepts either a file path or a base64 blob,
-      #      but electron-builder's base64 detection is fragile —
-      #      v0.30.0–v0.30.2 dmgs all came out ad-hoc-signed because
-      #      it silently fell back. A file path is the deterministic
-      #      input shape; this matches `runner/build/scripts/sign-darwin.sh`
-      #      which has been signing the runner CLI cleanly for
-      #      months via the same `.p12` decoded to disk.
+      # v0.30.0–v0.30.3 all shipped ad-hoc-signed dmgs even after
+      # switching CSC_LINK from base64 to a file path: electron-builder
+      # invokes its `app-builder` subprocess from within the Bazel
+      # action sandbox, and the CSC_LINK / CSC_KEY_PASSWORD pair was
+      # silently swallowed somewhere along that chain (no errors, no
+      # bullet logs visible — bazel captures action stdout). The
+      # resulting .app/Contents/MacOS/* came out as
+      # `Signature=adhoc, TeamIdentifier=not set`, spctl rejected,
+      # no notarization ticket.
       #
-      #   2. `@electron/notarize` requires `APPLE_API_KEY` to be a
-      #      filesystem path to the `.p8`, never the .p8 contents.
-      #
-      # Both decoded files live under `$RUNNER_TEMP/apple/` (chmod
-      # 0600) and are exposed to the build step via `$GITHUB_ENV`.
-      - name: Stage macOS signing credentials
+      # The fix: import the `.p12` into a temporary keychain and let
+      # electron-builder auto-discover the codesigning identity from
+      # there. This is the canonical macOS CI signing pattern (used
+      # by Apple's own examples + electron-builder docs) and removes
+      # the env-var routing entirely. electron-builder picks up the
+      # identity from `security find-identity` regardless of how the
+      # subprocess was launched. CSC_LINK is then unnecessary; we
+      # only keep `CSC_KEY_PASSWORD` for the keychain unlock during
+      # the import step.
+      - name: Set up macOS signing keychain + notarization API key
         if: matrix.os.runner == 'macos-14'
         shell: bash
         env:
           MACOS_CERT_B64: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY }}
         run: |
           set -euo pipefail
@@ -331,11 +336,49 @@ jobs:
             echo "ERROR: MACOS_CERTIFICATE secret not set — desktop dmg/zip would ship ad-hoc-signed." >&2
             exit 1
           fi
+          if [[ -z "${MACOS_CERT_PASSWORD:-}" ]]; then
+            echo "ERROR: MACOS_CERTIFICATE_PASSWORD secret not set." >&2
+            exit 1
+          fi
           mkdir -p "$RUNNER_TEMP/apple"
-          echo "$MACOS_CERT_B64" | base64 --decode > "$RUNNER_TEMP/apple/cert.p12"
-          chmod 0600 "$RUNNER_TEMP/apple/cert.p12"
-          echo "CSC_LINK=$RUNNER_TEMP/apple/cert.p12" >> "$GITHUB_ENV"
 
+          # Decode and import .p12 into a fresh keychain. The keychain
+          # password is per-run (random), the cert password is the
+          # secret. `-A` makes the imported key accessible to any
+          # codesigning tool without per-tool partition prompts.
+          KEYCHAIN_PATH="$RUNNER_TEMP/apple/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+          CERT_PATH="$RUNNER_TEMP/apple/cert.p12"
+
+          echo "$MACOS_CERT_B64" | base64 --decode > "$CERT_PATH"
+          chmod 0600 "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$MACOS_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Make the temp keychain the default + first in the search
+          # list. electron-builder shells out to `codesign`, which
+          # walks the user keychain list to locate Developer ID
+          # identities; without prepending the temp keychain it
+          # only sees the default user keychain (empty on a fresh
+          # GH runner) and signs ad-hoc.
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | xargs)
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+          # Confirm the identity is visible. Failure here means the
+          # .p12 didn't import (wrong password, wrong format) — we
+          # want to bail loudly rather than ship ad-hoc.
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Developer ID Application"; then
+            echo "ERROR: no Developer ID Application identity found after .p12 import." >&2
+            exit 1
+          fi
+
+          # Notarization API key — `@electron/notarize` reads it as a
+          # filesystem path, never raw bytes.
           if [[ -z "${APPLE_API_KEY_B64:-}" ]]; then
             echo "WARN: APPLE_API_KEY secret not set — notarization will be skipped (Gatekeeper will require user approval on first launch)." >&2
             exit 0
@@ -350,20 +393,45 @@ jobs:
         run: |
           bazel build //clients/desktop:dist \
             --build_tag_filters=electron_builder \
-            --action_env=CSC_LINK \
-            --action_env=CSC_KEY_PASSWORD \
             --action_env=APPLE_API_KEY \
             --action_env=APPLE_API_KEY_ID \
             --action_env=APPLE_API_KEY_ISSUER_ID
         env:
-          # CSC_LINK + APPLE_API_KEY are exported via $GITHUB_ENV by
-          # the staging step above (both as filesystem paths).
-          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          # `APPLE_API_KEY` is exported via $GITHUB_ENV by the
+          # staging step above (filesystem path to .p8). The `.p12`
+          # import is in the default keychain, so electron-builder's
+          # codesign subprocess discovers the Developer ID identity
+          # via `security find-identity` without any env-var routing.
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           # `@electron/notarize` reads `APPLE_API_KEY_ISSUER_ID`, not
           # the truncated `APPLE_API_ISSUER` variant — using the wrong
           # name silently disabled notarization in v0.30.0–v0.30.2.
           APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
+
+      # Fail-fast assertion: every prior release silently shipped
+      # ad-hoc-signed dmgs because electron-builder's logs are
+      # captured by bazel and we couldn't see signing fall back to
+      # ad-hoc. Verify the produced .app on the runner before the
+      # upload step so a sign regression turns into a CI failure
+      # instead of a Gatekeeper-rejected user install.
+      - name: Verify macOS dmg signing
+        if: matrix.os.runner == 'macos-14'
+        shell: bash
+        run: |
+          set -euo pipefail
+          DIST="bazel-bin/clients/desktop/dist"
+          APP="$(find "$DIST" -maxdepth 4 -name 'AgentsMesh.app' | head -1 || true)"
+          if [[ -z "$APP" ]]; then
+            echo "ERROR: AgentsMesh.app not found under $DIST." >&2
+            exit 1
+          fi
+          echo "Inspecting $APP"
+          codesign -dv --verbose=2 "$APP" 2>&1 | head -15
+          if codesign -dv "$APP" 2>&1 | grep -q "Signature=adhoc"; then
+            echo "::error::AgentsMesh.app is ad-hoc-signed; the codesign identity didn't reach electron-builder." >&2
+            exit 1
+          fi
+          echo "OK: app bundle is signed with a real identity."
 
       - name: Build :dist (Windows)
         if: matrix.os.runner == 'windows-latest'
