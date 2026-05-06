@@ -50,6 +50,14 @@ func (c *GRPCCollaborationClient) BlockListTypes(ctx context.Context, args map[s
 	return c.blockstoreCall(ctx, "block.list_types", args)
 }
 
+func (c *GRPCCollaborationClient) BlockListWorkspaces(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	return c.blockstoreCall(ctx, "block.list_workspaces", args)
+}
+
+func (c *GRPCCollaborationClient) BlockGetDefaultWorkspace(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error) {
+	return c.blockstoreCall(ctx, "block.get_default_workspace", args)
+}
+
 // blockstoreCall is a thin wrapper over c.call that unmarshals into a
 // map[string]interface{} for the agent-facing tool layer. Block Store
 // responses are heterogeneous (ApplyOps returns {op_ids, was_replay},

@@ -21,11 +21,11 @@ import (
 func (s *HTTPServer) createBlockCreateTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.create",
-		Description: "Create a new block inside a workspace. Use for notes, tasks, paragraphs, views, indicator records, etc.",
+		Description: "Create a new block inside a workspace. Use for notes, tasks, paragraphs, views, indicator records, etc. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID. Required."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Required. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional client-supplied key; second call with same key is a no-op replay returning the original op_ids."),
 				"payload":         blockstoreObjectProp("Block spec: {id?, type, data, text?, meta?}. `type` must be a registered block type key."),
 			},
@@ -40,11 +40,11 @@ func (s *HTTPServer) createBlockCreateTool() *MCPTool {
 func (s *HTTPServer) createBlockUpdateTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.update",
-		Description: "Update an existing block's data, text, or meta. Pass expected_updated_at inside payload for optimistic concurrency.",
+		Description: "Update an existing block's data, text, or meta. Pass expected_updated_at inside payload for optimistic concurrency. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"payload":         blockstoreObjectProp("{id, data?, text?, meta?, expected_updated_at?}"),
 			},
@@ -59,11 +59,11 @@ func (s *HTTPServer) createBlockUpdateTool() *MCPTool {
 func (s *HTTPServer) createBlockDeleteTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.delete",
-		Description: "Soft-delete a block. Incoming refs are not cascaded; downstream consumers treat dangling targets as tombstones.",
+		Description: "Soft-delete a block. Incoming refs are not cascaded; downstream consumers treat dangling targets as tombstones. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"payload":         blockstoreObjectProp("{id}"),
 			},
@@ -78,11 +78,11 @@ func (s *HTTPServer) createBlockDeleteTool() *MCPTool {
 func (s *HTTPServer) createBlockAddRefTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.add_ref",
-		Description: "Create a typed relationship from one block to another. Use rel='nest' (with order_key) for parent→child placement.",
+		Description: "Create a typed relationship from one block to another. Use rel='nest' (with order_key) for parent→child placement. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"payload":         blockstoreObjectProp("{from, to, rel, order_key?, anchor?}"),
 			},
@@ -97,11 +97,11 @@ func (s *HTTPServer) createBlockAddRefTool() *MCPTool {
 func (s *HTTPServer) createBlockRemoveRefTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.remove_ref",
-		Description: "Delete a block-to-block ref by its integer id.",
+		Description: "Delete a block-to-block ref by its integer id. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"payload":         blockstoreObjectProp("{ref_id}"),
 			},
@@ -116,11 +116,11 @@ func (s *HTTPServer) createBlockRemoveRefTool() *MCPTool {
 func (s *HTTPServer) createBlockUpdateRefTool() *MCPTool {
 	return &MCPTool{
 		Name:        "block.update_ref",
-		Description: "Reposition or re-annotate a ref (change parent, order_key, anchor, or meta). For rel='nest' this is the canonical 'move' operation.",
+		Description: "Reposition or re-annotate a ref (change parent, order_key, anchor, or meta). For rel='nest' this is the canonical 'move' operation. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"payload":         blockstoreObjectProp("{ref_id, from?, order_key?, anchor?, meta?}"),
 			},

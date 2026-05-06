@@ -21,6 +21,7 @@ go_library(
         "http_tools_block_helpers.go",
         "http_tools_block_query.go",
         "http_tools_block_sugar.go",
+        "http_tools_block_workspace.go",
         "http_tools_channel.go",
         "http_tools_channel_messaging.go",
         "http_tools_discovery.go",
@@ -69,6 +70,7 @@ go_test(
         "http_server_tool_call_test.go",
         "http_tools_binding_test.go",
         "http_tools_block_test.go",
+        "http_tools_block_workspace_test.go",
         "http_tools_channel_basic_test.go",
         "http_tools_channel_filters_test.go",
         "http_tools_channel_params_test.go",
@@ -93,7 +95,9 @@ go_test(
     ],
     embed = [":mcp"],
     deps = [
+        "//runner/internal/mcp/tools",
         "//runner/internal/testutil",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

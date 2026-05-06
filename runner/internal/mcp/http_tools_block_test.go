@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Block Store MCP tool registration — regression coverage for the 10 tools
-// (6 primitives + 3 sugar + block.list_types) that a pod's tools/list response
-// must carry. A missing tool here means agents in pods stop seeing that
-// capability; the check is cheap and the registration list is one-line-add
-// drift-prone.
+// Block Store MCP tool registration — regression coverage for the 12 tools
+// (6 primitives + 2 sugar + memory.retrieve + block.list_types + 2 workspace
+// discovery) that a pod's tools/list response must carry. A missing tool here
+// means agents in pods stop seeing that capability; the check is cheap and
+// the registration list is one-line-add drift-prone.
 //
 // Handler-level behaviour is covered by the end-to-end trigger-fire /
 // block-crud e2e specs; this file only ensures the registration surface.
@@ -28,6 +28,8 @@ func TestRegisterTools_IncludesAllBlockTools(t *testing.T) {
 		"trigger.define",
 		"memory.retrieve",
 		"block.list_types",
+		"block.list_workspaces",
+		"block.get_default_workspace",
 	}
 	have := make(map[string]bool, len(server.tools))
 	for _, tool := range server.tools {

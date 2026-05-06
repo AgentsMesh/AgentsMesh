@@ -151,6 +151,10 @@ func (a *GRPCRunnerAdapter) dispatchMcpMethod(ctx context.Context, tc *middlewar
 		return a.mcpMemoryRetrieve(ctx, tc, req.Payload)
 	case "block.list_types":
 		return a.mcpBlockListTypes(ctx, tc, req.Payload)
+	case "block.list_workspaces":
+		return a.mcpBlockListWorkspaces(ctx, tc, req.Payload)
+	case "block.get_default_workspace":
+		return a.mcpBlockGetDefaultWorkspace(ctx, tc, req.Payload)
 
 	default:
 		return nil, newMcpErrorf(400, "unknown MCP method: %s", req.Method)

@@ -14,11 +14,11 @@ import (
 func (s *HTTPServer) createIndicatorDefineTool() *MCPTool {
 	return &MCPTool{
 		Name:        "indicator.define",
-		Description: "Register a schema-driven indicator type (e.g. 'okr', 'incident'). Records of this type can then be created via block.create.",
+		Description: "Register a schema-driven indicator type (e.g. 'okr', 'incident'). Records of this type can then be created via block.create. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"arguments":       blockstoreObjectProp("{type_key, label?, description?, revision?, default_view?, supported_views?, allowed_children?, columns[]}"),
 			},
@@ -33,11 +33,11 @@ func (s *HTTPServer) createIndicatorDefineTool() *MCPTool {
 func (s *HTTPServer) createTriggerDefineTool() *MCPTool {
 	return &MCPTool{
 		Name:        "trigger.define",
-		Description: "Register a reactive rule: 'when create/update/delete happens on type X, fire action'. Webhook targets are SSRF-checked backend-side.",
+		Description: "Register a reactive rule: 'when create/update/delete happens on type X, fire action'. Webhook targets are SSRF-checked backend-side. If you don't know the workspace_id, call block.list_workspaces or block.get_default_workspace first.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"workspace_id":    blockstoreStringProp("Workspace UUID."),
+				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
 				"arguments":       blockstoreObjectProp("{name, target_type, on ('create'|'update'|'delete'), predicate?, action: {kind, url?, agent_slug?, headers?}, enabled?}"),
 			},

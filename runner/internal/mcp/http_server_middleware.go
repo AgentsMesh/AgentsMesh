@@ -61,6 +61,8 @@ func (s *HTTPServer) registerTools() {
 		s.createTriggerDefineTool(),
 		s.createMemoryRetrieveTool(),
 		s.createBlockListTypesTool(),
+		s.createBlockListWorkspacesTool(),
+		s.createBlockGetDefaultWorkspaceTool(),
 	}
 }
 

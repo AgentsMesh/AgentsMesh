@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"sync"
 	"time"
 
@@ -107,7 +108,16 @@ func (s *HTTPServer) Start() error {
 	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	addr := fmt.Sprintf("127.0.0.1:%d", s.port)
+	// Bind host: defaults to loopback so the MCP HTTP surface isn't reachable
+	// from outside the runner host (it carries pod-scoped X-Pod-Key auth, not
+	// proper auth). Override via AGENTSMESH_MCP_BIND env when running inside a
+	// container — docker port mappings only forward to interfaces the process
+	// listens on, so a 127.0.0.1-only bind is invisible from the host.
+	bindHost := os.Getenv("AGENTSMESH_MCP_BIND")
+	if bindHost == "" {
+		bindHost = "127.0.0.1"
+	}
+	addr := fmt.Sprintf("%s:%d", bindHost, s.port)
 	s.httpServer = &http.Server{
 		Addr:         addr,
 		Handler:      mux,

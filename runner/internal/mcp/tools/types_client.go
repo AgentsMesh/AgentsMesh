@@ -76,6 +76,8 @@ type BlockStoreClient interface {
 	TriggerDefine(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error)
 	MemoryRetrieve(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error)
 	BlockListTypes(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error)
+	BlockListWorkspaces(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error)
+	BlockGetDefaultWorkspace(ctx context.Context, args map[string]interface{}) (map[string]interface{}, error)
 }
 
 // CollaborationClient combines all collaboration interfaces.
