@@ -179,6 +179,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service backend --version ${VERSION}"
+          ssh aliyun-us-west-001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-uswest-web:
     name: Deploy US West Web
@@ -189,6 +190,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web --version ${VERSION}"
+          ssh aliyun-us-west-001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-uswest-web-admin:
     name: Deploy US West Web-Admin
@@ -199,6 +201,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web-admin --version ${VERSION}"
+          ssh aliyun-us-west-001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-uswest-relay-01:
     name: Deploy US West Relay 01
@@ -208,6 +211,7 @@ jobs:
     steps:
       - run: |
           ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-01 --pull"
+          ssh aliyun-us-west-relay-001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-uswest-relay-beijing-02:
     name: Deploy US West Relay Beijing 02
@@ -217,6 +221,7 @@ jobs:
     steps:
       - run: |
           ssh aliyun-agentsmesh-us-relay-beijing-002 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-beijing-02 --pull"
+          ssh aliyun-agentsmesh-us-relay-beijing-002 'docker image prune -af --filter "until=168h"' || true
 
   migrate-uswest:
     name: Migrate US West
@@ -240,6 +245,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service backend --version ${VERSION}"
+          ssh aliyun-s001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-cn-web:
     name: Deploy CN Web
@@ -250,6 +256,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web --version ${VERSION}"
+          ssh aliyun-s001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-cn-web-admin:
     name: Deploy CN Web-Admin
@@ -260,6 +267,7 @@ jobs:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
           ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web-admin --version ${VERSION}"
+          ssh aliyun-s001 'docker image prune -af --filter "until=168h"' || true
 
   deploy-cn-relay-01:
     name: Deploy CN Relay 01
@@ -269,6 +277,7 @@ jobs:
     steps:
       - run: |
           ssh aliyun-cn-relay-01 "cd /opt/agentsmesh/relay && ./deploy.sh cn-relay-01 --pull"
+          ssh aliyun-cn-relay-01 'docker image prune -af --filter "until=168h"' || true
 
   migrate-cn:
     name: Migrate CN
