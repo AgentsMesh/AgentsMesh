@@ -64,8 +64,20 @@ jobs:
       # The hermetic Go SDK + rules_pkg replace the goreleaser-action that
       # previously did the same job via `go build` + nfpm. See
       # build_defs/release/release_bundle.bzl.
+      #
+      # `--stamp` + `workspace_status.sh` injects the tag into
+      # `main.version` via the `cross_binary(x_defs)` template (see
+      # build_defs/release/cross_binary.bzl). Without these flags the
+      # binaries ship the source-tree placeholder `"dev"`.
       - name: Build release assets
-        run: bazel build //runner/cmd/runner:release_assets
+        env:
+          IMAGE_VERSION: ${{ needs.version.outputs.version }}
+          IMAGE_MINOR: ${{ needs.version.outputs.minor }}
+        run: |
+          bazel build \
+            --stamp \
+            --workspace_status_command=build_defs/workspace_status.sh \
+            //runner/cmd/runner:release_assets
 
       # Install rcodesign — cross-platform Apple code signing tool. Runs on
       # ubuntu-latest because rcodesign signs Mach-O binaries from any host

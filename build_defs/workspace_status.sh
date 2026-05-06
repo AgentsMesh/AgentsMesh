@@ -26,5 +26,16 @@ fi
 
 minor="${IMAGE_MINOR:-${version}}"
 
+# `STABLE_RUNNER_VERSION` is what `agentsmesh-runner --version` prints
+# at runtime. Identical to `STABLE_IMAGE_VERSION` today (both derived
+# from $IMAGE_VERSION) but kept under a distinct key so semantic intent
+# is clear: image-tag stamping is for OCI registries; binary stamping
+# is for `main.version` injected via `cross_binary(x_defs)`. The two
+# could diverge later (e.g. SemVer for the binary, sha-prefix for the
+# image) without churning consumers on either side.
+build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
 echo "STABLE_IMAGE_VERSION ${version}"
 echo "STABLE_IMAGE_MINOR ${minor}"
+echo "STABLE_RUNNER_VERSION ${version}"
+echo "STABLE_BUILD_TIME ${build_time}"
