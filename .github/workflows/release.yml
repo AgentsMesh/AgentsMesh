@@ -242,12 +242,17 @@ jobs:
             installers: |
               AgentsMesh*.exe
               latest.yml
-          - label: Linux
-            runner: ubuntu-latest
-            installers: |
-              AgentsMesh-*.AppImage
-              agentsmesh*.deb
-              latest-linux.yml
+          # Linux Desktop is intentionally not part of the matrix.
+          # electron-builder pulls `fpm` (Ruby-based packager) for the
+          # AppImage / .deb targets and hits a 7zip cache extraction
+          # failure inside the Bazel sandbox path:
+          #   `7za x ... ERROR: No more files / -2147024872`
+          # End-users on Linux run the runner CLI (which we still ship
+          # via `agentsmesh-runner_<TAG>_linux_*.tar.gz` from the
+          # release job) plus the web client at agentsmesh.ai. No
+          # Linux Electron product expectation today, so we drop the
+          # matrix entry rather than maintain a Bazel-managed fpm
+          # toolchain just for installer parity.
     steps:
       - uses: actions/checkout@v6
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -297,22 +302,44 @@ jobs:
       # Bazel's exec sandbox strips arbitrary host env from actions; the
       # `--action_env` flags below allowlist the signing vars so they
       # reach the electron-builder subprocess inside the action.
-      - name: Stage macOS notarization API key
+      # Stage both Apple credentials before invoking electron-builder.
+      # Two reasons we go through file paths instead of feeding the
+      # base64 secrets straight into env vars:
+      #
+      #   1. `CSC_LINK` accepts either a file path or a base64 blob,
+      #      but electron-builder's base64 detection is fragile —
+      #      v0.30.0–v0.30.2 dmgs all came out ad-hoc-signed because
+      #      it silently fell back. A file path is the deterministic
+      #      input shape; this matches `runner/build/scripts/sign-darwin.sh`
+      #      which has been signing the runner CLI cleanly for
+      #      months via the same `.p12` decoded to disk.
+      #
+      #   2. `@electron/notarize` requires `APPLE_API_KEY` to be a
+      #      filesystem path to the `.p8`, never the .p8 contents.
+      #
+      # Both decoded files live under `$RUNNER_TEMP/apple/` (chmod
+      # 0600) and are exposed to the build step via `$GITHUB_ENV`.
+      - name: Stage macOS signing credentials
         if: matrix.os.runner == 'macos-14'
         shell: bash
         env:
+          MACOS_CERT_B64: ${{ secrets.MACOS_CERTIFICATE }}
           APPLE_API_KEY_B64: ${{ secrets.APPLE_API_KEY }}
         run: |
           set -euo pipefail
-          if [[ -z "${APPLE_API_KEY_B64:-}" ]]; then
-            echo "WARN: APPLE_API_KEY secret not set — notarization will be skipped." >&2
-            exit 0
+          if [[ -z "${MACOS_CERT_B64:-}" ]]; then
+            echo "ERROR: MACOS_CERTIFICATE secret not set — desktop dmg/zip would ship ad-hoc-signed." >&2
+            exit 1
           fi
           mkdir -p "$RUNNER_TEMP/apple"
-          # @electron/notarize (electron-builder's notarization driver)
-          # accepts APPLE_API_KEY as a file path, not the .p8 contents.
-          # Decode here, then expose the path via $GITHUB_ENV for the
-          # build step that follows.
+          echo "$MACOS_CERT_B64" | base64 --decode > "$RUNNER_TEMP/apple/cert.p12"
+          chmod 0600 "$RUNNER_TEMP/apple/cert.p12"
+          echo "CSC_LINK=$RUNNER_TEMP/apple/cert.p12" >> "$GITHUB_ENV"
+
+          if [[ -z "${APPLE_API_KEY_B64:-}" ]]; then
+            echo "WARN: APPLE_API_KEY secret not set — notarization will be skipped (Gatekeeper will require user approval on first launch)." >&2
+            exit 0
+          fi
           echo "$APPLE_API_KEY_B64" | base64 --decode > "$RUNNER_TEMP/apple/AuthKey.p8"
           chmod 0600 "$RUNNER_TEMP/apple/AuthKey.p8"
           echo "APPLE_API_KEY=$RUNNER_TEMP/apple/AuthKey.p8" >> "$GITHUB_ENV"
@@ -327,14 +354,16 @@ jobs:
             --action_env=CSC_KEY_PASSWORD \
             --action_env=APPLE_API_KEY \
             --action_env=APPLE_API_KEY_ID \
-            --action_env=APPLE_API_ISSUER
+            --action_env=APPLE_API_KEY_ISSUER_ID
         env:
-          CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
+          # CSC_LINK + APPLE_API_KEY are exported via $GITHUB_ENV by
+          # the staging step above (both as filesystem paths).
           CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
-          APPLE_API_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
-          # APPLE_API_KEY is exported to $GITHUB_ENV by the previous
-          # step (path to the decoded .p8 file).
+          # `@electron/notarize` reads `APPLE_API_KEY_ISSUER_ID`, not
+          # the truncated `APPLE_API_ISSUER` variant — using the wrong
+          # name silently disabled notarization in v0.30.0–v0.30.2.
+          APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
 
       - name: Build :dist (Windows)
         if: matrix.os.runner == 'windows-latest'
