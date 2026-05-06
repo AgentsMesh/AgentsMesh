@@ -47,10 +47,24 @@ def cross_binary(name, embed, goos, goarch, out, **kwargs):
         **kwargs: Forwarded to `go_binary` (e.g., `gc_linkopts`).
     """
     gc_linkopts = kwargs.pop("gc_linkopts", [])
+    user_x_defs = kwargs.pop("x_defs", {})
 
     # `-s -w` matches GoReleaser ldflags — strip symbol + DWARF tables
     # (~30% smaller binary, no impact on runtime).
     gc_linkopts = list(gc_linkopts) + ["-s", "-w"]
+
+    # Stamp `main.version` and `main.buildTime` so `agentsmesh-runner
+    # --version` reports the release tag instead of the source-tree
+    # default `"dev"`. The {STABLE_*} placeholders are interpreted by
+    # rules_go when the build is invoked with
+    # `--stamp --workspace_status_command=build_defs/workspace_status.sh`
+    # (see release.yml). Without `--stamp` the literals remain in the
+    # binary as-is — that's why local dev builds keep showing `"dev"`.
+    x_defs = {
+        "main.version": "{STABLE_RUNNER_VERSION}",
+        "main.buildTime": "{STABLE_BUILD_TIME}",
+    }
+    x_defs.update(user_x_defs)
 
     go_binary(
         name = name,
@@ -60,5 +74,6 @@ def cross_binary(name, embed, goos, goarch, out, **kwargs):
         out = out,
         pure = "on",
         gc_linkopts = gc_linkopts,
+        x_defs = x_defs,
         **kwargs
     )

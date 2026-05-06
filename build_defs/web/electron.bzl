@@ -176,6 +176,16 @@ def electron_builder_app(
             # installer metadata). Synthesised here so a single source-
             # tree config covers all three platforms.
             "homepage": "https://agentsmesh.ai",
+            # `author` (with `email`) is also strictly enforced on the
+            # Linux side — `electron-builder` reads it for AppImage
+            # X-Apparmor-Profile + .deb maintainer fields. Missing it
+            # blows up exactly like the missing `homepage` did. mac dmg
+            # / win nsis are tolerant but pull `author.name` into
+            # CFBundleDisplayName / installer Author metadata when set.
+            "author": {
+                "name": "AgentsMesh",
+                "email": "support@agentsmesh.ai",
+            },
         },
     )
 

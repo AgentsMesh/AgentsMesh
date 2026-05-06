@@ -103,6 +103,13 @@ def napi_rust_library(
     # `outs` list is static (Bazel forbids `select` on outs), so the
     # per-platform names are spelled out below; the `alias` ensures
     # consumers see only the slice that matches the current build.
+    #
+    # `cmd` filters SRCS to the actual dynamic library: rust_shared_library
+    # exposes `<name>.dll` *plus* `<name>.dll.lib` (the import library) on
+    # Windows, so `cp $(SRCS) $@` interprets the second file as the
+    # destination dir and fails with "is not a directory". The case match
+    # below picks the dylib by extension on every host (.dll / .so /
+    # .dylib) and ignores the import lib + .pdb companions.
     if binary_name:
         for suffix in _PLATFORM_SUFFIXES.values():
             out_name = "{}.{}.node".format(binary_name, suffix)
@@ -110,7 +117,7 @@ def napi_rust_library(
                 name = "_{}_rename_{}".format(name, suffix.replace("-", "_")),
                 srcs = [":_{}_cdylib".format(name)],
                 outs = [out_name],
-                cmd = "cp $(SRCS) $@",
+                cmd = "for f in $(SRCS); do case \"$$f\" in *.dll|*.so|*.dylib) cp \"$$f\" \"$@\";; esac; done",
                 tags = ["manual"],
             )
 
@@ -136,7 +143,7 @@ def napi_rust_library(
             name = "_{}_rename".format(name),
             srcs = [":_{}_cdylib".format(name)],
             outs = ["{}.node".format(name)],
-            cmd = "cp $(SRCS) $@",
+            cmd = "for f in $(SRCS); do case \"$$f\" in *.dll|*.so|*.dylib) cp \"$$f\" \"$@\";; esac; done",
         )
 
     data = [":_{}_rename".format(name)]
