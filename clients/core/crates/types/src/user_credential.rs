@@ -86,7 +86,15 @@ pub struct RepositoryProvider {
     pub provider_type: String,
     pub name: String,
     pub base_url: Option<String>,
+    #[serde(default)]
+    pub has_client_id: Option<bool>,
+    #[serde(default)]
+    pub has_bot_token: Option<bool>,
+    #[serde(default)]
+    pub has_identity: Option<bool>,
     pub is_default: Option<bool>,
+    #[serde(default)]
+    pub is_active: Option<bool>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
@@ -103,11 +111,18 @@ pub struct CreateRepositoryProviderRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateRepositoryProviderRequest {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bot_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_active: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,4 +144,125 @@ pub struct ProviderRepository {
 pub struct ProviderRepositoryListResponse {
     pub repositories: Vec<ProviderRepository>,
     pub total: Option<i64>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn repository_provider_preserves_backend_fields() {
+        let backend_json = r#"{
+            "id": 42,
+            "provider_type": "github",
+            "name": "GitHub",
+            "base_url": "https://github.com",
+            "has_client_id": false,
+            "has_bot_token": false,
+            "has_identity": true,
+            "is_default": true,
+            "is_active": true,
+            "created_at": "2026-05-06T00:00:00Z",
+            "updated_at": "2026-05-06T00:00:00Z"
+        }"#;
+
+        let provider: RepositoryProvider = serde_json::from_str(backend_json).unwrap();
+        assert_eq!(provider.is_active, Some(true));
+        assert_eq!(provider.has_identity, Some(true));
+        assert_eq!(provider.has_bot_token, Some(false));
+        assert_eq!(provider.has_client_id, Some(false));
+
+        let reserialized = serde_json::to_value(&provider).unwrap();
+        assert_eq!(reserialized["is_active"], serde_json::json!(true));
+        assert_eq!(reserialized["has_identity"], serde_json::json!(true));
+        assert_eq!(reserialized["has_bot_token"], serde_json::json!(false));
+        assert_eq!(reserialized["has_client_id"], serde_json::json!(false));
+    }
+
+    #[test]
+    fn repository_provider_tolerates_missing_optional_fields() {
+        let minimal_json = r#"{
+            "id": 1,
+            "provider_type": "gitlab",
+            "name": "GitLab"
+        }"#;
+
+        let provider: RepositoryProvider = serde_json::from_str(minimal_json).unwrap();
+        assert_eq!(provider.is_active, None);
+        assert_eq!(provider.has_identity, None);
+    }
+
+    #[test]
+    fn update_repository_provider_request_round_trip_keeps_is_active() {
+        let frontend_json = r#"{"is_active":true}"#;
+        let req: UpdateRepositoryProviderRequest = serde_json::from_str(frontend_json).unwrap();
+        assert_eq!(req.is_active, Some(true));
+
+        let body = serde_json::to_value(&req).unwrap();
+        assert_eq!(body["is_active"], serde_json::json!(true));
+        assert!(
+            body.get("name").is_none(),
+            "skip_serializing_if should drop None fields so backend treats them as untouched"
+        );
+        assert!(body.get("client_id").is_none());
+    }
+
+    #[test]
+    fn update_repository_provider_request_round_trip_keeps_is_active_false() {
+        let frontend_json = r#"{"is_active":false}"#;
+        let req: UpdateRepositoryProviderRequest = serde_json::from_str(frontend_json).unwrap();
+        assert_eq!(req.is_active, Some(false));
+
+        let body = serde_json::to_value(&req).unwrap();
+        assert_eq!(body["is_active"], serde_json::json!(false));
+    }
+
+    #[test]
+    fn update_repository_provider_request_skips_omitted_fields() {
+        let req = UpdateRepositoryProviderRequest {
+            name: Some("Renamed".to_string()),
+            base_url: None,
+            client_id: None,
+            client_secret: None,
+            bot_token: None,
+            is_active: None,
+        };
+        let body = serde_json::to_value(&req).unwrap();
+        assert_eq!(body["name"], serde_json::json!("Renamed"));
+        assert!(body.get("is_active").is_none());
+        assert!(body.get("base_url").is_none());
+        assert!(body.get("client_secret").is_none());
+    }
+
+    #[test]
+    fn repository_provider_list_response_round_trip() {
+        let backend_json = r#"{
+            "providers": [
+                {
+                    "id": 1,
+                    "provider_type": "github",
+                    "name": "GitHub",
+                    "is_active": true,
+                    "has_identity": false
+                },
+                {
+                    "id": 2,
+                    "provider_type": "gitlab",
+                    "name": "GitLab Self-Hosted",
+                    "is_active": false,
+                    "has_bot_token": true
+                }
+            ]
+        }"#;
+
+        let resp: RepositoryProviderListResponse = serde_json::from_str(backend_json).unwrap();
+        assert_eq!(resp.providers.len(), 2);
+        assert_eq!(resp.providers[0].is_active, Some(true));
+        assert_eq!(resp.providers[1].is_active, Some(false));
+        assert_eq!(resp.providers[1].has_bot_token, Some(true));
+
+        let reserialized = serde_json::to_value(&resp).unwrap();
+        assert_eq!(reserialized["providers"][0]["is_active"], serde_json::json!(true));
+        assert_eq!(reserialized["providers"][1]["is_active"], serde_json::json!(false));
+    }
 }

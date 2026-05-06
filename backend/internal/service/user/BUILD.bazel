@@ -38,6 +38,7 @@ go_test(
         "mock_auth_test.go",
         "mock_basic_test.go",
         "mock_identity_test.go",
+        "repository_provider_test.go",
         "service_auth_test.go",
         "service_oauth_test.go",
         "service_setup_test.go",

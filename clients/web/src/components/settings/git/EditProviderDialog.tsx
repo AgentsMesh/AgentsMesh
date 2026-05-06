@@ -50,7 +50,10 @@ export function EditProviderDialog({ provider, onClose, onSuccess }: EditProvide
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div
+      data-testid="edit-provider-dialog"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
       <div className="bg-background rounded-lg shadow-lg w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold">{t("settings.gitSettings.providers.dialog.editTitle")}</h2>
@@ -105,8 +108,12 @@ export function EditProviderDialog({ provider, onClose, onSuccess }: EditProvide
             <label className="text-sm font-medium">
               {t("settings.gitSettings.providers.dialog.active")}
             </label>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label
+              data-testid="edit-provider-active-toggle-label"
+              className="relative inline-flex items-center cursor-pointer"
+            >
               <input
+                data-testid="edit-provider-active-toggle"
                 type="checkbox"
                 className="sr-only peer"
                 checked={isActive}
@@ -121,7 +128,11 @@ export function EditProviderDialog({ provider, onClose, onSuccess }: EditProvide
           <Button variant="outline" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button
+            data-testid="edit-provider-save-button"
+            onClick={handleSubmit}
+            disabled={saving}
+          >
             {saving ? t("common.loading") : t("common.save")}
           </Button>
         </div>

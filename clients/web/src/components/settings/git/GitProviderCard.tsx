@@ -23,10 +23,14 @@ export function GitProviderCard({
   onTestConnection,
   t,
 }: GitProviderCardProps) {
+  const isDisabled = provider.is_active === false;
   return (
     <div
+      data-testid="git-provider-card"
+      data-provider-id={provider.id}
+      data-is-active={provider.is_active === false ? "false" : "true"}
       className={`flex items-center justify-between p-4 rounded-lg border ${
-        !provider.is_active ? "opacity-60 bg-muted/30" : "bg-muted/50"
+        isDisabled ? "opacity-60 bg-muted/30" : "bg-muted/50"
       }`}
     >
       <div className="flex items-center gap-4">
@@ -41,8 +45,11 @@ export function GitProviderCard({
                 {t("settings.gitSettings.providers.default")}
               </span>
             )}
-            {!provider.is_active && (
-              <span className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full">
+            {isDisabled && (
+              <span
+                data-testid="git-provider-disabled-badge"
+                className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 rounded-full"
+              >
                 {t("settings.gitSettings.providers.disabled")}
               </span>
             )}
@@ -59,7 +66,12 @@ export function GitProviderCard({
         >
           <TestTube className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={onEdit}>
+        <Button
+          data-testid="git-provider-edit-button"
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+        >
           <Settings className="w-4 h-4" />
         </Button>
         <Button

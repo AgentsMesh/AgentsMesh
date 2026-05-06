@@ -22,6 +22,7 @@ alias(
 go_test(
     name = "user_test",
     srcs = [
+        "repository_provider_test.go",
         "user_test.go",
         "validation_test.go",
     ],

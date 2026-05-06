@@ -102,4 +102,98 @@ test.describe("Repository Providers API", () => {
 
     await api.delete(`/api/v1/users/repository-providers/${id}`);
   });
+
+  /**
+   * TC-REPOPROV-007: Created provider defaults to is_active=true and exposes has_* flags
+   *
+   * Regression for the user-reported bug where every provider showed as
+   * "已禁用" (disabled). The wasm-core RepositoryProvider struct used to drop
+   * is_active / has_identity / has_bot_token / has_client_id during the
+   * deserialize-then-reserialize relay, so the frontend always read undefined.
+   */
+  test("created provider exposes is_active=true and has_* flags by default", async ({ api }) => {
+    const createRes = await api.post("/api/v1/users/repository-providers", {
+      provider_type: "github",
+      name: "E2E IsActive Default",
+      base_url: "https://api.github.com",
+      bot_token: "ghp_default_active",
+    });
+    expect([200, 201]).toContain(createRes.status);
+    const data = await createRes.json();
+    const provider = data.provider ?? data;
+    const id = provider.id;
+
+    expect(provider.is_active).toBe(true);
+    expect(provider.has_bot_token).toBe(true);
+    expect(provider.has_client_id).toBe(false);
+    expect(provider.has_identity).toBe(false);
+
+    const listRes = await api.get("/api/v1/users/repository-providers");
+    const list = await listRes.json();
+    const inList = (list.providers as Array<{ id: number; is_active: boolean; has_bot_token: boolean }>)
+      .find((p) => p.id === id);
+    expect(inList?.is_active).toBe(true);
+    expect(inList?.has_bot_token).toBe(true);
+
+    await api.delete(`/api/v1/users/repository-providers/${id}`);
+  });
+
+  /**
+   * TC-REPOPROV-008: PUT is_active toggles the field and persists across reloads.
+   *
+   * This is the exact flow that broke under the wasm-core bug: the
+   * UpdateRepositoryProviderRequest struct lacked is_active, so sending
+   * {is_active: true} from EditProviderDialog produced an empty PUT body
+   * and the change silently no-op'd.
+   */
+  test("PUT is_active=false then is_active=true persists each toggle", async ({ api }) => {
+    const createRes = await api.post("/api/v1/users/repository-providers", {
+      provider_type: "github",
+      name: "E2E IsActive Toggle",
+      base_url: "https://api.github.com",
+      bot_token: "ghp_toggle_test",
+    });
+    const created = await createRes.json();
+    const id = (created.provider ?? created).id;
+
+    const offRes = await api.put(`/api/v1/users/repository-providers/${id}`, { is_active: false });
+    expect(offRes.status).toBe(200);
+    expect(((await offRes.json()).provider).is_active).toBe(false);
+
+    const reloadAfterOff = await api.get(`/api/v1/users/repository-providers/${id}`);
+    expect(((await reloadAfterOff.json()).provider).is_active).toBe(false);
+
+    const onRes = await api.put(`/api/v1/users/repository-providers/${id}`, { is_active: true });
+    expect(onRes.status).toBe(200);
+    expect(((await onRes.json()).provider).is_active).toBe(true);
+
+    const reloadAfterOn = await api.get(`/api/v1/users/repository-providers/${id}`);
+    expect(((await reloadAfterOn.json()).provider).is_active).toBe(true);
+
+    await api.delete(`/api/v1/users/repository-providers/${id}`);
+  });
+
+  /**
+   * TC-REPOPROV-009: Partial update (name only) preserves is_active.
+   */
+  test("partial update preserves is_active across renames", async ({ api }) => {
+    const createRes = await api.post("/api/v1/users/repository-providers", {
+      provider_type: "github",
+      name: "E2E Partial Original",
+      base_url: "https://api.github.com",
+      bot_token: "ghp_partial",
+    });
+    const id = ((await createRes.json()).provider).id;
+
+    await api.put(`/api/v1/users/repository-providers/${id}`, { is_active: false });
+
+    const renameRes = await api.put(`/api/v1/users/repository-providers/${id}`, {
+      name: "E2E Partial Renamed",
+    });
+    const renamed = (await renameRes.json()).provider;
+    expect(renamed.name).toBe("E2E Partial Renamed");
+    expect(renamed.is_active).toBe(false);
+
+    await api.delete(`/api/v1/users/repository-providers/${id}`);
+  });
 });
