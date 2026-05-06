@@ -10,7 +10,6 @@ require (
 	github.com/NdoleStudio/lemonsqueezy-go v1.3.1
 	github.com/alicebob/miniredis/v2 v2.37.0
 	github.com/anthropics/agentsmesh/agentfile v0.0.0
-	github.com/anthropics/agentsmesh/proto v0.0.0
 	github.com/aws/aws-sdk-go-v2 v1.41.3
 	github.com/aws/aws-sdk-go-v2/config v1.32.8
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.11
@@ -25,7 +24,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.12.3
 	github.com/maxmind/mmdbwriter v1.2.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/redis/go-redis/extra/redisotel/v9 v9.18.0
