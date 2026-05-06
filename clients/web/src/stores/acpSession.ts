@@ -10,6 +10,7 @@ export type { AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, A
 
 interface AcpSessionStore {
   _tick: number;
+  cache: Record<string, AcpSessionState>;
   addContentChunk: (podKey: string, sessionId: string, text: string, role: string) => void;
   markLastMessageComplete: (podKey: string) => void;
   updateToolCall: (podKey: string, sessionId: string, toolCall: AcpToolCall) => void;
@@ -24,24 +25,57 @@ interface AcpSessionStore {
 }
 
 const mgr = () => getAcpManager();
-const bump = () => useAcpSessionStore.setState((s) => ({ _tick: s._tick + 1 }));
+
+// WASM reads happen only inside mutators (same sync call stack as the
+// preceding &mut self write). Reads from React render only see this cache, so
+// wasm-bindgen's per-instance borrow flag never sees concurrent borrowers.
+function readSessionFromWasm(podKey: string): AcpSessionState | null {
+  try {
+    const raw = mgr().get_session_json(podKey);
+    if (!raw) return null;
+    return sessionFromWasm(typeof raw === "string" ? JSON.parse(raw) : raw);
+  } catch (err) {
+    console.error("[acpSession] wasm read failed", { podKey, err });
+    return null;
+  }
+}
+
+function refreshCache(podKey: string): void {
+  const session = readSessionFromWasm(podKey);
+  useAcpSessionStore.setState((s) => {
+    const next = { ...s.cache };
+    if (session) next[podKey] = session;
+    else delete next[podKey];
+    return { _tick: s._tick + 1, cache: next };
+  });
+}
+
+function dropFromCache(podKey: string): void {
+  useAcpSessionStore.setState((s) => {
+    if (!(podKey in s.cache)) return { _tick: s._tick + 1 };
+    const next = { ...s.cache };
+    delete next[podKey];
+    return { _tick: s._tick + 1, cache: next };
+  });
+}
 
 export const useAcpSessionStore = create<AcpSessionStore>(() => ({
   _tick: 0,
+  cache: {},
 
   addContentChunk: (podKey, _sid, text, role) => {
     mgr().add_content_chunk(podKey, text, role);
-    bump();
+    refreshCache(podKey);
   },
 
   markLastMessageComplete: (podKey) => {
     mgr().mark_last_message_complete(podKey);
-    bump();
+    refreshCache(podKey);
   },
 
   updateToolCall: (podKey, _sid, tc) => {
     mgr().update_tool_call(podKey, toolCallToWasm(tc));
-    bump();
+    refreshCache(podKey);
   },
 
   setToolCallResult: (podKey, _sid, id, success, resultText, errorMessage) => {
@@ -50,56 +84,54 @@ export const useAcpSessionStore = create<AcpSessionStore>(() => ({
       resultText || undefined,
       errorMessage || undefined,
     );
-    bump();
+    refreshCache(podKey);
   },
 
   updatePlan: (podKey, _sid, steps) => {
     mgr().update_plan(podKey, JSON.stringify(steps));
-    bump();
+    refreshCache(podKey);
   },
 
   addThinking: (podKey, _sid, text) => {
     mgr().add_thinking(podKey, text);
-    bump();
+    refreshCache(podKey);
   },
 
   addPermissionRequest: (podKey, req) => {
     mgr().add_permission_request(podKey, permReqToWasm(req));
-    bump();
+    refreshCache(podKey);
   },
 
   removePermissionRequest: (podKey, requestId) => {
     mgr().remove_permission_request(podKey, requestId);
-    bump();
+    refreshCache(podKey);
   },
 
   updateSessionState: (podKey, _sid, state) => {
     mgr().update_session_state(podKey, state);
-    bump();
+    refreshCache(podKey);
   },
 
   addLog: (podKey, level, message) => {
     mgr().add_log(podKey, level, message);
-    bump();
+    refreshCache(podKey);
   },
 
   clearSession: (podKey) => {
     mgr().clear_session(podKey);
-    bump();
+    dropFromCache(podKey);
   },
 }));
 
 export function readAcpSession(podKey: string): AcpSessionState | null {
-  const raw = mgr().get_session_json(podKey);
-  if (!raw) return null;
-  return sessionFromWasm(typeof raw === "string" ? JSON.parse(raw) : raw);
+  return useAcpSessionStore.getState().cache[podKey] ?? null;
 }
 
 export function useAcpSession(podKey: string | null | undefined): AcpSessionState | null {
   const tick = useAcpSessionStore((s) => s._tick);
   return useMemo(() => {
     if (!podKey) return null;
-    return readAcpSession(podKey);
+    return useAcpSessionStore.getState().cache[podKey] ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, podKey]);
 }
@@ -111,29 +143,26 @@ export function useAcpSessionField<T>(
   const tick = useAcpSessionStore((s) => s._tick);
   return useMemo(() => {
     if (!podKey) return pick(EMPTY_SESSION);
-    const s = readAcpSession(podKey);
-    return pick(s ?? EMPTY_SESSION);
+    const session = useAcpSessionStore.getState().cache[podKey];
+    return pick(session ?? EMPTY_SESSION);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, podKey]);
 }
 
-/** Test-only helper: seed the WASM-backed session directly, bumping tick so
- *  subscribed components re-render. Use inside beforeEach/each test setup. */
 export function __seedAcpSessionForTests(podKey: string, session: AcpSessionState): void {
   const mock = mgr() as unknown as { _seed: (k: string, s: unknown) => void };
   if (typeof mock._seed !== "function") {
     throw new Error("AcpManager mock does not support _seed — test-only API");
   }
   mock._seed(podKey, wasmFromSession(session));
-  useAcpSessionStore.setState((s) => ({ _tick: s._tick + 1 }));
+  refreshCache(podKey);
 }
 
-/** Test-only helper: reset the WASM-backed session store and tick. */
 export function __resetAcpSessionsForTests(): void {
   const mock = mgr() as unknown as { _reset: () => void };
   if (typeof mock._reset !== "function") {
     throw new Error("AcpManager mock does not support _reset — test-only API");
   }
   mock._reset();
-  useAcpSessionStore.setState({ _tick: 0 });
+  useAcpSessionStore.setState({ _tick: 0, cache: {} });
 }

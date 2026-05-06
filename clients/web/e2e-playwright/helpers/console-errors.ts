@@ -1,5 +1,4 @@
-import type { Page } from "@playwright/test";
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export function collectConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -22,4 +21,23 @@ export function assertNoWasmErrors(errors: string[]) {
       !e.includes("Failed to load resource")
   );
   expect(critical).toHaveLength(0);
+}
+
+/**
+ * wasm-bindgen's RefCell-style borrow check throws this exact string when
+ * `&mut self` and `&self` calls overlap on the same WASM object. The ACP
+ * session manager regression (render-time wasm read racing relay-driven
+ * mutators) surfaced as exactly this message.
+ */
+export function assertNoWasmRecursiveBorrow(errors: string[]) {
+  const offenders = errors.filter((e) =>
+    e.includes("recursive use of an object detected"),
+  );
+  expect(offenders, `wasm borrow conflict regressed:\n${offenders.join("\n")}`).toHaveLength(0);
+}
+
+export function collectPageErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("pageerror", (err) => errors.push(err.message));
+  return errors;
 }
