@@ -181,6 +181,7 @@ mod api_credential_tests {
         let data = agentsmesh_types::UpdateRepositoryProviderRequest {
             name: Some("Upd".into()), base_url: None,
             client_id: None, client_secret: None, bot_token: None,
+            is_active: None,
         };
         let _ = c.update_user_repository_provider(2, &data).await.unwrap();
     }

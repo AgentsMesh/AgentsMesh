@@ -3,7 +3,19 @@ use agentsmesh_types::{ProviderRepository, RepositoryProvider};
 use crate::git_provider_state::GitProviderState;
 
 fn make_provider(id: i64, ptype: &str) -> RepositoryProvider {
-    RepositoryProvider { id, provider_type: ptype.to_string(), name: format!("provider-{id}"), base_url: None, is_default: None, created_at: None, updated_at: None }
+    RepositoryProvider {
+        id,
+        provider_type: ptype.to_string(),
+        name: format!("provider-{id}"),
+        base_url: None,
+        has_client_id: None,
+        has_bot_token: None,
+        has_identity: None,
+        is_default: None,
+        is_active: None,
+        created_at: None,
+        updated_at: None,
+    }
 }
 
 fn make_project(id: &str) -> ProviderRepository {
