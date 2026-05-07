@@ -60,7 +60,13 @@ export function CreatePodForm({
   );
 
   // Form state management (receives configValues for AgentFile Layer generation)
-  const form = useCreatePodForm(availableAgents, repositories, onSuccess, configValues);
+  const form = useCreatePodForm(
+    availableAgents,
+    repositories,
+    onSuccess,
+    configValues,
+    { repositoryId: context?.ticket?.repositoryId ?? null },
+  );
 
   // Sync selected agent from form to local state for useConfigOptions
   useEffect(() => {

@@ -6,6 +6,7 @@ import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { Terminal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { Ticket } from "@/stores/ticket";
+import { buildTicketContext } from "./buildTicketContext";
 
 interface SpawnPodButtonProps {
   ticket: Ticket;
@@ -27,16 +28,8 @@ export function SpawnPodButton({
   const [showModal, setShowModal] = useState(false);
 
   const ticketContext = useMemo(
-    () =>
-      ticket.id
-        ? {
-            id: ticket.id,
-            slug: ticketSlug,
-            title: ticket.title,
-            repositoryId: ticket.repository_id,
-          }
-        : undefined,
-    [ticket.id, ticketSlug, ticket.title, ticket.repository_id],
+    () => buildTicketContext(ticket, ticketSlug),
+    [ticket, ticketSlug],
   );
 
   return (

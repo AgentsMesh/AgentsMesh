@@ -7,6 +7,11 @@ import { RUNNER_HOST_PROFILE_ID } from "./useCreatePodFormTypes";
 /**
  * Hook managing auto-fill from saved preferences when agents/repos become available.
  * Returns a ref that tracks whether preferences have been initialized.
+ *
+ * `overrides` lets callers declare explicit context (e.g. ticket repository) that
+ * must beat saved prefs. When a field is provided here, the matching pref branch
+ * is skipped so the explicit value can be applied by its own initializer without
+ * a race against this effect.
  */
 export function usePrefsAutoFill(
   availableAgents: AgentData[],
@@ -14,9 +19,11 @@ export function usePrefsAutoFill(
   setSelectedAgent: (slug: string | null) => void,
   setSelectedRepository: (id: number | null) => void,
   setSelectedBranch: (branch: string) => void,
+  overrides?: { repositoryId?: number | null },
 ) {
   const { lastAgentSlug, lastRepositoryId, lastBranchName } = usePodCreationStore();
   const prefsInitializedRef = useRef(false);
+  const overrideRepositoryId = overrides?.repositoryId ?? null;
 
   useEffect(() => {
     if (prefsInitializedRef.current || availableAgents.length === 0) return;
@@ -24,7 +31,11 @@ export function usePrefsAutoFill(
     if (lastAgentSlug && availableAgents.find(a => a.slug === lastAgentSlug)) {
       setSelectedAgent(lastAgentSlug);
     }
-    if (lastRepositoryId && repositories.find(r => r.id === lastRepositoryId)) {
+    if (
+      !overrideRepositoryId &&
+      lastRepositoryId &&
+      repositories.find(r => r.id === lastRepositoryId)
+    ) {
       setSelectedRepository(lastRepositoryId);
     }
     if (lastBranchName) {
@@ -32,7 +43,7 @@ export function usePrefsAutoFill(
     }
 
     prefsInitializedRef.current = true;
-  }, [availableAgents, repositories, lastAgentSlug, lastRepositoryId, lastBranchName, setSelectedAgent, setSelectedRepository, setSelectedBranch]);
+  }, [availableAgents, repositories, lastAgentSlug, lastRepositoryId, lastBranchName, overrideRepositoryId, setSelectedAgent, setSelectedRepository, setSelectedBranch]);
 
   return prefsInitializedRef;
 }
