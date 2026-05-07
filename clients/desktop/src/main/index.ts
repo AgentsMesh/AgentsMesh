@@ -2,9 +2,10 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
 import { AppState } from "@agentsmesh/node-bridge";
 import { createLocalRunnerStubs, type LocalRunnerStubMap } from "./local_runner_stubs";
+import { acquireSingleInstance } from "./single_instance";
 import {
   registerProtocol,
-  installSingleInstance,
+  attachSecondInstanceUrlHandler,
   installOpenUrlHandler,
   captureColdLaunchUrl,
   flushPendingUrl,
@@ -24,14 +25,14 @@ let mainWindow: BrowserWindow | null = null;
 
 const getMainWindow = () => mainWindow;
 
-// `agentsmesh://oauth/callback` deep link wiring. The single-instance
-// lock + protocol registration must run before whenReady so a second
-// launch sees the already-running instance instead of spawning a
-// duplicate, and so cold-launch argv is captured before any state is
-// torn down on the duplicate-process path.
-registerProtocol();
-installSingleInstance(getMainWindow);
-captureColdLaunchUrl();
+// MUST run before whenReady — single-instance lock is acquired sync,
+// and "second-instance" can fire before whenReady on the duplicate
+// launch path.
+if (acquireSingleInstance()) {
+  registerProtocol();
+  attachSecondInstanceUrlHandler(getMainWindow);
+  captureColdLaunchUrl();
+}
 
 function createWindow() {
   const win = new BrowserWindow({

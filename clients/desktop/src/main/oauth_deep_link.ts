@@ -35,21 +35,11 @@ export function registerProtocol(): void {
 }
 
 /**
- * Single-instance lock + second-instance handler. On Windows / Linux
- * the OS launches a fresh process with the protocol URL on argv when
- * the user clicks an `agentsmesh://` link; the running instance gets
- * a `second-instance` event with that argv and we extract the URL.
- *
- * MUST be called before `app.whenReady()` resolves — the lock is
- * acquired synchronously and the second-instance event fires before
- * whenReady on the second launch.
+ * Caller MUST acquire the single-instance lock first (see ./single_instance.ts) —
+ * without it the OS spawns a fresh process instead of waking us, and
+ * `second-instance` never fires.
  */
-export function installSingleInstance(getWindow: () => BrowserWindow | null): void {
-  const acquired = app.requestSingleInstanceLock();
-  if (!acquired) {
-    app.quit();
-    return;
-  }
+export function attachSecondInstanceUrlHandler(getWindow: () => BrowserWindow | null): void {
   app.on("second-instance", (_event, argv) => {
     const url = argv.find((a) => a.startsWith(PROTOCOL_PREFIX));
     if (url) deliver(getWindow(), url);
