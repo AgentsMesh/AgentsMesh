@@ -1,6 +1,7 @@
 import { test, expect } from "../../fixtures/index";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { clearAuthRateLimit } from "../../helpers/redis";
+import { CreatePodModal } from "../../pages/modals/create-pod.modal";
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -14,9 +15,9 @@ function escapeRegex(s: string): string {
  * `description`, so the preset prompt generator only emitted
  * "Work on ticket SLUG: title" and the prompt body was lost.
  *
- * The "prefs do not override ticket repo" half is covered by the unit test
- * usePrefsAutoFill.test.ts (deterministic) — keeping the e2e focused on the
- * UI prefill path so it doesn't fight zustand-persist hydration timing.
+ * The "ticket repo wins over prefs" half is covered exhaustively by the
+ * unit test usePrefsAutoFill.test.ts. This e2e protects the prompt-prefill
+ * UI path end-to-end.
  */
 test.describe("Ticket Spawn Pod context", () => {
   test.beforeEach(async () => { clearAuthRateLimit(); });
@@ -52,27 +53,26 @@ test.describe("Ticket Spawn Pod context", () => {
     });
 
     await page.goto(`/${TEST_ORG_SLUG}/tickets/${createdSlug}`);
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForLoadState("networkidle");
 
-    // Wait for the ticket title to render — proves currentTicket loaded and
-    // SpawnPodButton mounted (InlineEditableText renders the title in a
-    // <button>, not a heading, so use getByText).
+    // Wait for the ticket title to render (proves currentTicket loaded).
     await expect(page.getByText("E2E Spawn Pod From Ticket").first())
       .toBeVisible({ timeout: 30000 });
 
+    // Spawn Pod button is the prominent CTA in TicketDetail header.
+    // Use evaluate-based click as a hedge — Playwright's auto-wait
+    // sometimes races with React hydration on Next.js dev server.
     const spawnBtn = page.getByRole("button", { name: /spawn pod/i }).first();
     await expect(spawnBtn).toBeVisible({ timeout: 10000 });
-    await spawnBtn.scrollIntoViewIfNeeded();
-    await spawnBtn.click();
+    await spawnBtn.evaluate((el: HTMLButtonElement) => el.click());
 
-    // CreatePodModal renders <h2 id="create-pod-title">.
-    await expect(page.locator("#create-pod-title")).toBeVisible({ timeout: 15000 });
+    const modal = new CreatePodModal(page);
+    await modal.waitForOpen();
 
     const promptArea = page.locator('[role="dialog"] textarea').first();
     await expect(promptArea).toHaveValue(/E2E Spawn Pod From Ticket/);
     await expect(promptArea).toHaveValue(new RegExp(escapeRegex(description)));
 
-    // Repository select sits inside Advanced Options (collapsed by default).
     const advancedTrigger = page
       .locator('[role="dialog"]')
       .getByRole("button", { name: /advanced/i })
