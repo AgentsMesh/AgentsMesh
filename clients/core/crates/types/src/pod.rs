@@ -192,6 +192,7 @@ pub struct PodConnectionInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreatePodRequest {
+    #[serde(default)]
     pub agent_slug: String,
     pub agentfile_layer: Option<String>,
     pub runner_id: Option<i64>,
@@ -296,6 +297,22 @@ mod tests {
         assert_eq!(req.agent_slug, "aider");
         assert!(req.agentfile_layer.is_none());
         assert!(req.cols.is_none());
+    }
+
+    #[test]
+    fn create_pod_request_resume_without_agent_slug() {
+        let json = r#"{
+            "runner_id":1,
+            "source_pod_key":"pod-source",
+            "resume_agent_session":true,
+            "cols":120,
+            "rows":30
+        }"#;
+        let req: CreatePodRequest = serde_json::from_str(json).unwrap();
+        assert!(req.agent_slug.is_empty());
+        assert_eq!(req.runner_id, Some(1));
+        assert_eq!(req.source_pod_key.as_deref(), Some("pod-source"));
+        assert_eq!(req.resume_agent_session, Some(true));
     }
 
     #[test]

@@ -97,13 +97,14 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
     if (!runner || !resumingPod) return;
     setResumeLoading(true);
     try {
-      const res: { pod: { pod_key: string } } = JSON.parse(await getPodService().create_pod(JSON.stringify({
+      const res: { pod?: { pod_key: string }; pod_key?: string } = JSON.parse(await getPodService().create_pod(JSON.stringify({
+        agent_slug: resumingPod.agent_slug || "",
         runner_id: runner.id, source_pod_key: resumingPod.pod_key,
         resume_agent_session: true, cols: 120, rows: 30,
       })));
       setResumeDialogOpen(false);
       setResumingPod(null);
-      router.push(`/${params.org}/workspace?pod=${res.pod.pod_key}`);
+      router.push(`/${params.org}/workspace?pod=${(res.pod ?? res).pod_key}`);
     } catch (error) {
       toast.error(getLocalizedErrorMessage(error, t, t("common.error")));
     } finally {

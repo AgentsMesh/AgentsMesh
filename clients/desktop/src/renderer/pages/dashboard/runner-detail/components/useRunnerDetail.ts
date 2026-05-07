@@ -94,6 +94,7 @@ export function useRunnerDetail(t: (key: string) => string) {
     setResumeLoading(true);
     try {
       const res = await podApi.create({
+        agent_slug: resumingPod.agent_slug || "",
         runner_id: runner.id, source_pod_key: resumingPod.pod_key,
         resume_agent_session: true, cols: 120, rows: 30,
       });
