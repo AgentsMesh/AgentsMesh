@@ -143,7 +143,7 @@ func (m *mockFormatClient) CreateChannel(_ context.Context, _, _ string, _ *int,
 	}, nil
 }
 
-func (m *mockFormatClient) SendMessage(_ context.Context, _ int, _ string, _ tools.ChannelMessageType, _ []string, _ *int) (*tools.ChannelMessage, error) {
+func (m *mockFormatClient) SendMessage(_ context.Context, _ int, _, _ string, _ tools.ChannelMessageType, _ []string, _ *int) (*tools.ChannelMessage, error) {
 	return &tools.ChannelMessage{
 		ID: 100, ChannelID: 1, SenderPod: "test-pod", Content: "Hello",
 		MessageType: "text", CreatedAt: "2026-02-21T10:00:00Z",

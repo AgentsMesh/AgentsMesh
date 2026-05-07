@@ -33,7 +33,7 @@ type ChannelClient interface {
 	SearchChannels(ctx context.Context, name string, repositoryID *int, ticketSlug *string, isArchived *bool, offset, limit int) ([]Channel, error)
 	CreateChannel(ctx context.Context, name, description string, repositoryID *int, ticketSlug *string) (*Channel, error)
 	GetChannel(ctx context.Context, channelID int) (*Channel, error)
-	SendMessage(ctx context.Context, channelID int, content string, msgType ChannelMessageType, mentions []string, replyTo *int) (*ChannelMessage, error)
+	SendMessage(ctx context.Context, channelID int, content, source string, msgType ChannelMessageType, mentions []string, replyTo *int) (*ChannelMessage, error)
 	GetMessages(ctx context.Context, channelID int, beforeTime, afterTime *string, mentionedPod *string, limit int) ([]ChannelMessage, error)
 	GetDocument(ctx context.Context, channelID int) (string, error)
 	UpdateDocument(ctx context.Context, channelID int, document string) error

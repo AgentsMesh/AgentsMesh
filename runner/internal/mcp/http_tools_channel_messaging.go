@@ -22,7 +22,11 @@ func (s *HTTPServer) createSendChannelMessageTool() *MCPTool {
 				},
 				"content": map[string]interface{}{
 					"type":        "string",
-					"description": "The message content",
+					"description": "Plain-text message content (no markdown rendering). Use 'source' to send markdown.",
+				},
+				"source": map[string]interface{}{
+					"type":        "string",
+					"description": "Markdown source — server parses to a structured message (headings, lists, code blocks, etc.). Mutually exclusive with 'content'.",
 				},
 				"message_type": map[string]interface{}{
 					"type":        "string",
@@ -39,24 +43,28 @@ func (s *HTTPServer) createSendChannelMessageTool() *MCPTool {
 					"description": "Message ID to reply to (optional)",
 				},
 			},
-			"required": []string{"channel_id", "content"},
+			"required": []string{"channel_id"},
 		},
 		Handler: func(ctx context.Context, client tools.CollaborationClient, args map[string]interface{}) (interface{}, error) {
 			channelID := getIntArg(args, "channel_id")
 			content := getStringArg(args, "content")
+			source := getStringArg(args, "source")
 			msgType := getStringArg(args, "message_type")
 			mentions := getStringSliceArg(args, "mentions")
 			replyTo := getIntPtrArg(args, "reply_to")
 
-			if channelID == 0 || content == "" {
-				return nil, fmt.Errorf("channel_id and content are required")
+			if channelID == 0 {
+				return nil, fmt.Errorf("channel_id is required")
+			}
+			if content == "" && source == "" {
+				return nil, fmt.Errorf("content or source is required")
 			}
 
 			if msgType == "" {
 				msgType = "text"
 			}
 
-			return client.SendMessage(ctx, channelID, content, tools.ChannelMessageType(msgType), mentions, replyTo)
+			return client.SendMessage(ctx, channelID, content, source, tools.ChannelMessageType(msgType), mentions, replyTo)
 		},
 	}
 }

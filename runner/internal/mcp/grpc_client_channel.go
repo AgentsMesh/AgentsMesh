@@ -70,12 +70,18 @@ func (c *GRPCCollaborationClient) GetChannel(ctx context.Context, channelID int)
 	return &result.Channel, nil
 }
 
-// SendMessage sends a message to a channel.
-func (c *GRPCCollaborationClient) SendMessage(ctx context.Context, channelID int, content string, msgType tools.ChannelMessageType, mentions []string, replyTo *int) (*tools.ChannelMessage, error) {
+// SendMessage sends a message to a channel. `content` is plain text;
+// `source` is markdown that the backend will parse. Exactly one of the two
+// must be set (validated upstream).
+func (c *GRPCCollaborationClient) SendMessage(ctx context.Context, channelID int, content, source string, msgType tools.ChannelMessageType, mentions []string, replyTo *int) (*tools.ChannelMessage, error) {
 	params := map[string]interface{}{
 		"channel_id":   channelID,
-		"content":      content,
 		"message_type": msgType,
+	}
+	if source != "" {
+		params["source"] = source
+	} else {
+		params["content"] = content
 	}
 	if len(mentions) > 0 {
 		params["mentions"] = mentions
