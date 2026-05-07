@@ -26,18 +26,11 @@ export function CreatePodModal({ open, onClose, onCreated, ticketContext }: Crea
   // Focus trap for modal accessibility
   const modalRef = useFocusTrap<HTMLDivElement>(open, onClose);
 
-  // Build form configuration based on ticket context
+  // Build form configuration based on ticket context.
+  // promptGenerator is supplied by mergeConfig via the "ticket" preset.
   const formConfig: CreatePodFormConfig = useMemo(() => ({
     scenario: ticketContext ? "ticket" : "workspace",
     context: ticketContext ? { ticket: ticketContext } : undefined,
-    promptGenerator: ticketContext
-      ? (ctx) => {
-          if (!ctx.ticket) return "";
-          return `Work on ticket ${ctx.ticket.slug}: ${ctx.ticket.title}${
-            ctx.ticket.description ? `\n\n${ctx.ticket.description}` : ""
-          }`;
-        }
-      : undefined,
     onSuccess: (pod) => {
       onCreated(pod);
       onClose();

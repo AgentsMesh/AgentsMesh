@@ -233,4 +233,69 @@ describe("CreatePodForm", () => {
     });
   });
 
+  describe("ticket context priority over prefs", () => {
+    it("forwards ticket repositoryId as override into useCreatePodForm", () => {
+      vi.mocked(usePodCreationData).mockReturnValue({
+        ...defaultPodCreationData,
+        runners: [mockRunner],
+        availableAgents: [mockAgent],
+      });
+
+      render(
+        <CreatePodForm
+          config={{
+            scenario: "ticket",
+            context: {
+              ticket: { id: 1, slug: "T-1", title: "x", repositoryId: 42 },
+            },
+          }}
+        />,
+      );
+
+      const lastCall = vi.mocked(useCreatePodForm).mock.calls.at(-1);
+      expect(lastCall?.[4]).toEqual({ repositoryId: 42 });
+    });
+
+    it("passes null override when no ticket context is provided", () => {
+      render(<CreatePodForm config={{ scenario: "workspace" }} />);
+      const lastCall = vi.mocked(useCreatePodForm).mock.calls.at(-1);
+      expect(lastCall?.[4]).toEqual({ repositoryId: null });
+    });
+
+    it("seeds prompt with ticket title and description via preset", () => {
+      const setPrompt = vi.fn();
+      vi.mocked(usePodCreationData).mockReturnValue({
+        ...defaultPodCreationData,
+        runners: [mockRunner],
+        availableAgents: [mockAgent],
+      });
+      vi.mocked(useCreatePodForm).mockReturnValue({
+        ...defaultFormState,
+        selectedAgent: "claude-code",
+        setPrompt,
+      });
+
+      render(
+        <CreatePodForm
+          config={{
+            scenario: "ticket",
+            context: {
+              ticket: {
+                id: 5,
+                slug: "T-5",
+                title: "Fix flaky test",
+                description: "Reproduce locally then bisect.",
+              },
+            },
+          }}
+        />,
+      );
+
+      expect(setPrompt).toHaveBeenCalledTimes(1);
+      const seeded = setPrompt.mock.calls[0][0] as string;
+      expect(seeded).toContain("Work on ticket T-5: Fix flaky test");
+      expect(seeded).toContain("Reproduce locally then bisect.");
+    });
+  });
+
 });

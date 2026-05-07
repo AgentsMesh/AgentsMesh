@@ -22,7 +22,8 @@ export function useCreatePodForm(
   availableAgents: AgentData[],
   repositories: RepositoryData[],
   onSuccess?: (pod: PodData) => void,
-  configValues?: Record<string, unknown>
+  configValues?: Record<string, unknown>,
+  overrides?: { repositoryId?: number | null },
 ): CreatePodFormState {
   const { setLastChoices } = usePodCreationStore();
 
@@ -47,6 +48,7 @@ export function useCreatePodForm(
   // Auto-fill from saved preferences
   const prefsInitializedRef = usePrefsAutoFill(
     availableAgents, repositories, setSelectedAgent, setSelectedRepository, setSelectedBranch,
+    overrides,
   );
 
   // Compute agent slug from selected agent

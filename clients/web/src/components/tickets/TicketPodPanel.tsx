@@ -13,11 +13,13 @@ import { Terminal, ExternalLink, Plus } from "lucide-react";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
+import { buildTicketContext } from "./buildTicketContext";
 
 interface TicketPodPanelProps {
   ticketSlug: string;
   ticketTitle: string;
   ticketId?: number;
+  ticketContent?: string;
   repositoryId?: number;
   onPodCreated?: () => void;
 }
@@ -26,6 +28,7 @@ export default function TicketPodPanel({
   ticketSlug,
   ticketTitle,
   ticketId,
+  ticketContent,
   repositoryId,
   onPodCreated,
 }: TicketPodPanelProps) {
@@ -76,16 +79,15 @@ export default function TicketPodPanel({
         open={showCreateForm}
         onClose={handleCloseModal}
         onCreated={handlePodCreated}
-        ticketContext={
-          ticketId
-            ? {
-                id: ticketId,
-                slug: ticketSlug,
-                title: ticketTitle,
-                repositoryId: repositoryId,
-              }
-            : undefined
-        }
+        ticketContext={buildTicketContext(
+          {
+            id: ticketId,
+            title: ticketTitle,
+            content: ticketContent,
+            repository_id: repositoryId,
+          },
+          ticketSlug,
+        )}
       />
 
       <div className="space-y-2">

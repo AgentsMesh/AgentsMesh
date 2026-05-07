@@ -88,7 +88,7 @@ export function TicketDetailPane({ slug, onClose, className }: TicketDetailPaneP
           <SubTicketsList subTickets={subTickets} onTicketClick={handleTicketClick} compact />
           <RelationsList relations={relations} onTicketClick={handleTicketClick} compact />
           <CommitsList commits={commits} viewAllLink={`/${currentOrg?.slug}/tickets/${ticket.slug}`} compact />
-          <TicketPodPanel ticketSlug={slug} ticketTitle={ticket.title} ticketId={ticket.id} repositoryId={ticket.repository_id} />
+          <TicketPodPanel ticketSlug={slug} ticketTitle={ticket.title} ticketId={ticket.id} ticketContent={ticket.content} repositoryId={ticket.repository_id} />
         </div>
       </div>
 

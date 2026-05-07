@@ -14,6 +14,7 @@ import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { Play, Terminal, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildTicketContext } from "./buildTicketContext";
 
 export function SidebarPodSection({
   ticket,
@@ -47,9 +48,9 @@ export function SidebarPodSection({
   const activePods = pods.filter((p) => p.status === "running" || p.status === "initializing");
   const inactivePods = pods.filter((p) => p.status !== "running" && p.status !== "initializing");
 
-  const ticketContext = useMemo(() =>
-    ticket.id ? { id: ticket.id, slug: ticketSlug, title: ticket.title, repositoryId: ticket.repository_id } : undefined,
-    [ticket.id, ticketSlug, ticket.title, ticket.repository_id]
+  const ticketContext = useMemo(
+    () => buildTicketContext(ticket, ticketSlug),
+    [ticket, ticketSlug],
   );
 
   return (

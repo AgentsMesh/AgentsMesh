@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/auth";
 import { TicketKeyboardHandler } from "@/components/tickets";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
+import { buildTicketContext } from "@/components/tickets/buildTicketContext";
 import { useTranslations } from "next-intl";
 import { ListViewLayout, BoardViewLayout } from "./components";
 
@@ -107,12 +108,7 @@ export function TicketsPage() {
         onCreated={handleCreatePodClose}
         ticketContext={
           createPodTicket
-            ? {
-                id: createPodTicket.id,
-                slug: createPodTicket.slug,
-                title: createPodTicket.title,
-                repositoryId: createPodTicket.repository_id,
-              }
+            ? buildTicketContext(createPodTicket, createPodTicket.slug)
             : undefined
         }
       />
