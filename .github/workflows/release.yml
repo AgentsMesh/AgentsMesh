@@ -426,6 +426,15 @@ jobs:
       # upload + polling; `xcrun stapler staple` then attaches the
       # ticket to the dmg for offline Gatekeeper verification.
       #
+      # We also codesign the dmg container itself before notarization.
+      # electron-builder 25 should sign dmgs by default, but in our
+      # bazel-sandbox-driven build it often emits unsigned .dmg
+      # containers (the .app inside is signed correctly). spctl rejects
+      # unsigned dmgs with "no usable signature" even when the staple
+      # is attached (v0.30.7 hit this). Signing the dmg here covers
+      # the gap regardless of what electron-builder did inside the
+      # sandbox.
+      #
       # The dmg is staged into $RUNNER_TEMP/installers because bazel-bin
       # outputs are read-only — `stapler staple` modifies the dmg in
       # place. `cp -aR` preserves macOS extended attributes (xattrs)
@@ -457,7 +466,32 @@ jobs:
             echo "::error::no .dmg found under $STAGE after staging." >&2
             exit 1
           fi
+
+          # Resolve the Developer ID Application identity from the temp
+          # keychain set up earlier. `find-identity` prints lines like:
+          #   1) <hash> "Developer ID Application: Co. (TEAMID)"
+          # The quoted name is what `codesign --sign` accepts.
+          SIGN_IDENTITY=$(security find-identity -v -p codesigning \
+            | awk -F'"' '/Developer ID Application/ {print $2; exit}')
+          if [[ -z "$SIGN_IDENTITY" ]]; then
+            echo "::error::no Developer ID Application identity in keychain." >&2
+            exit 1
+          fi
+          echo "Signing identity: $SIGN_IDENTITY"
+
           for dmg in "${dmgs[@]}"; do
+            # codesign the dmg container if it isn't already signed.
+            # `--verify` exits 0 on a valid signature, non-zero
+            # otherwise; we re-sign on any failure rather than
+            # parsing the error string.
+            if codesign --verify "$dmg" >/dev/null 2>&1; then
+              echo "$dmg already signed, skipping codesign."
+            else
+              echo "Signing $dmg with $SIGN_IDENTITY..."
+              codesign --force --sign "$SIGN_IDENTITY" --timestamp "$dmg"
+              codesign --verify --verbose=2 "$dmg"
+            fi
+
             echo "Submitting $dmg to Apple Notary..."
             xcrun notarytool submit "$dmg" \
               --key "$APPLE_API_KEY" \
@@ -489,11 +523,15 @@ jobs:
           fi
           for dmg in "${dmgs[@]}"; do
             echo "Inspecting $dmg"
-            # codesign on the dmg itself proves Developer ID identity
-            # is wired (electron-builder signs the dmg as a separate
-            # bundle from the .app inside).
-            if codesign -dv "$dmg" 2>&1 | grep -q "Signature=adhoc"; then
-              echo "::error::$dmg is ad-hoc-signed; the codesign identity didn't reach electron-builder." >&2
+            # `codesign --verify` exits 0 when there's a valid
+            # signature, non-zero otherwise. The previous `grep
+            # Signature=adhoc` check was a false-pass on an unsigned
+            # dmg (output text doesn't contain "adhoc" so the
+            # negative-match check let it through). v0.30.7 hit this:
+            # dmg was unsigned but my grep let it pass, then spctl
+            # rejected with "no usable signature" downstream.
+            if ! codesign --verify --verbose=2 "$dmg" 2>&1; then
+              echo "::error::$dmg has no valid signature." >&2
               exit 1
             fi
             # Staple ticket present? — proves notarytool ran and
