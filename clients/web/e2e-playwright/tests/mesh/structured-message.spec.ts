@@ -270,6 +270,74 @@ test.describe("Structured Message — API", () => {
       expect(message.sender_pod).toBe(podKey);
     }
   });
+
+  test("source: heading + list + code block parse via goldmark", async ({ api }) => {
+    const source = "# Heading\n\n- item one\n- item two\n  - nested\n\n```go\nfunc main() {}\n```";
+    const res = await api.post(`${CHANNELS}/${channelId}/messages`, { source });
+    expect(res.status).toBe(201);
+    const { message } = await res.json();
+    const types = message.content.blocks.map((b: { type: string }) => b.type);
+    expect(types).toEqual(["heading", "list", "code_block"]);
+    expect(message.content.blocks[0].level).toBe(1);
+    expect(message.content.blocks[2].language).toBe("go");
+    expect(message.content.blocks[2].text).toBe("func main() {}");
+    // Body should include the code-block text now (extractBody fix)
+    expect(message.body).toContain("func main() {}");
+    // Nested list-item carries an inner list block
+    const outerItem = message.content.blocks[1].items[0];
+    const innerList = outerItem.find((b: { type: string }) => b.type === "list");
+    expect(innerList).toBeTruthy();
+  });
+
+  test("source: inline marks become typed style elements", async ({ api }) => {
+    const source = "**bold** *italic* ~~strike~~ `code`";
+    const res = await api.post(`${CHANNELS}/${channelId}/messages`, { source });
+    expect(res.status).toBe(201);
+    const { message } = await res.json();
+    const styles = message.content.blocks[0].elements
+      .filter((e: { type: string }) => e.type === "text" && e.style)
+      .map((e: { style: Record<string, boolean> }) => e.style);
+    expect(styles.some((s: Record<string, boolean>) => s.bold)).toBe(true);
+    expect(styles.some((s: Record<string, boolean>) => s.italic)).toBe(true);
+    expect(styles.some((s: Record<string, boolean>) => s.strike)).toBe(true);
+    expect(styles.some((s: Record<string, boolean>) => s.code)).toBe(true);
+  });
+
+  test("source: mention map upgrades @key into typed mention", async ({ api }) => {
+    const res = await api.post(`${CHANNELS}/${channelId}/messages`, {
+      source: "ping @dev-user please",
+      mentions: { "dev-user": { entity_type: "user", entity_key: "1" } },
+    });
+    expect(res.status).toBe(201);
+    const { message } = await res.json();
+    const mention = message.content.blocks[0].elements.find(
+      (e: { type: string }) => e.type === "mention"
+    );
+    expect(mention).toBeTruthy();
+    expect(mention.entity_key).toBe("1");
+    expect(message.mentions.users).toContain(1);
+  });
+
+  test("source: link with disallowed scheme degrades to plain text", async ({ api }) => {
+    const res = await api.post(`${CHANNELS}/${channelId}/messages`, {
+      source: "[click](javascript:alert(1)) and [ok](https://example.com)",
+    });
+    expect(res.status).toBe(201);
+    const { message } = await res.json();
+    const linkEls = message.content.blocks[0].elements.filter(
+      (e: { type: string }) => e.type === "link"
+    );
+    // Only the https link survives; javascript: degraded to text
+    expect(linkEls.map((e: { url: string }) => e.url)).toEqual(["https://example.com"]);
+  });
+
+  test("source: providing both source and content is a 400", async ({ api }) => {
+    const res = await api.post(`${CHANNELS}/${channelId}/messages`, {
+      source: "# H",
+      content: textContent("x"),
+    });
+    expect(res.status).toBe(400);
+  });
 });
 
 // ────────────────────────────────────────────────────
@@ -406,5 +474,38 @@ uiTest.describe("Structured Message — UI Rendering", () => {
 
     // Scope to message bodies — sidebar preview also shows "@dev-user" text.
     await uiExpect(page.locator("[data-message-id]").getByText("@dev-user").first()).toBeVisible({ timeout: 5000 });
+  });
+
+  uiTest("source-mode roundtrip renders heading + list + code", async ({ page, request }) => {
+    const name = "E2E StructUI Source " + Date.now();
+    await sidebar.navigateTo("channels");
+    await channels.createChannel(name);
+    await channels.selectChannel(name);
+
+    const apiBase = getApiBaseUrl();
+    const loginRes = await request.post(`${apiBase}/api/v1/auth/login`, {
+      data: { email: "dev@agentsmesh.local", password: "devpass123" },
+    });
+    const { token } = await loginRes.json();
+
+    const chListRes = await request.get(`${apiBase}/api/v1/orgs/${TEST_ORG_SLUG}/channels`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const { channels: chList } = await chListRes.json();
+    const ch = chList.find((c: { name: string }) => c.name === name);
+    if (!ch) { uiTest.skip(); return; }
+
+    await request.post(`${apiBase}/api/v1/orgs/${TEST_ORG_SLUG}/channels/${ch.id}/messages`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { source: "# Big heading\n\n- bullet a\n- bullet b\n\n```\nfn main() {}\n```" },
+    });
+
+    await page.reload();
+    await channels.selectChannel(name);
+
+    const bubble = page.locator("[data-message-id]").last();
+    await uiExpect(bubble.locator("h1, h2, h3").filter({ hasText: "Big heading" }).first()).toBeVisible({ timeout: 5000 });
+    await uiExpect(bubble.locator("ul li").filter({ hasText: "bullet a" })).toBeVisible({ timeout: 3000 });
+    await uiExpect(bubble.locator("pre code").filter({ hasText: "fn main()" })).toBeVisible({ timeout: 3000 });
   });
 });

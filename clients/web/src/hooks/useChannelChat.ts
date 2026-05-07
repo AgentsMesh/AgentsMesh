@@ -13,7 +13,7 @@ import { EMPTY_CACHE, LOAD_MORE_MESSAGE_LIMIT, useChannelMessages } from "@/stor
 import { useMeshStore, useTopology } from "@/stores/mesh";
 import { transformMessage } from "@/components/channel/transformMessage";
 import type { TransformedMessage } from "@/components/channel/types";
-import type { MessageContent } from "@/lib/api/channel-message-types";
+import type { MessageSendPayload, MessageEditPayload } from "@/lib/api/channel-message-types";
 
 interface UseChannelChatOptions {
   channelId: number;
@@ -31,8 +31,8 @@ interface UseChannelChatReturn {
   hasMore: boolean;
   currentUserId: number | undefined;
   handlePodsChanged: () => void;
-  handleSendMessage: (content: MessageContent) => Promise<void>;
-  handleEditMessage: (messageId: number, content: MessageContent) => Promise<void>;
+  handleSendMessage: (payload: MessageSendPayload) => Promise<void>;
+  handleEditMessage: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   handleDeleteMessage: (messageId: number) => Promise<void>;
   handleLoadMore: () => void;
   handleRefresh: () => void;
@@ -120,9 +120,9 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   }, [fetchTopology, fetchChannel, channelId]);
 
   const handleSendMessage = useCallback(
-    async (content: MessageContent) => {
+    async (payload: MessageSendPayload) => {
       try {
-        await sendMessage(channelId, content);
+        await sendMessage(channelId, payload);
       } catch (error) {
         console.error("Failed to send message:", error);
       }
@@ -131,8 +131,8 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   );
 
   const handleEditMessage = useCallback(
-    async (messageId: number, content: MessageContent) => {
-      await editMessage(channelId, messageId, content);
+    async (messageId: number, payload: MessageEditPayload) => {
+      await editMessage(channelId, messageId, payload);
     },
     [channelId, editMessage]
   );

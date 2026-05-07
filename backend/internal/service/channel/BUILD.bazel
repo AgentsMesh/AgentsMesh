@@ -12,6 +12,8 @@ go_library(
         "hook_notification.go",
         "hook_pod_prompt.go",
         "hooks.go",
+        "markdown.go",
+        "markdown_inline.go",
         "member.go",
         "member_event.go",
         "message.go",
@@ -26,6 +28,11 @@ go_library(
         "//backend/internal/domain/channel",
         "//backend/internal/domain/notification",
         "//backend/internal/infra/eventbus",
+        "@com_github_yuin_goldmark//:goldmark",
+        "@com_github_yuin_goldmark//ast",
+        "@com_github_yuin_goldmark//extension",
+        "@com_github_yuin_goldmark//extension/ast",
+        "@com_github_yuin_goldmark//text",
     ],
 )
 
@@ -51,6 +58,7 @@ go_test(
         "hook_notification_test.go",
         "hook_pod_prompt_test.go",
         "hooks_coverage_test.go",
+        "markdown_test.go",
         "member_coverage_test.go",
         "membership_test.go",
         "message_test.go",

@@ -153,8 +153,8 @@ describe("StructuredContent", () => {
         type: "list",
         ordered: true,
         items: [
-          [{ type: "text", text: "First" }],
-          [{ type: "text", text: "Second" }],
+          [{ type: "paragraph", elements: [{ type: "text", text: "First" }] }],
+          [{ type: "paragraph", elements: [{ type: "text", text: "Second" }] }],
         ],
       }],
     };
@@ -169,11 +169,30 @@ describe("StructuredContent", () => {
       blocks: [{
         type: "list",
         ordered: false,
-        items: [[{ type: "text", text: "Bullet" }]],
+        items: [[{ type: "paragraph", elements: [{ type: "text", text: "Bullet" }] }]],
       }],
     };
     render(<StructuredContent content={content} />);
     expect(screen.getByText("Bullet").closest("ul")).not.toBeNull();
+  });
+
+  it("renders nested list inside list item", () => {
+    const content: MessageContent = {
+      kind: "text",
+      blocks: [{
+        type: "list",
+        ordered: false,
+        items: [[
+          { type: "paragraph", elements: [{ type: "text", text: "Outer" }] },
+          { type: "list", ordered: false, items: [[
+            { type: "paragraph", elements: [{ type: "text", text: "Inner" }] },
+          ]] },
+        ]],
+      }],
+    };
+    render(<StructuredContent content={content} />);
+    const inner = screen.getByText("Inner");
+    expect(inner.closest("ul")?.parentElement?.tagName).toBe("LI");
   });
 
   it("renders linebreak element", () => {

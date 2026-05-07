@@ -5,6 +5,31 @@ import DesignSystem
 /// 8 个 bubble variant — 设计稿 ios-channel-detail.pastel。
 public enum MessageBubble {
 
+    public struct Content<Inner: View>: View {
+        let fillColor: Color
+        let inner: Inner
+        public init(fill: Color, @ViewBuilder content: () -> Inner) {
+            self.fillColor = fill
+            self.inner = content()
+        }
+        public var body: some View {
+            HStack {
+                inner
+                    .frame(maxWidth: 268, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(fillColor)
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(AMColors.border, lineWidth: 1))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 62)
+            .padding(.trailing, 16)
+            .padding(.vertical, 2)
+            .accessibilityIdentifier("bubble-structured")
+        }
+    }
+
     public struct Text_: View {
         let content: String
         let fillColor: Color

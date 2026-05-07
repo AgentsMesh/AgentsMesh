@@ -98,14 +98,17 @@ func extractBlocksBody(blocks []channel.Block, out *[]string) {
 	for _, block := range blocks {
 		var sb strings.Builder
 		writeInlineElements(&sb, block.Elements)
-		for i, item := range block.Items {
-			if sb.Len() > 0 || i > 0 {
+		if block.Type == "code_block" && block.Text != "" {
+			if sb.Len() > 0 {
 				sb.WriteString("\n")
 			}
-			writeInlineElements(&sb, item)
+			sb.WriteString(block.Text)
 		}
 		if text := sb.String(); text != "" {
 			*out = append(*out, text)
+		}
+		for _, item := range block.Items {
+			extractBlocksBody(item, out)
 		}
 		if len(block.Children) > 0 {
 			extractBlocksBody(block.Children, out)
@@ -147,7 +150,7 @@ func extractBlocksMentions(blocks []channel.Block, m *channel.MessageMentions, p
 	for _, block := range blocks {
 		collectMentionsFromElements(block.Elements, m, podsSeen, usersSeen)
 		for _, item := range block.Items {
-			collectMentionsFromElements(item, m, podsSeen, usersSeen)
+			extractBlocksMentions(item, m, podsSeen, usersSeen)
 		}
 		if len(block.Children) > 0 {
 			extractBlocksMentions(block.Children, m, podsSeen, usersSeen)

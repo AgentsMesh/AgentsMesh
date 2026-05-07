@@ -84,7 +84,13 @@ public struct ChannelDetailView: View {
         case .file(let filename, let size):
             MessageBubble.File(filename, size: size)
         case .text:
-            MessageBubble.Text_(msg.body, fill: AMColors.card)
+            if let ast = MessageContentDecoder.decode(msg.contentJson), (ast.blocks?.isEmpty == false) {
+                MessageBubble.Content(fill: AMColors.card) {
+                    StructuredContentView(content: ast)
+                }
+            } else {
+                MessageBubble.Text_(msg.body, fill: AMColors.card)
+            }
         }
     }
 

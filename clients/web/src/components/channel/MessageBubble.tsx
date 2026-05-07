@@ -6,16 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTranslations } from "next-intl";
 import { MessageActions } from "./MessageActions";
 import { StructuredContent } from "./StructuredContent";
-import { buildMessageContent, extractMentionMap } from "./message-content-builder";
+import { extractMentionMap } from "./mention-map";
 import type { TransformedMessage } from "./types";
-import type { MessageContent } from "@/lib/api/channel-message-types";
+import type { MessageEditPayload } from "@/lib/api/channel-message-types";
 
 interface MessageBubbleProps {
   message: TransformedMessage;
   isFirstInGroup: boolean;
   formatTime: (dateString: string) => string;
   currentUserId?: number;
-  onEdit?: (messageId: number, content: MessageContent) => Promise<void>;
+  onEdit?: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   onDelete?: (messageId: number) => Promise<void>;
 }
 
@@ -34,9 +34,10 @@ export function MessageBubble({
       return;
     }
     try {
-      const mentionMap = extractMentionMap(message.content);
-      const content = buildMessageContent(editContent.trim(), mentionMap);
-      await onEdit(message.id, content);
+      const mentions = extractMentionMap(message.content);
+      const payload: MessageEditPayload = { source: editContent.trim() };
+      if (Object.keys(mentions).length > 0) payload.mentions = mentions;
+      await onEdit(message.id, payload);
       setEditing(false);
     } catch { /* Error handled by store */ }
   }, [onEdit, editContent, message.id, message.body, message.content]);

@@ -1,4 +1,4 @@
-import type { ChannelMessage, MessageContent, MessageMentions } from "@/lib/api";
+import type { ChannelMessage, MessageContent, MessageMentions, MessageSendPayload, MessageEditPayload } from "@/lib/api";
 
 // UI-only cache state. Actual messages/hasMore live in Rust (ChannelService)
 // and are read through selectors; the cache here just tracks loading + error
@@ -27,11 +27,11 @@ export interface ChannelMessageState {
   fetchMessages: (channelId: number, limit?: number, beforeId?: number) => Promise<void>;
   sendMessage: (
     channelId: number,
-    content: MessageContent,
+    payload: MessageSendPayload,
     podKey?: string,
   ) => Promise<ChannelMessage>;
   addMessage: (channelId: number, message: ChannelMessage) => void;
-  editMessage: (channelId: number, messageId: number, content: MessageContent) => Promise<void>;
+  editMessage: (channelId: number, messageId: number, payload: MessageEditPayload) => Promise<void>;
   deleteMessage: (channelId: number, messageId: number) => Promise<void>;
   updateMessage: (channelId: number, data: { id: number; body: string; content?: MessageContent; mentions?: MessageMentions; edited_at: string }) => void;
   removeMessage: (channelId: number, messageId: number) => void;

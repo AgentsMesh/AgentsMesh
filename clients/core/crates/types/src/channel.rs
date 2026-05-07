@@ -117,13 +117,20 @@ pub struct UpdateChannelRequest {
     pub description: Option<String>,
 }
 
-/// Request body for POST /channels/{id}/messages.
-///
-/// `content` is the structured AST (schema_version + kind + blocks[] +
-/// inline elements). The backend derives `body` from it and stores both.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+/// Request body for POST /channels/{id}/messages. Either `source` (markdown
+/// string the backend will parse via goldmark) or `content` (pre-built AST)
+/// is required, but not both. `mentions` is the wire-format display→ref map
+/// used by the backend parser when expanding `@key` substrings.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SendChannelMessageRequest {
-    pub content: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mentions: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attachment_key: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pod_key: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -132,9 +139,14 @@ pub struct SendChannelMessageRequest {
 
 /// Request body for PUT /channels/{id}/messages/{msgId}. Same shape as
 /// SendChannelMessageRequest minus addressing fields.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EditChannelMessageRequest {
-    pub content: serde_json::Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mentions: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

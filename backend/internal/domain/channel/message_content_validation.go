@@ -76,7 +76,7 @@ func (b *Block) validate(depth int) error {
 	}
 	for i := range b.Items {
 		for j := range b.Items[i] {
-			if err := b.Items[i][j].validate(); err != nil {
+			if err := b.Items[i][j].validate(depth + 1); err != nil {
 				return fmt.Errorf("item[%d][%d]: %w", i, j, err)
 			}
 		}

@@ -82,6 +82,25 @@ func (el *InlineElement) UnmarshalJSON(data []byte) error {
 }
 
 type Block struct {
+	Type     string          `json:"type"`
+	Elements []InlineElement `json:"elements,omitempty"`
+	Children []Block         `json:"children,omitempty"`
+	Level    int             `json:"level,omitempty"`
+	Language string          `json:"language,omitempty"`
+	Text     string          `json:"text,omitempty"`
+	Ordered  bool            `json:"ordered,omitempty"`
+	// Items represents list-item bodies. Each item is a sequence of blocks
+	// (typically a paragraph + an optional nested list), matching the
+	// CommonMark semantics that a list item is a block container.
+	Items [][]Block `json:"items,omitempty"`
+}
+
+// blockRaw is the on-wire shape used during decoding so we can intercept the
+// `items` field and accept both the new `[][]Block` shape and the legacy
+// `[][]InlineElement` shape (rows written before migration 000130). Legacy
+// items are wrapped into a single paragraph block so reads always produce
+// schema-valid blocks regardless of when the row was written.
+type blockRaw struct {
 	Type     string            `json:"type"`
 	Elements []InlineElement   `json:"elements,omitempty"`
 	Children []Block           `json:"children,omitempty"`
@@ -89,7 +108,66 @@ type Block struct {
 	Language string            `json:"language,omitempty"`
 	Text     string            `json:"text,omitempty"`
 	Ordered  bool              `json:"ordered,omitempty"`
-	Items    [][]InlineElement `json:"items,omitempty"`
+	Items    []json.RawMessage `json:"items,omitempty"`
+}
+
+var legacyBlockTypes = map[string]bool{
+	"paragraph": true, "heading": true, "code_block": true, "quote": true, "list": true,
+}
+
+func (b *Block) UnmarshalJSON(data []byte) error {
+	var raw blockRaw
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	b.Type = raw.Type
+	b.Elements = raw.Elements
+	b.Children = raw.Children
+	b.Level = raw.Level
+	b.Language = raw.Language
+	b.Text = raw.Text
+	b.Ordered = raw.Ordered
+	if len(raw.Items) == 0 {
+		b.Items = nil
+		return nil
+	}
+	b.Items = make([][]Block, 0, len(raw.Items))
+	for _, item := range raw.Items {
+		blocks, err := decodeItem(item)
+		if err != nil {
+			return err
+		}
+		b.Items = append(b.Items, blocks)
+	}
+	return nil
+}
+
+func decodeItem(raw json.RawMessage) ([]Block, error) {
+	var probe []json.RawMessage
+	if err := json.Unmarshal(raw, &probe); err != nil {
+		return nil, err
+	}
+	if len(probe) == 0 {
+		return nil, nil
+	}
+	var first struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(probe[0], &first); err != nil {
+		return nil, err
+	}
+	if legacyBlockTypes[first.Type] {
+		var blocks []Block
+		if err := json.Unmarshal(raw, &blocks); err != nil {
+			return nil, err
+		}
+		return blocks, nil
+	}
+	var inline []InlineElement
+	if err := json.Unmarshal(raw, &inline); err != nil {
+		return nil, err
+	}
+	return []Block{{Type: "paragraph", Elements: inline}}, nil
 }
 
 type MessageContent struct {

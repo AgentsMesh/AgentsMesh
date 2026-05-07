@@ -294,8 +294,12 @@ impl ChannelService {
     }
 
     pub async fn send_message(&self, channel_id: i64, request_json: &str) -> Result<String, String> {
-        let req: SendChannelMessageRequest = serde_json::from_str(request_json)
-            .map_err(crate::wire)?;
+        let value: serde_json::Value = serde_json::from_str(request_json).map_err(crate::wire)?;
+        let req = if request_has_new_shape(&value) {
+            serde_json::from_value::<SendChannelMessageRequest>(value).map_err(crate::wire)?
+        } else {
+            SendChannelMessageRequest { content: Some(value), ..Default::default() }
+        };
         let msg: ChannelMessage = self.client
             .send_channel_message(channel_id, &req)
             .await.map_err(crate::wire)?;
@@ -303,14 +307,22 @@ impl ChannelService {
         serde_json::to_string(&msg).map_err(crate::wire)
     }
 
-    /// Edit a message. `content_json` is the raw JSON string of the structured
-    /// MessageContent AST (frontend sends exactly what the server schema expects).
+    /// Edit a message. `request_json` is the JSON of either:
+    ///   - the new `EditChannelMessageRequest` (`{source}`, `{content}`, or
+    ///     `{source, mentions}`), or
+    ///   - a bare `MessageContent` AST (legacy callers) which is rewrapped
+    ///     into `{content: <ast>}`. Shape is detected structurally.
     pub async fn edit_message(
-        &self, channel_id: i64, message_id: i64, content_json: &str,
+        &self, channel_id: i64, message_id: i64, request_json: &str,
     ) -> Result<String, String> {
-        let content: serde_json::Value = serde_json::from_str(content_json)
-            .map_err(|e| format!("invalid content JSON: {e}"))?;
-        let req = EditChannelMessageRequest { content };
+        let value: serde_json::Value = serde_json::from_str(request_json)
+            .map_err(|e| format!("invalid edit request JSON: {e}"))?;
+        let req = if request_has_new_shape(&value) {
+            serde_json::from_value::<EditChannelMessageRequest>(value)
+                .map_err(|e| format!("invalid edit request JSON: {e}"))?
+        } else {
+            EditChannelMessageRequest { content: Some(value), ..Default::default() }
+        };
         let msg: ChannelMessage = self.client
             .edit_channel_message(channel_id, message_id, &req)
             .await.map_err(crate::wire)?;
@@ -406,4 +418,14 @@ impl ChannelService {
             .await.map_err(crate::wire)?;
         serde_json::to_string(&resp).map_err(crate::wire)
     }
+}
+
+fn request_has_new_shape(v: &serde_json::Value) -> bool {
+    let Some(obj) = v.as_object() else { return false };
+    obj.contains_key("source")
+        || obj.contains_key("content")
+        || obj.contains_key("mentions")
+        || obj.contains_key("attachment_key")
+        || obj.contains_key("pod_key")
+        || obj.contains_key("reply_to")
 }

@@ -30,7 +30,7 @@ export type { AIProviderType, UserAgentPodSettings, UserAIProvider, UpdateSettin
 export type { PromoCodeType, ValidatePromoCodeResponse, RedeemPromoCodeResponse, PromoCodeRedemption } from "./promoCodeTypes";
 export type { NotificationPreference } from "./notificationTypes";
 export type { TokenUsageSummary, TokenUsageTimeSeriesPoint, TokenUsageByAgent, TokenUsageByUser, TokenUsageByModel, TokenUsageQueryParams } from "./tokenUsageTypes";
-export type { MessageContent, MessageMentions, InlineElement, Block } from "./channel-message-types";
+export type { MessageContent, MessageMentions, InlineElement, Block, MentionRefInput, MessageSendPayload, MessageEditPayload } from "./channel-message-types";
 
 // Re-export ProviderRepositoryData under the old alias for backward compatibility
 export type { ProviderRepositoryData as UserRemoteRepositoryData } from "./userRepositoryProviderTypes";

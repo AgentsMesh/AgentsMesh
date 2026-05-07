@@ -28,7 +28,7 @@ export interface Block {
   language?: string;
   text?: string;
   ordered?: boolean;
-  items?: InlineElement[][];
+  items?: Block[][];
 }
 
 export interface MessageContent {
@@ -42,4 +42,20 @@ export interface MessageMentions {
   pods?: string[];
   users?: number[];
   channel?: boolean;
+}
+
+export interface MentionRefInput {
+  entity_type: "pod" | "user";
+  entity_key: string;
+}
+
+export interface MessageSendPayload {
+  source: string;
+  mentions?: Record<string, MentionRefInput>;
+  attachment_key?: string;
+}
+
+export interface MessageEditPayload {
+  source: string;
+  mentions?: Record<string, MentionRefInput>;
 }

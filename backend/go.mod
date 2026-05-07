@@ -55,6 +55,7 @@ require (
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.1
 	gorm.io/plugin/dbresolver v1.6.2
+	github.com/yuin/goldmark v1.8.2
 )
 
 require (

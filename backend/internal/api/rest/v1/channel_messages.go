@@ -52,11 +52,54 @@ func (h *ChannelHandler) ListMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"messages": messages, "has_more": hasMore})
 }
 
-// SendMessageRequest represents message send request with structured content
+// MentionRefRequest is the wire-format mapping a `@<key>` substring in a
+// markdown source string to a typed entity reference. Used by Send/EditMessage
+// when `source` is supplied.
+type MentionRefRequest struct {
+	EntityType string `json:"entity_type"`
+	EntityKey  string `json:"entity_key"`
+}
+
+// SendMessageRequest accepts EITHER a markdown source string (server parses to
+// AST) OR a pre-built MessageContent AST. Sending both is a 400.
 type SendMessageRequest struct {
-	Content channelDomain.MessageContent `json:"content" binding:"required"`
-	PodKey  string                       `json:"pod_key"`
-	ReplyTo *int64                       `json:"reply_to"`
+	Source        *string                       `json:"source,omitempty"`
+	Mentions      map[string]MentionRefRequest  `json:"mentions,omitempty"`
+	Content       *channelDomain.MessageContent `json:"content,omitempty"`
+	AttachmentKey string                        `json:"attachment_key,omitempty"`
+	PodKey        string                        `json:"pod_key"`
+	ReplyTo       *int64                        `json:"reply_to"`
+}
+
+func resolveContent(source *string, mentions map[string]MentionRefRequest, content *channelDomain.MessageContent, attachmentKey string) (channelDomain.MessageContent, error) {
+	hasSource := source != nil && *source != ""
+	hasContent := content != nil && len(content.Blocks) > 0
+	if hasSource && hasContent {
+		return channelDomain.MessageContent{}, errors.New("provide either source or content, not both")
+	}
+	var resolved channelDomain.MessageContent
+	switch {
+	case hasSource:
+		refs := make(map[string]channelService.MentionRef, len(mentions))
+		for display, ref := range mentions {
+			refs[display] = channelService.MentionRef{EntityType: ref.EntityType, EntityKey: ref.EntityKey}
+		}
+		c, err := channelService.ParseMarkdown(*source, refs)
+		if err != nil {
+			return channelDomain.MessageContent{}, err
+		}
+		resolved = c
+	case hasContent:
+		resolved = *content
+	case attachmentKey != "":
+		resolved = channelDomain.MessageContent{Kind: "text"}
+	default:
+		return channelDomain.MessageContent{}, errors.New("source, content, or attachment_key is required")
+	}
+	if attachmentKey != "" {
+		resolved.AttachmentKey = attachmentKey
+	}
+	return resolved, nil
 }
 
 // SendMessage sends a message to a channel
@@ -78,13 +121,19 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	content, err := resolveContent(req.Source, req.Mentions, req.Content, req.AttachmentKey)
+	if err != nil {
+		apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
+		return
+	}
+
 	tenant := middleware.GetTenant(c)
 	var podKey *string
 	if req.PodKey != "" {
 		podKey = &req.PodKey
 	}
 
-	msg, err := h.channelService.SendMessage(c.Request.Context(), ch.ID, podKey, &tenant.UserID, req.Content, req.ReplyTo)
+	msg, err := h.channelService.SendMessage(c.Request.Context(), ch.ID, podKey, &tenant.UserID, content, req.ReplyTo)
 	if err != nil {
 		if errors.Is(err, channelService.ErrNotMember) {
 			apierr.ForbiddenAccess(c)
@@ -101,9 +150,12 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": msg})
 }
 
-// EditMessageRequest represents message edit request with structured content
+// EditMessageRequest mirrors SendMessageRequest's source/content choice.
 type EditMessageRequest struct {
-	Content channelDomain.MessageContent `json:"content" binding:"required"`
+	Source        *string                       `json:"source,omitempty"`
+	Mentions      map[string]MentionRefRequest  `json:"mentions,omitempty"`
+	Content       *channelDomain.MessageContent `json:"content,omitempty"`
+	AttachmentKey string                        `json:"attachment_key,omitempty"`
 }
 
 // EditMessage edits a channel message
@@ -126,8 +178,14 @@ func (h *ChannelHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
+	content, err := resolveContent(req.Source, req.Mentions, req.Content, req.AttachmentKey)
+	if err != nil {
+		apierr.BadRequest(c, apierr.VALIDATION_FAILED, err.Error())
+		return
+	}
+
 	tenant := middleware.GetTenant(c)
-	msg, err := h.channelService.EditMessage(c.Request.Context(), ch.ID, msgID, tenant.UserID, req.Content)
+	msg, err := h.channelService.EditMessage(c.Request.Context(), ch.ID, msgID, tenant.UserID, content)
 	if err != nil {
 		switch {
 		case errors.Is(err, channelService.ErrMessageNotFound):

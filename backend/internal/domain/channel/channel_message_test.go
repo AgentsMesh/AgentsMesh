@@ -170,6 +170,57 @@ func TestMessageStruct(t *testing.T) {
 
 // --- Benchmarks ---
 
+func TestBlockUnmarshalLegacyInlineItems(t *testing.T) {
+	// Pre-migration JSONB shape: list items were [[InlineElement]].
+	// Decoder must wrap each item into a paragraph block so post-upgrade
+	// readers see schema-valid blocks even on legacy rows.
+	raw := []byte(`{"type":"list","ordered":false,"items":[[{"type":"text","text":"alpha"}],[{"type":"text","text":"beta"}]]}`)
+	var b Block
+	if err := b.UnmarshalJSON(raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(b.Items) != 2 {
+		t.Fatalf("got %d items, want 2", len(b.Items))
+	}
+	for i, item := range b.Items {
+		if len(item) != 1 || item[0].Type != "paragraph" {
+			t.Fatalf("item[%d] expected single paragraph block, got %+v", i, item)
+		}
+	}
+	if b.Items[0][0].Elements[0].Text != "alpha" {
+		t.Errorf("legacy text not preserved: %+v", b.Items[0][0].Elements)
+	}
+}
+
+func TestBlockUnmarshalNewBlockItems(t *testing.T) {
+	raw := []byte(`{"type":"list","items":[[{"type":"paragraph","elements":[{"type":"text","text":"x"}]},{"type":"list","items":[[{"type":"paragraph","elements":[{"type":"text","text":"nested"}]}]]}]]}`)
+	var b Block
+	if err := b.UnmarshalJSON(raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if len(b.Items) != 1 || len(b.Items[0]) != 2 {
+		t.Fatalf("expected 1 item with 2 inner blocks, got %+v", b.Items)
+	}
+	if b.Items[0][0].Type != "paragraph" || b.Items[0][1].Type != "list" {
+		t.Errorf("inner block types wrong: %+v", b.Items[0])
+	}
+	nested := b.Items[0][1].Items
+	if len(nested) != 1 || nested[0][0].Elements[0].Text != "nested" {
+		t.Errorf("nested list lost: %+v", nested)
+	}
+}
+
+func TestMessageContentScanLegacyItemsThroughMessageContent(t *testing.T) {
+	raw := []byte(`{"kind":"text","blocks":[{"type":"list","items":[[{"type":"text","text":"task"}]]}]}`)
+	var mc MessageContent
+	if err := mc.Scan(raw); err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if err := mc.Validate(); err != nil {
+		t.Errorf("post-decode legacy content failed validate: %v", err)
+	}
+}
+
 func BenchmarkMessageContentScan(b *testing.B) {
 	data := []byte(`{"kind":"text","blocks":[{"type":"paragraph","elements":[{"type":"text","text":"hello"}]}]}`)
 	for i := 0; i < b.N; i++ {

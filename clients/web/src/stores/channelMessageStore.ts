@@ -6,7 +6,7 @@ import { getErrorMessage } from "@/lib/utils";
 import { useAuthStore } from "./auth";
 import { getCache, updateCache } from "./channelMessageTypes";
 import type { ChannelMessageState } from "./channelMessageTypes";
-import type { ChannelMessage, MessageContent } from "@/lib/api/channel";
+import type { ChannelMessage } from "@/lib/api/channel";
 import { registerOrgScopedReset } from "@/lib/org-scope/registry";
 
 export { EMPTY_CACHE, type ChannelMessageCache } from "./channelMessageTypes";
@@ -61,9 +61,11 @@ export const useChannelMessageStore = create<ChannelMessageState>((set, get) => 
     }
   },
 
-  sendMessage: async (channelId, content, podKey) => {
+  sendMessage: async (channelId, payload, podKey) => {
     try {
-      const req: Record<string, unknown> = { content };
+      const req: Record<string, unknown> = { source: payload.source };
+      if (payload.mentions && Object.keys(payload.mentions).length > 0) req.mentions = payload.mentions;
+      if (payload.attachment_key) req.attachment_key = payload.attachment_key;
       if (podKey) req.pod_key = podKey;
       const json = await svc().send_message(BigInt(channelId), JSON.stringify(req));
       const msg = JSON.parse(json) as ChannelMessage;
@@ -94,9 +96,11 @@ export const useChannelMessageStore = create<ChannelMessageState>((set, get) => 
     bumpMessages();
   },
 
-  editMessage: async (channelId, messageId, content: MessageContent) => {
+  editMessage: async (channelId, messageId, payload) => {
     try {
-      await svc().edit_message(BigInt(channelId), BigInt(messageId), JSON.stringify(content));
+      const req: Record<string, unknown> = { source: payload.source };
+      if (payload.mentions && Object.keys(payload.mentions).length > 0) req.mentions = payload.mentions;
+      await svc().edit_message(BigInt(channelId), BigInt(messageId), JSON.stringify(req));
       bumpMessages();
     } catch (error: unknown) {
       console.error("Failed to edit message:", getErrorMessage(error, "Unknown error"));

@@ -9,16 +9,22 @@ import (
 
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
+	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
 )
 
 // mcpSendMessage handles the "send_message" MCP method.
-// Agents send plain text + optional mentions; we build structured MessageContent server-side.
+// Agents may send any of:
+//   - structured_content: pre-built MessageContent AST (advanced)
+//   - source: markdown string (server parses to AST via goldmark)
+//   - content: plain text (legacy; server only does mention substitution, no
+//     markdown parsing — preserves existing behavior for older agents)
 func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
-		ChannelID         int64                        `json:"channel_id"`
-		Content           string                       `json:"content"`
+		ChannelID         int64                         `json:"channel_id"`
+		Content           string                        `json:"content"`
+		Source            string                        `json:"source"`
 		StructuredContent *channelDomain.MessageContent `json:"structured_content"`
-		Mentions          []string                     `json:"mentions"`
+		Mentions          []string                      `json:"mentions"`
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
@@ -26,8 +32,8 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 	if params.ChannelID == 0 {
 		return nil, newMcpError(400, "channel_id is required")
 	}
-	if params.Content == "" && params.StructuredContent == nil {
-		return nil, newMcpError(400, "content or structured_content is required")
+	if params.Content == "" && params.Source == "" && params.StructuredContent == nil {
+		return nil, newMcpError(400, "content, source, or structured_content is required")
 	}
 
 	ch, mcpErr := a.validateChannelAccess(ctx, tc, params.ChannelID)
@@ -38,18 +44,29 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 		return nil, newMcpError(400, "cannot send messages to archived channel")
 	}
 
-	// Use structured content if provided; otherwise build from plain text + mentions
-	var content channelDomain.MessageContent
-	if params.StructuredContent != nil {
-		content = *params.StructuredContent
-	} else {
-		mentionMap := make(map[string]struct{ typ, key string })
-		for _, m := range params.Mentions {
-			parts := strings.SplitN(m, ":", 2)
-			if len(parts) == 2 && (parts[0] == "user" || parts[0] == "pod") {
-				mentionMap[parts[1]] = struct{ typ, key string }{parts[0], parts[1]}
-			}
+	mentionMap := make(map[string]struct{ typ, key string })
+	for _, m := range params.Mentions {
+		parts := strings.SplitN(m, ":", 2)
+		if len(parts) == 2 && (parts[0] == "user" || parts[0] == "pod") {
+			mentionMap[parts[1]] = struct{ typ, key string }{parts[0], parts[1]}
 		}
+	}
+
+	var content channelDomain.MessageContent
+	switch {
+	case params.StructuredContent != nil:
+		content = *params.StructuredContent
+	case params.Source != "":
+		refs := make(map[string]channelService.MentionRef, len(mentionMap))
+		for k, v := range mentionMap {
+			refs[k] = channelService.MentionRef{EntityType: v.typ, EntityKey: v.key}
+		}
+		parsed, err := channelService.ParseMarkdown(params.Source, refs)
+		if err != nil {
+			return nil, newMcpError(400, "failed to parse markdown source: "+err.Error())
+		}
+		content = parsed
+	default:
 		content = buildTextContent(params.Content, mentionMap)
 	}
 

@@ -308,9 +308,10 @@ mod api_channel_extension_tests {
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let data = agentsmesh_types::SendChannelMessageRequest {
-            content: serde_json::json!("hello"),
+            content: Some(serde_json::json!("hello")),
             pod_key: None,
             reply_to: None,
+            ..Default::default()
         };
         let r = c.send_channel_message(2, &data).await.unwrap();
         assert_eq!(r.body, "hello");
@@ -389,7 +390,8 @@ mod api_channel_extension_tests {
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let data = agentsmesh_types::EditChannelMessageRequest {
-            content: serde_json::json!("edited"),
+            content: Some(serde_json::json!("edited")),
+            ..Default::default()
         };
         let r = c.edit_channel_message(2, 10, &data).await.unwrap();
         assert_eq!(r.body, "edited");

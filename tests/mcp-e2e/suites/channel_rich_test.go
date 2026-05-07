@@ -144,6 +144,49 @@ func TestChannel_ReplyToCurrentlyIgnoredByBackend(t *testing.T) {
 	}
 }
 
+func TestChannel_SourceMarkdownRendersAsBlocks(t *testing.T) {
+	env := fixture.LoadEnv(t)
+	rest := fixture.SharedREST(t, env)
+	runner := fixture.DiscoverRunner(t, env, rest)
+	pod := fixture.NewEchoPod(t, env, rest, runner.ID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	chOut, err := pod.MCP.CallToolText(ctx, "create_channel", map[string]any{
+		"name":        fmt.Sprintf("e2e-source-%d", time.Now().UnixMilli()),
+		"description": "source markdown spec",
+	})
+	if err != nil {
+		t.Fatalf("create_channel: %v", err)
+	}
+	chID, err := extractChannelID(chOut)
+	if err != nil {
+		t.Fatalf("parse channel id:\n%s", chOut)
+	}
+
+	source := "# from agent\n\n- alpha\n- beta\n\n```go\nfn main() {}\n```"
+	if _, err := pod.MCP.CallToolText(ctx, "send_channel_message", map[string]any{
+		"channel_id": chID,
+		"source":     source,
+	}); err != nil {
+		t.Fatalf("send_channel_message with source: %v", err)
+	}
+
+	feed, err := pod.MCP.CallToolText(ctx, "get_channel_messages", map[string]any{
+		"channel_id": chID,
+		"limit":      10,
+	})
+	if err != nil {
+		t.Fatalf("get_channel_messages: %v", err)
+	}
+	for _, want := range []string{"from agent", "alpha", "beta", "fn main() {}"} {
+		if !strings.Contains(feed, want) {
+			t.Errorf("expected %q in feed, got:\n%s", want, feed)
+		}
+	}
+}
+
 func TestChannel_SystemMessageType(t *testing.T) {
 	env := fixture.LoadEnv(t)
 	rest := fixture.SharedREST(t, env)

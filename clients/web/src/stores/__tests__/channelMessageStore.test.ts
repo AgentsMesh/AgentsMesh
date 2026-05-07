@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { useChannelMessageStore, EMPTY_CACHE, readMessages } from "../channelMessageStore";
 import { getChannelService } from "@/lib/wasm-core";
-import type { ChannelMessage, MessageContent } from "@/lib/api/channel";
+import type { ChannelMessage } from "@/lib/api/channel";
+import type { MessageSendPayload, MessageEditPayload } from "@/lib/api/channel-message-types";
 
 interface MockChannelService {
   fetch_messages: ReturnType<typeof vi.fn>;
@@ -93,30 +94,30 @@ describe("useChannelMessageStore — WASM integration", () => {
     expect(useChannelMessageStore.getState().cache[42]?.loading).toBe(false);
   });
 
-  it("sendMessage: forwards content + podKey and refreshes cache", async () => {
-    const content: MessageContent = { schema_version: 1, kind: "ast", blocks: [] };
+  it("sendMessage: forwards source + mentions + podKey and refreshes cache", async () => {
+    const payload: MessageSendPayload = { source: "hi", mentions: { bot: { entity_type: "pod", entity_key: "pod-abc" } } };
     const returned = makeMsg(100, { body: "hi" });
     svc().send_message.mockResolvedValue(JSON.stringify(returned));
     svc().get_messages_json.mockReturnValue(JSON.stringify({ messages: [returned], has_more: false }));
 
     let result: ChannelMessage | undefined;
     await act(async () => {
-      result = await useChannelMessageStore.getState().sendMessage(42, content, "pod-abc");
+      result = await useChannelMessageStore.getState().sendMessage(42, payload, "pod-abc");
     });
 
     const [chanArg, bodyArg] = svc().send_message.mock.calls[0];
     expect(chanArg).toBe(BigInt(42));
-    expect(JSON.parse(bodyArg)).toEqual({ content, pod_key: "pod-abc" });
+    expect(JSON.parse(bodyArg)).toEqual({ source: "hi", mentions: payload.mentions, pod_key: "pod-abc" });
     expect(result?.id).toBe(100);
     expect(readMessages(42).messages).toHaveLength(1);
   });
 
-  it("editMessage: JSON-encodes MessageContent and calls edit_message", async () => {
-    const content: MessageContent = { schema_version: 1, kind: "ast", blocks: [] };
+  it("editMessage: forwards source payload to edit_message", async () => {
+    const payload: MessageEditPayload = { source: "edited" };
     await act(async () => {
-      await useChannelMessageStore.getState().editMessage(42, 7, content);
+      await useChannelMessageStore.getState().editMessage(42, 7, payload);
     });
-    expect(svc().edit_message).toHaveBeenCalledWith(BigInt(42), BigInt(7), JSON.stringify(content));
+    expect(svc().edit_message).toHaveBeenCalledWith(BigInt(42), BigInt(7), JSON.stringify({ source: "edited" }));
   });
 
   it("deleteMessage: calls delete_message and re-syncs cache", async () => {

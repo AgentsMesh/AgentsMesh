@@ -116,10 +116,10 @@ func TestExtractBody(t *testing.T) {
 	})
 	t.Run("list block items", func(t *testing.T) {
 		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
-			{Type: "list", Ordered: true, Items: [][]channel.InlineElement{
-				{{Type: channel.InlineText, Text: "item one"}},
-				{{Type: channel.InlineText, Text: "item two"}},
-				{{Type: channel.InlineText, Text: "item three"}},
+			{Type: "list", Ordered: true, Items: [][]channel.Block{
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "item one"}}}},
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "item two"}}}},
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "item three"}}}},
 			}},
 		}}
 		if got := extractBody(c); got != "item one\nitem two\nitem three" {
@@ -131,9 +131,9 @@ func TestExtractBody(t *testing.T) {
 		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
 			{Type: "list", Elements: []channel.InlineElement{
 				{Type: channel.InlineText, Text: "Checklist:"},
-			}, Items: [][]channel.InlineElement{
-				{{Type: channel.InlineText, Text: "step 1"}},
-				{{Type: channel.InlineText, Text: "step 2"}},
+			}, Items: [][]channel.Block{
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "step 1"}}}},
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "step 2"}}}},
 			}},
 		}}
 		if got := extractBody(c); got != "Checklist:\nstep 1\nstep 2" {
@@ -158,13 +158,38 @@ func TestExtractBody(t *testing.T) {
 
 	t.Run("list items with mentions", func(t *testing.T) {
 		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
-			{Type: "list", Items: [][]channel.InlineElement{
-				{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-1", Display: "Bot"}},
-				{{Type: channel.InlineText, Text: "task"}},
+			{Type: "list", Items: [][]channel.Block{
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-1", Display: "Bot"}}}},
+				{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "task"}}}},
 			}},
 		}}
 		if got := extractBody(c); got != "@Bot\ntask" {
 			t.Errorf("got %q, want %q", got, "@Bot\ntask")
+		}
+	})
+
+	t.Run("code_block contributes its text to body", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "code_block", Language: "go", Text: "func main() {}"},
+		}}
+		if got := extractBody(c); got != "func main() {}" {
+			t.Errorf("got %q, want %q", got, "func main() {}")
+		}
+	})
+
+	t.Run("nested list items recurse through inner blocks", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "list", Items: [][]channel.Block{
+				{
+					{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "outer"}}},
+					{Type: "list", Items: [][]channel.Block{
+						{{Type: "paragraph", Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "inner"}}}},
+					}},
+				},
+			}},
+		}}
+		if got := extractBody(c); got != "outer\ninner" {
+			t.Errorf("got %q, want %q", got, "outer\ninner")
 		}
 	})
 }
@@ -268,8 +293,10 @@ func TestExtractMentions(t *testing.T) {
 
 	t.Run("mentions in list items", func(t *testing.T) {
 		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
-			{Type: "list", Items: [][]channel.InlineElement{
-				{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-list"}},
+			{Type: "list", Items: [][]channel.Block{
+				{{Type: "paragraph", Elements: []channel.InlineElement{
+					{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-list"},
+				}}},
 			}},
 		}}
 		m := extractMentions(c)

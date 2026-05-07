@@ -24,7 +24,7 @@ export function StructuredContent({ content, className }: StructuredContentProps
   }
 
   return (
-    <div className={cn("prose prose-sm max-w-none", className)}>
+    <div className={cn("prose prose-sm max-w-none [&_li>p:only-child]:m-0", className)}>
       {content.blocks.map((block, i) => (
         <RenderBlock key={i} block={block} />
       ))}
@@ -80,8 +80,8 @@ function RenderBlock({ block }: { block: Block }) {
           <Tag>
             {block.items?.map((item, i) => (
               <li key={i}>
-                {item.map((el, j) => (
-                  <RenderInline key={j} element={el} />
+                {item.map((child, j) => (
+                  <RenderBlock key={j} block={child} />
                 ))}
               </li>
             ))}
@@ -148,8 +148,16 @@ function MentionSpan({ element }: { element: InlineElement }) {
     if (pod) displayName = getPodDisplayName(pod);
   }
 
+  const s = element.style;
   return (
-    <span className="text-primary font-medium bg-primary/10 rounded px-0.5">
+    <span
+      className={cn(
+        "text-primary font-medium bg-primary/10 rounded px-0.5",
+        s?.bold && "font-bold",
+        s?.italic && "italic",
+        s?.strike && "line-through",
+      )}
+    >
       @{displayName}
     </span>
   );

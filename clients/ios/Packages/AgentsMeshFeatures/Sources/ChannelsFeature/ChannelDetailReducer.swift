@@ -76,11 +76,9 @@ public struct ChannelDetailFeature {
                 state.draft = ""
                 return .run { send in
                     do {
-                        let msg = try await core.sendChannelMessage(
-                            id,
-                            #"{"schema_version":1,"kind":"text","blocks":[{"type":"text","value":"\#(body)"}]}"#,
-                            nil, nil
-                        )
+                        let payload = try JSONEncoder().encode(["source": body])
+                        let json = String(data: payload, encoding: .utf8) ?? "{}"
+                        let msg = try await core.sendChannelMessage(id, json, nil, nil)
                         await send(.messageSent(msg))
                     } catch {
                         await send(.sendFailed(error.localizedDescription))

@@ -11,7 +11,7 @@ import { getPodDisplayName, getShortPodKey } from "@/lib/pod-display-name";
 import { usePods, type Pod } from "@/stores/pod";
 import { cn } from "@/lib/utils";
 import type { TransformedMessage } from "./types";
-import type { MessageContent } from "@/lib/api/channel-message-types";
+import type { MessageEditPayload } from "@/lib/api/channel-message-types";
 
 interface MessageListProps {
   messages: TransformedMessage[];
@@ -22,7 +22,7 @@ interface MessageListProps {
   onLoadMore?: () => void;
   onRetry?: () => void;
   currentUserId?: number;
-  onEditMessage?: (messageId: number, content: MessageContent) => Promise<void>;
+  onEditMessage?: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   onDeleteMessage?: (messageId: number) => Promise<void>;
 }
 

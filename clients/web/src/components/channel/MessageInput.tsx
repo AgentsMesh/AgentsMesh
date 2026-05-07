@@ -7,16 +7,10 @@ import { MessageInputToolbar } from "./MessageInputToolbar";
 import { useFileAttachment } from "@/hooks/useFileAttachment";
 import { useMentionCandidates, type MentionItem } from "@/hooks/useMentionCandidates";
 import { getMentionQuery } from "./mention";
-import { buildMessageContent } from "./message-content-builder";
-import type { MessageContent } from "@/lib/api/channel-message-types";
-
-interface MentionRef {
-  entityType: string;
-  entityKey: string;
-}
+import type { MentionRefInput, MessageSendPayload } from "@/lib/api/channel-message-types";
 
 interface MessageInputProps {
-  onSend: (content: MessageContent) => void;
+  onSend: (payload: MessageSendPayload) => void;
   disabled?: boolean;
   placeholder?: string;
   channelId?: number | null;
@@ -40,7 +34,7 @@ export function MessageInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const attachment = useFileAttachment();
 
-  const selectedMentionsRef = useRef<Map<string, MentionRef>>(new Map());
+  const selectedMentionsRef = useRef<Map<string, MentionRefInput>>(new Map());
 
   const [mentionVisible, setMentionVisible] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
@@ -135,7 +129,7 @@ export function MessageInput({
         const entityType = item.id.slice(0, colonIdx);
         const entityKey = item.id.slice(colonIdx + 1);
         if (entityType === "user" || entityType === "pod") {
-          selectedMentionsRef.current.set(item.mentionText, { entityType, entityKey });
+          selectedMentionsRef.current.set(item.mentionText, { entity_type: entityType, entity_key: entityKey });
         }
       }
 
@@ -159,10 +153,15 @@ export function MessageInput({
     if (!trimmed && !attachment.key) return;
     if (disabled) return;
 
-    const messageContent = buildMessageContent(trimmed, selectedMentionsRef.current);
-    if (attachment.key) messageContent.attachment_key = attachment.key;
+    const mentions: Record<string, MentionRefInput> = {};
+    selectedMentionsRef.current.forEach((ref, display) => {
+      mentions[display] = ref;
+    });
+    const payload: MessageSendPayload = { source: trimmed };
+    if (Object.keys(mentions).length > 0) payload.mentions = mentions;
+    if (attachment.key) payload.attachment_key = attachment.key;
 
-    onSend(messageContent);
+    onSend(payload);
     setContent("");
     setMentionVisible(false);
     selectedMentionsRef.current.clear();
