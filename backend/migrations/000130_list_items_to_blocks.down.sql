@@ -60,7 +60,7 @@ SET content = pg_temp.am_downgrade_block_items(content)
 WHERE content IS NOT NULL
   AND content @? '$.**.items';
 
-UPDATE message_edit_history
+UPDATE channel_message_edits
 SET previous_content = pg_temp.am_downgrade_block_items(previous_content)
 WHERE previous_content IS NOT NULL
   AND previous_content @? '$.**.items';

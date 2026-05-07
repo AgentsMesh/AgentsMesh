@@ -2,7 +2,7 @@
 -- Each existing list-item (a flat array of inline elements) is wrapped into a
 -- single paragraph block so the new readers see [{type:"paragraph",
 -- elements:[...]}] in place of the old [...]. Walks both channel_messages and
--- message_edit_history because both hold MessageContent JSONB.
+-- channel_message_edits because both hold MessageContent JSONB.
 
 CREATE OR REPLACE FUNCTION pg_temp.am_upgrade_block_items(node JSONB)
 RETURNS JSONB AS $$
@@ -76,7 +76,7 @@ SET content = pg_temp.am_upgrade_block_items(content)
 WHERE content IS NOT NULL
   AND content @? '$.**.items';
 
-UPDATE message_edit_history
+UPDATE channel_message_edits
 SET previous_content = pg_temp.am_upgrade_block_items(previous_content)
 WHERE previous_content IS NOT NULL
   AND previous_content @? '$.**.items';
