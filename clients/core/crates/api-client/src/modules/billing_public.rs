@@ -3,7 +3,7 @@ use crate::error::ApiError;
 use agentsmesh_types::*;
 
 impl ApiClient {
-    pub async fn get_public_pricing(&self) -> Result<PricingConfig, ApiError> {
+    pub async fn get_public_pricing(&self) -> Result<PublicPricingResponse, ApiError> {
         self.public_get("/api/v1/config/pricing").await
     }
 

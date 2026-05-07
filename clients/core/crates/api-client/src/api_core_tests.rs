@@ -280,7 +280,7 @@ mod api_core_tests {
     async fn get_public_pricing() {
         let s = MockServer::start().await;
         Mock::given(method("GET")).and(path("/api/v1/config/pricing"))
-            .respond_with(ok(json!({"plans":[]})))
+            .respond_with(ok(json!({"deployment_type":"global","currency":"USD","plans":[]})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
         let _ = c.get_public_pricing().await.unwrap();
