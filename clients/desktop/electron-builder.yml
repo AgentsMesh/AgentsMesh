@@ -16,6 +16,19 @@ appId: ai.agentsmesh.desktop
 productName: AgentsMesh
 copyright: Copyright © 2026 AgentsMesh
 
+# Custom URL scheme for OAuth deep-link callbacks. The desktop app
+# launches the system browser for OAuth (so password managers / 2FA
+# extensions / existing GitHub sessions just work), and the backend
+# 302-redirects to `agentsmesh://oauth/callback?token=...` after Apple/
+# GitHub/Google approve. macOS Info.plist (CFBundleURLTypes) and
+# Windows NSIS registry entries are emitted by electron-builder from
+# this section.
+protocols:
+  - name: AgentsMesh OAuth Callback
+    schemes:
+      - agentsmesh
+    role: Viewer
+
 # Pin the Electron runtime version directly. The thin-shell
 # `package.json` has no `devDependencies.electron` (deps are hoisted to
 # the workspace root), so electron-builder can't infer this from

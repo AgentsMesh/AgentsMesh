@@ -10,6 +10,15 @@ const api = {
     return () => ipcRenderer.removeListener(channel, listener);
   },
   shellOpen: (url: string) => ipcRenderer.invoke("shellOpen", url),
+  // Deep-link OAuth callback: main forwards `agentsmesh://oauth/callback?token=...`
+  // here when the system browser hands the URL back via open-url (mac) or
+  // second-instance argv (win/linux). Returns an unsubscribe so React Strict
+  // Mode double-mount doesn't accumulate listeners.
+  onOAuthCallback: (handler: (url: string) => void) => {
+    const listener = (_e: IpcRendererEvent, url: string) => handler(url);
+    ipcRenderer.on("oauth:callback", listener);
+    return () => ipcRenderer.removeListener("oauth:callback", listener);
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", api);

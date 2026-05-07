@@ -4,7 +4,7 @@ import { HeroPanel } from "./HeroPanel";
 import { ServerSettingsModal } from "./ServerSettingsModal";
 // Relative path: `@/` resolves to clients/web/src (electron-vite alias),
 // not the desktop renderer. server-config is desktop-only state.
-import { getConfig, getCloudInfo } from "../../../lib/server-config";
+import { getConfig, getActiveLabel } from "../../../lib/server-config";
 
 /**
  * Two-pane shell for auth screens. Hero panel sits on the left at >=
@@ -22,10 +22,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
   const cfg = getConfig();
-  const cloud = getCloudInfo();
-  const activeLabel = cfg.kind === "custom" && cfg.customLabel
-    ? cfg.customLabel
-    : cloud.label;
+  const activeLabel = getActiveLabel(cfg);
 
   return (
     <div className="flex min-h-screen bg-background">

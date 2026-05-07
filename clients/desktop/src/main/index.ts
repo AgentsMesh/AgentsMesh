@@ -2,6 +2,14 @@ import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
 import { AppState } from "@agentsmesh/node-bridge";
 import { createLocalRunnerStubs, type LocalRunnerStubMap } from "./local_runner_stubs";
+import { acquireSingleInstance } from "./single_instance";
+import {
+  registerProtocol,
+  attachSecondInstanceUrlHandler,
+  installOpenUrlHandler,
+  captureColdLaunchUrl,
+  flushPendingUrl,
+} from "./oauth_deep_link";
 
 const apiUrl = process.env.AGENTSMESH_API_URL ?? "http://localhost:25350";
 const storageDir = path.join(app.getPath("userData"), "agentsmesh");
@@ -13,6 +21,18 @@ const isHeadlessTest = process.env.NODE_ENV === "test";
 
 let appState: AppState;
 let stubs: LocalRunnerStubMap | null = null;
+let mainWindow: BrowserWindow | null = null;
+
+const getMainWindow = () => mainWindow;
+
+// MUST run before whenReady — single-instance lock is acquired sync,
+// and "second-instance" can fire before whenReady on the duplicate
+// launch path.
+if (acquireSingleInstance()) {
+  registerProtocol();
+  attachSecondInstanceUrlHandler(getMainWindow);
+  captureColdLaunchUrl();
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -45,6 +65,12 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, "../renderer/index.html"));
   }
+
+  mainWindow = win;
+  win.on("closed", () => {
+    if (mainWindow === win) mainWindow = null;
+  });
+  flushPendingUrl(getMainWindow);
 }
 
 function registerIpcHandlers() {
@@ -83,6 +109,7 @@ app.whenReady().then(() => {
     stubs = createLocalRunnerStubs();
   }
   registerIpcHandlers();
+  installOpenUrlHandler(getMainWindow);
   createWindow();
 
   app.on("activate", () => {

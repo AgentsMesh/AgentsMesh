@@ -220,6 +220,8 @@ go_test(
         "agentpod_error_test.go",
         "agentpod_request_test.go",
         "agentpod_response_test.go",
+        "auth_oauth_handler_test.go",
+        "auth_oauth_redirect_test.go",
         "billing_handler_setup_test.go",
         "billing_handler_test.go",
         "blockstore_correlation_test.go",
@@ -257,6 +259,7 @@ go_test(
     ],
     embed = [":rest"],
     deps = [
+        "//backend/internal/config",
         "//backend/internal/domain/agentpod",
         "//backend/internal/domain/blockstore",
         "//backend/internal/domain/gitprovider",

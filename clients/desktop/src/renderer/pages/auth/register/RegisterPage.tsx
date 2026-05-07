@@ -223,10 +223,12 @@ export function RegisterPage() {
           <Button
             variant="outline"
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const oauthUrl = getOAuthBaseUrl();
-              const redirectUrl = encodeURIComponent(window.location.origin + "/auth/callback");
-              window.location.href = `${oauthUrl}/api/v1/auth/oauth/github?redirect=${redirectUrl}`;
+              const redirectUrl = encodeURIComponent("agentsmesh://oauth/callback");
+              const url = `${oauthUrl}/api/v1/auth/oauth/github?redirect=${redirectUrl}`;
+              const { open } = await import("@/shims/electron-shell");
+              await open(url);
             }}
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
@@ -240,10 +242,12 @@ export function RegisterPage() {
           <Button
             variant="outline"
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const oauthUrl = getOAuthBaseUrl();
-              const redirectUrl = encodeURIComponent(window.location.origin + "/auth/callback");
-              window.location.href = `${oauthUrl}/api/v1/auth/oauth/google?redirect=${redirectUrl}`;
+              const redirectUrl = encodeURIComponent("agentsmesh://oauth/callback");
+              const url = `${oauthUrl}/api/v1/auth/oauth/google?redirect=${redirectUrl}`;
+              const { open } = await import("@/shims/electron-shell");
+              await open(url);
             }}
           >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">

@@ -52,13 +52,22 @@ func (h *AuthHandler) isAllowedRedirect(redirectTo string) bool {
 		return true
 	}
 
-	// Allow URLs whose hostname matches PrimaryDomain's hostname.
-	// Port is intentionally ignored because the frontend may run on a
-	// different port than the API (e.g., dev: Next.js on :3000, API on :80).
 	parsed, err := url.Parse(redirectTo)
 	if err != nil {
 		return false
 	}
+
+	// Allow the desktop deep-link callback. Path/host is fixed by the
+	// desktop client (`agentsmesh://oauth/callback`); we validate both
+	// scheme and host+path so users can't supply arbitrary other
+	// agentsmesh:// URLs to coax token leakage.
+	if parsed.Scheme == "agentsmesh" {
+		return parsed.Host == "oauth" && parsed.Path == "/callback"
+	}
+
+	// Allow URLs whose hostname matches PrimaryDomain's hostname.
+	// Port is intentionally ignored because the frontend may run on a
+	// different port than the API (e.g., dev: Next.js on :3000, API on :80).
 	allowedHost, _, _ := strings.Cut(h.config.PrimaryDomain, ":")
 	return parsed.Hostname() == allowedHost
 }

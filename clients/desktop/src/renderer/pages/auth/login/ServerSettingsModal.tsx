@@ -6,21 +6,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  getConfig, getCloudInfo, saveConfig, isValidServerUrl,
+  getConfig, getPresets, saveConfig, isValidServerUrl, type ServerKind,
 } from "../../../lib/server-config";
 
 /**
- * Two-mode picker: AgentsMesh Cloud (built-in) or 自定义服务器 (custom).
- * The custom URL/label inputs only appear when 自定义服务器 is selected,
- * so the dialog stays uncluttered for the 95% of users who just want
- * the cloud option. Saving + Connect reloads the window so env.ts re-
- * resolves the active URL on the next render — there's no clean way
- * to hot-swap the API origin while sockets/fetches are in flight.
- *
- * The form lives in a separate component (ServerSettingsForm) that
- * renders only when `open` is true. State initialisers there read the
- * current config on mount, sidestepping the "setState in useEffect"
- * pattern lint forbids — every open cycle gets a fresh form.
+ * Three-mode picker: AgentsMesh Global, AgentsMesh 中国, or 自定义服务器.
+ * Custom URL/label inputs only appear when 自定义 is selected, keeping
+ * the dialog uncluttered for the 95% who pick a preset. Saving + Connect
+ * reloads the window so env.ts re-resolves the active URL on next render —
+ * there's no clean way to hot-swap the API origin while sockets/fetches
+ * are in flight.
  */
 export function ServerSettingsModal({ open, onOpenChange }: {
   open: boolean;
@@ -41,11 +36,11 @@ export function ServerSettingsModal({ open, onOpenChange }: {
 
 function ServerSettingsForm({ onClose }: { onClose: () => void }) {
   const t = useTranslations();
-  const cloud = getCloudInfo();
+  const presets = getPresets();
   const [draft, setDraft] = useState(getConfig);
   const [error, setError] = useState("");
 
-  const setKind = (kind: "cloud" | "custom") => setDraft((d) => ({ ...d, kind }));
+  const setKind = (kind: ServerKind) => setDraft((d) => ({ ...d, kind }));
 
   const handleConnect = () => {
     if (draft.kind === "custom") {
@@ -65,19 +60,18 @@ function ServerSettingsForm({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <DialogBody className="space-y-4">
+      <DialogBody className="space-y-3">
         <p className="text-sm text-muted-foreground">{t("auth.loginPage.serverSettingsDesc")}</p>
 
-        <label className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
-          draft.kind === "cloud" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
-        }`}>
-          <input type="radio" name="kind" className="h-4 w-4"
-            checked={draft.kind === "cloud"} onChange={() => setKind("cloud")} />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-foreground">{cloud.label}</div>
-            <div className="truncate text-xs text-muted-foreground">{cloud.url}</div>
-          </div>
-        </label>
+        {presets.map((p) => (
+          <PresetRow
+            key={p.kind}
+            label={p.label}
+            url={p.url}
+            checked={draft.kind === p.kind}
+            onSelect={() => setKind(p.kind)}
+          />
+        ))}
 
         <label className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
           draft.kind === "custom" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
@@ -127,5 +121,25 @@ function ServerSettingsForm({ onClose }: { onClose: () => void }) {
         <Button onClick={handleConnect}>{t("auth.loginPage.serverConnect")}</Button>
       </DialogFooter>
     </>
+  );
+}
+
+function PresetRow({ label, url, checked, onSelect }: {
+  label: string;
+  url: string;
+  checked: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <label className={`flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ${
+      checked ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"
+    }`}>
+      <input type="radio" name="kind" className="h-4 w-4"
+        checked={checked} onChange={onSelect} />
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-medium text-foreground">{label}</div>
+        <div className="truncate text-xs text-muted-foreground">{url}</div>
+      </div>
+    </label>
   );
 }
