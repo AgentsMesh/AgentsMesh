@@ -73,7 +73,7 @@ func TestAddRef_MetaRoundTrip(t *testing.T) {
 }
 
 // TestUpdateRef_BumpsUpdatedAt guards the BlockRef.UpdatedAt field added in
-// migration 000116. Moving a ref (change order_key) must advance updated_at
+// migration 000119. Moving a ref (change order_key) must advance updated_at
 // so audit / backlink UIs can sort by last-touched.
 func TestUpdateRef_BumpsUpdatedAt(t *testing.T) {
 	svc, actor, wsID, rootID := setup(t)
