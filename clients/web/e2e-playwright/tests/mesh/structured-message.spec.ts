@@ -283,9 +283,11 @@ test.describe("Structured Message — API", () => {
     expect(message.content.blocks[2].text).toBe("func main() {}");
     // Body should include the code-block text now (extractBody fix)
     expect(message.body).toContain("func main() {}");
-    // Nested list-item carries an inner list block
-    const outerItem = message.content.blocks[1].items[0];
-    const innerList = outerItem.find((b: { type: string }) => b.type === "list");
+    // Nested list-item carries an inner list block. Goldmark places the
+    // nested list inside the SECOND outer item ("item two\n  - nested").
+    type ListBlock = { type: string; items?: ListBlock[][] };
+    const allInnerBlocks = (message.content.blocks[1].items as ListBlock[][]).flat();
+    const innerList = allInnerBlocks.find((b) => b.type === "list");
     expect(innerList).toBeTruthy();
   });
 
