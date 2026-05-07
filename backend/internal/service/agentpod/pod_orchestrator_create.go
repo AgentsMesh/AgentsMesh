@@ -74,6 +74,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	if !isResumeMode {
 		systemOverrides["session_id"] = sessionID
 	} else {
+		systemOverrides["session_id"] = ""
 		resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
 		if resumeAgentSession {
 			systemOverrides["resume_enabled"] = true
