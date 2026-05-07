@@ -64,13 +64,22 @@ test.describe("Ticket Spawn Pod context", () => {
     }, otherRepo.id);
 
     await page.goto(`/${TEST_ORG_SLUG}/tickets/${createdSlug}`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
-    await page.getByRole("button", { name: /spawn pod/i }).first().click();
-    await page.locator('[role="dialog"]').first().waitFor({ state: "visible" });
+    // Wait for the ticket to actually render (skeleton clears once
+    // currentTicket is loaded — and SpawnPodButton only appears after).
+    await expect(page.getByText("E2E Spawn Pod From Ticket").first()).toBeVisible({ timeout: 20000 });
+
+    const spawnBtn = page.getByRole("button", { name: /spawn pod/i }).first();
+    await expect(spawnBtn).toBeVisible({ timeout: 10000 });
+    await spawnBtn.click();
+
+    // The modal renders with id="create-pod-title" (h2). That's a more stable
+    // signal than [role="dialog"], which several unrelated components also use.
+    await expect(page.locator("#create-pod-title")).toBeVisible({ timeout: 15000 });
 
     const promptArea = page.locator('[role="dialog"] textarea').first();
-    // Use toHaveValue: textarea content set via React prop lives on `.value`,
+    // toHaveValue: textarea content set via React prop lives on `.value`,
     // not `textContent` (which is what toContainText reads).
     await expect(promptArea).toHaveValue(/E2E Spawn Pod From Ticket/);
     await expect(promptArea).toHaveValue(new RegExp(escapeRegex(description)));
