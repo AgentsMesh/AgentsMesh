@@ -748,6 +748,21 @@ jobs:
           fi
           ibazel -h | head -3 || true
 
+      # macmini-03 is a self-hosted runner that re-uses the working
+      # directory across jobs. actions/checkout's `clean: true` should
+      # remove untracked files, but we have observed stale migration
+      # files surviving (e.g. a previous PR's `000116_*.sql` after
+      # this PR renames it to `000128_*.sql`). golang-migrate then
+      # rejects the merged tree with "duplicate migration file".
+      # Force-clean the migrations directory specifically before bringing
+      # up the dev stack — cheap, defensive, scoped narrowly enough to
+      # stay safe across PRs.
+      - name: Pre-flight clean of stale migrations
+        run: |
+          cd backend/migrations
+          git clean -fdx .
+          ls 0001*.sql | wc -l
+
       - name: Bring up dev backend stack
         run: |
           bazel run //deploy/dev:backend_only
