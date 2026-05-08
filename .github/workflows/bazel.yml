@@ -748,6 +748,16 @@ jobs:
           fi
           ibazel -h | head -3 || true
 
+      - name: Pre-clean lingering host processes
+        # Self-hosted runner: previous failed runs may have left stale
+        # backend/relay binaries holding worktree-allocated ports
+        # (`_launch_ibazel`'s start-time cleanup only kills the recorded
+        # parent PID, not its bazel-spawned children). Run the canonical
+        # cleanup once before bring-up so this run starts on a clean
+        # host. Idempotent on a clean box.
+        run: |
+          bazel run //deploy/dev:clean || true
+
       - name: Bring up dev backend stack
         run: |
           bazel run //deploy/dev:backend_only
@@ -806,13 +816,19 @@ jobs:
           docker compose logs --tail=200 runner   || true
 
       - name: Tear down dev stack
-        # Self-hosted runner persists between jobs — leave the box
-        # clean for the next run. `down -v` drops volumes too so
-        # postgres state is fresh for migrations next time.
+        # Self-hosted macmini-03 persists state between runs. The previous
+        # `docker compose down -v` only cleaned containers + volumes; it
+        # left the host-side `ibazel` watchers + `bazel run` backend/relay
+        # processes alive, so each rerun stacked another stale backend on
+        # port :BACKEND_HTTP_PORT. After 4-5 reruns the new backend
+        # couldn't bind, the health probe hit the hung old process, and
+        # the wait timed out at exactly 480s every time. `bazel run
+        # //deploy/dev:clean` runs the dev.sh `clean` lifecycle which
+        # calls `stop_host_services` (kills ibazel + group-kills children)
+        # before tearing the docker stack down.
         if: always()
-        working-directory: deploy/dev
         run: |
-          docker compose down -v --remove-orphans || true
+          bazel run //deploy/dev:clean || true
 
   # =========================================================================
   # TODO: Bazel-native replacements tracked below. Each jobs above
