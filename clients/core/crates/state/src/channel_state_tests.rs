@@ -7,7 +7,7 @@ fn msg(id: i64, ch: i64, content: &str) -> ChannelMessage { ChannelMessage { id,
 fn msg_with_sender(id: i64, ch: i64, content: &str, user_id: i64, username: &str) -> ChannelMessage {
     let mut m = msg(id, ch, content);
     m.sender_user_id = Some(user_id);
-    m.sender_user = Some(User { id: user_id, email: format!("{username}@test.com"), username: username.into(), name: Some(username.into()), avatar_url: None });
+    m.sender_user = Some(User { id: user_id, email: format!("{username}@test.com"), username: username.into(), name: Some(username.into()), avatar_url: None, is_email_verified: None });
     m.created_at = Some(format!("2026-01-01T00:00:{:02}Z", id));
     m
 }
@@ -339,7 +339,7 @@ fn current_user_id() {
 // ── Single channel CRUD ──
 
 fn user(id: i64, username: &str) -> User {
-    User { id, email: format!("{username}@test.com"), username: username.into(), name: Some(username.into()), avatar_url: None }
+    User { id, email: format!("{username}@test.com"), username: username.into(), name: Some(username.into()), avatar_url: None, is_email_verified: None }
 }
 
 #[test]

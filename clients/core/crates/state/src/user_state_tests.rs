@@ -3,7 +3,7 @@ use agentsmesh_types::{User, UserIdentity};
 use crate::user_state::UserState;
 
 fn make_user(id: i64, email: &str) -> User {
-    User { id, email: email.to_string(), username: format!("user{id}"), name: None, avatar_url: None }
+    User { id, email: email.to_string(), username: format!("user{id}"), name: None, avatar_url: None, is_email_verified: None }
 }
 
 fn make_identity(id: i64, provider: &str) -> UserIdentity {

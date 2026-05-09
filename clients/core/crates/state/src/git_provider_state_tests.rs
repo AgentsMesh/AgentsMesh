@@ -19,7 +19,17 @@ fn make_provider(id: i64, ptype: &str) -> RepositoryProvider {
 }
 
 fn make_project(id: &str) -> ProviderRepository {
-    ProviderRepository { id: Some(id.to_string()), name: format!("project-{id}"), full_name: None, clone_url: None, ssh_url: None, default_branch: None }
+    ProviderRepository {
+        id: Some(id.to_string()),
+        name: format!("project-{id}"),
+        slug: None,
+        description: None,
+        default_branch: None,
+        visibility: None,
+        http_clone_url: None,
+        ssh_clone_url: None,
+        web_url: None,
+    }
 }
 
 #[test]

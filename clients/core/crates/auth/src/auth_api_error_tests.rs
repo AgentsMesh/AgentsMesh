@@ -177,9 +177,9 @@ mod auth_api_error_tests {
             refresh_token: "r".into(),
             user: agentsmesh_types::User {
                 id: 1, email: "e".into(), username: "u".into(),
-                name: None, avatar_url: None,
+                name: None, avatar_url: None, is_email_verified: None,
             },
-            expires_in: Some(3600),
+            expires_in: Some(3600), message: None,
         };
         state.apply_session(&session, "http://localhost", 1000);
         assert!(state.session.is_some());
@@ -196,9 +196,10 @@ mod auth_api_error_tests {
             token: "t".into(), refresh_token: "r".into(),
             user: agentsmesh_types::User {
                 id: 1, email: "e".into(), username: "u".into(),
-                name: None, avatar_url: None,
+                name: None, avatar_url: None, is_email_verified: None,
             },
             expires_in: Some(7200),
+            message: None,
         };
         state.apply_session(&session, "http://example", 1000);
         let s = state.session.as_ref().unwrap();
@@ -217,9 +218,9 @@ mod auth_api_error_tests {
             token: "t1".into(), refresh_token: "r1".into(),
             user: agentsmesh_types::User {
                 id: 1, email: "e".into(), username: "u".into(),
-                name: None, avatar_url: None,
+                name: None, avatar_url: None, is_email_verified: None,
             },
-            expires_in: Some(3600),
+            expires_in: Some(3600), message: None,
         };
         state.apply_session(&session, "http://example", 1000);
 
