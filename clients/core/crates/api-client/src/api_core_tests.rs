@@ -268,7 +268,7 @@ mod api_core_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/pause"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.pause_autopilot("ctrl-1").await.unwrap();

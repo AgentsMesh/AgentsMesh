@@ -79,7 +79,7 @@ impl ApiClient {
         &self,
         id: i64,
         data: &SandboxQueryRequest,
-    ) -> Result<serde_json::Value, ApiError> {
+    ) -> Result<SandboxQueryResponse, ApiError> {
         self.post(
             &self.org_path(&format!("/runners/{id}/sandboxes/query")),
             data,

@@ -36,12 +36,12 @@ impl ApiClient {
     pub async fn get_billing_usage(
         &self,
         usage_type: Option<&str>,
-    ) -> Result<BillingUsage, ApiError> {
+    ) -> Result<BillingUsageResponse, ApiError> {
         let mut path = self.org_path("/billing/usage");
         if let Some(t) = usage_type {
             path = format!("{path}?type={t}");
         }
-        self.get_resource(&path, "usage").await
+        self.get(&path).await
     }
 
     pub async fn check_billing_quota(

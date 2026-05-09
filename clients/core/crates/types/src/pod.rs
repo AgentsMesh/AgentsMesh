@@ -222,6 +222,10 @@ pub struct UpdatePodAliasRequest {
 pub struct PodListResponse {
     pub pods: Vec<Pod>,
     pub total: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+    #[serde(default)]
+    pub offset: Option<i64>,
 }
 
 #[cfg(test)]
@@ -318,6 +322,8 @@ mod tests {
                 ..Default::default()
             }],
             total: Some(1),
+            limit: None,
+            offset: None,
         };
         let json = serde_json::to_string(&resp).unwrap();
         let decoded: PodListResponse = serde_json::from_str(&json).unwrap();

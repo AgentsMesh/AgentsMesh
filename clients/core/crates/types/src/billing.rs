@@ -159,11 +159,27 @@ pub struct CustomerPortalResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlanListResponse {
     pub plans: Vec<Plan>,
+    #[serde(default)]
+    pub currency: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlanPriceListResponse {
     pub prices: Vec<PlanPrice>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlanPriceResponse {
+    pub price: PlanPrice,
+    #[serde(default)]
+    pub currency: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BillingUsageResponse {
+    pub usage: BillingUsage,
+    #[serde(default, rename = "type")]
+    pub usage_type: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

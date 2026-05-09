@@ -37,6 +37,10 @@ pub struct AuthSession {
     pub refresh_token: String,
     pub user: User,
     pub expires_in: Option<i64>,
+    /// Backend register/login may emit a banner message (e.g. "Please verify
+    /// your email"). Keep so the UI can surface it; absent on most sessions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,6 +152,7 @@ mod tests {
                 is_email_verified: None,
             },
             expires_in: Some(3600),
+            message: None,
         };
         let json = serde_json::to_string(&session).unwrap();
         let decoded: AuthSession = serde_json::from_str(&json).unwrap();

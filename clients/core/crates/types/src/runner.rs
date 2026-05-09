@@ -66,6 +66,37 @@ pub struct SandboxQueryRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SandboxStatus {
+    pub pod_key: String,
+    pub exists: bool,
+    pub can_resume: bool,
+    #[serde(default)]
+    pub sandbox_path: Option<String>,
+    #[serde(default)]
+    pub repository_url: Option<String>,
+    #[serde(default)]
+    pub branch_name: Option<String>,
+    #[serde(default)]
+    pub current_commit: Option<String>,
+    #[serde(default)]
+    pub size_bytes: Option<i64>,
+    #[serde(default)]
+    pub last_modified: Option<i64>,
+    #[serde(default)]
+    pub has_uncommitted_changes: Option<bool>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SandboxQueryResponse {
+    #[serde(default)]
+    pub sandboxes: Vec<SandboxStatus>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpgradeRunnerRequest {
     pub target_version: Option<String>,
     pub force: Option<bool>,

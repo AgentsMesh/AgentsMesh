@@ -59,3 +59,10 @@ pub struct AutopilotIteration {
 pub struct AutopilotListResponse {
     pub controllers: Vec<AutopilotController>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutopilotActionResponse {
+    pub status: String,
+    #[serde(default)]
+    pub action: Option<String>,
+}

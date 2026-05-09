@@ -250,7 +250,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/resume"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.resume_autopilot("ctrl-1").await.unwrap();
@@ -261,7 +261,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/stop"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.stop_autopilot("ctrl-1").await.unwrap();
@@ -272,7 +272,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/approve"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let data = agentsmesh_types::ApproveAutopilotRequest {
@@ -287,7 +287,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/takeover"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.takeover_autopilot("ctrl-1").await.unwrap();
@@ -298,7 +298,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/autopilot-controllers/ctrl-1/handback"))
-            .respond_with(ok(json!({})))
+            .respond_with(ok(json!({"status":"ok"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.handback_autopilot("ctrl-1").await.unwrap();
@@ -366,7 +366,7 @@ mod api_agent_billing_tests {
         let s = MockServer::start().await;
         Mock::given(method("GET")).and(path("/api/v1/orgs/acme/billing/usage"))
             .and(query_param("type", "compute"))
-            .respond_with(ok(json!({"used":50,"total":100})))
+            .respond_with(ok(json!({"usage":{"used":50,"total":100},"type":"compute"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.get_billing_usage(Some("compute")).await.unwrap();
