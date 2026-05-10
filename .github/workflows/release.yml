@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: bazel-contrib/setup-bazel@0.9.1
+      - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: true
@@ -257,7 +257,7 @@ jobs:
           # toolchain just for installer parity.
     steps:
       - uses: actions/checkout@v6
-      - uses: bazel-contrib/setup-bazel@0.9.1
+      - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: true
