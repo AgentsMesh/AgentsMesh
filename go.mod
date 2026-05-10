@@ -15,7 +15,7 @@ require (
 	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2
 	github.com/crewjam/saml v0.5.1
-	github.com/gin-contrib/cors v1.5.0
+	github.com/gin-contrib/cors v1.7.7
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-acme/lego/v4 v4.33.0
 	github.com/go-ldap/ldap/v3 v3.4.12
