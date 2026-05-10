@@ -160,38 +160,38 @@ jobs:
             ${{ matrix.target }}_push_agentsmesh
 
   # ===========================================================================
-  # Deploy US West production (independent parallel jobs, changes-based)
+  # Deploy US West production
   # ===========================================================================
+  # Single full-stack deploy (was 3 per-service jobs running
+  # `./deploy.sh --service <name>`). The previous mode skipped yaml on
+  # every push, so deploy-repo changes (healthcheck, registry, env) sat
+  # latent in git for weeks until somebody happened to run a full
+  # `docker stack deploy` manually — and then a month of accumulated
+  # drift would all hit production at once. The 2026-05-09 us-west-001
+  # disk-full → 2026-05-10 distroless healthcheck mismatch chain came
+  # straight from this drift.
+  #
+  # Now we always run `./deploy.sh <env> --version <sha>` (no
+  # `--service`), which reads base.yml + override.yml and reconciles
+  # every service spec. Stateless services (web / web-admin / backend)
+  # use start-first rolling updates with rollback on failure (see
+  # base.yml in deploy repo); stateful (postgres / redis / traefik)
+  # only restart when their spec actually changed. Net cost: a few
+  # extra `docker service inspect` calls per deploy.
+  #
+  # `git pull --rebase --autostash` makes the host pick up new yaml
+  # before the deploy reads it. autostash protects emergency manual
+  # edits on the host (rare but possible in incidents).
 
-  deploy-uswest-backend:
-    name: Deploy US West Backend
+  deploy-uswest:
+    name: Deploy US West
     needs: [changes, build-images]
-    if: always() && needs.changes.outputs.backend == 'true' && needs.build-images.result != 'failure'
+    if: always() && needs.build-images.result == 'success' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.web-admin == 'true')
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service backend --version ${VERSION}"
-
-  deploy-uswest-web:
-    name: Deploy US West Web
-    needs: [changes, build-images]
-    if: always() && needs.changes.outputs.web == 'true' && needs.build-images.result != 'failure'
-    runs-on: [self-hosted, deploy]
-    steps:
-      - run: |
-          VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web --version ${VERSION}"
-
-  deploy-uswest-web-admin:
-    name: Deploy US West Web-Admin
-    needs: [changes, build-images]
-    if: always() && needs.changes.outputs.web-admin == 'true' && needs.build-images.result != 'failure'
-    runs-on: [self-hosted, deploy]
-    steps:
-      - run: |
-          VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./deploy.sh uswest-prod --service web-admin --version ${VERSION}"
+          ssh aliyun-us-west-001 "cd /opt/agentsmesh && git pull --rebase --autostash origin main && ./deploy.sh uswest-prod --version ${VERSION}"
 
   deploy-uswest-relay-01:
     name: Deploy US West Relay 01
@@ -213,46 +213,26 @@ jobs:
 
   migrate-uswest:
     name: Migrate US West
-    needs: [changes, deploy-uswest-backend]
-    if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-uswest-backend.result == 'success'
+    needs: [changes, deploy-uswest]
+    if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-uswest.result == 'success'
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
           ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --direction up"
 
   # ===========================================================================
-  # Deploy China production (independent parallel jobs, changes-based)
+  # Deploy China production — same single-full-stack model as us-west.
   # ===========================================================================
 
-  deploy-cn-backend:
-    name: Deploy CN Backend
+  deploy-cn:
+    name: Deploy CN
     needs: [changes, build-images]
-    if: always() && needs.changes.outputs.backend == 'true' && needs.build-images.result != 'failure'
+    if: always() && needs.build-images.result == 'success' && (needs.changes.outputs.backend == 'true' || needs.changes.outputs.web == 'true' || needs.changes.outputs.web-admin == 'true')
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
           VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service backend --version ${VERSION}"
-
-  deploy-cn-web:
-    name: Deploy CN Web
-    needs: [changes, build-images]
-    if: always() && needs.changes.outputs.web == 'true' && needs.build-images.result != 'failure'
-    runs-on: [self-hosted, deploy]
-    steps:
-      - run: |
-          VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web --version ${VERSION}"
-
-  deploy-cn-web-admin:
-    name: Deploy CN Web-Admin
-    needs: [changes, build-images]
-    if: always() && needs.changes.outputs.web-admin == 'true' && needs.build-images.result != 'failure'
-    runs-on: [self-hosted, deploy]
-    steps:
-      - run: |
-          VERSION="${{ needs.build-images.outputs.version }}"
-          ssh aliyun-s001 "cd /opt/agentsmesh && ./deploy.sh cn-prod --service web-admin --version ${VERSION}"
+          ssh aliyun-s001 "cd /opt/agentsmesh && git pull --rebase --autostash origin main && ./deploy.sh cn-prod --version ${VERSION}"
 
   deploy-cn-relay-01:
     name: Deploy CN Relay 01
@@ -265,8 +245,8 @@ jobs:
 
   migrate-cn:
     name: Migrate CN
-    needs: [changes, deploy-cn-backend]
-    if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-cn-backend.result == 'success'
+    needs: [changes, deploy-cn]
+    if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-cn.result == 'success'
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
