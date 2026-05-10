@@ -467,7 +467,7 @@ jobs:
           cd dist && zip -r AgentsMeshCore-xcframework.zip \
                           AgentsMeshCore.xcframework AgentsMeshCore.swift
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: AgentsMeshCore-xcframework
           path: dist/AgentsMeshCore-xcframework.zip
@@ -634,7 +634,7 @@ jobs:
 
       - name: Upload Web e2e artifacts (shard ${{ matrix.shard }})
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: web-e2e-artifacts-shard-${{ matrix.shard }}
           path: |
@@ -739,7 +739,7 @@ jobs:
 
       - name: Upload MCP e2e logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mcp-e2e-logs
           path: |
@@ -844,7 +844,7 @@ jobs:
 
       - name: Upload Desktop e2e artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: desktop-e2e-artifacts
           path: |
