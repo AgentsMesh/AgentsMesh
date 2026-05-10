@@ -1,9 +1,11 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getPodService, getRunnerService } from "@/lib/wasm-core";
 import type { RunnerPodData } from "@/lib/api/runnerTypes";
 
 const mockPush = vi.fn();
+const mockCreatePod = vi.fn();
+const mockFetchRunner = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
   useParams: () => ({ id: "1", org: "test-org" }),
@@ -13,10 +15,20 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-import { useRunnerDetail } from "../useRunnerDetail";
+// Local override of the global setup.ts wasm-core mock.
+// vi.clearAllMocks() (run between tests) wipes the global mock's
+// implementation, leaving getRunnerService() returning undefined and
+// the hook's loadRunner() throwing silently — the test then times out
+// waiting for `runner` to populate. Using plain functions (not vi.fn)
+// here keeps the mock immune to mock-state resets.
+vi.mock("@/lib/wasm-core", () => ({
+  initWasmCore: vi.fn().mockResolvedValue(undefined),
+  isWasmReady: () => true,
+  getRunnerService: () => ({ fetch_runner: mockFetchRunner }),
+  getPodService: () => ({ create_pod: mockCreatePod }),
+}));
 
-const mockCreatePod = vi.fn();
-const mockFetchRunner = vi.fn();
+import { useRunnerDetail } from "../useRunnerDetail";
 
 const baseRunner = { id: 42, status: "online", is_enabled: true, relay_connections: [] };
 
@@ -41,15 +53,9 @@ async function renderResumed(pod: RunnerPodData) {
 
 describe("useRunnerDetail.handleConfirmResume — resume payload contract", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-
-    vi.mocked(getRunnerService).mockReturnValue({
-      fetch_runner: mockFetchRunner,
-    } as unknown as ReturnType<typeof getRunnerService>);
-
-    vi.mocked(getPodService).mockReturnValue({
-      create_pod: mockCreatePod,
-    } as unknown as ReturnType<typeof getPodService>);
+    mockPush.mockClear();
+    mockFetchRunner.mockReset();
+    mockCreatePod.mockReset();
 
     mockFetchRunner.mockResolvedValue(JSON.stringify(baseRunner));
     mockCreatePod.mockResolvedValue(
