@@ -29,7 +29,17 @@ export function useRealtimeConnection() {
   const user = useCurrentUser();
   const managerRef = useRef(getEventSubscriptionManager());
 
-  // Connect and subscribe to state changes when org/user are available
+  // Connect and subscribe to state changes when org/user are available.
+  //
+  // deps use `user?.id` (not `user`) on purpose: useCurrentUser() returns a
+  // fresh object reference on every store tick (useMemo([_tick])), so the
+  // login flow ticks several times in quick succession (token set → user
+  // populated → org list fetched → user-me roundtrip), each tick re-running
+  // this effect. Without an id-based dep, every tick triggers a
+  // disconnect/reconnect; the first WS lands in CONNECTING and gets close()'d
+  // before the handshake completes — Chrome logs "WebSocket is closed before
+  // the connection is established". Comparing primitives keeps the effect
+  // pinned to actual identity changes (user switch, org switch).
   useEffect(() => {
     if (!currentOrg || !user) {
       // disconnect() will trigger onConnectionStateChange callback
@@ -60,7 +70,7 @@ export function useRealtimeConnection() {
       }, 100);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentOrg?.id, user]);
+  }, [currentOrg?.id, user?.id]);
 
   const reconnect = useCallback(() => {
     const org = readCurrentOrg();

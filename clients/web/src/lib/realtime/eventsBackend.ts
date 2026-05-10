@@ -42,13 +42,32 @@ class TsEventsTransport implements IEventsTransport {
   send(data: string): void { this.ws.send(data); }
 
   close(code?: number, reason?: string): void {
-    if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
-      this.ws.close(code, reason);
-    }
-    this.ws.onopen = null;
+    // Detach business callbacks first — whoever called close() is tearing
+    // down the session and doesn't want late onmessage/onerror/onclose to
+    // bubble into the (already-replaced) EventSubscriptionManager.
     this.ws.onmessage = null;
     this.ws.onerror = null;
     this.ws.onclose = null;
+
+    if (this.ws.readyState === WebSocket.CONNECTING) {
+      // Calling ws.close() during the handshake makes Chrome log
+      // "WebSocket is closed before the connection is established" — a
+      // spec-mandated warning whenever a CONNECTING socket is aborted.
+      // Defer the close until onopen so readyState is OPEN at close time.
+      // This fires under React Strict Mode's double-mount: the first
+      // mount's ws is still negotiating when the second mount runs.
+      const ws = this.ws;
+      ws.onopen = () => {
+        ws.onopen = null;
+        ws.close(code, reason);
+      };
+      return;
+    }
+
+    this.ws.onopen = null;
+    if (this.ws.readyState === WebSocket.OPEN) {
+      this.ws.close(code, reason);
+    }
   }
 }
 
