@@ -5,18 +5,11 @@ updates:
     schedule:
       interval: weekly
 
+  # Single Go module rooted at //:go.mod — covers backend/, runner/,
+  # relay/, agentfile/, proto/ as subpackages. Don't add per-subtree
+  # entries; dependabot would silently fail to find go.mod there.
   - package-ecosystem: gomod
-    directory: /backend
-    schedule:
-      interval: weekly
-
-  - package-ecosystem: gomod
-    directory: /runner
-    schedule:
-      interval: weekly
-
-  - package-ecosystem: gomod
-    directory: /relay
+    directory: /
     schedule:
       interval: weekly
 

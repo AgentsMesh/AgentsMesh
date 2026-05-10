@@ -14,3 +14,9 @@ go_library(
         "//tests/mcp-e2e/client",
     ],
 )
+
+alias(
+    name = "go_default_library",
+    actual = ":fixture",
+    visibility = ["//visibility:public"],
+)

@@ -19,6 +19,13 @@ packages/service-interface/node_modules
 packages/service-runtime/node_modules
 clients/web/e2e-playwright/node_modules
 clients/desktop/e2e/node_modules
+# proto/gen is a lint-time mirror written by golangci_lint_runner.sh so
+# golangci-lint's typecheck sees the generated .pb.go files. The real
+# Bazel target is //proto/runner/v1:runner_go_proto; if Bazel walks
+# proto/gen/ it picks up gazelle's auto-generated BUILD.bazel which
+# references @org_golang_google_protobuf (now an indirect dep, not in
+# use_repo).
+proto/gen
 # Swift Package Manager checkout — `swift-syntax` ships its own
 # `//utils/bazel:...` references that don't resolve in this workspace,
 # breaking `bazel build //...` target expansion. SwiftPM deps are fed

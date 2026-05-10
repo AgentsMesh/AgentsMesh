@@ -69,7 +69,12 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
     exit 1
 fi
 
-cd "$BUILD_WORKSPACE_DIRECTORY/$module_dir"
+cd "$BUILD_WORKSPACE_DIRECTORY"
+
+# Single-module repo: no go.work. Worktrees nested under a parent repo
+# can still pick up an ancestor go.work via Go's upward search; force it
+# off so golangci-lint always resolves against //:go.mod alone.
+export GOWORK=off
 
 # golangci-lint's typecheck pass needs the generated proto stubs on the
 # Go module path. We don't commit them (proto/gen/ is .gitignored), so
@@ -87,30 +92,27 @@ cd "$BUILD_WORKSPACE_DIRECTORY/$module_dir"
 # source for the source-tree mirror.
 proto_dir="$BUILD_WORKSPACE_DIRECTORY/proto/gen/go/runner/v1"
 proto_target="//proto/runner/v1:runner_go_proto"
-(
-    cd "$BUILD_WORKSPACE_DIRECTORY"
-    bazel build --noshow_progress "$proto_target" >/dev/null 2>&1 || {
-        echo "ERROR: failed to bazel build $proto_target — proto stubs unavailable for lint." >&2
-        exit 1
-    }
-    bazel_out="$(bazel info output_path 2>/dev/null)"
-    if [[ -z "$bazel_out" || ! -d "$bazel_out" ]]; then
-        echo "ERROR: bazel output_path not resolvable: '$bazel_out'" >&2
-        exit 1
-    fi
-    pb_file="$(find "$bazel_out" -path "*runner_go_proto_/github.com/anthropics/agentsmesh/proto/gen/go/runner/v1/runner.pb.go" -print -quit 2>/dev/null)"
-    pb_grpc_file="$(find "$bazel_out" -path "*runner_go_proto_/github.com/anthropics/agentsmesh/proto/gen/go/runner/v1/runner_grpc.pb.go" -print -quit 2>/dev/null)"
-    if [[ -z "$pb_file" || -z "$pb_grpc_file" ]]; then
-        echo "ERROR: generated proto .pb.go files not found under $bazel_out — has $proto_target been built?" >&2
-        exit 1
-    fi
-    mkdir -p "$proto_dir"
-    cp -f "$pb_file" "$proto_dir/runner.pb.go"
-    cp -f "$pb_grpc_file" "$proto_dir/runner_grpc.pb.go"
-)
+bazel build --noshow_progress "$proto_target" >/dev/null 2>&1 || {
+    echo "ERROR: failed to bazel build $proto_target — proto stubs unavailable for lint." >&2
+    exit 1
+}
+bazel_out="$(bazel info output_path 2>/dev/null)"
+if [[ -z "$bazel_out" || ! -d "$bazel_out" ]]; then
+    echo "ERROR: bazel output_path not resolvable: '$bazel_out'" >&2
+    exit 1
+fi
+pb_file="$(find "$bazel_out" -path "*runner_go_proto_/github.com/anthropics/agentsmesh/proto/gen/go/runner/v1/runner.pb.go" -print -quit 2>/dev/null)"
+pb_grpc_file="$(find "$bazel_out" -path "*runner_go_proto_/github.com/anthropics/agentsmesh/proto/gen/go/runner/v1/runner_grpc.pb.go" -print -quit 2>/dev/null)"
+if [[ -z "$pb_file" || -z "$pb_grpc_file" ]]; then
+    echo "ERROR: generated proto .pb.go files not found under $bazel_out — has $proto_target been built?" >&2
+    exit 1
+fi
+mkdir -p "$proto_dir"
+cp -f "$pb_file" "$proto_dir/runner.pb.go"
+cp -f "$pb_grpc_file" "$proto_dir/runner_grpc.pb.go"
 
 echo "::group::golangci-lint $($linter --version | head -1) on $module_dir/"
-"$linter" run --config="$config" --timeout=5m "$@" ./...
+"$linter" run --config="$config" --timeout=5m "$@" "./$module_dir/..."
 status=$?
 echo "::endgroup::"
 exit $status

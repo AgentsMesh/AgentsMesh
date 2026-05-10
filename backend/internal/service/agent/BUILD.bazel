@@ -65,9 +65,12 @@ go_test(
     embed = [":agent"],
     deps = [
         "//backend/internal/domain/agent",
+        "//backend/internal/domain/extension",
         "//backend/internal/infra",
+        "//backend/internal/service/extension",
         "//backend/internal/testkit",
         "//backend/pkg/crypto",
+        "//proto/runner/v1:runner_go_proto",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@io_gorm_driver_sqlite//:sqlite",

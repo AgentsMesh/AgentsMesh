@@ -30,26 +30,25 @@ Run relevant checks before opening a PR.
 ### Backend
 
 ```bash
-cd backend
-go test ./...
+bazel test //backend/...
+bazel run //backend:lint
 ```
 
 ### Web
 
 ```bash
-cd web
-pnpm install --frozen-lockfile
-pnpm run lint
-pnpm run type-check
-pnpm run test:coverage
+pnpm install --frozen-lockfile          # one-shot at repo root
+bazel test //clients/web:lint
+bazel build //clients/web:src           # tsc --noEmit (type check)
+bazel test //clients/web:unit           # vitest
 ```
 
 ### Runner
 
 ```bash
-cd runner
-go test ./...
-go build ./cmd/runner
+bazel test //runner/...
+bazel build //runner/cmd/runner:runner
+bazel run //runner:lint
 ```
 
 ## Pull Request Guidelines

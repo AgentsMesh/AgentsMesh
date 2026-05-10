@@ -138,8 +138,7 @@ go c.writeLoop()
 
 运行测试：
 ```bash
-cd runner
-go test ./internal/relay/... -v -run "TestStopDuringReconnect|TestConcurrentStopAndReconnect|TestStartAfterStop|TestStopIdempotent"
+bazel test //runner/internal/relay/... --test_filter='TestStopDuringReconnect|TestConcurrentStopAndReconnect|TestStartAfterStop|TestStopIdempotent'
 ```
 
 ## 相关文件

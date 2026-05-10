@@ -133,10 +133,10 @@ bazel run //clients/ios:AgentsMesh_xcodeproj   # → Xcode project
 ### Backend (Go)
 
 ```bash
-cd backend
-go build ./cmd/server            # Build binary
-go test ./...                    # Run all tests
-go test -v ./internal/service/... -run TestAuth  # Run specific test
+bazel build //backend/cmd/server:server                   # Build binary
+bazel test //backend/...                                  # Run all tests
+bazel test //backend/internal/service/... --test_filter=TestAuth  # Run specific test
+bazel run //backend:lint                                  # golangci-lint
 ```
 
 ### Web (Next.js)
@@ -270,25 +270,28 @@ dependencies — Bazel 不读它**。
 ```bash
 # One-time setup
 rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
-brew install xcodegen        # generates AgentsMesh.xcodeproj
 
-# Build AgentsMeshCore.xcframework (consumed by clients/ios SPM package)
+# Build the signed .ipa (Bazel builds the XCFramework as a transitive dep)
+bazel build //clients/ios:AgentsMesh
+
+# Or build just the XCFramework (consumed by clients/ios SPM package)
 bazel build //clients/core/crates/ffi:AgentsMeshCore
 
-# Or one-shot (xcframework + symlink into SPM + xcodegen):
-cd clients/ios && make ios-setup
+# Run on a booted simulator (auto-boots iPhone 17 Pro if none)
+bazel run //clients/ios:AgentsMesh_sim
 
-# Then open in Xcode:
+# Develop in Xcode — regenerable, never commit the .xcodeproj
+bazel run //clients/ios:AgentsMesh_xcodeproj
 open AgentsMesh.xcodeproj
 ```
 
-Bazel tree artifact:
+Bazel tree artifacts:
 - `bazel-bin/clients/core/crates/ffi/AgentsMeshCore.xcframework/` — device + universal-sim slices + `Info.plist`
 - `bazel-bin/clients/core/crates/ffi/AgentsMeshCore_bindings_out/AgentsMeshCore.swift` — Swift glue (~18k lines)
 
-`make link-core` symlinks those two into the SPM tree at
-`clients/ios/Packages/AgentsMeshCore/Sources/AgentsMeshCoreFFI/` and
-`.../AgentsMeshCore/Generated/` respectively.
+The SPM package at `clients/ios/Packages/AgentsMeshCore/` references those
+artifacts directly through Bazel's `ios_app` macro — no source-tree
+symlinks, no manual `make` step.
 
 Layout:
 - `clients/ios/Packages/AgentsMeshCore/` — SPM facade: CoreBridge (singleton),

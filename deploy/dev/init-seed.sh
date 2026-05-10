@@ -85,7 +85,7 @@ check_migrations() {
         error "数据库表不存在，请先运行迁移"
         echo ""
         echo "运行迁移命令："
-        echo "  cd backend && ./scripts/migrate.sh up"
+        echo "  bazel run //deploy/dev:up    # 自动跑 migrate oneshot + 启动全栈"
         exit 1
     fi
     success "数据库迁移已完成"

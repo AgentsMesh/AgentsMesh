@@ -9,9 +9,9 @@
 
 ## Validation
 
-- [ ] Backend tests (`cd backend && go test ./...`)
-- [ ] Web checks (`cd web && pnpm run lint && pnpm run type-check && pnpm run test:coverage`)
-- [ ] Runner checks (`cd runner && go test ./...`)
+- [ ] Backend tests (`bazel test //backend/...`)
+- [ ] Web checks (`bazel test //clients/web:lint //clients/web:unit && bazel build //clients/web:src`)
+- [ ] Runner checks (`bazel test //runner/...`)
 - [ ] Manual validation performed (if applicable)
 
 ## Documentation

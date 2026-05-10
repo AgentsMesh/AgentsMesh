@@ -2,7 +2,7 @@
 # AgentsMesh — root BUILD file.
 #
 # Exports top-level config files so they can be referenced from nested
-# BUILD files (e.g. `//:go.work`, `//:pnpm-lock.yaml`). Adds workspace-level
+# BUILD files (e.g. `//:go.mod`, `//:pnpm-lock.yaml`). Adds workspace-level
 # targets: `buildifier` (formatter), `gazelle` (Go BUILD gen, Phase 1+).
 ###############################################################################
 
@@ -75,7 +75,7 @@ exports_files(
     [
         ".bazelrc",
         ".bazelignore",
-        "go.work",
+        "go.mod",
         "package.json",
         "README.md",
         "LICENSE",

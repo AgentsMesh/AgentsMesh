@@ -19,3 +19,9 @@ filegroup(
     srcs = glob(["*slug_reserved*.up.sql"]),
     visibility = ["//backend/pkg/slugkit:__pkg__"],
 )
+
+alias(
+    name = "go_default_library",
+    actual = ":migrations",
+    visibility = ["//visibility:public"],
+)

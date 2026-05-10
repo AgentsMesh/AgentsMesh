@@ -1,5 +1,12 @@
 load("@rules_go//go:def.bzl", "go_test")
 
+# This BUILD is hand-written. The `e2e` target uses glob() + manual tags
+# ("e2e", "manual", "no-sandbox") so it stays out of `bazel test //...`;
+# gazelle can't see those tags from sources, so without `:ignore` it
+# generates a parallel `suites_test` target with the same srcs and
+# conflicts at analysis time.
+# gazelle:ignore
+
 # MCP end-to-end test suites. Tagged "e2e" + "manual" so `bazel test //...`
 # never picks them up — they require a live deploy/dev stack. Run with:
 #   bazel run //deploy/dev:up   # one-time setup
