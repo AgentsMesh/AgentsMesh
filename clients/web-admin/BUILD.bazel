@@ -1,7 +1,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:next/package_json.bzl", next_bin = "bin")
 load("//build_defs/web:eslint.bzl", "eslint_test")
-load("//build_defs/web:next.bzl", "next_app")
+load("//build_defs/web:next.bzl", "next_app", "next_standalone_app")
 load("//build_defs/web:next_oci.bzl", "next_oci_image")
 load("//build_defs/web:ts.bzl", "ts_project")
 load("//build_defs/web:vitest.bzl", "vitest_test")
@@ -54,39 +54,75 @@ ts_project(
     deps = ["//:node_modules"],
 )
 
+# Common build inputs — see clients/web/BUILD.bazel for the rationale.
+_NEXT_DATA_COMMON = [
+    "postcss.config.mjs",
+    "tsconfig.json",
+    "//:node_modules",
+    "//:node_modules/@agentsmesh/service-interface",
+    "//:node_modules/@agentsmesh/service-runtime",
+    "//:node_modules/agentsmesh-wasm",
+    "//:package_json_bin",
+]
+
+# Dev path — keeps next.config.ts so existing `bazel run :next_dev` works.
 next_app(
     name = "next",
     srcs = _SRC_FILES,
-    # web-admin doesn't import @agentsmesh/* directly, but Next.js
-    # static analysis traverses the workspace's transitive imports.
-    # Listing the Bazel-managed links here keeps the graph closed.
-    data = [
-        "next.config.ts",
-        "postcss.config.mjs",
-        "tsconfig.json",
-        "//:node_modules",
-        "//:node_modules/@agentsmesh/service-interface",
-        "//:node_modules/@agentsmesh/service-runtime",
-        "//:node_modules/agentsmesh-wasm",
-        "//:package_json_bin",
-    ],
+    data = _NEXT_DATA_COMMON + ["next.config.ts"],
     next_js_binary = ":next_js_binary",
+)
+
+# OCI-image path — see clients/web/BUILD.bazel for the rationale.
+next_standalone_app(
+    name = "next_image",
+    srcs = _SRC_FILES,
+    config = "next.config.bazel.mjs",
+    data = _NEXT_DATA_COMMON,
+    next_js_binary = ":next_js_binary",
+    node_modules_runtime = [
+        "//:node_modules/next",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/@next/env",
+        "//:node_modules/@swc/helpers",
+        "//:node_modules/baseline-browser-mapping",
+        "//:node_modules/caniuse-lite",
+        "//:node_modules/postcss",
+        "//:node_modules/styled-jsx",
+    ],
 )
 
 next_oci_image(
     name = "image",
-    # Prod swarm stack defines a `curl -f http://localhost:3001/`
-    # healthcheck for web-admin. Next.js defaults to PORT=3000, which
-    # would mismatch the probe → unhealthy → SIGTERM loop. Pin
-    # PORT=3001 in the image so the runtime listener and the
-    # healthcheck address match without a per-deployment env override.
+    app_dir = "/app/clients/web-admin",
+    # Prod swarm stack defines a healthcheck against :3001/admin. Pin
+    # PORT here so the runtime listener and the probe address match.
     env = {"PORT": "3001"},
     exposed_ports = ["3001/tcp"],
+    extra_files = [
+        "entrypoint.mjs",
+        "healthcheck.mjs",
+    ],
     repositories = {
         "agentsmesh": "registry.agentsmesh.ai/agentsmesh/web-admin",
         "dockerhub": "agentsmesh/web-admin",
     },
-    start_binary = ":next_start_binary",
+    server_dir = ":next_image_server_dir",
+)
+
+# Image-size regression gate. 200 MB ceiling on the server tree (≈370 MB
+# image w/ distroless base). Current size is ~166 MB — most of the
+# weight is Next.js runtime (`node_modules/next/dist/compiled/next-server`,
+# ~50 MB) plus react/react-dom. See clients/web:image_size_gate for context.
+sh_test(
+    name = "image_size_gate",
+    srcs = ["//build_defs/web:image_size_gate.sh"],
+    args = [
+        "$(rootpath :next_image_server_dir)",
+        "209715200",
+    ],
+    data = [":next_image_server_dir"],
 )
 
 js_library(

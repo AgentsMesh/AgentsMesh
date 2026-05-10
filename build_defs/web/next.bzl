@@ -30,6 +30,8 @@ Usage:
     )
 """
 
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary", "js_run_devserver")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 
@@ -143,4 +145,154 @@ def next_app(
         entry_point = ":{}_start_entry".format(name),
         tags = tags,
         **kwargs
+    )
+
+# Standalone variant — produces a flat directory tree ready for `pkg_tar`
+# into a distroless OCI image. We fork the upstream `nextjs_standalone_build`
+# from aspect_rules_js v2.9.2 here (rather than calling it directly) for
+# two reasons:
+#   1. The upstream rule hard-codes `args = ["build"]`. Next 16's default
+#      Turbopack pipeline crashes inside the Bazel sandbox with "Symlink
+#      package.json is invalid, it points out of the filesystem root"
+#      (same root cause that already forces `next_app` above to pass
+#      `--webpack`). We need to thread `--webpack` through to the standalone
+#      build too.
+#   2. Vendoring the wrapper script (`build_defs/web/next_bazel_wrapper.mjs`)
+#      keeps us self-contained — the wrapper deletes the pnpm-symlink
+#      `node_modules` trees Next plants inside `.next/standalone/` so
+#      Bazel's declared-output validation passes.
+#
+# The user's Next.js config MUST be named something other than
+# `next.config.mjs` — we copy our wrapper to that path. We default to
+# `next.config.bazel.mjs` for both apps.
+def next_standalone_app(
+        name,
+        srcs,
+        data,
+        next_js_binary,
+        config = "next.config.bazel.mjs",
+        node_modules_runtime = None,
+        **kwargs):
+    """Build a Next.js standalone app + a packageable directory tree.
+
+    Targets produced:
+      :<name>             js_run_binary running `next build --webpack` (outputs
+                          `.next/`, including `.next/standalone/` after
+                          symlink fixup by next_bazel_wrapper.mjs).
+      :<name>_server_dir  flat directory tree ready for pkg_tar / oci_image:
+                            <pkg>/server.js
+                            <pkg>/.next/static/**
+                            <pkg>/public/**
+                            <pkg>/node_modules/** (NFT-traced)
+                            node_modules/** (workspace-level + runtime_deps)
+
+    Args:
+        name: base target name.
+        srcs: TS/TSX/CSS/JSON source files.
+        data: build-time deps (config files, full //:node_modules for NFT).
+        next_js_binary: js_binary pointing at the Next CLI.
+        config: path (relative to the package) of the user's Next.js config.
+            MUST NOT be `next.config.mjs` — see module docstring above.
+        node_modules_runtime: list of `//:node_modules/<pkg>` labels not
+            included in the standalone tree (Next NFT misses dynamic
+            requires). Defaults to next/react/react-dom; extend as smoke
+            tests surface MODULE_NOT_FOUND at runtime.
+        **kwargs: tags + visibility forwarded to all targets.
+    """
+    tags = kwargs.pop("tags", [])
+    env = kwargs.pop("env", {})
+    pkg = native.package_name()
+
+    # Synthesise `next.config.mjs` from our vendored wrapper. The wrapper
+    # reads the real config path from `NEXTJS_STANDALONE_CONFIG`.
+    env["NEXTJS_STANDALONE_CONFIG"] = "$(locations {})".format(config)
+    copy_file(
+        name = "_{}.standalone_config_file".format(name),
+        src = "//build_defs/web:next_bazel_wrapper.mjs",
+        out = "next.config.mjs",
+        visibility = ["//visibility:private"],
+        tags = ["manual"],
+    )
+
+    js_run_binary(
+        name = name,
+        tool = next_js_binary,
+        env = env,
+        # `--webpack` mirrors `next_app` above — Turbopack walks symlinks
+        # past the sandbox root. Re-evaluate when Turbopack ships a
+        # sandbox-tolerant fs walker.
+        args = [
+            "build",
+            "--webpack",
+        ],
+        srcs = srcs + data + [
+            ":_{}.standalone_config_file".format(name),
+            config,
+        ],
+        out_dirs = [".next"],
+        chdir = pkg,
+        mnemonic = "NextJsStandalone",
+        progress_message = "Compile Next.js standalone app %{label}",
+        tags = tags,
+        **kwargs
+    )
+
+    runtime_deps = list(node_modules_runtime or [
+        "//:node_modules/next",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+    ])
+
+    # `replace_prefixes` flattens the standalone tree into the layer root.
+    # Next.js plants server.js at `.next/standalone/<pkg>/server.js`; we
+    # strip the `.next/standalone/` prefix so the tree's root mirrors the
+    # monorepo layout (`<pkg>/server.js`). `.next/static/` and `public/`
+    # are not packed into standalone by Next — copy them into place
+    # under `<pkg>/`.
+    #
+    # `out = "app"` — the directory artifact is literally named `app` so
+    # `next_oci.bzl`'s pkg_tar produces `<package>/app/<contents>` which
+    # we then re-anchor at `/` with `package_dir = "/"` and a workspace
+    # strip — yielding `/app/<contents>` in the final image.
+    copy_to_directory(
+        name = name + "_server_dir",
+        out = "app",
+        srcs = [name] + native.glob(["public/**"], allow_empty = True) + runtime_deps,
+        # NFT-traced copies inside `.next/standalone/` overlap with the
+        # `//:node_modules` aggregate (both contain e.g. `next/README.md`).
+        # `copy_to_directory` rejects duplicates by default; allow them
+        # so the standalone tree wins where it overrides.
+        allow_overwrites = True,
+        # Patterns are matched against each file's path relative to its
+        # source. `:<name>` is a declared directory whose internal paths
+        # start at the directory root (`static/`, `standalone/`, ...);
+        # `glob("public/**")` returns paths under the package so they
+        # carry a `public/` prefix. Listing both forms keeps the rule
+        # robust against directory-artifact stripping behavior.
+        include_srcs_patterns = [
+            "public/**",
+            "static/**",
+            ".next/static/**",
+            "standalone/**",
+            ".next/standalone/**",
+            "node_modules/**",
+        ],
+        exclude_srcs_patterns = [
+            # `.aspect_rules_js/` is the pnpm virtual-store mirror —
+            # node_modules/<pkg>/ are symlinks pointing in here, but
+            # `copy_to_directory` already dereferences them, so the mirror
+            # is redundant. Excluding it strips ~1 GB of multi-platform
+            # native binaries (`@next/swc-*`, `@img/sharp-*`, `@swc/core-*`)
+            # that the runtime container does not need.
+            "node_modules/.aspect_rules_js/**",
+        ],
+        replace_prefixes = {
+            "standalone/": "",
+            ".next/standalone/": "",
+            "static/": "{}/.next/static/".format(pkg),
+            ".next/static/": "{}/.next/static/".format(pkg),
+            "public/": "{}/public/".format(pkg),
+        },
+        visibility = ["//visibility:public"],
+        tags = tags,
     )

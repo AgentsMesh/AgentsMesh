@@ -151,7 +151,7 @@ services:
       - POSTHOG_KEY=${POSTHOG_KEY:-}
       - POSTHOG_HOST=${POSTHOG_HOST:-}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ["CMD", "node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -171,7 +171,7 @@ services:
       - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
       - USE_HTTPS=false
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/admin"]
+      test: ["CMD", "node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3

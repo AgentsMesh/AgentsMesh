@@ -1,39 +1,44 @@
-"""Package a Next.js build into an OCI image.
+"""Package a Next.js standalone build into a distroless OCI image.
 
-Wraps the `next_app()` output (the `.next/` directory + `package.json`
-+ `node_modules`) into a Node-based container. The resulting image runs
-`node ./node_modules/next/dist/bin/next start` on container boot.
+Consumes `:<name>_server_dir` from `next_standalone_app` (in
+//build_defs/web:next.bzl) — a flat directory tree containing
+server.js + .next/static/ + public/ + NFT-traced node_modules. We
+pkg_tar that under /app, drop in `entrypoint.mjs` + `healthcheck.mjs`
+from the calling package, and launch via the distroless base's node
+binary.
 
-Separate from build_defs/docker/go_oci_image.bzl because Node apps carry
-their interpreter + runtime in-image, whereas Go binaries are static.
+Distinct from the legacy `js_image_layer`-based path because:
+  - Standalone output is self-contained: server.js needs only `node`
+    and the NFT-traced files, no bash launcher / runfiles tree.
+  - The base is real distroless (gcr.io/distroless/nodejs20-debian12),
+    which has no /bin/sh — `js_image_layer` would not run there.
 
 Usage:
     load("//build_defs/web:next_oci.bzl", "next_oci_image")
 
     next_oci_image(
         name = "image",
-        start_binary = ":next_start_binary",
+        server_dir = ":next_server_dir",
+        extra_files = ["entrypoint.mjs", "healthcheck.mjs"],
+        app_dir = "/app/clients/web",
+        env = {"PORT": "3000"},
         exposed_ports = ["3000/tcp"],
         repositories = {
-            "dockerhub":  "agentsmesh/web",
             "agentsmesh": "registry.agentsmesh.ai/agentsmesh/web",
+            "dockerhub": "agentsmesh/web",
         },
     )
-
-    # Produces:
-    #   :image                   — oci_image
-    #   :image_tarball           — oci_load (docker load)
-    #   :image_push_dockerhub    — oci_push to Docker Hub
-    #   :image_push_agentsmesh   — oci_push to AgentsMesh registry
 """
 
-load("@aspect_rules_js//js:defs.bzl", "js_image_layer")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//build_defs/docker:oci_push.bzl", "oci_push_targets")
 
 def next_oci_image(
         name,
-        start_binary,
+        server_dir,
+        extra_files = [],
+        app_dir = None,
         base = "@distroless_nodejs",
         env = {},
         exposed_ports = ["3000/tcp"],
@@ -41,49 +46,77 @@ def next_oci_image(
         repositories = {},
         repository = None,
         visibility = ["//visibility:public"]):
-    """OCI image wrapping a Next.js production build.
+    """Distroless OCI image around a Next.js standalone server tree.
 
     Args:
-        name: Target name.
-        start_binary: Label of the `<name>_start_binary` from next_app.
-        base: Base image, defaults to distroless Node 20.
-        env: Env vars injected into the container.
-        exposed_ports: Container ports to expose.
+        name: target name.
+        server_dir: Label of `:<n>_server_dir` from `next_standalone_app`.
+        extra_files: list of file Labels dropped verbatim under /app
+            (typically `entrypoint.mjs` and `healthcheck.mjs`).
+        app_dir: absolute path inside the container that contains
+            `server.js` (e.g. `/app/clients/web`). Baked into the
+            `APP_DIR` env so `entrypoint.mjs` knows where to chdir.
+            Defaults to `/app` (server.js at root — only used by callers
+            that flatten the standalone tree themselves).
+        base: base image; defaults to `@distroless_nodejs`.
+        env: extra env vars (merged after `APP_DIR`).
+        exposed_ports: container ports.
         labels: OCI labels.
-        repositories: Dict mapping registry key → full repo URL. Every
-            entry becomes a `:name_push_<key>` target. `bazel run` one
-            of them with `--stamp --workspace_status_command=...` to
-            push with the CI-provided version tag.
-        repository: Back-compat single-registry form; equivalent to
-            `repositories = {"default": repository}`. Prefer the dict.
-        visibility: Standard visibility.
+        repositories: dict mapping registry key → full repo URL.
+        repository: back-compat single-registry form.
+        visibility: standard visibility.
     """
 
-    # js_image_layer packages node_modules + the built .next/ tree
-    # into OCI-compatible layers with correct ownership. The layer
-    # places the binary at `<root>/<package>/<name>` — mirror that here
-    # when wiring the container entrypoint. The workdir stays at `/app`
-    # (not the package subdir) because the binary's internal `chdir`
-    # env is resolved relative to `$PWD`, so running from /app lets the
-    # script cd into clients/<pkg>/ as the build-time `chdir` attr
-    # expects.
-    js_image_layer(
-        name = name + "_layer",
-        binary = start_binary,
-        root = "/app",
+    # The standalone server tree is named `app` (set via `copy_to_directory`'s
+    # `out = "app"` in next.bzl), so the pkg_tar in-archive path before
+    # any strip is `<package>/app/<contents>`. We strip the workspace path
+    # to land everything at `/app/<contents>` in the image.
+    #
+    # `owner = "65532.65532"` makes everything writable by the distroless
+    # `:nonroot` user, which entrypoint.mjs needs in order to substitute
+    # placeholders inside `.next/`. Default mode 0644 keeps file
+    # contents owner-writable + world-readable.
+    pkg_tar(
+        name = name + "_app_layer",
+        srcs = [server_dir],
+        package_dir = "/",
+        strip_prefix = "/" + native.package_name(),
+        owner = "65532.65532",
+        # pkg_tar defaults to mode 0555 (read+exec only). Override to
+        # 0644 so the nonroot user can rewrite `.next/*.js` placeholder
+        # values at container boot. server.js itself stays runnable
+        # (Node only needs read+exec to load the file as JS).
+        mode = "0644",
     )
 
-    binary_name = start_binary.split(":")[-1]
-    entrypoint_path = "/app/" + native.package_name() + "/" + binary_name
+    tars = [":" + name + "_app_layer"]
+    if extra_files:
+        pkg_tar(
+            name = name + "_runtime_layer",
+            srcs = extra_files,
+            package_dir = "/app",
+            owner = "65532.65532",
+            mode = "0755",
+        )
+        tars.append(":" + name + "_runtime_layer")
+
+    image_env = {}
+    if app_dir:
+        image_env["APP_DIR"] = app_dir
+    image_env.update(env)
 
     oci_image(
         name = name,
         base = base,
-        entrypoint = [entrypoint_path],
-        env = env,
+        # distroless/nodejs20-debian12 ships node at /nodejs/bin/node and
+        # sets it as the default ENTRYPOINT. We override to invoke
+        # entrypoint.mjs first (runtime placeholder substitution +
+        # signal-forwarding spawn of server.js).
+        entrypoint = ["/nodejs/bin/node", "/app/entrypoint.mjs"],
+        env = image_env,
         exposed_ports = exposed_ports,
         labels = labels,
-        tars = [":" + name + "_layer"],
+        tars = tars,
         visibility = visibility,
         workdir = "/app",
     )

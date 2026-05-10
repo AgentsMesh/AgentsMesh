@@ -41,7 +41,7 @@
 
 /**
  * 获取主域名配置
- * 过滤未被 docker-entrypoint.sh 替换的占位符（如 "__PRIMARY_DOMAIN__"）
+ * 过滤未被 entrypoint.mjs 替换的占位符（如 "__PRIMARY_DOMAIN__"）
  */
 function getPrimaryDomain(): string | undefined {
   const domain = process.env.NEXT_PUBLIC_PRIMARY_DOMAIN;
@@ -51,7 +51,7 @@ function getPrimaryDomain(): string | undefined {
 
 /**
  * 是否使用 HTTPS
- * 过滤未被 docker-entrypoint.sh 替换的占位符（如 "__USE_HTTPS__"）
+ * 过滤未被 entrypoint.mjs 替换的占位符（如 "__USE_HTTPS__"）
  */
 function isHttpsEnabled(): boolean {
   const val = process.env.NEXT_PUBLIC_USE_HTTPS;

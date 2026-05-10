@@ -190,13 +190,13 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      # Runtime environment variables (injected by docker-entrypoint.sh)
+      # Runtime environment variables (injected by entrypoint.mjs)
       - PRIMARY_DOMAIN=${SERVER_IP}
       - USE_HTTPS=false
       - POSTHOG_KEY=${POSTHOG_KEY:-}
       - POSTHOG_HOST=${POSTHOG_HOST:-}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ["CMD", "node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -214,13 +214,13 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      # Runtime environment variables (injected by docker-entrypoint.sh)
+      # Runtime environment variables (injected by entrypoint.mjs)
       - PRIMARY_DOMAIN=${SERVER_IP}
       - USE_HTTPS=false
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/admin"]
+      test: ["CMD", "node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3

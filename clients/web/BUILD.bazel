@@ -1,7 +1,7 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:next/package_json.bzl", next_bin = "bin")
 load("//build_defs/web:eslint.bzl", "eslint_test")
-load("//build_defs/web:next.bzl", "next_app")
+load("//build_defs/web:next.bzl", "next_app", "next_standalone_app")
 load("//build_defs/web:next_oci.bzl", "next_oci_image")
 load("//build_defs/web:ts.bzl", "ts_project")
 load("//build_defs/web:vitest.bzl", "vitest_test")
@@ -124,8 +124,10 @@ _SRC_FILES = glob(
 # `workspace:*` in root package.json; see build_defs/web/internal_package.bzl).
 # We must list each `npm_link_package` link explicitly because
 # `//:node_modules` only aggregates pnpm-lock.yaml-derived externals.
-_NEXT_DATA = [
-    "next.config.ts",
+# Common build inputs shared between the dev path (`next_app`) and the
+# OCI-image path (`next_standalone_app`). Each macro adds its own config
+# file (.ts vs .bazel.mjs) on top — see comments below.
+_NEXT_DATA_COMMON = [
     "postcss.config.mjs",
     "tsconfig.json",
     "//:node_modules",
@@ -140,21 +142,83 @@ _NEXT_DATA = [
     allow_empty = True,
 )
 
+# Dev / type-check / vitest path — keeps the existing `next.config.ts`
+# so `bazel run :next_dev` and `bazel run :next_start` work unchanged.
+# This path does NOT enable `output: "standalone"` (the .ts file's
+# legacy BAZEL_BUILD env gate stays off by default).
 next_app(
     name = "next",
     srcs = _SRC_FILES,
-    data = _NEXT_DATA,
+    data = _NEXT_DATA_COMMON + ["next.config.ts"],
     next_js_binary = ":next_js_binary",
+)
+
+# OCI-image path — uses the standalone build via aspect_rules_js's
+# `nextjs_standalone_build` wrapper, which strips pnpm-symlink
+# `node_modules` trees inside `.next/standalone/` so Bazel's declared
+# output validation passes. Config MUST be `next.config.bazel.mjs`
+# (the wrapper synthesises a `next.config.mjs` of its own; the user's
+# config can't share that name).
+next_standalone_app(
+    name = "next_image",
+    srcs = _SRC_FILES,
+    config = "next.config.bazel.mjs",
+    data = _NEXT_DATA_COMMON,
+    next_js_binary = ":next_js_binary",
+    # NFT misses dynamic-`require` deps; whitelist runtime packages
+    # whose absence at boot would 500 the server. Append here when
+    # smoke tests surface MODULE_NOT_FOUND.
+    # NFT misses dynamic-`require` deps; whitelist runtime packages
+    # whose absence at boot would 500 the server. The 6 next-internal
+    # deps (@next/env / @swc/helpers / baseline-browser-mapping /
+    # caniuse-lite / postcss / styled-jsx) are hoisted into root
+    # package.json so `//:node_modules/<pkg>` labels exist for them.
+    # Append more here when smoke tests surface MODULE_NOT_FOUND.
+    node_modules_runtime = [
+        "//:node_modules/next",
+        "//:node_modules/react",
+        "//:node_modules/react-dom",
+        "//:node_modules/next-intl",
+        "//:node_modules/@next/env",
+        "//:node_modules/@swc/helpers",
+        "//:node_modules/baseline-browser-mapping",
+        "//:node_modules/caniuse-lite",
+        "//:node_modules/postcss",
+        "//:node_modules/styled-jsx",
+        "//:node_modules/@agentsmesh/service-runtime",
+        "//:node_modules/@agentsmesh/service-interface",
+        "//:node_modules/agentsmesh-wasm",
+    ],
 )
 
 next_oci_image(
     name = "image",
+    app_dir = "/app/clients/web",
     exposed_ports = ["3000/tcp"],
+    extra_files = [
+        "entrypoint.mjs",
+        "healthcheck.mjs",
+    ],
     repositories = {
         "agentsmesh": "registry.agentsmesh.ai/agentsmesh/web",
         "dockerhub": "agentsmesh/web",
     },
-    start_binary = ":next_start_binary",
+    server_dir = ":next_image_server_dir",
+)
+
+# Image-size regression gate. Fails CI if the staged server tree grows
+# past 350 MB. Combined with the deterministic ~170 MB distroless base,
+# the runtime image stays under the 500 MB target. The 2026-05-09
+# disk-full incident saw the legacy image at 7.97 GB; bump only with a
+# justifying commit message.
+sh_test(
+    name = "image_size_gate",
+    srcs = ["//build_defs/web:image_size_gate.sh"],
+    args = [
+        "$(rootpath :next_image_server_dir)",
+        "367001600",
+    ],
+    data = [":next_image_server_dir"],
 )
 
 js_library(

@@ -6,7 +6,7 @@ import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCurrentUser, useCurrentOrg } from "@/stores/auth";
 
-// Filter out unresolved docker-entrypoint.sh placeholders (e.g. "__POSTHOG_KEY__")
+// Filter out unresolved entrypoint.mjs placeholders (e.g. "__POSTHOG_KEY__")
 function resolveEnv(val: string | undefined): string {
   if (!val || val.startsWith("__")) return "";
   return val;

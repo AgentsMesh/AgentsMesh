@@ -89,27 +89,27 @@ use_repo(
     "distroless_static_linux_arm64_v8",
 )
 
-# Base image for Node.js services (Next.js web + web-admin). We pull
-# Debian-based `node:20` (full bookworm, not -slim) instead of a
-# distroless image here because:
-#  1. `js_image_layer` wraps the `js_binary` in a bash launcher (to set
-#     BAZEL_BINDIR and resolve runfiles), and Google's `distroless/nodejs20`
-#     ships neither bash nor sh.
-#  2. The prod swarm stack defines a `curl -f http://localhost:3000/`
-#     healthcheck. `node:20-slim` strips curl/wget; `node:20` (default
-#     bookworm) ships both. Keeping the full image lets the healthcheck
-#     work without taking a runtime dependency on the deploy repo's
-#     compose yml.
-# Multi-arch so the Next.js images still release to both amd64 and arm64
-# hosts.
+# Base image for Next.js services (clients/web + clients/web-admin).
+# Real distroless this time — the previous full `node:20` (~1.2GB) blew
+# up production images to 8GB and contributed to the 2026-05-09
+# us-west-001 disk-full incident. Two design changes made distroless
+# viable:
+#  1. The image pipeline now uses `nextjs_standalone_build` from
+#     aspect_rules_js v2.9.2's `contrib/nextjs/defs.bzl`. The Next.js
+#     standalone tree ships a self-contained `server.js` whose
+#     entrypoint is `node server.js` — no sh launcher, no `js_image_layer`
+#     bash wrapper, no need for /bin/sh in the runtime.
+#  2. The `curl -f http://localhost:3000/` healthcheck moves to a
+#     pure-stdlib Node probe at `/app/healthcheck.mjs`, so the runtime
+#     does not depend on curl/wget being present.
 oci.pull(
     name = "distroless_nodejs",
-    image = "docker.io/library/node",
+    image = "gcr.io/distroless/nodejs20-debian12",
     platforms = [
         "linux/amd64",
         "linux/arm64/v8",
     ],
-    tag = "20",
+    tag = "nonroot",
 )
 use_repo(
     oci,
@@ -451,16 +451,37 @@ npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
 npm.npm_translate_lock(
     name = "npm",
     pnpm_lock = "//:pnpm-lock.yaml",
-    # Hoist `next` and `eslint-config-next` so eslint-config-next's
-    # internal `require("next/dist/compiled/babel/eslint-parser")` can
-    # walk up to the root `node_modules/next/` symlink — without this
+    # Hoisted packages — exposed at root so `//:node_modules/<pkg>` is a
+    # valid label even when the package is a transitive dep, not a direct
+    # one in `package.json`.
+    #
+    # `next` + `eslint-config-next`: lets eslint-config-next walk up to
+    # the root `node_modules/next/` symlink for its
+    # `require("next/dist/compiled/babel/eslint-parser")` — without this
     # the pnpm virtual store buries `next` peer-deep and ESLint fails
-    # under Bazel sandboxing. Phase A unified the version, so the
-    # hoist no longer collides with desktop (which still has its own
-    # package.json but uses the same versions).
+    # under Bazel sandboxing.
+    #
+    # Next.js internal deps (`@next/env`, `@swc/helpers`,
+    # `baseline-browser-mapping`, `caniuse-lite`, `postcss`, `styled-jsx`):
+    # consumed at runtime by `next.config.bazel.mjs`'s standalone server
+    # via `next_standalone_app(..., node_modules_runtime = [...])`. NFT
+    # writes them as absolute symlinks the wrapper dereferences, but the
+    # dereferenced server tree no longer sits inside pnpm's virtual
+    # store, so Node module resolution at runtime relies on these labels
+    # being available at the workspace root. Hoisting here keeps root
+    # `package.json` clean.
     public_hoist_packages = {
         "next": [""],
         "eslint-config-next": [""],
+        "@next/env": [""],
+        "@swc/helpers": [""],
+        "baseline-browser-mapping": [""],
+        "caniuse-lite": [""],
+        # postcss has two versions resolved in pnpm-lock.yaml (8.4.31 +
+        # 8.5.10). Next 16 pulls 8.5.10; pin to that explicitly so the
+        # public_hoist_packages disambiguation does not refuse to resolve.
+        "postcss@8.5.10": [""],
+        "styled-jsx": [""],
     },
     verify_node_modules_ignored = "//:.bazelignore",
 )

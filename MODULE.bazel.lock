@@ -945,7 +945,7 @@
     "@@rules_oci+//oci:extensions.bzl%oci": {
       "general": {
         "bzlTransitiveDigest": "m5CaKTCnSQra32tL1Wy7xwRpB8nsAE7OSh4++9xURBg=",
-        "usagesDigest": "D545NRuKwngtgsqPuv0ISZnpoGlmUHn8CUHjlMshT3w=",
+        "usagesDigest": "qFrV9JmoOuKCjrk8tckLc0vmMYVSxN8Ghek/TJTGfXo=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -994,9 +994,9 @@
             "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
             "attributes": {
               "scheme": "https",
-              "registry": "index.docker.io",
-              "repository": "library/node",
-              "identifier": "20",
+              "registry": "gcr.io",
+              "repository": "distroless/nodejs20-debian12",
+              "identifier": "nonroot",
               "platform": "linux/amd64",
               "target_name": "distroless_nodejs_linux_amd64",
               "bazel_tags": []
@@ -1006,9 +1006,9 @@
             "repoRuleId": "@@rules_oci+//oci/private:pull.bzl%oci_pull",
             "attributes": {
               "scheme": "https",
-              "registry": "index.docker.io",
-              "repository": "library/node",
-              "identifier": "20",
+              "registry": "gcr.io",
+              "repository": "distroless/nodejs20-debian12",
+              "identifier": "nonroot",
               "platform": "linux/arm64/v8",
               "target_name": "distroless_nodejs_linux_arm64_v8",
               "bazel_tags": []
@@ -1019,9 +1019,9 @@
             "attributes": {
               "target_name": "distroless_nodejs",
               "scheme": "https",
-              "registry": "index.docker.io",
-              "repository": "library/node",
-              "identifier": "20",
+              "registry": "gcr.io",
+              "repository": "distroless/nodejs20-debian12",
+              "identifier": "nonroot",
               "platforms": {
                 "@@platforms//cpu:x86_64": "@distroless_nodejs_linux_amd64",
                 "@@platforms//cpu:arm64": "@distroless_nodejs_linux_arm64_v8"

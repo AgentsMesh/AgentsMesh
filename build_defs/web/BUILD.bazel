@@ -17,6 +17,21 @@ exports_files(
     visibility = ["//visibility:public"],
 )
 
+# Image-size regression gate. clients/{web,web-admin}:image_size_gate
+# `sh_test`s it against their `:image_tarball` outputs.
+exports_files(
+    ["image_size_gate.sh"],
+    visibility = ["//visibility:public"],
+)
+
+# Vendored from aspect_rules_js v2.9.2 contrib/nextjs/next.bazel.mjs —
+# our `next_standalone_app` macro forks the upstream rule to pass
+# `--webpack` (Next 16 Turbopack crashes inside the Bazel sandbox).
+exports_files(
+    ["next_bazel_wrapper.mjs"],
+    visibility = ["//visibility:public"],
+)
+
 js_library(
     name = "vitest_shim",
     srcs = ["vitest_shim.cjs"],
