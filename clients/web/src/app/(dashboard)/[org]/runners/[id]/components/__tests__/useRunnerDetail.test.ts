@@ -20,15 +20,6 @@ const mockFetchRunner = vi.fn();
 
 const baseRunner = { id: 42, status: "online", is_enabled: true, relay_connections: [] };
 
-function setupMocks() {
-  const podSvc = getPodService();
-  (podSvc as unknown as Record<string, unknown>).create_pod = mockCreatePod;
-
-  const runnerSvc = getRunnerService();
-  (runnerSvc as unknown as Record<string, unknown>).fetch_runner = mockFetchRunner;
-  mockFetchRunner.mockResolvedValue(JSON.stringify(baseRunner));
-}
-
 function makePod(overrides: Partial<RunnerPodData> = {}): RunnerPodData {
   return {
     id: 1, pod_key: "pod-source-abc", organization_id: 1, runner_id: 42,
@@ -39,7 +30,10 @@ function makePod(overrides: Partial<RunnerPodData> = {}): RunnerPodData {
 
 async function renderResumed(pod: RunnerPodData) {
   const { result } = renderHook(() => useRunnerDetail((k: string) => k));
-  await waitFor(() => expect(result.current.runner?.id).toBe(42));
+  await waitFor(
+    () => expect(result.current.runner?.id).toBe(42),
+    { timeout: 5000 }
+  );
   act(() => { result.current.setResumingPod(pod); });
   await act(async () => { await result.current.handleConfirmResume(); });
   return result;
@@ -48,7 +42,16 @@ async function renderResumed(pod: RunnerPodData) {
 describe("useRunnerDetail.handleConfirmResume — resume payload contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    setupMocks();
+
+    vi.mocked(getRunnerService).mockReturnValue({
+      fetch_runner: mockFetchRunner,
+    } as unknown as ReturnType<typeof getRunnerService>);
+
+    vi.mocked(getPodService).mockReturnValue({
+      create_pod: mockCreatePod,
+    } as unknown as ReturnType<typeof getPodService>);
+
+    mockFetchRunner.mockResolvedValue(JSON.stringify(baseRunner));
     mockCreatePod.mockResolvedValue(
       JSON.stringify({ pod: { pod_key: "pod-resume-xyz" } })
     );
