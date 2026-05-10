@@ -131,3 +131,24 @@ func TestPodCreateAPI_EmptyAliasNormalized(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.Equal(t, "MISSING_AGENT_SLUG", resp["code"])
 }
+
+// Backend equivalent of clients/core/crates/types/src/pod.rs
+// `create_pod_request_resume_without_agent_slug` — guards the protocol
+// contract that resume requests omit `agent_slug` (orchestrator inherits
+// it from the source pod). A future `binding:"required"` on AgentSlug
+// would silently reintroduce the original PR #340 bug; this test red-flags it.
+func TestCreatePodRequest_ResumeWithoutAgentSlug_Unmarshals(t *testing.T) {
+	body := `{"source_pod_key":"pod-source-123","resume_agent_session":true,"runner_id":1,"cols":80,"rows":24}`
+
+	var req CreatePodRequest
+	err := json.Unmarshal([]byte(body), &req)
+	require.NoError(t, err)
+
+	assert.Empty(t, req.AgentSlug, "AgentSlug must accept missing field for resume mode")
+	assert.Equal(t, "pod-source-123", req.SourcePodKey)
+	assert.Equal(t, int64(1), req.RunnerID)
+	assert.Equal(t, int32(80), req.Cols)
+	assert.Equal(t, int32(24), req.Rows)
+	require.NotNil(t, req.ResumeAgentSession)
+	assert.True(t, *req.ResumeAgentSession)
+}
