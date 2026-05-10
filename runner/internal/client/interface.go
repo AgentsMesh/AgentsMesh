@@ -1,6 +1,8 @@
 package client
 
 import (
+	"time"
+
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
@@ -73,7 +75,7 @@ type ConnectionSender interface {
 	SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error
 
 	// SendTokenUsage sends a token usage report to the server.
-	SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage) error
+	SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage, podStartedAt time.Time) error
 }
 
 // ConnectionMonitor defines methods for monitoring connection health.

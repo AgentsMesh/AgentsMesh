@@ -1,0 +1,10 @@
+{"type":"session_start"}
+
+{"type":"user","content":"mixed session"}
+not valid json at all
+{"type":"response","response":{"model":"o3-mini","usage":{"prompt_tokens":300,"completion_tokens":150}}}
+{"type":"assistant","message":{"model":"gpt-4o","usage":{"input_tokens":100,"output_tokens":50}}}
+{"model":"o3-mini","usage":{"prompt_tokens":200,"completion_tokens":100}}
+{"type":"user","content":"no usage here"}
+{"type":"tool_call","tool":"shell"}
+{"type":"response","response":{"model":"gpt-4o","usage":{"input_tokens":75,"output_tokens":25}}}

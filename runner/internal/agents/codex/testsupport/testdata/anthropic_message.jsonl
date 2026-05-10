@@ -1,0 +1,4 @@
+{"type":"session_start","session_id":"sess_legacy"}
+{"type":"user","message":{"content":"hello"}}
+{"type":"assistant","message":{"model":"claude-3-5-sonnet","usage":{"input_tokens":420,"output_tokens":180,"cache_creation_input_tokens":50,"cache_read_input_tokens":300}}}
+{"type":"assistant","message":{"model":"claude-3-5-sonnet","usage":{"input_tokens":380,"output_tokens":210,"cache_read_input_tokens":250}}}

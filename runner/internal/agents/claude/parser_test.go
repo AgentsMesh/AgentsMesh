@@ -31,7 +31,7 @@ func setupClaudeHomeProject(t *testing.T, sandboxPath string) string {
 	resolved, err := filepath.EvalSymlinks(sandboxPath)
 	require.NoError(t, err)
 
-	hash := claudePathHash(resolved)
+	hash := ProjectDirName(resolved)
 	projectDir := filepath.Join(home, ".claude", "projects", hash)
 	require.NoError(t, os.MkdirAll(projectDir, 0o755))
 	return projectDir
@@ -155,7 +155,7 @@ func TestClaudeParser_SkipsOldFiles(t *testing.T) {
 	assert.Nil(t, usage)
 }
 
-func TestClaudePathHash(t *testing.T) {
+func TestClaudeProjectDirName(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
@@ -165,10 +165,10 @@ func TestClaudePathHash(t *testing.T) {
 		{"/", "-"},
 	}
 	for _, tt := range tests {
-		got := claudePathHash(tt.input)
-		assert.Equal(t, tt.want, got, "claudePathHash(%q)", tt.input)
+		got := ProjectDirName(tt.input)
+		assert.Equal(t, tt.want, got, "ProjectDirName(%q)", tt.input)
 	}
 
-	assert.Equal(t, "C-Users-test", claudePathHash(`C:\Users\test`))
-	assert.Equal(t, "D-workspace", claudePathHash(`D:\workspace`))
+	assert.Equal(t, "C-Users-test", ProjectDirName(`C:\Users\test`))
+	assert.Equal(t, "D-workspace", ProjectDirName(`D:\workspace`))
 }

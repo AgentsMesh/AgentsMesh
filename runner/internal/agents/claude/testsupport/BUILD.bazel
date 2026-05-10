@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "testsupport",
+    srcs = ["fixture.go"],
+    embedsrcs = ["testdata/session.jsonl"],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/agents/claude/testsupport",
+    visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/agents/claude"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":testsupport",
+    visibility = ["//runner:__subpackages__"],
+)

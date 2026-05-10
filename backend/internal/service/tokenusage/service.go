@@ -9,6 +9,12 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
+// shortPodGracePeriod mirrors runner-side suppression: empty reports from
+// pods that ran briefly are normal, only longer sessions are suspicious.
+// MUST stay in sync with runner/internal/tokenusage/collector.go's constant
+// of the same name — separate processes, no shared SSOT possible.
+const shortPodGracePeriod = 5 * time.Second
+
 // Service handles token usage recording and querying.
 type Service struct {
 	repo   tokenusage.Repository
@@ -73,6 +79,7 @@ func (s *Service) RecordUsage(
 	}
 
 	if len(records) == 0 {
+		s.logEmptyAfterFilter(podKey, agentSlug, report)
 		return
 	}
 
@@ -90,6 +97,33 @@ func (s *Service) RecordUsage(
 		"models", len(records),
 		"org_id", orgID,
 	)
+}
+
+// logEmptyAfterFilter surfaces "runner sent N models but every one got
+// dropped" as Warn when the pod ran long enough that empty data is a
+// regression smell rather than a quick open-then-close session.
+//
+// Old runners predating proto field pod_started_at_unix_seconds send 0 (or
+// a buggy negative value from time.Time{}.Unix() = -62135596800) and are
+// logged at Info with an explicit marker so the rollout window doesn't
+// silently lose this signal.
+func (s *Service) logEmptyAfterFilter(podKey, agentSlug string, report *runnerv1.TokenUsageReport) {
+	args := []any{
+		"pod_key", podKey,
+		"agent_slug", agentSlug,
+		"models_in_report", len(report.Models),
+	}
+	if report.PodStartedAtUnixSeconds <= 0 {
+		s.logger.Info("token usage report had no usable records (no pod_started_at; legacy or buggy runner)", args...)
+		return
+	}
+	runtime := time.Since(time.Unix(report.PodStartedAtUnixSeconds, 0))
+	args = append(args, "pod_runtime_seconds", runtime.Seconds())
+	if runtime < shortPodGracePeriod {
+		s.logger.Debug("token usage report had no usable records after filter", args...)
+		return
+	}
+	s.logger.Warn("token usage report had no usable records after filter", args...)
 }
 
 // GetSummary returns aggregated totals for the given organization and filter.

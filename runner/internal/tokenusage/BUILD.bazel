@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "collector.go",
         "parser.go",
+        "parser_optout.go",
         "parser_registry.go",
         "time_filter.go",
     ],
@@ -22,16 +23,23 @@ alias(
 go_test(
     name = "tokenusage_test",
     srcs = [
+        "collector_log_test.go",
         "parser_agents_test.go",
+        "parser_contract_test.go",
         "parser_registry_test.go",
         "parser_test.go",
     ],
     embed = [":tokenusage"],
     deps = [
         "//runner/internal/agents/aider",
+        "//runner/internal/agents/aider/testsupport",
         "//runner/internal/agents/claude",
+        "//runner/internal/agents/claude/testsupport",
         "//runner/internal/agents/codex",
+        "//runner/internal/agents/codex/testsupport",
+        "//runner/internal/agents/loopal",
         "//runner/internal/agents/opencode",
+        "//runner/internal/agents/opencode/testsupport",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

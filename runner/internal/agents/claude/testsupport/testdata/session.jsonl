@@ -1,0 +1,5 @@
+{"type":"summary","summary":"sample claude session"}
+{"type":"user","message":{"role":"user","content":"hello"}}
+{"type":"assistant","message":{"model":"claude-sonnet-4-20250514","usage":{"input_tokens":520,"output_tokens":260,"cache_creation_input_tokens":50,"cache_read_input_tokens":1000}}}
+{"type":"assistant","message":{"model":"claude-sonnet-4-20250514","usage":{"input_tokens":380,"output_tokens":140,"cache_creation_input_tokens":0,"cache_read_input_tokens":1500}}}
+{"type":"assistant","message":{"model":"claude-haiku-4-5","usage":{"input_tokens":120,"output_tokens":60}}}

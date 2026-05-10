@@ -40,6 +40,7 @@ go_test(
         "home_test.go",
         "input_adapter_test.go",
         "integration_test.go",
+        "parser_fixtures_test.go",
         "parser_test.go",
         "transport_coverage_test.go",
         "transport_test.go",
@@ -47,6 +48,7 @@ go_test(
     embed = [":codex"],
     deps = [
         "//runner/internal/acp",
+        "//runner/internal/agents/codex/testsupport",
         "//runner/internal/tokenusage",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

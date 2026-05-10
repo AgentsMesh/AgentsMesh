@@ -724,6 +724,11 @@ message LogUploadStatusEvent {
 message TokenUsageReport {
   string pod_key = 1;
   repeated TokenModelUsage models = 2;
+  // pod_started_at_unix_seconds lets the backend distinguish a transient
+  // empty session (open-then-close in seconds) from a long-running session
+  // that produced 0 tokens — the latter is a parser-regression smell.
+  // Unix 秒，与 url_expires_at 同口径；注意此 proto 大多数时间戳为毫秒。
+  int64 pod_started_at_unix_seconds = 3;
 }
 
 // TokenModelUsage 单个模型的 Token 用量

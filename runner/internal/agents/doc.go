@@ -30,6 +30,19 @@
 //
 //	_ "github.com/anthropics/agentsmesh/runner/internal/agents/<name>"
 //
+// # Token Usage Fixture Contract
+//
+// Every agent that calls tokenusage.RegisterParser MUST also ship at least
+// one fixture under <pkg>/testsupport/testdata/ and expose a
+// BuildFixtureSandbox helper from a separate testsupport sub-package
+// (see e.g. agents/codex/testsupport/fixture.go) so the production library
+// does not link the testing package. The cross-agent contract test in
+// runner/internal/tokenusage/parser_contract_test.go runs each parser
+// against its own fixture and fails CI if it cannot produce non-zero tokens.
+// Stub agents that have no on-disk session format MUST opt out via
+// tokenusage.RegisterParserOptOut(...) instead of registering a no-op
+// parser, so the contract test knows to skip them.
+//
 // # Extension Points
 //
 //   - acp.RegisterAgent: Wire protocol (Transport interface) + command→transport mapping.

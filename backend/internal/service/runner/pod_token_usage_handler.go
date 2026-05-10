@@ -73,8 +73,9 @@ func (pc *PodCoordinator) handleTokenUsage(runnerID int64, data *runnerv1.TokenU
 
 	// Pass a report with the (possibly truncated) model list.
 	report := &runnerv1.TokenUsageReport{
-		PodKey: data.PodKey,
-		Models: models,
+		PodKey:                  data.PodKey,
+		Models:                  models,
+		PodStartedAtUnixSeconds: data.PodStartedAtUnixSeconds,
 	}
 	svc.RecordUsage(
 		ctx,

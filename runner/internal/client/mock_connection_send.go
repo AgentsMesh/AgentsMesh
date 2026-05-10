@@ -1,6 +1,8 @@
 package client
 
 import (
+	"time"
+
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
@@ -86,7 +88,7 @@ func (m *MockConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEven
 }
 
 // SendTokenUsage records a token usage report.
-func (m *MockConnection) SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage) error {
+func (m *MockConnection) SendTokenUsage(podKey string, models []*runnerv1.TokenModelUsage, podStartedAt time.Time) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.SendErr != nil {
@@ -94,7 +96,7 @@ func (m *MockConnection) SendTokenUsage(podKey string, models []*runnerv1.TokenM
 	}
 	m.Events = append(m.Events, EventCall{
 		Type: "token_usage",
-		Data: map[string]any{"pod_key": podKey, "models": models},
+		Data: map[string]any{"pod_key": podKey, "models": models, "pod_started_at": podStartedAt},
 	})
 	return nil
 }

@@ -6,6 +6,7 @@ import {
   getUserDataDir,
   isCi,
 } from "../helpers/env";
+import { invokeIpc } from "../helpers/ipc";
 import { loadStorageFile, restoreStorage } from "../helpers/storage-state";
 
 export interface ElectronFixtures {
@@ -65,6 +66,15 @@ export const test = base.extend<ElectronFixtures>({
         await restoreStorage(page, snap);
         await page.reload().catch(() => undefined);
         await page.waitForLoadState("domcontentloaded");
+        // Restore main-process Rust auth state from the disk-persisted
+        // session global.setup wrote on login. Rust core intentionally
+        // does not auto-bootstrap (see node-bridge/lib.rs:61); without
+        // this call ApiClient.org_path() returns non-org URLs and every
+        // org-scoped IPC (channel/runner/autopilot/...) 404s with
+        // ResourceNotFound { resource: "resource", id: null }. Failures
+        // here surface immediately rather than producing mysterious IPC
+        // errors deep inside individual tests.
+        await invokeIpc(page, "authBootstrap");
       }
     }
 

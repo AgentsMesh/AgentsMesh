@@ -1,5 +1,10 @@
 package tokenusage_test
 
+// NOTE: tests below mutate process-global HOME via t.Setenv (claude parser
+// reads os.UserHomeDir). Do NOT call t.Parallel() in any test in this file
+// — sibling tests would race. The same constraint applies to
+// parser_contract_test.go in this package.
+
 import (
 	"os"
 	"path/filepath"
@@ -10,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	_ "github.com/anthropics/agentsmesh/runner/internal/agents/aider"
-	_ "github.com/anthropics/agentsmesh/runner/internal/agents/claude"
+	"github.com/anthropics/agentsmesh/runner/internal/agents/claude"
 	_ "github.com/anthropics/agentsmesh/runner/internal/agents/codex"
 	_ "github.com/anthropics/agentsmesh/runner/internal/agents/opencode"
 	"github.com/anthropics/agentsmesh/runner/internal/tokenusage"
@@ -68,7 +73,7 @@ func TestCollect_WithData(t *testing.T) {
 	resolved, err := filepath.EvalSymlinks(sandbox)
 	require.NoError(t, err)
 
-	hash := claudePathHash(resolved)
+	hash := claude.ProjectDirName(resolved)
 	projectDir := filepath.Join(home, ".claude", "projects", hash)
 	require.NoError(t, os.MkdirAll(projectDir, 0o755))
 
@@ -90,18 +95,4 @@ func TestIsModifiedAfter(t *testing.T) {
 	assert.True(t, tokenusage.IsModifiedAfter(file, time.Now().Add(-24*time.Hour)))
 	assert.False(t, tokenusage.IsModifiedAfter(file, time.Now().Add(24*time.Hour)))
 	assert.False(t, tokenusage.IsModifiedAfter(filepath.Join(dir, "nonexistent"), epoch))
-}
-
-func claudePathHash(resolvedPath string) string {
-	var b []byte
-	for _, c := range resolvedPath {
-		switch c {
-		case '/', '\\':
-			b = append(b, '-')
-		case ':':
-		default:
-			b = append(b, byte(c))
-		}
-	}
-	return string(b)
 }

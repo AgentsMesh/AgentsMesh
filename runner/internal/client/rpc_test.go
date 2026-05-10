@@ -51,7 +51,9 @@ func (m *mockSender) SendObservePodResult(string, string, string, string, int, i
 }
 func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error     { return nil }
 func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error { return nil }
-func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage) error { return nil }
+func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage, time.Time) error {
+	return nil
+}
 func (m *mockSender) QueueLength() int                                         { return 0 }
 func (m *mockSender) QueueCapacity() int                                       { return 100 }
 func (m *mockSender) QueueUsage() float64                                      { return 0 }

@@ -46,7 +46,7 @@ func (p *claudeParser) Parse(sandboxPath string, podStartedAt time.Time) (*token
 			continue
 		}
 
-		hash := claudePathHash(resolved)
+		hash := ProjectDirName(resolved)
 		projectDir := filepath.Join(home, ".claude", "projects", hash)
 
 		if _, err := os.Stat(projectDir); err != nil {
@@ -78,12 +78,19 @@ func (p *claudeParser) Parse(sandboxPath string, podStartedAt time.Time) (*token
 	return usage, nil
 }
 
-// claudePathHash reproduces the project directory naming convention used by
-// Claude Code: the resolved absolute path with OS path separators replaced by "-".
+// ProjectDirName reproduces Claude Code's project-directory naming
+// convention: an absolute resolved path with OS path separators replaced by
+// "-" (and the Windows drive colon stripped). The result is the basename of
+// `~/.claude/projects/<name>/` for sessions belonging to that path.
 //
-// This is intentionally NOT using filepath helpers — it must match the external
-// convention, not the local OS path semantics.
-func claudePathHash(resolvedPath string) string {
+// Exported so the cross-agent token-usage contract test in
+// runner/internal/tokenusage can plant fixtures into a deterministic temp
+// HOME without re-implementing the algorithm. Do NOT reuse this for other
+// agents — it's an external convention specific to Claude Code.
+//
+// This is intentionally NOT using filepath helpers — it must match the
+// external convention, not the local OS path semantics.
+func ProjectDirName(resolvedPath string) string {
 	var b strings.Builder
 	b.Grow(len(resolvedPath))
 	for _, c := range resolvedPath {

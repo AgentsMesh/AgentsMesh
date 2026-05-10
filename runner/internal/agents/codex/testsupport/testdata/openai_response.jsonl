@@ -1,0 +1,8 @@
+{"type":"session_start","session_id":"sess_abc123"}
+{"type":"user","content":"build me a parser"}
+{"type":"response","response":{"id":"resp_001","model":"o3-mini","usage":{"prompt_tokens":820,"completion_tokens":312}}}
+{"type":"response","response":{"id":"resp_002","model":"o3-mini","usage":{"prompt_tokens":410,"completion_tokens":195}}}
+{"type":"user","content":"now add tests"}
+{"type":"response","response":{"id":"resp_003","model":"gpt-4.1","usage":{"prompt_tokens":1540,"completion_tokens":880}}}
+{"type":"response","response":{"id":"resp_004","model":"gpt-4.1","usage":{"prompt_tokens":2200,"completion_tokens":1100}}}
+{"type":"session_end","session_id":"sess_abc123"}

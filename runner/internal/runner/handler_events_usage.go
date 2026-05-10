@@ -39,7 +39,7 @@ func (h *RunnerMessageHandler) collectAndSendTokenUsage(podKey, agent, sandboxPa
 		})
 	}
 
-	if err := h.conn.SendTokenUsage(podKey, models); err != nil {
+	if err := h.conn.SendTokenUsage(podKey, models, podStartedAt); err != nil {
 		log.Warn("Failed to send token usage report", "pod_key", podKey, "error", err)
 	} else {
 		log.Info("Token usage report sent", "pod_key", podKey, "models", len(models))

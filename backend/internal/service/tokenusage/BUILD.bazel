@@ -20,6 +20,7 @@ alias(
 go_test(
     name = "tokenusage_test",
     srcs = [
+        "service_log_test.go",
         "service_test.go",
         "tokenusage_integration_test.go",
     ],

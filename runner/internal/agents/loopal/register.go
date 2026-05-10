@@ -6,6 +6,8 @@ import (
 )
 
 func init() {
-	tokenusage.RegisterParser([]string{"loopal"}, &loopalParser{})
+	// Loopal has no on-disk session format yet — opt out of the cross-agent
+	// fixture contract until persistence is implemented (see parser.go).
+	tokenusage.RegisterParserOptOut([]string{"loopal"})
 	agentkit.RegisterProcessNames("loopal")
 }
