@@ -32,7 +32,7 @@ pub struct UpdateGitCredentialRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SetDefaultGitCredentialRequest {
-    pub credential_id: i64,
+    pub credential_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

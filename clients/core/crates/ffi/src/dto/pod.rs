@@ -296,7 +296,6 @@ impl From<CreatePodResponse> for CreatePodResponseDto {
     }
 }
 
-/// Bridge Swift's `String` alias back to the strong-typed request shape.
-pub(crate) fn update_pod_alias_req(alias: String) -> UpdatePodAliasRequest {
+pub(crate) fn update_pod_alias_req(alias: Option<String>) -> UpdatePodAliasRequest {
     UpdatePodAliasRequest { alias }
 }

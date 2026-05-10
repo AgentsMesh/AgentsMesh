@@ -46,7 +46,7 @@ describe("useGitSettings", () => {
     } as any);
   });
 
-  it("clears the default credential when selecting runner local", async () => {
+  it("selects runner local by sending null credential_id", async () => {
     const { result } = renderHook(() => useGitSettings(t));
 
     await waitFor(() => {
@@ -57,8 +57,10 @@ describe("useGitSettings", () => {
       await result.current.handleSetDefault(null);
     });
 
-    expect(mockClearDefaultGitCredential).toHaveBeenCalledTimes(1);
-    expect(mockSetDefaultGitCredential).not.toHaveBeenCalled();
+    expect(mockSetDefaultGitCredential).toHaveBeenCalledWith(
+      JSON.stringify({ credential_id: null })
+    );
+    expect(mockClearDefaultGitCredential).not.toHaveBeenCalled();
     expect(result.current.data?.defaultCredentialId).toBe("runner_local");
   });
 

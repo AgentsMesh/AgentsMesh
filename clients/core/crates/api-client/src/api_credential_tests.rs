@@ -133,7 +133,7 @@ mod api_credential_tests {
         Mock::given(method("POST")).and(path("/api/v1/users/git-credentials/default"))
             .respond_with(ok(json!({}))).expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), Tok::none());
-        let data = agentsmesh_types::SetDefaultGitCredentialRequest { credential_id: 2 };
+        let data = agentsmesh_types::SetDefaultGitCredentialRequest { credential_id: Some(2) };
         let _ = c.set_default_git_credential(&data).await.unwrap();
     }
 

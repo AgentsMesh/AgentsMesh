@@ -92,7 +92,7 @@ mod api_pod_runner_tests {
             .respond_with(ok(pod_json("p1", "running")))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), Tok::org("acme"));
-        let data = agentsmesh_types::UpdatePodAliasRequest { alias: "my".into() };
+        let data = agentsmesh_types::UpdatePodAliasRequest { alias: Some("my".into()) };
         let _ = c.update_pod_alias("p1", &data).await.unwrap();
     }
 

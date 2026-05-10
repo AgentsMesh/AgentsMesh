@@ -188,7 +188,7 @@ impl PodService {
     ) -> Result<(), String> {
         self.state.write().unwrap().update_pod_alias(pod_key, alias.as_deref().unwrap_or(""));
         let req = UpdatePodAliasRequest {
-            alias: alias.unwrap_or_default(),
+            alias: alias.clone(),
         };
         match self.client.update_pod_alias(pod_key, &req).await {
             Ok(_) => Ok(()),

@@ -43,7 +43,7 @@ impl AgentsMeshCore {
     pub async fn update_pod_alias(
         &self,
         pod_key: String,
-        alias: String,
+        alias: Option<String>,
     ) -> Result<PodDto, CoreError> {
         let req = update_pod_alias_req(alias);
         let pod = self.api.update_pod_alias(&pod_key, &req).await?;
