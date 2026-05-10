@@ -486,10 +486,20 @@ jobs:
   # ===========================================================================
 
   web-e2e:
-    name: E2E (Web — Playwright)
-    runs-on: ubuntu-latest
+    name: E2E (Web — Playwright shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    # Default route: self-hosted on server-8t (web-e2e-1, web-e2e-2 — 8 vCPU /
+    # 12 GiB / 300 GB each, GH Actions runner v2.334.0 systemd-managed). Set
+    # repository variable WEB_E2E_RUNNER=hosted to fall back to ubuntu-latest
+    # if the self-hosted pair is offline / under maintenance — sharding still
+    # applies (two shards run on two GH-hosted runners in parallel).
+    # Per-call override: workflow_dispatch input "runner_override".
+    runs-on: ${{ vars.WEB_E2E_RUNNER == 'hosted' && 'ubuntu-latest' || fromJSON('["self-hosted", "web-e2e"]') }}
     timeout-minutes: 45
     needs: smoke
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -500,9 +510,14 @@ jobs:
 
       # dev.sh requires ibazel for hot reload of host backend / relay.
       # Install the linux-amd64 release binary; the doctor check in dev.sh
-      # exits 1 if it isn't on PATH.
+      # exits 1 if it isn't on PATH. Self-hosted runners already have it under
+      # /usr/local/bin/ibazel — skip the download in that case.
       - name: Install ibazel
         run: |
+          if command -v ibazel >/dev/null 2>&1; then
+            ibazel --version 2>&1 | head -1 || ibazel -h | head -1
+            exit 0
+          fi
           IBAZEL_VERSION="0.29.0"
           curl -fsSL "https://github.com/bazelbuild/bazel-watcher/releases/download/v${IBAZEL_VERSION}/ibazel_linux_amd64" \
             -o /usr/local/bin/ibazel
@@ -571,13 +586,18 @@ jobs:
           done
           echo "web dev never came up"; cat /tmp/web-dev.log; exit 1
 
-      - name: Run Web Playwright e2e
+      - name: Run Web Playwright e2e (shard ${{ matrix.shard }}/${{ strategy.job-total }})
         env:
           HTTP_PORT: ${{ steps.ports.outputs.HTTP_PORT }}
           WEB_PORT: ${{ steps.ports.outputs.WEB_PORT }}
           POSTGRES_PORT: ${{ steps.ports.outputs.POSTGRES_PORT }}
           COMPOSE_PROJECT_NAME: ${{ steps.ports.outputs.COMPOSE_PROJECT_NAME }}
         run: |
+          # `--test_arg=--shard=N/M` forwards to the playwright_test bin's
+          # auto-generated entrypoint (args = ["test", "--config", ...,
+          # "--reporter=line"] then test_arg appended). Sharding splits the
+          # spec set deterministically across N runners — order-independent
+          # tests are required (the suite is already that way).
           bazel --output_base=/tmp/bazel-e2e test \
             //clients/web/e2e-playwright:e2e \
             --test_tag_filters=e2e \
@@ -585,13 +605,14 @@ jobs:
             --test_env=HTTP_PORT \
             --test_env=WEB_PORT \
             --test_env=POSTGRES_PORT \
-            --test_env=COMPOSE_PROJECT_NAME
+            --test_env=COMPOSE_PROJECT_NAME \
+            --test_arg=--shard=${{ matrix.shard }}/${{ strategy.job-total }}
 
-      - name: Upload Web e2e artifacts
+      - name: Upload Web e2e artifacts (shard ${{ matrix.shard }})
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: web-e2e-artifacts
+          name: web-e2e-artifacts-shard-${{ matrix.shard }}
           path: |
             /tmp/web-dev.log
             test-results/
