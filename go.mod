@@ -30,8 +30,8 @@ require (
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/pelletier/go-toml/v2 v2.3.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/redis/go-redis/extra/redisotel/v9 v9.18.0
-	github.com/redis/go-redis/v9 v9.18.0
+	github.com/redis/go-redis/extra/redisotel/v9 v9.19.0
+	github.com/redis/go-redis/v9 v9.19.0
 	github.com/resend/resend-go/v2 v2.28.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/smartwalle/alipay/v3 v3.2.28
@@ -97,7 +97,6 @@ require (
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
@@ -139,7 +138,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
-	github.com/redis/go-redis/extra/rediscmd/v9 v9.18.0 // indirect
+	github.com/redis/go-redis/extra/rediscmd/v9 v9.19.0 // indirect
 	github.com/russellhaering/goxmldsig v1.4.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/smartwalle/ncrypto v1.0.4 // indirect
