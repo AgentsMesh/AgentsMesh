@@ -105,6 +105,7 @@ fn from_api_http_with_server_message() {
         code: None,
         server_message: Some("field invalid".into()),
         data: None,
+        url: None,
     }
     .into();
     match err {
@@ -126,6 +127,7 @@ fn from_api_http_falls_back_to_status_text() {
         code: None,
         server_message: None,
         data: None,
+        url: None,
     }
     .into();
     match err {
@@ -328,6 +330,7 @@ fn from_api_http_with_code_and_data() {
         code: Some("VALIDATION_ERROR".into()),
         server_message: Some("field invalid".into()),
         data: Some(serde_json::json!({"field": "email"})),
+        url: None,
     }
     .into();
     match err {
@@ -354,6 +357,7 @@ fn from_api_404_becomes_not_found() {
         code: Some("Pod".into()),
         server_message: None,
         data: None,
+        url: None,
     }
     .into();
     match err {

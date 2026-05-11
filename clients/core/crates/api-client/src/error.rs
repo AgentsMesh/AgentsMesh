@@ -11,6 +11,11 @@ pub enum ApiError {
         code: Option<String>,
         server_message: Option<String>,
         data: Option<serde_json::Value>,
+        // Full request URL the response came back from. None for synthetic
+        // errors constructed in tests; production paths in `parse_response`
+        // always set this so users see *which host* returned 5xx — critical
+        // when debugging "is the desktop hitting prod or my local OrbStack?"
+        url: Option<String>,
     },
 
     #[error("auth expired")]
@@ -60,11 +65,16 @@ impl From<&ApiError> for ServiceError {
                 status_text,
                 code,
                 server_message,
+                url,
                 ..
             } => {
-                let message = server_message
+                let base = server_message
                     .clone()
                     .unwrap_or_else(|| status_text.clone());
+                let message = match url {
+                    Some(u) => format!("{base} @ {u}"),
+                    None => base,
+                };
                 if *status == 404 {
                     return ServiceError::ResourceNotFound {
                         resource: code
@@ -80,9 +90,14 @@ impl From<&ApiError> for ServiceError {
                 }
             }
             ApiError::AuthExpired => ServiceError::AuthExpired,
-            ApiError::Network(e) => ServiceError::Network {
-                message: e.to_string(),
-            },
+            ApiError::Network(e) => {
+                let url = e.url().map(|u| u.to_string());
+                let message = match url {
+                    Some(u) => format!("{e} @ {u}"),
+                    None => e.to_string(),
+                };
+                ServiceError::Network { message }
+            }
             ApiError::Json(e) => ServiceError::InvalidJson {
                 message: e.to_string(),
             },
@@ -108,6 +123,7 @@ mod tests {
             code: Some("Pod".into()),
             server_message: Some("Pod not found".into()),
             data: None,
+            url: None,
         };
         let svc: ServiceError = (&err).into();
         assert!(matches!(
@@ -124,6 +140,7 @@ mod tests {
             code: Some("DB_DOWN".into()),
             server_message: Some("db unreachable".into()),
             data: None,
+            url: None,
         };
         let svc: ServiceError = (&err).into();
         match svc {
@@ -131,6 +148,29 @@ mod tests {
                 assert_eq!(status, 500);
                 assert_eq!(code.as_deref(), Some("DB_DOWN"));
                 assert_eq!(message, "db unreachable");
+            }
+            _ => panic!("expected Http variant"),
+        }
+    }
+
+    #[test]
+    fn http_502_with_url_appends_to_message() {
+        let err = ApiError::Http {
+            status: 502,
+            status_text: "Bad Gateway".into(),
+            code: None,
+            server_message: None,
+            data: None,
+            url: Some("http://localhost:25350/api/v1/users/me".into()),
+        };
+        let svc: ServiceError = (&err).into();
+        match svc {
+            ServiceError::Http { status, message, .. } => {
+                assert_eq!(status, 502);
+                assert!(
+                    message.contains("Bad Gateway") && message.contains("localhost:25350"),
+                    "expected message to include both status_text and url, got: {message}"
+                );
             }
             _ => panic!("expected Http variant"),
         }

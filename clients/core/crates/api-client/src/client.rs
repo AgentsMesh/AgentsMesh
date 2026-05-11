@@ -143,6 +143,10 @@ impl ApiClient {
     pub async fn put_raw_bytes(
         &self, url: &str, content_type: &str, body: Vec<u8>,
     ) -> Result<(), ApiError> {
+        // `url` here is the full upload target supplied by the caller
+        // (e.g. an S3 presigned URL), NOT prefixed with `self.base_url`.
+        // The error's `url` field reflects that, so a 5xx from S3 says
+        // "@ https://bucket.s3.amazonaws.com/..." not the AgentsMesh API.
         let resp = self.http
             .put(url)
             .header("Content-Type", content_type)
@@ -154,6 +158,7 @@ impl ApiClient {
                 status: resp.status().as_u16(),
                 status_text: resp.status().canonical_reason().unwrap_or("Unknown").to_string(),
                 code: None, server_message: None, data: None,
+                url: Some(url.to_string()),
             });
         }
         Ok(())

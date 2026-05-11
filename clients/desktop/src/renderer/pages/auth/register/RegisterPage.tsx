@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
 import { authApi } from "@/lib/api";
 import { useTranslations } from "next-intl";
-import { getOAuthBaseUrl } from "@/lib/env";
+import { getApiBaseUrl } from "@/lib/env";
 import { Logo } from "@/components/common";
 
 export function RegisterPage() {
@@ -224,7 +224,7 @@ export function RegisterPage() {
             variant="outline"
             type="button"
             onClick={async () => {
-              const oauthUrl = getOAuthBaseUrl();
+              const oauthUrl = getApiBaseUrl();
               const redirectUrl = encodeURIComponent("agentsmesh://oauth/callback");
               const url = `${oauthUrl}/api/v1/auth/oauth/github?redirect=${redirectUrl}`;
               const { open } = await import("@/shims/electron-shell");
@@ -243,7 +243,7 @@ export function RegisterPage() {
             variant="outline"
             type="button"
             onClick={async () => {
-              const oauthUrl = getOAuthBaseUrl();
+              const oauthUrl = getApiBaseUrl();
               const redirectUrl = encodeURIComponent("agentsmesh://oauth/callback");
               const url = `${oauthUrl}/api/v1/auth/oauth/google?redirect=${redirectUrl}`;
               const { open } = await import("@/shims/electron-shell");

@@ -91,11 +91,12 @@ impl ApiClient {
         }
 
         let resp = builder.send().await?;
-        Self::parse_response(resp).await
+        Self::parse_response(resp, &url).await
     }
 
     async fn parse_response<T: DeserializeOwned>(
         resp: reqwest::Response,
+        url: &str,
     ) -> Result<T, ApiError> {
         let status = resp.status();
 
@@ -122,6 +123,7 @@ impl ApiClient {
                     .and_then(|v| v.as_str())
                     .map(String::from),
                 data: Some(body),
+                url: Some(url.to_string()),
             })
         }
     }
@@ -148,6 +150,6 @@ impl ApiClient {
         }
         builder = builder.multipart(form);
         let resp = builder.send().await?;
-        Self::parse_response(resp).await
+        Self::parse_response(resp, &url).await
     }
 }

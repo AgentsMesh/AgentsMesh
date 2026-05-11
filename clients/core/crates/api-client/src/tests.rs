@@ -182,11 +182,17 @@ mod tests {
                 status,
                 code,
                 server_message,
+                url,
                 ..
             } => {
                 assert_eq!(*status, 422);
                 assert_eq!(code.as_deref(), Some("INVALID"));
                 assert_eq!(server_message.as_deref(), Some("bad input"));
+                // Regression guard: parse_response must tag every Http
+                // error with the request URL so wire errors are
+                // self-describing (2026-05-10 OrbStack incident).
+                let url = url.as_deref().expect("Http error must carry request url");
+                assert!(url.ends_with("/api/v1/validate"), "got url: {url}");
             }
             _ => panic!("expected Http error, got: {err:?}"),
         }
@@ -490,11 +496,14 @@ mod tests {
                 status,
                 code,
                 server_message,
+                url,
                 ..
             } => {
                 assert_eq!(status, 500);
                 assert!(code.is_none());
                 assert!(server_message.is_none());
+                let url = url.expect("Http error must carry request url");
+                assert!(url.ends_with("/api/v1/fail"), "got url: {url}");
             }
             _ => panic!("expected Http error"),
         }

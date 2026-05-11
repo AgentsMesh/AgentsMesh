@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { getOAuthBaseUrl } from "@/lib/env";
+import { getApiBaseUrl } from "@/lib/env";
 
 function GitHubIcon() {
   return (
@@ -36,7 +36,7 @@ function GoogleIcon() {
 }
 
 async function handleOAuth(provider: "github" | "google") {
-  const oauthUrl = getOAuthBaseUrl();
+  const oauthUrl = getApiBaseUrl();
   // Deep-link callback: backend 302's to `agentsmesh://oauth/callback?token=...`,
   // OS hands the URL back to the desktop app via open-url (mac) / second-instance
   // argv (win), main process forwards over IPC, renderer navigates to /auth/callback.
