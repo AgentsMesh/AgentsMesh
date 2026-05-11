@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/resend/resend-go/v2"
-)
-
-import (
-	"time"
 )
 
 // Service defines the email service interface
@@ -59,6 +56,21 @@ type ResendService struct {
 	baseURL     string
 }
 
+// send 是所有 Resend 调用的唯一入口。集中在这里是为了可观测性：
+// SDK 任何失败都会带 kind/to/from 落日志——没有这层，"用户收不到激活邮件"
+// 的投诉在后端日志里没有任何痕迹（之前 4 个发送方法 return err 后丢日志）。
+func (s *ResendService) send(ctx context.Context, kind, to string, req *resend.SendEmailRequest) error {
+	resp, err := s.client.Emails.SendWithContext(ctx, req)
+	if err != nil {
+		slog.ErrorContext(ctx, "resend send failed",
+			"kind", kind, "to", to, "from", s.fromAddress, "error", err)
+		return err
+	}
+	slog.InfoContext(ctx, "resend send ok",
+		"kind", kind, "to", to, "message_id", resp.Id)
+	return nil
+}
+
 // SendVerificationEmail sends email verification via Resend
 func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token string) error {
 	verifyURL := fmt.Sprintf("%s/verify-email/callback?token=%s", s.baseURL, token)
@@ -84,13 +96,12 @@ func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token str
 </html>
 `, verifyURL, verifyURL, verifyURL)
 
-	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
+	return s.send(ctx, "verification", to, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
 		Subject: "Verify your email - AgentsMesh",
 		Html:    html,
 	})
-	return err
 }
 
 // SendPasswordResetEmail sends password reset email via Resend
@@ -118,13 +129,12 @@ func (s *ResendService) SendPasswordResetEmail(ctx context.Context, to, token st
 </html>
 `, resetURL, resetURL, resetURL)
 
-	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
+	return s.send(ctx, "password_reset", to, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
 		Subject: "Reset your password - AgentsMesh",
 		Html:    html,
 	})
-	return err
 }
 
 // SendOrgInvitationEmail sends organization invitation via Resend
@@ -152,13 +162,12 @@ func (s *ResendService) SendOrgInvitationEmail(ctx context.Context, to, orgName,
 </html>
 `, orgName, inviterName, orgName, inviteURL, inviteURL, inviteURL)
 
-	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
+	return s.send(ctx, "org_invitation", to, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
 		Subject: fmt.Sprintf("You've been invited to join %s - AgentsMesh", orgName),
 		Html:    html,
 	})
-	return err
 }
 
 // SendRenewalReminder sends subscription renewal reminder via Resend
@@ -201,13 +210,12 @@ func (s *ResendService) SendRenewalReminder(ctx context.Context, to, orgName, pl
 </html>
 `, urgencyClass, urgencyText, planName, orgName, expiryDateStr, renewURL, renewURL, renewURL)
 
-	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
+	return s.send(ctx, "renewal_reminder", to, &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{to},
 		Subject: fmt.Sprintf("Subscription Renewal Reminder - %s expires in %d days", orgName, daysRemaining),
 		Html:    html,
 	})
-	return err
 }
 
 // ConsoleService implements email service for development (prints to console)

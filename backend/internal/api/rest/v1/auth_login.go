@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
 	domainUser "github.com/anthropics/agentsmesh/backend/internal/domain/user"
@@ -120,8 +121,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Send verification email (don't fail registration if email fails)
-	_ = h.emailService.SendVerificationEmail(c.Request.Context(), result.User.Email, verificationToken)
+	// 邮件失败不阻塞注册（用户可后续通过 ResendVerification 重发），
+	// 但必须落日志——否则"收不到激活邮件"投诉在 backend 日志里没有痕迹。
+	if err := h.emailService.SendVerificationEmail(c.Request.Context(), result.User.Email, verificationToken); err != nil {
+		slog.ErrorContext(c.Request.Context(), "failed to send verification email after registration",
+			"user_id", result.User.ID, "email", result.User.Email, "error", err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"token":         result.Token,
