@@ -52,7 +52,7 @@ test.describe("Auth · server switch clears session", () => {
       timeout: isCi() ? 120_000 : 30_000,
     });
     try {
-      const page2 = await app2.firstWindow();
+      const page2 = await app2.firstWindow({ timeout: isCi() ? 90_000 : 30_000 });
       await page2.waitForLoadState("domcontentloaded");
       await page2.waitForTimeout(2000); // bootstrap settles
 

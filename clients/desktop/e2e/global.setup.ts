@@ -37,7 +37,10 @@ setup("authenticate as test user (Electron)", async () => {
   });
 
   try {
-    const page = await app.firstWindow();
+    // See electron.fixture.ts: macmini-03 cold-starts the renderer in
+    // 30-60s; the default 30s firstWindow timeout was tripping the
+    // global setup before any spec even ran.
+    const page = await app.firstWindow({ timeout: isCi() ? 90_000 : 30_000 });
     page.on("pageerror", (err) => console.log(`[pageerror]`, err.message));
     await page.waitForLoadState("domcontentloaded");
 

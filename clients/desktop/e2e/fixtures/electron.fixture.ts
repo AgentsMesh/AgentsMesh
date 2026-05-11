@@ -57,7 +57,12 @@ export const test = base.extend<ElectronFixtures>({
   },
 
   page: async ({ electronApp, authFile, skipAuthRestore }, use) => {
-    const page = await electronApp.firstWindow();
+    // firstWindow() defaults to playwright's 30s timeout, but the
+    // macmini-03 self-hosted runner cold-starts the Electron renderer
+    // in 30-60s under load (Bazel cache restore + electron-vite bundle
+    // resolution + Rust core init via NAPI). Match the launch timeout
+    // window — repeated CI failures on main were all this one assertion.
+    const page = await electronApp.firstWindow({ timeout: isCi() ? 90_000 : 30_000 });
     await page.waitForLoadState("domcontentloaded");
 
     if (!skipAuthRestore) {
