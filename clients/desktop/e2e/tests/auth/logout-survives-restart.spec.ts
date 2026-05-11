@@ -69,7 +69,7 @@ test.describe("Auth · logout survives restart", () => {
       timeout: isCi() ? 120_000 : 30_000,
     });
     try {
-      const page2 = await app2.firstWindow();
+      const page2 = await app2.firstWindow({ timeout: isCi() ? 90_000 : 30_000 });
       await page2.waitForLoadState("domcontentloaded");
 
       // Bootstrap is async; give it a beat to settle before asserting route.
