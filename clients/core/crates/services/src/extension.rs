@@ -66,6 +66,96 @@ impl ExtensionService {
         Ok(resp.encode_to_vec())
     }
 
+    // ---- MarketService ----
+
+    pub async fn list_market_skills_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::ListMarketSkillsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_market_skills request: {e}"))?;
+        let resp = self.client.list_market_skills_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn list_market_mcp_servers_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::ListMarketMcpServersRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_market_mcp_servers request: {e}"))?;
+        let resp = self.client.list_market_mcp_servers_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    // ---- RepoSkillService ----
+
+    pub async fn list_repo_skills_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::ListRepoSkillsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_repo_skills request: {e}"))?;
+        let resp = self.client.list_repo_skills_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn install_skill_from_market_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::InstallSkillFromMarketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode install_skill_from_market request: {e}"))?;
+        let resp = self.client.install_skill_from_market_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn install_skill_from_github_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::InstallSkillFromGitHubRequest::decode(request_bytes)
+            .map_err(|e| format!("decode install_skill_from_github request: {e}"))?;
+        let resp = self.client.install_skill_from_github_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_skill_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::UpdateSkillRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_skill request: {e}"))?;
+        let resp = self.client.update_skill_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn uninstall_skill_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::UninstallSkillRequest::decode(request_bytes)
+            .map_err(|e| format!("decode uninstall_skill request: {e}"))?;
+        let resp = self.client.uninstall_skill_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    // ---- RepoMcpService ----
+
+    pub async fn list_repo_mcp_servers_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::ListRepoMcpServersRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_repo_mcp_servers request: {e}"))?;
+        let resp = self.client.list_repo_mcp_servers_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn install_mcp_from_market_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::InstallMcpFromMarketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode install_mcp_from_market request: {e}"))?;
+        let resp = self.client.install_mcp_from_market_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn install_custom_mcp_server_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::InstallCustomMcpServerRequest::decode(request_bytes)
+            .map_err(|e| format!("decode install_custom_mcp_server request: {e}"))?;
+        let resp = self.client.install_custom_mcp_server_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_mcp_server_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::UpdateMcpServerRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_mcp_server request: {e}"))?;
+        let resp = self.client.update_mcp_server_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn uninstall_mcp_server_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ext_proto::UninstallMcpServerRequest::decode(request_bytes)
+            .map_err(|e| format!("decode uninstall_mcp_server request: {e}"))?;
+        let resp = self.client.uninstall_mcp_server_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
     // -------- Legacy REST (JSON wire) — preserved during dual-track --------
 
     pub async fn list_skill_registries(&self) -> Result<String, String> {

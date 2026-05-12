@@ -3,6 +3,10 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "extension",
     srcs = [
+        "market.go",
+        "market_convert.go",
+        "repo_mcp.go",
+        "repo_skill.go",
         "skill_registry.go",
         "skill_registry_convert.go",
     ],
@@ -20,7 +24,12 @@ go_library(
 
 go_test(
     name = "extension_test",
-    srcs = ["skill_registry_test.go"],
+    srcs = [
+        "market_test.go",
+        "repo_mcp_test.go",
+        "repo_skill_test.go",
+        "skill_registry_test.go",
+    ],
     embed = [":extension"],
     deps = [
         "//backend/internal/api/connect/interceptors",

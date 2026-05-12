@@ -17,7 +17,10 @@ mod channel_proto;
 mod common;
 mod enums;
 mod extension;
+mod extension_market_proto;
 mod extension_proto;
+mod extension_repo_mcp_proto;
+mod extension_repo_skill_proto;
 mod file_upload;
 mod grant;
 mod grant_proto;
@@ -94,8 +97,16 @@ pub mod proto_channel_v1 {
 /// distinct module so the legacy serde `SkillRegistry` (REST path) and the
 /// prost `SkillRegistry` (Connect path) coexist during the dual-track
 /// migration window without name collisions.
+///
+/// All sub-services of the extension domain (skill_registry / market /
+/// repo_skill / repo_mcp) share the same proto package, so their prost
+/// mirrors are unified under this single module — `use proto_extension_v1::*`
+/// pulls in every prost type for the domain without per-sub-service imports.
 pub mod proto_extension_v1 {
+    pub use super::extension_market_proto::*;
     pub use super::extension_proto::*;
+    pub use super::extension_repo_mcp_proto::*;
+    pub use super::extension_repo_skill_proto::*;
 }
 
 /// Connect-RPC binary-wire DTOs for `proto.apikey.v1`. Re-exported as a
