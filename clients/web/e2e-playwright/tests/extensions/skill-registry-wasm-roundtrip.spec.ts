@@ -41,17 +41,24 @@ test.describe("Skill registry — wasm round-trip (#341)", () => {
     const nav = new SettingsNavPage(page, TEST_ORG_SLUG);
     await nav.goto("organization", "extensions");
 
-    // The "Add Source" button only lives on the org-registries section, so
-    // its visibility implicitly confirms we landed on the right tab.
-    const addSourceButton = page.getByRole("button", { name: /add source|添加注册表/i });
-    await expect(addSourceButton).toBeVisible();
-    await addSourceButton.click();
+    // Open the add-source dialog. The "Add Source" button only renders inside
+    // OrgRegistriesList — PlatformRegistriesList has no equivalent — so the
+    // page has exactly one such button before the dialog opens.
+    const openButton = page.getByRole("button", { name: /add source|添加注册表/i });
+    await expect(openButton).toBeVisible();
+    await openButton.click();
 
-    const dialog = page.getByRole("dialog");
+    // The project's Dialog is a custom portal — it does NOT set role="dialog".
+    // It marks the overlay with `data-dialog-overlay`, which is what we scope
+    // by; getByRole("dialog") would silently miss every spec that touches it.
+    const dialog = page.locator("[data-dialog-overlay]");
     await expect(dialog).toBeVisible();
+
     await dialog.getByPlaceholder("https://github.com/owner/skills-repo").fill(testUrl);
-    // The dialog heading also reads "Add Source"; scoping by role inside the
-    // dialog hits the submit button only.
+    // Inside the dialog overlay the only `<button>` carrying the "Add Source"
+    // label is the footer submit (the heading is an <h2>, the cancel button
+    // reads "Cancel" / "取消"). Scoping by dialog excludes the now-occluded
+    // OrgRegistriesList "Add Source" button on the page behind the overlay.
     await dialog.getByRole("button", { name: /add source|添加注册表/i }).click();
 
     await expect(dialog).toBeHidden();
