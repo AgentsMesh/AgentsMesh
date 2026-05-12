@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+# Scaffold package for Connect-RPC handlers. Subpackages
+# (`connect/extension/`, `connect/pod/`, etc.) implement the actual
+# service handlers; this top-level go_library exists so the import
+# path resolves while the migration is in flight.
+go_library(
+    name = "connect",
+    srcs = ["doc.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "@com_connectrpc_connect//:connect",
+    ],
+)

@@ -225,7 +225,7 @@ func main() {
 	subscriptionScheduler := startSubscriptionJobs(db, cfg, services.email, appLogger.Logger)
 
 	// Start HTTP server
-	srv := startHTTPServer(cfg, router)
+	srv := startHTTPServer(cfg, wrapWithConnect(router))
 
 	// Graceful shutdown
 	waitForShutdown(srv, grpcResult.server, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, relayManager, services, db, redisClient)

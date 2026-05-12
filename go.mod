@@ -68,6 +68,8 @@ require (
 	gorm.io/plugin/dbresolver v1.6.2
 )
 
+require connectrpc.com/connect v1.19.1
+
 require (
 	code.gitea.io/sdk/gitea v0.22.1 // indirect
 	github.com/42wim/httpsig v1.2.3 // indirect

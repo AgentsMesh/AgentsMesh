@@ -20,6 +20,7 @@ _WASM_DEPS = [
     "@crates//:console_error_panic_hook",
     "@crates//:futures",
     "@crates//:js-sys",
+    "@crates//:prost",
     "@crates//:reqwest",
     "@crates//:serde",
     "@crates//:serde_json",
