@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { APIKeyData, UpdateAPIKeyRequest } from "@/lib/api/apikeyTypes";
-import { getApiKeyService } from "@/lib/wasm-core";
+import { listApiKeys, createApiKey, updateApiKey, revokeApiKey } from "@/lib/api/apikey";
+import { useCurrentOrg } from "@/stores/auth";
 import { APIKeyCard, CreateAPIKeyDialog, APIKeySecretDialog, EditAPIKeyDialog } from "./apikeys";
 import type { TranslationFn } from "./GeneralSettings";
 
@@ -13,6 +14,7 @@ interface APIKeysSettingsProps {
 }
 
 export function APIKeysSettings({ t }: APIKeysSettingsProps) {
+  const currentOrg = useCurrentOrg();
   const [apiKeys, setApiKeys] = useState<APIKeyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,18 +28,19 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
   const { dialogProps, confirm } = useConfirmDialog();
 
   const fetchKeys = useCallback(async () => {
+    if (!currentOrg) return;
     setLoading(true);
     setError(null);
     try {
-      const response = JSON.parse(await getApiKeyService().list());
-      setApiKeys(response.api_keys || []);
+      const response = await listApiKeys(currentOrg.slug);
+      setApiKeys(response.items);
     } catch (err) {
       console.error("Failed to load API keys:", err);
       setError(t("settings.apiKeys.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [currentOrg, t]);
 
   useEffect(() => {
     fetchKeys();
@@ -49,8 +52,9 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
     scopes: string[];
     expires_in?: number;
   }) => {
+    if (!currentOrg) return;
     try {
-      const response = JSON.parse(await getApiKeyService().create(JSON.stringify(data)));
+      const response = await createApiKey(currentOrg.slug, data);
       setCreatedRawKey(response.raw_key);
       setShowCreateDialog(false);
       fetchKeys();
@@ -59,21 +63,23 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
       setError(t("settings.apiKeys.createFailed"));
       throw err;
     }
-  }, [fetchKeys, t]);
+  }, [currentOrg, fetchKeys, t]);
 
   const handleUpdate = useCallback(async (id: number, data: UpdateAPIKeyRequest) => {
+    if (!currentOrg) return;
     try {
-      await getApiKeyService().update(BigInt(id), JSON.stringify(data));
+      await updateApiKey(currentOrg.slug, id, data);
       fetchKeys();
     } catch (err) {
       console.error("Failed to update API key:", err);
       setError(t("settings.apiKeys.updateFailed"));
       throw err;
     }
-  }, [fetchKeys, t]);
+  }, [currentOrg, fetchKeys, t]);
 
   const handleRevoke = useCallback(
     async (id: number) => {
+      if (!currentOrg) return;
       const confirmed = await confirm({
         title: t("settings.apiKeys.revokeDialog.title"),
         description: t("settings.apiKeys.revokeDialog.description"),
@@ -83,7 +89,7 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
       });
       if (confirmed) {
         try {
-          await getApiKeyService().revoke(BigInt(id));
+          await revokeApiKey(currentOrg.slug, id);
           fetchKeys();
         } catch (err) {
           console.error("Failed to revoke API key:", err);
@@ -91,7 +97,7 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
         }
       }
     },
-    [confirm, fetchKeys, t]
+    [currentOrg, confirm, fetchKeys, t]
   );
 
   return (
