@@ -1,0 +1,43 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "repository",
+    srcs = [
+        "repository.go",
+        "repository_branches.go",
+        "repository_convert.go",
+        "repository_crud.go",
+        "repository_mount.go",
+        "repository_update.go",
+        "repository_webhook.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/domain/grant",
+        "//backend/internal/middleware",
+        "//backend/internal/service/billing",
+        "//backend/internal/service/grant",
+        "//backend/internal/service/repository",
+        "//backend/pkg/policy",
+        "//proto/repository/v1:repository_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "repository_test",
+    srcs = ["repository_test.go"],
+    embed = [":repository"],
+    deps = [
+        "//backend/internal/domain/gitprovider",
+        "//backend/internal/middleware",
+        "//backend/internal/service/repository",
+        "//proto/repository/v1:repository_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

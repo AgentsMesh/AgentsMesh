@@ -8,6 +8,7 @@ import (
 
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
+	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 )
 
@@ -66,4 +67,8 @@ func wrapWithConnect(cfg *config.Config, svc *serviceContainer, rest http.Handle
 // to. Specialist PRs insert one line per service.
 func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, opts []connect.HandlerOption) {
 	extensionconnect.Mount(mux, extensionconnect.NewServer(svc.extension, svc.org), opts...)
+	repositoryconnect.Mount(mux, repositoryconnect.NewServer(
+		svc.repository, svc.org,
+		repositoryconnect.WithBillingService(svc.billing),
+	), opts...)
 }
