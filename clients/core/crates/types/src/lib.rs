@@ -39,6 +39,7 @@ mod runner;
 mod runner_proto;
 mod service_error;
 mod sso;
+mod sso_proto;
 mod support_ticket;
 mod support_ticket_proto;
 mod ticket;
@@ -212,6 +213,15 @@ pub mod proto_promocode_v1 {
 /// `LoginRequest` / `RegisterRequest` in `auth.rs` for the dual-track window.
 pub mod proto_auth_v1 {
     pub use super::auth_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.sso.v1`. PUBLIC service (no
+/// auth, conventions §3.5 exception #1) — the login page hits Discover
+/// before the user has a bearer token, and LdapAuth issues that token.
+/// Coexists with the legacy serde `SSOConfig` / `LdapAuthRequest` /
+/// `SSODiscoverResponse` in `auth.rs` + `sso.rs` for the dual-track window.
+pub mod proto_sso_v1 {
+    pub use super::sso_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;

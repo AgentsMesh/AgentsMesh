@@ -1,0 +1,122 @@
+// SSOService — public SSO discovery + LDAP authentication for the
+// login page. The OIDC/SAML browser-redirect flows stay on REST (they
+// terminate in `Location:` redirects, not protobuf bodies — Connect's
+// unary contract cannot model that) and so do the org-admin SSO config
+// CRUD endpoints (web-admin owns them; not consumed by getSSOService()).
+//
+// Migrated from REST handlers in
+//   backend/internal/api/rest/v1/auth_sso.go        (Discover)
+//   backend/internal/api/rest/v1/auth_sso_ldap.go   (LDAPAuth)
+// per .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.sso.v1 + go_package suffix for dispatch
+//   * service name = <Domain>Service, methods PascalCase verbs
+//   * snake_case fields, no json_name annotations
+//   * USER-SCOPED + PUBLIC service (conventions §3.5 exception #1) — no
+//     org_slug field on any request. SSO configs are org-scoped on the
+//     backend, but the login-time discovery surface is keyed only by the
+//     email's domain. The caller is unauthenticated by definition.
+//   * timestamps as string ISO-8601 (no google.protobuf.Timestamp)
+//   * list response = {items, total, limit, offset} for Discover
+//   * LdapAuth response has multiple top-level fields (token + user +
+//     timestamps), so uses a dedicated LdapAuthResponse (§9 exception)
+//
+// SENSITIVE DATA: LdapAuthRequest carries username/password. These
+// transit on the wire as binary-encoded prost bytes over the same TLS
+// channel REST used. The proto messages describe ONLY the request
+// shape; the password is write-only and never appears on response
+// messages.
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - backend handler emits {domain, name, protocol, enforce_sso} for Discover
+//     and {token, refresh_token, expires_at, token_type, user{...}} for LDAPAuth
+//   - clients/core/crates/types/src/sso.rs (SSODiscoverResponse / LdapAuthRequest)
+//     and auth.rs (SSOConfig) carry the same fields
+//   - clients/web/src/lib/api/ssoTypes.ts mirrors the wire shape
+// Drift caught and fixed inline: the existing Rust LDAP path deserializes
+// the backend response into `AuthSession` (expires_in), but the backend
+// actually emits `expires_at` — those are different fields. The
+// LdapAuthResponse message below restores the wire shape correctly.
+
+syntax = "proto3";
+
+package proto.sso.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/sso/v1;ssov1";
+
+// ============================================================================
+// SSOService — public (unauthenticated) SSO entry points
+// ============================================================================
+// All RPCs are PUBLIC. The auth interceptor MUST NOT be applied — the
+// user does not have a bearer token yet (that is what they are trying to
+// obtain). MountPublic in the handler enforces this.
+service SSOService {
+  // Returns the SSO configs enabled for the email's domain. The frontend
+  // uses the result to render an SSO button on the login page; an empty
+  // list means "fall through to password auth".
+  rpc Discover(DiscoverRequest) returns (DiscoverResponse);
+
+  // Authenticates the caller against the LDAP IdP registered for the
+  // given domain and returns session tokens + user info.
+  rpc LdapAuth(LdapAuthRequest) returns (LdapAuthResponse);
+}
+
+// SSODiscoverConfig is the sanitized SSO config card. Mirrors
+// service/sso/types.go DiscoverResponse — secrets / IdP URLs are
+// intentionally omitted; the frontend only needs to know which protocol
+// to render and whether SSO is enforced for the domain.
+message SSODiscoverConfig {
+  string domain = 1;
+  string name = 2;
+  // oidc / saml / ldap — matches sso.Protocol on the backend.
+  string protocol = 3;
+  // When true, the login page hides the password form and forces the
+  // SSO path. enforce_sso is also surfaced by the password-login REST
+  // handler via the SSO_REQUIRED error code, but the Discover surface
+  // gives the UI a server-side toggle to render the right shell.
+  bool enforce_sso = 4;
+}
+
+// ---- Discover ----
+
+message DiscoverRequest {
+  string email = 1;
+}
+
+message DiscoverResponse {
+  repeated SSODiscoverConfig items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// ---- LdapAuth ----
+
+message LdapAuthRequest {
+  // Email domain extracted from the login form, lowercased.
+  string domain = 1;
+  string username = 2;
+  string password = 3;
+}
+
+// LdapAuthUser is the public user info returned alongside the tokens.
+// Mirrors the `user` sub-object the REST handler emits — same five
+// fields. Passwords stay server-side; the proto User message has no
+// field for them.
+message LdapAuthUser {
+  int64 id = 1;
+  string email = 2;
+  string username = 3;
+  optional string name = 4;
+}
+
+message LdapAuthResponse {
+  string token = 1;
+  string refresh_token = 2;
+  // RFC 3339 UTC. The legacy AuthSession deserialization dropped this
+  // because its Rust DTO used `expires_in` (a duration) instead — fixed
+  // inline as part of the migration drift reconciliation.
+  string expires_at = 3;
+  // Always "Bearer" today; surfaced for future scheme negotiation.
+  string token_type = 4;
+  LdapAuthUser user = 5;
+}

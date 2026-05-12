@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
 import { ApiError } from "@/lib/api/api-types";
 import type { SSOConfig } from "@/lib/api/ssoTypes";
-import { getAuthManager, getSSOService } from "@/lib/wasm-getters";
+import { getAuthManager } from "@/lib/wasm-getters";
 import { initWasmCore } from "@/lib/wasm-core";
+import { ssoApi } from "@/lib/api/sso";
 import { useTranslations } from "next-intl";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { OAuthButtons } from "./OAuthButtons";
@@ -43,9 +44,7 @@ export default function LoginPage() {
     const requestId = ++discoverRequestRef.current;
     try {
       await initWasmCore();
-      const raw = await getSSOService().discover(emailValue);
-      if (!raw || raw === "undefined") { setSsoConfigs([]); return; }
-      const response = JSON.parse(raw);
+      const response = await ssoApi.discover(emailValue);
       if (requestId === discoverRequestRef.current) {
         setSsoConfigs(response.configs || []);
       }
@@ -80,7 +79,7 @@ export default function LoginPage() {
     setLdapLoading(true);
     setError("");
     try {
-      const response = JSON.parse(await getSSOService().ldap_auth(ldapConfig.domain, JSON.stringify({username, password: pwd})));
+      const response = await ssoApi.ldapAuth(ldapConfig.domain, {username, password: pwd});
       await setAuth(response.token, response.user, response.refresh_token);
       await navigateAfterLogin();
     } catch (err) {
