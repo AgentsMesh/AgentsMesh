@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
-import { getOrgApiService } from "@/lib/wasm-getters";
+import { listMyOrgs, createOrg } from "@/lib/api/org";
 import { initWasmCore } from "@/lib/wasm-core";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
@@ -72,13 +72,14 @@ export default function CreateOrgPage() {
     setError("");
 
     try {
-      await getOrgApiService().create(JSON.stringify({ name: name.trim(), slug: slug.trim() }));
+      await createOrg({ name: name.trim(), slug: slug.trim() });
 
       // Refresh organizations
-      const { organizations } = JSON.parse(await getOrgApiService().list());
+      const resp = await listMyOrgs();
+      const organizations = resp.items;
       setOrganizations(organizations);
 
-      const newOrg = organizations.find((o: { slug: string }) => o.slug === slug);
+      const newOrg = organizations.find((o) => o.slug === slug);
       if (newOrg) {
         setCurrentOrg(newOrg);
       }

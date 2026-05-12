@@ -843,6 +843,18 @@ vi.mock('@/lib/wasm-core', () => {
       invite_member: fn().mockResolvedValue('{}'),
       remove_member: fn().mockResolvedValue(undefined),
       update_member_role: fn().mockResolvedValue('{}'),
+      // Connect (binary) lane — mocked as empty Uint8Array; per-test
+      // overrides can supply protobuf-encoded payloads as needed.
+      listMyOrgsConnect: fn().mockResolvedValue(new Uint8Array()),
+      createOrgConnect: fn().mockResolvedValue(new Uint8Array()),
+      createPersonalOrgConnect: fn().mockResolvedValue(new Uint8Array()),
+      getOrgConnect: fn().mockResolvedValue(new Uint8Array()),
+      updateOrgConnect: fn().mockResolvedValue(new Uint8Array()),
+      deleteOrgConnect: fn().mockResolvedValue(new Uint8Array()),
+      listMembersConnect: fn().mockResolvedValue(new Uint8Array()),
+      inviteMemberConnect: fn().mockResolvedValue(new Uint8Array()),
+      removeMemberConnect: fn().mockResolvedValue(new Uint8Array()),
+      updateMemberRoleConnect: fn().mockResolvedValue(new Uint8Array()),
     })),
     getAgentService: fn(() => ({
       list_agents: fn().mockResolvedValue('{"builtin_agents":[],"custom_agents":[]}'),

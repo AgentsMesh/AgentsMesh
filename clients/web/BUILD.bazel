@@ -247,6 +247,12 @@ vitest_test(
         "//:node_modules/@agentsmesh/service-runtime",
         "//:node_modules/agentsmesh-wasm",
         "//:package_json_bin",
+        # Generated TS proto message classes used by Connect adapters
+        # under src/lib/api/. vitest's `@proto/*` alias resolves to
+        # `../../proto/gen/ts/*` (vitest.config.ts), so the runfiles
+        # must include the generated sources or vite's import-analysis
+        # plugin fails on the alias.
+        "//proto:proto_gen_ts",
     ] + glob(
         [
             "src/**/*.ts",

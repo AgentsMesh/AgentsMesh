@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import type { OrganizationMember } from "@/lib/api";
-import { getOrgApiService } from "@/lib/wasm-getters";
+import { listMembers } from "@/lib/api/org";
 
 interface MentionPopoverProps {
   /** Whether the popover is visible */
@@ -45,9 +45,8 @@ export function MentionPopover({
   // Fetch members once
   useEffect(() => {
     if (!currentOrg?.slug) return;
-    getOrgApiService()
-      .list_members(currentOrg.slug)
-      .then((raw: string) => setMembers(JSON.parse(raw).members || []))
+    listMembers(currentOrg.slug)
+      .then((resp) => setMembers(resp.items || []))
       .catch(() => setMembers([]));
   }, [currentOrg?.slug]);
 

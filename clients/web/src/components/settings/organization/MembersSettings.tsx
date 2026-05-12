@@ -8,7 +8,8 @@ import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import type { Invitation } from "@/lib/api/invitationTypes";
-import { getOrgApiService, getInvitationService } from "@/lib/wasm-getters";
+import { getInvitationService } from "@/lib/wasm-getters";
+import { listMembers, removeMember, updateMemberRole } from "@/lib/api/org";
 import type { TranslationFn } from "./GeneralSettings";
 import { MembersList, type Member } from "./MembersList";
 import { PendingInvitations } from "./PendingInvitations";
@@ -53,8 +54,8 @@ export function MembersSettings({ t }: MembersSettingsProps) {
     if (!currentOrg) return;
     try {
       setLoading(true);
-      const response = JSON.parse(await getOrgApiService().list_members(currentOrg.slug));
-      setMembers(response.members || []);
+      const response = await listMembers(currentOrg.slug);
+      setMembers(response.items || []);
     } catch (err) {
       console.error("Failed to load members:", err);
       setError(t("settings.members.failedToLoad"));
@@ -129,13 +130,13 @@ export function MembersSettings({ t }: MembersSettingsProps) {
     if (!currentOrg) return;
     const confirmed = await removeMemberDialog.confirm();
     if (!confirmed) return;
-    try { await getOrgApiService().remove_member(currentOrg.slug, BigInt(userId)); await loadMembers(); }
+    try { await removeMember(currentOrg.slug, userId); await loadMembers(); }
     catch (err) { console.error("Failed to remove member:", err); setError(t("settings.members.failedToRemove")); }
   };
 
   const handleRoleChange = async (userId: number, newRole: string) => {
     if (!currentOrg) return;
-    try { await getOrgApiService().update_member_role(currentOrg.slug, BigInt(userId), JSON.stringify({role: newRole})); await loadMembers(); }
+    try { await updateMemberRole(currentOrg.slug, userId, newRole); await loadMembers(); }
     catch (err) { console.error("Failed to update role:", err); setError(t("settings.members.failedToUpdate")); }
   };
 

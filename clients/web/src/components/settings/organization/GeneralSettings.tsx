@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
-import { getOrgApiService } from "@/lib/wasm-getters";
+import { updateOrg, deleteOrg } from "@/lib/api/org";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { useCurrentOrg, useAuthOrganizations, useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await getOrgApiService().update(org!.slug, JSON.stringify({ name }));
+      await updateOrg(org!.slug, { name });
 
       // Sync Zustand store cache
       if (currentOrg && currentOrg.slug === org!.slug) {
@@ -66,7 +66,7 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
 
     setDeleting(true);
     try {
-      await getOrgApiService().delete(org!.slug);
+      await deleteOrg(org!.slug);
 
       // Remove from store and redirect
       const remaining = organizations.filter((o) => o.slug !== org!.slug);

@@ -1,1 +1,18 @@
 # gazelle-managed root of the `proto` Go module.
+
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+
+# Generated TS proto message classes (committed mirror under `gen/ts/`).
+# vitest / next consume via the `@proto/*` path alias resolved to
+# `<root>/proto/gen/ts/*` (clients/web/vitest.config.ts). copy_to_bin
+# stages the .ts files so they appear in test runfiles at the expected
+# relative path; aspect_rules_js's `js_test` rejects raw source-tree
+# inputs (each input must be in bazel-out).
+#
+# `proto/gen/go/` stays excluded — it's a lint-time mirror written by
+# golangci_lint_runner.sh; Bazel never reads it directly.
+copy_to_bin(
+    name = "proto_gen_ts",
+    srcs = glob(["gen/ts/**/*.ts"]),
+    visibility = ["//visibility:public"],
+)

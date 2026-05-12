@@ -16,7 +16,7 @@ import {
 import { TicketPriority } from "@/lib/api/ticketTypes";
 import { getTicketService } from "@/lib/wasm-core";
 import type { OrganizationMember } from "@/lib/api/organizationTypes";
-import { getOrgApiService } from "@/lib/wasm-getters";
+import { listMembers } from "@/lib/api/org";
 import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { RepositorySelect } from "@/components/common/RepositorySelect";
 import { useBreakpoint } from "@/components/layout/useBreakpoint";
@@ -64,8 +64,8 @@ export function TicketCreateDialog({
 
   useEffect(() => {
     if (open && currentOrg?.slug && members.length === 0) {
-      getOrgApiService().list_members(currentOrg.slug)
-        .then((raw: string) => setMembers(JSON.parse(raw).members || []))
+      listMembers(currentOrg.slug)
+        .then((resp) => setMembers(resp.items || []))
         .catch(() => {});
     }
   }, [open, currentOrg?.slug, members.length]);

@@ -1,4 +1,5 @@
-import { getAuthManager, getOrgApiService } from "@/lib/wasm-core";
+import { getAuthManager } from "@/lib/wasm-core";
+import { listMyOrgs } from "@/lib/api/org";
 import { getDefaultRoute } from "@/lib/default-route";
 import { safeRedirectPath } from "./redirect";
 
@@ -27,8 +28,8 @@ async function primeOrganizations(
   setOrganizations: (orgs: Organization[]) => Promise<void> | void
 ): Promise<Organization[]> {
   try {
-    const orgsResponse = JSON.parse(await getOrgApiService().list());
-    const orgs: Organization[] = orgsResponse.organizations || [];
+    const orgsResponse = await listMyOrgs();
+    const orgs: Organization[] = orgsResponse.items || [];
     if (orgs.length > 0) {
       await setOrganizations(orgs);
       try { await getAuthManager().fetch_organizations(); } catch { /* best effort */ }

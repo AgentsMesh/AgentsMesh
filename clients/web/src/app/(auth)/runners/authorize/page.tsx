@@ -6,7 +6,7 @@ import { useCurrentUser, useAuthOrganizations, useAuthStore } from "@/stores/aut
 import { getRunnerService, initWasmCore } from "@/lib/wasm-core";
 import type { RunnerAuthStatus } from "@/lib/api/runnerTypes";
 import type { OrganizationData } from "@/lib/api/organizationTypes";
-import { getOrgApiService } from "@/lib/wasm-getters";
+import { listMyOrgs } from "@/lib/api/org";
 import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import { useTranslations } from "next-intl";
@@ -51,10 +51,10 @@ export default function RunnerAuthorizePage() {
     await initWasmCore();
     if (!user) return;
     try {
-      const resp: { organizations: OrganizationData[] } = JSON.parse(await getOrgApiService().list());
-      setOrganizations(resp.organizations);
-      const adminOrg = resp.organizations.find((org) => org.subscription_status === "active" || org.subscription_plan);
-      setSelectedOrg(adminOrg || resp.organizations[0] || null);
+      const resp = await listMyOrgs();
+      setOrganizations(resp.items);
+      const adminOrg = resp.items.find((org) => org.subscription_status === "active" || org.subscription_plan);
+      setSelectedOrg(adminOrg || resp.items[0] || null);
     } catch { /* ignore */ }
   }, [user, setOrganizations]);
 

@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import type { InvitationInfo } from "@/lib/api/invitationTypes";
-import { getInvitationService, getOrgApiService } from "@/lib/wasm-getters";
+import { getInvitationService } from "@/lib/wasm-getters";
+import { listMyOrgs } from "@/lib/api/org";
 import { initWasmCore } from "@/lib/wasm-core";
 import { Logo } from "@/components/common";
 import { getDefaultRoute } from "@/lib/default-route";
@@ -53,9 +54,8 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
       await getInvitationService().accept(resolvedParams.token);
 
       // Refresh organizations list
-      const { organizations } = JSON.parse(await getOrgApiService().list()) as {
-        organizations: Array<{ id: number; name: string; slug: string }>;
-      };
+      const resp = await listMyOrgs();
+      const organizations = resp.items;
       setOrganizations(organizations);
 
       // Set the new org as current — use the invitation's org info

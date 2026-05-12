@@ -4,7 +4,8 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getAuthApiService, getOrgApiService } from "@/lib/wasm-getters";
+import { getAuthApiService } from "@/lib/wasm-getters";
+import { listMyOrgs } from "@/lib/api/org";
 import { initWasmCore } from "@/lib/wasm-core";
 import { useTranslations } from "next-intl";
 import { getDefaultRoute } from "@/lib/default-route";
@@ -41,10 +42,10 @@ function VerifyEmailContent() {
       setMessage(t("auth.verifyEmailPage.verificationSuccess"));
 
       try {
-        const orgsResponse = JSON.parse(await getOrgApiService().list());
-        if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
-          await setOrganizations(orgsResponse.organizations);
-          router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
+        const orgsResponse = await listMyOrgs();
+        if (orgsResponse.items && orgsResponse.items.length > 0) {
+          await setOrganizations(orgsResponse.items);
+          router.push(getDefaultRoute(orgsResponse.items[0].slug));
         } else {
           router.push("/onboarding");
         }
