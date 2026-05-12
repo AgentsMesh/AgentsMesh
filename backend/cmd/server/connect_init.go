@@ -9,6 +9,7 @@ import (
 	agentconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agent"
 	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
+	authconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/auth"
 	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
 	blockstoreconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/blockstore"
 	channelconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel"
@@ -112,6 +113,25 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	mountInvitationService(mux, svc, opts)
 	supportticketconnect.Mount(mux, supportticketconnect.NewServer(svc.supportTicket), opts...)
 	mountSSOService(mux, svc)
+	mountAuthService(mux, svc, cfg, opts)
+}
+
+// mountAuthService wires both AuthService (PUBLIC — no auth interceptor)
+// and AuthSessionService (auth-required — Logout). Per conventions §3.5
+// exception #1, the user does not have a bearer token when hitting
+// Login/Register/etc.; the act of authenticating IS to obtain one.
+// AuthSessionService.Logout is the only RPC that requires the token
+// (it revokes the caller's own bearer).
+//
+// REST handlers in /api/v1/auth/* stay mounted permanently in parallel —
+// AuthManager.login/refresh/logout in the Rust auth crate still drives
+// the stateful auth flow via REST, this Connect surface is the data-plane
+// migration target for register/verify/forgot/reset call sites and a
+// forward-compatible path for future flow migrations.
+func mountAuthService(mux *http.ServeMux, svc *serviceContainer, cfg *config.Config, opts []connect.HandlerOption) {
+	srv := authconnect.NewServer(svc.auth, svc.user, svc.email, cfg)
+	authconnect.MountPublic(mux, srv)
+	authconnect.MountSession(mux, authconnect.NewSessionServer(svc.auth), opts...)
 }
 
 // mountSSOService wires the public SSOService (Discover + LdapAuth)

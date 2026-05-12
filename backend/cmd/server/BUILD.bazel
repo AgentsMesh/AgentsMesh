@@ -31,6 +31,7 @@ go_library(
         "//backend/internal/api/connect/agent",
         "//backend/internal/api/connect/agentpod_settings",
         "//backend/internal/api/connect/apikey",
+        "//backend/internal/api/connect/auth",
         "//backend/internal/api/connect/billing",
         "//backend/internal/api/connect/blockstore",
         "//backend/internal/api/connect/channel",

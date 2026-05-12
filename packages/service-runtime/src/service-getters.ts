@@ -59,6 +59,7 @@ export const getTicketRelationsService = () => g<any>("ticketRelationsService");
 export const getFileService = () => g<any>("fileService");
 export const getSupportTicketService = () => g<any>("supportTicketService");
 export const getAuthApiService = () => g<any>("authApiService");
+export const getAuthConnectService = () => g<any>("authConnectService");
 export const getRunnerState = () => g<any>("runnerState");
 export const getMeshState = () => g<any>("meshState");
 export const getTicketState = () => g<any>("ticketState");
