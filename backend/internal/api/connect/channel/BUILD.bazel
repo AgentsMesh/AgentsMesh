@@ -1,0 +1,43 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "channel",
+    srcs = [
+        "channel.go",
+        "channels_handlers.go",
+        "convert.go",
+        "document_handlers.go",
+        "errors.go",
+        "members_handlers.go",
+        "messages_handlers.go",
+        "pods_handlers.go",
+        "readstate_handlers.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/domain/channel",
+        "//backend/internal/middleware",
+        "//backend/internal/service/channel",
+        "//backend/internal/service/ticket",
+        "//proto/channel/v1:channel_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "channel_test",
+    srcs = ["channel_test.go"],
+    embed = [":channel"],
+    deps = [
+        "//backend/internal/domain/channel",
+        "//backend/internal/middleware",
+        "//backend/internal/service/channel",
+        "//proto/channel/v1:channel_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

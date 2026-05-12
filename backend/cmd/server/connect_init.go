@@ -9,6 +9,7 @@ import (
 	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
 	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
+	channelconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
 	orgconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/org"
@@ -87,6 +88,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	apikeyconnect.Mount(mux, apikeyconnect.NewServer(svc.apikey, svc.org), opts...)
 	orgconnect.Mount(mux, orgconnect.NewServer(svc.org, svc.user), opts...)
 	ticketrelationsconnect.Mount(mux, ticketrelationsconnect.NewServer(svc.ticket, svc.org), opts...)
+	channelconnect.Mount(mux, channelconnect.NewServer(svc.channel, svc.ticket, svc.org), opts...)
 	mountRunnerService(mux, svc, rest, cfg, opts)
 	mountPodService(mux, svc, rest, opts)
 	mountAgentPodSettingsService(mux, svc, opts)
