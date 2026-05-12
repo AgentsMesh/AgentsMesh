@@ -31,7 +31,11 @@ export const invitationApi = {
     return { invitation: info };
   },
   accept: async (token: string) => {
-    await acceptInvitation(token);
+    // Legacy REST returned `{ organization: { id, name, slug } }`; same
+    // shape preserved here so desktop's `{ organization } = await accept(...)`
+    // keeps working.
+    const result = await acceptInvitation(token);
+    return { organization: result.organization! };
   },
   list: async (orgSlug = "") => {
     const resp = await listInvitations(orgSlug);
