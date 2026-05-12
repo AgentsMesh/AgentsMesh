@@ -7,7 +7,9 @@ import {
   type CredentialProfilesByAgent,
   type AgentData,
 } from "@/lib/api";
-import { getAgentService, getUserCredentialService } from "@/lib/wasm-core";
+import { getUserCredentialService } from "@/lib/wasm-core";
+import { listAgents, getAgentConfigSchema } from "@/lib/api/agentConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import type { AgentCredentialsState, AgentCredentialsActions, CredentialFormData } from "./types";
 
 /**
@@ -17,6 +19,7 @@ import type { AgentCredentialsState, AgentCredentialsActions, CredentialFormData
 export function useAgentCredentials(
   t: (key: string) => string
 ): AgentCredentialsState & AgentCredentialsActions {
+  const currentOrg = useCurrentOrg();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,26 +37,29 @@ export function useAgentCredentials(
       setLoading(true);
       setError(null);
 
+      if (!currentOrg) {
+        setLoading(false);
+        return;
+      }
+
       const [profilesRes, agentsRes] = await Promise.all([
         getUserCredentialService().list_agent_credentials().then((j: string) => JSON.parse(j)),
-        getAgentService().list_agents().then((j: string) => JSON.parse(j)),
+        listAgents(currentOrg.slug),
       ]);
 
       setProfilesByAgent(profilesRes.items || []);
-      const agentList = [...(agentsRes.builtin_agents || []), ...(agentsRes.custom_agents || []), ...(agentsRes.agents || [])];
+      const agentList = [...agentsRes.builtin_agents, ...agentsRes.custom_agents];
       setAgents(agentList);
 
       // Fetch credential fields for all agents in parallel
       const fieldsMap = new Map<string, CredentialField[]>();
       const schemaResults = await Promise.allSettled(
-        agentList.map((a: AgentData) =>
-          getAgentService().get_config_schema(a.slug).then((j: string) => JSON.parse(j))
-        )
+        agentList.map((a: AgentData) => getAgentConfigSchema(currentOrg.slug, a.slug))
       );
       agentList.forEach((a: AgentData, i: number) => {
         const result = schemaResults[i];
         if (result.status === "fulfilled") {
-          fieldsMap.set(a.slug, result.value.schema?.credential_fields || []);
+          fieldsMap.set(a.slug, result.value.credential_fields || []);
         }
       });
       setCredentialFieldsByAgent(fieldsMap);
@@ -84,7 +90,7 @@ export function useAgentCredentials(
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [currentOrg, t]);
 
   useEffect(() => {
     loadData();

@@ -7,7 +7,14 @@ import {
   type AgentData,
   type CredentialProfileData,
 } from "@/lib/api";
-import { getAgentService, getUserCredentialService } from "@/lib/wasm-core";
+import { getUserCredentialService } from "@/lib/wasm-core";
+import {
+  listAgents,
+  getAgentConfigSchema,
+  getUserAgentConfig,
+  setUserAgentConfig,
+} from "@/lib/api/agentConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
 import type { AgentConfigState, AgentConfigActions, CredentialFormData } from "./types";
@@ -19,6 +26,7 @@ export function useAgentConfig(
   agentSlug: string,
   t: (key: string) => string
 ): AgentConfigState & AgentConfigActions {
+  const currentOrg = useCurrentOrg();
   // Loading states
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
@@ -41,9 +49,14 @@ export function useAgentConfig(
       setLoading(true);
       setError(null);
 
+      if (!currentOrg) {
+        setLoading(false);
+        return;
+      }
+
       // Load agents to find the one matching the slug
-      const agentsRes = JSON.parse(await getAgentService().list_agents());
-      const allAgents = [...(agentsRes.builtin_agents || []), ...(agentsRes.custom_agents || []), ...(agentsRes.agents || [])];
+      const agentsRes = await listAgents(currentOrg.slug);
+      const allAgents = [...agentsRes.builtin_agents, ...agentsRes.custom_agents];
       const foundAgent = allAgents.find(
         (a: AgentData) => a.slug === agentSlug
       );
@@ -58,16 +71,17 @@ export function useAgentConfig(
 
       // Load data in parallel
       const [schemaRes, credentialsRes] = await Promise.all([
-        getAgentService().get_config_schema(foundAgent.slug).then((j: string) => JSON.parse(j)).catch(() => ({ schema: { fields: [], credential_fields: [] } })),
+        getAgentConfigSchema(currentOrg.slug, foundAgent.slug)
+          .catch(() => ({ fields: [], credential_fields: [] })),
         getUserCredentialService().list_agent_credentials().then((j: string) => JSON.parse(j)).catch(() => ({ items: [] })),
       ]);
 
       // Set config schema fields
-      const fields = schemaRes.schema?.fields || [];
+      const fields = schemaRes.fields || [];
       setConfigFields(fields);
 
       // Set credential fields from AgentFile ENV SECRET/TEXT declarations
-      setCredentialFields(schemaRes.schema?.credential_fields || []);
+      setCredentialFields(schemaRes.credential_fields || []);
 
       // Initialize config values with defaults from schema
       const defaultValues: Record<string, unknown> = {};
@@ -79,10 +93,10 @@ export function useAgentConfig(
 
       // Try to load user's saved config
       try {
-        const userConfigRes = JSON.parse(await getAgentService().get_user_config(foundAgent.slug));
-        if (userConfigRes.config?.config_values) {
+        const userConfig = await getUserAgentConfig(foundAgent.slug);
+        if (userConfig.config_values) {
           // Merge user config over defaults
-          setConfigValues({ ...defaultValues, ...userConfigRes.config.config_values });
+          setConfigValues({ ...defaultValues, ...userConfig.config_values });
         } else {
           setConfigValues(defaultValues);
         }
@@ -107,7 +121,7 @@ export function useAgentConfig(
     } finally {
       setLoading(false);
     }
-  }, [agentSlug, t]);
+  }, [agentSlug, currentOrg, t]);
 
   useEffect(() => {
     loadData();
@@ -138,7 +152,7 @@ export function useAgentConfig(
         }
       }
 
-      await getAgentService().set_user_config(agent.slug, JSON.stringify(cleanedConfig));
+      await setUserAgentConfig(agent.slug, cleanedConfig);
       setSuccess(t("settings.agentConfig.configSaved"));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {

@@ -4,8 +4,9 @@ import {
   AgentData,
   RepositoryData,
 } from "@/lib/api";
-import { getRunnerService, getAgentService } from "@/lib/wasm-core";
+import { getRunnerService } from "@/lib/wasm-core";
 import { listRepositories } from "@/lib/api/repositoryConnect";
+import { listAgents } from "@/lib/api/agentConnect";
 import { useCurrentOrg } from "@/stores/auth";
 
 export interface PodCreationData {
@@ -48,9 +49,12 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
         const reposPromise = currentOrg
           ? listRepositories(currentOrg.slug)
           : Promise.resolve({ items: [], total: 0, limit: 0, offset: 0 });
+        const agentsPromise = currentOrg
+          ? listAgents(currentOrg.slug)
+          : Promise.resolve({ builtin_agents: [], custom_agents: [], agents: [] });
         const [runnersRes, agentsRes, reposRes] = await Promise.allSettled([
           getRunnerService().fetch_runners(null).then((j: string) => JSON.parse(j)),
-          getAgentService().list_agents().then((j: string) => JSON.parse(j)),
+          agentsPromise,
           reposPromise,
         ]);
 
@@ -64,7 +68,7 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
         }
         if (agentsRes.status === "fulfilled") {
           const res = agentsRes.value;
-          const agentList = [...(res.builtin_agents || []), ...(res.custom_agents || []), ...(res.agents || [])];
+          const agentList = [...res.builtin_agents, ...res.custom_agents];
           setAgents(agentList);
         }
         if (reposRes.status === "fulfilled") {

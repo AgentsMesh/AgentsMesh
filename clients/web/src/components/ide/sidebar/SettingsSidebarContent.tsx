@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
-import { getAgentService } from "@/lib/wasm-core";
+import { listAgents } from "@/lib/api/agentConnect";
 import type { AgentData } from "@/lib/api";
 import {
   Settings,
@@ -65,11 +65,12 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
 
   useEffect(() => {
     const fetchAgents = async () => {
+      if (!currentOrg) return;
       try {
-        const response = JSON.parse(await getAgentService().list_agents());
+        const response = await listAgents(currentOrg.slug);
         const merged = [
-          ...(response.builtin_agents || []),
-          ...(response.custom_agents || []),
+          ...response.builtin_agents,
+          ...response.custom_agents,
         ];
         setAgents(merged);
       } catch (error) {
@@ -77,7 +78,7 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
       }
     };
     fetchAgents();
-  }, []);
+  }, [currentOrg]);
 
   const isOrgAdminOrOwner = currentOrg?.role === "owner" || currentOrg?.role === "admin";
 

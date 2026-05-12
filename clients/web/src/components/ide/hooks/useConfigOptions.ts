@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { getAgentService } from "@/lib/wasm-core";
+import { getAgentConfigSchema, getUserAgentConfig } from "@/lib/api/agentConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import type { ConfigField } from "@/lib/api";
 
 export interface ConfigOptionsState {
@@ -43,6 +44,7 @@ export function useConfigOptions(
   runnerId: number | null,
   agentSlug?: string | null
 ): ConfigOptionsState {
+  const currentOrg = useCurrentOrg();
   const [fields, setFields] = useState<ConfigField[]>([]);
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<Record<string, unknown>>({});
@@ -51,10 +53,10 @@ export function useConfigOptions(
   useEffect(() => {
     let cancelled = false;
 
-    
+
 
     const loadOptions = async () => {
-      if (!agentSlug) {
+      if (!agentSlug || !currentOrg) {
         setFields([]);
         setConfig({});
         return;
@@ -63,11 +65,10 @@ export function useConfigOptions(
       setLoading(true);
       try {
         // Load config schema from Backend
-        const schemaResponse = JSON.parse(await getAgentService().get_config_schema(agentSlug));
+        const schema = await getAgentConfigSchema(currentOrg.slug, agentSlug);
 
         if (cancelled) return;
 
-        const schema = schemaResponse.schema || { fields: [] };
         const baseFields = schema.fields || [];
 
         // Step 1: Initialize config with ConfigSchema defaults
@@ -80,14 +81,14 @@ export function useConfigOptions(
 
         // Step 2: Load user personal config and merge (higher priority)
         try {
-          const userConfigResponse = JSON.parse(await getAgentService().get_user_config(agentSlug));
-          if (!cancelled && userConfigResponse.config?.config_values) {
-            const userConfig = userConfigResponse.config.config_values;
+          const userConfig = await getUserAgentConfig(agentSlug);
+          if (!cancelled && userConfig.config_values) {
+            const values = userConfig.config_values;
 
             // Merge user config into mergedConfig
             for (const field of baseFields) {
-              if (userConfig[field.name] !== undefined) {
-                mergedConfig[field.name] = userConfig[field.name];
+              if (values[field.name] !== undefined) {
+                mergedConfig[field.name] = values[field.name];
               }
             }
           }
@@ -122,7 +123,7 @@ export function useConfigOptions(
     return () => {
       cancelled = true;
     };
-  }, [agentSlug]);
+  }, [agentSlug, currentOrg]);
 
   // Update a single config field
   const updateConfig = useCallback(

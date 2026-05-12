@@ -878,6 +878,19 @@ vi.mock('@/lib/wasm-core', () => {
       update_provider: fn().mockResolvedValue('{}'),
       delete_provider: fn().mockResolvedValue(undefined),
       set_default_provider: fn().mockResolvedValue(undefined),
+      // Connect-RPC (binary wire) — empty Uint8Array decodes to default proto
+      // messages, matching the legacy JSON `{}` semantics. Per-test mocks can
+      // override with prost-encoded payloads via @bufbuild/protobuf toBinary.
+      list_agents_connect: fn().mockResolvedValue(new Uint8Array()),
+      get_agent_connect: fn().mockResolvedValue(new Uint8Array()),
+      get_agent_config_schema_connect: fn().mockResolvedValue(new Uint8Array()),
+      create_custom_agent_connect: fn().mockResolvedValue(new Uint8Array()),
+      update_custom_agent_connect: fn().mockResolvedValue(new Uint8Array()),
+      delete_custom_agent_connect: fn().mockResolvedValue(new Uint8Array()),
+      list_user_agent_configs_connect: fn().mockResolvedValue(new Uint8Array()),
+      get_user_agent_config_connect: fn().mockResolvedValue(new Uint8Array()),
+      set_user_agent_config_connect: fn().mockResolvedValue(new Uint8Array()),
+      delete_user_agent_config_connect: fn().mockResolvedValue(new Uint8Array()),
     })),
     getTicketRelationsService: fn(() => ({
       list_relations: fn().mockResolvedValue('{"relations":[]}'),
