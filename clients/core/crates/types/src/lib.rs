@@ -10,6 +10,7 @@ mod billing_proto;
 mod binding;
 mod blockstore;
 mod channel;
+mod channel_proto;
 mod common;
 mod enums;
 mod extension;
@@ -62,6 +63,14 @@ pub use channel::*;
 pub use common::*;
 pub use enums::*;
 pub use extension::*;
+
+/// Connect-RPC binary-wire DTOs for `proto.channel.v1`. Re-exported as a
+/// distinct module so the legacy serde `Channel` (REST path) and the prost
+/// `Channel` (Connect path) coexist during the dual-track migration window
+/// without name collisions.
+pub mod proto_channel_v1 {
+    pub use super::channel_proto::*;
+}
 
 /// Connect-RPC binary-wire DTOs for `proto.extension.v1`. Re-exported as a
 /// distinct module so the legacy serde `SkillRegistry` (REST path) and the

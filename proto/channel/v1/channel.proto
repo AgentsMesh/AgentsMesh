@@ -178,7 +178,10 @@ message ListChannelsResponse {
   int32 offset = 4;
 }
 
-message GetChannelRequest { string org_slug = 1; int64 id = 2; }
+message GetChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
 
 message CreateChannelRequest {
   string org_slug = 1;
@@ -200,24 +203,45 @@ message UpdateChannelRequest {
   optional string document = 5;
 }
 
-message ArchiveChannelRequest   { string org_slug = 1; int64 id = 2; }
-message ArchiveChannelResponse  { string message = 1; }
-message UnarchiveChannelRequest { string org_slug = 1; int64 id = 2; }
-message UnarchiveChannelResponse{ string message = 1; }
+message ArchiveChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message ArchiveChannelResponse {
+  string message = 1;
+}
+
+message UnarchiveChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message UnarchiveChannelResponse {
+  string message = 1;
+}
 
 // =============================================================================
 // Document
 // =============================================================================
 
-message GetChannelDocumentRequest { string org_slug = 1; int64 id = 2; }
-message GetChannelDocumentResponse { string document = 1; }
+message GetChannelDocumentRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message GetChannelDocumentResponse {
+  string document = 1;
+}
 
 message UpdateChannelDocumentRequest {
   string org_slug = 1;
   int64 id = 2;
   string document = 3;
 }
-message UpdateChannelDocumentResponse { string document = 1; }
+message UpdateChannelDocumentResponse {
+  string document = 1;
+}
 
 // =============================================================================
 // Messages
@@ -295,7 +319,9 @@ message DeleteChannelMessageRequest {
   int64 channel_id = 2;
   int64 message_id = 3;
 }
-message DeleteChannelMessageResponse { string status = 1; }
+message DeleteChannelMessageResponse {
+  string status = 1;
+}
 
 // =============================================================================
 // Read state / mute
@@ -306,9 +332,13 @@ message MarkChannelReadRequest {
   int64 channel_id = 2;
   int64 message_id = 3;
 }
-message MarkChannelReadResponse { string status = 1; }
+message MarkChannelReadResponse {
+  string status = 1;
+}
 
-message GetChannelUnreadCountsRequest { string org_slug = 1; }
+message GetChannelUnreadCountsRequest {
+  string org_slug = 1;
+}
 message GetChannelUnreadCountsResponse {
   // channel_id (as string for map key) -> unread count
   map<string, int64> unread = 1;
@@ -319,7 +349,9 @@ message MuteChannelRequest {
   int64 id = 2;
   bool muted = 3;
 }
-message MuteChannelResponse { string status = 1; }
+message MuteChannelResponse {
+  string status = 1;
+}
 
 // =============================================================================
 // Members
@@ -339,31 +371,50 @@ message ListChannelMembersResponse {
   int32 offset = 4;
 }
 
-message JoinChannelRequest  { string org_slug = 1; int64 id = 2; }
-message JoinChannelResponse { string message = 1; }
+message JoinChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
 
-message LeaveChannelRequest  { string org_slug = 1; int64 id = 2; }
-message LeaveChannelResponse { string message = 1; }
+message JoinChannelResponse {
+  string message = 1;
+}
+
+message LeaveChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message LeaveChannelResponse {
+  string message = 1;
+}
 
 message InviteChannelMembersRequest {
   string org_slug = 1;
   int64 id = 2;
   repeated int64 user_ids = 3;
 }
-message InviteChannelMembersResponse { string message = 1; }
+message InviteChannelMembersResponse {
+  string message = 1;
+}
 
 message RemoveChannelMemberRequest {
   string org_slug = 1;
   int64 id = 2;
   int64 user_id = 3;
 }
-message RemoveChannelMemberResponse { string message = 1; }
+message RemoveChannelMemberResponse {
+  string message = 1;
+}
 
 // =============================================================================
 // Channel pods
 // =============================================================================
 
-message ListChannelPodsRequest { string org_slug = 1; int64 id = 2; }
+message ListChannelPodsRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
 
 message ListChannelPodsResponse {
   repeated ChannelPod items = 1;
@@ -377,11 +428,15 @@ message JoinChannelPodRequest {
   int64 id = 2;
   string pod_key = 3;
 }
-message JoinChannelPodResponse { string message = 1; }
+message JoinChannelPodResponse {
+  string message = 1;
+}
 
 message LeaveChannelPodRequest {
   string org_slug = 1;
   int64 id = 2;
   string pod_key = 3;
 }
-message LeaveChannelPodResponse { string message = 1; }
+message LeaveChannelPodResponse {
+  string message = 1;
+}
