@@ -28,6 +28,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//backend/internal/api/connect",
+        "//backend/internal/api/connect/apikey",
         "//backend/internal/api/connect/extension",
         "//backend/internal/api/connect/interceptors",
         "//backend/internal/api/connect/repository",

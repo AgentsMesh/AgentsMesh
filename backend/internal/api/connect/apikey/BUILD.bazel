@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "apikey",
+    srcs = [
+        "apikey.go",
+        "apikey_convert.go",
+        "apikey_errors.go",
+        "apikey_read.go",
+        "apikey_write.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/apikey",
+        "//backend/internal/middleware",
+        "//backend/internal/service/apikey",
+        "//proto/apikey/v1:apikey_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "apikey_test",
+    srcs = ["apikey_test.go"],
+    embed = [":apikey"],
+    deps = [
+        "//backend/internal/domain/apikey",
+        "//backend/internal/middleware",
+        "//backend/internal/service/apikey",
+        "//proto/apikey/v1:apikey_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

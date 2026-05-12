@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
 	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
@@ -77,6 +78,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 		svc.repository, svc.org,
 		repositoryconnect.WithBillingService(svc.billing),
 	), opts...)
+	apikeyconnect.Mount(mux, apikeyconnect.NewServer(svc.apikey, svc.org), opts...)
 	mountRunnerService(mux, svc, rest, cfg, opts)
 }
 
