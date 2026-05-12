@@ -56,11 +56,19 @@ service TicketRelationsService {
 // Entities
 // ============================================================
 
+// RelatedTicketSummary is the minimal projection of a ticket the relation
+// UI consumes: {id, slug, title}. Backend exposes via GORM `SourceTicket` /
+// `TargetTicket` associations preloaded in ListRelations.
+message RelatedTicketSummary {
+  int64 id = 1;
+  string slug = 2;
+  string title = 3;
+}
+
 // Relation mirrors backend/internal/domain/ticket/relation.go. SourceTicketID /
-// TargetTicketID surface as int64; the REST handler returns them under
-// `source_ticket_id` / `target_ticket_id`, but the Rust DTO carries
-// `source_slug` / `target_slug` — keep both shapes here, leaving the
-// resolution to the converter (PR #246 reconciliation).
+// TargetTicketID surface as int64; UI also reads the nested `source_ticket` /
+// `target_ticket` summaries (TicketDetailSidebar / RelationsList), so the
+// proto carries both raw IDs and the optional summary projections.
 message Relation {
   int64 id = 1;
   int64 organization_id = 2;
@@ -69,6 +77,8 @@ message Relation {
   // blocks / blocked_by / relates_to / duplicates
   string relation_type = 5;
   string created_at = 6;
+  optional RelatedTicketSummary source_ticket = 7;
+  optional RelatedTicketSummary target_ticket = 8;
 }
 
 // MergeRequest mirrors backend/internal/domain/ticket/merge_request.go and
@@ -125,11 +135,13 @@ message CommentUser {
   int64 id = 1;
   string username = 2;
   optional string name = 3;
-  optional string avatar = 4;
-  optional string email = 5;
+  optional string avatar_url = 4;
 }
 
-// Comment mirrors backend/internal/domain/ticket/comment.go.
+// Comment mirrors backend/internal/domain/ticket/comment.go. `replies` is
+// populated by ListComments via Preload, where children are pre-fetched with
+// their User association — kept inline so the UI doesn't make N+1 round
+// trips per top-level comment.
 message Comment {
   int64 id = 1;
   int64 ticket_id = 2;
@@ -140,6 +152,7 @@ message Comment {
   string created_at = 7;
   string updated_at = 8;
   optional CommentUser user = 9;
+  repeated Comment replies = 10;
 }
 
 // ============================================================

@@ -13,6 +13,16 @@
 // ============================================================
 
 #[derive(Clone, PartialEq, prost::Message)]
+pub struct RelatedTicketSummary {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+    #[prost(string, tag = "2")]
+    pub slug: String,
+    #[prost(string, tag = "3")]
+    pub title: String,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct Relation {
     #[prost(int64, tag = "1")]
     pub id: i64,
@@ -26,6 +36,10 @@ pub struct Relation {
     pub relation_type: String,
     #[prost(string, tag = "6")]
     pub created_at: String,
+    #[prost(message, optional, tag = "7")]
+    pub source_ticket: Option<RelatedTicketSummary>,
+    #[prost(message, optional, tag = "8")]
+    pub target_ticket: Option<RelatedTicketSummary>,
 }
 
 #[derive(Clone, PartialEq, prost::Message)]
@@ -111,9 +125,7 @@ pub struct CommentUser {
     #[prost(string, optional, tag = "3")]
     pub name: Option<String>,
     #[prost(string, optional, tag = "4")]
-    pub avatar: Option<String>,
-    #[prost(string, optional, tag = "5")]
-    pub email: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 #[derive(Clone, PartialEq, prost::Message)]
@@ -136,6 +148,8 @@ pub struct Comment {
     pub updated_at: String,
     #[prost(message, optional, tag = "9")]
     pub user: Option<CommentUser>,
+    #[prost(message, repeated, tag = "10")]
+    pub replies: Vec<Comment>,
 }
 
 // ============================================================
@@ -351,6 +365,8 @@ mod tests {
             target_ticket_id: 200,
             relation_type: "blocks".into(),
             created_at: "2026-05-12T00:00:00Z".into(),
+            source_ticket: None,
+            target_ticket: None,
         };
         let bytes = original.encode_to_vec();
         let decoded = Relation::decode(&*bytes).unwrap();
@@ -372,15 +388,76 @@ mod tests {
                 id: 50,
                 username: "bob".into(),
                 name: Some("Bob Smith".into()),
-                avatar: None,
-                email: None,
+                avatar_url: None,
             }),
+            replies: vec![],
         };
         let bytes = original.encode_to_vec();
         let decoded = Comment::decode(&*bytes).unwrap();
         assert_eq!(original, decoded);
         assert_eq!(decoded.mentions.len(), 1);
         assert_eq!(decoded.user.as_ref().unwrap().username, "bob");
+    }
+
+    #[test]
+    fn comment_with_nested_replies_round_trip() {
+        // Backend ListComments preloads top-level comments with their Replies
+        // populated; tag 10 must round-trip recursively (watch list §6).
+        let reply = Comment {
+            id: 2,
+            ticket_id: 100,
+            user_id: 51,
+            content: "reply".into(),
+            parent_id: Some(1),
+            mentions: vec![],
+            created_at: "2026-05-12T01:00:00Z".into(),
+            updated_at: "2026-05-12T01:00:00Z".into(),
+            user: None,
+            replies: vec![],
+        };
+        let original = Comment {
+            id: 1,
+            ticket_id: 100,
+            user_id: 50,
+            content: "top".into(),
+            parent_id: None,
+            mentions: vec![],
+            created_at: "2026-05-12T00:00:00Z".into(),
+            updated_at: "2026-05-12T00:00:00Z".into(),
+            user: None,
+            replies: vec![reply],
+        };
+        let bytes = original.encode_to_vec();
+        let decoded = Comment::decode(&*bytes).unwrap();
+        assert_eq!(original, decoded);
+        assert_eq!(decoded.replies.len(), 1);
+        assert_eq!(decoded.replies[0].id, 2);
+    }
+
+    #[test]
+    fn relation_with_summary_round_trip() {
+        let original = Relation {
+            id: 7,
+            organization_id: 42,
+            source_ticket_id: 100,
+            target_ticket_id: 200,
+            relation_type: "blocks".into(),
+            created_at: "2026-05-12T00:00:00Z".into(),
+            source_ticket: Some(RelatedTicketSummary {
+                id: 100,
+                slug: "T-100".into(),
+                title: "source".into(),
+            }),
+            target_ticket: Some(RelatedTicketSummary {
+                id: 200,
+                slug: "T-200".into(),
+                title: "target".into(),
+            }),
+        };
+        let bytes = original.encode_to_vec();
+        let decoded = Relation::decode(&*bytes).unwrap();
+        assert_eq!(original, decoded);
+        assert_eq!(decoded.source_ticket.as_ref().unwrap().slug, "T-100");
     }
 
     #[test]
@@ -400,6 +477,7 @@ mod tests {
                 created_at: "2026-05-12T00:00:00Z".into(),
                 updated_at: "2026-05-12T00:00:00Z".into(),
                 user: None,
+                replies: vec![],
             }],
             total: 13,
             limit: 50,
