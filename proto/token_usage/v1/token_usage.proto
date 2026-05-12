@@ -1,0 +1,90 @@
+// TokenUsageService — token usage analytics dashboard.
+//
+// Migrated from REST handler in
+//   backend/internal/api/rest/v1/token_usage.go (GET /token-usage/dashboard)
+// per .claude/plans/proto-naming-conventions.md.
+//
+// Single dashboard RPC returns 5 aggregations in one call (summary +
+// time-series + by-agent + by-user + by-model). Org-scoped + admin-only —
+// every request carries `org_slug = 1`; handler additionally checks
+// role == owner|admin.
+
+syntax = "proto3";
+
+package proto.token_usage.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/token_usage/v1;tokenusagev1";
+
+service TokenUsageService {
+  rpc GetDashboard(GetDashboardRequest) returns (GetDashboardResponse);
+}
+
+message GetDashboardRequest {
+  string org_slug = 1;
+  // Empty string = server default (last 30 days). ISO-8601 / RFC3339.
+  string start_time = 2;
+  string end_time = 3;
+  // "day" / "week" / "month". Empty = "day".
+  string granularity = 4;
+  // Optional filters. Empty string treated as "no filter".
+  string agent_slug = 5;
+  optional int64 user_id = 6;
+  string model = 7;
+}
+
+message UsageSummary {
+  int64 input_tokens = 1;
+  int64 output_tokens = 2;
+  int64 cache_creation_tokens = 3;
+  int64 cache_read_tokens = 4;
+  int64 total_tokens = 5;
+}
+
+message TimeSeriesPoint {
+  // ISO-8601 RFC3339 UTC.
+  string period = 1;
+  int64 input_tokens = 2;
+  int64 output_tokens = 3;
+  int64 cache_creation_tokens = 4;
+  int64 cache_read_tokens = 5;
+}
+
+message AgentUsage {
+  string agent_slug = 1;
+  int64 input_tokens = 2;
+  int64 output_tokens = 3;
+  int64 cache_creation_tokens = 4;
+  int64 cache_read_tokens = 5;
+  int64 total_tokens = 6;
+}
+
+message UserUsage {
+  int64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  int64 input_tokens = 4;
+  int64 output_tokens = 5;
+  int64 cache_creation_tokens = 6;
+  int64 cache_read_tokens = 7;
+  int64 total_tokens = 8;
+}
+
+message ModelUsage {
+  string model = 1;
+  int64 input_tokens = 2;
+  int64 output_tokens = 3;
+  int64 cache_creation_tokens = 4;
+  int64 cache_read_tokens = 5;
+  int64 total_tokens = 6;
+}
+
+// GetDashboardResponse is the §9 multi-field exception — REST returns
+// {summary, time_series, by_agent, by_user, by_model} as a single
+// payload. Keeping the same shape on Connect.
+message GetDashboardResponse {
+  UsageSummary summary = 1;
+  repeated TimeSeriesPoint time_series = 2;
+  repeated AgentUsage by_agent = 3;
+  repeated UserUsage by_user = 4;
+  repeated ModelUsage by_model = 5;
+}

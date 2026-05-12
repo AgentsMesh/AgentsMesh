@@ -53,6 +53,7 @@ mod ticket_proto;
 mod ticket_relations_proto;
 mod ticket_requests;
 mod token_usage;
+mod token_usage_proto;
 mod user_credential;
 mod user_credential_proto;
 mod user_proto;
@@ -278,6 +279,15 @@ pub mod proto_grant_v1 {
 /// dual-track migration window.
 pub mod proto_file_v1 {
     pub use super::file_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.token_usage.v1`. Org-scoped +
+/// admin-only — every request carries `org_slug = 1`; handler enforces
+/// role == owner|admin. Single dashboard RPC returns 5 aggregations.
+/// Coexists with the legacy serde `TokenUsageDashboard` for the
+/// dual-track migration window.
+pub mod proto_token_usage_v1 {
+    pub use super::token_usage_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;
