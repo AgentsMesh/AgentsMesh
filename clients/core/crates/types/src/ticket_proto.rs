@@ -27,8 +27,9 @@ pub struct Ticket {
     pub priority: String,
     #[prost(string, optional, tag = "8")]
     pub severity: Option<String>,
-    #[prost(double, optional, tag = "9")]
-    pub estimate: Option<f64>,
+    // Story points (Fibonacci: 1, 2, 3, 5, 8, 13, 21). Backend storage is i32.
+    #[prost(int32, optional, tag = "9")]
+    pub estimate: Option<i32>,
     #[prost(string, optional, tag = "10")]
     pub due_date: Option<String>,
     #[prost(string, optional, tag = "11")]
@@ -353,7 +354,7 @@ mod tests {
             status: "in_progress".into(),
             priority: "high".into(),
             severity: Some("major".into()),
-            estimate: Some(3.5),
+            estimate: Some(5),
             due_date: Some("2026-05-20".into()),
             started_at: Some("2026-05-10T00:00:00Z".into()),
             completed_at: None,
@@ -373,7 +374,7 @@ mod tests {
         let decoded = Ticket::decode(&*bytes).unwrap();
         assert_eq!(original, decoded);
         assert_eq!(decoded.severity.as_deref(), Some("major"));
-        assert_eq!(decoded.estimate, Some(3.5));
+        assert_eq!(decoded.estimate, Some(5));
         assert_eq!(decoded.parent_ticket_slug.as_deref(), Some("ACME-1"));
     }
 

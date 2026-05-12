@@ -70,7 +70,8 @@ message Ticket {
   // none / low / medium / high / urgent
   string priority = 7;
   optional string severity = 8;
-  optional double estimate = 9;
+  // Story points (Fibonacci: 1, 2, 3, 5, 8, 13, 21). Backend storage is int.
+  optional int32 estimate = 9;
   optional string due_date = 10;
   optional string started_at = 11;
   optional string completed_at = 12;
