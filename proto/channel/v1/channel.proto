@@ -1,0 +1,387 @@
+// ChannelService — org-scoped channel collaboration (channels, messages,
+// members, document, pods, read state).
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/channel*.go
+// per .claude/plans/proto-naming-conventions.md.
+//
+// Streaming endpoints (channel events) intentionally stay on Relay/WebSocket
+// — this migration is unary RPC only (runbook §"Service-specific deviations").
+//
+// Field set reconciled across three layers (runbook §1.5):
+//   - backend domain/channel/channel.go        (15 columns + 2 computed)
+//   - clients/core/crates/types/src/channel.rs (16 fields, drift on ticket_slug)
+//   - clients/web/src/lib/api/channel.ts       (17 fields, snake_case)
+//
+// Locked envelopes:
+//   - ListChannelsResponse: {items, total, limit, offset} — REST's
+//     {channels, total} normalized per conventions §8.
+//   - ListChannelMessagesResponse: {items, total, limit, offset, has_more}
+//     — REST returns {messages, has_more}; `has_more` lives alongside the
+//     uniform envelope because cursor-pagination requires it.
+//   - ListChannelMembersResponse: {items, total, limit, offset}.
+//   - ListChannelPodsResponse:    {items, total, limit, offset}.
+//
+// content / mentions are opaque JSON strings on the wire. Rich AST shape
+// (Block / InlineElement) is owned by the legacy serde DTO; proto carries
+// the serialized JSON to avoid mirroring 200+ lines of rich-text grammar
+// into protobuf (deferred to a follow-up structured-content PR if needed).
+
+syntax = "proto3";
+
+package proto.channel.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/channel/v1;channelv1";
+
+service ChannelService {
+  // -- Channels --
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse);
+  rpc GetChannel(GetChannelRequest) returns (Channel);
+  rpc CreateChannel(CreateChannelRequest) returns (Channel);
+  rpc UpdateChannel(UpdateChannelRequest) returns (Channel);
+  rpc ArchiveChannel(ArchiveChannelRequest) returns (ArchiveChannelResponse);
+  rpc UnarchiveChannel(UnarchiveChannelRequest) returns (UnarchiveChannelResponse);
+
+  // -- Document --
+  rpc GetChannelDocument(GetChannelDocumentRequest) returns (GetChannelDocumentResponse);
+  rpc UpdateChannelDocument(UpdateChannelDocumentRequest) returns (UpdateChannelDocumentResponse);
+
+  // -- Messages --
+  rpc ListChannelMessages(ListChannelMessagesRequest) returns (ListChannelMessagesResponse);
+  rpc SearchChannelMessages(SearchChannelMessagesRequest) returns (SearchChannelMessagesResponse);
+  rpc SendChannelMessage(SendChannelMessageRequest) returns (ChannelMessage);
+  rpc EditChannelMessage(EditChannelMessageRequest) returns (ChannelMessage);
+  rpc DeleteChannelMessage(DeleteChannelMessageRequest) returns (DeleteChannelMessageResponse);
+
+  // -- Read state / mute --
+  rpc MarkChannelRead(MarkChannelReadRequest) returns (MarkChannelReadResponse);
+  rpc GetChannelUnreadCounts(GetChannelUnreadCountsRequest) returns (GetChannelUnreadCountsResponse);
+  rpc MuteChannel(MuteChannelRequest) returns (MuteChannelResponse);
+
+  // -- Members --
+  rpc ListChannelMembers(ListChannelMembersRequest) returns (ListChannelMembersResponse);
+  rpc JoinChannel(JoinChannelRequest) returns (JoinChannelResponse);
+  rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
+  rpc InviteChannelMembers(InviteChannelMembersRequest) returns (InviteChannelMembersResponse);
+  rpc RemoveChannelMember(RemoveChannelMemberRequest) returns (RemoveChannelMemberResponse);
+
+  // -- Channel pods --
+  rpc ListChannelPods(ListChannelPodsRequest) returns (ListChannelPodsResponse);
+  rpc JoinChannelPod(JoinChannelPodRequest) returns (JoinChannelPodResponse);
+  rpc LeaveChannelPod(LeaveChannelPodRequest) returns (LeaveChannelPodResponse);
+}
+
+// =============================================================================
+// Entities
+// =============================================================================
+
+message Channel {
+  int64 id = 1;
+  int64 organization_id = 2;
+  string name = 3;
+  optional string description = 4;
+  optional string document = 5;
+  optional int64 repository_id = 6;
+  optional int64 ticket_id = 7;
+  optional string ticket_slug = 8;
+  optional string created_by_pod = 9;
+  optional int64 created_by_user_id = 10;
+  // "public" | "private" — empty string defaults to public server-side.
+  string visibility = 11;
+  bool is_archived = 12;
+  // Computed: is the requesting user a member? Populated by GetChannel.
+  bool is_member = 13;
+  // Computed: total members count. Populated by GetChannel.
+  int64 member_count = 14;
+  // RFC 3339 (conventions §6).
+  string created_at = 15;
+  string updated_at = 16;
+}
+
+// ChannelMessage — body is the plain-text projection. content + mentions
+// are opaque JSON strings on the wire (rich AST owned by serde DTO).
+message ChannelMessage {
+  int64 id = 1;
+  int64 channel_id = 2;
+  optional string sender_pod = 3;
+  optional int64 sender_user_id = 4;
+  // "text" | "attachment" | "system".
+  string message_type = 5;
+  string body = 6;
+  // Serialized JSON of channel.MessageContent (Block AST). Opaque to proto.
+  optional string content_json = 7;
+  // Serialized JSON of channel.MessageMentions. Opaque to proto.
+  optional string mentions_json = 8;
+  optional int64 reply_to = 9;
+  optional string edited_at = 10;
+  bool is_deleted = 11;
+  string created_at = 12;
+  // Sender user info (only when sender_user_id != null and joined).
+  optional ChannelMessageSenderUser sender_user = 13;
+  // Sender pod info (only when sender_pod != null and joined).
+  optional ChannelMessageSenderPod sender_pod_info = 14;
+}
+
+message ChannelMessageSenderUser {
+  int64 id = 1;
+  string username = 2;
+  optional string name = 3;
+  optional string avatar_url = 4;
+}
+
+message ChannelMessageSenderPod {
+  string pod_key = 1;
+  optional string alias = 2;
+  optional ChannelMessageSenderAgent agent = 3;
+}
+
+message ChannelMessageSenderAgent {
+  string name = 1;
+}
+
+message ChannelMember {
+  int64 channel_id = 1;
+  int64 user_id = 2;
+  // "creator" | "member".
+  string role = 3;
+  bool is_muted = 4;
+  // RFC 3339.
+  string joined_at = 5;
+}
+
+// ChannelPod is a slim projection of agentpod.Pod for the channel-pods endpoint.
+// Mirrors the existing TS shape (clients/web/src/lib/api/channel.ts:81).
+message ChannelPod {
+  int64 id = 1;
+  string pod_key = 2;
+  optional string alias = 3;
+  string status = 4;
+  string agent_status = 5;
+}
+
+// =============================================================================
+// Channel requests / responses
+// =============================================================================
+
+message ListChannelsRequest {
+  string org_slug = 1;
+  optional int64 repository_id = 2;
+  optional string ticket_slug = 3;
+  optional bool include_archived = 4;
+  optional int32 offset = 5;
+  optional int32 limit = 6;
+}
+
+message ListChannelsResponse {
+  repeated Channel items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetChannelRequest { string org_slug = 1; int64 id = 2; }
+
+message CreateChannelRequest {
+  string org_slug = 1;
+  string name = 2;
+  optional string description = 3;
+  optional string document = 4;
+  optional int64 repository_id = 5;
+  optional string ticket_slug = 6;
+  // "public" | "private". Empty = public (server default).
+  optional string visibility = 7;
+  repeated int64 member_ids = 8;
+}
+
+message UpdateChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  optional string document = 5;
+}
+
+message ArchiveChannelRequest   { string org_slug = 1; int64 id = 2; }
+message ArchiveChannelResponse  { string message = 1; }
+message UnarchiveChannelRequest { string org_slug = 1; int64 id = 2; }
+message UnarchiveChannelResponse{ string message = 1; }
+
+// =============================================================================
+// Document
+// =============================================================================
+
+message GetChannelDocumentRequest { string org_slug = 1; int64 id = 2; }
+message GetChannelDocumentResponse { string document = 1; }
+
+message UpdateChannelDocumentRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  string document = 3;
+}
+message UpdateChannelDocumentResponse { string document = 1; }
+
+// =============================================================================
+// Messages
+// =============================================================================
+
+message ListChannelMessagesRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  // Cursor — fetch messages whose id is < before_id. Zero = newest page.
+  optional int64 before_id = 3;
+  optional int32 limit = 4;
+}
+
+// Channel messages keep `has_more` alongside the uniform envelope because
+// cursor pagination cannot be expressed via total/limit/offset alone.
+message ListChannelMessagesResponse {
+  repeated ChannelMessage items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  bool has_more = 5;
+}
+
+message SearchChannelMessagesRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  string query = 3;
+  optional int32 limit = 4;
+}
+
+message SearchChannelMessagesResponse {
+  repeated ChannelMessage items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// MentionRef mirrors REST's MentionRefRequest (channel_messages.go:58).
+message MentionRef {
+  // "pod" | "user".
+  string entity_type = 1;
+  // pod_key, user_id-as-string, etc.
+  string entity_key = 2;
+}
+
+message SendChannelMessageRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  // Either `source` (markdown — backend parses to AST) or `content_json`
+  // (pre-built AST) is required. Sending both → InvalidArgument.
+  optional string source = 3;
+  // Wire-format display→ref map used by the backend parser when expanding
+  // `@key` substrings in `source`.
+  map<string, MentionRef> mentions = 4;
+  // Pre-built MessageContent JSON. Mutually exclusive with `source`.
+  optional string content_json = 5;
+  optional string attachment_key = 6;
+  // Pod authoring on behalf of a user — see channel_messages.go:131.
+  optional string pod_key = 7;
+  optional int64 reply_to = 8;
+}
+
+message EditChannelMessageRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  int64 message_id = 3;
+  optional string source = 4;
+  map<string, MentionRef> mentions = 5;
+  optional string content_json = 6;
+  optional string attachment_key = 7;
+}
+
+message DeleteChannelMessageRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  int64 message_id = 3;
+}
+message DeleteChannelMessageResponse { string status = 1; }
+
+// =============================================================================
+// Read state / mute
+// =============================================================================
+
+message MarkChannelReadRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  int64 message_id = 3;
+}
+message MarkChannelReadResponse { string status = 1; }
+
+message GetChannelUnreadCountsRequest { string org_slug = 1; }
+message GetChannelUnreadCountsResponse {
+  // channel_id (as string for map key) -> unread count
+  map<string, int64> unread = 1;
+}
+
+message MuteChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  bool muted = 3;
+}
+message MuteChannelResponse { string status = 1; }
+
+// =============================================================================
+// Members
+// =============================================================================
+
+message ListChannelMembersRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  optional int32 limit = 3;
+  optional int32 offset = 4;
+}
+
+message ListChannelMembersResponse {
+  repeated ChannelMember items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message JoinChannelRequest  { string org_slug = 1; int64 id = 2; }
+message JoinChannelResponse { string message = 1; }
+
+message LeaveChannelRequest  { string org_slug = 1; int64 id = 2; }
+message LeaveChannelResponse { string message = 1; }
+
+message InviteChannelMembersRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  repeated int64 user_ids = 3;
+}
+message InviteChannelMembersResponse { string message = 1; }
+
+message RemoveChannelMemberRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  int64 user_id = 3;
+}
+message RemoveChannelMemberResponse { string message = 1; }
+
+// =============================================================================
+// Channel pods
+// =============================================================================
+
+message ListChannelPodsRequest { string org_slug = 1; int64 id = 2; }
+
+message ListChannelPodsResponse {
+  repeated ChannelPod items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message JoinChannelPodRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  string pod_key = 3;
+}
+message JoinChannelPodResponse { string message = 1; }
+
+message LeaveChannelPodRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  string pod_key = 3;
+}
+message LeaveChannelPodResponse { string message = 1; }
