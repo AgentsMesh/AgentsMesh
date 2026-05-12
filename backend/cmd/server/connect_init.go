@@ -8,6 +8,7 @@ import (
 
 	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
+	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
 	podconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod"
@@ -86,6 +87,19 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	mountPodService(mux, svc, rest, opts)
 	mountAgentPodSettingsService(mux, svc, opts)
 	usercredentialconnect.Mount(mux, usercredentialconnect.NewServer(svc.user, svc.credentialProfile), opts...)
+	mountBillingService(mux, svc, opts)
+}
+
+// mountBillingService wires both BillingService (auth-required, org-scoped)
+// and BillingPublicService (no auth, no org_slug) onto the same mux.
+//
+// The public service intentionally mounts WITHOUT `opts` — the auth
+// interceptor would reject every unauthenticated request from the landing
+// page. The handler relies on conventions §3.5's "User-scoped /
+// Platform-admin scoped" exception (no `ResolveOrgScope` call).
+func mountBillingService(mux *http.ServeMux, svc *serviceContainer, opts []connect.HandlerOption) {
+	billingconnect.Mount(mux, billingconnect.NewServer(svc.billing, svc.org), opts...)
+	billingconnect.MountPublic(mux, billingconnect.NewPublicServer(svc.billing))
 }
 
 // mountRunnerService wires the runner Connect server with its optional
