@@ -44,14 +44,14 @@ function OAuthCallbackContent() {
       try {
         // First, set the token so subsequent API calls work
         // We'll get user info from the API
-        setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
+        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
         // Get user info
         const userResponse = JSON.parse(await getUserApiService().get_me());
         const user = userResponse.user;
 
         // Update auth with actual user info
-        setAuth(token, user, refreshToken || undefined);
+        await setAuth(token, user, refreshToken || undefined);
 
         const url = await resolvePostLoginUrl({
           redirectParam,

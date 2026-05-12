@@ -37,20 +37,24 @@ function OAuthCallbackContent() {
 
       try {
         // Set the token first so ApiClient can include it in /users/me.
+        // MUST await — on Electron, setAuth fans out an authApplySession
+        // IPC to the main-process Rust AuthManager (ApiClient's SSOT). The
+        // synchronous v0.31.x path left the token in renderer-only state,
+        // so the next userGetMe IPC saw no token → 401 → auth_expired.
         // This placeholder is overwritten with the real user as soon as
         // getMe() succeeds — but if anything below throws, we MUST run
         // logout() in catch to wipe it. Leaving a placeholder with token
         // but invalid identity is what the v0.31 onboarding-loop bug
         // was about.
-        setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
+        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
         const userResponse = await userApi.getMe();
         const user = userResponse.user;
-        setAuth(token, user, refreshToken || undefined);
+        await setAuth(token, user, refreshToken || undefined);
 
         const orgsResponse = await organizationApi.list();
         if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
-          setOrganizations(orgsResponse.organizations);
+          await setOrganizations(orgsResponse.organizations);
           setStatus("success");
           setTimeout(() => {
             router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
@@ -65,7 +69,7 @@ function OAuthCallbackContent() {
         // Wipe the placeholder auth before surfacing the error — otherwise
         // RootRedirect on the next mount would still see a token and route
         // back to dashboard, creating an infinite loop.
-        useAuthStore.getState().logout();
+        await useAuthStore.getState().logout();
         setStatus("error");
         if (err instanceof Error) {
           setErrorMessage(err.message);

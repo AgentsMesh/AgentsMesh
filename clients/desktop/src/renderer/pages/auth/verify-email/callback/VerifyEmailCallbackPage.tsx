@@ -27,7 +27,7 @@ function VerifyEmailCallbackContent() {
         const response = await authApi.verifyEmail(token);
 
         // Store auth tokens
-        setAuth(response.token, {
+        await setAuth(response.token, {
           id: response.user.id,
           email: response.user.email,
           username: response.user.username,

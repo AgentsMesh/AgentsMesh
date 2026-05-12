@@ -10,7 +10,7 @@ interface Organization {
 
 export interface ResolvePostLoginUrlOptions {
   redirectParam: string | null;
-  setOrganizations: (orgs: Organization[]) => void;
+  setOrganizations: (orgs: Organization[]) => Promise<void> | void;
 }
 
 // Single source of truth for "where do we land after a successful login".
@@ -24,13 +24,13 @@ export interface ResolvePostLoginUrlOptions {
 // Org cache priming runs on the redirect path too: the destination
 // (e.g. /popout/terminal/...) likely relies on currentOrg being populated.
 async function primeOrganizations(
-  setOrganizations: (orgs: Organization[]) => void
+  setOrganizations: (orgs: Organization[]) => Promise<void> | void
 ): Promise<Organization[]> {
   try {
     const orgsResponse = JSON.parse(await getOrgApiService().list());
     const orgs: Organization[] = orgsResponse.organizations || [];
     if (orgs.length > 0) {
-      setOrganizations(orgs);
+      await setOrganizations(orgs);
       try { await getAuthManager().fetch_organizations(); } catch { /* best effort */ }
     }
     return orgs;

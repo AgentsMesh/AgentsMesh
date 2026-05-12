@@ -36,14 +36,14 @@ function VerifyEmailContent() {
 
     try {
       const result = JSON.parse(await getAuthApiService().verify_email(verificationToken));
-      setAuth(result.token, result.user, result.refresh_token);
+      await setAuth(result.token, result.user, result.refresh_token);
       setVerifyState("success");
       setMessage(t("auth.verifyEmailPage.verificationSuccess"));
 
       try {
         const orgsResponse = JSON.parse(await getOrgApiService().list());
         if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
-          setOrganizations(orgsResponse.organizations);
+          await setOrganizations(orgsResponse.organizations);
           router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
         } else {
           router.push("/onboarding");

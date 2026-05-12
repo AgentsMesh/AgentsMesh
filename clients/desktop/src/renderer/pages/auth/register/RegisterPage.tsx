@@ -56,7 +56,7 @@ export function RegisterPage() {
         password: formData.password,
         name: formData.name,
       });
-      setAuth(response.token, response.user, response.refresh_token);
+      await setAuth(response.token, response.user, response.refresh_token);
 
       // Redirect to email verification page
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);

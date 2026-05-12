@@ -80,7 +80,11 @@ export class ElectronAuthService implements IAuthManager {
         this._currentOrgCache = parsed.current_org != null ? JSON.stringify(parsed.current_org) : null;
         this._organizationsCache = (await invoke<string>("authGetOrganizationsJson")) ?? "[]";
       } else {
-        this.clear_session();
+        // Bootstrap reports anonymous → main already has no session; only
+        // wipe renderer cache. Skip the authClearSession IPC that
+        // clear_session() would fan out (redundant + an extra round-trip
+        // on every cold start).
+        this.resetLocalCache();
       }
     } catch {
       // Parse failure: leave caches as-is, caller treats as anonymous via JSON
@@ -96,7 +100,10 @@ export class ElectronAuthService implements IAuthManager {
 
   async logout(): Promise<void> {
     await invoke<void>("authLogout");
-    this.clear_session();
+    // authLogout already cleared the Rust manager's session; only the
+    // renderer cache needs wiping here. clear_session() would re-fan-out
+    // authClearSession — correct but wasteful.
+    this.resetLocalCache();
   }
 
   async refresh_token(): Promise<string> {
@@ -116,14 +123,22 @@ export class ElectronAuthService implements IAuthManager {
     return result;
   }
 
-  // Synchronous cache-setters matching the Wasm AuthManager API. Zustand's
-  // setAuth / setOrganizations / setCurrentOrg call these to keep the local
-  // cache in sync after an IPC round-trip.
-  apply_session(sessionJson: string): void {
+  // Mirror state to BOTH ends: renderer cache (sync) AND main-process Rust
+  // AuthManager (via IPC). The renderer-only path was the v0.31.x OAuth
+  // deep-link bug — token landed in ElectronAuthService but never made it
+  // to ApiClient (which reads from the Rust manager), so the next
+  // `userGetMe` IPC 401'd and surfaced as `{"kind":"auth_expired"}`.
+  // Callers MUST `await` because the IAuthManager signature now returns
+  // Promise<void> | void; on the wasm side this is a no-op `await`.
+  async apply_session(sessionJson: string): Promise<void> {
+    // Push to Rust first so any IPC issued after `apply_session` returns
+    // (e.g. userGetMe in OAuthCallbackPage) sees the token on the main side.
+    await invoke("authApplySession", sessionJson);
     this.applySessionPayload(sessionJson);
   }
 
-  set_organizations(orgsJson: string): void {
+  async set_organizations(orgsJson: string): Promise<void> {
+    await invoke("authSetOrganizations", orgsJson);
     this._organizationsCache = orgsJson;
   }
 
@@ -132,17 +147,27 @@ export class ElectronAuthService implements IAuthManager {
     await invoke("authSetCurrentOrg", orgJson);
   }
 
-  clear_session(): void {
+  async clear_session(): Promise<void> {
+    // Same reasoning as apply_session: the Rust AuthManager is the SSOT
+    // for ApiClient's token, so renderer-only clears leave a logged-in
+    // main process. logout() already covers this for the API-logout path;
+    // clear_session is the local-reset used by Zustand on OAuth-failure
+    // cleanup, where the IPC fan-out is still required.
+    await invoke("authClearSession");
+    this.resetLocalCache();
+  }
+
+  static new_with_storage(baseUrl: string, _storage: unknown): IAuthManager {
+    return new ElectronAuthService(baseUrl);
+  }
+
+  private resetLocalCache(): void {
     this._token = undefined;
     this._refreshToken = undefined;
     this._expiresAt = undefined;
     this._currentUserCache = null;
     this._currentOrgCache = null;
     this._organizationsCache = "[]";
-  }
-
-  static new_with_storage(baseUrl: string, _storage: unknown): IAuthManager {
-    return new ElectronAuthService(baseUrl);
   }
 
   // Single source of truth for "I just got a session payload from server,

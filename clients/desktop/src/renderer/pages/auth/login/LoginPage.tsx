@@ -78,7 +78,7 @@ export function LoginPage() {
     setError("");
     try {
       const response = await ssoApi.ldapAuth(ldapConfig.domain, { username, password: pwd });
-      setAuth(response.token, response.user, response.refresh_token);
+      await setAuth(response.token, response.user, response.refresh_token);
       navigateAfterLogin(router.push, searchParams.get("redirect"));
     } catch (err) {
       setError(err instanceof ApiError && err.status >= 500

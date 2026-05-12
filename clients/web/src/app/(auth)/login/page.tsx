@@ -81,7 +81,7 @@ export default function LoginPage() {
     setError("");
     try {
       const response = JSON.parse(await getSSOService().ldap_auth(ldapConfig.domain, JSON.stringify({username, password: pwd})));
-      setAuth(response.token, response.user, response.refresh_token);
+      await setAuth(response.token, response.user, response.refresh_token);
       await navigateAfterLogin();
     } catch (err) {
       setError(err instanceof ApiError && err.status >= 500
@@ -97,7 +97,7 @@ export default function LoginPage() {
     try {
       await initWasmCore();
       const response = JSON.parse(await getAuthManager().login(email, password));
-      setAuth(response.token, response.user, response.refresh_token);
+      await setAuth(response.token, response.user, response.refresh_token);
       await navigateAfterLogin();
     } catch (err) {
       if (err instanceof ApiError && err.hasCode("SSO_REQUIRED")) {

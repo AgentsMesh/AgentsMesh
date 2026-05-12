@@ -31,14 +31,14 @@ function VerifyEmailContent() {
 
     try {
       const result = await authApi.verifyEmail(verificationToken);
-      setAuth(result.token, result.user, result.refresh_token);
+      await setAuth(result.token, result.user, result.refresh_token);
       setVerifyState("success");
       setMessage(t("auth.verifyEmailPage.verificationSuccess"));
 
       try {
         const orgsResponse = await organizationApi.list();
         if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
-          setOrganizations(orgsResponse.organizations);
+          await setOrganizations(orgsResponse.organizations);
           router.push(`/${orgsResponse.organizations[0].slug}/workspace`);
         } else {
           router.push("/onboarding");

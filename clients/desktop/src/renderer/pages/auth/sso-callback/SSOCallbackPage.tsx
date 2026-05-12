@@ -59,18 +59,18 @@ function SSOCallbackContent() {
 
       try {
         // Set token so subsequent API calls work
-        setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
+        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
         // Get user info
         const userResponse = await userApi.getMe();
-        setAuth(token, userResponse.user, refreshToken || undefined);
+        await setAuth(token, userResponse.user, refreshToken || undefined);
 
         // Get organizations and redirect
         try {
           const orgsResponse = await organizationApi.list();
           const orgs = orgsResponse.organizations;
           if (orgs && orgs.length > 0) {
-            setOrganizations(orgs);
+            await setOrganizations(orgs);
             setStatus("success");
             scheduleRedirect(`/${orgs[0].slug}/workspace`);
           } else {

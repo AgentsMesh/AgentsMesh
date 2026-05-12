@@ -88,9 +88,13 @@ export interface IAuthApiService {
 }
 
 export interface IAuthManager {
-  apply_session?(session_json: string): void;
+  // apply_session / clear_session / set_organizations may return Promise on
+  // adapters that need to fan out to a remote SSOT (Electron IPC → Rust main).
+  // Wasm AuthManager is sync (in-process); callers MUST `await` so both
+  // shapes work — see clients/web/src/stores/auth.ts setAuth.
+  apply_session?(session_json: string): Promise<void> | void;
   bootstrap(): Promise<string>;
-  clear_session?(): void;
+  clear_session?(): Promise<void> | void;
   fetch_organizations(): Promise<string>;
   get_current_org_json(): any;
   get_current_user_json(): any;
@@ -102,7 +106,7 @@ export interface IAuthManager {
   logout(): Promise<void>;
   refresh_token(): Promise<string>;
   set_current_org?(org_json: string): Promise<void> | void;
-  set_organizations?(orgs_json: string): void;
+  set_organizations?(orgs_json: string): Promise<void> | void;
   switch_org(slug: string): void;
   readonly base_url: string;
 }

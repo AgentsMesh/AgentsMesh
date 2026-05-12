@@ -55,7 +55,7 @@ export default function RegisterPage() {
         password: formData.password,
         name: formData.name,
       })));
-      setAuth(response.token, response.user, response.refresh_token);
+      await setAuth(response.token, response.user, response.refresh_token);
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "data" in err) {

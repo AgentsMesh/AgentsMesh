@@ -66,11 +66,11 @@ function SSOCallbackContent() {
 
       try {
         // Set token so subsequent API calls work
-        setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
+        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
         // Get user info
         const userResponse = JSON.parse(await getUserApiService().get_me());
-        setAuth(token, userResponse.user, refreshToken || undefined);
+        await setAuth(token, userResponse.user, refreshToken || undefined);
 
         const url = await resolvePostLoginUrl({
           redirectParam,

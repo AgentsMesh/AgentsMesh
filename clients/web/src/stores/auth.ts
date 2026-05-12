@@ -43,10 +43,14 @@ interface AuthState {
   switchOrg: (slug: string) => void;
   refreshSession: () => Promise<void>;
 
-  setAuth: (token: string, user: User, refreshToken?: string) => void;
-  setOrganizations: (orgs: Organization[]) => void;
+  // setAuth / setOrganizations / logout return Promise: on Electron the
+  // underlying adapter awaits an IPC round-trip to the Rust SSOT. Callers
+  // MUST await — fire-and-forget leaves the main process without the token
+  // (the v0.31.x OAuth deep-link bug). Wasm path resolves synchronously.
+  setAuth: (token: string, user: User, refreshToken?: string) => Promise<void>;
+  setOrganizations: (orgs: Organization[]) => Promise<void>;
   setCurrentOrg: (org: Organization) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: () => boolean;
   setHasHydrated: (state: boolean) => void;
   clearError: () => void;
@@ -175,9 +179,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  setAuth: (token, user, refreshToken) => {
+  setAuth: async (token, user, refreshToken) => {
     try {
-      mgr().apply_session(JSON.stringify({
+      await mgr().apply_session(JSON.stringify({
         token,
         refresh_token: refreshToken || "",
         user,
@@ -187,8 +191,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     bump();
   },
 
-  setOrganizations: (organizations) => {
-    try { mgr().set_organizations(JSON.stringify(organizations)); } catch { /* noop */ }
+  setOrganizations: async (organizations) => {
+    try { await mgr().set_organizations(JSON.stringify(organizations)); } catch { /* noop */ }
     bump();
   },
 
@@ -202,10 +206,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     bump();
   },
 
-  logout: () => {
+  logout: async () => {
     // Sync local cleanup first — guarantees post-call state is logged-out
     // even if the network POST below fails or hangs.
-    try { mgr().clear_session(); } catch { /* noop */ }
+    try { await mgr().clear_session(); } catch { /* noop */ }
     // Best-effort API logout (informs server, doesn't block UI).
     try { mgr().logout().catch(() => {}); } catch { /* noop */ }
     set({ error: null });
