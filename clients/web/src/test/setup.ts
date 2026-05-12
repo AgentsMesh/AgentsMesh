@@ -589,6 +589,17 @@ vi.mock('@/lib/wasm-core', () => {
     trigger_loop: fn().mockResolvedValue('{}'),
     fetch_runs: fn().mockResolvedValue(JSON.stringify({ runs: [], total: 0 })),
     cancel_run: fn().mockResolvedValue(undefined),
+    // Connect-RPC binary lane (proto.loop.v1.LoopService).
+    listLoopsConnect: fn().mockResolvedValue(new Uint8Array()),
+    getLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    createLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    updateLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    deleteLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    enableLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    disableLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    triggerLoopConnect: fn().mockResolvedValue(new Uint8Array()),
+    listRunsConnect: fn().mockResolvedValue(new Uint8Array()),
+    cancelRunConnect: fn().mockResolvedValue(new Uint8Array()),
   }
 
   // --- Git provider state ---

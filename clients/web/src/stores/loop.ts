@@ -2,13 +2,30 @@ import { create } from "zustand";
 import { useMemo } from "react";
 import type { LoopData, LoopRunData, RunStatus, CreateLoopRequest, UpdateLoopRequest } from "@/lib/api/loopTypes";
 import { getLoopService } from "@/lib/wasm-core";
+import { readCurrentOrg } from "@/stores/auth";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
+import {
+  listLoops as listLoopsConnect,
+  getLoop as getLoopConnect,
+  createLoop as createLoopConnect,
+  updateLoop as updateLoopConnect,
+  deleteLoop as deleteLoopConnect,
+  enableLoop as enableLoopConnect,
+  disableLoop as disableLoopConnect,
+  triggerLoop as triggerLoopConnect,
+  listLoopRuns as listLoopRunsConnect,
+  cancelLoopRun as cancelLoopRunConnect,
+} from "@/lib/api/loopConnect";
 
 export type { LoopData, LoopRunData, RunStatus };
 
 const svc = () => getLoopService();
 const bump = () => useLoopStore.setState((s) => ({ _tick: s._tick + 1 }));
+
+function orgSlug(): string {
+  return readCurrentOrg()?.slug ?? "";
+}
 
 export function useLoops(): LoopData[] {
   const tick = useLoopStore((s) => s._tick);
@@ -56,9 +73,13 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
   fetchLoops: async (filters) => {
     set({ loading: true, error: null });
     try {
-      const raw = await svc().fetch_loops(filters?.status ?? undefined, 500, undefined);
-      const res: { total: number } = JSON.parse(raw);
-      set({ totalCount: res.total, loading: false, _tick: get()._tick + 1 });
+      const { items, total } = await listLoopsConnect(orgSlug(), {
+        status: filters?.status,
+        query: filters?.query,
+        limit: 500,
+      });
+      svc().set_loops(JSON.stringify(items));
+      set({ totalCount: total, loading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), loading: false }); }
   },
 
@@ -71,52 +92,70 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
     }
     set({ loopLoading: true, error: null });
     try {
-      await svc().fetch_loop(slug);
+      const loop = await getLoopConnect(orgSlug(), slug);
+      svc().set_current_loop(JSON.stringify(loop));
       set({ loopLoading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), loopLoading: false }); }
   },
 
   createLoop: async (data) => {
-    const raw = await svc().create_loop(JSON.stringify(data));
-    const loop: LoopData = JSON.parse(raw);
+    const loop = await createLoopConnect(orgSlug(), data);
     get().fetchLoops();
     return { loop };
   },
 
   updateLoop: async (slug, data) => {
-    const raw = await svc().update_loop(slug, JSON.stringify(data));
-    const loop: LoopData = JSON.parse(raw);
+    const loop = await updateLoopConnect(orgSlug(), slug, data);
     bump();
     get().fetchLoops();
     return loop;
   },
 
   deleteLoop: async (slug) => {
-    await svc().delete_loop(slug);
+    await deleteLoopConnect(orgSlug(), slug);
+    svc().set_current_loop("");
     bump();
     get().fetchLoops();
   },
 
-  enableLoop: async (slug) => { await svc().enable_loop(slug); bump(); },
-  disableLoop: async (slug) => { await svc().disable_loop(slug); bump(); },
+  enableLoop: async (slug) => {
+    const loop = await enableLoopConnect(orgSlug(), slug);
+    svc().update_loop_local(slug, JSON.stringify(loop));
+    bump();
+  },
+  disableLoop: async (slug) => {
+    const loop = await disableLoopConnect(orgSlug(), slug);
+    svc().update_loop_local(slug, JSON.stringify(loop));
+    bump();
+  },
 
   triggerLoop: async (slug) => {
     try {
-      const raw = await svc().trigger_loop(slug);
-      const run: LoopRunData = JSON.parse(raw);
+      const result = await triggerLoopConnect(orgSlug(), slug);
+      if (result.run) {
+        svc().add_run(JSON.stringify(result.run));
+      }
       bump();
       get().fetchRuns(slug, { limit: 20, offset: 0 });
       get().fetchLoop(slug);
-      return { run };
+      return result;
     } catch { return { skipped: true, reason: "trigger skipped or failed" }; }
   },
 
   fetchRuns: async (slug, filters) => {
     set({ runsLoading: true });
     try {
-      const raw = await svc().fetch_runs(slug, filters?.status ?? undefined, filters?.limit ?? undefined, filters?.offset ?? undefined);
-      const res: { total: number } = JSON.parse(raw);
-      set({ runsTotalCount: res.total, runsLoading: false, _tick: get()._tick + 1 });
+      const { items, total } = await listLoopRunsConnect(orgSlug(), slug, {
+        status: filters?.status,
+        limit: filters?.limit,
+        offset: filters?.offset,
+      });
+      if ((filters?.offset ?? 0) > 0) {
+        svc().append_runs(JSON.stringify(items));
+      } else {
+        svc().set_runs(JSON.stringify(items));
+      }
+      set({ runsTotalCount: total, runsLoading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), runsLoading: false }); }
   },
 
@@ -127,7 +166,8 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
   },
 
   cancelRun: async (slug, runId) => {
-    await svc().cancel_run(slug, BigInt(runId));
+    await cancelLoopRunConnect(orgSlug(), slug, runId);
+    svc().update_run_status(BigInt(runId), "cancelled");
     bump();
     get().fetchRuns(slug, { limit: 20, offset: 0 });
     get().fetchLoop(slug);
