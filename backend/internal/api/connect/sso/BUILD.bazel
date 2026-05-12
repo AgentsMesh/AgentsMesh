@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "sso",
+    srcs = [
+        "sso.go",
+        "sso_convert.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/sso",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/sso",
+        "//backend/internal/domain/user",
+        "//backend/internal/service/auth",
+        "//backend/internal/service/sso",
+        "//proto/sso/v1:sso_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "sso_test",
+    srcs = ["sso_test.go"],
+    embed = [":sso"],
+    deps = [
+        "//backend/internal/domain/sso",
+        "//backend/internal/domain/user",
+        "//backend/internal/service/auth",
+        "//backend/internal/service/sso",
+        "//proto/sso/v1:sso_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//require",
+    ],
+)

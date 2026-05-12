@@ -811,6 +811,8 @@ vi.mock('@/lib/wasm-core', () => {
     getSSOService: fn(() => ({
       discover: fn().mockResolvedValue('{}'),
       ldap_auth: fn().mockResolvedValue('{}'),
+      discoverConnect: fn().mockResolvedValue(new Uint8Array()),
+      ldapAuthConnect: fn().mockResolvedValue(new Uint8Array()),
     })),
     getUserApiService: fn(() => ({
       get_me: fn().mockResolvedValue('{}'),
@@ -920,6 +922,9 @@ vi.mock('@/lib/wasm-core', () => {
       get_attachment_url: fn().mockResolvedValue('{}'),
       create_ticket: fn().mockResolvedValue('{}'),
       add_message: fn().mockResolvedValue('{}'),
+      // Connect-RPC (binary wire) — empty Uint8Array decodes to default
+      // proto messages so call sites that don't override the mock get
+      // sensible defaults instead of TypeErrors.
       listSupportTicketsConnect: fn().mockResolvedValue(new Uint8Array()),
       getSupportTicketConnect: fn().mockResolvedValue(new Uint8Array()),
       getAttachmentUrlConnect: fn().mockResolvedValue(new Uint8Array()),

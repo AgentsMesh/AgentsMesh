@@ -19,6 +19,7 @@ import (
 	podconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod"
 	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
 	runnerconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/runner"
+	ssoconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/sso"
 	supportticketconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/support_ticket"
 	ticketconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/ticket"
 	ticketrelationsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/ticket_relations"
@@ -110,6 +111,20 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	mountBillingService(mux, svc, opts)
 	mountInvitationService(mux, svc, opts)
 	supportticketconnect.Mount(mux, supportticketconnect.NewServer(svc.supportTicket), opts...)
+	mountSSOService(mux, svc)
+}
+
+// mountSSOService wires the public SSOService (Discover + LdapAuth)
+// onto the mux WITHOUT the auth interceptor — conventions §3.5
+// exception #1. The user does not have a bearer token when they hit
+// these RPCs; that is the goal of the SSO login flow.
+//
+// The OIDC/SAML browser-redirect endpoints (auth_sso_oidc.go,
+// auth_sso_saml.go) stay on REST permanently — Connect's unary
+// contract cannot return `Location:` redirects.
+func mountSSOService(mux *http.ServeMux, svc *serviceContainer) {
+	srv := ssoconnect.NewServer(svc.sso, svc.auth)
+	ssoconnect.MountPublic(mux, srv)
 }
 
 // mountInvitationService wires the auth-required InvitationService +
