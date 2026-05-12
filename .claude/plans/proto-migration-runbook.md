@@ -293,30 +293,28 @@ bazel test  //backend/internal/api/connect/<service>:<service>_test
 
 ### 4.1 DTO — `clients/core/crates/types/src/<service>.rs` (REPLACE)
 
+Binary wire only — `prost::Message` derive is the entire contract. **Do not add `Serialize` / `Deserialize` derives.** They were a JSON-wire concern that no longer applies (conventions §2.5, §3).
+
 ```rust
 use prost::Message;
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct <Service> {
     #[prost(int64,  tag = "1")] pub id: i64,
     #[prost(string, tag = "2")] pub name: String,
-    #[prost(string, optional, tag = "3")] #[serde(skip_serializing_if = "Option::is_none")] pub description: Option<String>,
+    #[prost(string, optional, tag = "3")] pub description: Option<String>,
     #[prost(string, tag = "4")] pub created_at: String,
-    #[prost(string, optional, tag = "5")] #[serde(skip_serializing_if = "Option::is_none")] pub updated_at: Option<String>,
+    #[prost(string, optional, tag = "5")] pub updated_at: Option<String>,
 }
 
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message, Default)]
 pub struct List<Service>sRequest {
     #[prost(string, tag = "1")] pub org_slug: String,
-    #[prost(int32, optional, tag = "2")] #[serde(skip_serializing_if = "Option::is_none")] pub offset: Option<i32>,
-    #[prost(int32, optional, tag = "3")] #[serde(skip_serializing_if = "Option::is_none")] pub limit:  Option<i32>,
+    #[prost(int32, optional, tag = "2")] pub offset: Option<i32>,
+    #[prost(int32, optional, tag = "3")] pub limit:  Option<i32>,
 }
 
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct List<Service>sResponse {
     #[prost(message, repeated, tag = "1")] pub items: Vec<<Service>>,
     #[prost(int64,   tag = "2")] pub total: i64,
@@ -324,12 +322,11 @@ pub struct List<Service>sResponse {
     #[prost(int32,   tag = "4")] pub offset: i32,
 }
 
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct Create<Service>Request {
     #[prost(string, tag = "1")] pub org_slug: String,
     #[prost(string, tag = "2")] pub name: String,
-    #[prost(string, optional, tag = "3")] #[serde(skip_serializing_if = "Option::is_none")] pub description: Option<String>,
+    #[prost(string, optional, tag = "3")] pub description: Option<String>,
 }
 
 // Get/Update/Delete requests analogous — each starts with `org_slug` at tag 1.
@@ -354,24 +351,33 @@ impl ApiClient {
 }
 ```
 
-`connect_call` helper (lives in `clients/core/crates/api-client/src/connect_call.rs`, added by infra or first-migration PR):
+`connect_call` helper (lives in `clients/core/crates/api-client/src/connect_call.rs`, added by infra or first-migration PR) — **binary in, binary out, no JSON path**:
 
 ```rust
-pub async fn connect_call<Req: Serialize, Res: DeserializeOwned>(
+use prost::Message;
+
+pub async fn connect_call<Req, Res>(
     client: &ApiClient, procedure: &str, body: &Req,
-) -> Result<Res, ApiError> {
+) -> Result<Res, ApiError>
+where
+    Req: Message,
+    Res: Message + Default,
+{
     let url = format!("{}{}", client.base_url(), procedure);
-    let mut b = client.http.post(&url).json(body)
+    let payload = body.encode_to_vec();
+    let mut b = client.http.post(&url)
         .header("Connect-Protocol-Version", "1")
-        .header("Content-Type", "application/json");
+        .header("Content-Type", "application/proto")
+        .body(payload);
     if let Some(tok) = client.token().await { b = b.header("Authorization", format!("Bearer {tok}")); }
     let resp = b.send().await.map_err(ApiError::Http)?;
     if !resp.status().is_success() { return Err(ApiError::from_connect_response(resp).await); }
-    Ok(resp.json::<Res>().await.map_err(ApiError::Http)?)
+    let resp_bytes = resp.bytes().await.map_err(ApiError::Http)?;
+    Res::decode(resp_bytes).map_err(ApiError::Decode)
 }
 ```
 
-**Delete** old `get_resource`/`post_resource` calls in this file — Connect has no wrapper key.
+**Delete** old `get_resource`/`post_resource` calls in this file — Connect has no wrapper key. **Do not** add JSON-fallback branches "for debugging" — curl with `Content-Type: application/json` against the server still works on the server side; client code stays binary-only.
 
 ### 4.3 Verify
 
@@ -383,11 +389,14 @@ bazel test //clients/core/crates/types/... //clients/core/crates/api-client/...
 
 ## Step 5 — wasm bridge
 
+The wasm bridge surface is **binary in, binary out** — `Vec<u8>` (= TS `Uint8Array`). TS decodes via `@bufbuild/protoc-gen-es`-generated `Message.fromBinary`. No `serde_wasm_bindgen`, no JSON intermediate.
+
 `clients/core/crates/wasm/src/service_<service>.rs`:
 
 ```rust
 use agentsmesh_api_client::ApiClient;
 use agentsmesh_types::*;
+use prost::Message;
 use std::sync::Arc;
 use wasm_bindgen::prelude::*;
 
@@ -403,22 +412,24 @@ impl <Service>Service {
     // not from TS arguments — keeps existing TS call sites unchanged.
 
     #[wasm_bindgen(js_name = list<Service>s)]
-    pub async fn list_<service>s(&self, offset: Option<i32>, limit: Option<i32>) -> Result<JsValue, JsValue> {
+    pub async fn list_<service>s(&self, offset: Option<i32>, limit: Option<i32>) -> Result<Vec<u8>, JsValue> {
         let req = List<Service>sRequest { org_slug: self.client.org_slug().await, offset, limit };
         let resp = self.client.list_<service>s(&req).await.map_err(api_err_to_js)?;
-        serde_wasm_bindgen::to_value(&resp).map_err(|e| JsValue::from_str(&e.to_string()))
+        Ok(resp.encode_to_vec())
     }
 
     #[wasm_bindgen(js_name = create<Service>)]
-    pub async fn create_<service>(&self, name: String, description: Option<String>) -> Result<JsValue, JsValue> {
+    pub async fn create_<service>(&self, name: String, description: Option<String>) -> Result<Vec<u8>, JsValue> {
         let req = Create<Service>Request { org_slug: self.client.org_slug().await, name, description };
         let entity = self.client.create_<service>(&req).await.map_err(api_err_to_js)?;
-        serde_wasm_bindgen::to_value(&entity).map_err(|e| JsValue::from_str(&e.to_string()))
+        Ok(entity.encode_to_vec())
     }
 }
 ```
 
 **Keep method names stable.** TS callers depend on `list<Service>s`, `create<Service>` etc.
+
+**Return-type discipline**: `Result<Vec<u8>, JsValue>` only. **Do not** return `JsValue` from a `serde_wasm_bindgen::to_value(&resp)` call — that round-trips through JSON serialization and reintroduces the field-name drift surface. The wasm output is raw prost bytes; TS deserializes via the corresponding `@bufbuild/protobuf` message class (see Step 6).
 
 ### Verify
 
@@ -439,8 +450,23 @@ grep -rn "<entity>Service\|get<Service>Service\|use<Service>" clients/web/src/ |
 
 For each:
 
+- **Decode wasm output**: every call site now receives a `Uint8Array` from the wasm bridge. Decode via the `@bufbuild/protoc-gen-es`-generated message class:
+  ```typescript
+  import { ListFoosResponse, Foo } from "@/proto/gen/ts/foo/v1/foo_pb";
+
+  // Before (JSON via serde_wasm_bindgen):
+  // const resp = await wasmFooService.listFoos(offset, limit);
+  // return resp;  // already a JS object
+
+  // After (binary in, binary out):
+  const bytes = await wasmFooService.listFoos(offset, limit);
+  const resp = ListFoosResponse.fromBinary(new Uint8Array(bytes));
+  return resp;  // typed message instance, .items / .total / .limit / .offset
+  ```
 - **List shape**: `resp.<plural>` → `resp.items`. Add destructuring for `total/limit/offset` if used.
-- **Create/update**: `resp.<entity>` → `resp` (entity is the response directly).
+- **Create/update**: `resp.<entity>` → `resp` (entity is the response directly). Decode via `<Entity>.fromBinary(new Uint8Array(bytes))`.
+
+The `@bufbuild/protobuf` message class auto-generates **camelCase getters** from the snake_case `.proto`. Existing TS call sites reading `.createdAt` continue to work — same field-name surface, different wire path.
 
 ### 6.2 Delete old TS types
 
@@ -449,7 +475,7 @@ rm clients/web/src/lib/api/<service>Types.ts                        # if exists
 grep -rn "from ['\"]@/lib/api/<service>Types" clients/web/src/      # find imports
 ```
 
-Replace each import with wasm-generated types (from `agentsmesh-wasm` `.d.ts`) or a thin local alias.
+Replace each import with the `@bufbuild/protoc-gen-es`-generated module at `@/proto/gen/ts/<service>/v1/<service>_pb` (output path defined by the `ts_proto_library` Bazel rule — see "TS proto codegen toolchain" section below).
 
 ### 6.3 Update vitest mocks
 
@@ -457,7 +483,29 @@ Replace each import with wasm-generated types (from `agentsmesh-wasm` `.d.ts`) o
 grep -rn "<entity>\|<plural>" clients/web/src/test/setup.ts
 ```
 
-Existing mocks were written against the drifted shape (watch list §6 / PR #368). Update to match the new `.proto` shape.
+Existing mocks returned drifted JSON strings (watch list §6 / PR #368). Update each mock to return a **binary-encoded empty response** using the `@bufbuild/protobuf` class:
+
+```typescript
+import { ListFoosResponse, Foo } from "@/proto/gen/ts/foo/v1/foo_pb";
+
+// Before:
+// listFoos: vi.fn().mockResolvedValue('{"foos":[]}'),
+
+// After (binary bytes, decoded by the call-site `fromBinary`):
+listFoos: vi.fn().mockResolvedValue(new ListFoosResponse({}).toBinary()),
+
+// Or with data:
+listFoos: vi.fn().mockResolvedValue(
+  new ListFoosResponse({
+    items: [new Foo({ id: 1n, name: "sample" })],
+    total: 1n,
+    limit: 20,
+    offset: 0,
+  }).toBinary(),
+),
+```
+
+The mock's return type is `Uint8Array`, matching the production wasm bridge surface. Call-site `Message.fromBinary` works against either.
 
 ### 6.4 Verify
 
@@ -472,38 +520,47 @@ bazel build //clients/web:src //clients/web:next
 
 ### 7.1 Rust round-trip — at the bottom of `clients/core/crates/types/src/<service>.rs`
 
+Binary wire round-trip — encode every distinguishing field, decode, assert. A swapped or transposed `prost(tag = N)` annotation manifests as field-value swap in the assertions (see watch list §8).
+
 ```rust
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const LIST_PAYLOAD: &str = r#"{
-        "items":[{"id":1,"name":"sample","createdAt":"2026-05-12T13:16:10Z"}],
-        "total":1,"limit":20,"offset":0
-    }"#;
+    use prost::Message;
 
     #[test]
     fn list_response_round_trip() {
-        let r: List<Service>sResponse = serde_json::from_str(LIST_PAYLOAD).unwrap();
-        assert_eq!(r.items.len(), 1);
-        assert_eq!(r.total, 1);
-        let v: serde_json::Value = serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
-        assert!(v.get("items").is_some());
-        assert!(v.get("<service>s").is_none(), "must not emit drifted wrapper key");
+        let original = List<Service>sResponse {
+            items: vec![<Service> {
+                id: 1, name: "sample".into(), description: None,
+                created_at: "2026-05-12T13:16:10Z".into(), updated_at: None,
+            }],
+            total: 1, limit: 20, offset: 0,
+        };
+        let bytes = original.encode_to_vec();
+        let decoded = List<Service>sResponse::decode(&*bytes).unwrap();
+        assert_eq!(original, decoded);
+        // Every field at its expected position — drifted tag would swap values.
     }
 
     #[test]
-    fn entity_camelcase_on_wire() {
-        let e = <Service>{ id: 1, name: "x".into(), description: None,
-                           created_at: "2026-05-12T00:00:00Z".into(), updated_at: None };
-        let s = serde_json::to_string(&e).unwrap();
-        assert!(s.contains("\"createdAt\""));
-        assert!(!s.contains("\"created_at\""));
+    fn optional_offset_zero_vs_absent_distinguishable() {
+        let with_zero = List<Service>sRequest { org_slug: "o".into(), offset: Some(0), limit: None };
+        let absent    = List<Service>sRequest { org_slug: "o".into(), offset: None,    limit: None };
+        // Binary wire: with_zero emits the tag with value 0; absent emits no tag.
+        assert_ne!(with_zero.encode_to_vec(), absent.encode_to_vec());
+        let r1 = List<Service>sRequest::decode(&*with_zero.encode_to_vec()).unwrap();
+        let r2 = List<Service>sRequest::decode(&*absent.encode_to_vec()).unwrap();
+        assert_eq!(r1.offset, Some(0));
+        assert_eq!(r2.offset, None);
     }
-    // Add tests per oneof variant if any.
-    // Add explicit `offset: 0` vs absent test for any optional scalar.
+
+    // Add tests per oneof variant if any — see conventions §7.
+    // Add per-field tag-collision smoke test if the .proto has 10+ fields.
 }
 ```
+
+The "camelCase on wire" test from the legacy template is **removed** — there is no JSON wire on the client side, so casing has no production touchpoint. TS-side decoding via `@bufbuild/protoc-gen-es` generates camelCase getters from the snake_case `.proto` at the message-class level (see Step 6.1).
 
 ### 7.2 Go handler unit test — `backend/internal/api/connect/<service>/<service>_test.go`
 
@@ -631,9 +688,14 @@ Follows conventions locked in .claude/plans/proto-naming-conventions.md.
 - [ ] Create/update returns entity directly (no {entity:...} wrapper)
 - [ ] No google.protobuf.Timestamp (string ISO-8601 only)
 - [ ] Auth interceptor mounted on all RPCs
-- [ ] Rust response messages have #[serde(rename_all = "camelCase")]
-- [ ] Round-trip test asserts camelCase + no drift keys
+- [ ] Rust DTO is prost::Message only — NO `Serialize` / `Deserialize` derives
+- [ ] Every Rust `prost(tag = N)` matches the .proto field number
+- [ ] wasm bridge returns `Result<Vec<u8>, JsValue>` — NO `serde_wasm_bindgen::to_value`
+- [ ] TS call sites decode via `<Message>.fromBinary(new Uint8Array(bytes))`
+- [ ] vitest mocks return `.toBinary()` bytes, not JSON strings
 - [ ] TS call sites read .items (not .<plural>)
+- [ ] Round-trip test encodes → decodes via prost::Message, asserts PartialEq
+- [ ] No `application/json` content-type in any client code (grep -rE "application/json" clients/core/crates/api-client clients/core/crates/wasm clients/web/src/lib/api)
 EOF
 )"
 
@@ -665,8 +727,8 @@ Copy + fill the variables below to spawn a service-migration agent.
 
 ## Must read first (in order)
 1. .claude/plans/proto-migration-adr.md
-2. .claude/plans/proto-naming-conventions.md  — every SHALL rule
-3. .claude/plans/proto-watch-list.md          — 7 known hazards (especially #1 camelCase, #5 auth, #6 field accumulation)
+2. .claude/plans/proto-naming-conventions.md  — every SHALL rule (especially §2.5 codec)
+3. .claude/plans/proto-watch-list.md          — 8 known hazards (especially #5 auth, #6 field accumulation, #8 tag-number drift)
 4. .claude/plans/proto-migration-runbook.md   — THIS document
 
 ## Working environment
@@ -686,7 +748,9 @@ DO NOT skip §7.1 (round-trip test) — that is the entire reason for the migrat
 - Do NOT bump connectrpc.com/connect (locked at v1.19.1).
 - Do NOT introduce google.protobuf.Timestamp — use string ISO-8601.
 - Do NOT use json_name annotations in .proto.
-- Do NOT skip #[serde(rename_all = "camelCase")] on Rust response messages.
+- Do NOT add `Serialize` / `Deserialize` derives on migrated Rust DTOs — binary wire only.
+- Do NOT use `application/json` content-type in any client-side code (api-client crate, wasm crate, clients/web/src/lib/api). Client wire is binary, mandatory.
+- Do NOT return `JsValue` from `serde_wasm_bindgen::to_value(&resp)` in wasm bridge — return `Result<Vec<u8>, JsValue>` carrying `prost::Message::encode_to_vec()` bytes.
 
 ## Done means
 - All Bazel targets green: //proto/{service_name}/..., //backend/internal/api/connect/{service_name}/...,
@@ -703,6 +767,98 @@ DO NOT skip §7.1 (round-trip test) — that is the entire reason for the migrat
 - Any deviations from conventions.md you had to make (if none, say "none")
 - Any drift you discovered and fixed inline
 ```
+
+---
+
+## TS proto codegen toolchain (infrastructure prerequisite for binary-only wire)
+
+The binary-only client wire (conventions §2.5) requires TS-side message classes that decode prost bytes. We use `@bufbuild/protoc-gen-es` v2 — the canonical Connect-ecosystem codegen for TS. The first service migration PR (the `skill_registry` reference) **must land this toolchain** because the remaining 25 services depend on it.
+
+### Root `package.json` additions
+
+```json
+{
+  "devDependencies": {
+    "@bufbuild/buf": "^1.45.0",
+    "@bufbuild/protoc-gen-es": "^2.2.0"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.2.0"
+  }
+}
+```
+
+`@bufbuild/protobuf` is the runtime (`Message.toBinary` / `fromBinary` lives there); `@bufbuild/protoc-gen-es` is the codegen plugin invoked by `buf generate`; `@bufbuild/buf` provides the host `buf` CLI we drive from Bazel.
+
+### Bazel rule — `build_defs/ts/ts_proto.bzl`
+
+Macro wrapping `buf generate` with the hermetic toolchain pulled from pnpm. Output lands in `bazel-bin/proto/<domain>/v1/<name>_pb.ts` (and a `_pb.d.ts` for IDE consumption).
+
+```python
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+
+def ts_proto_library(name, proto, visibility = None):
+    """Generates a TS message-class module from a proto_library target.
+
+    Wraps `buf generate` driven by the pnpm-resolved
+    @bufbuild/buf binary, producing <name>_pb.ts + <name>_pb.d.ts.
+    """
+    js_run_binary(
+        name = name,
+        srcs = [proto],
+        tool = "@npm//@bufbuild/buf/bin:buf",
+        args = ["generate", "--template=$(BUF_TEMPLATE)", "--output=$(@D)"],
+        # ... full implementation: locate proto descriptor set, invoke buf generate,
+        # output one .ts file per .proto, with .d.ts beside it.
+        visibility = visibility,
+    )
+```
+
+Detailed implementation (descriptor-set wiring, buf.gen.yaml template, output-path normalization) is the first-service PR's deliverable. The macro signature above is the locked contract.
+
+### Per-service `BUILD.bazel` — pair `proto_library` with `ts_proto_library`
+
+Update `proto/<service>/v1/BUILD.bazel` (the Step 2 template) to add a third target:
+
+```python
+load("@rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//build_defs/ts:ts_proto.bzl", "ts_proto_library")
+
+proto_library(
+    name = "<service>_proto",
+    srcs = ["<service>.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "<service>_go_proto",
+    compilers = ["@rules_go//proto:go_proto"],
+    importpath = "github.com/anthropics/agentsmesh/proto/gen/go/<service>/v1",
+    proto = ":<service>_proto",
+    visibility = ["//visibility:public"],
+)
+
+ts_proto_library(
+    name = "<service>_ts_proto",
+    proto = ":<service>_proto",
+    visibility = ["//visibility:public"],
+)
+```
+
+TS consumers import from `@/proto/gen/ts/<service>/v1/<service>_pb` — the alias resolves to `bazel-bin/proto/<service>/v1/<service>_ts_proto/<service>_pb.ts` through the existing Bazel JS rule's path mapping.
+
+### Verification (first-service PR adds these to CI)
+
+```bash
+bazel build //proto/<service>/v1:<service>_ts_proto                  # codegen runs
+bazel test  //clients/web:unit                                       # vitest mocks compile against the new class
+bazel build //clients/web:src                                        # tsc --noEmit catches import path mistakes
+```
+
+### Why not `protoc-gen-ts` (the legacy generator)?
+
+`@bufbuild/protoc-gen-es` is the only TS codegen with first-class support for the `Message.toBinary` / `fromBinary` API that our binary wire requires. Alternatives (`protoc-gen-ts`, `ts-proto`) target JSON-first interop or generate non-buffered runtime code — neither matches the Connect-ecosystem contract we lock in conventions §2.5.
 
 ---
 

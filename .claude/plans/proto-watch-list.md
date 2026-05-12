@@ -1,67 +1,65 @@
 # Proto Migration Watch List — 26-Service Hazard Map
 
-Seven known migration hazards, ordered by **likelihood of biting**. Each entry: **symptom → detection → mitigation**.
+Eight known migration hazards, ordered by **likelihood of biting**. Each entry: **symptom → detection → mitigation**.
 
 This document is companion to:
 - ADR (`proto-migration-adr.md`) — the why
 - Conventions (`proto-naming-conventions.md`) — the SHALL rules
 - Runbook (`proto-migration-runbook.md`) — the how-to
 
-POC §3.4 covers items 1–5 in raw form; this expands them to actionable.
+POC §3.4 originally ranked five raw hazards. Hazard #1 (camelCase drift) was eliminated by the team-lead's binary-only-on-client pivot (conventions §2.5) — it now stands as a closed entry for historical traceability. Hazard #8 (tag-number drift in hand-maintained prost structs) is the new equivalent risk and is the single most important reason `tools/validate_prost_tags` lands with the first migration PR.
 
 ---
 
-## 1. camelCase / snake_case inconsistency — **the #1 historical bug class**
+## 1. ~~camelCase / snake_case inconsistency~~ — **physically eliminated by binary wire**
 
-### Symptom
+### Status
 
-Field arrives at TS as `undefined`. UI renders `${undefined}${undefined}` (literal "undefinedundefined"), badges stay at 0, paginators frozen at page 1, secrets render empty, list responses look empty even though DB rows exist.
+**Closed by codec choice, not by lint discipline.** The client wire is `application/proto` binary only (conventions.md §2.5). Fields on the wire are identified by `prost(tag = N)` / `.proto` field number, not by string name. The whole class of "wasm sends `is_active`, backend reads `isActive`, field arrives as `undefined`" cannot happen — there are no field names on the binary wire.
 
-This single root cause owns the entire drift bug arc:
+The historical bug arc that owned this slot:
 
-- **PR #329** — `RepositoryProvider.is_active/has_*` dropped → every provider "disabled".
-- **PR #334** — `PricingConfig.currency` (singular) vs Rust `currencies` (vector) → pricing card `${undefined}${undefined}`.
-- **PR #341** + **#349** + **#368** — `SkillRegistry` list wrapper key drifted through wasm relay → UI list empty, re-adding same repo triggered unique-key violation (user reopened issue twice).
-- **commit 986a38ca6** — sweep of seven simultaneous drifts: `{pod, warning}`, `{tickets, total, limit, offset}`, `{has_more}`, `{unread_count}`, `{raw_key}`, `{replayed_message}`.
-- **PR #340** — resume pod missing `agent_slug`.
+- **PR #329** — `RepositoryProvider.is_active/has_*` → would now be a tag-number lookup, can't miss.
+- **PR #334** — `PricingConfig.currency` vs `currencies` (singular/plural drift) → still possible (it's a different field), but caught at compile time because the Rust prost struct mirrors the `.proto` field name 1:1, not a casing transform.
+- **PR #341 / #349 / #368** — `SkillRegistry` list wrapper key → solved by §8 uniform `{items, total, limit, offset}` envelope, orthogonal to wire codec.
+- **commit 986a38ca6** — sweep of seven wrapper drifts → solved by §8 + §9 (entity-direct create response), orthogonal to wire codec.
 
-### Detection
+### What remains on this slot
 
-1. **buf lint** rule `FIELD_LOWER_SNAKE_CASE` — fails on camelCase in `.proto`.
-2. **Round-trip test per response message** — record a real backend JSON payload (or hand-author one matching the handler), deserialize it into the Rust struct, re-serialize, assert byte-equality with a normalized form. Catches any missing `#[serde(rename_all = "camelCase")]`, any field-name typo.
-3. **Wasm relay test** — same round-trip but going through `wasm_pkg`: TS calls the service, Rust deserializes-then-reserializes, TS sees same shape it would see calling backend directly.
-4. **CI grep gate**: `! grep -r 'json_name' proto/` — disallows the third-name escape hatch.
+The replacement risk — **tag number drift in hand-maintained prost structs** — is hazard #8 below. Same severity, different mechanism: instead of catching string-name typos, CI now catches numeric tag mismatches between `.proto` and Rust.
 
-### Mitigation
+### Why the rule moved
 
-- **Codegen template forces `#[serde(rename_all = "camelCase")]` on every response message.** Never hand-write a Rust DTO; always generate.
-- **No `json_name` annotations in `.proto`.** Conventions §3.
-- **Round-trip test is non-optional.** Specialist agents do not merge a service PR without the test (runbook §7).
+POC §3.4 listed JSON casing as the #1 hazard *given* the POC's JSON wire. The team-lead's binary-only pivot turns that hazard into a non-event: no JSON wire, no string field names on the wire, no casing drift surface. The lint discipline (`#[serde(rename_all = "camelCase")]`, `buf lint FIELD_LOWER_SNAKE_CASE` on the **rust side**) that this section used to enforce is **deleted** in conventions.md §3.
+
+### Residual buf lint
+
+`FIELD_LOWER_SNAKE_CASE` on `.proto` still runs — keeps the source files uniform and keeps the server-side curl-debug JSON path consistent. But this is hygiene, not the bug-prevention mechanism it used to be.
 
 ---
 
-## 2. `oneof` encoding disagreement
+## 2. `oneof` encoding — **mostly closed by binary wire; one residual surface**
 
-### Symptom
+### Status
 
-`oneof` fields are silently lost or misinterpreted between Rust and Go.
+Binary wire encodes `oneof` as the variant's nested message at its tag number. prost's stock `#[derive(prost::Oneof)]` enum is the canonical Rust shape. **No custom serde, no JSON encoding negotiation, no cross-codec mismatch.**
 
-- **prost** generates a Rust enum: `Event::PodCreated(PodCreatedData)` with no inherent JSON shape.
-- **protojson** (Go side) encodes `oneof` as a tagged shape: `{"event": {"podCreated": {...}}}`.
-- A naive `serde(untagged)` enum on the Rust side encodes as `{"podCreated": {...}}` — outer `event` field missing, backend can't decode.
-- Conversely, a `serde(tag = "type")` discriminator (e.g., `{"type": "POD_CREATED", "podId": "..."}`) is what some hand-written DTOs use today; protojson does **not** speak this dialect.
+The original symptom — "prost's untagged JSON conflicts with protojson's tagged shape" — was a JSON-wire problem. On binary wire there is no JSON to disagree about.
+
+### Residual surface
+
+Server-side curl debugging hits `application/json` and uses protojson, which encodes `oneof` as `{<oneof_field>: {<variantName>: <payload>}}`. Variant field names go through snake_case → camelCase via protojson rules. This affects **only admin scripts that hand-author JSON payloads** — wasm/TS clients never see it.
 
 ### Detection
 
-1. **Round-trip test per `oneof` variant**: encode each variant from Rust → assert exact JSON shape → decode back → assert PartialEq with the original.
-2. **Cross-language wire test**: stand up the Connect handler, send a hand-authored `application/json` payload matching protojson's documented form via `curl`, assert handler decodes correctly. Reverse: encode in Rust, send to handler, assert handler reaches expected branch.
-3. **buf lint** rule `ONEOF_LOWER_SNAKE_CASE` — variant field names must be `snake_case` so camelCase conversion is unambiguous.
+1. **Per-variant round-trip test** — `prost::Message::encode_to_vec` each variant, decode back, assert PartialEq. Tag-number drift between `.proto` and `tags = "..."` in the Rust enum surfaces here.
+2. **buf lint** rule `ONEOF_LOWER_SNAKE_CASE` — variant field names must be `snake_case` so the server-side protojson curl path stays consistent (rare path, but kept for hygiene).
 
 ### Mitigation
 
-- **Adopt the tagged shape uniformly**: `{<oneof_field>: {<variantName>: <payload>}}`. Implement custom `Serialize` + `Deserialize` for each Rust `oneof` enum (conventions §7 has the template).
-- **No `oneof` in v1 of any service if avoidable.** Several existing REST endpoints would use a `oneof` naturally (e.g., the `PodEvent` stream). For the v1 migration, prefer flat messages with discriminator strings if the field set is small (<5 variants). Add `oneof` later as a non-breaking widening if needed.
-- **Specialist agents must flag `oneof` usage in PR description** and include the variant round-trip test in the test plan.
+- Use prost's stock `#[derive(prost::Oneof)]`. **Do not** hand-write `Serialize` / `Deserialize` for oneof enums — conventions.md §7 explicitly forbids it.
+- The "avoid `oneof` in v1" advice from the legacy version of this section is **dropped**. Binary wire makes `oneof` boring; specialist agents may use it freely where the domain calls for it.
+- Specialist agents must still flag `oneof` in PR description so reviewers eyeball the tag-number annotations.
 
 ---
 
@@ -86,7 +84,7 @@ This bit the existing `ListComments` endpoint (`backend/internal/api/rest/v1/tic
 
 - **Use proto3 `optional` keyword.** Conventions §5 has the full pattern.
 - **Server-side default convention**: if `offset` is absent, default to 0 anyway — semantics match REST behavior. The point of `optional` is **client intent visibility**, not server semantics.
-- **Pair with `#[serde(skip_serializing_if = "Option::is_none")]`** on the Rust side so omitted Options don't serialize as `null`.
+- **Binary wire handles this automatically** — `Option<T>` in the prost struct maps to "field present at tag N" vs "field absent". No `serde(skip_serializing_if)` needed; that was a JSON-wire workaround. The Rust struct's `Option<i32>` plus `#[prost(int32, optional, tag = "N")]` is the whole story.
 
 ---
 
@@ -193,8 +191,55 @@ Two concerns:
 ### Mitigation
 
 - **Per-service ceiling**: a single DTO file generating >10 KB suggests the message tree is excessive. Specialist agent splits it into sub-messages (which then deduplicate via prost's message-name interning).
-- **Skip the prost binary-codec lane** for services that don't need it. The +50 KB prost runtime is already paid; per-service additional cost for binary support is negligible, so this is rarely a knob. But: a service that returns `string` everywhere and never needs proto-binary can derive only `Serialize/Deserialize` and skip `prost::Message` — saves a few KB per message. Most services don't; this is a fallback if budget pressure spikes.
-- **Plan B (cross-platform crates tokio-free, from PR #349)** is already paying off here. The wasm bundle does not pull mio/rustls/tokio's IO stack; migrating to Connect+JSON keeps this property.
+- **`prost::Message` is mandatory** on every migrated DTO — binary wire requires it (conventions.md §2.5). The legacy "fall back to serde-only" escape valve is **gone**; there is no JSON lane to fall back to. If a service's bundle delta is unacceptable, the lever is message-tree shape (split into sub-messages, share with `proto.common.v1`), not codec choice.
+- **No tokio/rustls/mio in wasm** (PR #349) still holds — `prost` is pure-Rust, no IO crates pulled in. Binary wire keeps this property.
+
+---
+
+## 8. Tag number stability (replaces the JSON casing slot)
+
+### Background
+
+Binary wire identifies each field by its **tag number** — the integer in `prost(tag = N)` and the integer after `=` in `.proto`. Field names are local labels with no wire presence.
+
+This is the source of the binary lane's drift immunity. It is also a **single new failure mode** for hand-maintained prost structs (the path the POC chose, see ADR §"Codegen"): if a service migration types `tag = "7"` in Rust but the `.proto` says `tag = 8`, the wire decodes the wrong field into the wrong slot **and the type system doesn't catch it** (both might be `String`).
+
+### Mitigation surface
+
+`@bufbuild/protoc-gen-es` (TS proto codegen) and `protoc-gen-go` (Go proto codegen) **automatically** generate tag-correct code from `.proto`. The only hand-maintained surface is the Rust prost struct in `clients/core/crates/types/src/<service>.rs`. **This is single-point risk.**
+
+### Detection
+
+1. **`tools/validate_prost_tags` Bazel rule** (NEW, must land with the first service migration PR — `skill_registry` reference impl).
+
+   Implementation sketch:
+   - Parse `.proto` field declarations → `{message: {field_name: tag_number}}`.
+   - Parse Rust source via `syn` → `{struct: {field_name: tag_number}}` (extracted from `prost(tag = "N")` attribute).
+   - Assert one-to-one mapping. Fail at build time on mismatch.
+   
+   Reference targets: every `proto_library` gets a paired `validate_prost_tags(name="<svc>_validate", proto=":<svc>_proto", rust=":<svc>_rust")`.
+
+2. **Per-message round-trip test in Rust** (already mandated in runbook §7.1, repurposed):
+   ```rust
+   let original = FooResponse { /* every field set to a distinguishing value */ };
+   let bytes = original.encode_to_vec();
+   let decoded = FooResponse::decode(&*bytes).unwrap();
+   assert_eq!(original, decoded);
+   ```
+   A swapped tag pair (e.g., tag 2 and tag 3 transposed) shows up as field-value swap in the assertion.
+
+3. **buf rules** on the `.proto` side:
+   - `RESERVED_TAG` — reserved tag numbers can't be reused.
+   - `PACKAGE_NO_IMPORT_CYCLE` — keeps tag-numbering schemes isolated per package.
+   - `FIELD_LOWER_SNAKE_CASE` — orthogonal to tags but keeps `.proto` source consistent.
+
+### What this does NOT catch
+
+A field whose **type** matches but **semantics** are wrong is unrecoverable from tag-level checks alone. E.g., if `.proto` says `int32 user_id = 5;` and the Rust struct has `int32 group_id = 5;`, both encode/decode fine, the names just diverge. The `validate_prost_tags` rule MUST also compare **field names** between the two sources, treating snake_case ↔ snake_case identity as the contract (no case translation).
+
+### Scope
+
+The risk is bounded to the **Rust hand-written DTO** surface. Once the codegen tool (`tools/gen_rust_proto` per ADR §5) lands and the 26 services migrate to generated `.rs`, this hazard goes from "single-point" to "compiler-enforced" — the codegen reads the `.proto` as ground truth, can't transcribe wrong. Until then, this rule is the safety net.
 
 ---
 
@@ -262,10 +307,11 @@ For v1, prefer **shared messages in `proto.<domain>.v1`** only if the domain is 
 
 | # | Hazard | Severity | Detection mechanism | Mitigation |
 |---|---|---|---|---|
-| 1 | camelCase drift | **HIGH** (entire bug arc) | buf lint + round-trip test | codegen template forces `rename_all` |
-| 2 | `oneof` encoding | MEDIUM | per-variant round-trip + curl | tagged shape, custom serde |
+| 1 | ~~camelCase drift~~ | **CLOSED** by binary wire | (codec choice eliminates surface) | conventions §2.5 — no client JSON path |
+| 2 | `oneof` encoding | LOW (was MEDIUM) | per-variant round-trip | prost-stock `#[derive(prost::Oneof)]`, no custom serde |
 | 3 | Optional vs default scalar | MEDIUM | per-RPC `offset=0` test | `optional` keyword |
 | 4 | `Timestamp` introduction | LOW (gated) | grep CI gate | use `string` ISO-8601 |
 | 5 | Auth interceptor gap | **HIGH** | "401 without bearer" test | block on interceptor PR |
 | 6 | Backend field accumulation | **HIGH** (re-opens issues) | three-way diff before `.proto` | runbook §1 mandates the diff |
-| 7 | wasm bundle creep | LOW | per-PR delta + cumulative budget | per-service ceiling, fallback to derive-only |
+| 7 | wasm bundle creep | LOW | per-PR delta + cumulative budget | per-service ceiling; no codec fallback (binary mandatory) |
+| 8 | Tag number drift in Rust prost structs | **HIGH** (replaces #1's slot) | `tools/validate_prost_tags` Bazel rule + round-trip test | codegen tool emits Rust from `.proto`; hand-written DTOs are interim only |

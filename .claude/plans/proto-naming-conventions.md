@@ -59,11 +59,61 @@ service SkillRegistryService {
 
 ---
 
-## 3. Field naming on the wire — `snake_case` in `.proto`, `camelCase` on the wire, no `json_name`
+## 2.5 Codec — Wire = protobuf binary (client zero JSON path)
 
-**Rule**: Field names in `.proto` are `snake_case`. Connect's `protojson` automatically maps `snake_case` ↔ `camelCase`. Rust DTOs declare `#[serde(rename_all = "camelCase")]`. **Never** use `json_name = "..."` annotations — they introduce a third name and split the brain.
+### Client wire format (mandatory)
 
-This is the **single most important rule**. Every drift bug in PR #329–#368 was a casing mismatch.
+| Component | Out/In wire |
+|---|---|
+| Rust wasm crate | `prost::Message::encode_to_vec()` / `prost::Message::decode(bytes)` |
+| wasm-bindgen bridge | `Result<Vec<u8>, JsValue>` (NOT `Result<String, JsValue>`) |
+| TS web / desktop | `@bufbuild/protobuf` generated message class — `toBinary()` / `fromBinary()` |
+| HTTP request | `Content-Type: application/proto` |
+
+**Forbidden**: any client-side code (Rust / wasm / TS) using `application/json`. There is no JSON fallback. There is no `serde_json` on the request/response path. The wasm bridge surface is binary in, binary out.
+
+### Server-side content-type negotiation (kept)
+
+Connect-Go handlers accept both `application/proto` and `application/json` by default — this is the framework's content negotiator, costs us nothing, and gives a free curl-debug surface.
+
+| Path | Content-Type |
+|---|---|
+| Production (wasm / TS → server) | `application/proto` — always binary |
+| Debug (curl, admin scripts → server) | `application/json` — permitted, framework decodes |
+
+Handler code (service implementation) is identical in both cases — Connect-Go materializes the request proto struct before calling the handler. Business code never sees the wire.
+
+### Why no JSON on the client
+
+POC report §3.4 ranked "JSON camelCase vs Rust naming mismatch" as the **#1 migration hazard** — and that is precisely the failure mode (PR #329–#368) the migration set out to eliminate. Keeping a client JSON path preserves the drift surface:
+
+- JSON wire identifies fields by **string name**. Names in `.proto` are `snake_case`, names in JSON are `camelCase`, names in Rust structs are `snake_case` — three labels for the same field, three places a typo or `rename_all` slip can drift.
+- Binary wire identifies fields by **tag number** (`prost(tag = N)` ↔ `.proto` field number). Field names are local identifiers; they never travel on the wire. A `Foo` in Rust, a `foo` in Go's generated type, a `foo` in TS — all decode the same `tag = 1` bytes. **Drift physically cannot happen.**
+
+The drift bug class is closed by codec choice, not by lint discipline.
+
+### What this replaces from the ADR
+
+ADR §"Locked decisions" lists `Codec default = Connect+JSON`. That row reflected the POC-stage default. **For the 26-service rollout this convention overrides it**: client = binary, server = negotiating. The ADR decision (migrate to Connect-RPC + .proto SSOT) is unchanged.
+
+### CI gate
+
+1. `grep -rE "application/json" clients/core/crates/api-client/src/ clients/core/crates/wasm/src/ clients/web/src/lib/api/` returns non-empty → fail. Client paths must not mention JSON content-type.
+2. `grep -r 'serde_wasm_bindgen\|serde_json' clients/core/crates/wasm/src/service_*.rs` — wasm service bridges return `Vec<u8>`, not `JsValue` serialized JSON. Existing uses (terminal events etc.) outside `service_*.rs` are fine.
+3. wasm-bindgen `Promise<string>` returns in `service_*.rs` are a smell — review must catch them.
+
+---
+
+## 3. Field naming — `snake_case` everywhere, no `json_name`
+
+**Rule**: Field names in `.proto` are `snake_case`. Rust prost structs are `snake_case`. TS proto-es generates camelCase getters from the same snake_case source. **Never** use `json_name = "..."` annotations.
+
+`.proto` is still snake_case for two reasons even though client wire is binary:
+
+1. **buf lint** rule `FIELD_LOWER_SNAKE_CASE` enforces it across the proto SSOT — keeps the source uniform.
+2. **Server-side JSON negotiation** (curl / admin) still uses protojson rules, which map snake_case ↔ camelCase. A `.proto` with camelCase fields would break that path.
+
+What changed from the legacy design: Rust DTOs **no longer carry `#[serde(...)]` derives**. The wire on the client side is binary, the type identity is the prost tag number, serde plays no role. See §4 (DTO template).
 
 **Bad**:
 ```protobuf
@@ -73,35 +123,28 @@ message SkillRegistry {
 }
 ```
 
-```rust
-#[derive(Serialize, Deserialize)]
-// MISSING: #[serde(rename_all = "camelCase")]
-pub struct SkillRegistry {
-    pub repository_url: String,    // serde keeps snake_case → wire mismatch
-}
-```
-
 **Good**:
 ```protobuf
 message SkillRegistry {
   string repository_url = 1;       // snake_case in .proto
-  bool is_active = 2;              // protojson emits "isActive" automatically
+  bool is_active = 2;
 }
 ```
 
 ```rust
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+// Rust DTO: prost::Message only, NO serde derives.
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct SkillRegistry {
     #[prost(string, tag = "1")] pub repository_url: String,
-    #[prost(bool, tag = "2")]   pub is_active: bool,
+    #[prost(bool,   tag = "2")] pub is_active: bool,
 }
 ```
 
 **CI gate**:
 1. `buf lint` rule `FIELD_LOWER_SNAKE_CASE` rejects camelCase in `.proto`.
 2. `grep -r 'json_name' proto/` returns non-empty → fail.
-3. Per-service round-trip test (see runbook §7) decodes a recorded backend JSON payload, re-serializes through serde, asserts byte-equal — catches a missing `rename_all`.
+3. `grep -rE '#\[derive\(.*Serialize|Deserialize' clients/core/crates/types/src/` on migrated services → fail (no serde on migrated DTOs).
+4. Per-service round-trip test (runbook §7): encode a request via prost, decode via prost, assert field-by-field equality. Tag-number drift between `.proto` and the Rust `prost(tag = N)` annotation surfaces here.
 
 ---
 
@@ -280,17 +323,15 @@ message ListSkillRegistriesRequest {
 ```
 
 ```rust
-#[derive(Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct ListSkillRegistriesRequest {
-    #[prost(int32, optional, tag = "1")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub offset: Option<i32>,
-    #[prost(int32, optional, tag = "2")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
+    #[prost(string, tag = "1")] pub org_slug: String,
+    #[prost(int32, optional, tag = "2")] pub offset: Option<i32>,
+    #[prost(int32, optional, tag = "3")] pub limit:  Option<i32>,
 }
 ```
+
+Binary wire elides absent fields by tag-number absence (prost's `Option<T>` maps to "field not present"). No `serde(skip_serializing_if)` needed — that was a JSON-wire concern.
 
 **CI gate**: round-trip test for each list-RPC with `offset: 0` explicit vs absent → assert the handler distinguishes them (e.g., absent uses server default page size, explicit `0` returns first page).
 
@@ -322,45 +363,33 @@ message SkillRegistry {
 ```
 
 ```rust
-#[derive(Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct SkillRegistry {
     #[prost(string, tag = "1")]
     pub last_synced_at: String,
 }
 ```
 
-**Use `Option<String>` for nullable timestamps** (most "last seen at" / "ended at" fields).
+**Use `Option<String>` for nullable timestamps** (most "last seen at" / "ended at" fields) — `#[prost(string, optional, tag = "N")] pub field: Option<String>`.
 
 **CI gate**: `grep -r 'google.protobuf.Timestamp' proto/` returns non-empty → fail (until we explicitly lift this restriction).
 
 ---
 
-## 7. `oneof` — tagged shape `{kind: {variantName: ...}}`, never untagged
+## 7. `oneof` — binary wire encodes the variant tag; Rust enum is the canonical shape
 
-**Rule**: `oneof` fields encode on the JSON wire as `{<oneof_field_name>: {<variantName>: <value>}}`. Variant names are camelCase (matching the field name in protojson rules). The Rust side uses an untagged enum with a custom deserialize matcher.
+**Rule**: `oneof` fields encode on the binary wire as the variant's nested message at its tag number. Rust uses prost's standard `#[derive(prost::Oneof)]` enum. No custom serde, no JSON-side discriminator alignment — the binary lane handles this automatically.
 
-This disagreement between prost's default Rust codegen and protojson is the **#2 likeliest migration hazard** (POC §3.4).
+When server-side admin/curl debugging hits a oneof endpoint with `application/json`, Connect-Go's `protojson` encodes/decodes the tagged shape `{<oneof_field>: {<variantName>: <payload>}}`. Variant field names are `snake_case` in `.proto`; protojson maps to camelCase. Client code never sees this shape.
 
-**Bad** — wasm sends one shape, backend expects another:
-```json
-{
-  "type": "POD_CREATED",        // discriminator-as-string
-  "pod_id": "p-123"
-}
+**Bad** — splitting the wire form across two encodings:
+```rust
+// Don't hand-write serde derives for oneof — binary wire is sufficient.
+impl Serialize for Event { /* ... custom JSON tagged shape ... */ }
+impl Deserialize for Event { /* ... */ }
 ```
 
-**Good** — Connect protojson canonical:
-```json
-{
-  "event": {
-    "podCreated": {              // variantName matches oneof variant field
-      "podId": "p-123"
-    }
-  }
-}
-```
-
+**Good** — prost-stock enum, no serde:
 ```protobuf
 message PodEvent {
   oneof event {
@@ -371,40 +400,24 @@ message PodEvent {
 ```
 
 ```rust
-#[derive(Clone, PartialEq, Message)]
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct PodEvent {
     #[prost(oneof = "pod_event::Event", tags = "1, 2")]
     pub event: Option<pod_event::Event>,
 }
 
 pub mod pod_event {
-    use serde::{Deserialize, Serialize};
-
     #[derive(Clone, PartialEq, prost::Oneof)]
     pub enum Event {
-        #[prost(message, tag = "1")]
-        PodCreated(super::PodCreatedData),
-        #[prost(message, tag = "2")]
-        PodTerminated(super::PodTerminatedData),
+        #[prost(message, tag = "1")] PodCreated(super::PodCreatedData),
+        #[prost(message, tag = "2")] PodTerminated(super::PodTerminatedData),
     }
-
-    // Manual serde to emit/parse {"podCreated": {...}} tagged shape.
-    impl Serialize for Event {
-        fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-            use serde::ser::SerializeMap;
-            let mut m = s.serialize_map(Some(1))?;
-            match self {
-                Event::PodCreated(v)    => m.serialize_entry("podCreated", v)?,
-                Event::PodTerminated(v) => m.serialize_entry("podTerminated", v)?,
-            }
-            m.end()
-        }
-    }
-    // Deserialize: match the single key, dispatch by name. (See runbook for full template.)
 }
 ```
 
-**CI gate**: any service introducing a `oneof` adds a round-trip test that encodes each variant, asserts the JSON has exactly the tagged shape, and decodes it back to the same enum value. Without that test, do not merge.
+Constraint that remains: `oneof` variant field names MUST be `snake_case` (buf lint `ONEOF_LOWER_SNAKE_CASE`) so the curl-debug JSON path stays consistent.
+
+**CI gate**: every `oneof` adds a Rust round-trip test — `encode_to_vec` each variant, `decode` back, assert `PartialEq`. Tag-number drift between `.proto` and the `tags = "..."` annotation surfaces here. Cross-language wire test (curl with `application/proto` body) is optional — the binary codec is symmetric by construction.
 
 ---
 
@@ -545,41 +558,53 @@ return nil, connect.NewError(connect.CodeInternal, err)
 | Header | Value | Set by | Validated by |
 |---|---|---|---|
 | `Connect-Protocol-Version` | `1` | wasm helper auto-injects | `connect-go` library |
-| `Content-Type` | `application/json` (default) or `application/proto` | wasm helper picks per-service flag | `connect-go` content negotiator |
+| `Content-Type` | `application/proto` (MANDATORY for client) | wasm helper hard-codes | `connect-go` content negotiator |
 | `Authorization` | `Bearer <jwt>` | wasm helper, from `AuthManager` token store | auth interceptor |
 
 `Connect-Protocol-Version: 1` is **not** an API version. It refers to the Connect protocol spec version. The wasm-side wrapper must inject it on every call. Forgetting it makes `connect-go` reject the request with `unsupported_protocol`.
+
+`Content-Type: application/proto` is **hard-coded** in the wasm + TS request helpers (see §2.5). The body is a prost-encoded `Vec<u8>` / `Uint8Array`. There is no per-service flag.
 
 **Bad**:
 ```rust
 let res = reqwest::Client::new()
     .post(&url)
-    .json(&req)
-    .send().await?;     // missing Connect-Protocol-Version + Authorization
+    .json(&req)                                  // JSON path forbidden on client
+    .send().await?;                              // missing headers
 ```
 
-**Good** (wasm helper, factored once and reused):
+**Good** (wasm helper, factored once and reused — binary in, binary out):
 ```rust
-pub async fn connect_call<Req: Serialize, Res: DeserializeOwned>(
+pub async fn connect_call<Req, Res>(
     client: &ApiClient,
     procedure: &str,
     body: &Req,
-) -> Result<Res, ApiError> {
+) -> Result<Res, ApiError>
+where
+    Req: prost::Message,
+    Res: prost::Message + Default,
+{
     let url = format!("{}{}", client.base_url(), procedure);
-    let mut req = client.http.post(&url).json(body);
-    req = req.header("Connect-Protocol-Version", "1");
+    let bytes = body.encode_to_vec();
+    let mut req = client.http.post(&url)
+        .header("Connect-Protocol-Version", "1")
+        .header("Content-Type", "application/proto")
+        .body(bytes);
     if let Some(tok) = client.token().await {
         req = req.header("Authorization", format!("Bearer {tok}"));
     }
-    let resp = req.send().await?;
+    let resp = req.send().await.map_err(ApiError::Http)?;
     if !resp.status().is_success() {
-        return Err(ApiError::from_connect_error(resp).await);
+        return Err(ApiError::from_connect_response(resp).await);
     }
-    Ok(resp.json::<Res>().await?)
+    let resp_bytes = resp.bytes().await.map_err(ApiError::Http)?;
+    Res::decode(resp_bytes).map_err(ApiError::Decode)
 }
 ```
 
-**CI gate**: round-trip test from wasm path against test backend — backend rejects requests without `Connect-Protocol-Version: 1`, so the test fails fast if the wasm helper is bypassed.
+**CI gate**:
+1. Round-trip test from wasm path against test backend — backend rejects requests without `Connect-Protocol-Version: 1`, so the test fails fast if the wasm helper is bypassed.
+2. `grep -r '"application/json"' clients/core/crates/api-client/src/ clients/core/crates/wasm/src/ clients/web/src/lib/api/` returns non-empty → fail (see §2.5).
 
 ---
 
@@ -612,18 +637,19 @@ pub async fn connect_call<Req: Serialize, Res: DeserializeOwned>(
 ## Quick reference card
 
 ```
+codec        : Client = protobuf binary ONLY (application/proto). Server negotiates (admin curl can JSON).
 package      : proto.<domain>.v1
 service      : <Domain>Service
 method       : VerbNoun (List, Create, Update, Delete, Get, Toggle, Sync)
-field name   : snake_case (.proto) ↔ camelCase (wire) ↔ #[serde(rename_all = "camelCase")] (Rust)
+field name   : snake_case in .proto. Rust prost struct = snake_case. NO serde derives on migrated DTOs.
 org_slug     : org-scoped RPCs MUST have `string org_slug = 1;` as field 1 (User/Admin RPCs exempt)
 prost tag    : matches .proto field number, never reused, gaps go to `reserved`
 optional     : proto3 `optional` keyword wherever zero is semantically meaningful
 timestamps   : `string` ISO-8601, NOT google.protobuf.Timestamp
-oneof JSON   : {<field>: {<variantName>: ...}} tagged
+oneof wire   : binary tag-number. Rust = #[derive(prost::Oneof)]. Server JSON shape (curl only) = {<field>: {<variantName>: ...}} tagged.
 list resp    : {items, total, limit, offset} — UNIFORM across 26 services
 create resp  : the entity itself (no {entity: ...} wrapper) — exception: multi-field returns
 error        : connect.NewError(connect.CodeXxx, err) — never {error: "..."}
-headers      : Connect-Protocol-Version: 1 (mandatory), Authorization: Bearer <jwt>
+headers      : Connect-Protocol-Version: 1, Content-Type: application/proto, Authorization: Bearer <jwt>
 URL          : /<package>.<Service>/<Method>, prefix /proto. routed by connect_init.go
 ```
