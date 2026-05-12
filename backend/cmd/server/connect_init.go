@@ -18,6 +18,7 @@ import (
 	podconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod"
 	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
 	runnerconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/runner"
+	supportticketconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/support_ticket"
 	ticketconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/ticket"
 	ticketrelationsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/ticket_relations"
 	usercredentialconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/user_credential"
@@ -102,6 +103,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	), opts...)
 	mountBillingService(mux, svc, opts)
 	mountInvitationService(mux, svc, opts)
+	supportticketconnect.Mount(mux, supportticketconnect.NewServer(svc.supportTicket), opts...)
 }
 
 // mountInvitationService wires the auth-required InvitationService +

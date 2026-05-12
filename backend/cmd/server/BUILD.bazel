@@ -40,6 +40,7 @@ go_library(
         "//backend/internal/api/connect/pod",
         "//backend/internal/api/connect/repository",
         "//backend/internal/api/connect/runner",
+        "//backend/internal/api/connect/support_ticket",
         "//backend/internal/api/connect/ticket",
         "//backend/internal/api/connect/ticket_relations",
         "//backend/internal/api/connect/user_credential",

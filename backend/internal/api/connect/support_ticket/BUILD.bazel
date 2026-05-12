@@ -1,0 +1,34 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "support_ticket",
+    srcs = [
+        "support_ticket.go",
+        "support_ticket_convert.go",
+        "support_ticket_errors.go",
+        "support_ticket_handlers.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/support_ticket",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/domain/supportticket",
+        "//backend/internal/middleware",
+        "//backend/internal/service/supportticket",
+        "//proto/support_ticket/v1:support_ticket_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "support_ticket_test",
+    srcs = ["support_ticket_test.go"],
+    embed = [":support_ticket"],
+    deps = [
+        "//backend/internal/middleware",
+        "//backend/internal/service/supportticket",
+        "//proto/support_ticket/v1:support_ticket_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
