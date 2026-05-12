@@ -3,11 +3,17 @@
 import { useState, useCallback, useEffect } from "react";
 import { Ticket } from "@/stores/ticket";
 import { TicketRelation, TicketCommit, TicketComment } from "@/lib/api";
-import { getTicketRelationsService, getTicketService } from "@/lib/wasm-core";
+import { getTicketService } from "@/lib/wasm-core";
+import {
+  listRelations,
+  listCommits,
+  listComments,
+  createComment as createCommentConnect,
+  updateComment as updateCommentConnect,
+  deleteComment as deleteCommentConnect,
+} from "@/lib/api/ticketRelations";
+import { useCurrentOrg } from "@/stores/auth";
 
-/**
- * Extra data associated with a ticket (sub-tickets, relations, commits, comments)
- */
 export interface TicketExtraData {
   subTickets: Ticket[];
   relations: TicketRelation[];
@@ -15,13 +21,12 @@ export interface TicketExtraData {
   comments: TicketComment[];
 }
 
-/**
- * Hook for fetching extra ticket data (sub-tickets, relations, commits, comments)
- *
- * @param slug - Ticket slug
- * @param enabled - Whether to enable fetching (e.g., when ticket is loaded)
- */
+// useTicketExtraData fetches sub-tickets, relations, commits, comments for
+// a ticket. Relations / commits / comments go through the Connect-RPC
+// adapter (proto.ticket_relations.v1) — sub-tickets remain on the legacy
+// ticket service until that migration lands.
 export function useTicketExtraData(slug: string, enabled: boolean) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [subTickets, setSubTickets] = useState<Ticket[]>([]);
   const [relations, setRelations] = useState<TicketRelation[]>([]);
   const [commits, setCommits] = useState<TicketCommit[]>([]);
@@ -29,15 +34,15 @@ export function useTicketExtraData(slug: string, enabled: boolean) {
   const [loading, setLoading] = useState(false);
 
   const fetchExtraData = useCallback(async () => {
-    if (!enabled || !slug) return;
+    if (!enabled || !slug || !orgSlug) return;
 
     setLoading(true);
     try {
       const [subTicketsRes, relationsRes, commitsRes, commentsRes] = await Promise.all([
         getTicketService().get_sub_tickets(slug).then((j: string) => JSON.parse(j)).catch(() => ({ sub_tickets: [] })),
-        getTicketRelationsService().list_relations(slug).then((j: string) => JSON.parse(j)).catch(() => ({ relations: [] })),
-        getTicketRelationsService().list_commits(slug).then((j: string) => JSON.parse(j)).catch(() => ({ commits: [] })),
-        getTicketRelationsService().list_comments(slug).then((j: string) => JSON.parse(j)).catch(() => ({ comments: [], total: 0 })),
+        listRelations(orgSlug, slug).catch(() => ({ relations: [] })),
+        listCommits(orgSlug, slug).catch(() => ({ commits: [] })),
+        listComments(orgSlug, slug).catch(() => ({ comments: [], total: 0, limit: 0, offset: 0 })),
       ]);
 
       setSubTickets(subTicketsRes.sub_tickets || []);
@@ -49,24 +54,23 @@ export function useTicketExtraData(slug: string, enabled: boolean) {
     } finally {
       setLoading(false);
     }
-  }, [slug, enabled]);
+  }, [slug, enabled, orgSlug]);
 
   useEffect(() => {
     fetchExtraData();
   }, [fetchExtraData]);
 
-  // Comment CRUD operations
   const addComment = useCallback(
     async (
       content: string,
       parentId?: number,
       mentions?: Array<{ user_id: number; username: string }>
     ) => {
-      await getTicketRelationsService().create_comment(slug, JSON.stringify({ content, parent_id: parentId, mentions }));
-      const commentsRes = JSON.parse(await getTicketRelationsService().list_comments(slug));
-      setComments(commentsRes.comments || []);
+      await createCommentConnect(orgSlug, slug, { content, parent_id: parentId, mentions });
+      const refreshed = await listComments(orgSlug, slug);
+      setComments(refreshed.comments);
     },
-    [slug]
+    [slug, orgSlug]
   );
 
   const updateComment = useCallback(
@@ -75,20 +79,20 @@ export function useTicketExtraData(slug: string, enabled: boolean) {
       content: string,
       mentions?: Array<{ user_id: number; username: string }>
     ) => {
-      await getTicketRelationsService().update_comment(slug, BigInt(commentId), JSON.stringify({ content, mentions }));
-      const commentsRes = JSON.parse(await getTicketRelationsService().list_comments(slug));
-      setComments(commentsRes.comments || []);
+      await updateCommentConnect(orgSlug, slug, commentId, { content, mentions });
+      const refreshed = await listComments(orgSlug, slug);
+      setComments(refreshed.comments);
     },
-    [slug]
+    [slug, orgSlug]
   );
 
   const deleteComment = useCallback(
     async (commentId: number) => {
-      await getTicketRelationsService().delete_comment(slug, BigInt(commentId));
-      const commentsRes = JSON.parse(await getTicketRelationsService().list_comments(slug));
-      setComments(commentsRes.comments || []);
+      await deleteCommentConnect(orgSlug, slug, commentId);
+      const refreshed = await listComments(orgSlug, slug);
+      setComments(refreshed.comments);
     },
-    [slug]
+    [slug, orgSlug]
   );
 
   return {
