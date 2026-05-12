@@ -1,0 +1,257 @@
+// TicketService — org-scoped issue tracker (board + labels + assignees).
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/tickets.go,
+// ticket_board.go, ticket_labels.go, ticket_assignees.go per
+// .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.ticket.v1 + go_package suffix for dispatch
+//   * service name = <Domain>Service, methods PascalCase verbs
+//   * snake_case fields, no json_name annotations
+//   * org_slug at field 1 of every request (no path params on Connect URLs)
+//   * timestamps as string ISO-8601 (no google.protobuf.Timestamp)
+//   * list response = {items, total, limit, offset} uniform envelope
+//   * create/update/sync return entity directly (no {ticket: ...} wrapper)
+//
+// Out-of-scope for THIS proto (separate specialist agents):
+//   * ticket_comments — backend/internal/api/rest/v1/ticket_comments.go
+//   * ticket_relations — backend/internal/api/rest/v1/ticket_relations.go
+//   * ticket_commits — backend/internal/api/rest/v1/ticket_commits.go
+//   * support_tickets — its own service
+//
+// Historical drift: 986a38ca6 envelope unification — `{tickets, total, limit,
+// offset}` REST shape becomes `{items, total, limit, offset}` here. The
+// legacy Rust DTO (`TicketListResponse.tickets`) is mirrored in
+// `ticket_proto.rs` as `items` per conventions §8.
+//
+// LabelListResponse — Label is a sub-domain of TicketService (same backend
+// table, same handlers), kept in this proto rather than a separate
+// label.proto to avoid noise.
+
+syntax = "proto3";
+
+package proto.ticket.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/ticket/v1;ticketv1";
+
+service TicketService {
+  rpc ListTickets(ListTicketsRequest) returns (ListTicketsResponse);
+  rpc GetTicket(GetTicketRequest) returns (Ticket);
+  rpc CreateTicket(CreateTicketRequest) returns (Ticket);
+  rpc UpdateTicket(UpdateTicketRequest) returns (Ticket);
+  rpc DeleteTicket(DeleteTicketRequest) returns (DeleteTicketResponse);
+  rpc UpdateTicketStatus(UpdateTicketStatusRequest) returns (UpdateTicketStatusResponse);
+
+  rpc GetActiveTickets(GetActiveTicketsRequest) returns (ListTicketsResponse);
+  rpc GetBoard(GetBoardRequest) returns (Board);
+  rpc GetSubTickets(GetSubTicketsRequest) returns (ListTicketsResponse);
+
+  rpc AddAssignee(AddAssigneeRequest) returns (AddAssigneeResponse);
+  rpc RemoveAssignee(RemoveAssigneeRequest) returns (RemoveAssigneeResponse);
+
+  rpc ListLabels(ListLabelsRequest) returns (ListLabelsResponse);
+  rpc CreateLabel(CreateLabelRequest) returns (Label);
+  rpc UpdateLabel(UpdateLabelRequest) returns (Label);
+  rpc DeleteLabel(DeleteLabelRequest) returns (DeleteLabelResponse);
+  rpc AddLabel(AddLabelRequest) returns (AddLabelResponse);
+  rpc RemoveLabel(RemoveLabelRequest) returns (RemoveLabelResponse);
+}
+
+// Ticket mirrors backend/internal/domain/ticket/Ticket. The legacy serde
+// shape (clients/core/crates/types/src/ticket.rs) covered only 9 fields;
+// here we carry the full surface the REST handler emits so future drift
+// becomes compile-time per watch list §8.
+message Ticket {
+  int64 id = 1;
+  int32 number = 2;
+  string slug = 3;
+  string title = 4;
+  optional string content = 5;
+  // backlog / todo / in_progress / in_review / done
+  string status = 6;
+  // none / low / medium / high / urgent
+  string priority = 7;
+  optional string severity = 8;
+  optional double estimate = 9;
+  optional string due_date = 10;
+  optional string started_at = 11;
+  optional string completed_at = 12;
+  optional int64 repository_id = 13;
+  optional int64 parent_ticket_id = 14;
+  optional string parent_ticket_slug = 15;
+  optional int64 reporter_id = 16;
+  string created_at = 17;
+  string updated_at = 18;
+}
+
+message Label {
+  int64 id = 1;
+  int64 organization_id = 2;
+  optional int64 repository_id = 3;
+  string name = 4;
+  string color = 5;
+  optional string created_at = 6;
+  optional string updated_at = 7;
+}
+
+// Board is the kanban view. Columns are pre-grouped by status. Backend
+// returns one column per status with the matching ticket subset.
+message Board {
+  repeated BoardColumn columns = 1;
+}
+
+message BoardColumn {
+  string status = 1;
+  repeated Ticket tickets = 2;
+  int64 total_count = 3;
+}
+
+message ListTicketsRequest {
+  string org_slug = 1;
+  optional int64 repository_id = 2;
+  optional string status = 3;
+  optional string priority = 4;
+  optional int64 assignee_id = 5;
+  repeated string labels = 6;
+  optional string query = 7;
+  optional int32 offset = 8;
+  optional int32 limit = 9;
+}
+
+message ListTicketsResponse {
+  repeated Ticket items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetTicketRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message CreateTicketRequest {
+  string org_slug = 1;
+  string title = 2;
+  optional string content = 3;
+  optional string status = 4;
+  optional string priority = 5;
+  optional int64 repository_id = 6;
+  repeated int64 assignee_ids = 7;
+  repeated string labels = 8;
+  optional string parent_ticket_slug = 9;
+  optional string due_date = 10;
+}
+
+message UpdateTicketRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  optional string title = 3;
+  optional string content = 4;
+  optional string status = 5;
+  optional string priority = 6;
+  // 0 explicitly clears the repository association (REST handler
+  // backend/internal/api/rest/v1/tickets.go:209 inlines this semantic).
+  optional int64 repository_id = 7;
+  repeated int64 assignee_ids = 8;
+  repeated string labels = 9;
+  optional string due_date = 10;
+}
+
+message DeleteTicketRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message DeleteTicketResponse {}
+
+message UpdateTicketStatusRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  string status = 3;
+}
+
+message UpdateTicketStatusResponse {}
+
+message GetActiveTicketsRequest {
+  string org_slug = 1;
+  optional int64 repository_id = 2;
+  optional int32 limit = 3;
+}
+
+message GetBoardRequest {
+  string org_slug = 1;
+  optional int64 repository_id = 2;
+  optional int32 limit = 3;
+  optional string priority = 4;
+  optional int64 assignee_id = 5;
+  optional string query = 6;
+}
+
+message GetSubTicketsRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message AddAssigneeRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 user_id = 3;
+}
+
+message AddAssigneeResponse {}
+
+message RemoveAssigneeRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 user_id = 3;
+}
+
+message RemoveAssigneeResponse {}
+
+message ListLabelsRequest {
+  string org_slug = 1;
+  optional int64 repository_id = 2;
+}
+
+message ListLabelsResponse {
+  repeated Label items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message CreateLabelRequest {
+  string org_slug = 1;
+  string name = 2;
+  string color = 3;
+  optional int64 repository_id = 4;
+}
+
+message UpdateLabelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  optional string name = 3;
+  optional string color = 4;
+}
+
+message DeleteLabelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message DeleteLabelResponse {}
+
+message AddLabelRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 label_id = 3;
+}
+
+message AddLabelResponse {}
+
+message RemoveLabelRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 label_id = 3;
+}
+
+message RemoveLabelResponse {}

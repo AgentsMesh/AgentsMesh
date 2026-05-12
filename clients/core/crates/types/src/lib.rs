@@ -35,6 +35,7 @@ mod service_error;
 mod sso;
 mod support_ticket;
 mod ticket;
+mod ticket_proto;
 mod ticket_relations_proto;
 mod ticket_requests;
 mod token_usage;
@@ -120,6 +121,16 @@ pub mod proto_user_credential_v1 {
 /// the wire — the adapter remaps to the legacy `{comments, ...}` shape.
 pub mod proto_ticket_relations_v1 {
     pub use super::ticket_relations_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.ticket.v1`. Re-exported as a
+/// distinct module so the legacy serde `Ticket` / `Label` / `BoardColumn`
+/// (REST path) and the prost mirrors (Connect path) coexist during the
+/// dual-track migration window without name collisions. PR 986a38ca6
+/// reconciliation: list envelope unified to `{items, total, limit,
+/// offset}`; legacy `{tickets, ...}` shape lives only in the TS adapter.
+pub mod proto_ticket_v1 {
+    pub use super::ticket_proto::*;
 }
 
 /// Connect-RPC binary-wire DTOs for `proto.org.v1`. Re-exported as a distinct

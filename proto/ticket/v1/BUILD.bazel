@@ -1,0 +1,32 @@
+load("@rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
+
+# Bazel-native protobuf code generation for ticket.v1.
+#
+# Mirrors proto/repository/v1/BUILD.bazel — same hermetic protoc/protoc-gen-go
+# pipeline, same `proto/gen/go/<svc>/v1` importpath shape. The Rust prost
+# DTOs are hand-maintained at clients/core/crates/types/src/ticket_proto.rs
+# (Rust source-of-truth pending `tools/gen_rust_proto` codegen — see
+# ADR §"Codegen"); `tools/validate_prost_tags` (//proto/ticket/v1:ticket_validate)
+# pins the .proto field number ↔ Rust `prost(tag = N)` mapping at build time.
+
+proto_library(
+    name = "ticket_proto",
+    srcs = ["ticket.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "ticket_go_proto",
+    compilers = ["@rules_go//proto:go_proto"],
+    importpath = "github.com/anthropics/agentsmesh/proto/gen/go/ticket/v1",
+    proto = ":ticket_proto",
+    visibility = ["//visibility:public"],
+)
+
+validate_prost_tags(
+    name = "ticket_validate",
+    proto = "ticket.proto",
+    rust = "//clients/core/crates/types:src/ticket_proto.rs",
+)
