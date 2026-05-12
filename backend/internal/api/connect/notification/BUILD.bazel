@@ -24,8 +24,11 @@ go_test(
     embed = [":notification"],
     deps = [
         "//backend/internal/domain/notification",
+        "//backend/internal/middleware",
+        "//backend/internal/service/notification",
         "//proto/notification/v1:notification_go_proto",
         "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )
