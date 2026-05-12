@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "interceptors",
+    srcs = [
+        "auth.go",
+        "claims.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/middleware",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+    ],
+)
+
+go_test(
+    name = "interceptors_test",
+    srcs = ["auth_test.go"],
+    deps = [
+        ":interceptors",
+        "//backend/internal/middleware",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

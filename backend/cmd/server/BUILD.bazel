@@ -28,6 +28,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//backend/internal/api/connect",
+        "//backend/internal/api/connect/interceptors",
         "//backend/internal/api/grpc",
         "//backend/internal/api/rest",
         "//backend/internal/api/rest/v1:rest",
@@ -81,6 +82,7 @@ go_library(
         "//backend/migrations",
         "//backend/pkg/crypto",
         "//proto/runner/v1:runner_go_proto",
+        "@com_connectrpc_connect//:connect",
         "@com_github_golang_migrate_migrate_v4//:migrate",
         "@com_github_golang_migrate_migrate_v4//database/postgres",
         "@com_github_golang_migrate_migrate_v4//source/iofs",
