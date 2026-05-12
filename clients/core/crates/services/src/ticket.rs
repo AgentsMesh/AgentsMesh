@@ -236,3 +236,136 @@ impl TicketService {
         serde_json::to_string(&resp).map_err(crate::wire)
     }
 }
+
+// =============================================================================
+// Connect-RPC (binary wire). See proto-naming-conventions.md §2.5.
+// =============================================================================
+//
+// Each `*_connect` method takes prost-encoded bytes and returns
+// prost-encoded bytes — matching the wasm bridge's `Result<Vec<u8>, String>`
+// surface. Caller (TS) encodes via @bufbuild/protobuf .toBinary() and
+// decodes via .fromBinary().
+
+use agentsmesh_types::proto_ticket_v1 as ticket_proto;
+use prost::Message;
+
+impl TicketService {
+    pub async fn list_tickets_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::ListTicketsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_tickets request: {e}"))?;
+        let resp = self.client.list_tickets_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn get_ticket_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::GetTicketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode get_ticket request: {e}"))?;
+        let resp = self.client.get_ticket_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn create_ticket_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::CreateTicketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode create_ticket request: {e}"))?;
+        let resp = self.client.create_ticket_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_ticket_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::UpdateTicketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_ticket request: {e}"))?;
+        let resp = self.client.update_ticket_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn delete_ticket_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::DeleteTicketRequest::decode(request_bytes)
+            .map_err(|e| format!("decode delete_ticket request: {e}"))?;
+        let resp = self.client.delete_ticket_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_ticket_status_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::UpdateTicketStatusRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_ticket_status request: {e}"))?;
+        let resp = self.client.update_ticket_status_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn get_active_tickets_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::GetActiveTicketsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode get_active_tickets request: {e}"))?;
+        let resp = self.client.get_active_tickets_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn get_board_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::GetBoardRequest::decode(request_bytes)
+            .map_err(|e| format!("decode get_board request: {e}"))?;
+        let resp = self.client.get_board_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn get_sub_tickets_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::GetSubTicketsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode get_sub_tickets request: {e}"))?;
+        let resp = self.client.get_sub_tickets_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn add_assignee_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::AddAssigneeRequest::decode(request_bytes)
+            .map_err(|e| format!("decode add_assignee request: {e}"))?;
+        let resp = self.client.add_assignee_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn remove_assignee_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::RemoveAssigneeRequest::decode(request_bytes)
+            .map_err(|e| format!("decode remove_assignee request: {e}"))?;
+        let resp = self.client.remove_assignee_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn list_labels_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::ListLabelsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode list_labels request: {e}"))?;
+        let resp = self.client.list_labels_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn create_label_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::CreateLabelRequest::decode(request_bytes)
+            .map_err(|e| format!("decode create_label request: {e}"))?;
+        let resp = self.client.create_label_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_label_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::UpdateLabelRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_label request: {e}"))?;
+        let resp = self.client.update_label_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn delete_label_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::DeleteLabelRequest::decode(request_bytes)
+            .map_err(|e| format!("decode delete_label request: {e}"))?;
+        let resp = self.client.delete_label_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn add_label_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::AddLabelRequest::decode(request_bytes)
+            .map_err(|e| format!("decode add_label request: {e}"))?;
+        let resp = self.client.add_label_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn remove_label_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = ticket_proto::RemoveLabelRequest::decode(request_bytes)
+            .map_err(|e| format!("decode remove_label request: {e}"))?;
+        let resp = self.client.remove_label_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+}
