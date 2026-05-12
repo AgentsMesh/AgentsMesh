@@ -1,0 +1,103 @@
+// RepoSkillService — installed Skill management per repository.
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/extension_skills.go
+// per .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.extension.v1 (shared with skill_registry + market)
+//   * org_slug at field 1 of every request
+//   * snake_case fields, no json_name annotations
+//   * list response = {items, total, limit, offset} uniform envelope
+//   * update/install return entity directly (no {skill: ...} wrapper)
+//
+// DEVIATION: InstallSkillFromUpload (multipart POST) stays on REST. Connect
+// has no multipart story — same exception as support_ticket Create/AddMessage.
+// The runbook documents this in the "Service-specific deviations" table.
+
+syntax = "proto3";
+
+package proto.extension.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/extension/v1;extensionv1";
+
+service RepoSkillService {
+  rpc ListRepoSkills(ListRepoSkillsRequest) returns (ListRepoSkillsResponse);
+  rpc InstallSkillFromMarket(InstallSkillFromMarketRequest) returns (InstalledSkill);
+  rpc InstallSkillFromGitHub(InstallSkillFromGitHubRequest) returns (InstalledSkill);
+  rpc UpdateSkill(UpdateSkillRequest) returns (InstalledSkill);
+  rpc UninstallSkill(UninstallSkillRequest) returns (UninstallSkillResponse);
+}
+
+// InstalledSkill mirrors backend/internal/domain/extension/installed_skill.go
+// (the version surfaced to clients). market_item is intentionally absent;
+// the renderer queries the marketplace separately when it needs catalog
+// fields beyond market_item_id.
+message InstalledSkill {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 repository_id = 3;
+  // null for github / upload installs.
+  optional int64 market_item_id = 4;
+  // org / user
+  string scope = 5;
+  optional int64 installed_by = 6;
+  string slug = 7;
+  // market / github / upload
+  string install_source = 8;
+  string source_url = 9;
+  string content_sha = 10;
+  string storage_key = 11;
+  int64 package_size = 12;
+  // null = track latest (market source) or no pinning.
+  optional int32 pinned_version = 13;
+  bool is_enabled = 14;
+  string created_at = 15;
+  string updated_at = 16;
+}
+
+message ListRepoSkillsRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  // org / user / all — empty defaults to "all" on the server.
+  optional string scope = 3;
+}
+
+message ListRepoSkillsResponse {
+  repeated InstalledSkill items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message InstallSkillFromMarketRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 market_item_id = 3;
+  // org / user — org-scope requires admin role.
+  string scope = 4;
+}
+
+message InstallSkillFromGitHubRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  string url = 3;
+  optional string branch = 4;
+  optional string path = 5;
+  // org / user — org-scope requires admin role.
+  string scope = 6;
+}
+
+message UpdateSkillRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 install_id = 3;
+  // Tri-state intentionally: absent = no change, true/false = update.
+  optional bool is_enabled = 4;
+  optional int32 pinned_version = 5;
+}
+
+message UninstallSkillRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 install_id = 3;
+}
+
+message UninstallSkillResponse {}

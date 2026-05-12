@@ -53,6 +53,72 @@ impl WasmExtensionService {
         self.0.list_skill_registry_overrides_connect(request).await
     }
 
+    // -- MarketService --
+
+    #[wasm_bindgen(js_name = listMarketSkillsConnect)]
+    pub async fn list_market_skills_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_market_skills_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = listMarketMcpServersConnect)]
+    pub async fn list_market_mcp_servers_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_market_mcp_servers_connect(request).await
+    }
+
+    // -- RepoSkillService --
+
+    #[wasm_bindgen(js_name = listRepoSkillsConnect)]
+    pub async fn list_repo_skills_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_repo_skills_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = installSkillFromMarketConnect)]
+    pub async fn install_skill_from_market_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.install_skill_from_market_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = installSkillFromGithubConnect)]
+    pub async fn install_skill_from_github_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.install_skill_from_github_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = updateSkillConnect)]
+    pub async fn update_skill_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.update_skill_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = uninstallSkillConnect)]
+    pub async fn uninstall_skill_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.uninstall_skill_connect(request).await
+    }
+
+    // -- RepoMcpService --
+
+    #[wasm_bindgen(js_name = listRepoMcpServersConnect)]
+    pub async fn list_repo_mcp_servers_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_repo_mcp_servers_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = installMcpFromMarketConnect)]
+    pub async fn install_mcp_from_market_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.install_mcp_from_market_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = installCustomMcpServerConnect)]
+    pub async fn install_custom_mcp_server_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.install_custom_mcp_server_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = updateMcpServerConnect)]
+    pub async fn update_mcp_server_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.update_mcp_server_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = uninstallMcpServerConnect)]
+    pub async fn uninstall_mcp_server_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.uninstall_mcp_server_connect(request).await
+    }
+
     // -------- Legacy REST JSON methods (preserved during dual-track) --------
 
     pub async fn list_skill_registries(&self) -> Result<String, String> {

@@ -1,0 +1,124 @@
+// MarketService — read-only marketplace catalog (skills + MCP servers).
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/extension.go
+// (ListMarketSkills + ListMarketMcpServers) per
+// .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.extension.v1 — shared with skill_registry.proto so
+//     the go_proto_library bundles every service into the same Go pkg
+//     (extensionv1) and matches the canonical Go importpath.
+//   * org_slug at field 1 of every request (no path params on Connect URLs)
+//   * snake_case fields, no json_name annotations
+//   * list response = {items, total, limit, offset} uniform envelope
+//   * timestamps as string ISO-8601 (no google.protobuf.Timestamp)
+//
+// Both endpoints are org-scoped — the REST handler reads `tenant.OrganizationID`
+// before the repo query so platform-level + org-specific market items merge
+// correctly.
+
+syntax = "proto3";
+
+package proto.extension.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/extension/v1;extensionv1";
+
+service MarketService {
+  rpc ListMarketSkills(ListMarketSkillsRequest) returns (ListMarketSkillsResponse);
+  rpc ListMarketMcpServers(ListMarketMcpServersRequest) returns (ListMarketMcpServersResponse);
+}
+
+// SkillMarketItem mirrors backend/internal/domain/extension/skill_market_item.go
+// minus eager-loaded associations the renderer never reads. content_sha is
+// preserved — UI shows it on install dialogs to confirm provenance.
+message SkillMarketItem {
+  int64 id = 1;
+  int64 registry_id = 2;
+  string slug = 3;
+  string display_name = 4;
+  string description = 5;
+  string license = 6;
+  string compatibility = 7;
+  string allowed_tools = 8;
+  string category = 9;
+  string content_sha = 10;
+  string storage_key = 11;
+  int64 package_size = 12;
+  int32 version = 13;
+  // Agent whitelist parsed from agent_filter jsonb; empty = all agents.
+  repeated string agent_filter = 14;
+  bool is_active = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+// McpEnvVarSchemaEntry mirrors backend EnvVarSchemaEntry — describes a
+// required/optional env variable the user supplies at install time.
+message McpEnvVarSchemaEntry {
+  string name = 1;
+  string label = 2;
+  bool required = 3;
+  bool sensitive = 4;
+  string placeholder = 5;
+}
+
+// McpMarketItem mirrors backend/internal/domain/extension/mcp_market_item.go.
+// default_args / default_http_headers / env_var_schema land as JSON strings
+// preserving the existing wire surface (the renderer parses them locally).
+message McpMarketItem {
+  int64 id = 1;
+  string slug = 2;
+  string name = 3;
+  string description = 4;
+  string icon = 5;
+  string transport_type = 6;
+  string command = 7;
+  // default_args is the raw JSON array, e.g. `["arg1","arg2"]` — preserved
+  // as a string so the wire matches REST's `json.RawMessage` round-trip.
+  string default_args = 8;
+  string default_http_url = 9;
+  // default_http_headers is the raw JSON array (header schema entries).
+  string default_http_headers = 10;
+  repeated McpEnvVarSchemaEntry env_var_schema = 11;
+  // Agent whitelist parsed from agent_filter jsonb; empty = all agents.
+  repeated string agent_filter = 12;
+  string category = 13;
+  bool is_active = 14;
+  // seed / registry / admin
+  string source = 15;
+  string registry_name = 16;
+  string version = 17;
+  string repository_url = 18;
+  // registry_meta as JSON string, preserved verbatim from backend.
+  string registry_meta = 19;
+  optional string last_synced_at = 20;
+  string created_at = 21;
+  string updated_at = 22;
+}
+
+message ListMarketSkillsRequest {
+  string org_slug = 1;
+  // Free-text query against slug/display_name/description.
+  optional string query = 2;
+  optional string category = 3;
+}
+
+message ListMarketSkillsResponse {
+  repeated SkillMarketItem items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListMarketMcpServersRequest {
+  string org_slug = 1;
+  optional string query = 2;
+  optional string category = 3;
+  optional int32 offset = 4;
+  optional int32 limit = 5;
+}
+
+message ListMarketMcpServersResponse {
+  repeated McpMarketItem items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}

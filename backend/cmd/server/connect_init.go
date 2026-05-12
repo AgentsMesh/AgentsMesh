@@ -88,7 +88,11 @@ func wrapWithConnect(cfg *config.Config, svc *serviceContainer, rest *v1.Service
 // mountConnectServices is the seam each per-service migration PR adds
 // to. Specialist PRs insert one line per service.
 func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Services, cfg *config.Config, opts []connect.HandlerOption) {
-	extensionconnect.Mount(mux, extensionconnect.NewServer(svc.extension, svc.org), opts...)
+	extensionSrv := extensionconnect.NewServer(svc.extension, svc.org)
+	extensionconnect.Mount(mux, extensionSrv, opts...)
+	extensionconnect.MountMarket(mux, extensionconnect.NewMarketServer(extensionSrv), opts...)
+	extensionconnect.MountRepoSkill(mux, extensionconnect.NewRepoSkillServer(extensionSrv), opts...)
+	extensionconnect.MountRepoMcp(mux, extensionconnect.NewRepoMcpServer(extensionSrv), opts...)
 	repositoryconnect.Mount(mux, repositoryconnect.NewServer(
 		svc.repository, svc.org,
 		repositoryconnect.WithBillingService(svc.billing),

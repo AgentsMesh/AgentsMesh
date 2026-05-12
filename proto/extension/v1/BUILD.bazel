@@ -17,7 +17,12 @@ load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
 
 proto_library(
     name = "extension_proto",
-    srcs = ["skill_registry.proto"],
+    srcs = [
+        "market.proto",
+        "repo_mcp.proto",
+        "repo_skill.proto",
+        "skill_registry.proto",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -29,9 +34,29 @@ go_proto_library(
     visibility = ["//visibility:public"],
 )
 
-# Watch list hazard #8 — catch hand-written prost struct drift.
+# Watch list hazard #8 — catch hand-written prost struct drift. One target
+# per .proto / Rust file pair so a drift surfaces with the exact pair that
+# diverged.
 validate_prost_tags(
     name = "extension_validate",
     proto = "skill_registry.proto",
     rust = "//clients/core/crates/types:src/extension_proto.rs",
+)
+
+validate_prost_tags(
+    name = "extension_market_validate",
+    proto = "market.proto",
+    rust = "//clients/core/crates/types:src/extension_market_proto.rs",
+)
+
+validate_prost_tags(
+    name = "extension_repo_skill_validate",
+    proto = "repo_skill.proto",
+    rust = "//clients/core/crates/types:src/extension_repo_skill_proto.rs",
+)
+
+validate_prost_tags(
+    name = "extension_repo_mcp_validate",
+    proto = "repo_mcp.proto",
+    rust = "//clients/core/crates/types:src/extension_repo_mcp_proto.rs",
 )

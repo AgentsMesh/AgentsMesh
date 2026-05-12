@@ -1,0 +1,117 @@
+// RepoMcpService — installed MCP server management per repository.
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/extension_mcp.go
+// per .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.extension.v1 (shared with skill_registry + market)
+//   * org_slug at field 1 of every request
+//   * snake_case fields, no json_name annotations
+//   * list response = {items, total, limit, offset} uniform envelope
+//   * update/install return entity directly (no {mcp_server: ...} wrapper)
+//
+// env_vars / args / http_headers are passed as JSON strings — they're
+// arbitrary user-provided structures, and bouncing through google.protobuf.Any
+// or `map<string, string>` would force three places to special-case the
+// schema. The TS adapter parses these strings before they reach call sites.
+
+syntax = "proto3";
+
+package proto.extension.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/extension/v1;extensionv1";
+
+service RepoMcpService {
+  rpc ListRepoMcpServers(ListRepoMcpServersRequest) returns (ListRepoMcpServersResponse);
+  rpc InstallMcpFromMarket(InstallMcpFromMarketRequest) returns (InstalledMcpServer);
+  rpc InstallCustomMcpServer(InstallCustomMcpServerRequest) returns (InstalledMcpServer);
+  rpc UpdateMcpServer(UpdateMcpServerRequest) returns (InstalledMcpServer);
+  rpc UninstallMcpServer(UninstallMcpServerRequest) returns (UninstallMcpServerResponse);
+}
+
+// InstalledMcpServer mirrors backend/internal/domain/extension/installed_mcp_server.go
+// (the version surfaced to clients). env_vars round-trip as the decrypted
+// JSON object — backend re-encrypts before persist on UpdateMcpServer.
+// market_item is intentionally absent; the renderer queries the marketplace
+// separately when it needs catalog fields beyond market_item_id.
+message InstalledMcpServer {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 repository_id = 3;
+  optional int64 market_item_id = 4;
+  // org / user
+  string scope = 5;
+  optional int64 installed_by = 6;
+  string name = 7;
+  string slug = 8;
+  // stdio / http / sse
+  string transport_type = 9;
+  string command = 10;
+  // args is the raw JSON array preserved verbatim from backend.
+  string args = 11;
+  string http_url = 12;
+  // http_headers is the raw JSON object preserved verbatim.
+  string http_headers = 13;
+  // env_vars is the JSON object of name→value (decrypted at read time).
+  string env_vars = 14;
+  bool is_enabled = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+message ListRepoMcpServersRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  // org / user / all — empty defaults to "all" on the server.
+  optional string scope = 3;
+}
+
+message ListRepoMcpServersResponse {
+  repeated InstalledMcpServer items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message InstallMcpFromMarketRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 market_item_id = 3;
+  // org / user — org-scope requires admin role.
+  string scope = 4;
+  // env_vars supplied by the user at install time (JSON object string).
+  optional string env_vars = 5;
+}
+
+message InstallCustomMcpServerRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  string name = 3;
+  string slug = 4;
+  // stdio / http / sse
+  string transport_type = 5;
+  optional string command = 6;
+  // args as JSON array string, max 50 entries — validated server-side.
+  optional string args = 7;
+  optional string http_url = 8;
+  // http_headers as JSON object string, max 20 entries — validated server-side.
+  optional string http_headers = 9;
+  // org / user — org-scope requires admin role.
+  string scope = 10;
+  optional string env_vars = 11;
+}
+
+message UpdateMcpServerRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 install_id = 3;
+  // Tri-state intentionally: absent = no change.
+  optional bool is_enabled = 4;
+  optional string env_vars = 5;
+}
+
+message UninstallMcpServerRequest {
+  string org_slug = 1;
+  int64 repository_id = 2;
+  int64 install_id = 3;
+}
+
+message UninstallMcpServerResponse {}
