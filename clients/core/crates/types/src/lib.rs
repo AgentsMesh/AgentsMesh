@@ -22,6 +22,7 @@ mod extension_proto;
 mod extension_repo_mcp_proto;
 mod extension_repo_skill_proto;
 mod file_upload;
+mod file_proto;
 mod grant;
 mod grant_proto;
 mod invitation;
@@ -268,6 +269,15 @@ pub mod proto_notification_v1 {
 /// the dual-track window.
 pub mod proto_grant_v1 {
     pub use super::grant_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.file.v1`. Org-scoped service
+/// — every request carries `org_slug = 1`. Single-RPC service for S3
+/// presigned upload URLs. Coexists with the legacy serde
+/// `PresignRequest` / `PresignResponse` in `file_upload.rs` for the
+/// dual-track migration window.
+pub mod proto_file_v1 {
+    pub use super::file_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;

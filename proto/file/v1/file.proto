@@ -1,0 +1,32 @@
+// FileService — presigned upload URL generation.
+//
+// Migrated from REST handler in
+//   backend/internal/api/rest/v1/files.go (POST /files/presign)
+// per .claude/plans/proto-naming-conventions.md.
+//
+// Only the presign-URL RPC moves to Connect; the actual PUT to S3 from
+// the browser is direct (no proxy), and the GET URL is consumed
+// client-side as a string. Org-scoped — every request carries
+// `org_slug = 1`.
+
+syntax = "proto3";
+
+package proto.file.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/file/v1;filev1";
+
+service FileService {
+  rpc PresignUpload(PresignUploadRequest) returns (PresignUploadResponse);
+}
+
+message PresignUploadRequest {
+  string org_slug = 1;
+  string filename = 2;
+  string content_type = 3;
+  int64 size = 4;
+}
+
+message PresignUploadResponse {
+  string put_url = 1;
+  string get_url = 2;
+}
