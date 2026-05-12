@@ -1,0 +1,18 @@
+# buf config for committed-mirror TS proto generation.
+#
+# Mirrors the Go pipeline: source-of-truth .proto files in proto/<svc>/v1/,
+# generated TS message classes committed to proto/gen/ts/<svc>/v1/.
+#
+# We commit the generated .ts files (vs running buf in Bazel at build time)
+# because the Bazel-native `ts_proto_library` macro was deferred to a
+# follow-up infra PR — see runbook "TS proto codegen toolchain" + this PR's
+# Specialist agent prompt template.
+#
+# Regenerate: pnpm proto:gen-ts
+
+version: v2
+modules:
+  - path: proto
+    excludes:
+      - proto/runner
+      - proto/gen

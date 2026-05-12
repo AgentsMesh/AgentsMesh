@@ -38,6 +38,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      // Generated proto TS message classes (committed mirror).
+      // Resolves to the same path tsconfig.json's `@proto/*` alias points to,
+      // keeping vitest, ESLint, and Next.js in lockstep.
+      '@proto': resolve(__dirname, '../../proto/gen/ts'),
     },
     // Force a single copy of React across the workspace. Without this,
     // vitest's forked pool workers walk pnpm's virtual store from each

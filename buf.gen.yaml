@@ -1,0 +1,18 @@
+# Generation config for protoc-gen-es (the @bufbuild/protobuf v2 TS codegen).
+#
+# Output: proto/gen/ts/<domain>/v1/<name>_pb.ts — committed to the source
+# tree so vitest, ESLint, and Next.js production builds all consume the
+# same artifacts without a Bazel codegen toolchain at hand. Once the
+# Bazel-native `ts_proto_library` macro lands (see runbook §"TS proto
+# codegen toolchain"), this committed mirror gets replaced by a Bazel
+# rule and is removed in the same PR.
+
+version: v2
+plugins:
+  - local: node_modules/.bin/protoc-gen-es
+    out: proto/gen/ts
+    opt:
+      - target=ts
+      - import_extension=ts
+inputs:
+  - directory: proto

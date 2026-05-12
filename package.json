@@ -2,10 +2,14 @@
   "name": "agentsmesh-workspace-root",
   "private": true,
   "description": "Workspace root. All frontend dependencies live here. First-party @agentsmesh/* packages are NOT in this manifest — they are managed entirely by Bazel via `internal_npm_package` macro and linked at //:node_modules via `npm_link_package`. See build_defs/web/internal_package.bzl.",
+  "scripts": {
+    "proto:gen-ts": "buf generate"
+  },
   "dependencies": {
     "@blocknote/core": "^0.47.3",
     "@blocknote/mantine": "^0.47.3",
     "@blocknote/react": "^0.47.3",
+    "@bufbuild/protobuf": "^2.2.0",
     "@codemirror/autocomplete": "^6.20.1",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-json": "^6.0.2",
@@ -72,6 +76,8 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@bufbuild/buf": "^1.45.0",
+    "@bufbuild/protoc-gen-es": "^2.2.0",
     "@electron-toolkit/preload": "^3",
     "@electron-toolkit/utils": "^4",
     "@playwright/test": "1.50.1",
