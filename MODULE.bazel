@@ -395,7 +395,10 @@ crate.spec(
 # the Go side.
 crate.spec(
     default_features = False,
-    features = ["prost-derive", "std"],
+    features = [
+        "prost-derive",
+        "std",
+    ],
     package = "prost",
     version = "0.13",
 )
