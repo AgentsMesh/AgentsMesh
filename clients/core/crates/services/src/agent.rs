@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use agentsmesh_api_client::ApiClient;
 use agentsmesh_types::*;
+use agentsmesh_types::proto_pod_v1 as pod_proto;
+use prost::Message;
 
 pub struct AgentService {
     client: Arc<ApiClient>,
@@ -101,5 +103,56 @@ impl AgentService {
             .set_default_agentpod_provider(id)
             .await.map_err(crate::wire)?;
         Ok(())
+    }
+
+    // -------- Connect-RPC (binary wire) — AgentPodSettingsService --------
+    //
+    // Each `*_connect` method takes prost-encoded bytes and returns
+    // prost-encoded bytes (conventions §2.5). User-scoped — auth comes from
+    // the Connect interceptor's TenantContext, no payload-derived org_slug.
+
+    pub async fn get_agentpod_settings_connect(&self) -> Result<Vec<u8>, String> {
+        let resp = self.client.get_agentpod_settings_connect().await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_agentpod_settings_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = pod_proto::UpdateSettingsRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_agentpod_settings request: {e}"))?;
+        let resp = self.client.update_agentpod_settings_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn list_agentpod_providers_connect(&self) -> Result<Vec<u8>, String> {
+        let resp = self.client.list_agentpod_providers_connect().await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn create_agentpod_provider_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = pod_proto::CreateProviderRequest::decode(request_bytes)
+            .map_err(|e| format!("decode create_agentpod_provider request: {e}"))?;
+        let resp = self.client.create_agentpod_provider_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn update_agentpod_provider_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = pod_proto::UpdateProviderRequest::decode(request_bytes)
+            .map_err(|e| format!("decode update_agentpod_provider request: {e}"))?;
+        let resp = self.client.update_agentpod_provider_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn delete_agentpod_provider_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = pod_proto::DeleteProviderRequest::decode(request_bytes)
+            .map_err(|e| format!("decode delete_agentpod_provider request: {e}"))?;
+        let resp = self.client.delete_agentpod_provider_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
+    pub async fn set_default_agentpod_provider_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = pod_proto::SetDefaultProviderRequest::decode(request_bytes)
+            .map_err(|e| format!("decode set_default_agentpod_provider request: {e}"))?;
+        let resp = self.client.set_default_agentpod_provider_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
     }
 }

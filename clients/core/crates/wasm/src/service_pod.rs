@@ -100,4 +100,46 @@ impl WasmPodService {
     pub async fn get_pod_connection(&self, pod_key: &str) -> Result<String, String> {
         self.0.get_pod_connection(pod_key).await
     }
+
+    // -------- Connect-RPC (binary wire) --------
+    //
+    // Each `*_connect` method takes prost-encoded bytes (Uint8Array on the JS
+    // side) and returns prost-encoded bytes — TS callers encode via
+    // @bufbuild/protobuf .toBinary() and decode via .fromBinary().
+
+    pub async fn list_pods_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_pods_connect(request_bytes).await
+    }
+
+    pub async fn get_pod_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.get_pod_connect(request_bytes).await
+    }
+
+    pub async fn create_pod_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.create_pod_connect(request_bytes).await
+    }
+
+    pub async fn terminate_pod_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.terminate_pod_connect(request_bytes).await
+    }
+
+    pub async fn update_pod_alias_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.update_pod_alias_connect(request_bytes).await
+    }
+
+    pub async fn update_pod_perpetual_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.update_pod_perpetual_connect(request_bytes).await
+    }
+
+    pub async fn get_pod_connection_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.get_pod_connection_connect(request_bytes).await
+    }
+
+    pub async fn send_pod_prompt_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.send_pod_prompt_connect(request_bytes).await
+    }
+
+    pub async fn list_pods_by_ticket_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.list_pods_by_ticket_connect(request_bytes).await
+    }
 }
