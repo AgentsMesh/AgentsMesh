@@ -1,0 +1,273 @@
+// TicketRelationsService — org-scoped relations / comments / commits /
+// merge-requests associated with a ticket (identified by `ticket_slug`).
+//
+// Migrated from REST handlers in:
+//   backend/internal/api/rest/v1/ticket_relations.go
+//   backend/internal/api/rest/v1/ticket_comments.go
+//   backend/internal/api/rest/v1/ticket_commits.go
+//
+// Single service per `.proto` file (conventions §2) — the four sub-domains
+// share the same `ticket_slug` lookup boilerplate and same auth scope, so
+// keeping them together is cheaper than four parallel proto packages.
+// Method names carry the sub-domain prefix to keep the surface unambiguous:
+//   ListRelations / CreateRelation / DeleteRelation
+//   ListMergeRequests
+//   ListCommits / LinkCommit / UnlinkCommit
+//   ListComments / CreateComment / UpdateComment / DeleteComment
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - backend domain/ticket/{relation,merge_request,commit,comment}.go
+//   - clients/core/crates/types/src/ticket.rs (TicketRelation/Commit/Comment) + ticket_requests.rs
+//   - clients/web/src/components/tickets/* call-sites consume {relations|commits|comments|merge_requests} keys
+//
+// PR 986a38ca6 reconciliation: the legacy REST handler returned
+// `{comments, total, limit, offset}` for the comment list — preserved here
+// as the dedicated ListCommentsResponse envelope. Plain `relations` /
+// `commits` / `merge_requests` keep their list-only shape to match REST.
+
+syntax = "proto3";
+
+package proto.ticket_relations.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/ticket_relations/v1;ticketrelationsv1";
+
+service TicketRelationsService {
+  // Relations
+  rpc ListRelations(ListRelationsRequest) returns (ListRelationsResponse);
+  rpc CreateRelation(CreateRelationRequest) returns (Relation);
+  rpc DeleteRelation(DeleteRelationRequest) returns (DeleteRelationResponse);
+
+  // Merge requests (read-only — sync runs server-side off webhook events)
+  rpc ListMergeRequests(ListMergeRequestsRequest) returns (ListMergeRequestsResponse);
+
+  // Commits
+  rpc ListCommits(ListCommitsRequest) returns (ListCommitsResponse);
+  rpc LinkCommit(LinkCommitRequest) returns (Commit);
+  rpc UnlinkCommit(UnlinkCommitRequest) returns (UnlinkCommitResponse);
+
+  // Comments
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse);
+  rpc CreateComment(CreateCommentRequest) returns (Comment);
+  rpc UpdateComment(UpdateCommentRequest) returns (Comment);
+  rpc DeleteComment(DeleteCommentRequest) returns (DeleteCommentResponse);
+}
+
+// ============================================================
+// Entities
+// ============================================================
+
+// Relation mirrors backend/internal/domain/ticket/relation.go. SourceTicketID /
+// TargetTicketID surface as int64; the REST handler returns them under
+// `source_ticket_id` / `target_ticket_id`, but the Rust DTO carries
+// `source_slug` / `target_slug` — keep both shapes here, leaving the
+// resolution to the converter (PR #246 reconciliation).
+message Relation {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 source_ticket_id = 3;
+  int64 target_ticket_id = 4;
+  // blocks / blocked_by / relates_to / duplicates
+  string relation_type = 5;
+  string created_at = 6;
+}
+
+// MergeRequest mirrors backend/internal/domain/ticket/merge_request.go and
+// proto.repository.v1.MergeRequest. We duplicate the structural fields here
+// (rather than import) so the ticket_relations service stays self-contained
+// for the migration — a follow-up consolidation PR can move to a shared
+// `proto/common/v1/merge_request.proto` once both services are migrated.
+message MergeRequest {
+  int64 id = 1;
+  int32 mr_iid = 2;
+  string title = 3;
+  // opened / merged / closed
+  string state = 4;
+  string mr_url = 5;
+  string source_branch = 6;
+  string target_branch = 7;
+  optional string pipeline_status = 8;
+  optional int64 pipeline_id = 9;
+  optional string pipeline_url = 10;
+  optional int64 ticket_id = 11;
+  optional int64 pod_id = 12;
+  optional string merge_commit_sha = 13;
+  optional string merged_at = 14;
+  optional int64 merged_by_id = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+// Commit mirrors backend/internal/domain/ticket/commit.go.
+message Commit {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 ticket_id = 3;
+  int64 repository_id = 4;
+  optional int64 pod_id = 5;
+  string commit_sha = 6;
+  string commit_message = 7;
+  optional string commit_url = 8;
+  optional string author_name = 9;
+  optional string author_email = 10;
+  optional string committed_at = 11;
+  string created_at = 12;
+}
+
+// CommentMention mirrors ticket.CommentMention; surfaced inline on Comment.
+message CommentMention {
+  int64 user_id = 1;
+  string username = 2;
+}
+
+// CommentUser is the minimal user shape the REST handler serializes via the
+// `User *AssigneeUser` GORM association (domain/ticket/assignee.go).
+message CommentUser {
+  int64 id = 1;
+  string username = 2;
+  optional string name = 3;
+  optional string avatar = 4;
+  optional string email = 5;
+}
+
+// Comment mirrors backend/internal/domain/ticket/comment.go.
+message Comment {
+  int64 id = 1;
+  int64 ticket_id = 2;
+  int64 user_id = 3;
+  string content = 4;
+  optional int64 parent_id = 5;
+  repeated CommentMention mentions = 6;
+  string created_at = 7;
+  string updated_at = 8;
+  optional CommentUser user = 9;
+}
+
+// ============================================================
+// Relations RPCs
+// ============================================================
+
+message ListRelationsRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message ListRelationsResponse {
+  repeated Relation items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message CreateRelationRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  string target_slug = 3;
+  // blocks / blocked_by / relates_to / duplicates
+  string relation_type = 4;
+}
+
+message DeleteRelationRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 relation_id = 3;
+}
+
+message DeleteRelationResponse {}
+
+// ============================================================
+// Merge requests RPCs
+// ============================================================
+
+message ListMergeRequestsRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message ListMergeRequestsResponse {
+  repeated MergeRequest items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// ============================================================
+// Commits RPCs
+// ============================================================
+
+message ListCommitsRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+}
+
+message ListCommitsResponse {
+  repeated Commit items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message LinkCommitRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  string commit_sha = 3;
+  optional string commit_message = 4;
+  optional string commit_url = 5;
+  optional string author_name = 6;
+  optional string author_email = 7;
+  // RFC 3339; absent = use server time
+  optional string committed_at = 8;
+}
+
+message UnlinkCommitRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 commit_id = 3;
+}
+
+message UnlinkCommitResponse {}
+
+// ============================================================
+// Comments RPCs
+// ============================================================
+
+message ListCommentsRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  // Default 50 server-side when absent
+  optional int32 limit = 3;
+  // Default 0 server-side when absent
+  optional int32 offset = 4;
+}
+
+// ListCommentsResponse preserves the {items, total, limit, offset} envelope
+// the REST handler emitted (PR 986a38ca6 — pagination must round-trip).
+message ListCommentsResponse {
+  repeated Comment items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message CreateCommentRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  string content = 3;
+  optional int64 parent_id = 4;
+  repeated CommentMention mentions = 5;
+}
+
+message UpdateCommentRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 comment_id = 3;
+  string content = 4;
+  repeated CommentMention mentions = 5;
+}
+
+message DeleteCommentRequest {
+  string org_slug = 1;
+  string ticket_slug = 2;
+  int64 comment_id = 3;
+}
+
+message DeleteCommentResponse {}
