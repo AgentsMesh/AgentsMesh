@@ -4,6 +4,7 @@ mod agentpod_settings_proto;
 mod apikey;
 mod apikey_proto;
 mod auth;
+mod auth_proto;
 mod autopilot;
 mod billing;
 mod billing_proto;
@@ -158,6 +159,15 @@ pub mod proto_org_v1 {
 /// with the legacy serde `Invitation` for the dual-track window.
 pub mod proto_invitation_v1 {
     pub use super::invitation_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.auth.v1`. AuthService is public
+/// (login / register / refresh / oauth / verify-email / forgot- and
+/// reset-password — no token required); AuthSessionService.Logout is
+/// authenticated. Coexists with the legacy serde `AuthSession` / `User` /
+/// `LoginRequest` / `RegisterRequest` in `auth.rs` for the dual-track window.
+pub mod proto_auth_v1 {
+    pub use super::auth_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;
