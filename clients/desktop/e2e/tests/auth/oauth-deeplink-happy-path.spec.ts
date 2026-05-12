@@ -97,9 +97,12 @@ test.describe("Auth · OAuth deep link · happy path", () => {
     // 5. Direct assertion on the bug: userGetMe must succeed now that
     //    setAuth completed. If apply_session forgets to fan out
     //    authApplySession IPC, this fails the same way the production
-    //    "Sign in failed · auth_expired" UI does.
+    //    "Sign in failed · auth_expired" UI does. IPC userGetMe returns
+    //    a serialized User directly (Rust ApiClient unwraps the backend's
+    //    `{user: ...}` envelope in get_resource), so JSON.parse yields
+    //    the bare user object.
     const meJson = await invokeIpc<string>(page, "userGetMe");
-    const me = JSON.parse(meJson) as { user: { email: string } };
-    expect(me.user.email).toBe(TEST_USER.email);
+    const me = JSON.parse(meJson) as { email: string };
+    expect(me.email).toBe(TEST_USER.email);
   });
 });
