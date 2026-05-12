@@ -1,11 +1,12 @@
 load("@rules_go//proto:def.bzl", "go_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
 
 # Bazel-native protobuf code generation for extension.v1.
 #
 # Mirrors proto/runner/v1/BUILD.bazel — same hermetic protoc/protoc-gen-go
 # pipeline, same `proto/gen/go/<svc>/v1` importpath shape. The Rust prost
-# DTOs are hand-maintained at clients/core/crates/types/src/extension.rs
+# DTOs are hand-maintained at clients/core/crates/types/src/extension_proto.rs
 # (Rust source-of-truth pending `tools/gen_rust_proto` codegen — see
 # ADR §"Codegen"); `tools/validate_prost_tags` pins the
 # .proto field number ↔ Rust `prost(tag = N)` mapping at build time.
@@ -26,4 +27,11 @@ go_proto_library(
     importpath = "github.com/anthropics/agentsmesh/proto/gen/go/extension/v1",
     proto = ":extension_proto",
     visibility = ["//visibility:public"],
+)
+
+# Watch list hazard #8 — catch hand-written prost struct drift.
+validate_prost_tags(
+    name = "extension_validate",
+    proto = "skill_registry.proto",
+    rust = "//clients/core/crates/types:src/extension_proto.rs",
 )

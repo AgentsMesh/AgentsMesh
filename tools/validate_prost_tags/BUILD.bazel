@@ -1,0 +1,50 @@
+# Bazel hooks for tools/validate_prost_tags (watch list #8).
+#
+# Exposes:
+#   :validate_prost_tags         — the wrapper sh_binary invoked by
+#                                  validate_prost_tags(...) macro in rule.bzl
+#   :validate_prost_tags_smoke   — self-test verifying the parser logic
+#                                  agrees on known-good / known-drifted samples
+
+# Wrapper that invokes the Python script via /usr/bin/env python3. We
+# intentionally don't hermitize Python — the script is regex-only, no
+# pip deps, and every CI runner ships Python 3.x. Adding rules_python +
+# a toolchain repo for a ~200 LoC linter is the wrong trade-off.
+sh_binary(
+    name = "validate_prost_tags",
+    srcs = [":validate_prost_tags_sh"],
+    data = ["validate_prost_tags.py"],
+    visibility = ["//visibility:public"],
+)
+
+# The wrapper script — `exec python3 <data>` so Bazel resolves `data` via
+# runfiles and the validator picks up the python source colocated next to
+# the binary.
+genrule(
+    name = "validate_prost_tags_sh",
+    outs = ["validate_prost_tags_runner.sh"],
+    cmd = """cat > $@ <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+# Resolve the python source relative to this script's location.
+script_dir="$$(cd "$$(dirname "$$0")" && pwd)"
+# In Bazel runfiles the .py sits next to the wrapper.
+exec /usr/bin/env python3 "$$script_dir/validate_prost_tags.py" "$$@"
+EOF
+""",
+    executable = True,
+)
+
+# Smoke test — runs the validator against a known-good and a known-broken
+# .proto/.rs pair to ensure regex parsing is stable.
+sh_test(
+    name = "validate_prost_tags_smoke",
+    srcs = ["smoke_test.sh"],
+    data = [
+        ":validate_prost_tags",
+        "testdata/good.proto",
+        "testdata/good.rs",
+        "testdata/bad.proto",
+        "testdata/bad.rs",
+    ],
+)

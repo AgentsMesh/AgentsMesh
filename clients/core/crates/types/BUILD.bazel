@@ -9,6 +9,14 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 # binary-wire-only (conventions §2.5, §3) and live in separate `*_proto.rs`
 # files so the legacy serde structs and the prost mirrors stay clearly
 # separated during the dual-track migration.
+
+# `*_proto.rs` files are exported so the proto package BUILD.bazel files
+# can pair them with `validate_prost_tags` rules (watch list #8).
+exports_files(
+    glob(["src/*_proto.rs"]),
+    visibility = ["//proto:__subpackages__"],
+)
+
 rust_library(
     name = "types",
     srcs = glob(["src/**/*.rs"]),
