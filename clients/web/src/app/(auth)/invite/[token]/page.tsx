@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import type { InvitationInfo } from "@/lib/api/invitationTypes";
-import { getInvitationService } from "@/lib/wasm-getters";
+import { acceptInvitation, getInvitationByToken } from "@/lib/api/invitationConnect";
 import { listMyOrgs } from "@/lib/api/org";
 import { initWasmCore } from "@/lib/wasm-core";
 import { Logo } from "@/components/common";
@@ -31,7 +31,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
     const fetchInvitation = async () => {
       await initWasmCore();
       try {
-        const { invitation: inv } = JSON.parse(await getInvitationService().get_by_token(resolvedParams.token));
+        const inv = await getInvitationByToken(resolvedParams.token);
         setInvitation(inv);
       } catch {
         setError("This invitation is invalid or has expired.");
@@ -51,7 +51,7 @@ export default function InvitePage({ params }: { params: Promise<PageParams> }) 
     setError("");
 
     try {
-      await getInvitationService().accept(resolvedParams.token);
+      await acceptInvitation(resolvedParams.token);
 
       // Refresh organizations list
       const resp = await listMyOrgs();

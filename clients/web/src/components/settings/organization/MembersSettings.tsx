@@ -8,7 +8,12 @@ import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import type { Invitation } from "@/lib/api/invitationTypes";
-import { getInvitationService } from "@/lib/wasm-getters";
+import {
+  createInvitation,
+  listInvitations,
+  resendInvitation,
+  revokeInvitation,
+} from "@/lib/api/invitationConnect";
 import { listMembers, removeMember, updateMemberRole } from "@/lib/api/org";
 import type { TranslationFn } from "./GeneralSettings";
 import { MembersList, type Member } from "./MembersList";
@@ -68,8 +73,8 @@ export function MembersSettings({ t }: MembersSettingsProps) {
     if (!currentOrg) return;
     try {
       setLoadingInvitations(true);
-      const response = JSON.parse(await getInvitationService().list());
-      setPendingInvitations(response.invitations || []);
+      const response = await listInvitations(currentOrg.slug);
+      setPendingInvitations(response.items || []);
     } catch (err) {
       console.error("Failed to load invitations:", err);
     } finally {
@@ -90,7 +95,7 @@ export function MembersSettings({ t }: MembersSettingsProps) {
     setInviting(true);
     setError(null);
     try {
-      await getInvitationService().create(JSON.stringify({email: inviteEmail, role: inviteRole}));
+      await createInvitation(currentOrg.slug, inviteEmail, inviteRole);
       setShowInviteDialog(false);
       setInviteEmail("");
       setInviteRole("member");
@@ -113,15 +118,17 @@ export function MembersSettings({ t }: MembersSettingsProps) {
   };
 
   const handleRevoke = async (invitationId: number) => {
+    if (!currentOrg) return;
     const confirmed = await revokeInvitationDialog.confirm();
     if (!confirmed) return;
-    try { await getInvitationService().revoke(BigInt(invitationId)); setSuccessMessage(t("settings.members.invitationRevoked")); await loadInvitations(); }
+    try { await revokeInvitation(currentOrg.slug, invitationId); setSuccessMessage(t("settings.members.invitationRevoked")); await loadInvitations(); }
     catch (err) { console.error("Failed to revoke invitation:", err); setError(t("settings.members.failedToRevoke")); }
   };
 
   const handleResend = async (invitationId: number) => {
+    if (!currentOrg) return;
     setResendingId(invitationId);
-    try { await getInvitationService().resend(BigInt(invitationId)); setSuccessMessage(t("settings.members.invitationResent")); }
+    try { await resendInvitation(currentOrg.slug, invitationId); setSuccessMessage(t("settings.members.invitationResent")); }
     catch (err) { console.error("Failed to resend invitation:", err); setError(t("settings.members.failedToResend")); }
     finally { setResendingId(null); }
   };
