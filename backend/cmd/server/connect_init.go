@@ -6,9 +6,11 @@ import (
 
 	"connectrpc.com/connect"
 
+	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
+	podconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod"
 	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
 	runnerconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/runner"
 	v1 "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1"
@@ -80,6 +82,8 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	), opts...)
 	apikeyconnect.Mount(mux, apikeyconnect.NewServer(svc.apikey, svc.org), opts...)
 	mountRunnerService(mux, svc, rest, cfg, opts)
+	mountPodService(mux, svc, rest, opts)
+	mountAgentPodSettingsService(mux, svc, opts)
 }
 
 // mountRunnerService wires the runner Connect server with its optional
@@ -110,4 +114,52 @@ func mountRunnerService(mux *http.ServeMux, svc *serviceContainer, rest *v1.Serv
 	}
 	srv := runnerconnect.NewServer(svc.runner, svc.org, serverOpts...)
 	runnerconnect.Mount(mux, srv, opts...)
+}
+
+// mountPodService wires the pod Connect server with its optional
+// dependencies. Mirrors PodHandler / PodConnectHandler in v1/pods.go +
+// v1/pod_relay_connect.go — same deps drawn from v1.Services so Connect
+// and REST agree on every collaborator instance. RunnerCommandSender is
+// optional: when nil, perpetual / send-prompt return CodeUnavailable.
+func mountPodService(mux *http.ServeMux, svc *serviceContainer, rest *v1.Services, opts []connect.HandlerOption) {
+	serverOpts := []podconnect.Option{}
+	if rest.PodOrchestrator != nil {
+		serverOpts = append(serverOpts, podconnect.WithOrchestrator(rest.PodOrchestrator))
+	}
+	if rest.PodCoordinator != nil {
+		serverOpts = append(serverOpts, podconnect.WithPodCoordinator(rest.PodCoordinator))
+		if sender := rest.PodCoordinator.GetCommandSender(); sender != nil {
+			serverOpts = append(serverOpts, podconnect.WithCommandSender(sender))
+			// RunnerStateReader is implemented by the same GRPCCommandSender
+			// instance (duck-typed) — mirrors routes_pods.go:45.
+			if sr, ok := sender.(interface {
+				GetRunnerLocalRelayURL(int64) string
+				GetRunnerNodeID(int64) string
+			}); ok {
+				serverOpts = append(serverOpts, podconnect.WithStateReader(sr))
+			}
+		}
+	}
+	if rest.RelayManager != nil {
+		serverOpts = append(serverOpts, podconnect.WithRelayManager(rest.RelayManager))
+	}
+	if rest.RelayTokenGenerator != nil {
+		serverOpts = append(serverOpts, podconnect.WithTokenGenerator(rest.RelayTokenGenerator))
+	}
+	if rest.GeoResolver != nil {
+		serverOpts = append(serverOpts, podconnect.WithGeoResolver(rest.GeoResolver))
+	}
+	if rest.Grant != nil {
+		serverOpts = append(serverOpts, podconnect.WithGrantService(rest.Grant))
+	}
+	srv := podconnect.NewServer(svc.pod, svc.org, serverOpts...)
+	podconnect.Mount(mux, srv, opts...)
+}
+
+// mountAgentPodSettingsService wires the user-scoped AgentPod settings +
+// AI provider Connect server. No optional deps — both services are wired
+// unconditionally during service init.
+func mountAgentPodSettingsService(mux *http.ServeMux, svc *serviceContainer, opts []connect.HandlerOption) {
+	srv := agentpodsettingsconnect.NewServer(svc.agentpodSettings, svc.agentpodAIProvider)
+	agentpodsettingsconnect.Mount(mux, srv, opts...)
 }
