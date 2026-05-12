@@ -95,4 +95,69 @@ impl WasmRepositoryService {
             .await.map_err(agentsmesh_services::wire)?;
         Ok(())
     }
+
+    // -------- Connect-RPC (binary wire) --------
+    //
+    // Each `*_connect` method takes prost-encoded bytes (Uint8Array on the JS
+    // side) and returns prost-encoded bytes — TS callers encode via
+    // @bufbuild/protobuf .toBinary() and decode via .fromBinary().
+
+    pub async fn list_repositories_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().list_repositories_connect(request_bytes).await
+    }
+
+    pub async fn get_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().get_repository_connect(request_bytes).await
+    }
+
+    pub async fn create_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().create_repository_connect(request_bytes).await
+    }
+
+    pub async fn update_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().update_repository_connect(request_bytes).await
+    }
+
+    pub async fn delete_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().delete_repository_connect(request_bytes).await
+    }
+
+    pub async fn list_repository_branches_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().list_repository_branches_connect(request_bytes).await
+    }
+
+    pub async fn sync_repository_branches_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().sync_repository_branches_connect(request_bytes).await
+    }
+
+    pub async fn list_repository_merge_requests_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().list_repository_merge_requests_connect(request_bytes).await
+    }
+
+    pub async fn register_repository_webhook_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().register_repository_webhook_connect(request_bytes).await
+    }
+
+    pub async fn delete_repository_webhook_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().delete_repository_webhook_connect(request_bytes).await
+    }
+
+    pub async fn get_repository_webhook_status_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().get_repository_webhook_status_connect(request_bytes).await
+    }
+
+    pub async fn get_repository_webhook_secret_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().get_repository_webhook_secret_connect(request_bytes).await
+    }
+
+    pub async fn mark_repository_webhook_configured_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        self.svc().mark_repository_webhook_configured_connect(request_bytes).await
+    }
+
+    // Lazily construct a services::RepositoryService for the Connect bridge.
+    // The legacy JSON methods still call self.client directly (no state, no
+    // bookkeeping) so wrapping them is unnecessary for the dual-track window.
+    fn svc(&self) -> agentsmesh_services::RepositoryService {
+        agentsmesh_services::RepositoryService::new(self.client.clone())
+    }
 }
