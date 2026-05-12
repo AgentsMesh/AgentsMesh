@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use agentsmesh_api_client::ApiClient;
+use agentsmesh_types::proto_file_v1 as fp;
 use agentsmesh_types::*;
+use prost::Message;
 
 pub struct FileService {
     client: Arc<ApiClient>,
@@ -32,5 +34,14 @@ impl FileService {
         self.client.put_raw_bytes(&presign.put_url, content_type, file_data)
             .await.map_err(crate::wire)?;
         Ok(presign.get_url)
+    }
+
+    // -------- Connect-RPC (binary wire) --------
+
+    pub async fn presign_upload_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = fp::PresignUploadRequest::decode(request_bytes)
+            .map_err(|e| format!("decode presign_upload request: {e}"))?;
+        let resp = self.client.presign_upload_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
     }
 }

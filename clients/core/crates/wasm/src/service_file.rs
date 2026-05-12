@@ -23,4 +23,11 @@ impl WasmFileService {
         let bytes = file_data.to_vec();
         self.0.upload_file(bytes, filename, content_type).await
     }
+
+    // -------- Connect-RPC (binary wire) --------
+
+    #[wasm_bindgen(js_name = presignUploadConnect)]
+    pub async fn presign_upload_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.presign_upload_connect(request).await
+    }
 }
