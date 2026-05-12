@@ -1,0 +1,345 @@
+// BillingService — org-scoped billing surface (subscriptions, plans, usage,
+// invoices, checkout, seats). Mirrors REST handlers under
+// backend/internal/api/rest/v1/billing_*.go and uses the same
+// service-layer domain types for the conversion (see billing_convert.go).
+//
+// BillingPublicService — unauthenticated public pricing surface used by the
+// landing page (PR #334 fix). The handler bypasses ResolveOrgScope per
+// conventions §3.5 "User-scoped / Platform-admin scoped" exceptions; the
+// request message intentionally has no org_slug.
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - backend domain/billing/{plan,subscription,invoice,order}.go
+//   - clients/core/crates/types/src/billing.rs
+//   - clients/web/src/lib/api/billing-types.ts
+//
+// PR #334 lesson: PublicPlanPricing must include `price_monthly`,
+// `price_yearly`, `currency`, and per-plan limits — those got dropped by an
+// earlier wasm relay that re-serialized via `serde_json::Value`. The proto
+// here pins every field at a numbered tag so a future "rename" can't drop
+// any of them silently.
+
+syntax = "proto3";
+
+package proto.billing.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/billing/v1;billingv1";
+
+// ===========================================
+// Authenticated, org-scoped service
+// ===========================================
+
+service BillingService {
+  rpc GetOverview(GetOverviewRequest) returns (BillingOverview);
+  rpc ListPlans(ListPlansRequest) returns (ListPlansResponse);
+  rpc GetSubscription(GetSubscriptionRequest) returns (Subscription);
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (Subscription);
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (Subscription);
+  rpc CancelSubscription(CancelSubscriptionRequest) returns (CancelSubscriptionResponse);
+  rpc RequestCancelSubscription(RequestCancelSubscriptionRequest) returns (RequestCancelSubscriptionResponse);
+  rpc ReactivateSubscription(ReactivateSubscriptionRequest) returns (Subscription);
+  rpc UpgradeSubscription(UpgradeSubscriptionRequest) returns (Subscription);
+  rpc ChangeBillingCycle(ChangeBillingCycleRequest) returns (ChangeBillingCycleResponse);
+  rpc UpdateAutoRenew(UpdateAutoRenewRequest) returns (Subscription);
+  rpc GetSeatUsage(GetSeatUsageRequest) returns (SeatUsage);
+  rpc PurchaseSeats(PurchaseSeatsRequest) returns (PurchaseSeatsResponse);
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+  rpc CreateCheckout(CreateCheckoutRequest) returns (CreateCheckoutResponse);
+  rpc GetCheckoutStatus(GetCheckoutStatusRequest) returns (CheckoutStatus);
+  rpc GetDeploymentInfo(GetDeploymentInfoRequest) returns (DeploymentInfo);
+}
+
+// ===========================================
+// Unauthenticated public pricing service (#334)
+// ===========================================
+
+service BillingPublicService {
+  rpc GetPublicPricing(GetPublicPricingRequest) returns (PublicPricingResponse);
+  rpc GetPublicDeploymentInfo(GetPublicDeploymentInfoRequest) returns (DeploymentInfo);
+}
+
+// -------------------------------------------
+// Entities
+// -------------------------------------------
+
+// SubscriptionPlan mirrors backend/internal/domain/billing/plan.go.
+// Optional Stripe IDs and Features (JSON map) intentionally absent — UI
+// never reads them.
+message SubscriptionPlan {
+  int64 id = 1;
+  string name = 2;
+  string display_name = 3;
+  double price_per_seat_monthly = 4;
+  double price_per_seat_yearly = 5;
+  int32 included_pod_minutes = 6;
+  double price_per_extra_minute = 7;
+  int32 max_users = 8;
+  int32 max_runners = 9;
+  int32 max_concurrent_pods = 10;
+  int32 max_repositories = 11;
+  bool is_active = 12;
+  string created_at = 13;
+}
+
+// Subscription mirrors backend/internal/domain/billing/subscription.go.
+// Stripe / LemonSqueezy / Alipay / WeChat identifiers reach the UI so the
+// "Manage payment method" link can pick the right provider.
+message Subscription {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 plan_id = 3;
+  string status = 4;
+  string billing_cycle = 5;
+  string current_period_start = 6;
+  string current_period_end = 7;
+  optional SubscriptionPlan plan = 8;
+  optional string payment_provider = 9;
+  optional string payment_method = 10;
+  bool auto_renew = 11;
+  int32 seat_count = 12;
+  optional string stripe_customer_id = 13;
+  optional string stripe_subscription_id = 14;
+  optional string lemonsqueezy_customer_id = 15;
+  optional string lemonsqueezy_subscription_id = 16;
+  optional string canceled_at = 17;
+  bool cancel_at_period_end = 18;
+  optional string frozen_at = 19;
+  optional string downgrade_to_plan = 20;
+  optional string next_billing_cycle = 21;
+  string created_at = 22;
+  string updated_at = 23;
+}
+
+// UsageOverview mirrors service/billing/overview.go::UsageOverview.
+message UsageOverview {
+  double pod_minutes = 1;
+  double included_pod_minutes = 2;
+  int32 users = 3;
+  int32 max_users = 4;
+  int32 runners = 5;
+  int32 max_runners = 6;
+  int32 concurrent_pods = 7;
+  int32 max_concurrent_pods = 8;
+  int32 repositories = 9;
+  int32 max_repositories = 10;
+}
+
+// BillingOverview mirrors service/billing/overview.go::BillingOverview.
+// `plan` is optional because a freshly-onboarded org without a subscription
+// returns plan=nil from the service layer.
+message BillingOverview {
+  optional SubscriptionPlan plan = 1;
+  string status = 2;
+  string billing_cycle = 3;
+  string current_period_start = 4;
+  string current_period_end = 5;
+  bool cancel_at_period_end = 6;
+  UsageOverview usage = 7;
+}
+
+message Invoice {
+  int64 id = 1;
+  int64 organization_id = 2;
+  optional int64 payment_order_id = 3;
+  string invoice_no = 4;
+  string status = 5;
+  string currency = 6;
+  double subtotal = 7;
+  double tax_amount = 8;
+  double total = 9;
+  string period_start = 10;
+  string period_end = 11;
+  optional string pdf_url = 12;
+  optional string issued_at = 13;
+  optional string due_at = 14;
+  optional string paid_at = 15;
+  string created_at = 16;
+  string updated_at = 17;
+}
+
+// SeatUsage mirrors service/billing/seats.go::SeatUsage.
+message SeatUsage {
+  int32 total_seats = 1;
+  int32 used_seats = 2;
+  int32 available_seats = 3;
+  int32 max_seats = 4;
+  bool can_add_seats = 5;
+}
+
+// DeploymentInfo mirrors service/billing/overview.go::DeploymentInfo.
+message DeploymentInfo {
+  string deployment_type = 1;
+  repeated string available_providers = 2;
+}
+
+message CheckoutStatus {
+  string order_no = 1;
+  string status = 2;
+  string order_type = 3;
+  double amount = 4;
+  string currency = 5;
+  string created_at = 6;
+  optional string paid_at = 7;
+}
+
+// PublicPlanPricing — the row of the public pricing card. PR #334 fix:
+// every UI field must have a numbered tag so re-serialization can't drop
+// it. Keep field order matching billing-types.ts for review parity.
+message PublicPlanPricing {
+  string name = 1;
+  string display_name = 2;
+  double price_monthly = 3;
+  double price_yearly = 4;
+  int32 max_users = 5;
+  int32 max_runners = 6;
+  int32 max_repositories = 7;
+  int32 max_concurrent_pods = 8;
+}
+
+message PublicPricingResponse {
+  string deployment_type = 1;
+  string currency = 2;
+  repeated PublicPlanPricing plans = 3;
+}
+
+// -------------------------------------------
+// Requests / Responses — authenticated
+// -------------------------------------------
+
+message GetOverviewRequest {
+  string org_slug = 1;
+}
+
+message ListPlansRequest {
+  string org_slug = 1;
+}
+
+message ListPlansResponse {
+  repeated SubscriptionPlan items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetSubscriptionRequest {
+  string org_slug = 1;
+}
+
+message CreateSubscriptionRequest {
+  string org_slug = 1;
+  string plan_name = 2;
+  optional string billing_cycle = 3;
+}
+
+message UpdateSubscriptionRequest {
+  string org_slug = 1;
+  string plan_name = 2;
+}
+
+message CancelSubscriptionRequest {
+  string org_slug = 1;
+}
+
+message CancelSubscriptionResponse {}
+
+message RequestCancelSubscriptionRequest {
+  string org_slug = 1;
+  bool immediate = 2;
+}
+
+message RequestCancelSubscriptionResponse {
+  // Set only when the cancellation is scheduled (not immediate) — the
+  // current period end so UI can render "Access through <date>".
+  optional string current_period_end = 1;
+  bool immediate = 2;
+}
+
+message ReactivateSubscriptionRequest {
+  string org_slug = 1;
+}
+
+message UpgradeSubscriptionRequest {
+  string org_slug = 1;
+  string plan_name = 2;
+}
+
+message ChangeBillingCycleRequest {
+  string org_slug = 1;
+  string billing_cycle = 2;
+}
+
+message ChangeBillingCycleResponse {
+  string current_cycle = 1;
+  string next_cycle = 2;
+  string effective_date = 3;
+}
+
+message UpdateAutoRenewRequest {
+  string org_slug = 1;
+  bool auto_renew = 2;
+}
+
+message GetSeatUsageRequest {
+  string org_slug = 1;
+}
+
+message PurchaseSeatsRequest {
+  string org_slug = 1;
+  int32 seats = 2;
+}
+
+message PurchaseSeatsResponse {
+  optional SeatUsage seats = 1;
+}
+
+message ListInvoicesRequest {
+  string org_slug = 1;
+  optional int32 offset = 2;
+  optional int32 limit = 3;
+}
+
+message ListInvoicesResponse {
+  repeated Invoice items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message CreateCheckoutRequest {
+  string org_slug = 1;
+  string order_type = 2;
+  optional string plan_name = 3;
+  optional string billing_cycle = 4;
+  optional int32 seats = 5;
+  optional string provider = 6;
+  string success_url = 7;
+  string cancel_url = 8;
+}
+
+message CreateCheckoutResponse {
+  string order_no = 1;
+  string session_id = 2;
+  string session_url = 3;
+  optional string qr_code_url = 4;
+  string expires_at = 5;
+  string provider = 6;
+}
+
+message GetCheckoutStatusRequest {
+  string org_slug = 1;
+  string order_no = 2;
+}
+
+message GetDeploymentInfoRequest {
+  string org_slug = 1;
+}
+
+// -------------------------------------------
+// Requests / Responses — public (no org_slug, no auth)
+// -------------------------------------------
+
+message GetPublicPricingRequest {
+  optional string currency = 1;
+}
+
+message GetPublicDeploymentInfoRequest {}

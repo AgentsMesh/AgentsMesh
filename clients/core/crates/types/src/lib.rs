@@ -5,6 +5,7 @@ mod apikey_proto;
 mod auth;
 mod autopilot;
 mod billing;
+mod billing_proto;
 mod binding;
 mod blockstore;
 mod channel;
@@ -40,6 +41,14 @@ pub use apikey::*;
 pub use auth::*;
 pub use autopilot::*;
 pub use billing::*;
+
+/// Connect-RPC binary-wire DTOs for `proto.billing.v1`. Re-exported as a
+/// distinct module so the legacy serde `Subscription` (REST path) and the
+/// prost `Subscription` (Connect path) coexist during the dual-track
+/// migration window without name collisions.
+pub mod proto_billing_v1 {
+    pub use super::billing_proto::*;
+}
 pub use binding::*;
 pub use blockstore::*;
 pub use channel::*;
