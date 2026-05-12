@@ -1,0 +1,35 @@
+load("@rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
+
+# Bazel-native protobuf code generation for notification.v1.
+#
+# Mirrors proto/extension/v1/BUILD.bazel — same hermetic protoc/protoc-gen-go
+# pipeline. The Rust prost DTOs live in
+# clients/core/crates/types/src/notification_proto.rs; `tools/validate_prost_tags`
+# pins the .proto field number ↔ Rust `prost(tag = N)` mapping at build time.
+#
+# TS message classes ship as a committed mirror under
+# proto/gen/ts/notification/v1/ — pending Bazel-native `ts_proto_library`
+# macro per runbook.
+
+proto_library(
+    name = "notification_proto",
+    srcs = ["notification.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "notification_go_proto",
+    compilers = ["@rules_go//proto:go_proto"],
+    importpath = "github.com/anthropics/agentsmesh/proto/gen/go/notification/v1",
+    proto = ":notification_proto",
+    visibility = ["//visibility:public"],
+)
+
+# Watch list hazard #8 — catch hand-written prost struct drift.
+validate_prost_tags(
+    name = "notification_validate",
+    proto = "notification.proto",
+    rust = "//clients/core/crates/types:src/notification_proto.rs",
+)

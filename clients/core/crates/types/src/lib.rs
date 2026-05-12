@@ -27,6 +27,7 @@ mod loop_types;
 mod mesh;
 mod message;
 mod notification;
+mod notification_proto;
 mod organization;
 mod org_proto;
 mod pod;
@@ -232,6 +233,20 @@ pub mod proto_auth_v1 {
 /// `SSODiscoverResponse` in `auth.rs` + `sso.rs` for the dual-track window.
 pub mod proto_sso_v1 {
     pub use super::sso_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.notification.v1`. Org-scoped
+/// service — every request carries `org_slug = 1`. Coexists with the
+/// legacy serde `NotificationPreference` / `SetNotificationPreferenceRequest`
+/// / `NotificationPreferenceListResponse` in `notification.rs` for the
+/// dual-track migration window. The legacy REST envelope
+/// `{preferences: [...]}` lives only in the TS adapter; the proto wire is
+/// the §8 uniform `{items, total, limit, offset}`. SetPreference returns
+/// the entity directly (§9) where REST returns `{status:"ok"}` — drift
+/// reconciled inline (the TS adapter discards the response, so this is
+/// backwards compatible at the call-site level).
+pub mod proto_notification_v1 {
+    pub use super::notification_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;

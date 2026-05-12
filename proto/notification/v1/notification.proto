@@ -1,0 +1,107 @@
+// NotificationService — user notification preferences within an org.
+//
+// Migrated from REST handlers in
+//   backend/internal/api/rest/v1/notification_preferences.go
+// per .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.notification.v1 + go_package suffix for dispatch
+//   * service name = <Domain>Service, methods PascalCase verbs
+//   * snake_case fields, no json_name annotations
+//   * ORG-SCOPED: org_slug = 1 on every request (conventions §3.5)
+//   * no google.protobuf.Timestamp
+//   * list response = {items, total, limit, offset} uniform envelope (§8)
+//     — the legacy REST envelope `{preferences: [...]}` lives in the TS
+//     adapter (`notificationConnect.ts`) so the renderer-side surface
+//     stays stable during the dual-track window.
+//   * SetPreference returns the entity directly (§9) — REST currently
+//     returns `{status: "ok"}` (drift signal); the proto migration returns
+//     the persisted NotificationPreference verbatim, which is the more
+//     useful contract for the caller.
+//
+// Out of scope (Phase 2):
+//   * unread-count subscribe stream — Connect's unary contract cannot model
+//     server-push. The websocket relay path (notification_relay.go) stays
+//     untouched and continues to broadcast events to subscribed users.
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - backend handler emits {source, entity_id?, is_muted, channels{}}
+//   - clients/core/crates/types/src/notification.rs Vec<NotificationPreference>
+//   - clients/web/src/lib/api/notificationTypes.ts NotificationPreference
+//
+// Channels is a free-form map<string,bool> because the backend supports
+// extensible channel slugs (toast / browser / apns / email / ...). The
+// proto `map` field is the only proto3 idiom that round-trips the
+// map<string,bool> surface — there is no `optional` qualifier on map.
+
+syntax = "proto3";
+
+package proto.notification.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/notification/v1;notificationv1";
+
+// ============================================================================
+// NotificationService — org-scoped preference CRUD
+// ============================================================================
+service NotificationService {
+  // Returns the caller's notification preferences for this org. Empty list
+  // means "all sources unconfigured, use server defaults" — the REST
+  // handler returns 200 with `{preferences: []}` in that case; the proto
+  // surface follows the §8 uniform envelope.
+  rpc ListPreferences(ListPreferencesRequest) returns (ListPreferencesResponse);
+
+  // Creates or upserts a single preference row (PK is user_id + source +
+  // entity_id; empty entity_id means "source-level preference"). REST
+  // currently returns `{status:"ok"}`; proto returns the persisted record
+  // for better caller ergonomics (§9). The frontend `set_preference`
+  // adapter discards the response today, so this change is backwards
+  // compatible at the call-site level.
+  rpc SetPreference(SetPreferenceRequest) returns (NotificationPreference);
+}
+
+// NotificationPreference mirrors backend/internal/domain/notification.
+// PreferenceRecord (minus user_id — the auth interceptor supplies it).
+//
+// entity_id is `optional` because empty string is the legitimate
+// "source-level preference, no entity" semantic — the REST handler maps
+// `entity_id: null` → empty string in the DB. Round-trip-wise: absent
+// proto field == None == legacy `null` in JSON.
+message NotificationPreference {
+  // Source slug — channel:message / channel:mention / terminal:osc /
+  // task:completed (see backend/internal/domain/notification/types.go).
+  string source = 1;
+  // Empty / absent = source-level (applies to all entities); present =
+  // entity-specific (e.g. one channel ID).
+  optional string entity_id = 2;
+  bool is_muted = 3;
+  // Channel slug → enabled. Known channels today: toast, browser, apns,
+  // email. The set is extensible server-side; the proto carries whatever
+  // the DB JSONB column holds.
+  map<string, bool> channels = 4;
+}
+
+// ---- ListPreferences ----
+
+message ListPreferencesRequest {
+  string org_slug = 1;
+}
+
+message ListPreferencesResponse {
+  repeated NotificationPreference items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+// ---- SetPreference ----
+//
+// The REST handler defaults channels to `{toast:true, browser:true}` when
+// nil; the proto surface keeps that semantic — an empty `channels` map
+// means "use server defaults", whereas any non-empty map is taken as the
+// caller's explicit preference. is_muted defaults to false (proto3 zero).
+
+message SetPreferenceRequest {
+  string org_slug = 1;
+  string source = 2;
+  optional string entity_id = 3;
+  bool is_muted = 4;
+  map<string, bool> channels = 5;
+}
