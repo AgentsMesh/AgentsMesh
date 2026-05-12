@@ -1,0 +1,224 @@
+// AgentService — agent catalog + custom-agent CRUD (org-scoped) +
+// UserAgentConfigService (user-scoped personal agent config).
+//
+// Migrated from REST handlers in backend/internal/api/rest/v1/agents*.go per
+// .claude/plans/proto-naming-conventions.md. Conventions enforced:
+//   * package proto.agent.v1 + go_package suffix for dispatch
+//   * service name = <Domain>Service, methods PascalCase verbs
+//   * snake_case fields, no json_name annotations
+//   * org_slug at field 1 of every org-scoped request (user-scoped exempt)
+//   * timestamps as string ISO-8601 (no google.protobuf.Timestamp)
+//   * list response = {items, total, limit, offset} uniform envelope
+//   * create/update/get return entity directly (no {agent: ...} wrapper)
+//
+// Two services bundled in one proto file because they share the same Rust
+// crate (agent service depends on user_config_service deps) and live behind
+// the same per-domain BUILD.bazel:
+//
+//   AgentService           — org-scoped agent catalog (builtin + custom)
+//   UserAgentConfigService — user-scoped personal config per agent_slug
+//
+// AgentListResponse is the §9 exception: the REST handler emits
+// `{builtin_agents, custom_agents}` (not the §8 list envelope) because the
+// two slices have different per-row visibility semantics (builtin = platform,
+// custom = org-scoped). Preserving the split lets the existing UI continue
+// to render the merged list without a follow-up renderer rewrite.
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - backend domain/agent/Agent + CustomAgent + UserAgentConfigResponse
+//   - clients/core/crates/types/src/agent.rs
+//   - clients/web/src/lib/api/agentTypes.ts
+
+syntax = "proto3";
+
+package proto.agent.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/agent/v1;agentv1";
+
+// ============================================================================
+// AgentService — org-scoped agent catalog + custom agent CRUD
+// ============================================================================
+service AgentService {
+  rpc ListAgents(ListAgentsRequest) returns (AgentListResponse);
+  rpc GetAgent(GetAgentRequest) returns (Agent);
+  rpc GetAgentConfigSchema(GetAgentConfigSchemaRequest) returns (ConfigSchema);
+  rpc CreateCustomAgent(CreateCustomAgentRequest) returns (Agent);
+  rpc UpdateCustomAgent(UpdateCustomAgentRequest) returns (Agent);
+  rpc DeleteCustomAgent(DeleteCustomAgentRequest) returns (DeleteCustomAgentResponse);
+}
+
+// ============================================================================
+// UserAgentConfigService — user-scoped personal config per agent
+// ============================================================================
+service UserAgentConfigService {
+  rpc ListUserAgentConfigs(ListUserAgentConfigsRequest) returns (UserAgentConfigListResponse);
+  rpc GetUserAgentConfig(GetUserAgentConfigRequest) returns (UserAgentConfig);
+  rpc SetUserAgentConfig(SetUserAgentConfigRequest) returns (UserAgentConfig);
+  rpc DeleteUserAgentConfig(DeleteUserAgentConfigRequest) returns (DeleteUserAgentConfigResponse);
+}
+
+// ============================================================================
+// Agent entity — covers both builtin (domain/agent/Agent) and custom (CustomAgent)
+// ============================================================================
+
+// Agent mirrors backend/internal/domain/agent.Agent.
+// Builtin agents have is_builtin=true; custom agents have organization_id set
+// + is_builtin=false. The REST handler serializes both via the same JSON shape
+// (modulo organization_id), so we keep one proto message.
+message Agent {
+  string slug = 1;
+  string name = 2;
+  optional string description = 3;
+  string launch_command = 4;
+  optional string executable = 5;
+  optional string default_args = 6;
+  // Source of truth for CONFIG / ENV / CREDENTIAL / PROMPT declarations.
+  optional string agentfile_source = 7;
+  bool is_builtin = 8;
+  bool is_active = 9;
+  // CSV: "pty,acp" — REST emits this as a string today, kept verbatim.
+  string supported_modes = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  // organization_id is null for builtin agents.
+  optional int64 organization_id = 13;
+}
+
+// AgentListResponse — §9 multi-field envelope (intentional deviation from §8).
+// Builtin and custom agents are returned in separate slices so the UI can
+// render them with different per-row visibility semantics. The `agents` field
+// is kept as the merged convenience slice some clients consume.
+message AgentListResponse {
+  repeated Agent builtin_agents = 1;
+  repeated Agent custom_agents = 2;
+  // Merged slice (builtin_agents ++ custom_agents). Present for clients that
+  // ignore the builtin/custom distinction.
+  repeated Agent agents = 3;
+}
+
+message ListAgentsRequest {
+  string org_slug = 1;
+}
+
+message GetAgentRequest {
+  string org_slug = 1;
+  string agent_slug = 2;
+}
+
+message CreateCustomAgentRequest {
+  string org_slug = 1;
+  string slug = 2;
+  string name = 3;
+  optional string description = 4;
+  // Either agentfile_source or launch_command must be provided. When
+  // agentfile_source is set, launch_command is extracted from the AgentFile's
+  // AGENT declaration if not provided.
+  optional string agentfile_source = 5;
+  optional string launch_command = 6;
+  optional string default_args = 7;
+}
+
+message UpdateCustomAgentRequest {
+  string org_slug = 1;
+  string agent_slug = 2;
+  // Free-form updates dict — mirrors REST handler `map[string]interface{}`.
+  // Keys: name, description, launch_command, default_args, agentfile_source,
+  // is_active. Wrapping in a JSON-encoded struct field instead of typed
+  // optionals keeps the dual-track REST contract intact (the REST handler
+  // also accepts arbitrary keys).
+  string updates_json = 3;
+}
+
+message DeleteCustomAgentRequest {
+  string org_slug = 1;
+  string agent_slug = 2;
+}
+
+message DeleteCustomAgentResponse {
+  string message = 1;
+}
+
+// ============================================================================
+// ConfigSchema — schema for an agent's config fields + credential fields
+// ============================================================================
+
+// ConfigSchema mirrors backend/internal/service/agent/ConfigSchemaResponse.
+// REST emits `{schema: {fields, credential_fields}}`; the proto message IS
+// the schema (§9 single-entity return).
+message ConfigSchema {
+  repeated ConfigField fields = 1;
+  repeated CredentialField credential_fields = 2;
+}
+
+message ConfigField {
+  string name = 1;
+  // boolean / string / select / number / secret / model_list
+  string type = 2;
+  // JSON-encoded default — type varies per field type so we keep it as a
+  // string at the wire layer. Empty string means absent.
+  string default_json = 3;
+  repeated FieldOption options = 4;
+}
+
+message FieldOption {
+  string value = 1;
+}
+
+message CredentialField {
+  // Full ENV name, e.g. "ANTHROPIC_API_KEY".
+  string name = 1;
+  // secret / text
+  string type = 2;
+  bool optional = 3;
+}
+
+message GetAgentConfigSchemaRequest {
+  string org_slug = 1;
+  string agent_slug = 2;
+}
+
+// ============================================================================
+// UserAgentConfig — user-scoped personal config per agent
+// ============================================================================
+
+// UserAgentConfig mirrors backend/internal/domain/agent.UserAgentConfigResponse.
+message UserAgentConfig {
+  int64 id = 1;
+  int64 user_id = 2;
+  string agent_slug = 3;
+  optional string agent_name = 4;
+  // JSON-encoded `map[string]interface{}` — the config-value types vary per
+  // schema (boolean, string, number, …). The REST handler emits arbitrary
+  // JSON, so we shuttle it as a string here.
+  string config_values_json = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+// UserAgentConfigListResponse — sub-resource envelope (§9 exception #2).
+// The REST handler emits `{configs: [...]}` (no pagination). Preserving the
+// `configs` field name keeps the wire shape stable for the dual-track window;
+// `items` would force an adapter remap at every call site for zero benefit.
+message UserAgentConfigListResponse {
+  repeated UserAgentConfig configs = 1;
+}
+
+message ListUserAgentConfigsRequest {}
+
+message GetUserAgentConfigRequest {
+  string agent_slug = 1;
+}
+
+message SetUserAgentConfigRequest {
+  string agent_slug = 1;
+  // JSON-encoded `map[string]interface{}` — see UserAgentConfig.config_values_json.
+  string config_values_json = 2;
+}
+
+message DeleteUserAgentConfigRequest {
+  string agent_slug = 1;
+}
+
+message DeleteUserAgentConfigResponse {
+  string message = 1;
+}

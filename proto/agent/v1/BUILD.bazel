@@ -1,0 +1,36 @@
+load("@rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
+
+# Bazel-native protobuf code generation for agent.v1.
+#
+# Mirrors proto/extension/v1/BUILD.bazel — same hermetic protoc/protoc-gen-go
+# pipeline, same `proto/gen/go/<svc>/v1` importpath shape. The Rust prost
+# DTOs are hand-maintained at clients/core/crates/types/src/agent_proto.rs;
+# `tools/validate_prost_tags` pins the .proto field number ↔ Rust
+# `prost(tag = N)` mapping at build time (watch list #8).
+#
+# TS message classes for the binary wire (conventions §2.5) ship as a
+# committed mirror under proto/gen/ts/agent/v1/ — pending Bazel-native
+# `ts_proto_library` macro per runbook "TS proto codegen toolchain".
+
+proto_library(
+    name = "agent_proto",
+    srcs = ["agent.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "agent_go_proto",
+    compilers = ["@rules_go//proto:go_proto"],
+    importpath = "github.com/anthropics/agentsmesh/proto/gen/go/agent/v1",
+    proto = ":agent_proto",
+    visibility = ["//visibility:public"],
+)
+
+# Watch list hazard #8 — catch hand-written prost struct drift.
+validate_prost_tags(
+    name = "agent_validate",
+    proto = "agent.proto",
+    rust = "//clients/core/crates/types:src/agent_proto.rs",
+)
