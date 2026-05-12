@@ -94,4 +94,49 @@ test.describe("Skill registry — wasm round-trip (#341)", () => {
 
     await expect(page.getByText(testUrl)).toBeVisible();
   });
+
+  // Connect-RPC binary lane (proto-migration feature branch). Asserts the
+  // wasm-side `listSkillRegistriesConnect` (binary protobuf) ends up
+  // populating the same UI list — i.e. the Connect handler at
+  // /proto.extension.v1.SkillRegistryService/ListSkillRegistries returns
+  // the same data the REST handler does, and the @bufbuild/protobuf
+  // fromBinary path on the renderer side doesn't lose fields.
+  //
+  // Marked as Connect-path explicitly so a future regression in the
+  // protobuf wire (vs the still-mounted REST wire) surfaces as a
+  // distinct failure rather than masquerading as a generic empty-list bug.
+  test("UI shows newly added org registry after submit (Connect path)", async ({ page, db }) => {
+    const testUrl = `${TEST_URL_PREFIX}connect-${Date.now()}`;
+
+    const nav = new SettingsNavPage(page, TEST_ORG_SLUG);
+    await nav.goto("organization", "extensions");
+
+    // The dialog still posts via the REST POST (creation lane will flip in
+    // a follow-up commit). The Connect path is exercised by the
+    // refresh-after-submit list call, which already goes through the new
+    // `listSkillRegistries(orgSlug)` adapter as of this PR.
+    const openButton = page.getByRole("button", { name: /add source|添加注册表/i });
+    await expect(openButton).toBeVisible();
+    await openButton.click();
+
+    const dialog = page.locator("[data-dialog-overlay]");
+    await expect(dialog).toBeVisible();
+
+    await dialog.getByPlaceholder("https://github.com/owner/skills-repo").fill(testUrl);
+    await dialog.getByRole("button", { name: /add source|添加注册表/i }).click();
+    await expect(dialog).toBeHidden();
+
+    // The row appearing in the UI after the dialog closes is the proof:
+    // it must have come back from a list call (the create response is
+    // single-entity, not a list), and the post-create refresh now goes
+    // through Connect (`listSkillRegistries(orgSlug)`). If the Connect
+    // handler dropped the entity (wrong envelope, drifted prost tag,
+    // missing field), this assertion fails.
+    await expect(page.getByText(testUrl)).toBeVisible();
+
+    const dbCount = db.queryValue(
+      `SELECT COUNT(*) FROM skill_registries WHERE organization_id = ${orgIdSql} AND repository_url = '${testUrl}'`
+    );
+    expect(dbCount).toBe("1");
+  });
 });
