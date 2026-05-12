@@ -1,0 +1,33 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "autopilot",
+    srcs = [
+        "autopilot.go",
+        "autopilot_actions.go",
+        "autopilot_convert.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/autopilot",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/agentpod",
+        "//backend/internal/middleware",
+        "//backend/internal/service/agentpod",
+        "//proto/autopilot/v1:autopilot_go_proto",
+        "//proto/runner/v1:runner_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "autopilot_test",
+    srcs = ["autopilot_test.go"],
+    embed = [":autopilot"],
+    deps = [
+        "//proto/autopilot/v1:autopilot_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

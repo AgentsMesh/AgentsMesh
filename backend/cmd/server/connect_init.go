@@ -10,6 +10,7 @@ import (
 	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
 	authconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/auth"
+	autopilotconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/autopilot"
 	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
 	blockstoreconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/blockstore"
 	channelconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel"
@@ -126,6 +127,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	mountGrantService(mux, svc, opts)
 	mountFileService(mux, svc, opts)
 	mountTokenUsageService(mux, svc, opts)
+	mountAutopilotService(mux, svc, rest, opts)
 }
 
 // mountAuthService wires both AuthService (PUBLIC — no auth interceptor)
@@ -293,4 +295,21 @@ func mountTokenUsageService(mux *http.ServeMux, svc *serviceContainer, opts []co
 	}
 	srv := tokenusageconnect.NewServer(svc.tokenUsage, svc.org)
 	tokenusageconnect.Mount(mux, srv, opts...)
+}
+
+// mountAutopilotService wires AutopilotControllerService — CRUD + 6
+// control actions + iterations. Reuses the GRPCCommandSender from
+// rest.RunnerCommandSender (same instance the REST handler uses).
+func mountAutopilotService(mux *http.ServeMux, svc *serviceContainer, rest *v1.Services, opts []connect.HandlerOption) {
+	if svc.autopilot == nil {
+		return
+	}
+	var cmdSender autopilotconnect.CommandSender
+	if rest != nil && rest.PodCoordinator != nil {
+		if s, ok := rest.PodCoordinator.GetCommandSender().(autopilotconnect.CommandSender); ok {
+			cmdSender = s
+		}
+	}
+	srv := autopilotconnect.NewServer(svc.autopilot, svc.org, svc.pod, cmdSender)
+	autopilotconnect.Mount(mux, srv, opts...)
 }
