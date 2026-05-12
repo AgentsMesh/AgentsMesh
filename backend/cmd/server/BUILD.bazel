@@ -33,6 +33,7 @@ go_library(
         "//backend/internal/api/connect/billing",
         "//backend/internal/api/connect/extension",
         "//backend/internal/api/connect/interceptors",
+        "//backend/internal/api/connect/org",
         "//backend/internal/api/connect/pod",
         "//backend/internal/api/connect/repository",
         "//backend/internal/api/connect/runner",

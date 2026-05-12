@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "org",
+    srcs = [
+        "org.go",
+        "org_convert.go",
+        "org_crud.go",
+        "org_members.go",
+        "org_user_scoped.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/org",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/organization",
+        "//backend/internal/middleware",
+        "//backend/internal/service/organization",
+        "//backend/internal/service/user",
+        "//backend/pkg/slugkit",
+        "//proto/org/v1:org_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "org_test",
+    srcs = ["org_test.go"],
+    embed = [":org"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/organization",
+        "//backend/internal/middleware",
+        "//backend/internal/service/organization",
+        "//proto/org/v1:org_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

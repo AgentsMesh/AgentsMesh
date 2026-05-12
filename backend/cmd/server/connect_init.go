@@ -11,6 +11,7 @@ import (
 	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
 	"github.com/anthropics/agentsmesh/backend/internal/api/connect/interceptors"
+	orgconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/org"
 	podconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod"
 	repositoryconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/repository"
 	runnerconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/runner"
@@ -83,6 +84,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 		repositoryconnect.WithBillingService(svc.billing),
 	), opts...)
 	apikeyconnect.Mount(mux, apikeyconnect.NewServer(svc.apikey, svc.org), opts...)
+	orgconnect.Mount(mux, orgconnect.NewServer(svc.org, svc.user), opts...)
 	mountRunnerService(mux, svc, rest, cfg, opts)
 	mountPodService(mux, svc, rest, opts)
 	mountAgentPodSettingsService(mux, svc, opts)
