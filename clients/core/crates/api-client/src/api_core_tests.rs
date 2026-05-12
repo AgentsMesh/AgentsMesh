@@ -327,7 +327,7 @@ mod api_core_tests {
     async fn list_skill_registries() {
         let s = MockServer::start().await;
         Mock::given(method("GET")).and(path("/api/v1/orgs/acme/skill-registries"))
-            .respond_with(ok(json!({"registries":[]})))
+            .respond_with(ok(json!({"skill_registries":[]})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.list_skill_registries().await.unwrap();

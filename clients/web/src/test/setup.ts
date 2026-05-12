@@ -676,7 +676,7 @@ vi.mock('@/lib/wasm-core', () => {
       list_merge_requests: fn().mockResolvedValue('{"merge_requests":[]}'),
     })),
     getExtensionService: fn(() => ({
-      list_skill_registries: fn().mockResolvedValue('{"registries":[]}'),
+      list_skill_registries: fn().mockResolvedValue('{"skill_registries":[]}'),
       create_skill_registry: fn().mockResolvedValue('{}'),
       sync_skill_registry: fn().mockResolvedValue(undefined),
       toggle_skill_registry: fn().mockResolvedValue('{}'),

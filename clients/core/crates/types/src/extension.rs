@@ -140,8 +140,7 @@ pub struct UpdateMcpInstallRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkillRegistryListResponse {
-    #[serde(alias = "skill_registries")]
-    pub registries: Vec<SkillRegistry>,
+    pub skill_registries: Vec<SkillRegistry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -172,7 +171,7 @@ pub struct RepoMcpServerInstallListResponse {
 
 #[cfg(test)]
 mod skill_registry_tests {
-    use super::SkillRegistry;
+    use super::{SkillRegistry, SkillRegistryListResponse};
 
     const BACKEND_PAYLOAD: &str = r#"{
         "id": 7,
@@ -211,5 +210,29 @@ mod skill_registry_tests {
                     "last_commit_sha", "detected_type"] {
             assert!(!parsed[key].is_null(), "field `{key}` dropped by relay");
         }
+    }
+
+    // Regression for #341: backend wire wrapper is `skill_registries`, but PR #349
+    // used `#[serde(alias)]` on a Rust field named `registries`. Serde's `alias`
+    // only affects deserialization; re-serializing for the wasm relay emitted
+    // `{"registries": ...}` instead, so the TS layer (which reads
+    // `.skill_registries`) always saw `undefined` and rendered an empty list.
+    // This test pins the round-trip key.
+    #[test]
+    fn skill_registry_list_response_relay_key_matches_backend_wire() {
+        let backend_wire = format!(r#"{{"skill_registries":[{BACKEND_PAYLOAD}]}}"#);
+        let typed: SkillRegistryListResponse = serde_json::from_str(&backend_wire).unwrap();
+        assert_eq!(typed.skill_registries.len(), 1);
+
+        let relayed = serde_json::to_string(&typed).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&relayed).unwrap();
+        assert!(
+            parsed.get("skill_registries").is_some(),
+            "wasm relay must emit `skill_registries`, got: {relayed}"
+        );
+        assert!(
+            parsed.get("registries").is_none(),
+            "legacy `registries` key must not leak through: {relayed}"
+        );
     }
 }
