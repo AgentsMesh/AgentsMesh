@@ -17,6 +17,7 @@ pub mod grant_connect;
 pub mod invitation;
 pub mod invitation_connect;
 pub mod loop_api;
+pub mod loop_connect;
 pub mod mesh;
 pub mod message;
 pub mod notification;
