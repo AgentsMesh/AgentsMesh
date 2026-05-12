@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth";
-import { getAuthApiService } from "@/lib/wasm-getters";
+import * as authConnect from "@/lib/api/authConnect";
 import { initWasmCore } from "@/lib/wasm-core";
 import { useTranslations } from "next-intl";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -49,12 +49,12 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = JSON.parse(await getAuthApiService().register(JSON.stringify({
+      const response = await authConnect.register({
         email: formData.email,
         username: formData.username,
         password: formData.password,
         name: formData.name,
-      })));
+      });
       await setAuth(response.token, response.user, response.refresh_token);
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {

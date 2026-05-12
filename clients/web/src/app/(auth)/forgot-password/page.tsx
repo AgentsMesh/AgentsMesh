@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAuthApiService } from "@/lib/wasm-getters";
+import * as authConnect from "@/lib/api/authConnect";
 import { initWasmCore } from "@/lib/wasm-core";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      await getAuthApiService().forgot_password(email);
+      await authConnect.forgotPassword(email);
       setSubmitted(true);
     } catch {
       setError(t("auth.forgotPasswordPage.sendFailed"));

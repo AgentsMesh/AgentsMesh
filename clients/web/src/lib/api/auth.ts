@@ -1,24 +1,49 @@
-import { getAuthApiService } from "@/lib/wasm-core";
+// Legacy authApi facade — now delegates to authConnect (Connect-RPC,
+// binary wire). Kept as a re-export shim so downstream call sites
+// migrate at their own pace; the underlying transport is already
+// flipped to proto.auth.v1.AuthService.
+//
+// New code should import directly from @/lib/api/authConnect.
+
+import * as authConnect from "@/lib/api/authConnect";
 
 export const authApi = {
-  register: async (data: { name: string; email: string; password: string }) => {
-    const json = await getAuthApiService().register(JSON.stringify(data));
-    return JSON.parse(json);
+  register: async (data: {
+    name?: string;
+    email: string;
+    username?: string;
+    password: string;
+  }) => {
+    const username = data.username ?? data.email.split("@")[0];
+    const session = await authConnect.register({
+      email: data.email,
+      username,
+      password: data.password,
+      name: data.name,
+    });
+    return {
+      token: session.token,
+      refresh_token: session.refresh_token,
+      user: session.user,
+      message: session.message,
+    };
   },
   verifyEmail: async (token: string) => {
-    const json = await getAuthApiService().verify_email(token);
-    return JSON.parse(json);
+    const session = await authConnect.verifyEmail(token);
+    return {
+      token: session.token,
+      refresh_token: session.refresh_token,
+      user: session.user,
+      message: session.message,
+    };
   },
   resendVerification: async (email: string) => {
-    const json = await getAuthApiService().resend_verification(email);
-    return JSON.parse(json);
+    return authConnect.resendVerification(email);
   },
   forgotPassword: async (email: string) => {
-    const json = await getAuthApiService().forgot_password(email);
-    return JSON.parse(json);
+    return authConnect.forgotPassword(email);
   },
   resetPassword: async (token: string, password: string) => {
-    const json = await getAuthApiService().reset_password(JSON.stringify({ token, password }));
-    return JSON.parse(json);
+    return authConnect.resetPassword(token, password);
   },
 };

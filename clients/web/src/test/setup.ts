@@ -936,6 +936,21 @@ vi.mock('@/lib/wasm-core', () => {
       forgot_password: fn().mockResolvedValue('{}'),
       reset_password: fn().mockResolvedValue('{}'),
     })),
+    getAuthConnectService: fn(() => ({
+      // Connect-RPC (binary wire) — empty Uint8Array decodes to default
+      // proto messages so call sites that don't override get sensible
+      // defaults instead of TypeErrors.
+      loginConnect: fn().mockResolvedValue(new Uint8Array()),
+      registerConnect: fn().mockResolvedValue(new Uint8Array()),
+      refreshTokenConnect: fn().mockResolvedValue(new Uint8Array()),
+      verifyEmailConnect: fn().mockResolvedValue(new Uint8Array()),
+      resendVerificationConnect: fn().mockResolvedValue(new Uint8Array()),
+      forgotPasswordConnect: fn().mockResolvedValue(new Uint8Array()),
+      resetPasswordConnect: fn().mockResolvedValue(new Uint8Array()),
+      oauthRedirectConnect: fn().mockResolvedValue(new Uint8Array()),
+      oauthCallbackConnect: fn().mockResolvedValue(new Uint8Array()),
+      logoutConnect: fn().mockResolvedValue(new Uint8Array()),
+    })),
     isWasmReady: fn(() => true),
     parseWasmAny: fn((v: unknown) => v ? (typeof v === 'string' ? JSON.parse(v as string) : v) : null),
     relay_encode_input: fn((d: Uint8Array) => new Uint8Array([0x03, ...d])),

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth";
-import { getAuthApiService } from "@/lib/wasm-getters";
+import * as authConnect from "@/lib/api/authConnect";
 import { initWasmCore } from "@/lib/wasm-core";
 import { Logo } from "@/components/common";
 
@@ -28,7 +28,7 @@ function VerifyEmailCallbackContent() {
       }
 
       try {
-        const response = JSON.parse(await getAuthApiService().verify_email(token));
+        const response = await authConnect.verifyEmail(token);
 
         // Store auth tokens
         await setAuth(response.token, {

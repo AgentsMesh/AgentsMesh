@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAuthApiService } from "@/lib/wasm-getters";
+import * as authConnect from "@/lib/api/authConnect";
 import { initWasmCore } from "@/lib/wasm-core";
 import { Logo } from "@/components/common";
 
@@ -43,7 +43,7 @@ function ResetPasswordContent() {
     setError("");
 
     try {
-      await getAuthApiService().reset_password(JSON.stringify({token, new_password: password}));
+      await authConnect.resetPassword(token, password);
       setSuccess(true);
 
       // Redirect to login after a brief delay

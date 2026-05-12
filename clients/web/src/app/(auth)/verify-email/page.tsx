@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getAuthApiService } from "@/lib/wasm-getters";
+import * as authConnect from "@/lib/api/authConnect";
 import { listMyOrgs } from "@/lib/api/org";
 import { initWasmCore } from "@/lib/wasm-core";
 import { useTranslations } from "next-intl";
@@ -36,7 +36,7 @@ function VerifyEmailContent() {
     setMessage("");
 
     try {
-      const result = JSON.parse(await getAuthApiService().verify_email(verificationToken));
+      const result = await authConnect.verifyEmail(verificationToken);
       await setAuth(result.token, result.user, result.refresh_token);
       setVerifyState("success");
       setMessage(t("auth.verifyEmailPage.verificationSuccess"));
@@ -78,7 +78,7 @@ function VerifyEmailContent() {
     setError("");
     setMessage("");
     try {
-      await getAuthApiService().resend_verification(email);
+      await authConnect.resendVerification(email);
       setMessage(t("auth.verifyEmailPage.emailSent"));
     } catch {
       setError(t("auth.verifyEmailPage.resendFailed"));
