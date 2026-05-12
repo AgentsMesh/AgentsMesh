@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ticket",
+    srcs = [
+        "ticket.go",
+        "ticket_assignees.go",
+        "ticket_board.go",
+        "ticket_convert.go",
+        "ticket_crud.go",
+        "ticket_labels.go",
+        "ticket_mount.go",
+        "ticket_update.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/ticket",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/ticket",
+        "//backend/internal/middleware",
+        "//backend/internal/service/ticket",
+        "//proto/ticket/v1:ticket_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
