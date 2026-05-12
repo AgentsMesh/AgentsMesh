@@ -18,6 +18,7 @@ mod extension_proto;
 mod file_upload;
 mod grant;
 mod invitation;
+mod invitation_proto;
 mod loop_requests;
 mod loop_types;
 mod mesh;
@@ -148,6 +149,15 @@ pub mod proto_ticket_v1 {
 /// window without name collisions.
 pub mod proto_org_v1 {
     pub use super::org_proto::*;
+}
+
+/// Connect-RPC binary-wire DTOs for `proto.invitation.v1`. Bundles three
+/// services (org-scoped `InvitationService`, invitee-scoped
+/// `UserInvitationService`, public `PublicInvitationService`) because they
+/// address the same `invitations` table via orthogonal scopes. Coexists
+/// with the legacy serde `Invitation` for the dual-track window.
+pub mod proto_invitation_v1 {
+    pub use super::invitation_proto::*;
 }
 pub use file_upload::*;
 pub use grant::*;
