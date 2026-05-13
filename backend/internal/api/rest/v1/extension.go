@@ -2,8 +2,6 @@ package v1
 
 import (
 	"errors"
-	"net/http"
-	"strconv"
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	extensionservice "github.com/anthropics/agentsmesh/backend/internal/service/extension"
@@ -41,7 +39,8 @@ func requireOrgAdmin(c *gin.Context) bool {
 	return true
 }
 
-// ExtensionHandler handles extension-related API endpoints
+// ExtensionHandler handles extension-related API endpoints (skill / mcp install
+// surface — market list RPCs migrated to Connect).
 type ExtensionHandler struct {
 	extensionSvc *extensionservice.Service
 }
@@ -51,52 +50,5 @@ func NewExtensionHandler(extensionSvc *extensionservice.Service) *ExtensionHandl
 	return &ExtensionHandler{
 		extensionSvc: extensionSvc,
 	}
-}
-
-// --- Marketplace ---
-
-// ListMarketSkills returns skills available in the marketplace
-// GET /api/v1/organizations/:slug/market/skills?q=&category=
-func (h *ExtensionHandler) ListMarketSkills(c *gin.Context) {
-	tenant := middleware.GetTenant(c)
-	query := c.Query("q")
-	category := c.Query("category")
-
-	skills, err := h.extensionSvc.ListMarketSkills(c.Request.Context(), tenant.OrganizationID, query, category)
-	if err != nil {
-		handleServiceError(c, err, "Failed to list market skills")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"skills": skills})
-}
-
-// ListMarketMcpServers returns MCP server templates from the marketplace
-// GET /api/v1/organizations/:slug/market/mcp-servers?q=&category=&limit=50&offset=0
-func (h *ExtensionHandler) ListMarketMcpServers(c *gin.Context) {
-	query := c.Query("q")
-	category := c.Query("category")
-
-	limit := 50
-	if l, err := strconv.Atoi(c.Query("limit")); err == nil && l > 0 {
-		limit = l
-	}
-	offset := 0
-	if o, err := strconv.Atoi(c.Query("offset")); err == nil && o >= 0 {
-		offset = o
-	}
-
-	servers, total, err := h.extensionSvc.ListMarketMcpServers(c.Request.Context(), query, category, limit, offset)
-	if err != nil {
-		handleServiceError(c, err, "Failed to list market MCP servers")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"mcp_servers": servers,
-		"total":       total,
-		"limit":       limit,
-		"offset":      offset,
-	})
 }
 

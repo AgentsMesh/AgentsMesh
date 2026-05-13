@@ -121,18 +121,6 @@ impl WasmExtensionService {
 
     // -------- Legacy REST JSON methods (preserved for not-yet-migrated routes) --------
 
-    pub async fn list_market_skills(
-        &self, query: Option<String>, category: Option<String>,
-    ) -> Result<String, String> {
-        self.0.list_market_skills(query, category).await
-    }
-
-    pub async fn list_market_mcp_servers(
-        &self, query: Option<String>, limit: Option<u32>, offset: Option<u32>,
-    ) -> Result<String, String> {
-        self.0.list_market_mcp_servers(query, limit, offset).await
-    }
-
     pub async fn list_repo_skills(
         &self, repo_id: i64, scope: Option<String>,
     ) -> Result<String, String> {

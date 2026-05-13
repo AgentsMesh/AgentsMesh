@@ -746,9 +746,10 @@ vi.mock('@/lib/wasm-core', () => {
       togglePlatformRegistryConnect: fn().mockResolvedValue(new Uint8Array()),
       deleteSkillRegistryConnect: fn().mockResolvedValue(new Uint8Array()),
       listSkillRegistryOverridesConnect: fn().mockResolvedValue(new Uint8Array()),
-      // Legacy REST (market + repo skill/mcp still on JSON wire)
-      list_market_skills: fn().mockResolvedValue('{"skills":[]}'),
-      list_market_mcp_servers: fn().mockResolvedValue('{"servers":[]}'),
+      // MarketService — Connect-RPC (binary wire)
+      listMarketSkillsConnect: fn().mockResolvedValue(new Uint8Array()),
+      listMarketMcpServersConnect: fn().mockResolvedValue(new Uint8Array()),
+      // Legacy REST (repo skill/mcp install still on JSON wire)
       list_repo_skills: fn().mockResolvedValue('{"installs":[]}'),
       install_skill_from_market: fn().mockResolvedValue('{}'),
       install_skill_from_github: fn().mockResolvedValue('{}'),

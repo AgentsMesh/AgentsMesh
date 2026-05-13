@@ -237,53 +237,11 @@ impl ApiClient {
 }
 
 // =============================================================================
-// Legacy REST methods — preserved for dual-track migration (market + repo
-// skill/mcp routes haven't been flipped yet).
+// Legacy REST methods — preserved for not-yet-migrated repo skill/mcp install
+// routes.
 // =============================================================================
 
 impl ApiClient {
-    pub async fn list_market_skills(
-        &self,
-        query: Option<&str>,
-        category: Option<&str>,
-    ) -> Result<MarketSkillListResponse, ApiError> {
-        let mut path = self.org_path("/market/skills");
-        let mut params = Vec::new();
-        if let Some(q) = query {
-            params.push(format!("q={q}"));
-        }
-        if let Some(c) = category {
-            params.push(format!("category={c}"));
-        }
-        if !params.is_empty() {
-            path = format!("{path}?{}", params.join("&"));
-        }
-        self.get(&path).await
-    }
-
-    pub async fn list_market_mcp_servers(
-        &self,
-        query: Option<&str>,
-        limit: Option<u32>,
-        offset: Option<u32>,
-    ) -> Result<MarketMcpServerListResponse, ApiError> {
-        let mut path = self.org_path("/market/mcp-servers");
-        let mut params = Vec::new();
-        if let Some(q) = query {
-            params.push(format!("q={q}"));
-        }
-        if let Some(l) = limit {
-            params.push(format!("limit={l}"));
-        }
-        if let Some(o) = offset {
-            params.push(format!("offset={o}"));
-        }
-        if !params.is_empty() {
-            path = format!("{path}?{}", params.join("&"));
-        }
-        self.get(&path).await
-    }
-
     pub async fn list_repo_skills(
         &self,
         repo_id: i64,

@@ -40,15 +40,15 @@ impl AppState {
     }
 
     #[napi]
-    pub async fn extension_list_market_skills(&self, query: Option<String>, category: Option<String>) -> napi::Result<String> {
+    pub async fn extension_list_market_skills_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.list_market_skills(query, category).await.map_err(err)
+        svc.list_market_skills_connect(&request).await.map_err(err)
     }
 
     #[napi]
-    pub async fn extension_list_market_mcp_servers(&self, query: Option<String>, limit: Option<u32>, offset: Option<u32>) -> napi::Result<String> {
+    pub async fn extension_list_market_mcp_servers_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.list_market_mcp_servers(query, limit, offset).await.map_err(err)
+        svc.list_market_mcp_servers_connect(&request).await.map_err(err)
     }
 
     #[napi]

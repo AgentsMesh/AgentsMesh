@@ -45,17 +45,17 @@ test.describe("IPC · extension", () => {
     expect(result).toBeDefined();
   });
 
-  test("extension_list_market_skills", async ({ page }) => {
+  test("extension_list_market_skills_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_list_market_skills", "", "").catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_list_market_skills_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 
-  test("extension_list_market_mcp_servers", async ({ page }) => {
+  test("extension_list_market_mcp_servers_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_list_market_mcp_servers", "", 0, 0).catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_list_market_mcp_servers_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 

@@ -2,30 +2,8 @@ use serde::{Deserialize, Serialize};
 
 // Connect-RPC binary-wire DTOs for proto.extension.v1 live in extension_proto.rs,
 // re-exported through lib.rs as `pub mod proto_extension_v1`. The legacy serde
-// types below remain for REST handlers that haven't been migrated yet (market
-// listing, repo skills/MCP — those are gradually flipping to Connect too).
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarketSkill {
-    pub id: i64,
-    pub name: String,
-    pub slug: Option<String>,
-    pub description: Option<String>,
-    pub category: Option<String>,
-    pub author: Option<String>,
-    pub icon_url: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarketMcpServer {
-    pub id: i64,
-    pub name: String,
-    pub slug: Option<String>,
-    pub description: Option<String>,
-    pub category: Option<String>,
-    pub author: Option<String>,
-    pub transport_type: Option<String>,
-}
+// types below remain for the REST handlers that haven't been migrated yet (repo
+// skills/MCP install paths — those are flipping to Connect too).
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepoSkillInstall {
@@ -94,17 +72,6 @@ pub struct InstallCustomMcpRequest {
 pub struct UpdateMcpInstallRequest {
     pub is_enabled: Option<bool>,
     pub env_vars: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarketSkillListResponse {
-    pub skills: Vec<MarketSkill>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MarketMcpServerListResponse {
-    pub mcp_servers: Vec<MarketMcpServer>,
-    pub total: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

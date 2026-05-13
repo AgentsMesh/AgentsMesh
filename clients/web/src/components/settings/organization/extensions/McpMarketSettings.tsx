@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ExternalLink, Search, Loader2 } from "lucide-react";
 import { McpMarketItem } from "@/lib/api";
-import { getExtensionService } from "@/lib/wasm-core";
+import { listMarketMcpServers } from "@/lib/api/marketExtension";
+import { useCurrentOrg } from "@/stores/auth";
 import type { TranslationFn } from "../GeneralSettings";
 
 const PAGE_SIZE = 50;
@@ -16,6 +17,8 @@ interface McpMarketSettingsProps {
 }
 
 export function McpMarketSettings({ t }: McpMarketSettingsProps) {
+  const currentOrg = useCurrentOrg();
+  const orgSlug = currentOrg?.slug ?? "";
   const [servers, setServers] = useState<McpMarketItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -24,6 +27,7 @@ export function McpMarketSettings({ t }: McpMarketSettingsProps) {
   const offsetRef = useRef(0);
 
   const loadServers = useCallback(async (query?: string, append = false, mounted?: { current: boolean }) => {
+    if (!orgSlug) return;
     try {
       if (append) {
         setLoadingMore(true);
@@ -31,13 +35,13 @@ export function McpMarketSettings({ t }: McpMarketSettingsProps) {
         setLoading(true);
         offsetRef.current = 0;
       }
-      const res = JSON.parse(await getExtensionService().list_market_mcp_servers(
+      const res = await listMarketMcpServers(orgSlug, {
         query,
-        PAGE_SIZE,
-        offsetRef.current
-      ));
+        limit: PAGE_SIZE,
+        offset: offsetRef.current,
+      });
       if (mounted && !mounted.current) return;
-      const items = res.mcp_servers || [];
+      const items = res.items;
       if (append) {
         setServers((prev) => [...prev, ...items]);
       } else {
@@ -54,7 +58,7 @@ export function McpMarketSettings({ t }: McpMarketSettingsProps) {
         setLoadingMore(false);
       }
     }
-  }, []);
+  }, [orgSlug]);
 
   // Debounced search – also handles initial load (search starts as "")
   useEffect(() => {

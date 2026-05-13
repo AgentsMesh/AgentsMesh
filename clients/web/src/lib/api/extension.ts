@@ -28,10 +28,6 @@ export const extensionApi = {
   uninstallMcpServer: async (repoId: number, installId: number) => {
     await getExtensionService().uninstall_mcp_server(BigInt(repoId), BigInt(installId));
   },
-  listMarketSkills: async (query?: string, category?: string) => {
-    const json = await getExtensionService().list_market_skills(query ?? null, category ?? null);
-    return JSON.parse(json);
-  },
   installSkillFromMarket: async (repoId: number, data: Record<string, unknown>) => {
     const json = await getExtensionService().install_skill_from_market(BigInt(repoId), JSON.stringify(data));
     return JSON.parse(json);
@@ -43,10 +39,6 @@ export const extensionApi = {
   installSkillFromUpload: async (repoId: number, file: File, scope?: string) => {
     const buf = new Uint8Array(await file.arrayBuffer());
     const json = await getExtensionService().install_skill_from_upload(BigInt(repoId), buf, file.name, scope ?? null);
-    return JSON.parse(json);
-  },
-  listMarketMcpServers: async (query?: string, _category?: string, limit?: number, offset?: number) => {
-    const json = await getExtensionService().list_market_mcp_servers(query ?? null, limit ?? null, offset ?? null);
     return JSON.parse(json);
   },
   installMcpFromMarket: async (repoId: number, data: Record<string, unknown>) => {

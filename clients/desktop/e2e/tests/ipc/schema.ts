@@ -1515,38 +1515,26 @@ export const ipcSchema: IpcMethodSchema[] = [
     "returnType": "Vec<u8>"
   },
   {
-    "name": "extension_list_market_skills",
+    "name": "extension_list_market_skills_connect",
     "group": "extension",
     "params": [
       {
-        "name": "query",
-        "type": "Option<String>"
-      },
-      {
-        "name": "category",
-        "type": "Option<String>"
+        "name": "request",
+        "type": "Vec<u8>"
       }
     ],
-    "returnType": "String"
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "extension_list_market_mcp_servers",
+    "name": "extension_list_market_mcp_servers_connect",
     "group": "extension",
     "params": [
       {
-        "name": "query",
-        "type": "Option<String>"
-      },
-      {
-        "name": "limit",
-        "type": "Option<u32>"
-      },
-      {
-        "name": "offset",
-        "type": "Option<u32>"
+        "name": "request",
+        "type": "Vec<u8>"
       }
     ],
-    "returnType": "String"
+    "returnType": "Vec<u8>"
   },
   {
     "name": "extension_list_repo_skills",

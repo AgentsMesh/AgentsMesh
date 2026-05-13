@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { SkillMarketItem } from "@/lib/api";
 import { getExtensionService } from "@/lib/wasm-core";
+import { listMarketSkills } from "@/lib/api/marketExtension";
+import { useCurrentOrg } from "@/stores/auth";
 import type { InstalledSkill } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -25,6 +27,8 @@ interface AddSkillDialogProps {
 
 export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInstalled, installedSlugs }: AddSkillDialogProps) {
   const t = useTranslations();
+  const currentOrg = useCurrentOrg();
+  const orgSlug = currentOrg?.slug ?? "";
   const [installing, setInstalling] = useState(false);
 
   // Marketplace state
@@ -41,16 +45,17 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMarketSkills = useCallback(async (query?: string) => {
+    if (!orgSlug) return;
     setLoadingMarket(true);
     try {
-      const res = JSON.parse(await getExtensionService().list_market_skills(query));
-      setMarketSkills(res.skills || []);
+      const res = await listMarketSkills(orgSlug, { query });
+      setMarketSkills(res.items);
     } catch (error) {
       console.error("Failed to load market skills:", error);
     } finally {
       setLoadingMarket(false);
     }
-  }, []);
+  }, [orgSlug]);
 
   useEffect(() => {
     if (open) {

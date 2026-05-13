@@ -14,12 +14,6 @@ func registerExtensionRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	handler := NewExtensionHandler(svc.Extension)
 
-	market := rg.Group("/market")
-	{
-		market.GET("/skills", handler.ListMarketSkills)
-		market.GET("/mcp-servers", handler.ListMarketMcpServers)
-	}
-
 	repoSkills := rg.Group("/repositories/:id/skills")
 	{
 		repoSkills.GET("", handler.ListRepoSkills)
