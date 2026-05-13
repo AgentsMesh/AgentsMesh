@@ -4,7 +4,7 @@ import {
   AgentData,
   RepositoryData,
 } from "@/lib/api";
-import { getRunnerService } from "@/lib/wasm-core";
+import { listRunners } from "@/lib/api/runnerConnect";
 import { listRepositories } from "@/lib/api/repositoryConnect";
 import { listAgents } from "@/lib/api/agentConnect";
 import { useCurrentOrg } from "@/stores/auth";
@@ -52,8 +52,11 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
         const agentsPromise = currentOrg
           ? listAgents(currentOrg.slug)
           : Promise.resolve({ builtin_agents: [], custom_agents: [], agents: [] });
+        const runnersPromise = currentOrg
+          ? listRunners(currentOrg.slug)
+          : Promise.resolve({ items: [], total: 0, limit: 0, offset: 0 });
         const [runnersRes, agentsRes, reposRes] = await Promise.allSettled([
-          getRunnerService().fetch_runners(null).then((j: string) => JSON.parse(j)),
+          runnersPromise,
           agentsPromise,
           reposPromise,
         ]);
@@ -62,7 +65,7 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
 
         if (runnersRes.status === "fulfilled") {
           // Only online runners
-          const allRunners: RunnerData[] = runnersRes.value.runners || [];
+          const allRunners: RunnerData[] = runnersRes.value.items || [];
           const onlineRunners = allRunners.filter((r: RunnerData) => r.status === "online");
           setRunners(onlineRunners);
         }
