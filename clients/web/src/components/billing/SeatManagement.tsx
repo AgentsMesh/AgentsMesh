@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SeatUsage } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { getSeatUsageConnect, purchaseSeatsConnect } from "@/lib/api/billingConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 
 interface SeatManagementProps {
@@ -17,6 +18,7 @@ export function SeatManagement({
   t,
   onPurchaseInitiated,
 }: SeatManagementProps) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [loading, setLoading] = useState(true);
   const [seatUsage, setSeatUsage] = useState<SeatUsage | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,35 +27,34 @@ export function SeatManagement({
   const [purchasing, setPurchasing] = useState(false);
 
   const loadSeatUsage = useCallback(async () => {
+    if (!orgSlug) return;
     setLoading(true);
     setError(null);
     try {
-      const usage: SeatUsage = JSON.parse(await getBillingService().get_seat_usage());
+      const usage = await getSeatUsageConnect(orgSlug);
       setSeatUsage(usage);
     } catch (err) {
       setError(getLocalizedErrorMessage(err, t, t("billing.seats.loadFailed") || "Failed to load seat data"));
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, [orgSlug, t]);
 
   useEffect(() => {
     loadSeatUsage();
   }, [loadSeatUsage]);
 
   const handlePurchaseSeats = async () => {
-    if (seatsToAdd < 1) return;
+    if (seatsToAdd < 1 || !orgSlug) return;
 
     setPurchasing(true);
     setError(null);
     try {
-      const result = JSON.parse(await getBillingService().purchase_seats(
-        JSON.stringify({ seats: seatsToAdd })
-      ));
+      const result = await purchaseSeatsConnect(orgSlug, seatsToAdd);
 
       // Update local state with new seat data
-      if (result.seats) {
-        setSeatUsage(result.seats);
+      if (result) {
+        setSeatUsage(result);
       } else {
         // Reload seat usage if not returned inline
         await loadSeatUsage();

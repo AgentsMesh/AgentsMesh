@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import type { Invoice } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { listInvoicesConnect } from "@/lib/api/billingConnect";
+import { useCurrentOrg } from "@/stores/auth";
 
 interface InvoiceHistoryProps {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function InvoiceHistory({ t }: InvoiceHistoryProps) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -20,19 +22,21 @@ export function InvoiceHistory({ t }: InvoiceHistoryProps) {
 
   useEffect(() => {
     loadInvoices(0);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgSlug]);
 
   const loadInvoices = async (pageNum: number) => {
+    if (!orgSlug) return;
     setLoading(true);
     setError(null);
     try {
-      const response = JSON.parse(await getBillingService().list_invoices(pageSize, pageNum * pageSize));
+      const response = await listInvoicesConnect(orgSlug, { limit: pageSize, offset: pageNum * pageSize });
       if (pageNum === 0) {
-        setInvoices(response.invoices);
+        setInvoices(response.items);
       } else {
-        setInvoices((prev) => [...prev, ...response.invoices]);
+        setInvoices((prev) => [...prev, ...response.items]);
       }
-      setHasMore(response.invoices.length === pageSize);
+      setHasMore(response.items.length === pageSize);
       setPage(pageNum);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load invoices");

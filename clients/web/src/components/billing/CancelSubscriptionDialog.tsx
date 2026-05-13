@@ -12,7 +12,8 @@ import {
   ResponsiveDialogBody,
   ResponsiveDialogFooter,
 } from "@/components/ui/responsive-dialog";
-import { getBillingService } from "@/lib/wasm-core";
+import { requestCancelSubscriptionConnect } from "@/lib/api/billingConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 
 interface CancelSubscriptionDialogProps {
@@ -30,6 +31,7 @@ export function CancelSubscriptionDialog({
   t,
   onCancelled,
 }: CancelSubscriptionDialogProps) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cancelType, setCancelType] = useState<"end_of_period" | "immediate">(
@@ -37,13 +39,12 @@ export function CancelSubscriptionDialog({
   );
 
   const handleCancel = async () => {
+    if (!orgSlug) return;
     setLoading(true);
     setError(null);
 
     try {
-      await getBillingService().request_cancel(
-        JSON.stringify({ immediate: cancelType === "immediate" })
-      );
+      await requestCancelSubscriptionConnect(orgSlug, cancelType === "immediate");
       onCancelled?.();
       onOpenChange(false);
     } catch (err) {

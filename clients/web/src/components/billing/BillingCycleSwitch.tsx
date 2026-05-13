@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BillingCycle } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { changeBillingCycleConnect } from "@/lib/api/billingConnect";
+import { useCurrentOrg } from "@/stores/auth";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 
 export interface BillingCycleSwitchProps {
@@ -23,16 +24,16 @@ export function BillingCycleSwitch({
   onCycleChanged,
   onError,
 }: BillingCycleSwitchProps) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [targetCycle, setTargetCycle] = useState<BillingCycle | null>(null);
 
   const handleSwitchCycle = async (newCycle: BillingCycle) => {
+    if (!orgSlug) return;
     setLoading(true);
     try {
-      const result = JSON.parse(await getBillingService().change_cycle(
-        JSON.stringify({ billing_cycle: newCycle })
-      ));
+      const result = await changeBillingCycleConnect(orgSlug, newCycle);
       onCycleChanged?.(newCycle, result.effective_date);
       setShowConfirm(false);
       setTargetCycle(null);
