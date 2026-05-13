@@ -679,116 +679,114 @@ export const ipcSchema: IpcMethodSchema[] = [
     "returnType": "String"
   },
   {
-    "name": "binding_request_binding",
+    "name": "binding_request_binding_connect",
     "group": "binding",
     "params": [
       {
-        "name": "json",
-        "type": "String"
-      },
-      {
-        "name": "pod_key",
-        "type": "Option<String>"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_accept_binding",
+    "name": "binding_accept_binding_connect",
     "group": "binding",
     "params": [
       {
-        "name": "json",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_reject_binding",
+    "name": "binding_reject_binding_connect",
     "group": "binding",
     "params": [
       {
-        "name": "json",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "()"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_request_scopes",
+    "name": "binding_request_scopes_connect",
     "group": "binding",
     "params": [
       {
-        "name": "binding_id",
-        "type": "i64"
-      },
-      {
-        "name": "json",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_approve_scopes",
+    "name": "binding_approve_scopes_connect",
     "group": "binding",
     "params": [
       {
-        "name": "binding_id",
-        "type": "i64"
-      },
-      {
-        "name": "json",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_unbind",
+    "name": "binding_unbind_connect",
     "group": "binding",
     "params": [
       {
-        "name": "json",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "()"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_list_bindings",
+    "name": "binding_list_bindings_connect",
     "group": "binding",
     "params": [
       {
-        "name": "status",
-        "type": "Option<String>"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
   },
   {
-    "name": "binding_get_pending_bindings",
-    "group": "binding",
-    "params": [],
-    "returnType": "String"
-  },
-  {
-    "name": "binding_get_bound_pods",
-    "group": "binding",
-    "params": [],
-    "returnType": "String"
-  },
-  {
-    "name": "binding_check_binding",
+    "name": "binding_get_pending_bindings_connect",
     "group": "binding",
     "params": [
       {
-        "name": "target_pod",
-        "type": "String"
+        "name": "request",
+        "type": "Buffer"
       }
     ],
-    "returnType": "String"
+    "returnType": "Buffer"
+  },
+  {
+    "name": "binding_get_bound_pods_connect",
+    "group": "binding",
+    "params": [
+      {
+        "name": "request",
+        "type": "Buffer"
+      }
+    ],
+    "returnType": "Buffer"
+  },
+  {
+    "name": "binding_check_binding_connect",
+    "group": "binding",
+    "params": [
+      {
+        "name": "request",
+        "type": "Buffer"
+      }
+    ],
+    "returnType": "Buffer"
   },
   {
     "name": "channel_channels_json",

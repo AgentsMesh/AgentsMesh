@@ -179,16 +179,19 @@ export interface IBillingService {
 }
 
 export interface IBindingService {
-  accept_binding(json: string): Promise<string>;
-  approve_scopes(binding_id: bigint, json: string): Promise<string>;
-  check_binding(target_pod: string): Promise<string>;
-  get_bound_pods(): Promise<string>;
-  get_pending_bindings(): Promise<string>;
-  list_bindings(status?: string | null): Promise<string>;
-  reject_binding(json: string): Promise<void>;
-  request_binding(json: string, pod_key?: string | null): Promise<string>;
-  request_scopes(binding_id: bigint, json: string): Promise<string>;
-  unbind(json: string): Promise<void>;
+  // Connect-RPC: proto.binding.v1.BindingService. Binary wire (Uint8Array
+  // in, Uint8Array out). Callers encode/decode via @bufbuild/protobuf
+  // — see clients/web/src/lib/api/bindingConnect.ts for the adapter.
+  acceptBindingConnect(request: Uint8Array): Promise<Uint8Array>;
+  approveScopesConnect(request: Uint8Array): Promise<Uint8Array>;
+  checkBindingConnect(request: Uint8Array): Promise<Uint8Array>;
+  getBoundPodsConnect(request: Uint8Array): Promise<Uint8Array>;
+  getPendingBindingsConnect(request: Uint8Array): Promise<Uint8Array>;
+  listBindingsConnect(request: Uint8Array): Promise<Uint8Array>;
+  rejectBindingConnect(request: Uint8Array): Promise<Uint8Array>;
+  requestBindingConnect(request: Uint8Array): Promise<Uint8Array>;
+  requestScopesConnect(request: Uint8Array): Promise<Uint8Array>;
+  unbindConnect(request: Uint8Array): Promise<Uint8Array>;
 }
 
 export interface IChannelService {

@@ -2,43 +2,48 @@ import { invoke } from "./invoke";
 import type { IBindingService } from "@agentsmesh/service-interface";
 
 export class ElectronBindingService implements IBindingService {
-  async list_bindings(status?: string | null): Promise<string> {
-    return invoke<string>("bindingListBindings", status);
+  // Connect-RPC: proto.binding.v1.BindingService. Binary wire — every
+  // method forwards a Uint8Array request to the matching napi handler
+  // (commands/binding.rs) and gets a Uint8Array response back. Callers
+  // wrap with @bufbuild/protobuf .toBinary() / .fromBinary().
+
+  async requestBindingConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingRequestBindingConnect", request);
   }
 
-  async get_bound_pods(): Promise<string> {
-    return invoke<string>("bindingGetBoundPods");
+  async acceptBindingConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingAcceptBindingConnect", request);
   }
 
-  async get_pending_bindings(): Promise<string> {
-    return invoke<string>("bindingGetPendingBindings");
+  async rejectBindingConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingRejectBindingConnect", request);
   }
 
-  async check_binding(targetPod: string): Promise<string> {
-    return invoke<string>("bindingCheckBinding", targetPod);
+  async unbindConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingUnbindConnect", request);
   }
 
-  async request_binding(json: string, podKey?: string | null): Promise<string> {
-    return invoke<string>("bindingRequestBinding", json, podKey);
+  async requestScopesConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingRequestScopesConnect", request);
   }
 
-  async accept_binding(json: string): Promise<string> {
-    return invoke<string>("bindingAcceptBinding", json);
+  async approveScopesConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingApproveScopesConnect", request);
   }
 
-  async reject_binding(json: string): Promise<void> {
-    await invoke<void>("bindingRejectBinding", json);
+  async listBindingsConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingListBindingsConnect", request);
   }
 
-  async unbind(json: string): Promise<void> {
-    await invoke<void>("bindingUnbind", json);
+  async getPendingBindingsConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingGetPendingBindingsConnect", request);
   }
 
-  async request_scopes(bindingId: bigint, json: string): Promise<string> {
-    return invoke<string>("bindingRequestScopes", Number(bindingId), json);
+  async getBoundPodsConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingGetBoundPodsConnect", request);
   }
 
-  async approve_scopes(bindingId: bigint, json: string): Promise<string> {
-    return invoke<string>("bindingApproveScopes", Number(bindingId), json);
+  async checkBindingConnect(request: Uint8Array): Promise<Uint8Array> {
+    return invoke<Uint8Array>("bindingCheckBindingConnect", request);
   }
 }
