@@ -1,19 +1,9 @@
-use serde::{Deserialize, Serialize};
+use prost::Message;
+use reqwest::header::{HeaderName, HeaderValue};
 use tracing::warn;
 
 use crate::client::ApiClient;
-
-#[derive(Serialize)]
-struct RefreshRequest {
-    refresh_token: String,
-}
-
-#[derive(Deserialize)]
-struct RefreshResponse {
-    token: String,
-    refresh_token: String,
-    expires_in: Option<i64>,
-}
+use agentsmesh_types::proto_auth_v1 as auth_proto;
 
 impl ApiClient {
     pub(crate) async fn handle_token_refresh(&self, failed_token: Option<&str>) -> bool {
@@ -30,23 +20,48 @@ impl ApiClient {
             return false;
         };
 
-        let url = format!("{}/api/v1/auth/refresh", self.base_url);
+        // Drive token refresh through Connect-RPC — the REST
+        // `/api/v1/auth/refresh` handler is gone. Proto.auth.v1 owns the
+        // refresh data plane (see backend/internal/api/connect/auth).
+        let req = auth_proto::RefreshTokenRequest { refresh_token };
+        let url = format!(
+            "{}/proto.auth.v1.AuthService/RefreshToken",
+            self.base_url
+        );
         let result = self
             .http
             .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&RefreshRequest { refresh_token })
+            .header(
+                HeaderName::from_static("content-type"),
+                HeaderValue::from_static("application/proto"),
+            )
+            .header(
+                HeaderName::from_static("connect-protocol-version"),
+                HeaderValue::from_static("1"),
+            )
+            .body(req.encode_to_vec())
             .send()
             .await;
 
         match result {
-            Ok(resp) if resp.status().is_success() => match resp.json::<RefreshResponse>().await {
-                Ok(data) => {
-                    self.auth_store.set_tokens(data.token, data.refresh_token, data.expires_in);
-                    true
-                }
+            Ok(resp) if resp.status().is_success() => match resp.bytes().await {
+                Ok(body) => match auth_proto::RefreshTokenResponse::decode(body) {
+                    Ok(data) => {
+                        self.auth_store.set_tokens(
+                            data.token,
+                            data.refresh_token,
+                            Some(data.expires_in),
+                        );
+                        true
+                    }
+                    Err(e) => {
+                        warn!("failed to decode refresh response: {e}");
+                        self.auth_store.clear_tokens();
+                        false
+                    }
+                },
                 Err(e) => {
-                    warn!("failed to parse refresh response: {e}");
+                    warn!("failed to read refresh response body: {e}");
                     self.auth_store.clear_tokens();
                     false
                 }

@@ -12,7 +12,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/api/rest/ws"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
@@ -96,25 +95,20 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		})
 	})
 
-	// Initialize email service
-	// BaseURL is derived from PrimaryDomain
-	emailSvc := email.NewService(email.Config{
-		Provider:    cfg.Email.Provider,
-		ResendKey:   cfg.Email.ResendKey,
-		FromAddress: cfg.Email.FromAddress,
-		BaseURL:     cfg.FrontendURL(), // Derived from PrimaryDomain
-	})
-
 	// API v1
 	apiV1 := r.Group("/api/v1")
 	{
-		// Public routes (no auth required, with rate limiting)
-		authHandler := v1.NewAuthHandler(svc.Auth, svc.User, emailSvc, cfg)
+		// Public OAuth browser-redirect endpoints (no auth required, with
+		// rate limiting). Login / register / refresh / logout / verify /
+		// resend / forgot / reset / sso-discover / sso-ldap moved to
+		// Connect-RPC — see backend/internal/api/connect/auth + connect/sso.
+		authHandler := v1.NewAuthHandler(svc.Auth, cfg)
 		authGroup := apiV1.Group("/auth")
 		authGroup.Use(middleware.IPRateLimiter(redisClient, "auth", 20, time.Minute))
 		authHandler.RegisterRoutes(authGroup)
 
-		// SSO authentication routes (public, under /auth/sso)
+		// SSO OIDC/SAML browser-redirect endpoints (public, under /auth/sso).
+		// Discover + LDAPAuth migrated to proto.sso.v1.SSOService.
 		if svc.SSO != nil {
 			ssoAuthHandler := v1.NewSSOAuthHandler(svc.SSO, svc.Auth, cfg)
 			ssoAuthHandler.RegisterRoutes(authGroup.Group("/sso"))
@@ -163,14 +157,9 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		protected := apiV1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 		{
-			// User-level routes (no tenant context required)
-			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org)
-
-			// Organization CRUD + Members migrated to Connect-RPC
-			// proto.org.v1 — see backend/internal/api/connect/org. The REST
-			// /orgs handler was removed in the dual-track cleanup. Org-scoped
-			// routes (/orgs/:slug/...) below remain on REST until each
-			// service migrates.
+			// User-level routes (no tenant context required).
+			// /me + /me/organizations migrated to proto.user.v1.UserService
+			// + proto.org.v1.OrgService.ListMyOrgs — REST surface removed.
 
 			// Support Tickets (user-level, no tenant context required)
 			if svc.SupportTicket != nil {

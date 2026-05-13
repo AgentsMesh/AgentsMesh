@@ -220,32 +220,4 @@ mod api_message_org_tests {
         let data = agentsmesh_types::UpdateMemberRoleRequest { role: "admin".into() };
         let _ = c.update_org_member_role("acme", 5, &data).await.unwrap();
     }
-
-    #[tokio::test]
-    async fn sso_ldap_auth() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/sso/corp.com/ldap"))
-            .respond_with(ok(json!({
-                "token":"a","refresh_token":"r",
-                "user":{"id":1,"email":"u@c.com","username":"u"}, "expires_in":3600
-            }))).expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), Tok::none());
-        let data = agentsmesh_types::LdapAuthRequest {
-            username: "admin".into(), password: "secret".into(),
-        };
-        let r = c.sso_ldap_auth("corp.com", &data).await.unwrap();
-        assert_eq!(r.token, "a");
-        let reqs = s.received_requests().await.unwrap();
-        assert!(reqs[0].headers.get("Authorization").is_none());
-    }
-
-    #[tokio::test]
-    async fn get_user_organizations() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ok(json!({"organizations":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), Tok::none());
-        let _ = c.get_organizations().await.unwrap();
-    }
 }

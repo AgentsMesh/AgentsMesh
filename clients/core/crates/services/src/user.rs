@@ -13,22 +13,6 @@ impl UserApiService {
         Self { client }
     }
 
-    // -------- Legacy REST (JSON wire) --------
-    //
-    // `get_me` and `get_organizations` stay on REST until the AuthManager
-    // bootstrap path and the iOS UniFFI bridge (ffi/src/services/user.rs)
-    // are migrated to Connect — both consume the wrapped JSON shape today.
-
-    pub async fn get_me(&self) -> Result<String, String> {
-        let resp = self.client.get_me().await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn get_organizations(&self) -> Result<String, String> {
-        let resp = self.client.get_organizations().await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
     // -------- Connect-RPC (binary wire) --------
 
     pub async fn get_me_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {

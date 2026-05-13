@@ -1,7 +1,6 @@
 use crate::ApiClient;
 use crate::connect_call::connect_call;
 use crate::error::ApiError;
-use agentsmesh_types::*;
 use agentsmesh_types::proto_sso_v1 as sso_proto;
 
 // =============================================================================
@@ -39,25 +38,5 @@ impl ApiClient {
             req,
         )
         .await
-    }
-}
-
-// =============================================================================
-// Legacy REST methods — preserved for dual-track migration.
-// =============================================================================
-
-impl ApiClient {
-    pub async fn sso_discover(&self, email: &str) -> Result<SSODiscoverResponse, ApiError> {
-        self.public_get(&format!("/api/v1/auth/sso/discover?email={email}"))
-            .await
-    }
-
-    pub async fn sso_ldap_auth(
-        &self,
-        domain: &str,
-        data: &LdapAuthRequest,
-    ) -> Result<AuthSession, ApiError> {
-        self.public_post(&format!("/api/v1/auth/sso/{domain}/ldap"), data)
-            .await
     }
 }

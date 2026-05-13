@@ -2,70 +2,57 @@ package v1
 
 import (
 	"github.com/anthropics/agentsmesh/backend/internal/config"
-	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
-	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/auth/oauth"
 	"github.com/gin-gonic/gin"
 )
 
-// AuthHandler handles authentication requests
+// AuthHandler hosts the OAuth browser-redirect surface that Connect-RPC
+// cannot replace: the IdP-initiated GET on `/oauth/:provider` issues a
+// 307 to the provider's authorization endpoint, and `/oauth/:provider/
+// callback` consumes the IdP's redirect and 307s the SPA back. Connect's
+// unary contract cannot return `Location:` headers, so these two
+// endpoints stay on REST permanently.
+//
+// All other auth flows (login / register / refresh / logout / verify /
+// resend / forgot / reset) moved to proto.auth.v1.AuthService —
+// see backend/internal/api/connect/auth.
 type AuthHandler struct {
-	authService  *auth.Service
-	userService  *user.Service
-	emailService email.Service
-	config       *config.Config
+	authService *auth.Service
+	config      *config.Config
 }
 
-// NewAuthHandler creates a new auth handler
-func NewAuthHandler(authSvc *auth.Service, userSvc *user.Service, emailSvc email.Service, cfg *config.Config) *AuthHandler {
+func NewAuthHandler(authSvc *auth.Service, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
-		authService:  authSvc,
-		userService:  userSvc,
-		emailService: emailSvc,
-		config:       cfg,
+		authService: authSvc,
+		config:      cfg,
 	}
 }
 
-// RegisterRoutes registers authentication routes
+// RegisterRoutes mounts the OAuth browser-redirect endpoints. Login /
+// register / refresh / logout / verify-email / resend-verification /
+// forgot-password / reset-password are owned by Connect-RPC.
 func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.POST("/login", h.Login)
-	rg.POST("/register", h.Register)
-	rg.POST("/refresh", h.RefreshToken)
-	rg.POST("/logout", h.Logout)
-
-	// Email verification routes
-	rg.POST("/verify-email", h.VerifyEmail)
-	rg.POST("/resend-verification", h.ResendVerification)
-
-	// Password reset routes
-	rg.POST("/forgot-password", h.ForgotPassword)
-	rg.POST("/reset-password", h.ResetPassword)
-
-	// OAuth routes
 	oauthGroup := rg.Group("/oauth")
 	{
-		// GitHub
 		oauthGroup.GET("/github", h.OAuthRedirect("github"))
 		oauthGroup.GET("/github/callback", h.OAuthCallback("github"))
 
-		// Google
 		oauthGroup.GET("/google", h.OAuthRedirect("google"))
 		oauthGroup.GET("/google/callback", h.OAuthCallback("google"))
 
-		// GitLab
 		oauthGroup.GET("/gitlab", h.OAuthRedirect("gitlab"))
 		oauthGroup.GET("/gitlab/callback", h.OAuthCallback("gitlab"))
 
-		// Gitee
 		oauthGroup.GET("/gitee", h.OAuthRedirect("gitee"))
 		oauthGroup.GET("/gitee/callback", h.OAuthCallback("gitee"))
 	}
 }
 
-// getOAuthConfig returns OAuth configuration for a provider
+// getOAuthConfig resolves the provider's OAuth config from the loaded
+// server config. Returns nil when the provider has no client_id —
+// the caller treats that as an unconfigured provider and responds 400.
 func (h *AuthHandler) getOAuthConfig(provider string) *oauth.Config {
-	// RedirectURLs are derived from PrimaryDomain
 	switch provider {
 	case "github":
 		if h.config.OAuth.GitHub.ClientID == "" {

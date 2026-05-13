@@ -11,7 +11,6 @@ mod api_repo_tests {
     struct Tok(Mutex<Option<String>>);
     impl Tok {
         fn org(s: &str) -> Arc<Self> { Arc::new(Self(Mutex::new(Some(s.into())))) }
-        fn none() -> Arc<Self> { Arc::new(Self(Mutex::new(None))) }
     }
     impl AuthTokenStore for Tok {
         fn get_token(&self) -> Option<String> { Some("tok".into()) }

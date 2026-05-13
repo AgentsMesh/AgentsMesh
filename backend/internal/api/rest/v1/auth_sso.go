@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -20,14 +19,21 @@ import (
 // domainRegexp validates email domain format in URL path parameters.
 var domainRegexp = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$`)
 
-// SSOAuthHandler handles SSO authentication requests
+// SSOAuthHandler hosts the OIDC/SAML browser-redirect surface that
+// Connect-RPC cannot replace — IdP-initiated GETs issue a 307 to the
+// IdP, the IdP callback path consumes their redirect, and the SAML
+// metadata route serves XML. Connect's unary contract can't return
+// `Location:` headers or `application/xml`, so these endpoints stay
+// on REST permanently.
+//
+// Discover and LDAPAuth migrated to proto.sso.v1.SSOService —
+// see backend/internal/api/connect/sso.
 type SSOAuthHandler struct {
 	ssoService  *ssoservice.Service
 	authService *auth.Service
 	config      *config.Config
 }
 
-// NewSSOAuthHandler creates a new SSO auth handler
 func NewSSOAuthHandler(ssoSvc *ssoservice.Service, authSvc *auth.Service, cfg *config.Config) *SSOAuthHandler {
 	return &SSOAuthHandler{
 		ssoService:  ssoSvc,
@@ -36,45 +42,14 @@ func NewSSOAuthHandler(ssoSvc *ssoservice.Service, authSvc *auth.Service, cfg *c
 	}
 }
 
-// RegisterRoutes registers SSO authentication routes
+// RegisterRoutes mounts the OIDC/SAML browser-redirect endpoints.
+// Discover and LDAPAuth are owned by Connect-RPC.
 func (h *SSOAuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	rg.GET("/discover", h.Discover)
 	rg.GET("/:domain/oidc", h.OIDCRedirect)
 	rg.GET("/:domain/oidc/callback", h.OIDCCallback)
 	rg.GET("/:domain/saml", h.SAMLRedirect)
 	rg.POST("/:domain/saml/acs", h.SAMLACS)
-	rg.POST("/:domain/ldap", h.LDAPAuth)
 	rg.GET("/:domain/saml/metadata", h.SAMLMetadata)
-}
-
-// Discover returns available SSO configurations for a given email domain
-func (h *SSOAuthHandler) Discover(c *gin.Context) {
-	email := c.Query("email")
-	if email == "" {
-		apierr.InvalidInput(c, "Email is required")
-		return
-	}
-
-	domain := extractEmailDomain(email)
-	if domain == "" {
-		apierr.InvalidInput(c, "Invalid email format")
-		return
-	}
-
-	configs, err := h.ssoService.GetEnabledConfigs(c.Request.Context(), domain)
-	if err != nil {
-		slog.ErrorContext(c.Request.Context(), "failed to discover SSO configs", "domain", domain, "error", err)
-		c.JSON(http.StatusOK, gin.H{"configs": []interface{}{}})
-		return
-	}
-
-	// Return sanitized list
-	result := make([]*ssoservice.DiscoverResponse, 0, len(configs))
-	for _, cfg := range configs {
-		result = append(result, h.ssoService.ToDiscoverResponse(cfg))
-	}
-
-	c.JSON(http.StatusOK, gin.H{"configs": result})
 }
 
 // authenticateSSO creates/gets the user from SSO identity, checks if active, and generates tokens.
@@ -183,13 +158,4 @@ func validateDomain(c *gin.Context) (string, bool) {
 		return "", false
 	}
 	return domain, true
-}
-
-// extractEmailDomain extracts the domain part from an email address
-func extractEmailDomain(email string) string {
-	parts := strings.SplitN(email, "@", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	return strings.ToLower(parts[1])
 }

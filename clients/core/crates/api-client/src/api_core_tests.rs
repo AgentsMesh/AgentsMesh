@@ -33,19 +33,6 @@ mod api_core_tests {
         ResponseTemplate::new(200).set_body_json(body)
     }
 
-    // ── user ────────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn get_me() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me"))
-            .respond_with(ok(json!({"id":1,"email":"u@a.com","username":"u"})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let r = c.get_me().await.unwrap();
-        assert_eq!(r.email, "u@a.com");
-    }
-
     // ── pod ─────────────────────────────────────────────────────────────
     // Pod tests removed: REST surface eliminated; Connect handler tests in
     // backend/internal/api/connect/pod cover the same surface.
@@ -97,21 +84,6 @@ mod api_core_tests {
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let _ = c.get_billing_overview().await.unwrap();
-    }
-
-    // ── sso ─────────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn sso_discover() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/auth/sso/discover"))
-            .and(query_param("email", "a@b.com"))
-            .respond_with(ok(json!({"configs":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.sso_discover("a@b.com").await.unwrap();
-        let reqs = s.received_requests().await.unwrap();
-        assert!(reqs[0].headers.get("Authorization").is_none());
     }
 
     // ── mesh ────────────────────────────────────────────────────────────

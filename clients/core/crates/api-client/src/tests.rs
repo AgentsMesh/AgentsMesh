@@ -3,11 +3,22 @@ mod tests {
     use std::collections::HashMap;
     use std::sync::{Arc, Mutex};
 
+    use prost::Message;
     use serde::{Deserialize, Serialize};
     use wiremock::matchers::{header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use crate::{ApiClient, ApiError, AuthTokenStore, RequestOptions};
+    use agentsmesh_types::proto_auth_v1 as auth_proto;
+
+    fn refresh_response(token: &str, refresh: &str, expires_in: i64) -> Vec<u8> {
+        auth_proto::RefreshTokenResponse {
+            token: token.into(),
+            refresh_token: refresh.into(),
+            expires_in,
+        }
+        .encode_to_vec()
+    }
 
     struct MockTokenStore {
         token: Mutex<Option<String>>,
@@ -106,13 +117,15 @@ mod tests {
             .mount(&server)
             .await;
 
+        // Refresh runs through Connect-RPC (proto.auth.v1.AuthService) —
+        // the legacy REST `/api/v1/auth/refresh` no longer exists.
         Mock::given(method("POST"))
-            .and(path("/api/v1/auth/refresh"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "token": "new-tok",
-                "refresh_token": "new-ref",
-                "expires_in": 3600
-            })))
+            .and(path("/proto.auth.v1.AuthService/RefreshToken"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_bytes(refresh_response("new-tok", "new-ref", 3600))
+                    .insert_header("content-type", "application/proto"),
+            )
             .mount(&server)
             .await;
 
@@ -146,8 +159,8 @@ mod tests {
             .await;
 
         Mock::given(method("POST"))
-            .and(path("/api/v1/auth/refresh"))
-            .respond_with(ResponseTemplate::new(401).set_body_json(serde_json::json!({})))
+            .and(path("/proto.auth.v1.AuthService/RefreshToken"))
+            .respond_with(ResponseTemplate::new(401))
             .mount(&server)
             .await;
 
@@ -369,7 +382,7 @@ mod tests {
     async fn public_post_no_auth() {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/api/v1/auth/login"))
+            .and(path("/api/v1/public/echo"))
             .respond_with(
                 ResponseTemplate::new(200)
                     .set_body_json(serde_json::json!({"message": "logged-in", "count": 0})),
@@ -381,7 +394,7 @@ mod tests {
         let client = ApiClient::new(server.uri(), store);
 
         let body = serde_json::json!({"email": "a@b.com"});
-        let result: TestPayload = client.public_post("/api/v1/auth/login", &body).await.unwrap();
+        let result: TestPayload = client.public_post("/api/v1/public/echo", &body).await.unwrap();
         assert_eq!(result.message, "logged-in");
 
         let requests = server.received_requests().await.unwrap();
