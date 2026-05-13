@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { getTicketService } from "@/lib/wasm-core";
+import { getTicket, getSubTickets } from "@/lib/api/ticketConnect";
 import { listRelations, listCommits } from "@/lib/api/ticketRelations";
 import { useCurrentOrg } from "@/stores/auth";
 
@@ -49,16 +49,17 @@ export function useTicketPrefetch() {
       pendingRequests.add(slug);
 
       try {
-        const ticketData = JSON.parse(await getTicketService().fetch_ticket(slug));
+        if (!orgSlug) return;
+        const ticketData = await getTicket(orgSlug, slug);
         prefetchCache.set(slug, {
           data: ticketData,
           timestamp: Date.now(),
         });
 
         const [subTickets, relations, commits] = await Promise.allSettled([
-          getTicketService().get_sub_tickets(slug).then((j: string) => JSON.parse(j)),
-          orgSlug ? listRelations(orgSlug, slug) : Promise.resolve({ relations: [] }),
-          orgSlug ? listCommits(orgSlug, slug) : Promise.resolve({ commits: [] }),
+          getSubTickets(orgSlug, slug),
+          listRelations(orgSlug, slug),
+          listCommits(orgSlug, slug),
         ]);
 
         if (subTickets.status === "fulfilled") {

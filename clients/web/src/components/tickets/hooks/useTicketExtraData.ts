@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Ticket } from "@/stores/ticket";
 import { TicketRelation, TicketCommit, TicketComment } from "@/lib/api";
-import { getTicketService } from "@/lib/wasm-core";
+import { getSubTickets } from "@/lib/api/ticketConnect";
 import {
   listRelations,
   listCommits,
@@ -39,13 +39,13 @@ export function useTicketExtraData(slug: string, enabled: boolean) {
     setLoading(true);
     try {
       const [subTicketsRes, relationsRes, commitsRes, commentsRes] = await Promise.all([
-        getTicketService().get_sub_tickets(slug).then((j: string) => JSON.parse(j)).catch(() => ({ sub_tickets: [] })),
+        getSubTickets(orgSlug, slug).catch(() => [] as Ticket[]),
         listRelations(orgSlug, slug).catch(() => ({ relations: [] })),
         listCommits(orgSlug, slug).catch(() => ({ commits: [] })),
         listComments(orgSlug, slug).catch(() => ({ comments: [], total: 0, limit: 0, offset: 0 })),
       ]);
 
-      setSubTickets(subTicketsRes.sub_tickets || []);
+      setSubTickets((subTicketsRes ?? []) as Ticket[]);
       setRelations(relationsRes.relations || []);
       setCommits(commitsRes.commits || []);
       setComments(commentsRes.comments || []);

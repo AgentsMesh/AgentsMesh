@@ -4,6 +4,8 @@ import type { TicketData, TicketStatus, TicketPriority, BoardColumn } from "@/li
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getTicketService, parseWasmAny } from "@/lib/wasm-core";
+import * as ticketApi from "@/lib/api/ticketConnect";
+import { useAuthStore } from "@/stores/auth";
 
 export type { TicketStatus, TicketPriority };
 export interface Label { id: number; name: string; color: string }
@@ -25,6 +27,7 @@ const initPag = (cols: BoardColumn[]) => Object.fromEntries(
 
 const svc = () => getTicketService();
 const bump = () => useTicketStore.setState((s) => ({ _tick: s._tick + 1 }));
+const orgSlug = (): string => useAuthStore.getState().currentOrg?.slug || "";
 
 interface TicketState {
   _tick: number; selectedTicketSlug: string | null;
@@ -34,7 +37,7 @@ interface TicketState {
   columnPagination: Record<string, ColumnPagination>; doneCollapsed: boolean;
   fetchTickets: (f?: TicketFilters) => Promise<void>; fetchBoard: (f?: TicketFilters) => Promise<void>;
   loadMoreColumn: (status: string) => Promise<void>; fetchTicket: (slug: string) => Promise<void>;
-  createTicket: (d: { repositoryId: number; title: string; content?: string; priority?: TicketPriority; assigneeIds?: number[]; labels?: string[]; parentId?: number }) => Promise<Ticket>;
+  createTicket: (d: { repositoryId: number; title: string; content?: string; priority?: TicketPriority; assigneeIds?: number[]; labels?: string[]; parentId?: number; parent_ticket_slug?: string }) => Promise<Ticket>;
   updateTicket: (slug: string, d: Partial<{ title: string; content: string; status: TicketStatus; priority: TicketPriority; repositoryId: number | null; assigneeIds: number[]; labels: string[] }>) => Promise<Ticket>;
   deleteTicket: (slug: string) => Promise<void>; updateTicketStatus: (slug: string, s: TicketStatus) => Promise<void>;
   fetchLabels: (r?: number) => Promise<void>; createLabel: (n: string, c: string, r?: number) => Promise<Label>; deleteLabel: (id: number) => Promise<void>;
@@ -80,8 +83,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
     fetchTickets: async (filters) => {
       const m = { ...get().filters, ...filters }; set({ error: null, filters: m });
       try {
-        const json = await svc().fetch_tickets(m.status, 500, undefined);
-        const r = JSON.parse(json);
+        const r = await ticketApi.listTickets(orgSlug(), { status: m.status, limit: 500 });
+        svc().set_tickets(JSON.stringify(r.items));
         set({ totalCount: r.total || 0, priorityCounts: {}, columnPagination: {}, _tick: get()._tick + 1 });
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch tickets") }); }
     },
@@ -89,8 +92,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
     fetchBoard: async (filters) => {
       const m = { ...get().filters, ...filters }; set({ error: null, filters: m });
       try {
-        const json = await svc().fetch_board(m.repositoryId != null ? BigInt(m.repositoryId) : undefined);
-        const { columns } = JSON.parse(json);
+        const columns = await ticketApi.getBoard(orgSlug(), { repository_id: m.repositoryId });
+        svc().set_board_columns(JSON.stringify(columns));
         set({
           totalCount: columns.reduce((s: number, c: BoardColumn) => s + c.count, 0),
           priorityCounts: {},
@@ -105,12 +108,11 @@ export const useTicketStore = create<TicketState>((set, get) => {
       const pag = cp[status]; if (!pag?.hasMore || pag.loading) return;
       set({ columnPagination: { ...cp, [status]: { ...pag, loading: true } } });
       try {
-        const json = await svc().load_more_column(status, pag.offset, 20);
-        const res = JSON.parse(json);
-        const added = (res.tickets || []) as Ticket[];
-        const off = pag.offset + added.length;
+        const r = await ticketApi.listTickets(orgSlug(), { status, offset: pag.offset, limit: 20 });
+        svc().append_column_tickets(status, JSON.stringify(r.items));
+        const off = pag.offset + r.items.length;
         set({
-          columnPagination: { ...get().columnPagination, [status]: { offset: off, hasMore: off < (res.total || 0), loading: false } },
+          columnPagination: { ...get().columnPagination, [status]: { offset: off, hasMore: off < (r.total || 0), loading: false } },
           _tick: get()._tick + 1,
         });
       } catch (e: unknown) { set({ columnPagination: { ...get().columnPagination, [status]: { ...pag, loading: false } }, error: getErrorMessage(e, "Failed to load more") }); }
@@ -118,7 +120,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
 
     fetchTicket: async (slug) => {
       try {
-        await svc().fetch_ticket(slug);
+        const ticket = await ticketApi.getTicket(orgSlug(), slug);
+        svc().set_current_ticket(JSON.stringify(ticket));
         bump();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch ticket") }); }
     },
@@ -126,26 +129,43 @@ export const useTicketStore = create<TicketState>((set, get) => {
     createTicket: async (data) => {
       set({ error: null });
       try {
-        const json = await svc().create_ticket(JSON.stringify(data));
-        const t = JSON.parse(json) as Ticket;
+        const t = await ticketApi.createTicket(orgSlug(), {
+          title: data.title,
+          content: data.content,
+          priority: data.priority,
+          repository_id: data.repositoryId,
+          assignee_ids: data.assigneeIds,
+          labels: data.labels,
+          parent_ticket_slug: data.parent_ticket_slug,
+        });
+        svc().add_ticket(JSON.stringify(t));
         refresh();
-        return t;
+        return t as Ticket;
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to create ticket") }); throw e; }
     },
 
     updateTicket: async (slug, data) => {
       try {
-        const json = await svc().update_ticket(slug, JSON.stringify(data));
-        const t = JSON.parse(json) as Ticket;
+        const t = await ticketApi.updateTicket(orgSlug(), slug, {
+          title: data.title,
+          content: data.content,
+          status: data.status,
+          priority: data.priority,
+          repository_id: data.repositoryId === null ? 0 : data.repositoryId,
+          assignee_ids: data.assigneeIds,
+          labels: data.labels,
+        });
+        svc().update_ticket_local(slug, JSON.stringify(t));
         bump();
         refresh();
-        return t;
+        return t as Ticket;
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to update ticket") }); throw e; }
     },
 
     deleteTicket: async (slug) => {
       try {
-        await svc().delete_ticket(slug);
+        await ticketApi.deleteTicket(orgSlug(), slug);
+        svc().remove_ticket(slug);
         bump();
         refresh();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to delete ticket") }); throw e; }
@@ -153,7 +173,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
 
     updateTicketStatus: async (slug, status) => {
       try {
-        await svc().update_ticket_status(slug, status);
+        await ticketApi.updateTicketStatus(orgSlug(), slug, status);
+        svc().update_ticket_status_local(slug, status);
         bump();
         refresh();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to update status") }); throw e; }
@@ -161,23 +182,25 @@ export const useTicketStore = create<TicketState>((set, get) => {
 
     fetchLabels: async (repositoryId) => {
       try {
-        await svc().fetch_labels(repositoryId != null ? BigInt(repositoryId) : undefined);
+        const labels = await ticketApi.listLabels(orgSlug(), { repository_id: repositoryId });
+        svc().set_labels(JSON.stringify(labels));
         bump();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch labels") }); }
     },
 
     createLabel: async (name, color, repositoryId) => {
       try {
-        const json = await svc().create_label(name, color, repositoryId != null ? BigInt(repositoryId) : undefined);
-        const l = JSON.parse(json) as Label;
+        const l = await ticketApi.createLabel(orgSlug(), name, color, { repository_id: repositoryId });
+        svc().add_label(JSON.stringify(l));
         bump();
-        return l;
+        return l as Label;
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to create label") }); throw e; }
     },
 
     deleteLabel: async (id) => {
       try {
-        await svc().delete_label(id);
+        await ticketApi.deleteLabel(orgSlug(), id);
+        svc().remove_label(id);
         bump();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to delete label") }); throw e; }
     },
