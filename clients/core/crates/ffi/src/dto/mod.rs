@@ -75,6 +75,10 @@ pub use repository_dto::{
     RepositoryListResponseDto, RepositoryMergeRequestDto, UpdateRepositoryRequestDto,
     WebhookSecretDto, WebhookStatusDto,
 };
+pub(crate) use repository_dto::{
+    build_create_repository_proto_request, build_update_repository_proto_request,
+    list_branches_from_proto, merge_request_list_from_proto, repository_list_from_proto,
+};
 pub use runner_dto::{
     AuthorizeRunnerRequestDto, CreateRunnerTokenRequestDto, GrpcRegistrationTokenDto,
     RunnerAuthStatusDto, RunnerDto, RunnerListResponseDto, RunnerLogDto, RunnerLogListResponseDto,
