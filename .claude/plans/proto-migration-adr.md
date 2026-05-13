@@ -179,8 +179,7 @@ Replaced with generated Rust modules from `.proto` (committed but not hand-edite
 | Codec (client wire) | `application/proto` only; server accepts JSON for debug |
 | Proto package | `proto.<domain>.v1` (e.g., `proto.extension.v1`) |
 | Service URL | `/<package>.<Service>/<Method>` |
-| Field naming on wire | camelCase (Connect protojson auto from snake_case `.proto`) |
-| Rust struct rename | `#[serde(rename_all = "camelCase")]` on every response message |
+| Field naming in .proto | snake_case |
 | Tenant scope field | Org-scoped RPCs MUST have `string org_slug = 1;` as field 1 (User/Admin RPCs exempt) — Connect has no path params |
 | List response shape | `{items: [...], total: int64, limit: int32, offset: int32}` — uniform across 26 services |
 | Single-entity create/update response | message **is** the entity (no `{entity: ...}` wrapper) |
