@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { InstalledMcpServer } from "@/lib/api";
-import { getExtensionService } from "@/lib/wasm-core";
+import { updateMcpServer } from "@/lib/api/repoMcpExtension";
+import { useCurrentOrg } from "@/stores/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ interface EnvVarEntry {
 
 export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChange, onUpdated }: EditMcpEnvVarsDialogProps) {
   const t = useTranslations();
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [saving, setSaving] = useState(false);
   const [envVars, setEnvVars] = useState<EnvVarEntry[]>([]);
 
@@ -61,6 +63,7 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
   }, [open, mcpServer, hasSchema]);
 
   const handleSave = useCallback(async () => {
+    if (!orgSlug) return;
     setSaving(true);
     try {
       const envRecord: Record<string, string> = {};
@@ -69,7 +72,7 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
           envRecord[key.trim()] = value.trim();
         }
       });
-      await getExtensionService().update_mcp_server(BigInt(repositoryId), BigInt(mcpServer.id), JSON.stringify({ env_vars: envRecord }));
+      await updateMcpServer(orgSlug, repositoryId, mcpServer.id, { envVars: envRecord });
       toast.success(t("extensions.envVarsUpdated"));
       onUpdated();
       onOpenChange(false);
@@ -78,7 +81,7 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
     } finally {
       setSaving(false);
     }
-  }, [repositoryId, mcpServer.id, envVars, t, onUpdated, onOpenChange]);
+  }, [orgSlug, repositoryId, mcpServer.id, envVars, t, onUpdated, onOpenChange]);
 
   const hasUnfilledRequired = envVars.some((e) => e.required && !e.value.trim());
 

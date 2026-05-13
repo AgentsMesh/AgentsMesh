@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { McpMarketItem } from "@/lib/api";
-import { getExtensionService } from "@/lib/wasm-core";
+import { listMarketMcpServers } from "@/lib/api/marketExtension";
+import { installMcpFromMarket, installCustomMcpServer } from "@/lib/api/repoMcpExtension";
+import { useCurrentOrg } from "@/stores/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ interface AddMcpServerDialogProps {
 
 export function AddMcpServerDialog({ repositoryId, scope, open, onOpenChange, onInstalled }: AddMcpServerDialogProps) {
   const t = useTranslations();
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [installing, setInstalling] = useState(false);
 
   // Market state
@@ -47,13 +50,14 @@ export function AddMcpServerDialog({ repositoryId, scope, open, onOpenChange, on
   }, []);
 
   const loadMarketServers = useCallback(async (query?: string) => {
+    if (!orgSlug) return;
     setLoadingMarket(true);
     try {
-      const res = JSON.parse(await getExtensionService().list_market_mcp_servers(query, 100, 0));
-      setMarketServers(res.mcp_servers || []);
+      const res = await listMarketMcpServers(orgSlug, { query, limit: 100, offset: 0 });
+      setMarketServers(res.items || []);
     } catch (error) { console.error("Failed to load market MCP servers:", error); }
     finally { setLoadingMarket(false); }
-  }, []);
+  }, [orgSlug]);
 
   useEffect(() => { if (open) loadMarketServers(); }, [open, loadMarketServers]);
 
@@ -73,42 +77,44 @@ export function AddMcpServerDialog({ repositoryId, scope, open, onOpenChange, on
   ) ?? false;
 
   const handleInstallFromMarket = useCallback(async () => {
-    if (!selectedTemplate) return;
+    if (!selectedTemplate || !orgSlug) return;
     setInstalling(true);
     try {
       const filteredEnvVars: Record<string, string> = {};
       Object.entries(envVars).forEach(([key, value]) => { if (value.trim()) filteredEnvVars[key] = value.trim(); });
-      await getExtensionService().install_mcp_from_market(BigInt(repositoryId), JSON.stringify({
-        market_item_id: selectedTemplate.id,
-        env_vars: Object.keys(filteredEnvVars).length > 0 ? filteredEnvVars : undefined,
+      await installMcpFromMarket(orgSlug, repositoryId, {
+        marketItemId: selectedTemplate.id,
+        envVars: Object.keys(filteredEnvVars).length > 0 ? filteredEnvVars : undefined,
         scope,
-      }));
+      });
       toast.success(t("extensions.installed"));
       onInstalled();
     } catch (error) { toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToInstall"))); }
     finally { setInstalling(false); }
-  }, [repositoryId, selectedTemplate, envVars, scope, t, onInstalled]);
+  }, [orgSlug, repositoryId, selectedTemplate, envVars, scope, t, onInstalled]);
 
   const handleInstallCustom = useCallback(async () => {
-    if (!customName.trim() || !customSlug.trim()) return;
+    if (!customName.trim() || !customSlug.trim() || !orgSlug) return;
     setInstalling(true);
     try {
       const filteredEnvVars: Record<string, string> = Object.fromEntries(
         customEnvVars.filter((e) => e.key.trim()).map((e) => [e.key.trim(), e.value.trim()])
       );
-      await getExtensionService().install_custom_mcp_server(BigInt(repositoryId), JSON.stringify({
-        name: customName.trim(), slug: customSlug.trim(), transport_type: customTransport,
+      await installCustomMcpServer(orgSlug, repositoryId, {
+        name: customName.trim(),
+        slug: customSlug.trim(),
+        transportType: customTransport,
         command: customTransport === "stdio" ? customCommand.trim() || undefined : undefined,
         args: customTransport === "stdio" && customArgs.trim() ? customArgs.split(/\s+/).filter(Boolean) : undefined,
-        http_url: customTransport !== "stdio" ? customHttpUrl.trim() || undefined : undefined,
-        env_vars: Object.keys(filteredEnvVars).length > 0 ? filteredEnvVars : undefined,
+        httpUrl: customTransport !== "stdio" ? customHttpUrl.trim() || undefined : undefined,
+        envVars: Object.keys(filteredEnvVars).length > 0 ? filteredEnvVars : undefined,
         scope,
-      }));
+      });
       toast.success(t("extensions.installed"));
       onInstalled();
     } catch (error) { toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToInstall"))); }
     finally { setInstalling(false); }
-  }, [repositoryId, customName, customSlug, customTransport, customCommand, customArgs, customHttpUrl, customEnvVars, scope, t, onInstalled]);
+  }, [orgSlug, repositoryId, customName, customSlug, customTransport, customCommand, customArgs, customHttpUrl, customEnvVars, scope, t, onInstalled]);
 
   return (
     <Dialog open={open} onOpenChange={(value) => { if (!value) resetAllState(); onOpenChange(value); }}>

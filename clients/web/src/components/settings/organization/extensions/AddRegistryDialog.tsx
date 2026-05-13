@@ -3,7 +3,8 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getExtensionService } from "@/lib/wasm-core";
+import { createSkillRegistry } from "@/lib/api/skillRegistry";
+import { useCurrentOrg } from "@/stores/auth";
 import type { SkillRegistryAuthType } from "@/lib/api/extensionTypes";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ interface AddRegistryDialogProps {
 }
 
 export function AddRegistryDialog({ t, open, onOpenChange, onAdded }: AddRegistryDialogProps) {
+  const orgSlug = useCurrentOrg()?.slug || "";
   const [addUrl, setAddUrl] = useState("");
   const [addBranch, setAddBranch] = useState("");
   const [addType, setAddType] = useState("");
@@ -44,17 +46,17 @@ export function AddRegistryDialog({ t, open, onOpenChange, onAdded }: AddRegistr
   }, []);
 
   const handleAdd = useCallback(async () => {
-    if (!addUrl.trim()) return;
+    if (!addUrl.trim() || !orgSlug) return;
     setAdding(true);
     try {
-      await getExtensionService().create_skill_registry(JSON.stringify({
-        repository_url: addUrl.trim(),
+      await createSkillRegistry(orgSlug, {
+        repositoryUrl: addUrl.trim(),
         branch: addBranch.trim() || undefined,
-        source_type: addType.trim() || undefined,
-        compatible_agents: addCompatibleAgents.length > 0 ? addCompatibleAgents : undefined,
-        auth_type: addAuthType !== "none" ? addAuthType : undefined,
-        auth_credential: addAuthCredential.trim() || undefined,
-      }));
+        sourceType: addType.trim() || undefined,
+        compatibleAgents: addCompatibleAgents.length > 0 ? addCompatibleAgents : undefined,
+        authType: addAuthType !== "none" ? addAuthType : undefined,
+        authCredential: addAuthCredential.trim() || undefined,
+      });
       toast.success(t("extensions.sourceAdded"));
       onOpenChange(false);
       resetForm();
@@ -64,7 +66,7 @@ export function AddRegistryDialog({ t, open, onOpenChange, onAdded }: AddRegistr
     } finally {
       setAdding(false);
     }
-  }, [addUrl, addBranch, addType, addCompatibleAgents, addAuthType, addAuthCredential, t, onAdded, onOpenChange, resetForm]);
+  }, [orgSlug, addUrl, addBranch, addType, addCompatibleAgents, addAuthType, addAuthCredential, t, onAdded, onOpenChange, resetForm]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
