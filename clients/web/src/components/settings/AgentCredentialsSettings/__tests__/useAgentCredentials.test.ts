@@ -1,11 +1,7 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getUserCredentialService } from "@/lib/wasm-core";
 import * as agentConnect from "@/lib/api/agentConnect";
-
-const mockListCredentials = vi.fn();
-const mockCreateCredential = vi.fn();
-const mockUpdateCredential = vi.fn();
+import * as userAgentCredential from "@/lib/api/userAgentCredential";
 
 // Stable references so React's useCallback([currentOrg]) doesn't churn and
 // re-trigger loadData every render (would otherwise yield "Maximum update
@@ -36,6 +32,14 @@ vi.mock("@/lib/api/agentConnect", () => ({
   getAgentConfigSchema: vi.fn(),
 }));
 
+vi.mock("@/lib/api/userAgentCredential", () => ({
+  listAgentCredentialProfiles: vi.fn(),
+  createAgentCredentialProfile: vi.fn(),
+  updateAgentCredentialProfile: vi.fn(),
+  deleteAgentCredentialProfile: vi.fn(),
+  setDefaultAgentCredentialProfile: vi.fn(),
+}));
+
 import { useAgentCredentials } from "../useAgentCredentials";
 import type { CredentialFormData } from "../types";
 
@@ -44,7 +48,10 @@ const mockTranslate = (key: string) => key;
 describe("useAgentCredentials - handleSaveProfile error handling", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockListCredentials.mockResolvedValue(JSON.stringify({ items: [] }));
+    vi.mocked(userAgentCredential.listAgentCredentialProfiles).mockResolvedValue({
+      items: [],
+      total: 0,
+    });
     vi.mocked(agentConnect.listAgents).mockResolvedValue({
       builtin_agents: [{ slug: "claude-code", name: "Claude", description: "", launch_command: "", is_builtin: true, is_active: true, supported_modes: [] }],
       custom_agents: [],
@@ -58,19 +65,11 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
         { name: "ANTHROPIC_BASE_URL", type: "text", optional: true },
       ],
     });
-
-    vi.mocked(getUserCredentialService).mockReturnValue({
-      ...getUserCredentialService(),
-      list_agent_credentials: mockListCredentials,
-      create_agent_credential: mockCreateCredential,
-      update_agent_credential: mockUpdateCredential,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
   });
 
   it("should propagate API errors from create to caller", async () => {
     const apiError = new Error("Network error");
-    mockCreateCredential.mockRejectedValue(apiError);
+    vi.mocked(userAgentCredential.createAgentCredentialProfile).mockRejectedValue(apiError);
 
     const { result } = renderHook(() => useAgentCredentials(mockTranslate));
 
@@ -93,7 +92,7 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
 
   it("should propagate API errors from update to caller", async () => {
     const apiError = new Error("Unauthorized");
-    mockUpdateCredential.mockRejectedValue(apiError);
+    vi.mocked(userAgentCredential.updateAgentCredentialProfile).mockRejectedValue(apiError);
 
     const { result } = renderHook(() => useAgentCredentials(mockTranslate));
 
@@ -127,7 +126,19 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
   });
 
   it("should set success message and call loadData on successful create", async () => {
-    mockCreateCredential.mockResolvedValue(JSON.stringify({ profile: { id: 1 } }));
+    vi.mocked(userAgentCredential.createAgentCredentialProfile).mockResolvedValue({
+      id: 1,
+      user_id: 1,
+      agent_slug: "claude-code",
+      name: "New Profile",
+      is_runner_host: false,
+      is_default: false,
+      is_active: true,
+      configured_fields: [],
+      configured_values: {},
+      created_at: "2024-01-01",
+      updated_at: "2024-01-01",
+    });
 
     const { result } = renderHook(() => useAgentCredentials(mockTranslate));
 
@@ -145,8 +156,8 @@ describe("useAgentCredentials - handleSaveProfile error handling", () => {
       await result.current.handleSaveProfile("claude-code", formData, null);
     });
 
-    expect(mockCreateCredential).toHaveBeenCalledTimes(1);
+    expect(userAgentCredential.createAgentCredentialProfile).toHaveBeenCalledTimes(1);
     expect(result.current.success).toBe("settings.agentCredentials.profileCreated");
-    expect(mockListCredentials).toHaveBeenCalledTimes(2);
+    expect(userAgentCredential.listAgentCredentialProfiles).toHaveBeenCalledTimes(2);
   });
 });

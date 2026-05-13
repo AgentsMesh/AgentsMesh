@@ -8,13 +8,26 @@ import {
   RunnerLocalCredentialData,
   CredentialType,
 } from "@/lib/api";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import { listRepositoryProviders, deleteRepositoryProvider, testRepositoryProviderConnection } from "@/lib/api/userRepositoryProvider";
+import { listGitCredentials, deleteGitCredential, setDefaultGitCredential } from "@/lib/api/userGitCredential";
 
 export interface GitSettingsData {
   providers: RepositoryProviderData[];
   credentials: GitCredentialData[];
   runnerLocal: RunnerLocalCredentialData | null;
   defaultCredentialId: number | null | "runner_local";
+}
+
+// Synthesize the virtual `runner_local` credential entry the legacy REST API
+// always returned (user_git_credentials.go:67) — the Connect surface omits it
+// and exposes the default toggle via runner_local_is_default instead.
+function buildRunnerLocal(isDefault: boolean): RunnerLocalCredentialData {
+  return {
+    id: "runner_local",
+    name: "Runner Local",
+    credential_type: "runner_local",
+    is_default: isDefault,
+  };
 }
 
 export interface UseGitSettingsResult {
@@ -49,13 +62,13 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
   // Fetch data
   const fetcher = useCallback(async (): Promise<GitSettingsData> => {
     const [providersRes, credentialsRes] = await Promise.all([
-      getUserCredentialService().list_repo_providers().then((j: string) => JSON.parse(j)),
-      getUserCredentialService().list_git_credentials().then((j: string) => JSON.parse(j)),
+      listRepositoryProviders(),
+      listGitCredentials(),
     ]);
 
-    const providers = providersRes.providers || [];
-    const credentials = credentialsRes.credentials || [];
-    const runnerLocal = credentialsRes.runner_local;
+    const providers = providersRes.items;
+    const credentials = credentialsRes.items;
+    const runnerLocal = buildRunnerLocal(credentialsRes.runner_local_is_default);
 
     // Determine default credential
     let defaultCredentialId: number | null | "runner_local";
@@ -91,9 +104,7 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     async (credentialId: number | null) => {
       try {
         setErrorMessage(null);
-        await getUserCredentialService().set_default_git_credential(
-          JSON.stringify({ credential_id: credentialId })
-        );
+        await setDefaultGitCredential(credentialId === null ? undefined : credentialId);
 
         // Update local state
         setData((prev) =>
@@ -119,7 +130,7 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
   const handleDeleteProvider = useCallback(
     async (id: number): Promise<boolean> => {
       try {
-        await getUserCredentialService().delete_repo_provider(BigInt(id));
+        await deleteRepositoryProvider(id);
         await refetch();
         return true;
       } catch (err) {
@@ -135,7 +146,7 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
   const handleDeleteCredential = useCallback(
     async (id: number): Promise<boolean> => {
       try {
-        await getUserCredentialService().delete_git_credential(BigInt(id));
+        await deleteGitCredential(id);
         await refetch();
         return true;
       } catch (err) {
@@ -152,7 +163,10 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     async (id: number) => {
       try {
         setErrorMessage(null);
-        await getUserCredentialService().test_repo_provider(BigInt(id));
+        const res = await testRepositoryProviderConnection(id);
+        if (!res.success) {
+          throw new Error(res.message);
+        }
         setSuccessMessage(t("settings.gitSettings.connectionSuccess"));
         setTimeout(() => {
           setSuccessMessage(null);

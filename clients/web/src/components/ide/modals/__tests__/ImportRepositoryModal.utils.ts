@@ -1,7 +1,6 @@
 import { vi } from "vitest";
 import type { RepositoryProviderData, ProviderRepositoryData } from "@/lib/api/userRepositoryProviderTypes";
 import type { RepositoryData } from "@/lib/api/repositoryTypes";
-import { getUserCredentialService, getRepositoryService } from "@/lib/wasm-core";
 
 export const mockProvider: RepositoryProviderData = {
   id: 1,
@@ -64,70 +63,34 @@ export const mockCreatedRepository: RepositoryData = {
 export const createMockOnClose = () => vi.fn();
 export const createMockOnImported = () => vi.fn();
 
-export const createListRepositoriesResponse = (repositories: ProviderRepositoryData[] = [mockRepository]) =>
-  JSON.stringify({ repositories, page: 1, per_page: 20 });
+// Connect-RPC adapter accessors. Tests must vi.mock the modules themselves
+// (vi.mock is hoisted per test file). These accessors retrieve the mocked
+// instances at setup time. Use stableCredSvc.* to assert against calls made
+// by useImportWizard.
+import * as userRepositoryProvider from "@/lib/api/userRepositoryProvider";
+import * as repositoryConnect from "@/lib/api/repositoryConnect";
 
-export const createRepositoryResponse = (repository: RepositoryData = mockCreatedRepository) =>
-  JSON.stringify({ repository });
-
-const stableCredSvc = {
-  list_repo_providers: vi.fn().mockResolvedValue('{"providers":[]}'),
-  list_provider_repositories: vi.fn().mockResolvedValue('{"repositories":[]}'),
-  list_git_credentials: vi.fn().mockResolvedValue('{"credentials":[]}'),
-  create_git_credential: vi.fn().mockResolvedValue('{}'),
-  get_git_credential: vi.fn().mockResolvedValue('{}'),
-  update_git_credential: vi.fn().mockResolvedValue('{}'),
-  delete_git_credential: vi.fn().mockResolvedValue(undefined),
-  get_default_git_credential: vi.fn().mockResolvedValue('{}'),
-  set_default_git_credential: vi.fn().mockResolvedValue(undefined),
-  clear_default_git_credential: vi.fn().mockResolvedValue(undefined),
-  list_agent_credentials: vi.fn().mockResolvedValue('{"credentials":[]}'),
-  list_agent_credentials_for_agent: vi.fn().mockResolvedValue('{"credentials":[]}'),
-  create_agent_credential: vi.fn().mockResolvedValue('{}'),
-  get_agent_credential: vi.fn().mockResolvedValue('{}'),
-  update_agent_credential: vi.fn().mockResolvedValue('{}'),
-  delete_agent_credential: vi.fn().mockResolvedValue(undefined),
-  set_default_agent_credential: vi.fn().mockResolvedValue(undefined),
-  create_repo_provider: vi.fn().mockResolvedValue('{}'),
-  get_repo_provider: vi.fn().mockResolvedValue('{}'),
-  update_repo_provider: vi.fn().mockResolvedValue('{}'),
-  delete_repo_provider: vi.fn().mockResolvedValue(undefined),
-  set_default_repo_provider: vi.fn().mockResolvedValue(undefined),
-  test_repo_provider: vi.fn().mockResolvedValue(undefined),
+export const stableCredSvc = {
+  list_repo_providers: vi.mocked(userRepositoryProvider.listRepositoryProviders),
+  list_provider_repositories: vi.mocked(userRepositoryProvider.listProviderRepositories),
 };
 
-const stableRepoSvc = {
-  list: vi.fn().mockResolvedValue('{"repositories":[]}'),
-  get: vi.fn().mockResolvedValue('{}'),
-  create: vi.fn().mockResolvedValue('{}'),
-  update: vi.fn().mockResolvedValue('{}'),
-  delete: vi.fn().mockResolvedValue(undefined),
-  list_branches: vi.fn().mockResolvedValue('{"branches":[]}'),
-  sync_branches: vi.fn().mockResolvedValue('{"branches":[]}'),
-  register_webhook: vi.fn().mockResolvedValue(undefined),
-  delete_webhook: vi.fn().mockResolvedValue(undefined),
-  get_webhook_status: vi.fn().mockResolvedValue('{}'),
-  get_webhook_secret: vi.fn().mockResolvedValue('{}'),
-  list_merge_requests: vi.fn().mockResolvedValue('{"merge_requests":[]}'),
+export const stableRepoSvc = {
+  create: vi.mocked(repositoryConnect.createRepository),
 };
 
-export function setupProviderMocks(providers = [mockProvider, mockGitLabProvider]) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vi.mocked(getUserCredentialService).mockReturnValue(stableCredSvc as any);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vi.mocked(getRepositoryService).mockReturnValue(stableRepoSvc as any);
-
-  stableCredSvc.list_repo_providers.mockResolvedValue(
-    JSON.stringify({ providers }),
-  );
-  stableCredSvc.list_provider_repositories.mockResolvedValue(
-    createListRepositoriesResponse(),
-  );
+export function setupProviderMocks(providers: RepositoryProviderData[] = [mockProvider, mockGitLabProvider]) {
+  vi.mocked(userRepositoryProvider.listRepositoryProviders).mockResolvedValue({
+    items: providers,
+    total: providers.length,
+  });
+  vi.mocked(userRepositoryProvider.listProviderRepositories).mockResolvedValue({
+    items: [mockRepository],
+    total: 1,
+  });
 }
 
-export function mockRepositoryCreate(response?: string) {
-  stableRepoSvc.create.mockResolvedValue(response ?? createRepositoryResponse());
+export function mockRepositoryCreate(response?: RepositoryData) {
+  vi.mocked(repositoryConnect.createRepository).mockResolvedValue(response ?? mockCreatedRepository);
   return stableRepoSvc;
 }
-
-export { stableCredSvc, stableRepoSvc };

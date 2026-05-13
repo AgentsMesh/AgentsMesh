@@ -1,6 +1,6 @@
 export interface RepositoryProviderData {
   id: number;
-  user_id: number;
+  user_id?: number;
   provider_type: string;
   name: string;
   base_url: string;

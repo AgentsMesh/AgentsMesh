@@ -36,7 +36,7 @@ import { PromptInput } from "@/components/pod/CreatePodForm/PromptInput";
 import { AdvancedOptions } from "@/components/pod/CreatePodForm/AdvancedOptions";
 import { ConfigForm } from "@/components/ide/ConfigForm";
 import { Spinner } from "@/components/ui/spinner";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import { listAgentCredentialProfilesForAgent } from "@/lib/api/userAgentCredential";
 import type { CredentialProfileData } from "@/lib/api";
 import type { LoopData } from "@/lib/api/loopTypes";
 
@@ -179,10 +179,8 @@ export function LoopCreateDialog({
     const loadCredentials = async () => {
       setLoadingCredentials(true);
       try {
-        const res = JSON.parse(
-          await getUserCredentialService().list_agent_credentials_for_agent(selectedAgentSlug)
-        );
-        const profiles = res.profiles || [];
+        const res = await listAgentCredentialProfilesForAgent(selectedAgentSlug);
+        const profiles = res.items;
         setCredentialProfiles(profiles);
 
         // In edit mode, preserve editLoop's credential on initial load

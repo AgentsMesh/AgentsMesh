@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import { createGitCredential } from "@/lib/api/userGitCredential";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
@@ -48,13 +48,13 @@ export function AddCredentialDialog({ open, onOpenChange, onSuccess }: AddCreden
     setError(null);
 
     try {
-      await getUserCredentialService().create_git_credential(JSON.stringify({
+      await createGitCredential({
         name,
         credential_type: credentialType,
         pat: credentialType === "pat" ? pat : undefined,
         private_key: credentialType === "ssh_key" ? privateKey : undefined,
         host_pattern: hostPattern || undefined,
-      }));
+      });
       onSuccess();
     } catch (err) {
       console.error("Failed to create credential:", err);

@@ -7,7 +7,7 @@ import {
 } from "@/lib/api";
 import type { ProviderRepositoryData } from "@/lib/api/userRepositoryProviderTypes";
 import { createRepository } from "@/lib/api/repositoryConnect";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import { listRepositoryProviders, listProviderRepositories } from "@/lib/api/userRepositoryProvider";
 import { useCurrentOrg } from "@/stores/auth";
 import type { ImportWizardState, ImportWizardActions, ImportWizardStep } from "./types";
 
@@ -76,8 +76,8 @@ export function useImportWizard({
   const loadProviders = useCallback(async () => {
     try {
       setState(s => ({ ...s, loadingProviders: true }));
-      const response: { providers: RepositoryProviderData[] } = JSON.parse(await getUserCredentialService().list_repo_providers());
-      const activeProviders = (response.providers || []).filter(
+      const response = await listRepositoryProviders();
+      const activeProviders = response.items.filter(
         (p: RepositoryProviderData) => p.is_active && (p.has_identity || p.has_bot_token)
       );
       setState(s => ({ ...s, providers: activeProviders, loadingProviders: false }));
@@ -96,17 +96,15 @@ export function useImportWizard({
     if (!state.selectedProvider) return;
     try {
       setState(s => ({ ...s, loadingRepos: true, error: null }));
-      const response: { repositories: ProviderRepositoryData[] } = JSON.parse(
-        await getUserCredentialService().list_provider_repositories(
-          BigInt(state.selectedProvider.id),
-          state.page,
-          20,
-          state.search || undefined,
-        )
-      );
+      const response = await listProviderRepositories({
+        id: state.selectedProvider.id,
+        page: state.page,
+        per_page: 20,
+        search: state.search || undefined,
+      });
       setState(s => ({
         ...s,
-        repositories: response.repositories || [],
+        repositories: response.items,
         loadingRepos: false,
       }));
     } catch (err) {
@@ -124,13 +122,14 @@ export function useImportWizard({
     setState(s => ({ ...s, selectedProvider: provider, step: "browse", loadingRepos: true }));
 
     // Directly trigger repository loading (not via useEffect)
-    getUserCredentialService().list_provider_repositories(
-      BigInt(provider.id), 1, 20, undefined,
-    ).then((response: string) => {
-      const parsed: { repositories: ProviderRepositoryData[] } = JSON.parse(response);
+    listProviderRepositories({
+      id: provider.id,
+      page: 1,
+      per_page: 20,
+    }).then((response) => {
       setState(s => ({
         ...s,
-        repositories: parsed.repositories || [],
+        repositories: response.items,
         loadingRepos: false,
       }));
     }).catch((err: unknown) => {

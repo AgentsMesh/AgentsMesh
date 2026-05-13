@@ -7,7 +7,13 @@ import {
   type AgentData,
   type CredentialProfileData,
 } from "@/lib/api";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import {
+  listAgentCredentialProfiles,
+  createAgentCredentialProfile,
+  updateAgentCredentialProfile,
+  deleteAgentCredentialProfile,
+  setDefaultAgentCredentialProfile,
+} from "@/lib/api/userAgentCredential";
 import {
   listAgents,
   getAgentConfigSchema,
@@ -73,7 +79,7 @@ export function useAgentConfig(
       const [schemaRes, credentialsRes] = await Promise.all([
         getAgentConfigSchema(currentOrg.slug, foundAgent.slug)
           .catch(() => ({ fields: [], credential_fields: [] })),
-        getUserCredentialService().list_agent_credentials().then((j: string) => JSON.parse(j)).catch(() => ({ items: [] })),
+        listAgentCredentialProfiles().catch(() => ({ items: [], total: 0 })),
       ]);
 
       // Set config schema fields
@@ -171,7 +177,7 @@ export function useAgentConfig(
       setError(null);
       const currentDefault = credentialProfiles.find((p) => p.is_default);
       if (currentDefault) {
-        await getUserCredentialService().update_agent_credential(BigInt(currentDefault.id), JSON.stringify({ is_default: false }));
+        await updateAgentCredentialProfile(currentDefault.id, { is_default: false });
       }
       setSuccess(t("settings.agentCredentials.defaultSet"));
       await loadData();
@@ -188,7 +194,7 @@ export function useAgentConfig(
   const handleSetDefault = useCallback(async (profileId: number) => {
     try {
       setError(null);
-      await getUserCredentialService().set_default_agent_credential(BigInt(profileId));
+      await setDefaultAgentCredentialProfile(profileId);
       setSuccess(t("settings.agentCredentials.defaultSet"));
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -204,7 +210,7 @@ export function useAgentConfig(
   const handleDeleteProfile = useCallback(async (profileId: number) => {
     try {
       setError(null);
-      await getUserCredentialService().delete_agent_credential(BigInt(profileId));
+      await deleteAgentCredentialProfile(profileId);
       setSuccess(t("settings.agentCredentials.profileDeleted"));
       await loadData();
       setTimeout(() => setSuccess(null), 3000);
@@ -227,20 +233,22 @@ export function useAgentConfig(
     const credentials = Object.keys(data.credentials).length > 0 ? data.credentials : undefined;
 
     if (editingProfile) {
-      await getUserCredentialService().update_agent_credential(BigInt(editingProfile.id), JSON.stringify({
+      await updateAgentCredentialProfile(editingProfile.id, {
         name: data.name,
         description: data.description || undefined,
         is_runner_host: false,
         credentials,
-      }));
+      });
       setSuccess(t("settings.agentCredentials.profileUpdated"));
     } else {
-      await getUserCredentialService().create_agent_credential(agent.slug, JSON.stringify({
+      await createAgentCredentialProfile({
+        agent_slug: agent.slug,
         name: data.name,
         description: data.description || undefined,
         is_runner_host: false,
         credentials: data.credentials,
-      }));
+        is_default: false,
+      });
       setSuccess(t("settings.agentCredentials.profileCreated"));
     }
 

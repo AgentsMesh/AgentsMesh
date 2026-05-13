@@ -10,7 +10,7 @@ export type CredentialTypeValue =
 
 export interface GitCredentialData {
   id: number;
-  user_id: number;
+  user_id?: number;
   name: string;
   credential_type: CredentialTypeValue;
   repository_provider_id?: number;
@@ -20,6 +20,7 @@ export interface GitCredentialData {
     provider_type: string;
     base_url: string;
   };
+  provider_name?: string;
   public_key?: string;
   fingerprint?: string;
   host_pattern?: string;

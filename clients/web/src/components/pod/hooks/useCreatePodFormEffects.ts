@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { AgentData, RepositoryData, CredentialProfileData } from "@/lib/api";
-import { getUserCredentialService } from "@/lib/wasm-core";
+import { listAgentCredentialProfilesForAgent } from "@/lib/api/userAgentCredential";
 import { usePodCreationStore } from "@/stores/podCreation";
 import { RUNNER_HOST_PROFILE_ID } from "./useCreatePodFormTypes";
 
@@ -68,10 +68,8 @@ export function useCredentialProfiles(selectedAgent: string | null) {
     const loadCredentials = async () => {
       setLoadingCredentials(true);
       try {
-        const res = JSON.parse(
-          await getUserCredentialService().list_agent_credentials_for_agent(selectedAgent)
-        );
-        const profiles = res.profiles || [];
+        const res = await listAgentCredentialProfilesForAgent(selectedAgent);
+        const profiles = res.items;
         setCredentialProfiles(profiles);
 
         // Auto-select: prefer saved preference, then default profile, then RunnerHost
