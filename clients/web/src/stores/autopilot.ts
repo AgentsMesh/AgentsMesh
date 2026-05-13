@@ -8,6 +8,19 @@ import { AutopilotThinkingData } from "@/lib/realtime/types";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getAutopilotService, parseWasmAny } from "@/lib/wasm-core";
+import {
+  listAutopilots,
+  getAutopilot,
+  createAutopilot,
+  pauseAutopilot,
+  resumeAutopilot,
+  stopAutopilot,
+  takeoverAutopilot,
+  handbackAutopilot,
+  approveAutopilot,
+  getAutopilotIterations,
+} from "@/lib/api/autopilotConnect";
+import { readCurrentOrg } from "@/stores/auth";
 
 export type AutopilotController = AutopilotControllerData;
 export type AutopilotIteration = AutopilotIterationData;
@@ -18,6 +31,7 @@ type Ctrl = AutopilotController;
 const ACTIVE = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
 const svc = () => getAutopilotService();
 const bump = () => useAutopilotStore.setState((s) => ({ _tick: s._tick + 1 }));
+const orgSlug = (): string => readCurrentOrg()?.slug || "";
 
 function updateCtrlInWasm(key: string, updater: (c: Ctrl) => Ctrl) {
   const ctrls: Ctrl[] = JSON.parse(svc().controllers_json());
@@ -94,42 +108,61 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
 
   fetchAutopilotControllers: async () => {
     set({ loading: true, error: null });
-    try { await svc().fetch_controllers(); set({ loading: false, _tick: get()._tick + 1 }); }
-    catch (e) { set({ error: getErrorMessage(e, "Failed to fetch controllers"), loading: false }); }
+    try {
+      const items = await listAutopilots(orgSlug());
+      svc().set_controllers(JSON.stringify(items));
+      set({ loading: false, _tick: get()._tick + 1 });
+    } catch (e) { set({ error: getErrorMessage(e, "Failed to fetch controllers"), loading: false }); }
   },
 
   fetchAutopilotController: async (key) => {
-    try { await svc().fetch_controller(key); bump(); }
+    try {
+      const ctrl = await getAutopilot(orgSlug(), key);
+      svc().update_controller(key, JSON.stringify(ctrl));
+      bump();
+    }
     catch (e) { set({ error: getErrorMessage(e, "Failed to fetch controller") }); }
   },
 
   createAutopilotController: async (data) => {
     try {
-      const json = await svc().create_controller(JSON.stringify(data));
-      const c: Ctrl = JSON.parse(json);
+      const c = await createAutopilot({
+        orgSlug: orgSlug(),
+        podKey: data.pod_key,
+        prompt: data.prompt,
+        maxIterations: data.max_iterations,
+        iterationTimeoutSec: data.iteration_timeout_sec,
+        noProgressThreshold: data.no_progress_threshold,
+        sameErrorThreshold: data.same_error_threshold,
+        approvalTimeoutMin: data.approval_timeout_min,
+        controlAgentSlug: data.control_agent_slug,
+        controlPromptTemplate: data.control_prompt_template,
+        mcpConfigJson: data.mcp_config_json,
+      });
+      svc().add_controller(JSON.stringify(c));
       bump();
-      return c;
+      return c as Ctrl;
     } catch (e) { set({ error: getErrorMessage(e, "Failed to create") }); throw e; }
   },
 
   pauseAutopilotController: async (key) => {
-    try { await svc().pause_controller(key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "paused" })); bump(); }
+    try { await pauseAutopilot(orgSlug(), key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "paused" })); bump(); }
     catch (e) { set({ error: getErrorMessage(e, "Failed to pause") }); }
   },
 
   resumeAutopilotController: async (key) => {
-    try { await svc().resume_controller(key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "running" })); bump(); }
+    try { await resumeAutopilot(orgSlug(), key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "running" })); bump(); }
     catch (e) { set({ error: getErrorMessage(e, "Failed to resume") }); }
   },
 
   stopAutopilotController: async (key) => {
-    try { await svc().stop_controller(key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "stopped" })); bump(); }
+    try { await stopAutopilot(orgSlug(), key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "stopped" })); bump(); }
     catch (e) { set({ error: getErrorMessage(e, "Failed to stop") }); }
   },
 
   approveAutopilotController: async (key, data) => {
     try {
-      await svc().approve_controller(key, JSON.stringify(data || {}));
+      await approveAutopilot(orgSlug(), key, data?.continue_execution, data?.additional_iterations);
       updateCtrlInWasm(key, (c) => ({
         ...c, phase: data?.continue_execution === false ? "stopped" : "running",
         max_iterations: data?.additional_iterations ? c.max_iterations + data.additional_iterations : c.max_iterations,
@@ -139,17 +172,21 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
   },
 
   takeoverAutopilotController: async (key) => {
-    try { await svc().takeover_controller(key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "user_takeover", user_takeover: true })); bump(); }
+    try { await takeoverAutopilot(orgSlug(), key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "user_takeover", user_takeover: true })); bump(); }
     catch (e) { set({ error: getErrorMessage(e, "Failed to takeover") }); }
   },
 
   handbackAutopilotController: async (key) => {
-    try { await svc().handback_controller(key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "running", user_takeover: false })); bump(); }
+    try { await handbackAutopilot(orgSlug(), key); updateCtrlInWasm(key, (c) => ({ ...c, phase: "running", user_takeover: false })); bump(); }
     catch (e) { set({ error: getErrorMessage(e, "Failed to handback") }); }
   },
 
   fetchIterations: async (key) => {
-    try { await svc().fetch_iterations(key); bump(); }
+    try {
+      const items = await getAutopilotIterations(orgSlug(), key);
+      svc().set_iterations(key, JSON.stringify(items));
+      bump();
+    }
     catch (e) { set({ error: getErrorMessage(e, "Failed to fetch iterations") }); }
   },
 
