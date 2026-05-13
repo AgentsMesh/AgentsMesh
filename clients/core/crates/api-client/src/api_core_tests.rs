@@ -50,18 +50,6 @@ mod api_core_tests {
     // Pod tests removed: REST surface eliminated; Connect handler tests in
     // backend/internal/api/connect/pod cover the same surface.
 
-    // ── channel ─────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_channels() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/channels"))
-            .respond_with(ok(json!({"channels":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.list_channels(None).await.unwrap();
-    }
-
     // ── ticket ──────────────────────────────────────────────────────────
 
     #[tokio::test]
