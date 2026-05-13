@@ -1,5 +1,6 @@
-import { getGrantService } from "@/lib/wasm-core";
-
+// Web-side ResourceGrant type — snake_case interface mirroring the
+// proto.grant.v1 wire shape. The grantApi facade was removed in
+// cleanup(grant); call sites use grantConnect.ts directly.
 export interface ResourceGrant {
   id: number;
   resource_type: string;
@@ -10,20 +11,3 @@ export interface ResourceGrant {
   user?: { id: number; email: string; username: string; name?: string };
   granted_by_user?: { id: number; email: string; username: string; name?: string };
 }
-
-export const grantApi = {
-  list: async (resourceType: string, resourceId: string) => {
-    const json = await getGrantService().list(resourceType, resourceId);
-    return JSON.parse(json) as { grants: ResourceGrant[] };
-  },
-
-  grant: async (resourceType: string, resourceId: string, userId: number) => {
-    const json = await getGrantService().grant(resourceType, resourceId, BigInt(userId));
-    return JSON.parse(json) as { grant: ResourceGrant };
-  },
-
-  revoke: async (resourceType: string, resourceId: string, grantId: number) => {
-    await getGrantService().revoke(resourceType, resourceId, BigInt(grantId));
-    return { message: "ok" };
-  },
-};

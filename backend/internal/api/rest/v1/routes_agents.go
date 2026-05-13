@@ -41,10 +41,6 @@ func registerRepositoryRoutes(rg *gin.RouterGroup, svc *Services) {
 		repositories.POST("/:id/webhook/configured", repositoryHandler.MarkRepositoryWebhookConfigured)
 
 		repositories.GET("/:id/merge-requests", repositoryHandler.ListRepositoryMergeRequests)
-
-		repositories.GET("/:id/grants", repositoryHandler.ListRepositoryGrants)
-		repositories.POST("/:id/grants", repositoryHandler.GrantRepositoryAccess)
-		repositories.DELETE("/:id/grants/:grant_id", repositoryHandler.RevokeRepositoryGrant)
 	}
 }
 
@@ -87,10 +83,6 @@ func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 		runners.POST("/:id/upgrade", runnerHandler.UpgradeRunner)
 		runners.POST("/:id/logs/upload", runnerHandler.RequestLogUpload)
 		runners.GET("/:id/logs", runnerHandler.ListRunnerLogs)
-
-		runners.GET("/:id/grants", runnerHandler.ListRunnerGrants)
-		runners.POST("/:id/grants", runnerHandler.GrantRunnerAccess)
-		runners.DELETE("/:id/grants/:grant_id", runnerHandler.RevokeRunnerGrant)
 
 		if svc.GRPCRunnerHandler != nil {
 			RegisterOrgGRPCRunnerRoutes(runners, svc.GRPCRunnerHandler)
