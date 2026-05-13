@@ -2,19 +2,6 @@ package v1
 
 import "github.com/gin-gonic/gin"
 
-func registerAgentRoutes(rg *gin.RouterGroup, svc *Services) {
-	agentHandler := NewAgentHandler(svc.AgentSvc, svc.CredentialProfile, svc.UserConfig)
-	agents := rg.Group("/agents")
-	{
-		agents.GET("", agentHandler.ListAgents)
-		agents.GET("/:agent_slug", agentHandler.GetAgent)
-		agents.POST("/custom", agentHandler.CreateCustomAgent)
-		agents.PUT("/custom/:agent_slug", agentHandler.UpdateCustomAgent)
-		agents.DELETE("/custom/:agent_slug", agentHandler.DeleteCustomAgent)
-		agents.GET("/:agent_slug/config-schema", agentHandler.GetAgentConfigSchema)
-	}
-}
-
 func registerRepositoryRoutes(rg *gin.RouterGroup, svc *Services) {
 	var repoOpts []RepositoryHandlerOption
 	if svc.Billing != nil {

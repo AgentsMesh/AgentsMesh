@@ -8,66 +8,6 @@ export interface IpcMethodSchema {
 
 export const ipcSchema: IpcMethodSchema[] = [
   {
-    "name": "agent_list_agents",
-    "group": "agent",
-    "params": [],
-    "returnType": "String"
-  },
-  {
-    "name": "agent_get_config_schema",
-    "group": "agent",
-    "params": [
-      {
-        "name": "agent_slug",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
-    "name": "agent_list_user_configs",
-    "group": "agent",
-    "params": [],
-    "returnType": "String"
-  },
-  {
-    "name": "agent_get_user_config",
-    "group": "agent",
-    "params": [
-      {
-        "name": "agent_slug",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
-    "name": "agent_set_user_config",
-    "group": "agent",
-    "params": [
-      {
-        "name": "agent_slug",
-        "type": "String"
-      },
-      {
-        "name": "json",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
-    "name": "agent_delete_user_config",
-    "group": "agent",
-    "params": [
-      {
-        "name": "agent_slug",
-        "type": "String"
-      }
-    ],
-    "returnType": "()"
-  },
-  {
     "name": "agent_get_agentpod_settings",
     "group": "agent",
     "params": [],

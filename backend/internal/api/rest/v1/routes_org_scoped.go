@@ -6,7 +6,6 @@ import (
 
 // RegisterOrgScopedRoutes registers organization-scoped routes (require tenant context).
 func RegisterOrgScopedRoutes(rg *gin.RouterGroup, svc *Services) {
-	registerAgentRoutes(rg, svc)
 	registerRepositoryRoutes(rg, svc)
 	registerRunnerRoutes(rg, svc)
 	registerPodRoutes(rg, svc)

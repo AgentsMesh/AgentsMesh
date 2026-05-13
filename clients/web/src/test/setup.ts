@@ -889,12 +889,6 @@ vi.mock('@/lib/wasm-core', () => {
       updateMemberRoleConnect: fn().mockResolvedValue(new Uint8Array()),
     })),
     getAgentService: fn(() => ({
-      list_agents: fn().mockResolvedValue('{"builtin_agents":[],"custom_agents":[]}'),
-      get_config_schema: fn().mockResolvedValue('{}'),
-      list_user_configs: fn().mockResolvedValue('{"configs":[]}'),
-      get_user_config: fn().mockResolvedValue('{}'),
-      set_user_config: fn().mockResolvedValue('{}'),
-      delete_user_config: fn().mockResolvedValue(undefined),
       get_agentpod_settings: fn().mockResolvedValue('{}'),
       update_agentpod_settings: fn().mockResolvedValue('{}'),
       list_providers: fn().mockResolvedValue('{"providers":[]}'),

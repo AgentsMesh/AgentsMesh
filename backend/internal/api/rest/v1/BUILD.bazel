@@ -3,10 +3,6 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "rest",
     srcs = [
-        "agents.go",
-        "agents_custom.go",
-        "agents_types.go",
-        "agents_user_config.go",
         "auth.go",
         "auth_login.go",
         "auth_oauth.go",
@@ -113,8 +109,6 @@ go_library(
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/rest/v1",
     visibility = ["//backend:__subpackages__"],
     deps = [
-        "//agentfile/extract",
-        "//agentfile/parser",
         "//backend/internal/config",
         "//backend/internal/domain/agent",
         "//backend/internal/domain/agentpod",

@@ -39,7 +39,6 @@ export type { ProviderRepositoryData as UserRemoteRepositoryData } from "./userR
 export { organizationApi } from "./organization";
 export type { ResourceGrant } from "./grant";
 export { invitationApi } from "./invitation";
-export { agentApi } from "./agent";
 export { billingApi } from "./billing";
 export { channelApi } from "./channel";
 export { extensionApi } from "./extension";

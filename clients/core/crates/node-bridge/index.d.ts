@@ -23,12 +23,6 @@ export declare class AppState {
   authSetOrganizations(orgsJson: string): void
   authSetCurrentOrg(orgJson: string): void
   authClearSession(): void
-  agentListAgents(): Promise<string>
-  agentGetConfigSchema(agentSlug: string): Promise<string>
-  agentListUserConfigs(): Promise<string>
-  agentGetUserConfig(agentSlug: string): Promise<string>
-  agentSetUserConfig(agentSlug: string, json: string): Promise<string>
-  agentDeleteUserConfig(agentSlug: string): Promise<void>
   agentGetAgentpodSettings(): Promise<string>
   agentUpdateAgentpodSettings(json: string): Promise<string>
   agentListProviders(): Promise<string>

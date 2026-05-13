@@ -183,30 +183,6 @@ mod api_core_tests {
         let _ = c.list_loops(Some("active"), None, None).await.unwrap();
     }
 
-    // ── agent ───────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_agents() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/agents"))
-            .respond_with(ok(json!({"agents":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let r = c.list_agents().await.unwrap();
-        assert!(r.agents.is_empty());
-    }
-
-    #[tokio::test]
-    async fn get_agent_config_schema() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v1/orgs/acme/agents/claude/config-schema"))
-            .respond_with(ok(json!({"fields":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.get_agent_config_schema("claude").await.unwrap();
-    }
-
     // ── agentpod ────────────────────────────────────────────────────────
 
     #[tokio::test]

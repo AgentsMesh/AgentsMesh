@@ -19,15 +19,9 @@ export interface IAcpSessionManager {
 export interface IAgentService {
   create_provider(json: string): Promise<string>;
   delete_provider(id: bigint): Promise<void>;
-  delete_user_config(agent_slug: string): Promise<void>;
   get_agentpod_settings(): Promise<string>;
-  get_config_schema(agent_slug: string): Promise<string>;
-  get_user_config(agent_slug: string): Promise<string>;
-  list_agents(): Promise<string>;
   list_providers(): Promise<string>;
-  list_user_configs(): Promise<string>;
   set_default_provider(id: bigint): Promise<void>;
-  set_user_config(agent_slug: string, json: string): Promise<string>;
   update_agentpod_settings(json: string): Promise<string>;
   update_provider(id: bigint, json: string): Promise<string>;
 }

@@ -18,46 +18,7 @@ impl WasmAgentService {
         Self { client }
     }
 
-    pub async fn list_agents(&self) -> Result<String, String> {
-        let resp = self.client.list_agents().await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
-    }
-
-    pub async fn get_config_schema(&self, agent_slug: &str) -> Result<String, String> {
-        let resp = self.client
-            .get_agent_config_schema(agent_slug)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
-    }
-
-    pub async fn list_user_configs(&self) -> Result<String, String> {
-        let resp = self.client.list_user_agent_configs().await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
-    }
-
-    pub async fn get_user_config(&self, agent_slug: &str) -> Result<String, String> {
-        let resp = self.client
-            .get_user_agent_config(agent_slug)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
-    }
-
-    pub async fn set_user_config(
-        &self, agent_slug: &str, json: &str,
-    ) -> Result<String, String> {
-        let req: SetUserAgentConfigRequest = serde_json::from_str(json).map_err(agentsmesh_services::wire)?;
-        let resp = self.client
-            .set_user_agent_config(agent_slug, &req)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
-    }
-
-    pub async fn delete_user_config(&self, agent_slug: &str) -> Result<(), String> {
-        self.client
-            .delete_user_agent_config(agent_slug)
-            .await.map_err(agentsmesh_services::wire)?;
-        Ok(())
-    }
+    // -------- AgentPodSettings (legacy REST — still consumed by web stores) --------
 
     pub async fn get_agentpod_settings(&self) -> Result<String, String> {
         let resp = self.client.get_agentpod_settings().await.map_err(agentsmesh_services::wire)?;

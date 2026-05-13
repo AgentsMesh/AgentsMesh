@@ -33,54 +33,6 @@ mod api_agent_billing_tests {
         ResponseTemplate::new(200).set_body_json(body)
     }
 
-    // ── agent (user configs) ────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_user_agent_configs() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/agent-configs"))
-            .respond_with(ok(json!({"configs":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_user_agent_configs().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_user_agent_config() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v1/users/me/agent-configs/claude"))
-            .respond_with(ok(json!({"agent_slug":"claude","config_values":{}})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.get_user_agent_config("claude").await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn set_user_agent_config() {
-        let s = MockServer::start().await;
-        Mock::given(method("PUT"))
-            .and(path("/api/v1/users/me/agent-configs/claude"))
-            .respond_with(ok(json!({"agent_slug":"claude","config_values":{}})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let data = agentsmesh_types::SetUserAgentConfigRequest {
-            config_values: json!({"key": "val"}),
-        };
-        let _ = c.set_user_agent_config("claude", &data).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn delete_user_agent_config() {
-        let s = MockServer::start().await;
-        Mock::given(method("DELETE"))
-            .and(path("/api/v1/users/me/agent-configs/claude"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.delete_user_agent_config("claude").await.unwrap();
-    }
-
     // ── agentpod ────────────────────────────────────────────────────────
 
     #[tokio::test]
