@@ -13,6 +13,7 @@ import { useRunners, useRunnerStore } from "@/stores/runner";
 import { useCurrentOrg } from "@/stores/auth";
 import { InfraRepositoryDetail } from "@/components/infra/InfraRepositoryDetail";
 import { InfraRunnerDetail } from "@/components/infra/InfraRunnerDetail";
+import { AddRunnerModal } from "@/components/ide/modals/AddRunnerModal";
 
 type InfraTab = "repositories" | "runners";
 
@@ -137,10 +138,12 @@ function RunnerSection({
   t: (k: string) => string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const currentOrg = useCurrentOrg();
   const runners = useRunners();
   const loading = useRunnerStore((s) => s.loading);
   const fetchRunners = useRunnerStore((s) => s.fetchRunners);
+  const addRunnerOpen = searchParams.get("add") === "1";
 
   useEffect(() => {
     if (currentOrg) fetchRunners();
@@ -153,25 +156,55 @@ function RunnerSection({
     router.replace(`/${orgSlug}/infra?tab=runners&id=${firstId}`);
   }, [idMissing, loading, firstId, router, orgSlug]);
 
-  if (loading && runners.length === 0) return <CenteredSpinner className="h-64" />;
+  const closeAddRunnerModal = useCallback(() => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("add");
+    if (!next.get("tab")) next.set("tab", "runners");
+    router.replace(`/${orgSlug}/infra?${next.toString()}`);
+  }, [orgSlug, router, searchParams]);
+
+  const addRunnerModal = (
+    <AddRunnerModal
+      open={addRunnerOpen}
+      onClose={closeAddRunnerModal}
+      onCreated={closeAddRunnerModal}
+    />
+  );
+
+  if (loading && runners.length === 0) {
+    return (
+      <>
+        <CenteredSpinner className="h-64" />
+        {addRunnerModal}
+      </>
+    );
+  }
 
   if (idMissing && firstId == null) {
     return (
-      <EmptyState
-        size="full"
-        icon={<Server className="h-12 w-12" />}
-        title={t("runners.emptyState.title")}
-        description={t("runners.emptyState.description")}
-        actions={
-          <Button onClick={() => router.push(`/${orgSlug}/infra?tab=runners&add=1`)}>
-            <Plus className="mr-1 h-4 w-4" />
-            {t("runners.addRunner")}
-          </Button>
-        }
-      />
+      <>
+        <EmptyState
+          size="full"
+          icon={<Server className="h-12 w-12" />}
+          title={t("runners.emptyState.title")}
+          description={t("runners.emptyState.description")}
+          actions={
+            <Button onClick={() => router.push(`/${orgSlug}/infra?tab=runners&add=1`)}>
+              <Plus className="mr-1 h-4 w-4" />
+              {t("runners.addRunner")}
+            </Button>
+          }
+        />
+        {addRunnerModal}
+      </>
     );
   }
 
   if (Number.isNaN(selectedId)) return null;
-  return <InfraRunnerDetail runnerId={selectedId} onBack={onBack} />;
+  return (
+    <>
+      <InfraRunnerDetail runnerId={selectedId} onBack={onBack} />
+      {addRunnerModal}
+    </>
+  );
 }
