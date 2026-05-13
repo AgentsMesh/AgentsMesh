@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use agentsmesh_api_client::ApiClient;
-use agentsmesh_types::*;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -15,85 +14,62 @@ impl WasmRepositoryService {
         Self { client }
     }
 
+    // Legacy JSON-shaped methods routed through the Rust `RepositoryService`
+    // (Connect-RPC under the hood) so the web/iOS/desktop bridge keeps the
+    // legacy wire shape during the dual-track window.
+
     pub async fn list(&self) -> Result<String, String> {
-        let resp = self.client.list_repositories().await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().list().await
     }
 
     pub async fn get(&self, id: i64) -> Result<String, String> {
-        let resp = self.client.get_repository(id).await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().get(id).await
     }
 
     pub async fn create(&self, json: &str) -> Result<String, String> {
-        let req: CreateRepositoryRequest = serde_json::from_str(json).map_err(agentsmesh_services::wire)?;
-        let resp = self.client.create_repository(&req).await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().create(json).await
     }
 
     pub async fn update(&self, id: i64, json: &str) -> Result<String, String> {
-        let req: UpdateRepositoryRequest = serde_json::from_str(json).map_err(agentsmesh_services::wire)?;
-        let resp = self.client.update_repository(id, &req).await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().update(id, json).await
     }
 
     pub async fn delete(&self, id: i64) -> Result<(), String> {
-        self.client.delete_repository(id).await.map_err(agentsmesh_services::wire)?;
-        Ok(())
+        self.svc().delete(id).await
     }
 
     pub async fn list_branches(&self, id: i64) -> Result<String, String> {
-        let resp = self.client.list_repository_branches(id).await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().list_branches(id).await
     }
 
     pub async fn sync_branches(&self, id: i64, json: &str) -> Result<String, String> {
-        let req: SyncBranchesRequest = serde_json::from_str(json).map_err(agentsmesh_services::wire)?;
-        let resp = self.client
-            .sync_repository_branches(id, &req)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().sync_branches(id, json).await
     }
 
     pub async fn register_webhook(&self, id: i64) -> Result<(), String> {
-        self.client.register_repository_webhook(id).await.map_err(agentsmesh_services::wire)?;
-        Ok(())
+        self.svc().register_webhook(id).await
     }
 
     pub async fn delete_webhook(&self, id: i64) -> Result<(), String> {
-        self.client.delete_repository_webhook(id).await.map_err(agentsmesh_services::wire)?;
-        Ok(())
+        self.svc().delete_webhook(id).await
     }
 
     pub async fn get_webhook_status(&self, id: i64) -> Result<String, String> {
-        let resp = self.client
-            .get_repository_webhook_status(id)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().get_webhook_status(id).await
     }
 
     pub async fn get_webhook_secret(&self, id: i64) -> Result<String, String> {
-        let resp = self.client
-            .get_repository_webhook_secret(id)
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().get_webhook_secret(id).await
     }
 
     pub async fn list_merge_requests(
         &self, id: i64, branch: Option<String>, state: Option<String>,
     ) -> Result<String, String> {
-        let resp = self.client
-            .list_repository_merge_requests(id, branch.as_deref(), state.as_deref())
-            .await.map_err(agentsmesh_services::wire)?;
-        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+        self.svc().list_merge_requests(id, branch, state).await
     }
 
     pub async fn mark_webhook_configured(&self, id: i64) -> Result<(), String> {
-        let path = self.client.org_path(&format!("/repositories/{id}/webhook/configured"));
-        self.client
-            .post::<agentsmesh_types::EmptyResponse>(&path, &serde_json::json!({}))
-            .await.map_err(agentsmesh_services::wire)?;
-        Ok(())
+        self.svc().mark_webhook_configured(id).await
     }
 
     // -------- Connect-RPC (binary wire) --------
@@ -154,9 +130,6 @@ impl WasmRepositoryService {
         self.svc().mark_repository_webhook_configured_connect(request_bytes).await
     }
 
-    // Lazily construct a services::RepositoryService for the Connect bridge.
-    // The legacy JSON methods still call self.client directly (no state, no
-    // bookkeeping) so wrapping them is unnecessary for the dual-track window.
     fn svc(&self) -> agentsmesh_services::RepositoryService {
         agentsmesh_services::RepositoryService::new(self.client.clone())
     }

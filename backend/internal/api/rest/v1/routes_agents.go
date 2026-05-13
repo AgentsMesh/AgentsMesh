@@ -2,35 +2,6 @@ package v1
 
 import "github.com/gin-gonic/gin"
 
-func registerRepositoryRoutes(rg *gin.RouterGroup, svc *Services) {
-	var repoOpts []RepositoryHandlerOption
-	if svc.Billing != nil {
-		repoOpts = append(repoOpts, WithBillingService(svc.Billing))
-	}
-	if svc.Grant != nil {
-		repoOpts = append(repoOpts, WithGrantServiceForRepo(svc.Grant))
-	}
-	repositoryHandler := NewRepositoryHandler(svc.Repository, repoOpts...)
-	repositories := rg.Group("/repositories")
-	{
-		repositories.GET("", repositoryHandler.ListRepositories)
-		repositories.POST("", repositoryHandler.CreateRepository)
-		repositories.GET("/:id", repositoryHandler.GetRepository)
-		repositories.PUT("/:id", repositoryHandler.UpdateRepository)
-		repositories.DELETE("/:id", repositoryHandler.DeleteRepository)
-		repositories.GET("/:id/branches", repositoryHandler.ListBranches)
-		repositories.POST("/:id/sync-branches", repositoryHandler.SyncBranches)
-
-		repositories.POST("/:id/webhook", repositoryHandler.RegisterRepositoryWebhook)
-		repositories.DELETE("/:id/webhook", repositoryHandler.DeleteRepositoryWebhook)
-		repositories.GET("/:id/webhook/status", repositoryHandler.GetRepositoryWebhookStatus)
-		repositories.GET("/:id/webhook/secret", repositoryHandler.GetRepositoryWebhookSecret)
-		repositories.POST("/:id/webhook/configured", repositoryHandler.MarkRepositoryWebhookConfigured)
-
-		repositories.GET("/:id/merge-requests", repositoryHandler.ListRepositoryMergeRequests)
-	}
-}
-
 func registerRunnerRoutes(rg *gin.RouterGroup, svc *Services) {
 	var runnerOpts []RunnerHandlerOption
 	if svc.Pod != nil {
