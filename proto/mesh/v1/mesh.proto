@@ -56,6 +56,180 @@ service MeshService {
   rpc CreatePodForTicket(CreatePodForTicketRequest) returns (MeshNode);
 }
 
+// MeshMessageService — pod-to-pod direct messaging (distinct from channel
+// messaging). Migrated from /api/v1/orgs/:slug/messages/* REST surface
+// originally owned by MessageHandler. The REST surface authenticated via
+// the `X-Pod-Key` header; Connect names the calling pod in `pod_key` on
+// every request (parity with binding.proto's initiator_pod pattern —
+// the service trusts the pod identifier alone and never re-validates
+// pod ownership against user identity).
+//
+// DLQ endpoints (GetDeadLetters / Replay) keep their admin/ops semantics
+// — the original REST shape didn't require a pod_key for those because
+// they were operator surfaces. Same here.
+service MeshMessageService {
+  // List messages addressed to (or sent by) the caller pod. `unread_only`
+  // narrows to messages where status != "read". Pagination via offset/limit.
+  rpc ListMeshMessages(ListMeshMessagesRequest) returns (ListMeshMessagesResponse);
+
+  // Count of unread messages addressed to the caller pod.
+  rpc GetMeshUnreadCount(GetMeshUnreadCountRequest) returns (GetMeshUnreadCountResponse);
+
+  // Single message fetch by id. Used for in-conversation deep-links.
+  rpc GetMeshMessage(GetMeshMessageRequest) returns (MeshMessage);
+
+  // Mark every message addressed to the caller pod as read. Returns the
+  // count of messages flipped to MessageStatusRead.
+  rpc MarkAllMeshMessagesRead(MarkAllReadRequest) returns (MarkAllReadResponse);
+
+  // List a conversation by correlation id (request/response chains share
+  // the same correlation id). Limit caps the page size.
+  rpc GetMeshConversation(GetConversationRequest) returns (GetConversationResponse);
+
+  // List messages sent BY the caller pod (the inverse of ListMeshMessages).
+  rpc GetMeshSentMessages(GetSentMessagesRequest) returns (GetSentMessagesResponse);
+
+  // List dead letter entries — ops/admin surface. No pod_key required.
+  rpc GetMeshDeadLetters(GetDeadLettersRequest) returns (GetDeadLettersResponse);
+
+  // Replay a dead letter — flips its original message back to pending and
+  // returns the replayed message. Ops/admin surface, no pod_key required.
+  rpc ReplayMeshDeadLetter(ReplayDeadLetterRequest) returns (ReplayDeadLetterResponse);
+}
+
+// MeshMessage — pod-to-pod direct message projection. Mirrors the REST
+// wire shape from MessageHandler — content travels as a JSON-stringified
+// blob (the domain stores it as map[string]any in jsonb). status maps the
+// agent.AgentMessage statuses (pending/delivered/read/failed/dead_letter)
+// but the renderer only reads `is_read` so the proto exposes it pre-computed.
+message MeshMessage {
+  int64 id = 1;
+  optional string sender_pod = 2;
+  optional string receiver_pod = 3;
+  optional string message_type = 4;
+  // JSON-stringified content blob. Matches the legacy REST shape — the
+  // backend's MessageContent is map[string]any; serializing as a string
+  // keeps the proto stable when content schemas evolve.
+  optional string content = 5;
+  optional string correlation_id = 6;
+  // ParentMessageID on the domain — aliased as `reply_to_id` on the
+  // legacy serde DTO + REST wire. Keeping that name on the proto so the
+  // renderer doesn't have to remap.
+  optional int64 reply_to_id = 7;
+  optional bool is_read = 8;
+  optional string created_at = 9;
+}
+
+// MeshDeadLetterEntry — DLQ projection. The original message is embedded
+// (nullable) so the operator can see what failed without a second fetch.
+message MeshDeadLetterEntry {
+  int64 id = 1;
+  optional MeshMessage message = 2;
+  optional string error = 3;
+  optional string created_at = 4;
+}
+
+// --- Requests / Responses for MeshMessageService ---
+
+message ListMeshMessagesRequest {
+  string org_slug = 1;
+  // Calling pod identity (X-Pod-Key in REST). Required: a message list
+  // without a pod scope would leak every org pod's traffic.
+  string pod_key = 2;
+  optional bool unread_only = 3;
+  optional int32 offset = 4;
+  optional int32 limit = 5;
+}
+
+// MeshMessageListResponse uses the §8 uniform list envelope shape with
+// an extra `unread_count` field — the REST wire carried unread_count
+// alongside total (it's cheap to compute and the inbox UI needs it).
+message ListMeshMessagesResponse {
+  repeated MeshMessage items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  // Unread count for the caller pod's inbox (cached from
+  // MessageRepository.GetUnreadCount). UI badge.
+  int64 unread_count = 5;
+}
+
+message GetMeshUnreadCountRequest {
+  string org_slug = 1;
+  string pod_key = 2;
+}
+
+message GetMeshUnreadCountResponse {
+  int64 count = 1;
+}
+
+message GetMeshMessageRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message MarkAllReadRequest {
+  string org_slug = 1;
+  string pod_key = 2;
+}
+
+message MarkAllReadResponse {
+  int64 marked_count = 1;
+}
+
+message GetConversationRequest {
+  string org_slug = 1;
+  string correlation_id = 2;
+  optional int32 limit = 3;
+}
+
+// Conversation uses the §8 list envelope shape (no offset — correlation
+// ids are page-1 collections by construction).
+message GetConversationResponse {
+  repeated MeshMessage items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+}
+
+message GetSentMessagesRequest {
+  string org_slug = 1;
+  string pod_key = 2;
+  optional int32 offset = 3;
+  optional int32 limit = 4;
+}
+
+message GetSentMessagesResponse {
+  repeated MeshMessage items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetDeadLettersRequest {
+  string org_slug = 1;
+  optional int32 offset = 2;
+  optional int32 limit = 3;
+}
+
+message GetDeadLettersResponse {
+  repeated MeshDeadLetterEntry items = 1;
+  int64 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ReplayDeadLetterRequest {
+  string org_slug = 1;
+  int64 entry_id = 2;
+}
+
+message ReplayDeadLetterResponse {
+  // Server status text — matches the REST shape ("Replayed successfully").
+  // Keep it for parity with the legacy MarkReadResponse renderer mapping.
+  optional string message = 1;
+  optional MeshMessage replayed_message = 2;
+}
+
 // MeshNode — a pod projected for topology display. Mirrors
 // backend/internal/domain/mesh/mesh.go:MeshNode. Field names align with the
 // Rust DTO and the TS store interface; aliases collapsed to the canonical

@@ -156,6 +156,189 @@ pub struct CreatePodForTicketRequest {
     pub permission_mode: Option<String>,
 }
 
+// MeshMessageService — pod-to-pod direct messaging. Mirrors
+// service MeshMessageService in proto/mesh/v1/mesh.proto.
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct MeshMessage {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+    #[prost(string, optional, tag = "2")]
+    pub sender_pod: Option<String>,
+    #[prost(string, optional, tag = "3")]
+    pub receiver_pod: Option<String>,
+    #[prost(string, optional, tag = "4")]
+    pub message_type: Option<String>,
+    #[prost(string, optional, tag = "5")]
+    pub content: Option<String>,
+    #[prost(string, optional, tag = "6")]
+    pub correlation_id: Option<String>,
+    #[prost(int64, optional, tag = "7")]
+    pub reply_to_id: Option<i64>,
+    #[prost(bool, optional, tag = "8")]
+    pub is_read: Option<bool>,
+    #[prost(string, optional, tag = "9")]
+    pub created_at: Option<String>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct MeshDeadLetterEntry {
+    #[prost(int64, tag = "1")]
+    pub id: i64,
+    #[prost(message, optional, tag = "2")]
+    pub message: Option<MeshMessage>,
+    #[prost(string, optional, tag = "3")]
+    pub error: Option<String>,
+    #[prost(string, optional, tag = "4")]
+    pub created_at: Option<String>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ListMeshMessagesRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(string, tag = "2")]
+    pub pod_key: String,
+    #[prost(bool, optional, tag = "3")]
+    pub unread_only: Option<bool>,
+    #[prost(int32, optional, tag = "4")]
+    pub offset: Option<i32>,
+    #[prost(int32, optional, tag = "5")]
+    pub limit: Option<i32>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ListMeshMessagesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub items: Vec<MeshMessage>,
+    #[prost(int64, tag = "2")]
+    pub total: i64,
+    #[prost(int32, tag = "3")]
+    pub limit: i32,
+    #[prost(int32, tag = "4")]
+    pub offset: i32,
+    #[prost(int64, tag = "5")]
+    pub unread_count: i64,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetMeshUnreadCountRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(string, tag = "2")]
+    pub pod_key: String,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetMeshUnreadCountResponse {
+    #[prost(int64, tag = "1")]
+    pub count: i64,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetMeshMessageRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(int64, tag = "2")]
+    pub id: i64,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct MarkAllReadRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(string, tag = "2")]
+    pub pod_key: String,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct MarkAllReadResponse {
+    #[prost(int64, tag = "1")]
+    pub marked_count: i64,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetConversationRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(string, tag = "2")]
+    pub correlation_id: String,
+    #[prost(int32, optional, tag = "3")]
+    pub limit: Option<i32>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetConversationResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub items: Vec<MeshMessage>,
+    #[prost(int64, tag = "2")]
+    pub total: i64,
+    #[prost(int32, tag = "3")]
+    pub limit: i32,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetSentMessagesRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(string, tag = "2")]
+    pub pod_key: String,
+    #[prost(int32, optional, tag = "3")]
+    pub offset: Option<i32>,
+    #[prost(int32, optional, tag = "4")]
+    pub limit: Option<i32>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetSentMessagesResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub items: Vec<MeshMessage>,
+    #[prost(int64, tag = "2")]
+    pub total: i64,
+    #[prost(int32, tag = "3")]
+    pub limit: i32,
+    #[prost(int32, tag = "4")]
+    pub offset: i32,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetDeadLettersRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(int32, optional, tag = "2")]
+    pub offset: Option<i32>,
+    #[prost(int32, optional, tag = "3")]
+    pub limit: Option<i32>,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct GetDeadLettersResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub items: Vec<MeshDeadLetterEntry>,
+    #[prost(int64, tag = "2")]
+    pub total: i64,
+    #[prost(int32, tag = "3")]
+    pub limit: i32,
+    #[prost(int32, tag = "4")]
+    pub offset: i32,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ReplayDeadLetterRequest {
+    #[prost(string, tag = "1")]
+    pub org_slug: String,
+    #[prost(int64, tag = "2")]
+    pub entry_id: i64,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct ReplayDeadLetterResponse {
+    #[prost(string, optional, tag = "1")]
+    pub message: Option<String>,
+    #[prost(message, optional, tag = "2")]
+    pub replayed_message: Option<MeshMessage>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -361,5 +544,143 @@ mod tests {
         let bytes = req.encode_to_vec();
         let decoded = CreatePodForTicketRequest::decode(&bytes[..]).unwrap();
         assert_eq!(decoded, req);
+    }
+
+    // --- MeshMessageService round-trips ---
+
+    #[test]
+    fn mesh_message_round_trip_all_fields() {
+        let m = MeshMessage {
+            id: 42,
+            sender_pod: Some("pod-a".into()),
+            receiver_pod: Some("pod-b".into()),
+            message_type: Some("requirement".into()),
+            content: Some("{\"text\":\"hello\"}".into()),
+            correlation_id: Some("corr-1".into()),
+            reply_to_id: Some(7),
+            is_read: Some(false),
+            created_at: Some("2026-05-10T00:00:00Z".into()),
+        };
+        let bytes = m.encode_to_vec();
+        let decoded = MeshMessage::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded, m);
+    }
+
+    #[test]
+    fn mesh_message_optionals_absent() {
+        let m = MeshMessage { id: 1, ..Default::default() };
+        let bytes = m.encode_to_vec();
+        let decoded = MeshMessage::decode(&bytes[..]).unwrap();
+        assert!(decoded.sender_pod.is_none());
+        assert!(decoded.content.is_none());
+        assert!(decoded.is_read.is_none());
+    }
+
+    #[test]
+    fn mesh_dead_letter_entry_round_trip() {
+        let e = MeshDeadLetterEntry {
+            id: 11,
+            message: Some(MeshMessage { id: 100, ..Default::default() }),
+            error: Some("timeout".into()),
+            created_at: Some("2026-05-10T00:00:00Z".into()),
+        };
+        let bytes = e.encode_to_vec();
+        let decoded = MeshDeadLetterEntry::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded, e);
+    }
+
+    #[test]
+    fn list_mesh_messages_request_round_trip() {
+        let req = ListMeshMessagesRequest {
+            org_slug: "acme".into(),
+            pod_key: "pod-1".into(),
+            unread_only: Some(true),
+            offset: Some(0),
+            limit: Some(20),
+        };
+        let bytes = req.encode_to_vec();
+        let decoded = ListMeshMessagesRequest::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded, req);
+    }
+
+    #[test]
+    fn list_mesh_messages_response_preserves_unread_count() {
+        let resp = ListMeshMessagesResponse {
+            items: vec![MeshMessage { id: 1, ..Default::default() }],
+            total: 1,
+            limit: 20,
+            offset: 0,
+            unread_count: 7,
+        };
+        let bytes = resp.encode_to_vec();
+        let decoded = ListMeshMessagesResponse::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded.unread_count, 7);
+        assert_eq!(decoded.items.len(), 1);
+    }
+
+    #[test]
+    fn get_mesh_unread_count_response_round_trip() {
+        let resp = GetMeshUnreadCountResponse { count: 5 };
+        let bytes = resp.encode_to_vec();
+        let decoded = GetMeshUnreadCountResponse::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded.count, 5);
+    }
+
+    #[test]
+    fn mark_all_read_response_round_trip() {
+        let resp = MarkAllReadResponse { marked_count: 12 };
+        let bytes = resp.encode_to_vec();
+        let decoded = MarkAllReadResponse::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded.marked_count, 12);
+    }
+
+    #[test]
+    fn get_conversation_round_trip() {
+        let req = GetConversationRequest {
+            org_slug: "acme".into(),
+            correlation_id: "c1".into(),
+            limit: Some(50),
+        };
+        let resp = GetConversationResponse {
+            items: vec![MeshMessage { id: 1, ..Default::default() }],
+            total: 1,
+            limit: 50,
+        };
+        let rb = req.encode_to_vec();
+        let _ = GetConversationRequest::decode(&rb[..]).unwrap();
+        let respb = resp.encode_to_vec();
+        let decoded = GetConversationResponse::decode(&respb[..]).unwrap();
+        assert_eq!(decoded.total, 1);
+    }
+
+    #[test]
+    fn get_dead_letters_response_round_trip() {
+        let resp = GetDeadLettersResponse {
+            items: vec![MeshDeadLetterEntry {
+                id: 1,
+                message: Some(MeshMessage { id: 99, ..Default::default() }),
+                error: Some("retry exhausted".into()),
+                ..Default::default()
+            }],
+            total: 1,
+            limit: 50,
+            offset: 0,
+        };
+        let bytes = resp.encode_to_vec();
+        let decoded = GetDeadLettersResponse::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded.items.len(), 1);
+        assert_eq!(decoded.items[0].error, Some("retry exhausted".into()));
+    }
+
+    #[test]
+    fn replay_dead_letter_response_round_trip() {
+        let resp = ReplayDeadLetterResponse {
+            message: Some("Replayed successfully".into()),
+            replayed_message: Some(MeshMessage { id: 7, ..Default::default() }),
+        };
+        let bytes = resp.encode_to_vec();
+        let decoded = ReplayDeadLetterResponse::decode(&bytes[..]).unwrap();
+        assert_eq!(decoded.message.as_deref(), Some("Replayed successfully"));
+        assert_eq!(decoded.replayed_message.unwrap().id, 7);
     }
 }
