@@ -2,13 +2,24 @@ import { create } from "zustand";
 import { useMemo } from "react";
 import { ApiError } from "@/lib/api/api-types";
 import { reconnectRegistry } from "@/lib/realtime";
-import { readCurrentUser, useAuthStore } from "@/stores/auth";
+import { readCurrentOrg, readCurrentUser } from "@/stores/auth";
 import { getErrorMessage } from "@/lib/utils";
-import { initWasmCore, getPodService, getApiClient } from "@/lib/wasm-core";
+import { initWasmCore, getPodService } from "@/lib/wasm-core";
+import {
+  listPods as listPodsConnect,
+  getPod as getPodConnect,
+  terminatePod as terminatePodConnect,
+  updatePodAlias as updatePodAliasConnect,
+  updatePodPerpetual as updatePodPerpetualConnect,
+} from "@/lib/api/podConnect";
 import type { PodState, Pod } from "./podTypes";
 
 export type { Pod } from "./podTypes";
 export { SIDEBAR_STATUS_MAP } from "./podTypes";
+
+function orgSlug(): string {
+  return readCurrentOrg()?.slug ?? "";
+}
 
 export function usePods(): Pod[] {
   const tick = usePodStore((s) => s._tick);
@@ -45,11 +56,10 @@ export const usePodStore = create<PodState>((set, get) => ({
     await initWasmCore();
     set({ error: null });
     try {
-      await getPodService().fetch_pods(
-        filters?.status ?? null,
-        filters?.runnerId != null ? BigInt(filters.runnerId) : null,
-        null, null, null,
-      );
+      const { items } = await listPodsConnect(orgSlug(), {
+        status: filters?.status,
+      });
+      getPodService().set_pods(JSON.stringify(items));
       bump();
     } catch (error: unknown) {
       set({ error: getErrorMessage(error, "Failed to fetch pods") });
@@ -62,7 +72,8 @@ export const usePodStore = create<PodState>((set, get) => ({
     const promise = (async () => {
       await initWasmCore();
       try {
-        await getPodService().fetch_pod(podKey);
+        const pod = await getPodConnect(orgSlug(), podKey);
+        getPodService().upsert_pod(JSON.stringify(pod));
         bump();
       } catch (error: unknown) {
         console.warn("[PodStore] fetchPod failed for", podKey, error);
@@ -109,7 +120,8 @@ export const usePodStore = create<PodState>((set, get) => ({
 
   terminatePod: async (podKey) => {
     try {
-      await getPodService().terminate_pod(podKey);
+      await terminatePodConnect(orgSlug(), podKey);
+      getPodService().update_pod_status(podKey, "terminated", undefined, undefined, undefined);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
       const isNotFound = (error instanceof ApiError && error.status === 404) || msg.includes("404");
@@ -151,7 +163,8 @@ export const usePodStore = create<PodState>((set, get) => ({
   updatePodAlias: async (podKey, alias) => {
     await initWasmCore();
     try {
-      await getPodService().update_pod_alias_api(podKey, alias);
+      await updatePodAliasConnect(orgSlug(), podKey, alias);
+      getPodService().update_pod_alias(podKey, alias ?? "");
       bump();
     } catch (error: unknown) {
       console.warn("[PodStore] updatePodAlias failed, reverting", error);
@@ -171,10 +184,7 @@ export const usePodStore = create<PodState>((set, get) => ({
   updatePodPerpetual: async (podKey, perpetual) => {
     await initWasmCore();
     try {
-      await getApiClient().patch(
-        getApiClient().org_path(`/pods/${podKey}/perpetual`),
-        JSON.stringify({ perpetual }),
-      );
+      await updatePodPerpetualConnect(orgSlug(), podKey, perpetual);
       const raw = getPodService().get_pod_json(podKey);
       if (raw) {
         const pod = JSON.parse(String(raw)) as Pod;

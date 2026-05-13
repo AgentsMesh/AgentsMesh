@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { CheckoutResponse } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { getCheckoutStatusConnect } from "@/lib/api/billingConnect";
+import { readCurrentOrg } from "@/stores/auth";
 
 interface QRCodeCheckoutProps {
   response: CheckoutResponse;
@@ -17,7 +18,7 @@ export function QRCodeCheckout({ response, t, onCancel }: QRCodeCheckoutProps) {
   const checkStatus = async () => {
     setChecking(true);
     try {
-      const status = JSON.parse(await getBillingService().get_checkout_status(response.order_no));
+      const status = await getCheckoutStatusConnect(readCurrentOrg()?.slug ?? "", response.order_no);
       if (status.status === "succeeded") window.location.reload();
     } catch (err) {
       console.error("Failed to check status:", err);

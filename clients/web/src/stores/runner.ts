@@ -4,6 +4,15 @@ import type { RunnerData } from "@/lib/api";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getRunnerService } from "@/lib/wasm-core";
+import { readCurrentOrg } from "@/stores/auth";
+import {
+  listRunners as listRunnersConnect,
+  listAvailableRunners as listAvailableRunnersConnect,
+  getRunner as getRunnerConnect,
+  updateRunner as updateRunnerConnect,
+  deleteRunner as deleteRunnerConnect,
+  createRunnerToken as createRunnerTokenConnect,
+} from "@/lib/api/runnerConnect";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 export type Runner = RunnerData;
@@ -23,6 +32,10 @@ interface RunnerState {
 
 const svc = () => getRunnerService();
 const bump = () => useRunnerStore.setState((s) => ({ _tick: s._tick + 1 }));
+
+function orgSlug(): string {
+  return readCurrentOrg()?.slug ?? "";
+}
 
 export function useRunners(): Runner[] {
   const tick = useRunnerStore((s) => s._tick);
@@ -51,29 +64,32 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
   fetchRunners: async (status) => {
     set({ loading: true, error: null });
     try {
-      await svc().fetch_runners(status ?? null);
+      const { items } = await listRunnersConnect(orgSlug(), { status });
+      svc().set_runners(JSON.stringify(items));
       set({ loading: false, _tick: get()._tick + 1 });
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch runners"), loading: false }); }
   },
 
   fetchAvailableRunners: async () => {
     try {
-      await svc().fetch_available_runners();
+      const { items } = await listAvailableRunnersConnect(orgSlug());
+      svc().set_available_runners(JSON.stringify(items));
       bump();
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch available runners") }); }
   },
 
   fetchRunner: async (id) => {
     try {
-      await svc().fetch_runner(BigInt(id));
+      const { runner } = await getRunnerConnect(orgSlug(), id);
+      if (runner) svc().set_current_runner(JSON.stringify(runner));
       bump();
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch runner") }); }
   },
 
   updateRunner: async (id, data) => {
     try {
-      const json = await svc().update_runner(BigInt(id), JSON.stringify(data));
-      const runner: Runner = JSON.parse(json);
+      const runner = await updateRunnerConnect(orgSlug(), id, data);
+      svc().update_runner(BigInt(id), JSON.stringify(runner));
       bump();
       return runner;
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to update runner") }); throw e; }
@@ -81,16 +97,16 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
 
   deleteRunner: async (id) => {
     try {
-      await svc().delete_runner(BigInt(id));
+      await deleteRunnerConnect(orgSlug(), id);
+      svc().remove_runner(BigInt(id));
       bump();
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to delete runner") }); throw e; }
   },
 
   createToken: async (data) => {
     try {
-      const json = await svc().create_token(JSON.stringify(data || {}));
-      const resp: { token: string } = JSON.parse(json);
-      return resp.token;
+      const resp = await createRunnerTokenConnect(orgSlug(), data ?? {});
+      return resp.token ?? "";
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to create token") }); throw e; }
   },
 

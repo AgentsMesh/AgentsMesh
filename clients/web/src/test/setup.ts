@@ -154,6 +154,16 @@ vi.mock('@/lib/wasm-core', () => {
     terminate_pod: fn().mockResolvedValue(undefined),
     update_pod_alias_api: fn().mockResolvedValue(undefined),
     get_pod_connection: fn().mockResolvedValue('{}'),
+    // Connect-RPC binary lane (proto.pod.v1.PodService).
+    list_pods_connect: fn().mockResolvedValue(new Uint8Array()),
+    get_pod_connect: fn().mockResolvedValue(new Uint8Array()),
+    create_pod_connect: fn().mockResolvedValue(new Uint8Array()),
+    terminate_pod_connect: fn().mockResolvedValue(new Uint8Array()),
+    update_pod_alias_connect: fn().mockResolvedValue(new Uint8Array()),
+    update_pod_perpetual_connect: fn().mockResolvedValue(new Uint8Array()),
+    get_pod_connection_connect: fn().mockResolvedValue(new Uint8Array()),
+    send_pod_prompt_connect: fn().mockResolvedValue(new Uint8Array()),
+    list_pods_by_ticket_connect: fn().mockResolvedValue(new Uint8Array()),
   }
 
   // --- Runner state ---

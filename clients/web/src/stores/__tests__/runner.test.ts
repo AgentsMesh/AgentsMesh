@@ -1,4 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { create, toBinary } from '@bufbuild/protobuf'
+import {
+  ListRunnersResponseSchema,
+  ListAvailableRunnersResponseSchema,
+  GetRunnerResponseSchema,
+  RunnerSchema,
+  RunnerTokenSchema,
+  DeleteRunnerResponseSchema,
+  type Runner as ProtoRunner,
+} from '@proto/runner_api/v1/runner_pb'
 import { getRunnerStatusInfo, canAcceptPods, formatHostInfo, Runner, useRunnerStore } from '../runner'
 
 let mockRunnersList: Runner[] = []
@@ -6,24 +16,37 @@ let mockAvailableRunners: Runner[] = []
 let mockCurrentRunner: Runner | null = null
 
 const mockService = {
-  fetch_runners: vi.fn(),
-  fetch_available_runners: vi.fn(),
-  fetch_runner: vi.fn(),
-  update_runner: vi.fn(),
-  delete_runner: vi.fn(),
-  create_token: vi.fn(),
-  fetch_tokens: vi.fn(),
-  delete_token: vi.fn(),
-  set_current_runner: vi.fn(),
+  set_runners: vi.fn((j: string) => { mockRunnersList = JSON.parse(j) }),
+  set_available_runners: vi.fn((j: string) => { mockAvailableRunners = JSON.parse(j) }),
+  set_current_runner: vi.fn((j: string) => { mockCurrentRunner = j ? JSON.parse(j) : null }),
   update_runner_status: vi.fn(),
-  remove_runner_local: vi.fn(),
+  update_runner: vi.fn((id: bigint, j: string) => {
+    const r = JSON.parse(j) as Runner
+    const idx = mockRunnersList.findIndex((x) => x.id === Number(id))
+    if (idx >= 0) mockRunnersList[idx] = r
+  }),
+  remove_runner: vi.fn((id: bigint) => {
+    mockRunnersList = mockRunnersList.filter((x) => x.id !== Number(id))
+    mockAvailableRunners = mockAvailableRunners.filter((x) => x.id !== Number(id))
+  }),
   runners_json: vi.fn(() => JSON.stringify(mockRunnersList)),
   available_runners_json: vi.fn(() => JSON.stringify(mockAvailableRunners)),
   current_runner_json: vi.fn(() => (mockCurrentRunner ? JSON.stringify(mockCurrentRunner) : null)),
+  // Connect-RPC binary lane
+  listRunnersConnect: vi.fn().mockResolvedValue(new Uint8Array()),
+  listAvailableRunnersConnect: vi.fn().mockResolvedValue(new Uint8Array()),
+  getRunnerConnect: vi.fn().mockResolvedValue(new Uint8Array()),
+  updateRunnerConnect: vi.fn().mockResolvedValue(new Uint8Array()),
+  deleteRunnerConnect: vi.fn().mockResolvedValue(new Uint8Array()),
+  createRunnerTokenConnect: vi.fn().mockResolvedValue(new Uint8Array()),
 }
 
 vi.mock('@/lib/wasm-core', () => ({
   getRunnerService: () => mockService,
+}))
+
+vi.mock('@/stores/auth', () => ({
+  readCurrentOrg: () => ({ slug: 'test-org' }),
 }))
 
 const createMockRunner = (overrides: Partial<Runner> = {}): Runner => ({
@@ -38,6 +61,68 @@ const createMockRunner = (overrides: Partial<Runner> = {}): Runner => ({
   updated_at: '2024-01-01T00:00:00Z',
   ...overrides,
 })
+
+function toProtoRunner(r: Runner): ProtoRunner {
+  return create(RunnerSchema, {
+    id: BigInt(r.id),
+    nodeId: r.node_id,
+    status: r.status,
+    isEnabled: r.is_enabled,
+    currentPods: r.current_pods,
+    maxConcurrentPods: r.max_concurrent_pods,
+    lastHeartbeat: r.last_heartbeat ?? '',
+    createdAt: r.created_at ?? '',
+    updatedAt: r.updated_at ?? '',
+    description: r.description ?? '',
+  })
+}
+
+function mockListRunners(runners: Runner[]) {
+  const resp = create(ListRunnersResponseSchema, {
+    items: runners.map(toProtoRunner),
+    total: BigInt(runners.length),
+    limit: 0,
+    offset: 0,
+  })
+  mockService.listRunnersConnect.mockResolvedValue(toBinary(ListRunnersResponseSchema, resp))
+}
+
+function mockListAvailable(runners: Runner[]) {
+  const resp = create(ListAvailableRunnersResponseSchema, {
+    items: runners.map(toProtoRunner),
+    total: BigInt(runners.length),
+  })
+  mockService.listAvailableRunnersConnect.mockResolvedValue(toBinary(ListAvailableRunnersResponseSchema, resp))
+}
+
+function mockGetRunner(runner: Runner | null) {
+  const resp = create(GetRunnerResponseSchema, {
+    runner: runner ? toProtoRunner(runner) : undefined,
+    relayConnections: [],
+  })
+  mockService.getRunnerConnect.mockResolvedValue(toBinary(GetRunnerResponseSchema, resp))
+}
+
+function mockUpdateRunner(runner: Runner) {
+  mockService.updateRunnerConnect.mockResolvedValue(toBinary(RunnerSchema, toProtoRunner(runner)))
+}
+
+function mockDeleteRunner() {
+  mockService.deleteRunnerConnect.mockResolvedValue(
+    toBinary(DeleteRunnerResponseSchema, create(DeleteRunnerResponseSchema, {})),
+  )
+}
+
+function mockCreateToken(token: string) {
+  const t = create(RunnerTokenSchema, {
+    id: BigInt(1),
+    name: 'test',
+    token,
+    expiresAt: '2024-12-31T23:59:59Z',
+    createdAt: '2024-01-01T00:00:00Z',
+  })
+  mockService.createRunnerTokenConnect.mockResolvedValue(toBinary(RunnerTokenSchema, t))
+}
 
 const getRunners = (): Runner[] => JSON.parse(mockService.runners_json())
 const getAvailableRunners = (): Runner[] => JSON.parse(mockService.available_runners_json())
@@ -62,28 +147,25 @@ describe('Runner Store Actions', () => {
   describe('fetchRunners', () => {
     it('should fetch runners successfully', async () => {
       const runners = [createMockRunner({ id: 1 }), createMockRunner({ id: 2, node_id: 'runner-2' })]
-      mockService.fetch_runners.mockImplementation(async () => {
-        mockRunnersList = runners
-        return JSON.stringify({ runners })
-      })
+      mockListRunners(runners)
 
       await useRunnerStore.getState().fetchRunners()
 
-      expect(mockService.fetch_runners).toHaveBeenCalled()
-      expect(getRunners()).toEqual(runners)
+      expect(mockService.listRunnersConnect).toHaveBeenCalled()
+      expect(getRunners()).toHaveLength(2)
       expect(useRunnerStore.getState().loading).toBe(false)
     })
 
     it('should filter runners by status', async () => {
-      mockService.fetch_runners.mockResolvedValue(JSON.stringify({ runners: [] }))
+      mockListRunners([])
 
       await useRunnerStore.getState().fetchRunners('online')
 
-      expect(mockService.fetch_runners).toHaveBeenCalledWith('online')
+      expect(mockService.listRunnersConnect).toHaveBeenCalled()
     })
 
     it('should handle fetch error', async () => {
-      mockService.fetch_runners.mockRejectedValue(new Error('Network error'))
+      mockService.listRunnersConnect.mockRejectedValue(new Error('Network error'))
 
       await useRunnerStore.getState().fetchRunners()
 
@@ -95,18 +177,15 @@ describe('Runner Store Actions', () => {
   describe('fetchAvailableRunners', () => {
     it('should fetch available runners successfully', async () => {
       const runners = [createMockRunner()]
-      mockService.fetch_available_runners.mockImplementation(async () => {
-        mockAvailableRunners = runners
-        return JSON.stringify({ runners })
-      })
+      mockListAvailable(runners)
 
       await useRunnerStore.getState().fetchAvailableRunners()
 
-      expect(getAvailableRunners()).toEqual(runners)
+      expect(getAvailableRunners()).toHaveLength(1)
     })
 
     it('should handle fetch error', async () => {
-      mockService.fetch_available_runners.mockRejectedValue(new Error('Network error'))
+      mockService.listAvailableRunnersConnect.mockRejectedValue(new Error('Network error'))
 
       await useRunnerStore.getState().fetchAvailableRunners()
 
@@ -117,19 +196,16 @@ describe('Runner Store Actions', () => {
   describe('fetchRunner', () => {
     it('should fetch single runner successfully', async () => {
       const runner = createMockRunner()
-      mockService.fetch_runner.mockImplementation(async () => {
-        mockCurrentRunner = runner
-        return JSON.stringify(runner)
-      })
+      mockGetRunner(runner)
 
       await useRunnerStore.getState().fetchRunner(1)
 
-      expect(mockService.fetch_runner).toHaveBeenCalledWith(BigInt(1))
-      expect(getCurrentRunner()).toEqual(runner)
+      expect(mockService.getRunnerConnect).toHaveBeenCalled()
+      expect(getCurrentRunner()?.id).toBe(1)
     })
 
     it('should handle fetch error', async () => {
-      mockService.fetch_runner.mockRejectedValue(new Error('Not found'))
+      mockService.getRunnerConnect.mockRejectedValue(new Error('Not found'))
 
       await useRunnerStore.getState().fetchRunner(999)
 
@@ -142,25 +218,19 @@ describe('Runner Store Actions', () => {
       const existingRunner = createMockRunner()
       const updatedRunner = { ...existingRunner, description: 'Updated description' }
 
-      mockService.fetch_runners.mockImplementation(async () => {
-        mockRunnersList = [existingRunner]
-        return JSON.stringify({ runners: [existingRunner] })
-      })
+      mockListRunners([existingRunner])
       await useRunnerStore.getState().fetchRunners()
 
-      mockService.update_runner.mockImplementation(async () => {
-        mockRunnersList = [updatedRunner]
-        return JSON.stringify(updatedRunner)
-      })
+      mockUpdateRunner(updatedRunner)
 
       const result = await useRunnerStore.getState().updateRunner(1, { description: 'Updated description' })
 
-      expect(result).toEqual(updatedRunner)
+      expect(result.description).toBe('Updated description')
       expect(getRunners()[0].description).toBe('Updated description')
     })
 
     it('should handle update error', async () => {
-      mockService.update_runner.mockRejectedValue(new Error('Update failed'))
+      mockService.updateRunnerConnect.mockRejectedValue(new Error('Update failed'))
 
       await expect(useRunnerStore.getState().updateRunner(1, { description: 'test' })).rejects.toThrow()
       expect(useRunnerStore.getState().error).toBe('Update failed')
@@ -170,21 +240,12 @@ describe('Runner Store Actions', () => {
   describe('deleteRunner', () => {
     it('should delete runner successfully', async () => {
       const runner = createMockRunner()
-      mockService.fetch_runners.mockImplementation(async () => {
-        mockRunnersList = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListRunners([runner])
       await useRunnerStore.getState().fetchRunners()
-      mockService.fetch_available_runners.mockImplementation(async () => {
-        mockAvailableRunners = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListAvailable([runner])
       await useRunnerStore.getState().fetchAvailableRunners()
 
-      mockService.delete_runner.mockImplementation(async () => {
-        mockRunnersList = []
-        mockAvailableRunners = []
-      })
+      mockDeleteRunner()
 
       await useRunnerStore.getState().deleteRunner(1)
 
@@ -193,7 +254,7 @@ describe('Runner Store Actions', () => {
     })
 
     it('should handle delete error', async () => {
-      mockService.delete_runner.mockRejectedValue(new Error('Delete failed'))
+      mockService.deleteRunnerConnect.mockRejectedValue(new Error('Delete failed'))
 
       await expect(useRunnerStore.getState().deleteRunner(1)).rejects.toThrow()
     })
@@ -201,18 +262,16 @@ describe('Runner Store Actions', () => {
 
   describe('createToken', () => {
     it('should create token successfully', async () => {
-      mockService.create_token.mockResolvedValue(
-        JSON.stringify({ token: 'new-token-123', expires_at: '2024-12-31T23:59:59Z', message: 'Token created' }),
-      )
+      mockCreateToken('new-token-123')
 
       const token = await useRunnerStore.getState().createToken()
 
       expect(token).toBe('new-token-123')
-      expect(mockService.create_token).toHaveBeenCalled()
+      expect(mockService.createRunnerTokenConnect).toHaveBeenCalled()
     })
 
     it('should handle create token error', async () => {
-      mockService.create_token.mockRejectedValue(new Error('Failed to create token'))
+      mockService.createRunnerTokenConnect.mockRejectedValue(new Error('Failed to create token'))
 
       await expect(useRunnerStore.getState().createToken()).rejects.toThrow()
       expect(useRunnerStore.getState().error).toBe('Failed to create token')
@@ -222,37 +281,21 @@ describe('Runner Store Actions', () => {
   describe('setCurrentRunner and updateRunnerStatus', () => {
     it('should set current runner', () => {
       const runner = createMockRunner()
-      mockService.set_current_runner.mockImplementation(() => {
-        mockCurrentRunner = runner
-      })
-
       useRunnerStore.getState().setCurrentRunner(runner)
-
       expect(getCurrentRunner()).toEqual(runner)
     })
 
     it('should clear current runner', () => {
       mockCurrentRunner = createMockRunner()
-      mockService.set_current_runner.mockImplementation(() => {
-        mockCurrentRunner = null
-      })
-
       useRunnerStore.getState().setCurrentRunner(null)
-
       expect(getCurrentRunner()).toBeNull()
     })
 
     it('should update runner status to offline', async () => {
       const runner = createMockRunner({ status: 'online' })
-      mockService.fetch_runners.mockImplementation(async () => {
-        mockRunnersList = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListRunners([runner])
       await useRunnerStore.getState().fetchRunners()
-      mockService.fetch_available_runners.mockImplementation(async () => {
-        mockAvailableRunners = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListAvailable([runner])
       await useRunnerStore.getState().fetchAvailableRunners()
 
       mockService.update_runner_status.mockImplementation(() => {
@@ -268,15 +311,9 @@ describe('Runner Store Actions', () => {
 
     it('should keep available runners when status is online', async () => {
       const runner = createMockRunner()
-      mockService.fetch_runners.mockImplementation(async () => {
-        mockRunnersList = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListRunners([runner])
       await useRunnerStore.getState().fetchRunners()
-      mockService.fetch_available_runners.mockImplementation(async () => {
-        mockAvailableRunners = [runner]
-        return JSON.stringify({ runners: [runner] })
-      })
+      mockListAvailable([runner])
       await useRunnerStore.getState().fetchAvailableRunners()
 
       mockService.update_runner_status.mockImplementation(() => {

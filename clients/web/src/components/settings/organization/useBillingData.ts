@@ -3,9 +3,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import type { BillingOverview, SubscriptionPlan, DeploymentInfo } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { readCurrentOrg } from "@/stores/auth";
+import {
+  getOverviewConnect,
+  listPlansConnect,
+  getDeploymentInfoConnect,
+  createSubscriptionConnect,
+  updateSubscriptionConnect,
+  upgradeSubscriptionConnect,
+  reactivateSubscriptionConnect,
+} from "@/lib/api/billingConnect";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import type { TranslationFn } from "./GeneralSettings";
+
+function orgSlug(): string {
+  return readCurrentOrg()?.slug ?? "";
+}
 
 export function useBillingData(t: TranslationFn) {
   const searchParams = useSearchParams();
@@ -33,19 +46,15 @@ export function useBillingData(t: TranslationFn) {
     setLoading(true);
     setError(null);
     try {
-      const svc = getBillingService();
-      const [overviewJson, plansJson, deploymentJson] = await Promise.all([
-        svc.get_overview().catch(() => null),
-        svc.list_plans().catch(() => '{"plans":[]}'),
-        svc.get_deployment_info().catch(() => null),
+      const slug = orgSlug();
+      const [overviewRes, plansRes, deploymentRes] = await Promise.all([
+        getOverviewConnect(slug).catch(() => null),
+        listPlansConnect(slug).catch(() => [] as SubscriptionPlan[]),
+        getDeploymentInfoConnect(slug).catch(() => null),
       ]);
-      if (overviewJson) {
-        const overviewRes = JSON.parse(overviewJson);
-        if (overviewRes?.overview) setOverview(overviewRes.overview);
-      }
-      const plansRes = JSON.parse(plansJson as string);
-      setPlans(plansRes.plans || []);
-      if (deploymentJson) setDeploymentInfo(JSON.parse(deploymentJson));
+      if (overviewRes) setOverview(overviewRes);
+      setPlans(plansRes);
+      if (deploymentRes) setDeploymentInfo(deploymentRes);
     } catch (err) {
       setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.loadFailed") || "Failed to load billing data"));
     } finally { setLoading(false); }
@@ -56,9 +65,9 @@ export function useBillingData(t: TranslationFn) {
   const handleFreePlanSelect = async (planName: string) => {
     setUpgrading(true); setError(null);
     try {
-      const svc = getBillingService();
-      if (overview) await svc.update_subscription(JSON.stringify({ plan_name: planName }));
-      else await svc.create_subscription(JSON.stringify({ plan_name: planName, billing_cycle: "monthly" }));
+      const slug = orgSlug();
+      if (overview) await updateSubscriptionConnect(slug, planName);
+      else await createSubscriptionConnect(slug, planName, "monthly");
       await loadBillingData();
     } catch (err) {
       setError(getLocalizedErrorMessage(err, t, t("settings.billingPage.selectPlanFailed") || "Failed to select plan"));
@@ -78,7 +87,7 @@ export function useBillingData(t: TranslationFn) {
       if (plan.price_per_seat_monthly > currentPrice) {
         setUpgrading(true); setError(null);
         try {
-          await getBillingService().upgrade(JSON.stringify({ plan_name: planName }));
+          await upgradeSubscriptionConnect(orgSlug(), planName);
           setPaymentMessage({ type: "success", text: t("settings.billingPage.upgradeSuccess") || "Plan upgraded successfully" });
           await loadBillingData();
         } catch (err) {
@@ -93,7 +102,7 @@ export function useBillingData(t: TranslationFn) {
   const handleReactivateSubscription = async () => {
     setReactivating(true);
     try {
-      await getBillingService().reactivate();
+      await reactivateSubscriptionConnect(orgSlug());
       await loadBillingData();
       setPaymentMessage({ type: "success", text: t("settings.billingPage.reactivateSuccess") });
     } catch (err) {

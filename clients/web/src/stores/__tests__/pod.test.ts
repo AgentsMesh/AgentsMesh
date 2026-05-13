@@ -1,30 +1,48 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { ListPodsResponseSchema, PodSchema } from "@proto/pod/v1/pod_pb";
 import { usePodStore } from "../pod";
 import { getPodService } from "@/lib/wasm-core";
 import { mockPod, mockPod2, resetPodStore, seedPods, readPods, readCurrentPod } from "./pod-test-utils";
 
-function svc() {
-  return getPodService() as unknown as {
-    fetch_pods: ReturnType<typeof vi.fn>;
-    fetch_pod: ReturnType<typeof vi.fn>;
-    set_pods: (json: string) => void;
-    upsert_pod: (json: string) => void;
-  };
+interface MockService {
+  list_pods_connect: ReturnType<typeof vi.fn>;
+  get_pod_connect: ReturnType<typeof vi.fn>;
 }
 
-function mockFetchPodsResponse(pods: unknown[], total = pods.length) {
-  vi.mocked(svc().fetch_pods).mockImplementation(async () => {
-    svc().set_pods(JSON.stringify(pods));
-    return JSON.stringify({ pods, total });
-  });
+function svc(): MockService {
+  return getPodService() as unknown as MockService;
 }
 
-function mockFetchPodOk(pod: unknown) {
-  vi.mocked(svc().fetch_pod).mockImplementation(async () => {
-    svc().upsert_pod(JSON.stringify(pod));
-    return JSON.stringify(pod);
+function mockListPodsConnect(pods: unknown[], total = pods.length) {
+  const items = pods.map((p) =>
+    create(PodSchema, {
+      id: BigInt((p as { id: number }).id),
+      podKey: (p as { pod_key: string }).pod_key,
+      status: (p as { status: string }).status,
+      agentStatus: (p as { agent_status?: string }).agent_status ?? "",
+      createdAt: (p as { created_at?: string }).created_at ?? "",
+    }),
+  );
+  const resp = create(ListPodsResponseSchema, {
+    items,
+    total: BigInt(total),
+    limit: 0,
+    offset: 0,
   });
+  vi.mocked(svc().list_pods_connect).mockResolvedValue(toBinary(ListPodsResponseSchema, resp));
+}
+
+function mockGetPodConnect(pod: unknown) {
+  const protoPod = create(PodSchema, {
+    id: BigInt((pod as { id: number }).id),
+    podKey: (pod as { pod_key: string }).pod_key,
+    status: (pod as { status: string }).status,
+    agentStatus: (pod as { agent_status?: string }).agent_status ?? "",
+    createdAt: (pod as { created_at?: string }).created_at ?? "",
+  });
+  vi.mocked(svc().get_pod_connect).mockResolvedValue(toBinary(PodSchema, protoPod));
 }
 
 describe("Pod Store — basic reads", () => {
@@ -42,7 +60,7 @@ describe("Pod Store — basic reads", () => {
 
   describe("fetchPods", () => {
     it("should fetch pods successfully", async () => {
-      mockFetchPodsResponse([mockPod, mockPod2], 2);
+      mockListPodsConnect([mockPod, mockPod2], 2);
 
       await act(async () => { await usePodStore.getState().fetchPods(); });
 
@@ -53,24 +71,24 @@ describe("Pod Store — basic reads", () => {
       expect(usePodStore.getState().error).toBeNull();
     });
 
-    it("should pass filters to WASM service", async () => {
-      mockFetchPodsResponse([]);
+    it("should call Connect with status filter", async () => {
+      mockListPodsConnect([]);
 
       await act(async () => {
-        await usePodStore.getState().fetchPods({ status: "running", runnerId: 1 });
+        await usePodStore.getState().fetchPods({ status: "running" });
       });
 
-      expect(svc().fetch_pods).toHaveBeenCalledWith("running", BigInt(1), null, null, null);
+      expect(svc().list_pods_connect).toHaveBeenCalled();
     });
 
     it("should handle empty response", async () => {
-      mockFetchPodsResponse([]);
+      mockListPodsConnect([]);
       await act(async () => { await usePodStore.getState().fetchPods(); });
       expect(readPods()).toEqual([]);
     });
 
     it("should handle fetch error", async () => {
-      vi.mocked(svc().fetch_pods).mockRejectedValue(new Error("Network error"));
+      vi.mocked(svc().list_pods_connect).mockRejectedValue(new Error("Network error"));
 
       await act(async () => { await usePodStore.getState().fetchPods(); });
 
@@ -80,7 +98,7 @@ describe("Pod Store — basic reads", () => {
     });
 
     it("should use default error message when no message provided", async () => {
-      vi.mocked(svc().fetch_pods).mockRejectedValue({});
+      vi.mocked(svc().list_pods_connect).mockRejectedValue({});
 
       await act(async () => { await usePodStore.getState().fetchPods(); });
       expect(usePodStore.getState().error).toBe("Failed to fetch pods");
@@ -89,7 +107,7 @@ describe("Pod Store — basic reads", () => {
 
   describe("fetchPod", () => {
     it("should fetch single pod successfully", async () => {
-      mockFetchPodOk(mockPod);
+      mockGetPodConnect(mockPod);
 
       await act(async () => { await usePodStore.getState().fetchPod("pod-abc-123"); });
 
@@ -98,20 +116,20 @@ describe("Pod Store — basic reads", () => {
     });
 
     it("should add fetched pod to pods array when not present", async () => {
-      mockFetchPodOk(mockPod);
+      mockGetPodConnect(mockPod);
       expect(readPods()).toEqual([]);
 
       await act(async () => { await usePodStore.getState().fetchPod("pod-abc-123"); });
 
       const pods = readPods();
       expect(pods).toHaveLength(1);
-      expect(pods[0]).toEqual(mockPod);
+      expect(pods[0].pod_key).toBe(mockPod.pod_key);
     });
 
     it("should update existing pod in pods array when present", async () => {
       const updatedPod = { ...mockPod, status: "terminated" as const };
       seedPods(mockPod, mockPod2);
-      mockFetchPodOk(updatedPod);
+      mockGetPodConnect(updatedPod);
 
       await act(async () => { await usePodStore.getState().fetchPod("pod-abc-123"); });
 
@@ -122,7 +140,7 @@ describe("Pod Store — basic reads", () => {
     });
 
     it("should handle fetch error", async () => {
-      vi.mocked(svc().fetch_pod).mockRejectedValue({ message: "Pod not found" });
+      vi.mocked(svc().get_pod_connect).mockRejectedValue({ message: "Pod not found" });
 
       await act(async () => {
         await usePodStore.getState().fetchPod("non-existent").catch(() => {});

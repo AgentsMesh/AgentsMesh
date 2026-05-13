@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SeatUsage } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { getSeatUsageConnect, purchaseSeatsConnect } from "@/lib/api/billingConnect";
+import { readCurrentOrg } from "@/stores/auth";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 
 interface SeatManagementProps {
@@ -28,7 +29,7 @@ export function SeatManagement({
     setLoading(true);
     setError(null);
     try {
-      const usage: SeatUsage = JSON.parse(await getBillingService().get_seat_usage());
+      const usage = await getSeatUsageConnect(readCurrentOrg()?.slug ?? "");
       setSeatUsage(usage);
     } catch (err) {
       setError(getLocalizedErrorMessage(err, t, t("billing.seats.loadFailed") || "Failed to load seat data"));
@@ -47,13 +48,11 @@ export function SeatManagement({
     setPurchasing(true);
     setError(null);
     try {
-      const result = JSON.parse(await getBillingService().purchase_seats(
-        JSON.stringify({ seats: seatsToAdd })
-      ));
+      const updatedSeats = await purchaseSeatsConnect(readCurrentOrg()?.slug ?? "", seatsToAdd);
 
       // Update local state with new seat data
-      if (result.seats) {
-        setSeatUsage(result.seats);
+      if (updatedSeats) {
+        setSeatUsage(updatedSeats);
       } else {
         // Reload seat usage if not returned inline
         await loadSeatUsage();

@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import type { SubscriptionPlan, BillingCycle, OrderType, CheckoutResponse, DeploymentInfo } from "@/lib/api/billing-types";
-import { getBillingService } from "@/lib/wasm-core";
+import { createCheckoutConnect } from "@/lib/api/billingConnect";
+import { readCurrentOrg } from "@/stores/auth";
 import { useLemonSqueezy } from "@/hooks/useLemonSqueezy";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { QRCodeCheckout } from "./QRCodeCheckout";
@@ -51,11 +52,14 @@ export function CheckoutFlow({
   const handleCheckout = async () => {
     setLoading(true);
     try {
-      const response: CheckoutResponse = JSON.parse(await getBillingService().create_checkout(JSON.stringify({
-        order_type: orderType, plan_name: plan?.name, billing_cycle: selectedCycle,
+      const response = await createCheckoutConnect(readCurrentOrg()?.slug ?? "", {
+        order_type: orderType,
+        plan_name: plan?.name,
+        billing_cycle: selectedCycle,
         seats: orderType === "seat_purchase" || orderType === "subscription" ? selectedSeats : undefined,
-        success_url: `${currentUrl}?payment=success`, cancel_url: `${currentUrl}?payment=cancelled`,
-      })));
+        success_url: `${currentUrl}?payment=success`,
+        cancel_url: `${currentUrl}?payment=cancelled`,
+      });
       setCheckoutResponse(response);
       onCheckoutCreated?.(response);
       if (response.session_url) {
