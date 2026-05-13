@@ -52,33 +52,33 @@ impl AppState {
     }
 
     #[napi]
-    pub async fn extension_list_repo_skills(&self, repo_id: i64, scope: Option<String>) -> napi::Result<String> {
+    pub async fn extension_list_repo_skills_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.list_repo_skills(repo_id, scope).await.map_err(err)
+        svc.list_repo_skills_connect(&request).await.map_err(err)
     }
 
     #[napi]
-    pub async fn extension_install_skill_from_market(&self, repo_id: i64, json: String) -> napi::Result<String> {
+    pub async fn extension_install_skill_from_market_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.install_skill_from_market(repo_id, &json).await.map_err(err)
+        svc.install_skill_from_market_connect(&request).await.map_err(err)
     }
 
     #[napi]
-    pub async fn extension_install_skill_from_github(&self, repo_id: i64, json: String) -> napi::Result<String> {
+    pub async fn extension_install_skill_from_github_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.install_skill_from_github(repo_id, &json).await.map_err(err)
+        svc.install_skill_from_github_connect(&request).await.map_err(err)
     }
 
     #[napi]
-    pub async fn extension_update_skill(&self, repo_id: i64, install_id: i64, json: String) -> napi::Result<String> {
+    pub async fn extension_update_skill_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.update_skill(repo_id, install_id, &json).await.map_err(err)
+        svc.update_skill_connect(&request).await.map_err(err)
     }
 
     #[napi]
-    pub async fn extension_uninstall_skill(&self, repo_id: i64, install_id: i64) -> napi::Result<()> {
+    pub async fn extension_uninstall_skill_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
         let svc = self.extension.lock().await;
-            svc.uninstall_skill(repo_id, install_id).await.map_err(err)
+        svc.uninstall_skill_connect(&request).await.map_err(err)
     }
 
     #[napi]

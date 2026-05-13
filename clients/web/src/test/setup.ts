@@ -749,12 +749,15 @@ vi.mock('@/lib/wasm-core', () => {
       // MarketService — Connect-RPC (binary wire)
       listMarketSkillsConnect: fn().mockResolvedValue(new Uint8Array()),
       listMarketMcpServersConnect: fn().mockResolvedValue(new Uint8Array()),
-      // Legacy REST (repo skill/mcp install still on JSON wire)
-      list_repo_skills: fn().mockResolvedValue('{"installs":[]}'),
-      install_skill_from_market: fn().mockResolvedValue('{}'),
-      install_skill_from_github: fn().mockResolvedValue('{}'),
-      update_skill: fn().mockResolvedValue('{}'),
-      uninstall_skill: fn().mockResolvedValue(undefined),
+      // RepoSkillService — Connect-RPC (binary wire)
+      listRepoSkillsConnect: fn().mockResolvedValue(new Uint8Array()),
+      installSkillFromMarketConnect: fn().mockResolvedValue(new Uint8Array()),
+      installSkillFromGithubConnect: fn().mockResolvedValue(new Uint8Array()),
+      updateSkillConnect: fn().mockResolvedValue(new Uint8Array()),
+      uninstallSkillConnect: fn().mockResolvedValue(new Uint8Array()),
+      // Legacy REST: multipart upload stays REST (Connect doesn't do multipart);
+      // repo MCP install still pending migration.
+      install_skill_from_upload: fn().mockResolvedValue('{}'),
       list_repo_mcp_servers: fn().mockResolvedValue('{"installs":[]}'),
       install_mcp_from_market: fn().mockResolvedValue('{}'),
       install_custom_mcp_server: fn().mockResolvedValue('{}'),

@@ -59,38 +59,38 @@ test.describe("IPC · extension", () => {
     expect(result).toBeDefined();
   });
 
-  test("extension_list_repo_skills", async ({ page }) => {
+  test("extension_list_repo_skills_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_list_repo_skills", 0, "").catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_list_repo_skills_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 
-  test("extension_install_skill_from_market", async ({ page }) => {
+  test("extension_install_skill_from_market_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_install_skill_from_market", 0, "").catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_install_skill_from_market_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 
-  test("extension_install_skill_from_github", async ({ page }) => {
+  test("extension_install_skill_from_github_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_install_skill_from_github", 0, "").catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_install_skill_from_github_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 
-  test("extension_update_skill", async ({ page }) => {
+  test("extension_update_skill_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_update_skill", 0, 0, "").catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_update_skill_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 
-  test("extension_uninstall_skill", async ({ page }) => {
+  test("extension_uninstall_skill_connect", async ({ page }) => {
     // Smoke: the bridge accepts the call. Result may be a valid response OR a typed error —
     // both prove the IPC route is wired. A crashed bridge would throw an unrelated runtime error.
-    const result = await invokeIpc(page, "extension_uninstall_skill", 0, 0).catch((err: Error) => ({ __ipcError: err.message }));
+    const result = await invokeIpc(page, "extension_uninstall_skill_connect", []).catch((err: Error) => ({ __ipcError: err.message }));
     expect(result).toBeDefined();
   });
 

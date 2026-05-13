@@ -6,10 +6,14 @@ import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import type { InstalledSkill, InstalledMcpServer } from "@/lib/api/extensionTypes";
 import { getExtensionService } from "@/lib/wasm-core";
+import { listRepoSkills, updateSkill, uninstallSkill } from "@/lib/api/repoSkillExtension";
+import { useCurrentOrg } from "@/stores/auth";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export function useCapabilitiesData(repositoryId: number) {
   const t = useTranslations();
+  const currentOrg = useCurrentOrg();
+  const orgSlug = currentOrg?.slug ?? "";
   const [orgSkills, setOrgSkills] = useState<InstalledSkill[]>([]);
   const [userSkills, setUserSkills] = useState<InstalledSkill[]>([]);
   const [orgMcpServers, setOrgMcpServers] = useState<InstalledMcpServer[]>([]);
@@ -19,19 +23,20 @@ export function useCapabilitiesData(repositoryId: number) {
   const { dialogProps: confirmDialogProps, confirm } = useConfirmDialog();
 
   const loadSkills = useCallback(async (mounted?: { current: boolean }) => {
+    if (!orgSlug) return;
     try {
       const [orgRes, userRes] = await Promise.all([
-        getExtensionService().list_repo_skills(BigInt(repositoryId), "org").then((j: string) => JSON.parse(j)),
-        getExtensionService().list_repo_skills(BigInt(repositoryId), "user").then((j: string) => JSON.parse(j)),
+        listRepoSkills(orgSlug, repositoryId, { scope: "org" }),
+        listRepoSkills(orgSlug, repositoryId, { scope: "user" }),
       ]);
       if (mounted && !mounted.current) return;
-      setOrgSkills(orgRes.skills || []);
-      setUserSkills(userRes.skills || []);
+      setOrgSkills(orgRes.items);
+      setUserSkills(userRes.items);
     } catch (error) {
       if (mounted && !mounted.current) return;
       toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToLoadSkills")));
     }
-  }, [repositoryId, t]);
+  }, [orgSlug, repositoryId, t]);
 
   const loadMcpServers = useCallback(async (mounted?: { current: boolean }) => {
     try {
@@ -60,20 +65,22 @@ export function useCapabilitiesData(repositoryId: number) {
   }, [loadSkills, loadMcpServers]);
 
   const handleToggleSkill = useCallback(async (skill: InstalledSkill) => {
-    try { await getExtensionService().update_skill(BigInt(repositoryId), BigInt(skill.id), JSON.stringify({ is_enabled: !skill.is_enabled })); await loadSkills(); }
+    if (!orgSlug) return;
+    try { await updateSkill(orgSlug, repositoryId, skill.id, { isEnabled: !skill.is_enabled }); await loadSkills(); }
     catch (error) { toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToUpdate"))); }
-  }, [repositoryId, loadSkills, t]);
+  }, [orgSlug, repositoryId, loadSkills, t]);
 
   const handleDeleteSkill = useCallback(async (skill: InstalledSkill) => {
+    if (!orgSlug) return;
     const confirmed = await confirm({
       title: t("extensions.confirmUninstallSkill"),
       description: t("extensions.uninstallSkillDescription", { name: skill.slug }),
       variant: "destructive", confirmText: t("extensions.uninstall"), cancelText: t("extensions.cancel"),
     });
     if (!confirmed) return;
-    try { await getExtensionService().uninstall_skill(BigInt(repositoryId), BigInt(skill.id)); toast.success(t("extensions.uninstalled")); await loadSkills(); }
+    try { await uninstallSkill(orgSlug, repositoryId, skill.id); toast.success(t("extensions.uninstalled")); await loadSkills(); }
     catch (error) { toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToUninstall"))); }
-  }, [repositoryId, loadSkills, t, confirm]);
+  }, [orgSlug, repositoryId, loadSkills, t, confirm]);
 
   const handleToggleMcp = useCallback(async (mcp: InstalledMcpServer) => {
     try { await getExtensionService().update_mcp_server(BigInt(repositoryId), BigInt(mcp.id), JSON.stringify({ is_enabled: !mcp.is_enabled })); await loadMcpServers(); }

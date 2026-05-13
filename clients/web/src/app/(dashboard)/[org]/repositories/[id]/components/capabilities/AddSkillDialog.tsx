@@ -7,6 +7,7 @@ import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { SkillMarketItem } from "@/lib/api";
 import { getExtensionService } from "@/lib/wasm-core";
 import { listMarketSkills } from "@/lib/api/marketExtension";
+import { installSkillFromMarket, installSkillFromGitHub } from "@/lib/api/repoSkillExtension";
 import { useCurrentOrg } from "@/stores/auth";
 import type { InstalledSkill } from "@/lib/api";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -69,12 +70,13 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
 
   const handleInstallFromMarket = useCallback(
     async (item: SkillMarketItem) => {
+      if (!orgSlug) return;
       setInstalling(true);
       try {
-        await getExtensionService().install_skill_from_market(BigInt(repositoryId), JSON.stringify({
-          market_item_id: item.id,
+        await installSkillFromMarket(orgSlug, repositoryId, {
+          marketItemId: item.id,
           scope,
-        }));
+        });
         toast.success(t("extensions.installed"));
         onInstalled();
       } catch (error) {
@@ -83,19 +85,19 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
         setInstalling(false);
       }
     },
-    [repositoryId, scope, t, onInstalled]
+    [orgSlug, repositoryId, scope, t, onInstalled]
   );
 
   const handleInstallFromGitHub = useCallback(async () => {
-    if (!githubUrl.trim()) return;
+    if (!githubUrl.trim() || !orgSlug) return;
     setInstalling(true);
     try {
-      await getExtensionService().install_skill_from_github(BigInt(repositoryId), JSON.stringify({
+      await installSkillFromGitHub(orgSlug, repositoryId, {
         url: githubUrl.trim(),
         branch: githubBranch.trim() || undefined,
         path: githubPath.trim() || undefined,
         scope,
-      }));
+      });
       toast.success(t("extensions.installed"));
       onInstalled();
     } catch (error) {
@@ -103,7 +105,7 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
     } finally {
       setInstalling(false);
     }
-  }, [repositoryId, githubUrl, githubBranch, githubPath, scope, t, onInstalled]);
+  }, [orgSlug, repositoryId, githubUrl, githubBranch, githubPath, scope, t, onInstalled]);
 
   const handleUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,6 +114,7 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
       setInstalling(true);
       try {
         const bytes = new Uint8Array(await file.arrayBuffer());
+        // Multipart upload stays REST (Connect doesn't handle multipart/form-data).
         await getExtensionService().install_skill_from_upload(
           BigInt(repositoryId), bytes, file.name, scope,
         );

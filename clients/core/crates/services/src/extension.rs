@@ -158,50 +158,6 @@ impl ExtensionService {
 
     // -------- Legacy REST (JSON wire) — preserved for not-yet-migrated routes --------
 
-    pub async fn list_repo_skills(
-        &self, repo_id: i64, scope: Option<String>,
-    ) -> Result<String, String> {
-        let resp = self.client
-            .list_repo_skills(repo_id, scope.as_deref())
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn install_skill_from_market(
-        &self, repo_id: i64, json: &str,
-    ) -> Result<String, String> {
-        let req: InstallMarketSkillRequest = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .install_skill_from_market(repo_id, &req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn install_skill_from_github(
-        &self, repo_id: i64, json: &str,
-    ) -> Result<String, String> {
-        let req: InstallGithubSkillRequest = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .install_skill_from_github(repo_id, &req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn update_skill(
-        &self, repo_id: i64, install_id: i64, json: &str,
-    ) -> Result<String, String> {
-        let req: UpdateSkillInstallRequest = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .update_skill_install(repo_id, install_id, &req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn uninstall_skill(&self, repo_id: i64, install_id: i64) -> Result<(), String> {
-        self.client.uninstall_skill(repo_id, install_id).await.map_err(crate::wire)?;
-        Ok(())
-    }
-
     pub async fn list_repo_mcp_servers(
         &self, repo_id: i64, scope: Option<String>,
     ) -> Result<String, String> {

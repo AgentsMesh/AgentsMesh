@@ -16,12 +16,8 @@ func registerExtensionRoutes(rg *gin.RouterGroup, svc *Services) {
 
 	repoSkills := rg.Group("/repositories/:id/skills")
 	{
-		repoSkills.GET("", handler.ListRepoSkills)
-		repoSkills.POST("/install-from-market", handler.InstallSkillFromMarket)
-		repoSkills.POST("/install-from-github", handler.InstallSkillFromGitHub)
+		// Multipart upload stays REST (Connect-RPC doesn't handle multipart/form-data).
 		repoSkills.POST("/install-from-upload", handler.InstallSkillFromUpload)
-		repoSkills.PUT("/:installId", handler.UpdateSkill)
-		repoSkills.DELETE("/:installId", handler.UninstallSkill)
 	}
 
 	repoMcp := rg.Group("/repositories/:id/mcp-servers")

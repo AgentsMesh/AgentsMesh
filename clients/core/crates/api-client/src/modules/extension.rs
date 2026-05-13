@@ -237,68 +237,11 @@ impl ApiClient {
 }
 
 // =============================================================================
-// Legacy REST methods — preserved for not-yet-migrated repo skill/mcp install
-// routes.
+// Legacy REST methods — preserved for not-yet-migrated repo MCP install routes
+// + multipart skill upload (multipart stays REST forever).
 // =============================================================================
 
 impl ApiClient {
-    pub async fn list_repo_skills(
-        &self,
-        repo_id: i64,
-        scope: Option<&str>,
-    ) -> Result<RepoSkillInstallListResponse, ApiError> {
-        let mut path = self.org_path(&format!("/repositories/{repo_id}/skills"));
-        if let Some(s) = scope {
-            path = format!("{path}?scope={s}");
-        }
-        self.get(&path).await
-    }
-
-    pub async fn install_skill_from_market(
-        &self,
-        repo_id: i64,
-        data: &InstallMarketSkillRequest,
-    ) -> Result<RepoSkillInstall, ApiError> {
-        self.post_resource(
-            &self.org_path(&format!("/repositories/{repo_id}/skills/install-from-market")),
-            data, "skill",
-        ).await
-    }
-
-    pub async fn install_skill_from_github(
-        &self,
-        repo_id: i64,
-        data: &InstallGithubSkillRequest,
-    ) -> Result<RepoSkillInstall, ApiError> {
-        self.post_resource(
-            &self.org_path(&format!("/repositories/{repo_id}/skills/install-from-github")),
-            data, "skill",
-        ).await
-    }
-
-    pub async fn update_skill_install(
-        &self,
-        repo_id: i64,
-        install_id: i64,
-        data: &UpdateSkillInstallRequest,
-    ) -> Result<RepoSkillInstall, ApiError> {
-        self.put_resource(
-            &self.org_path(&format!("/repositories/{repo_id}/skills/{install_id}")),
-            data, "skill",
-        ).await
-    }
-
-    pub async fn uninstall_skill(
-        &self,
-        repo_id: i64,
-        install_id: i64,
-    ) -> Result<EmptyResponse, ApiError> {
-        self.delete(&self.org_path(&format!(
-            "/repositories/{repo_id}/skills/{install_id}"
-        )))
-        .await
-    }
-
     pub async fn list_repo_mcp_servers(
         &self,
         repo_id: i64,

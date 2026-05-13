@@ -121,34 +121,6 @@ impl WasmExtensionService {
 
     // -------- Legacy REST JSON methods (preserved for not-yet-migrated routes) --------
 
-    pub async fn list_repo_skills(
-        &self, repo_id: i64, scope: Option<String>,
-    ) -> Result<String, String> {
-        self.0.list_repo_skills(repo_id, scope).await
-    }
-
-    pub async fn install_skill_from_market(
-        &self, repo_id: i64, json: &str,
-    ) -> Result<String, String> {
-        self.0.install_skill_from_market(repo_id, json).await
-    }
-
-    pub async fn install_skill_from_github(
-        &self, repo_id: i64, json: &str,
-    ) -> Result<String, String> {
-        self.0.install_skill_from_github(repo_id, json).await
-    }
-
-    pub async fn update_skill(
-        &self, repo_id: i64, install_id: i64, json: &str,
-    ) -> Result<String, String> {
-        self.0.update_skill(repo_id, install_id, json).await
-    }
-
-    pub async fn uninstall_skill(&self, repo_id: i64, install_id: i64) -> Result<(), String> {
-        self.0.uninstall_skill(repo_id, install_id).await
-    }
-
     pub async fn list_repo_mcp_servers(
         &self, repo_id: i64, scope: Option<String>,
     ) -> Result<String, String> {
