@@ -8,6 +8,7 @@
 #![allow(unused_imports)]
 
 mod automation;
+mod billing_dto;
 mod blocks_mesh;
 mod channel;
 mod message;
@@ -25,6 +26,15 @@ pub use automation::{
     UpdateLoopRequestDto,
 };
 pub(crate) use automation::approve_autopilot_req;
+pub use billing_dto::{
+    BillingOverviewDto, ChangeBillingCycleRequestDto, CheckoutStatusDto,
+    CreateCheckoutRequestDto, CreateCheckoutResponseDto, CreateSubscriptionRequestDto,
+    DeploymentInfoDto, InvoiceDto, InvoiceListResponseDto, PlanListResponseDto,
+    PublicPlanPricingDto, PublicPricingResponseDto, SeatUsageDto, SubscriptionDto,
+    SubscriptionPlanDto, UpdateSubscriptionRequestDto, UpgradeSubscriptionRequestDto,
+    UsageOverviewDto,
+};
+pub(crate) use billing_dto::{invoice_list_from_proto, plan_list_from_proto};
 pub use blocks_mesh::{
     ActorTypeDto, ApplyOpsRequestDto, ApplyOpsResultDto, BlockDto, BlockOpDto, BlockRefDto,
     ChildrenResultDto, MeshChannelInfoDto, MeshEdgeDto, MeshNodeDto, MeshRunnerInfoDto,
