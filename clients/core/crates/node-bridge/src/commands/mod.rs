@@ -1,6 +1,6 @@
 pub mod agent;
 pub mod apikey;
-pub mod auth_api;
+pub mod auth_connect;
 pub mod autopilot;
 pub mod autopilot_api;
 pub mod billing;

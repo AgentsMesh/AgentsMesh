@@ -23,8 +23,8 @@ import { ElectronSupportTicketService } from './support_ticket';
 import { ElectronTicketRelationsService } from './ticket_relations';
 import { ElectronTokenUsageService } from './token_usage';
 import { ElectronPromoCodeService } from './promocode';
-import { ElectronAuthApiService } from './auth_api';
 import { ElectronAuthService } from './auth';
+import { ElectronAuthConnectService } from './auth_connect';
 import { ElectronBlockstoreService } from './blockstore';
 import { ElectronLocalRunnerService } from './local_runner';
 import { invoke } from './invoke';
@@ -115,7 +115,7 @@ export function createElectronServiceProvider(baseUrl = '') {
     ticketRelationsService: new ElectronTicketRelationsService(),
     tokenUsageService: new ElectronTokenUsageService(),
     promoCodeService: new ElectronPromoCodeService(),
-    authApiService: new ElectronAuthApiService(),
+    authConnectService: new ElectronAuthConnectService(),
     blockstoreService: new ElectronBlockstoreService(),
     localRunnerService: new ElectronLocalRunnerService(),
     // State facets — share the Service instance, not a separate stub.

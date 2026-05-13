@@ -35,7 +35,6 @@ export interface IAgentService {
 export interface IApiClient {
   create_agent_service(): IAgentService;
   create_apikey_service(): IApiKeyService;
-  create_auth_api_service(): IAuthApiService;
   create_autopilot_service(): IAutopilotService;
   create_billing_service(): IBillingService;
   create_binding_service(): IBindingService;
@@ -79,12 +78,17 @@ export interface IApiKeyService {
   update(id: bigint, json: string): Promise<string>;
 }
 
-export interface IAuthApiService {
-  forgot_password(email: string): Promise<string>;
-  register(json: string): Promise<string>;
-  resend_verification(email: string): Promise<string>;
-  reset_password(json: string): Promise<string>;
-  verify_email(token: string): Promise<string>;
+export interface IAuthConnectService {
+  loginConnect(request: Uint8Array): Promise<Uint8Array>;
+  registerConnect(request: Uint8Array): Promise<Uint8Array>;
+  refreshTokenConnect(request: Uint8Array): Promise<Uint8Array>;
+  verifyEmailConnect(request: Uint8Array): Promise<Uint8Array>;
+  resendVerificationConnect(request: Uint8Array): Promise<Uint8Array>;
+  forgotPasswordConnect(request: Uint8Array): Promise<Uint8Array>;
+  resetPasswordConnect(request: Uint8Array): Promise<Uint8Array>;
+  oauthRedirectConnect(request: Uint8Array): Promise<Uint8Array>;
+  oauthCallbackConnect(request: Uint8Array): Promise<Uint8Array>;
+  logoutConnect(request: Uint8Array): Promise<Uint8Array>;
 }
 
 export interface IAuthManager {

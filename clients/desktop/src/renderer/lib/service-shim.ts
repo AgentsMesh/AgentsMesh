@@ -12,7 +12,7 @@ export {
   getTokenUsageService, getSSOService, getUserApiService,
   getUserCredentialService, getOrgApiService, getAgentService,
   getTicketRelationsService, getFileService, getSupportTicketService,
-  getAuthApiService, getRunnerState, getMeshState, getTicketState,
+  getAuthConnectService, getRunnerState, getMeshState, getTicketState,
   getChannelState, getLoopState, getAcpManager, getOrgState,
   getUserState, getGitProviderState, getRepoState,
   getAutopilotState, getRelayManager,

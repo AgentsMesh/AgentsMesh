@@ -948,13 +948,6 @@ vi.mock('@/lib/wasm-core', () => {
       getSupportTicketConnect: fn().mockResolvedValue(new Uint8Array()),
       getAttachmentUrlConnect: fn().mockResolvedValue(new Uint8Array()),
     })),
-    getAuthApiService: fn(() => ({
-      register: fn().mockResolvedValue('{}'),
-      verify_email: fn().mockResolvedValue('{}'),
-      resend_verification: fn().mockResolvedValue('{}'),
-      forgot_password: fn().mockResolvedValue('{}'),
-      reset_password: fn().mockResolvedValue('{}'),
-    })),
     getAuthConnectService: fn(() => ({
       // Connect-RPC (binary wire) — empty Uint8Array decodes to default
       // proto messages so call sites that don't override get sensible

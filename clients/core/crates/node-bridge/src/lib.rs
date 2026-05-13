@@ -43,7 +43,7 @@ pub struct AppState {
     support_ticket: Arc<Mutex<SupportTicketService>>,
     ticket_relations: Arc<Mutex<TicketRelationsService>>,
     token_usage: Arc<Mutex<TokenUsageService>>,
-    auth_api: Arc<Mutex<AuthApiService>>,
+    auth_connect: Arc<Mutex<AuthConnectService>>,
     blockstore: Arc<Mutex<BlockstoreService>>,
     sso: Arc<Mutex<SSOService>>,
     local_runner: Arc<LocalRunnerManager>,
@@ -90,7 +90,7 @@ impl AppState {
             support_ticket: Arc::new(Mutex::new(SupportTicketService::new(c.clone()))),
             ticket_relations: Arc::new(Mutex::new(TicketRelationsService::new(c.clone()))),
             token_usage: Arc::new(Mutex::new(TokenUsageService::new(c.clone()))),
-            auth_api: Arc::new(Mutex::new(AuthApiService::new(c.clone()))),
+            auth_connect: Arc::new(Mutex::new(AuthConnectService::new(c.clone()))),
             blockstore: Arc::new(Mutex::new(BlockstoreService::new(
                 c.clone(),
                 blockstore_state::BlockstoreState::new(),

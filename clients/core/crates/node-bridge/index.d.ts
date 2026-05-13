@@ -42,11 +42,16 @@ export declare class AppState {
   apikeyUpdate(id: number, json: string): Promise<string>
   apikeyDelete(id: number): Promise<void>
   apikeyRevoke(id: number): Promise<void>
-  authApiRegister(json: string): Promise<string>
-  authApiVerifyEmail(token: string): Promise<string>
-  authApiResendVerification(email: string): Promise<string>
-  authApiForgotPassword(email: string): Promise<string>
-  authApiResetPassword(json: string): Promise<string>
+  authConnectLoginConnect(request: Array<number>): Promise<Array<number>>
+  authConnectRegisterConnect(request: Array<number>): Promise<Array<number>>
+  authConnectRefreshTokenConnect(request: Array<number>): Promise<Array<number>>
+  authConnectVerifyEmailConnect(request: Array<number>): Promise<Array<number>>
+  authConnectResendVerificationConnect(request: Array<number>): Promise<Array<number>>
+  authConnectForgotPasswordConnect(request: Array<number>): Promise<Array<number>>
+  authConnectResetPasswordConnect(request: Array<number>): Promise<Array<number>>
+  authConnectOauthRedirectConnect(request: Array<number>): Promise<Array<number>>
+  authConnectOauthCallbackConnect(request: Array<number>): Promise<Array<number>>
+  authConnectLogoutConnect(request: Array<number>): Promise<Array<number>>
   autopilotControllersJson(): Promise<string>
   autopilotCurrentControllerJson(): Promise<string>
   autopilotGetControllerByPodKeyJson(podKey: string): Promise<string>

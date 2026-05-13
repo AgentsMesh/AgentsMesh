@@ -205,59 +205,64 @@ export const ipcSchema: IpcMethodSchema[] = [
     "returnType": "Vec<u8>"
   },
   {
-    "name": "auth_api_register",
-    "group": "auth_api",
-    "params": [
-      {
-        "name": "json",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
+    "name": "auth_connect_login_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "auth_api_verify_email",
-    "group": "auth_api",
-    "params": [
-      {
-        "name": "token",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
+    "name": "auth_connect_register_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "auth_api_resend_verification",
-    "group": "auth_api",
-    "params": [
-      {
-        "name": "email",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
+    "name": "auth_connect_refresh_token_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "auth_api_forgot_password",
-    "group": "auth_api",
-    "params": [
-      {
-        "name": "email",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
+    "name": "auth_connect_verify_email_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "auth_api_reset_password",
-    "group": "auth_api",
-    "params": [
-      {
-        "name": "json",
-        "type": "String"
-      }
-    ],
-    "returnType": "String"
+    "name": "auth_connect_resend_verification_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "auth_connect_forgot_password_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "auth_connect_reset_password_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "auth_connect_oauth_redirect_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "auth_connect_oauth_callback_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "auth_connect_logout_connect",
+    "group": "auth_connect",
+    "params": [{"name": "request", "type": "Vec<u8>"}],
+    "returnType": "Vec<u8>"
   },
   {
     "name": "autopilot_controllers_json",
