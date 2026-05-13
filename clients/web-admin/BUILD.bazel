@@ -66,10 +66,13 @@ _NEXT_DATA_COMMON = [
 ]
 
 # Dev path — keeps next.config.ts so existing `bazel run :next_dev` works.
+# `next_build_out=".next-dev"` avoids the `.next/` output collision
+# with `:next_image` — see //clients/web for the matching note.
 next_app(
     name = "next",
     srcs = _SRC_FILES,
     data = _NEXT_DATA_COMMON + ["next.config.ts"],
+    next_build_out = ".next-dev",
     next_js_binary = ":next_js_binary",
 )
 
@@ -125,11 +128,11 @@ sh_test(
     data = [":next_image_server_dir"],
 )
 
-js_library(
-    name = "web_admin",
-    srcs = [":next"],
-    visibility = ["//visibility:public"],
-)
+# `:next` (dev build) and `:next_image` (standalone) both write into
+# `.next/`. Wildcard builds (`bazel build //...`) trigger both → Bazel
+# rejects with "conflicting actions". `:next` carries the `manual` tag
+# via the `next_app` macro so wildcards skip it. See //clients/web for
+# the matching note.
 
 # `bazel test //clients/web-admin:lint` — see //build_defs/web:eslint.bzl.
 eslint_test(

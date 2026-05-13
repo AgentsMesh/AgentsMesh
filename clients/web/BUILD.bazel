@@ -137,6 +137,11 @@ _NEXT_DATA_COMMON = [
     "//:node_modules/@agentsmesh/node-bridge",
     "//:node_modules/agentsmesh-wasm",
     "//:package_json_bin",
+    # Generated TS proto message classes — `@proto/*` alias resolves
+    # to `../../proto/gen/ts/*` (tsconfig.json paths). Next.js's
+    # webpack pipeline reads the .ts files directly; the alias maps
+    # imports to disk paths inside the Bazel sandbox.
+    "//proto:proto_gen_ts",
 ] + glob(
     ["public/**/*"],
     allow_empty = True,
@@ -146,10 +151,18 @@ _NEXT_DATA_COMMON = [
 # so `bazel run :next_dev` and `bazel run :next_start` work unchanged.
 # This path does NOT enable `output: "standalone"` (the .ts file's
 # legacy BAZEL_BUILD env gate stays off by default).
+#
+# `next_build_out=".next-dev"` keeps this target's outputs from
+# clashing with `:next_image` (which writes the canonical `.next/`).
+# Both targets are analyzed by `bazel build //...`; declaring the
+# same out_dir would trip Bazel's "conflicting actions" check even
+# with `tags=["manual"]`. The matching `distDir` is wired in
+# next.config.ts via process.env.BAZEL_TARGET_NAME.
 next_app(
     name = "next",
     srcs = _SRC_FILES,
     data = _NEXT_DATA_COMMON + ["next.config.ts"],
+    next_build_out = ".next-dev",
     next_js_binary = ":next_js_binary",
 )
 
@@ -221,11 +234,12 @@ sh_test(
     data = [":next_image_server_dir"],
 )
 
-js_library(
-    name = "web",
-    srcs = [":next"],
-    visibility = ["//visibility:public"],
-)
+# `:next` (dev build) and `:next_image` (standalone) both write into
+# `.next/`. Wildcard builds (`bazel build //...`) trigger both → Bazel
+# rejects with "conflicting actions". `:next` carries the `manual` tag
+# via the `next_app` macro so wildcards skip it; explicit invocations
+# (`bazel build //clients/web:next`) and the dev server target remain
+# unaffected. The OCI image pipeline runs through `:next_image`.
 
 # Vitest unit + component tests (132 files / 1510 tests as of last run).
 # `bazel test //clients/web:unit` is equivalent to `pnpm test:run`.

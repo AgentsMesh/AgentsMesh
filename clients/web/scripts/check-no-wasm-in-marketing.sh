@@ -8,7 +8,10 @@
 
 set -euo pipefail
 
-NEXT_DIR="${NEXT_DIR:-bazel-bin/clients/web/.next}"
+# `:next` writes to `.next-dev/` (see clients/web/BUILD.bazel and
+# next.config.ts for why). Allow override for callers that already
+# point NEXT_DIR at a custom location.
+NEXT_DIR="${NEXT_DIR:-bazel-bin/clients/web/.next-dev}"
 CHUNKS_DIR="${NEXT_DIR}/static/chunks"
 
 if [[ ! -d "${CHUNKS_DIR}" ]]; then

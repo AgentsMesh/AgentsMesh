@@ -93,7 +93,13 @@ def next_app(
         out_dirs = [next_build_out],
         progress_message = "Building Next.js application",
         srcs = srcs + data,
-        tags = tags,
+        # The dev-path build emits to the same `.next/` directory as
+        # `next_standalone_app` below; running `bazel build //...`
+        # asks Bazel to materialise both into one path → conflicting
+        # actions. Tag manual so wildcard builds skip this; the dev
+        # server (`:<name>_dev`) and explicit `bazel build :<name>`
+        # invocations still work.
+        tags = tags + ["manual"],
         tool = next_js_binary,
         **kwargs
     )
@@ -122,7 +128,10 @@ def next_app(
         args = ["start"],
         chdir = native.package_name(),
         data = data + [name],
-        tags = tags,
+        # Manual because this target pulls `:name` (the dev build),
+        # which is itself manual. Without the matching tag, wildcard
+        # builds rope `:name` back in through this target's data.
+        tags = tags + ["manual"],
         tool = next_js_binary,
         **kwargs
     )
@@ -143,7 +152,11 @@ def next_app(
         chdir = native.package_name(),
         data = data + [name],
         entry_point = ":{}_start_entry".format(name),
-        tags = tags,
+        # OCI image pipeline uses `:next_image` instead; this binary
+        # is here for symmetry with the non-Bazel `next start` flow.
+        # Mark manual so wildcard builds don't pull `:name` through
+        # this target's data closure.
+        tags = tags + ["manual"],
         **kwargs
     )
 

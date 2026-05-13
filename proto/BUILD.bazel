@@ -1,6 +1,7 @@
 # gazelle-managed root of the `proto` Go module.
 
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 # Generated TS proto message classes (committed mirror under `gen/ts/`).
 # vitest / next consume via the `@proto/*` path alias resolved to
@@ -12,7 +13,35 @@ load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 # `proto/gen/go/` stays excluded — it's a lint-time mirror written by
 # golangci_lint_runner.sh; Bazel never reads it directly.
 copy_to_bin(
-    name = "proto_gen_ts",
+    name = "proto_gen_ts_files",
     srcs = glob(["gen/ts/**/*.ts"]),
     visibility = ["//visibility:public"],
+)
+
+# js_library wrapper — surfaces `JsInfo.sources` for downstream
+# bundlers (vite / next webpack). Note: ts_project's tsc action
+# only picks up `transitive_types` from JsInfo (i.e. .d.ts files),
+# so this target alone is NOT sufficient for tsc typecheck — the
+# .ts sources must be staged via runfiles or added to a downstream
+# ts_project's `srcs`. See //clients/web:src for how the typecheck
+# leg gets the files.
+js_library(
+    name = "proto_gen_ts",
+    srcs = [":proto_gen_ts_files"],
+    visibility = ["//visibility:public"],
+)
+
+# Source-level export so cross-package `ts_project` targets can pull
+# the .ts files into their own `srcs` list — required because tsc
+# only walks files it sees as srcs (transitive types from JsInfo
+# carry .d.ts, not .ts).
+exports_files(
+    glob(["gen/ts/**/*.ts"]),
+    visibility = ["//clients:__subpackages__"],
+)
+
+filegroup(
+    name = "proto_gen_ts_sources",
+    srcs = glob(["gen/ts/**/*.ts"]),
+    visibility = ["//clients:__subpackages__"],
 )

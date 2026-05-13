@@ -5,6 +5,11 @@ import tailwindcss from "@tailwindcss/vite";
 
 const desktopSrc = resolve(__dirname, "src/renderer");
 const webSrc = resolve(__dirname, "../web/src");
+// Generated TS proto message classes — match web/vitest-config alias
+// (`@proto/*` → `../../proto/gen/ts/*`). Without this the renderer
+// can't resolve the Connect-RPC pb modules cross-imported via
+// clients/web/src/lib/api/.
+const protoGen = resolve(__dirname, "../../proto/gen/ts");
 // All deps live in the workspace root after Phase C. The thin-shell
 // `clients/desktop/package.json` declares no `dependencies`, so
 // `clients/desktop/node_modules/` is empty in CI; pnpm's hoisting puts
@@ -63,6 +68,7 @@ export default defineConfig({
         { find: "react-dom", replacement: resolve(rootModules, "react-dom") },
         { find: /^@\/lib\/wasm-core$/, replacement: resolve(desktopSrc, "shims/service-shim") },
         { find: /^@\/lib\/wasm-getters$/, replacement: resolve(desktopSrc, "shims/service-shim") },
+        { find: /^@proto\/(.*)$/, replacement: resolve(protoGen, "$1") },
         { find: "@/stores", replacement: resolve(webSrc, "stores") },
         { find: "@/hooks", replacement: resolve(webSrc, "hooks") },
         { find: "@/components", replacement: resolve(webSrc, "components") },

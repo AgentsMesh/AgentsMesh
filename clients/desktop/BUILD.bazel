@@ -37,6 +37,11 @@ electron_vite_build(
         "//:node_modules/@agentsmesh/electron-adapter",
         "//:node_modules/@agentsmesh/service-interface",
         "//:node_modules/@agentsmesh/service-runtime",
+        # Generated TS proto message classes — clients/web/src/lib/api/
+        # imports `@proto/*`, aliased to `../../proto/gen/ts/*` in
+        # electron.vite.config.ts. The sandbox needs the staged .ts
+        # files for rollup's import resolver to succeed.
+        "//proto:proto_gen_ts",
     ],
     tags = ["manual"],
 )

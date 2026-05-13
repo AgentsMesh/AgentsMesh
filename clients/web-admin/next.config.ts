@@ -13,6 +13,13 @@ const enableStandalone = process.env.BAZEL_BUILD === "standalone";
 const nextConfig: NextConfig = {
   ...(enableStandalone ? { output: "standalone" as const } : {}),
 
+  // See clients/web/next.config.ts for the matching note — keeps the
+  // dev-path build out of the `.next/` directory the standalone
+  // pipeline owns.
+  ...(process.env.BAZEL_TARGET_NAME === "next"
+    ? { distDir: ".next-dev" as const }
+    : {}),
+
   // =============================================================================
   // Unified Domain Configuration
   // 将 PRIMARY_DOMAIN / USE_HTTPS 映射为 NEXT_PUBLIC_* 变量
