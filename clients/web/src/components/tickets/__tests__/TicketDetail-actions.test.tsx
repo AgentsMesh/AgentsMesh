@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
 import { TicketDetail } from '../TicketDetail'
-import { getTicketRelationsService, getApiClient, getOrgApiService } from '@/lib/wasm-core'
+import { getApiClient, getOrgApiService } from '@/lib/wasm-core'
+import * as ticketRelations from '@/lib/api/ticketRelations'
 
 // Mock next/navigation
 const mockRouterBack = vi.fn()
@@ -48,6 +49,25 @@ vi.mock('@/stores/ticket', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({}))
+
+vi.mock('@/lib/api/ticketRelations', () => ({
+  listRelations: vi.fn(),
+  createRelation: vi.fn(),
+  deleteRelation: vi.fn(),
+  listCommits: vi.fn(),
+  linkCommit: vi.fn(),
+  unlinkCommit: vi.fn(),
+  listMergeRequests: vi.fn(),
+  listComments: vi.fn(),
+  createComment: vi.fn(),
+  updateComment: vi.fn(),
+  deleteComment: vi.fn(),
+}))
+
+vi.mock('@/lib/api/ticketConnect', () => ({
+  getSubTickets: vi.fn().mockResolvedValue([]),
+  getTicket: vi.fn(),
+}))
 
 vi.mock('@/lib/wasm-getters', async () => {
   const wasmCore = await vi.importMock<typeof import('@/lib/wasm-core')>('@/lib/wasm-core')
@@ -128,9 +148,9 @@ describe('TicketDetail - Editing, Status & Delete', () => {
 
     const client = getApiClient()
     vi.mocked(client.get).mockResolvedValue(JSON.stringify({ sub_tickets: [], pods: [] }))
-    vi.mocked(getTicketRelationsService().list_relations).mockResolvedValue(JSON.stringify({ relations: [] }))
-    vi.mocked(getTicketRelationsService().list_commits).mockResolvedValue(JSON.stringify({ commits: [] }))
-    vi.mocked(getTicketRelationsService().list_comments).mockResolvedValue(JSON.stringify({ comments: [], total: 0 }))
+    vi.mocked(ticketRelations.listRelations).mockResolvedValue({ relations: [] })
+    vi.mocked(ticketRelations.listCommits).mockResolvedValue({ commits: [] })
+    vi.mocked(ticketRelations.listComments).mockResolvedValue({ comments: [], total: 0, limit: 0, offset: 0 })
 
     vi.mocked(getOrgApiService().list_members).mockResolvedValue(JSON.stringify({ members: [] }))
   })
