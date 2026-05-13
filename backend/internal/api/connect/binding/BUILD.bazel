@@ -1,0 +1,38 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "binding",
+    srcs = [
+        "binding.go",
+        "binding_lifecycle.go",
+        "binding_query.go",
+        "binding_scopes.go",
+        "convert.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/binding",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/channel",
+        "//backend/internal/middleware",
+        "//backend/internal/service/binding",
+        "//proto/binding/v1:binding_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "binding_test",
+    srcs = ["binding_test.go"],
+    embed = [":binding"],
+    deps = [
+        "//backend/internal/domain/channel",
+        "//backend/internal/middleware",
+        "//backend/internal/service/binding",
+        "//proto/binding/v1:binding_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_lib_pq//:pq",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

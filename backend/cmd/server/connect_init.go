@@ -12,6 +12,7 @@ import (
 	authconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/auth"
 	autopilotconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/autopilot"
 	billingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/billing"
+	bindingconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/binding"
 	blockstoreconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/blockstore"
 	channelconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel"
 	extensionconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/extension"
@@ -105,6 +106,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 		repositoryconnect.WithBillingService(svc.billing),
 	), opts...)
 	apikeyconnect.Mount(mux, apikeyconnect.NewServer(svc.apikey, svc.org), opts...)
+	bindingconnect.Mount(mux, bindingconnect.NewServer(svc.binding, svc.org), opts...)
 	if svc.blockstore != nil {
 		blockstoreconnect.Mount(mux, blockstoreconnect.NewServer(svc.blockstore, svc.org), opts...)
 	}
