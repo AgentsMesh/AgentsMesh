@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Share2 } from "lucide-react";
 import { ShareDialog } from "@/components/shared/ShareDialog";
 import type { RunnerData } from "@/lib/api/runnerTypes";
-import { getRunnerService } from "@/lib/wasm-core";
+import { updateRunner } from "@/lib/api/runnerConnect";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { getShortPodKey } from "@/lib/pod-display-name";
 
@@ -22,6 +23,8 @@ interface RunnerConfigModalProps {
  * RunnerConfigModal - Modal for configuring runner settings
  */
 export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfigModalProps) {
+  const params = useParams();
+  const orgSlug = String(params.org ?? "");
   const [description, setDescription] = useState(runner.description || "");
   const [maxPods, setMaxPods] = useState(runner.max_concurrent_pods);
   const [visibility, setVisibility] = useState<string>(runner.visibility || "organization");
@@ -35,12 +38,12 @@ export function RunnerConfigModal({ t, runner, onClose, onUpdated }: RunnerConfi
     setLoading(true);
     setError(null);
     try {
-      await getRunnerService().update_runner(BigInt(runner.id), JSON.stringify({
+      await updateRunner(orgSlug, runner.id, {
         description: description || undefined,
         max_concurrent_pods: maxPods,
         visibility,
         tags,
-      }));
+      });
       onUpdated();
     } catch (err) {
       console.error("Failed to update runner:", err);
