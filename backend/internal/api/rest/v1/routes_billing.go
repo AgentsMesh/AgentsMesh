@@ -50,10 +50,3 @@ func registerFileRoutes(rg *gin.RouterGroup, svc *Services) {
 		files.POST("/presign", fileHandler.PresignUpload)
 	}
 }
-
-func registerTokenUsageRoutes(rg *gin.RouterGroup, svc *Services) {
-	if svc.TokenUsage == nil {
-		return
-	}
-	RegisterTokenUsageRoutes(rg, svc.TokenUsage)
-}
