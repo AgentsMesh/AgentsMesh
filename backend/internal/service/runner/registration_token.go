@@ -31,7 +31,10 @@ func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, user
 	// Set defaults
 	expiresIn := req.ExpiresIn
 	if expiresIn <= 0 {
-		expiresIn = 3600 // 1 hour default
+		// 24h default — 1h was too short for the realistic "copy token → install
+		// runner on laptop → run register" flow; users routinely hit expired-token
+		// errors after stepping away briefly.
+		expiresIn = 86400
 	}
 	maxUses := req.MaxUses
 	if maxUses <= 0 {
