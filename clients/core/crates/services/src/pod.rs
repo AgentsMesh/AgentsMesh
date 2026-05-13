@@ -4,7 +4,7 @@ use std::sync::RwLock;
 use agentsmesh_api_client::ApiClient;
 use agentsmesh_state::pod_state::PodState;
 use agentsmesh_types::proto_pod_v1 as pod_proto;
-use agentsmesh_types::{Pod, PodStatus, CreatePodRequest, UpdatePodAliasRequest};
+use agentsmesh_types::{Pod, PodStatus, CreatePodRequest};
 use prost::Message;
 
 use crate::parse_status;
@@ -97,25 +97,49 @@ impl PodService {
         &self, status: Option<String>, runner_id: Option<i64>,
         created_by_id: Option<i64>, limit: Option<i64>, offset: Option<i64>,
     ) -> Result<String, String> {
-        let resp = self.client
-            .list_pods(status.as_deref(), runner_id, created_by_id, limit, offset)
-            .await
-            .map_err(crate::wire)?;
-        self.state.write().unwrap().set_pods(resp.pods.clone());
-        serde_json::to_string(&resp).map_err(crate::wire)
+        // runner_id filter is REST-only — proto.pod.v1.ListPodsRequest drops
+        // it because the new surface routes per-runner lookup through
+        // RunnerService.QuerySandboxes / ListRunnerPods. The few legacy
+        // callers passing runner_id (none in active web code post-PR #340)
+        // would have to switch to the runner-scoped endpoint.
+        let _ = runner_id;
+        let req = pod_proto::ListPodsRequest {
+            org_slug: self.client.current_org_slug(),
+            status,
+            created_by_id,
+            limit: limit.map(|v| v as i32),
+            offset: offset.map(|v| v as i32),
+        };
+        let resp = self.client.list_pods_connect(&req).await.map_err(crate::wire)?;
+        let total = resp.total;
+        let resp_limit = resp.limit;
+        let resp_offset = resp.offset;
+        let pods: Vec<Pod> = resp.items.into_iter().map(crate::proto_convert::pod::from_proto).collect();
+        self.state.write().unwrap().set_pods(pods.clone());
+        let envelope = serde_json::json!({
+            "pods": pods,
+            "total": total,
+            "limit": resp_limit,
+            "offset": resp_offset,
+        });
+        serde_json::to_string(&envelope).map_err(crate::wire)
     }
 
     pub async fn fetch_sidebar_pods(
         &self, filter: &str, user_id: Option<i64>,
     ) -> Result<String, String> {
-        let status_param = sidebar_status_param(filter);
+        let status_param = sidebar_status_param(filter).map(String::from);
         let created_by_id = if filter == "mine" { user_id } else { None };
-        let resp = self.client
-            .list_pods(status_param, None, created_by_id, Some(SIDEBAR_PAGE_SIZE), Some(0))
-            .await
-            .map_err(crate::wire)?;
-        let total = resp.total.unwrap_or(0);
-        let pods = resp.pods;
+        let req = pod_proto::ListPodsRequest {
+            org_slug: self.client.current_org_slug(),
+            status: status_param,
+            created_by_id,
+            limit: Some(SIDEBAR_PAGE_SIZE as i32),
+            offset: Some(0),
+        };
+        let resp = self.client.list_pods_connect(&req).await.map_err(crate::wire)?;
+        let total = resp.total;
+        let pods: Vec<Pod> = resp.items.into_iter().map(crate::proto_convert::pod::from_proto).collect();
         let has_more = (pods.len() as i64) < total;
         self.state.write().unwrap().set_pods(pods.clone());
         let result = serde_json::json!({
@@ -129,14 +153,18 @@ impl PodService {
     pub async fn load_more_pods(
         &self, filter: &str, user_id: Option<i64>, offset: i64,
     ) -> Result<String, String> {
-        let status_param = sidebar_status_param(filter);
+        let status_param = sidebar_status_param(filter).map(String::from);
         let created_by_id = if filter == "mine" { user_id } else { None };
-        let resp = self.client
-            .list_pods(status_param, None, created_by_id, Some(SIDEBAR_PAGE_SIZE), Some(offset))
-            .await
-            .map_err(crate::wire)?;
-        let total = resp.total.unwrap_or(0);
-        let new_pods = resp.pods;
+        let req = pod_proto::ListPodsRequest {
+            org_slug: self.client.current_org_slug(),
+            status: status_param,
+            created_by_id,
+            limit: Some(SIDEBAR_PAGE_SIZE as i32),
+            offset: Some(offset as i32),
+        };
+        let resp = self.client.list_pods_connect(&req).await.map_err(crate::wire)?;
+        let total = resp.total;
+        let new_pods: Vec<Pod> = resp.items.into_iter().map(crate::proto_convert::pod::from_proto).collect();
         {
             let mut state = self.state.write().unwrap();
             for pod in &new_pods {
@@ -155,30 +183,51 @@ impl PodService {
     }
 
     pub async fn fetch_pod(&self, pod_key: &str) -> Result<String, String> {
-        let pod: Pod = self.client
-            .get_pod(pod_key)
-            .await
-            .map_err(crate::wire)?;
+        let req = pod_proto::GetPodRequest {
+            org_slug: self.client.current_org_slug(),
+            pod_key: pod_key.to_string(),
+        };
+        let resp = self.client.get_pod_connect(&req).await.map_err(crate::wire)?;
+        let pod = crate::proto_convert::pod::from_proto(resp);
         self.state.write().unwrap().upsert_pod(pod.clone(), None);
         serde_json::to_string(&pod).map_err(crate::wire)
     }
 
     pub async fn create_pod(&self, request_json: &str) -> Result<String, String> {
-        let req: CreatePodRequest = serde_json::from_str(request_json)
+        let req_legacy: CreatePodRequest = serde_json::from_str(request_json)
             .map_err(crate::wire)?;
-        let resp = self.client
-            .create_pod(&req)
-            .await
-            .map_err(crate::wire)?;
-        self.state.write().unwrap().upsert_pod(resp.pod.clone(), None);
-        serde_json::to_string(&resp).map_err(crate::wire)
+        let req = pod_proto::CreatePodRequest {
+            org_slug: self.client.current_org_slug(),
+            agent_slug: req_legacy.agent_slug,
+            runner_id: req_legacy.runner_id,
+            ticket_slug: req_legacy.ticket_slug,
+            alias: req_legacy.alias,
+            agentfile_layer: req_legacy.agentfile_layer,
+            repository_id: None,
+            credential_profile_id: None,
+            cols: req_legacy.cols.map(|v| v as i32).unwrap_or(0),
+            rows: req_legacy.rows.map(|v| v as i32).unwrap_or(0),
+            source_pod_key: req_legacy.source_pod_key,
+            resume_agent_session: req_legacy.resume_agent_session,
+            perpetual: req_legacy.perpetual,
+        };
+        let resp = self.client.create_pod_connect(&req).await.map_err(crate::wire)?;
+        let pod_proto_msg = resp.pod.ok_or_else(|| "create_pod: empty pod in response".to_string())?;
+        let pod = crate::proto_convert::pod::from_proto(pod_proto_msg);
+        self.state.write().unwrap().upsert_pod(pod.clone(), None);
+        let envelope = serde_json::json!({
+            "pod": pod,
+            "warning": resp.warning,
+        });
+        serde_json::to_string(&envelope).map_err(crate::wire)
     }
 
     pub async fn terminate_pod(&self, pod_key: &str) -> Result<(), String> {
-        self.client
-            .terminate_pod(pod_key)
-            .await
-            .map_err(crate::wire)?;
+        let req = pod_proto::TerminatePodRequest {
+            org_slug: self.client.current_org_slug(),
+            pod_key: pod_key.to_string(),
+        };
+        self.client.terminate_pod_connect(&req).await.map_err(crate::wire)?;
         self.state.write().unwrap().update_pod_status(
             pod_key, PodStatus::Terminated, None, None, None, None,
         );
@@ -189,13 +238,21 @@ impl PodService {
         &self, pod_key: &str, alias: Option<String>,
     ) -> Result<(), String> {
         self.state.write().unwrap().update_pod_alias(pod_key, alias.as_deref().unwrap_or(""));
-        let req = UpdatePodAliasRequest {
+        let req = pod_proto::UpdatePodAliasRequest {
+            org_slug: self.client.current_org_slug(),
+            pod_key: pod_key.to_string(),
             alias: alias.clone(),
         };
-        match self.client.update_pod_alias(pod_key, &req).await {
+        match self.client.update_pod_alias_connect(&req).await {
             Ok(_) => Ok(()),
             Err(e) => {
-                if let Ok(pod) = self.client.get_pod(pod_key).await {
+                // Roll back local optimistic state to server truth on error.
+                let get_req = pod_proto::GetPodRequest {
+                    org_slug: self.client.current_org_slug(),
+                    pod_key: pod_key.to_string(),
+                };
+                if let Ok(pod_proto_msg) = self.client.get_pod_connect(&get_req).await {
+                    let pod = crate::proto_convert::pod::from_proto(pod_proto_msg);
                     self.state.write().unwrap().upsert_pod(pod, None);
                 }
                 Err(e.to_string())
@@ -204,10 +261,12 @@ impl PodService {
     }
 
     pub async fn get_pod_connection(&self, pod_key: &str) -> Result<String, String> {
-        let info = self.client
-            .get_pod_relay_connection(pod_key)
-            .await
-            .map_err(crate::wire)?;
+        let req = pod_proto::GetPodConnectionRequest {
+            org_slug: self.client.current_org_slug(),
+            pod_key: pod_key.to_string(),
+        };
+        let info_proto = self.client.get_pod_connection_connect(&req).await.map_err(crate::wire)?;
+        let info = crate::proto_convert::pod::connection_info(info_proto);
         serde_json::to_string(&info).map_err(crate::wire)
     }
 

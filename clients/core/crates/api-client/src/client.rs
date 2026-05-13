@@ -33,6 +33,13 @@ impl ApiClient {
         }
     }
 
+    /// Current org slug for Connect-RPC requests that carry `org_slug` in
+    /// the proto body. Services use this to build proto requests before
+    /// invoking `*_connect` (dual-track migration window).
+    pub fn current_org_slug(&self) -> String {
+        self.auth_store.get_current_org_slug().unwrap_or_default()
+    }
+
     pub async fn get<T: DeserializeOwned>(&self, endpoint: &str) -> Result<T, ApiError> {
         self.request(Method::GET, endpoint, RequestOptions::default())
             .await
