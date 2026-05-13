@@ -13,19 +13,7 @@ impl WasmSupportTicketService {
         Self(SupportTicketService::new(client))
     }
 
-    pub async fn list(
-        &self, status: Option<String>, page: Option<u32>, page_size: Option<u32>,
-    ) -> Result<String, String> {
-        self.0.list(status, page, page_size).await
-    }
-
-    pub async fn get_detail(&self, id: i64) -> Result<String, String> {
-        self.0.get_detail(id).await
-    }
-
-    pub async fn get_attachment_url(&self, id: i64) -> Result<String, String> {
-        self.0.get_attachment_url(id).await
-    }
+    // Multipart REST endpoints (no Connect multipart wire).
 
     pub async fn create_ticket(
         &self, title: &str, category: &str, content: &str,
@@ -44,13 +32,6 @@ impl WasmSupportTicketService {
     }
 
     // -------- Connect-RPC (binary wire) --------
-    //
-    // TS encodes the request via @bufbuild/protobuf .toBinary(), passes the
-    // Uint8Array in, receives a Uint8Array back, decodes via .fromBinary().
-    // No JSON intermediate; conventions §2.5 forbids it on the client.
-    //
-    // js_name is camelCase; the `Connect` suffix marks the migration lane so
-    // the legacy JSON methods can coexist until the UI fully cuts over.
 
     #[wasm_bindgen(js_name = listSupportTicketsConnect)]
     pub async fn list_support_tickets_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {

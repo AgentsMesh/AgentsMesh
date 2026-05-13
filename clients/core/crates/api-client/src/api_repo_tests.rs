@@ -138,18 +138,6 @@ mod api_repo_tests {
     }
 
     #[tokio::test]
-    async fn get_support_ticket_attachment_url() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v1/support-tickets/attachments/99/url"))
-            .respond_with(ok(json!({"url":{"url":"https://s3/a/99"}})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), Tok::none());
-        let r = c.get_support_ticket_attachment_url(99).await.unwrap();
-        assert_eq!(r.url, "https://s3/a/99");
-    }
-
-    #[tokio::test]
     async fn get_token_usage_dashboard_all_params() {
         let s = MockServer::start().await;
         Mock::given(method("GET"))

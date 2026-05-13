@@ -3094,47 +3094,6 @@ export const ipcSchema: IpcMethodSchema[] = [
     "returnType": "String"
   },
   {
-    "name": "support_ticket_list",
-    "group": "support_ticket",
-    "params": [
-      {
-        "name": "status",
-        "type": "Option<String>"
-      },
-      {
-        "name": "page",
-        "type": "Option<u32>"
-      },
-      {
-        "name": "page_size",
-        "type": "Option<u32>"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
-    "name": "support_ticket_get_detail",
-    "group": "support_ticket",
-    "params": [
-      {
-        "name": "id",
-        "type": "i64"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
-    "name": "support_ticket_get_attachment_url",
-    "group": "support_ticket",
-    "params": [
-      {
-        "name": "id",
-        "type": "i64"
-      }
-    ],
-    "returnType": "String"
-  },
-  {
     "name": "support_ticket_create_ticket",
     "group": "support_ticket",
     "params": [
@@ -3187,6 +3146,39 @@ export const ipcSchema: IpcMethodSchema[] = [
       }
     ],
     "returnType": "String"
+  },
+  {
+    "name": "support_ticket_list_support_tickets_connect",
+    "group": "support_ticket",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "support_ticket_get_support_ticket_connect",
+    "group": "support_ticket",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "support_ticket_get_attachment_url_connect",
+    "group": "support_ticket",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
   },
   {
     "name": "ticket_tickets_json",

@@ -456,29 +456,6 @@ mod api_core_tests {
         let _ = c.list_repository_branches(5).await.unwrap();
     }
 
-    // ── support_ticket ──────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_support_tickets() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/support-tickets"))
-            .and(query_param("status", "open")).and(query_param("page", "1"))
-            .respond_with(ok(json!({"data":[],"total":0})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_support_tickets(Some("open"), Some(1), None).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_support_ticket_detail() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/support-tickets/42"))
-            .respond_with(ok(json!({"ticket":{"id":42,"title":"help"},"messages":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.get_support_ticket_detail(42).await.unwrap();
-    }
-
     // ── ticket_relations ────────────────────────────────────────────────
 
     #[tokio::test]

@@ -12,28 +12,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SupportTicketHandler handles user-facing support ticket requests
+// SupportTicketHandler keeps the two multipart-bodied REST endpoints that
+// Connect-RPC cannot represent today (file uploads). Read paths have moved
+// to proto.support_ticket.v1.SupportTicketService (Connect).
 type SupportTicketHandler struct {
 	service *supportticket.Service
 }
 
-// NewSupportTicketHandler creates a new support ticket handler
 func NewSupportTicketHandler(service *supportticket.Service) *SupportTicketHandler {
 	return &SupportTicketHandler{service: service}
 }
 
-// RegisterRoutes registers support ticket routes for authenticated users
+// RegisterRoutes wires the two multipart endpoints. Connect-RPC owns
+// list/get/messages-list/attachment-url.
 func (h *SupportTicketHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("", h.Create)
-	rg.GET("", h.List)
-	rg.GET("/:id", h.GetByID)
 	rg.POST("/:id/messages", h.AddMessage)
-	rg.GET("/:id/messages", h.ListMessages)
-	rg.GET("/attachments/:attachmentId/url", h.GetAttachmentURL)
 }
 
-// Create handles support ticket creation with optional file uploads
-// POST /api/v1/support-tickets
+// Create handles POST /api/v1/support-tickets (multipart/form-data).
+// Kept on REST because Connect has no multipart wire today.
 func (h *SupportTicketHandler) Create(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -73,7 +71,6 @@ func (h *SupportTicketHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Handle file uploads
 	form, _ := c.MultipartForm()
 	if form != nil && form.File["files[]"] != nil {
 		for _, fileHeader := range form.File["files[]"] {
@@ -103,76 +100,8 @@ func (h *SupportTicketHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, ticket)
 }
 
-// List returns the authenticated user's support tickets
-// GET /api/v1/support-tickets
-func (h *SupportTicketHandler) List(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	if userID == 0 {
-		apierr.AbortUnauthorized(c, apierr.AUTH_REQUIRED, "Authentication required")
-		return
-	}
-
-	query := &supportticket.ListQuery{
-		Status:   c.Query("status"),
-		Page:     1,
-		PageSize: 20,
-	}
-
-	if page, err := strconv.Atoi(c.Query("page")); err == nil {
-		query.Page = page
-	}
-	if pageSize, err := strconv.Atoi(c.Query("page_size")); err == nil {
-		query.PageSize = pageSize
-	}
-
-	result, err := h.service.ListByUser(c.Request.Context(), userID, query)
-	if err != nil {
-		apierr.InternalError(c, "Failed to list support tickets")
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
-}
-
-// GetByID returns a specific support ticket with messages
-// GET /api/v1/support-tickets/:id
-func (h *SupportTicketHandler) GetByID(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	if userID == 0 {
-		apierr.AbortUnauthorized(c, apierr.AUTH_REQUIRED, "Authentication required")
-		return
-	}
-
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid ticket ID")
-		return
-	}
-
-	ticket, err := h.service.GetByID(c.Request.Context(), id, userID)
-	if err != nil {
-		if errors.Is(err, supportticket.ErrTicketNotFound) {
-			apierr.ResourceNotFound(c, "Support ticket not found")
-			return
-		}
-		apierr.InternalError(c, "Failed to get support ticket")
-		return
-	}
-
-	// Load messages
-	messages, err := h.service.ListMessages(c.Request.Context(), id, userID)
-	if err != nil {
-		slog.WarnContext(c.Request.Context(), "failed to load messages for ticket", "ticket_id", id, "error", err)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"ticket":   ticket,
-		"messages": messages,
-	})
-}
-
-// AddMessage adds a message to a support ticket
-// POST /api/v1/support-tickets/:id/messages
+// AddMessage handles POST /api/v1/support-tickets/:id/messages
+// (multipart/form-data). Kept on REST for the same reason as Create.
 func (h *SupportTicketHandler) AddMessage(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
@@ -204,7 +133,6 @@ func (h *SupportTicketHandler) AddMessage(c *gin.Context) {
 		return
 	}
 
-	// Handle file uploads
 	form, _ := c.MultipartForm()
 	if form != nil && form.File["files[]"] != nil {
 		for _, fileHeader := range form.File["files[]"] {
@@ -232,63 +160,4 @@ func (h *SupportTicketHandler) AddMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, msg)
-}
-
-// ListMessages returns all messages for a support ticket
-// GET /api/v1/support-tickets/:id/messages
-func (h *SupportTicketHandler) ListMessages(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	if userID == 0 {
-		apierr.AbortUnauthorized(c, apierr.AUTH_REQUIRED, "Authentication required")
-		return
-	}
-
-	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid ticket ID")
-		return
-	}
-
-	messages, err := h.service.ListMessages(c.Request.Context(), ticketID, userID)
-	if err != nil {
-		if errors.Is(err, supportticket.ErrTicketNotFound) {
-			apierr.ResourceNotFound(c, "Support ticket not found")
-			return
-		}
-		apierr.InternalError(c, "Failed to list messages")
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": messages})
-}
-
-// GetAttachmentURL returns a presigned URL for downloading an attachment
-// GET /api/v1/support-tickets/attachments/:attachmentId/url
-func (h *SupportTicketHandler) GetAttachmentURL(c *gin.Context) {
-	userID := middleware.GetUserID(c)
-	if userID == 0 {
-		apierr.AbortUnauthorized(c, apierr.AUTH_REQUIRED, "Authentication required")
-		return
-	}
-
-	attachmentID, err := strconv.ParseInt(c.Param("attachmentId"), 10, 64)
-	if err != nil {
-		apierr.InvalidInput(c, "Invalid attachment ID")
-		return
-	}
-
-	url, err := h.service.GetAttachmentURL(c.Request.Context(), attachmentID, userID)
-	if err != nil {
-		switch {
-		case errors.Is(err, supportticket.ErrAttachmentNotFound):
-			apierr.ResourceNotFound(c, "Attachment not found")
-		case errors.Is(err, supportticket.ErrAccessDenied):
-			apierr.ForbiddenAccess(c)
-		default:
-			apierr.InternalError(c, "Failed to get attachment URL")
-		}
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"url": url})
 }

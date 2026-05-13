@@ -13,28 +13,8 @@ impl SupportTicketService {
         Self { client }
     }
 
-    pub async fn list(
-        &self, status: Option<String>, page: Option<u32>, page_size: Option<u32>,
-    ) -> Result<String, String> {
-        let resp = self.client
-            .list_support_tickets(status.as_deref(), page, page_size)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn get_detail(&self, id: i64) -> Result<String, String> {
-        let resp = self.client
-            .get_support_ticket_detail(id)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn get_attachment_url(&self, id: i64) -> Result<String, String> {
-        let resp = self.client
-            .get_support_ticket_attachment_url(id)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
+    // Multipart endpoints stay on REST: Connect-RPC has no multipart wire,
+    // and ticket creation / message replies carry optional file uploads.
 
     pub async fn create_ticket(
         &self, title: &str, category: &str, content: &str,

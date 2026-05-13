@@ -335,11 +335,11 @@ export declare class AppState {
   runnerQueryRunnerSandboxes(id: number, requestJson: string): Promise<string>
   runnerGetAuthStatus(authKey: string): Promise<string>
   runnerAuthorizeRunner(requestJson: string): Promise<string>
-  supportTicketList(status?: string | undefined | null, page?: number | undefined | null, pageSize?: number | undefined | null): Promise<string>
-  supportTicketGetDetail(id: number): Promise<string>
-  supportTicketGetAttachmentUrl(id: number): Promise<string>
   supportTicketCreateTicket(title: string, category: string, content: string, priority: string | undefined | null, fileData: Array<Array<number>>, fileNames: Array<string>): Promise<string>
   supportTicketAddMessage(ticketId: number, content: string, fileData: Array<Array<number>>, fileNames: Array<string>): Promise<string>
+  supportTicketListSupportTicketsConnect(request: Array<number>): Promise<Array<number>>
+  supportTicketGetSupportTicketConnect(request: Array<number>): Promise<Array<number>>
+  supportTicketGetAttachmentUrlConnect(request: Array<number>): Promise<Array<number>>
   ticketTicketsJson(): Promise<string>
   ticketGetTicketBySlugJson(slug: string): Promise<string>
   ticketCurrentTicketJson(): Promise<string>

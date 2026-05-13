@@ -610,9 +610,9 @@ export interface ISSOService {
 export interface ISupportTicketService {
   add_message(ticket_id: bigint, content: string, file_data: Uint8Array[], file_names: string[]): Promise<string>;
   create_ticket(title: string, category: string, content: string, priority: string | null | undefined, file_data: Uint8Array[], file_names: string[]): Promise<string>;
-  get_attachment_url(id: bigint): Promise<string>;
-  get_detail(id: bigint): Promise<string>;
-  list(status?: string | null, page?: number | null, page_size?: number | null): Promise<string>;
+  listSupportTicketsConnect(request: Uint8Array): Promise<Uint8Array>;
+  getSupportTicketConnect(request: Uint8Array): Promise<Uint8Array>;
+  getAttachmentUrlConnect(request: Uint8Array): Promise<Uint8Array>;
 }
 
 export interface ITicketRelationsService {
