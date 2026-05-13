@@ -1,5 +1,6 @@
 import { MsgType, encodeMessage, encodeJsonMessage } from "./relayProtocol";
-import { getPodService } from "@/lib/wasm-core";
+import { getPodConnection } from "@/lib/api/podConnect";
+import { readCurrentOrg } from "@/stores/auth";
 import { getLocalRunnerService } from "@agentsmesh/service-runtime";
 import type { RelayConnection, ConnectionHandle, StatusListener } from "./relayConnectionTypes";
 import { createNewConnection, doSendResize, type PoolContext } from "./relayConnectionWebSocket";
@@ -94,7 +95,7 @@ class RelayConnectionPool {
     if (pending) { await pending; return this.subscribe(podKey, subscriptionId, onMessage); }
 
     const createPromise = (async () => {
-      const relayInfo = JSON.parse(await getPodService().get_pod_connection(podKey));
+      const relayInfo = await getPodConnection(readCurrentOrg()?.slug ?? "", podKey);
       if (relayInfo.local_relay_url && relayInfo.local_token && await isSameHostRunner(relayInfo.local_relay_node_id)) {
         const ok = await probeRelayOpen(relayInfo.local_relay_url, relayInfo.local_token, 1000);
         if (ok) {
