@@ -118,7 +118,6 @@ go_library(
         "ticket_labels.go",
         "ticket_relations.go",
         "tickets.go",
-        "token_usage.go",
         "user_agent_credentials.go",
         "user_agent_credentials_crud.go",
         "user_git_credentials.go",
@@ -147,7 +146,6 @@ go_library(
         "//backend/internal/domain/promocode",
         "//backend/internal/domain/sso",
         "//backend/internal/domain/ticket",
-        "//backend/internal/domain/tokenusage",
         "//backend/internal/domain/user",
         "//backend/internal/infra/acme",
         "//backend/internal/infra/email",
@@ -196,7 +194,6 @@ go_library(
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
-        "@org_golang_x_sync//errgroup",
     ],
 )
 
@@ -243,7 +240,6 @@ go_test(
         "repositories_webhook_status_test.go",
         "repositories_webhook_struct_test.go",
         "runners_upgrade_test.go",
-        "token_usage_test.go",
         "users_basic_test.go",
         "users_identity_test.go",
         "users_password_test.go",
