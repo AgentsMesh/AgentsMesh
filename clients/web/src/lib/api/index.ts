@@ -37,7 +37,6 @@ export type { ProviderRepositoryData as UserRemoteRepositoryData } from "./userR
 
 // API wrapper re-exports
 export { organizationApi } from "./organization";
-export { grantApi } from "./grant";
 export type { ResourceGrant } from "./grant";
 export { invitationApi } from "./invitation";
 export { agentApi } from "./agent";

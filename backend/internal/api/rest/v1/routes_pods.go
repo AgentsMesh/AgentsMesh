@@ -30,9 +30,6 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.PATCH("/:key/perpetual", podHandler.UpdatePodPerpetual)
 		pods.GET("/:key/connect", podHandler.GetConnectionInfo)
 		pods.POST("/:key/prompt", podHandler.SendPodPrompt)
-		pods.GET("/:key/grants", podHandler.ListPodGrants)
-		pods.POST("/:key/grants", podHandler.GrantPodAccess)
-		pods.DELETE("/:key/grants/:grant_id", podHandler.RevokePodGrant)
 	}
 
 	// Relay connection endpoint
