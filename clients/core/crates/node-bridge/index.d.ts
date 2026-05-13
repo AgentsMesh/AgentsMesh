@@ -383,8 +383,12 @@ export declare class AppState {
   ticketRelationsUpdateComment(slug: string, commentId: number, json: string): Promise<string>
   ticketRelationsDeleteComment(slug: string, commentId: number): Promise<void>
   tokenUsageGetDashboard(startTime?: string | undefined | null, endTime?: string | undefined | null, agentSlug?: string | undefined | null, userId?: number | undefined | null, model?: string | undefined | null, granularity?: string | undefined | null): Promise<string>
-  userGetMe(): Promise<string>
-  userGetOrganizations(): Promise<string>
+  userGetMeConnect(request: Array<number>): Promise<Array<number>>
+  userUpdateMeConnect(request: Array<number>): Promise<Array<number>>
+  userChangePasswordConnect(request: Array<number>): Promise<Array<number>>
+  userListIdentitiesConnect(request: Array<number>): Promise<Array<number>>
+  userDeleteIdentityConnect(request: Array<number>): Promise<Array<number>>
+  userSearchUsersConnect(request: Array<number>): Promise<Array<number>>
   userCredentialListGitCredentials(): Promise<string>
   userCredentialCreateGitCredential(json: string): Promise<string>
   userCredentialGetGitCredential(id: number): Promise<string>

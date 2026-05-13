@@ -13,7 +13,11 @@ impl UserApiService {
         Self { client }
     }
 
-    // -------- Legacy REST (JSON wire) — preserved during dual-track --------
+    // -------- Legacy REST (JSON wire) --------
+    //
+    // `get_me` and `get_organizations` stay on REST until the AuthManager
+    // bootstrap path and the iOS UniFFI bridge (ffi/src/services/user.rs)
+    // are migrated to Connect — both consume the wrapped JSON shape today.
 
     pub async fn get_me(&self) -> Result<String, String> {
         let resp = self.client.get_me().await.map_err(crate::wire)?;
@@ -26,14 +30,6 @@ impl UserApiService {
     }
 
     // -------- Connect-RPC (binary wire) --------
-    //
-    // TS encodes via @bufbuild/protobuf .toBinary() → wasm bridge → here →
-    // ApiClient.*_connect (binary in / binary out, conventions §2.5). No
-    // JSON path on the client.
-    //
-    // Each `*_connect` method takes prost-encoded bytes and returns
-    // prost-encoded bytes — matching the wasm bridge's
-    // `Result<Vec<u8>, String>` surface (conventions §2.5).
 
     pub async fn get_me_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = user_proto::GetMeRequest::decode(request_bytes)

@@ -20,13 +20,10 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	userHandler := NewUserHandler(userSvc, orgSvc)
 	agentHandler := NewAgentHandler(agentSvc, credentialSvc, userConfigSvc)
 
-	// Profile routes
+	// REST surface kept for AuthManager (Rust) + iOS ffi consumers only.
+	// Profile mutation / identities / search migrated to proto.user.v1.UserService.
 	rg.GET("/me", userHandler.GetCurrentUser)
-	rg.PUT("/me", userHandler.UpdateCurrentUser)
-	rg.POST("/me/password", userHandler.ChangePassword)
 	rg.GET("/me/organizations", userHandler.ListUserOrganizations)
-	rg.GET("/me/identities", userHandler.ListIdentities)
-	rg.DELETE("/me/identities/:provider", userHandler.DeleteIdentity)
 
 	// User agent configs (personal runtime configuration)
 	rg.GET("/me/agent-configs", agentHandler.ListUserAgentConfigs)
@@ -39,6 +36,6 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	// backend/internal/api/connect/user_credential. The REST handlers were
 	// removed in the dual-track cleanup.
 
-	// User search
-	rg.GET("/search", userHandler.SearchUsers)
+	// User search and other user-scoped REST removed; migrated to
+	// proto.user.v1 — see backend/internal/api/connect/user.
 }

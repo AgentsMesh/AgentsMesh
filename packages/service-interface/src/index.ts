@@ -687,8 +687,12 @@ export interface ITokenUsageService {
 }
 
 export interface IUserApiService {
-  get_me(): Promise<string>;
-  get_organizations(): Promise<string>;
+  getMeConnect(request: Uint8Array): Promise<Uint8Array>;
+  updateMeConnect(request: Uint8Array): Promise<Uint8Array>;
+  changePasswordConnect(request: Uint8Array): Promise<Uint8Array>;
+  listIdentitiesConnect(request: Uint8Array): Promise<Uint8Array>;
+  deleteIdentityConnect(request: Uint8Array): Promise<Uint8Array>;
+  searchUsersConnect(request: Uint8Array): Promise<Uint8Array>;
 }
 
 export interface IUserCredentialService {

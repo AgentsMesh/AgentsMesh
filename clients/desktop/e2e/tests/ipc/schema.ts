@@ -3712,16 +3712,70 @@ export const ipcSchema: IpcMethodSchema[] = [
     "returnType": "()"
   },
   {
-    "name": "user_get_me",
+    "name": "user_get_me_connect",
     "group": "user",
-    "params": [],
-    "returnType": "String"
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
   },
   {
-    "name": "user_get_organizations",
+    "name": "user_update_me_connect",
     "group": "user",
-    "params": [],
-    "returnType": "String"
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "user_change_password_connect",
+    "group": "user",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "user_list_identities_connect",
+    "group": "user",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "user_delete_identity_connect",
+    "group": "user",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
+  },
+  {
+    "name": "user_search_users_connect",
+    "group": "user",
+    "params": [
+      {
+        "name": "request",
+        "type": "Vec<u8>"
+      }
+    ],
+    "returnType": "Vec<u8>"
   },
   {
     "name": "user_credential_list_git_credentials",
