@@ -111,9 +111,9 @@ func (r *organizationRepo) DeleteWithCleanup(ctx context.Context, id int64) erro
 		if err := tx.Exec("DELETE FROM channel_access WHERE channel_id IN ("+subq+")", id).Error; err != nil {
 			return err
 		}
-		if err := tx.Exec("DELETE FROM pod_bindings WHERE channel_id IN ("+subq+")", id).Error; err != nil {
-			return err
-		}
+		// pod_bindings is cleaned up by FK CASCADE on organization_id (see migration 000001);
+		// it has no channel_id column — referencing one used to crash DeleteWithCleanup with
+		// SQLSTATE 42703, blocking *every* org deletion in production.
 		if err := tx.Exec("DELETE FROM channels WHERE organization_id = ?", id).Error; err != nil {
 			return err
 		}

@@ -105,6 +105,7 @@ go_test(
         "loop_run_repo_test.go",
         "loop_run_repo_trigger_test.go",
         "loop_test_setup_test.go",
+        "organization_repo_test.go",
         "token_usage_repo_aggregation_test.go",
         "token_usage_repo_filter_test.go",
         "token_usage_repo_test.go",
@@ -112,6 +113,7 @@ go_test(
     embed = [":infra"],
     deps = [
         "//backend/internal/domain/loop",
+        "//backend/internal/domain/organization",
         "//backend/internal/domain/tokenusage",
         "//backend/internal/testkit",
         "@com_github_stretchr_testify//assert",

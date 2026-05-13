@@ -65,7 +65,6 @@ func channelTableDDLs() []string {
 		`CREATE TABLE IF NOT EXISTS pod_bindings (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			organization_id INTEGER NOT NULL,
-			channel_id INTEGER,
 			initiator_pod TEXT NOT NULL, target_pod TEXT NOT NULL,
 			granted_scopes TEXT DEFAULT '[]', pending_scopes TEXT DEFAULT '[]',
 			status TEXT NOT NULL DEFAULT 'pending',

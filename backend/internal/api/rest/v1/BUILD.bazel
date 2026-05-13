@@ -229,6 +229,7 @@ go_test(
         "files_benchmark_test.go",
         "files_setup_test.go",
         "files_upload_test.go",
+        "organizations_delete_test.go",
         "organizations_reserved_test.go",
         "pod_commands_test.go",
         "pod_create_integration_test.go",
