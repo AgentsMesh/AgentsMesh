@@ -164,7 +164,7 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		protected.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 		{
 			// User-level routes (no tenant context required)
-			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org, svc.AgentSvc, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
+			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org, svc.AgentSvc, svc.CredentialProfile, svc.UserConfig)
 
 			// Organization CRUD + Members migrated to Connect-RPC
 			// proto.org.v1 — see backend/internal/api/connect/org. The REST

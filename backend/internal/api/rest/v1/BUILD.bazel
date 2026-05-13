@@ -3,7 +3,6 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "rest",
     srcs = [
-        "agentpod.go",
         "agents.go",
         "agents_custom.go",
         "agents_types.go",
@@ -190,9 +189,6 @@ alias(
 go_test(
     name = "rest_test",
     srcs = [
-        "agentpod_error_test.go",
-        "agentpod_request_test.go",
-        "agentpod_response_test.go",
         "auth_oauth_handler_test.go",
         "auth_oauth_redirect_test.go",
         "billing_handler_setup_test.go",
