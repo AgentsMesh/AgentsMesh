@@ -9,7 +9,12 @@ import type {
   RelayConnectionInfo,
 } from "@/lib/api/runnerTypes";
 import { getRunnerService, getPodService } from "@/lib/wasm-core";
-import { getRunner as getRunnerConnect } from "@/lib/api/runnerConnect";
+import {
+  getRunner as getRunnerConnect,
+  updateRunner as updateRunnerConnect,
+  deleteRunner as deleteRunnerConnect,
+  querySandboxes as querySandboxesConnect,
+} from "@/lib/api/runnerConnect";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
@@ -85,9 +90,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
     if (inactivePodKeys.length === 0) return;
     setLoadingSandbox(true);
     try {
-      const res: { sandboxes: SandboxStatus[] } = JSON.parse(
-        await getRunnerService().query_runner_sandboxes(BigInt(runnerId), JSON.stringify({ pod_keys: inactivePodKeys }))
-      );
+      const res = await querySandboxesConnect(orgSlug, runnerId, inactivePodKeys);
       const newStatuses = new Map<string, SandboxStatus>();
       for (const status of res.sandboxes || []) newStatuses.set(status.pod_key, status);
       setSandboxStatuses(newStatuses);
@@ -120,7 +123,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
   const handleToggleEnabled = async () => {
     if (!runner) return;
     try {
-      await getRunnerService().update_runner(BigInt(runner.id), JSON.stringify({ is_enabled: !runner.is_enabled }));
+      await updateRunnerConnect(orgSlug, runner.id, { is_enabled: !runner.is_enabled });
       loadRunner();
     } catch (error) {
       toast.error(getLocalizedErrorMessage(error, t, t("common.error")));
@@ -132,7 +135,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
     const confirmed = await deleteDialog.confirm();
     if (!confirmed) return;
     try {
-      await getRunnerService().delete_runner(BigInt(runner.id));
+      await deleteRunnerConnect(orgSlug, runner.id);
       router.push("../runners");
     } catch (error) {
       toast.error(getLocalizedErrorMessage(error, t, t("common.error")));
