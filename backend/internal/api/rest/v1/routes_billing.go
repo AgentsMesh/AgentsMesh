@@ -51,18 +51,6 @@ func registerFileRoutes(rg *gin.RouterGroup, svc *Services) {
 	}
 }
 
-func registerNotificationRoutes(rg *gin.RouterGroup, svc *Services) {
-	if svc.NotificationPrefStore == nil {
-		return
-	}
-	handler := NewNotificationHandler(svc.NotificationPrefStore)
-	notifications := rg.Group("/notifications")
-	{
-		notifications.GET("/preferences", handler.GetPreferences)
-		notifications.PUT("/preferences", handler.SetPreference)
-	}
-}
-
 func registerTokenUsageRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.TokenUsage == nil {
 		return

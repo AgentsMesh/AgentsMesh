@@ -211,7 +211,6 @@ func buildServicesContainer(
 		LoopScheduler:       loopScheduler,
 		SSO:                  services.sso,
 		SupportTicket:       services.supportTicket,
-		NotificationPrefStore: services.notifPrefStore,
 		TokenUsage:            services.tokenUsage,
 		Blockstore:            services.blockstore,
 		Grant:                 services.grant,
