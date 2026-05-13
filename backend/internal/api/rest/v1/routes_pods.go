@@ -45,18 +45,4 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		}
 		RegisterPodConnectRoutes(rg, svc.Pod, svc.RelayManager, svc.RelayTokenGenerator, commandSender, stateReader, svc.GeoResolver, svc.Grant)
 	}
-
-	// AutopilotControllers
-	var autopilotOpts []AutopilotControllerHandlerOption
-	if svc.Pod != nil {
-		autopilotOpts = append(autopilotOpts, WithPodServiceForAutopilot(svc.Pod))
-	}
-	if svc.Autopilot != nil {
-		autopilotOpts = append(autopilotOpts, WithAutopilotControllerService(svc.Autopilot))
-	}
-	if svc.PodCoordinator != nil {
-		autopilotOpts = append(autopilotOpts, WithAutopilotCommandSender(svc.PodCoordinator))
-	}
-	autopilotHandler := NewAutopilotControllerHandler(autopilotOpts...)
-	RegisterAutopilotControllerRoutes(rg, autopilotHandler)
 }
