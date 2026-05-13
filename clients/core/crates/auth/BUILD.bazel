@@ -12,6 +12,7 @@ rust_library(
         "//clients/core/crates/api-client:api_client",
         "//clients/core/crates/types",
         "@crates//:futures",
+        "@crates//:prost",
         "@crates//:reqwest",
         "@crates//:serde",
         "@crates//:serde_json",

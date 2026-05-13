@@ -1,47 +1,105 @@
+use agentsmesh_types::proto_auth_v1 as auth_proto;
+use agentsmesh_types::proto_user_v1 as user_proto;
 use agentsmesh_types::{AuthSession, AuthTokens, RegisterRequest};
 
-use crate::error::{parse_error_response, AuthError};
+use crate::connect::connect_call;
+use crate::error::AuthError;
 use crate::manager::{now_unix_secs, AuthManager};
+
+// Maps the prost `auth_proto::User` shape (returned by AuthService) to
+// the serde `agentsmesh_types::User` AuthState already persists. Done
+// once here so callers downstream stay shape-agnostic — anything that
+// reads the user out of AuthState (web UI, FFI, bootstrap) sees the
+// same serde DTO the legacy REST path produced.
+fn user_from_auth_proto(u: auth_proto::User) -> agentsmesh_types::User {
+    agentsmesh_types::User {
+        id: u.id,
+        email: u.email,
+        username: u.username,
+        name: u.name,
+        avatar_url: u.avatar_url,
+        is_email_verified: u.is_email_verified,
+    }
+}
+
+// `proto.user.v1.User` (GetMe response) carries more fields than the
+// serde User AuthState persists; we down-project to keep AuthState's
+// surface stable. The auth-proto User and user-proto User overlap on
+// the fields AuthManager actually needs (id / email / username / name
+// / avatar_url / is_email_verified) so this mapping is loss-tolerant.
+fn user_from_user_proto(u: user_proto::User) -> agentsmesh_types::User {
+    agentsmesh_types::User {
+        id: u.id,
+        email: u.email,
+        username: u.username,
+        name: u.name,
+        avatar_url: u.avatar_url,
+        is_email_verified: Some(u.is_email_verified),
+    }
+}
+
+fn session_from_login(resp: auth_proto::LoginResponse) -> Result<AuthSession, AuthError> {
+    let user = resp
+        .user
+        .ok_or_else(|| AuthError::InvalidResponse("login response missing user".into()))?;
+    Ok(AuthSession {
+        token: resp.token,
+        refresh_token: resp.refresh_token,
+        user: user_from_auth_proto(user),
+        expires_in: Some(resp.expires_in),
+        message: None,
+    })
+}
+
+fn session_from_register(resp: auth_proto::RegisterResponse) -> Result<AuthSession, AuthError> {
+    let user = resp
+        .user
+        .ok_or_else(|| AuthError::InvalidResponse("register response missing user".into()))?;
+    Ok(AuthSession {
+        token: resp.token,
+        refresh_token: resp.refresh_token,
+        user: user_from_auth_proto(user),
+        expires_in: Some(resp.expires_in),
+        message: resp.message,
+    })
+}
+
+fn session_from_verify(resp: auth_proto::VerifyEmailResponse) -> Result<AuthSession, AuthError> {
+    let user = resp
+        .user
+        .ok_or_else(|| AuthError::InvalidResponse("verify response missing user".into()))?;
+    Ok(AuthSession {
+        token: resp.token,
+        refresh_token: resp.refresh_token,
+        user: user_from_auth_proto(user),
+        expires_in: Some(resp.expires_in),
+        message: Some(resp.message),
+    })
+}
 
 impl AuthManager {
     pub async fn login(&self, email: &str, password: &str) -> Result<AuthSession, AuthError> {
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/login", self.base_url))
-            .json(&serde_json::json!({ "email": email, "password": password }))
-            .send()
-            .await?;
-
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        let session: AuthSession = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
-
+        let req = auth_proto::LoginRequest {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let resp: auth_proto::LoginResponse =
+            connect_call(self, "/proto.auth.v1.AuthService/Login", &req, None).await?;
+        let session = session_from_login(resp)?;
         self.apply_session(&session);
         Ok(session)
     }
 
     pub async fn register(&self, data: &RegisterRequest) -> Result<AuthSession, AuthError> {
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/register", self.base_url))
-            .json(data)
-            .send()
-            .await?;
-
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        let session: AuthSession = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
-
+        let req = auth_proto::RegisterRequest {
+            email: data.email.clone(),
+            username: data.username.clone(),
+            password: data.password.clone(),
+            name: Some(data.name.clone()),
+        };
+        let resp: auth_proto::RegisterResponse =
+            connect_call(self, "/proto.auth.v1.AuthService/Register", &req, None).await?;
+        let session = session_from_register(resp)?;
         self.apply_session(&session);
         Ok(session)
     }
@@ -54,20 +112,22 @@ impl AuthManager {
         // logged in — plan I3 forbids the in-memory-user-but-no-token
         // middle state. Local cleanup runs unconditionally; server-side
         // failure is logged but swallowed so the user lands on /login.
-        let server_result = self
-            .http
-            .post(format!("{}/api/v1/auth/logout", self.base_url))
-            .header("Authorization", auth)
-            .send()
-            .await;
+        let server_result = connect_call::<_, auth_proto::LogoutResponse>(
+            self,
+            "/proto.auth.v1.AuthSessionService/Logout",
+            &auth_proto::LogoutRequest {},
+            Some(&auth),
+        )
+        .await;
 
         self.reset_local();
 
         match server_result {
-            Ok(resp) if !resp.status().is_success() => {
+            Ok(_) => {}
+            Err(AuthError::Server { status, .. }) => {
                 tracing::warn!(
                     "auth logout: server returned {}; local state cleared anyway",
-                    resp.status()
+                    status
                 );
             }
             Err(e) => {
@@ -75,7 +135,6 @@ impl AuthManager {
                     "auth logout: server unreachable ({e}); local state cleared anyway"
                 );
             }
-            Ok(_) => {}
         }
         Ok(())
     }
@@ -108,60 +167,51 @@ impl AuthManager {
             });
         }
 
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/refresh", self.base_url))
-            .json(&serde_json::json!({ "refresh_token": pre_lock_refresh }))
-            .send()
-            .await?;
+        let req = auth_proto::RefreshTokenRequest {
+            refresh_token: pre_lock_refresh,
+        };
+        let resp: auth_proto::RefreshTokenResponse = connect_call(
+            self,
+            "/proto.auth.v1.AuthService/RefreshToken",
+            &req,
+            None,
+        )
+        .await?;
 
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        let tokens: AuthTokens = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
+        let tokens = AuthTokens {
+            token: resp.token,
+            refresh_token: resp.refresh_token,
+            expires_in: Some(resp.expires_in),
+        };
 
         self.write_state()
-            .apply_tokens(&tokens, &self.base_url, now_unix_secs());
+            .apply_tokens(&tokens, self.base_url(), now_unix_secs());
         self.persist();
         Ok(tokens)
     }
 
     pub async fn verify_email(&self, token: &str) -> Result<AuthSession, AuthError> {
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/verify-email", self.base_url))
-            .json(&serde_json::json!({ "token": token }))
-            .send()
-            .await?;
-
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        let session: AuthSession = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
-
+        let req = auth_proto::VerifyEmailRequest {
+            token: token.to_string(),
+        };
+        let resp: auth_proto::VerifyEmailResponse =
+            connect_call(self, "/proto.auth.v1.AuthService/VerifyEmail", &req, None).await?;
+        let session = session_from_verify(resp)?;
         self.apply_session(&session);
         Ok(session)
     }
 
     pub async fn forgot_password(&self, email: &str) -> Result<(), AuthError> {
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/forgot-password", self.base_url))
-            .json(&serde_json::json!({ "email": email }))
-            .send()
-            .await?;
-
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
+        let req = auth_proto::ForgotPasswordRequest {
+            email: email.to_string(),
+        };
+        let _: auth_proto::ForgotPasswordResponse = connect_call(
+            self,
+            "/proto.auth.v1.AuthService/ForgotPassword",
+            &req,
+            None,
+        )
+        .await?;
         Ok(())
     }
 
@@ -170,52 +220,38 @@ impl AuthManager {
         token: &str,
         new_password: &str,
     ) -> Result<(), AuthError> {
-        let resp = self
-            .http
-            .post(format!("{}/api/v1/auth/reset-password", self.base_url))
-            .json(&serde_json::json!({
-                "token": token,
-                "new_password": new_password,
-            }))
-            .send()
-            .await?;
-
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
+        let req = auth_proto::ResetPasswordRequest {
+            token: token.to_string(),
+            new_password: new_password.to_string(),
+        };
+        let _: auth_proto::ResetPasswordResponse = connect_call(
+            self,
+            "/proto.auth.v1.AuthService/ResetPassword",
+            &req,
+            None,
+        )
+        .await?;
         Ok(())
     }
 
     pub async fn fetch_me(&self) -> Result<agentsmesh_types::User, AuthError> {
         let auth = self.bearer_header()?;
-        let resp = self
-            .http
-            .get(format!("{}/api/v1/users/me", self.base_url))
-            .header("Authorization", auth)
-            .send()
-            .await?;
+        let resp: user_proto::User = connect_call(
+            self,
+            "/proto.user.v1.UserService/GetMe",
+            &user_proto::GetMeRequest {},
+            Some(&auth),
+        )
+        .await?;
 
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        // Server wraps user in `{ "user": {...} }`
-        #[derive(serde::Deserialize)]
-        struct Wrapper {
-            user: agentsmesh_types::User,
-        }
-        let wrapper: Wrapper = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
-
-        self.write_state().set_user(wrapper.user.clone());
-        Ok(wrapper.user)
+        let user = user_from_user_proto(resp);
+        self.write_state().set_user(user.clone());
+        Ok(user)
     }
 
     pub fn apply_session(&self, session: &AuthSession) {
         self.write_state()
-            .apply_session(session, &self.base_url, now_unix_secs());
+            .apply_session(session, self.base_url(), now_unix_secs());
         self.persist();
     }
 }

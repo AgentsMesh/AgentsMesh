@@ -61,19 +61,3 @@ pub(crate) struct ServerErrorBody {
     pub message: Option<String>,
     pub code: Option<String>,
 }
-
-pub(crate) async fn parse_error_response(resp: reqwest::Response) -> AuthError {
-    let status = resp.status().as_u16();
-    match resp.json::<ServerErrorBody>().await {
-        Ok(body) => AuthError::Server {
-            status,
-            message: body.message.unwrap_or_else(|| "unknown error".into()),
-            code: body.code,
-        },
-        Err(_) => AuthError::Server {
-            status,
-            message: "failed to parse error response".into(),
-            code: None,
-        },
-    }
-}

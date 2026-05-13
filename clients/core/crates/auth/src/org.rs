@@ -1,36 +1,40 @@
+use agentsmesh_types::proto_org_v1 as org_proto;
 use agentsmesh_types::Organization;
 
-use crate::error::{parse_error_response, AuthError};
+use crate::connect::connect_call;
+use crate::error::AuthError;
 use crate::manager::AuthManager;
 
-#[derive(serde::Deserialize)]
-struct OrgsResponse {
-    organizations: Vec<Organization>,
+fn org_from_proto(o: org_proto::Organization) -> Organization {
+    // proto.org.v1.Organization carries 9 fields; AuthState only needs
+    // the 7 the serde DTO already exposes. subscription_plan /
+    // subscription_status arrive as required strings on the wire — they
+    // can be empty when the org was created before billing migrations
+    // ran, so we keep `Option` semantics by promoting empty → None.
+    let promote = |s: String| if s.is_empty() { None } else { Some(s) };
+    Organization {
+        id: o.id,
+        name: o.name,
+        slug: o.slug,
+        role: o.role,
+        logo_url: o.logo_url,
+        subscription_plan: promote(o.subscription_plan),
+        subscription_status: promote(o.subscription_status),
+    }
 }
 
 impl AuthManager {
     pub async fn fetch_organizations(&self) -> Result<Vec<Organization>, AuthError> {
         let auth = self.bearer_header()?;
-        let resp = self
-            .http
-            .get(format!(
-                "{}/api/v1/users/me/organizations",
-                self.base_url
-            ))
-            .header("Authorization", auth)
-            .send()
-            .await?;
+        let resp: org_proto::ListMyOrgsResponse = connect_call(
+            self,
+            "/proto.org.v1.OrgService/ListMyOrgs",
+            &org_proto::ListMyOrgsRequest {},
+            Some(&auth),
+        )
+        .await?;
 
-        if !resp.status().is_success() {
-            return Err(parse_error_response(resp).await);
-        }
-
-        let wrapper: OrgsResponse = resp
-            .json()
-            .await
-            .map_err(|e| AuthError::InvalidResponse(e.to_string()))?;
-        let orgs = wrapper.organizations;
-
+        let orgs: Vec<Organization> = resp.items.into_iter().map(org_from_proto).collect();
         self.replace_organizations(orgs.clone());
         Ok(orgs)
     }

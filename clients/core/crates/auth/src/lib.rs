@@ -1,5 +1,6 @@
 mod api;
 mod bootstrap;
+mod connect;
 mod error;
 mod manager;
 mod org;

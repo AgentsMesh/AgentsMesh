@@ -1,36 +1,99 @@
 #[cfg(test)]
 mod auth_org_token_tests {
     use agentsmesh_api_client::AuthTokenStore;
+    use agentsmesh_types::proto_auth_v1 as auth_proto;
+    use agentsmesh_types::proto_org_v1 as org_proto;
+    use prost::Message;
     use wiremock::matchers::{method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use crate::manager::AuthManager;
-    use crate::storage::PersistentStorage;
     use crate::test_support::InMemoryStorage;
 
-    fn session_json() -> serde_json::Value {
-        serde_json::json!({
-            "token": "access-tok",
-            "refresh_token": "refresh-tok",
-            "user": {
-                "id": 1, "email": "dev@test.com",
-                "username": "dev", "name": "Dev User", "avatar_url": null
-            },
-            "expires_in": 3600
-        })
+    fn login_resp_proto() -> Vec<u8> {
+        auth_proto::LoginResponse {
+            token: "access-tok".into(),
+            refresh_token: "refresh-tok".into(),
+            expires_in: 3600,
+            user: Some(auth_proto::User {
+                id: 1,
+                email: "dev@test.com".into(),
+                username: "dev".into(),
+                name: Some("Dev User".into()),
+                avatar_url: None,
+                is_email_verified: Some(true),
+            }),
+        }
+        .encode_to_vec()
+    }
+
+    fn proto_response(bytes: Vec<u8>) -> ResponseTemplate {
+        ResponseTemplate::new(200)
+            .set_body_bytes(bytes)
+            .insert_header("content-type", "application/proto")
+    }
+
+    fn orgs_resp(items: Vec<org_proto::Organization>) -> Vec<u8> {
+        let total = items.len() as i64;
+        org_proto::ListMyOrgsResponse {
+            items,
+            total,
+            limit: 50,
+            offset: 0,
+        }
+        .encode_to_vec()
+    }
+
+    fn mock_org(id: i64, name: &str, slug: &str) -> org_proto::Organization {
+        org_proto::Organization {
+            id,
+            name: name.into(),
+            slug: slug.into(),
+            logo_url: None,
+            // ListMyOrgs serializes plan/status; empty strings get
+            // promoted to None in org_from_proto. Tests assert on slug
+            // and name only, so the values themselves don't matter.
+            subscription_plan: String::new(),
+            subscription_status: String::new(),
+            role: None,
+            created_at: "2026-01-01T00:00:00Z".into(),
+            updated_at: "2026-01-01T00:00:00Z".into(),
+        }
+    }
+
+    fn mount_login(server: &MockServer) -> impl std::future::Future<Output = ()> + '_ {
+        Mock::given(method("POST"))
+            .and(path("/proto.auth.v1.AuthService/Login"))
+            .respond_with(proto_response(login_resp_proto()))
+            .mount(server)
+    }
+
+    fn mount_orgs<'a>(
+        server: &'a MockServer,
+        items: Vec<org_proto::Organization>,
+    ) -> impl std::future::Future<Output = ()> + 'a {
+        Mock::given(method("POST"))
+            .and(path("/proto.org.v1.OrgService/ListMyOrgs"))
+            .respond_with(proto_response(orgs_resp(items)))
+            .mount(server)
     }
 
     #[tokio::test]
     async fn refresh_token_success() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/refresh"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "token": "new-access", "refresh_token": "new-refresh", "expires_in": 7200
-            })))
-            .mount(&server).await;
+        mount_login(&server).await;
+        Mock::given(method("POST"))
+            .and(path("/proto.auth.v1.AuthService/RefreshToken"))
+            .respond_with(proto_response(
+                auth_proto::RefreshTokenResponse {
+                    token: "new-access".into(),
+                    refresh_token: "new-refresh".into(),
+                    expires_in: 7200,
+                }
+                .encode_to_vec(),
+            ))
+            .mount(&server)
+            .await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -53,17 +116,15 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn fetch_organizations_selects_first() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "organizations": [
-                    {"id": 1, "name": "Org A", "slug": "org-a"},
-                    {"id": 2, "name": "Org B", "slug": "org-b"}
-                ]
-            })))
-            .mount(&server).await;
+        mount_login(&server).await;
+        mount_orgs(
+            &server,
+            vec![
+                mock_org(1, "Org A", "org-a"),
+                mock_org(2, "Org B", "org-b"),
+            ],
+        )
+        .await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -75,24 +136,21 @@ mod auth_org_token_tests {
         let current = manager.get_current_org().unwrap();
         assert_eq!(current.slug, "org-a");
         assert_eq!(manager.get_organizations().len(), 2);
-        // current_org_slug 也应在 PersistedSession 里同步更新
         assert_eq!(manager.get_current_org_slug(), Some("org-a".into()));
     }
 
     #[tokio::test]
     async fn switch_org_success() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "organizations": [
-                    {"id": 1, "name": "Org A", "slug": "org-a"},
-                    {"id": 2, "name": "Org B", "slug": "org-b"}
-                ]
-            })))
-            .mount(&server).await;
+        mount_login(&server).await;
+        mount_orgs(
+            &server,
+            vec![
+                mock_org(1, "Org A", "org-a"),
+                mock_org(2, "Org B", "org-b"),
+            ],
+        )
+        .await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -107,16 +165,8 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn switch_org_not_found() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "organizations": [
-                    {"id": 1, "name": "Org A", "slug": "org-a"}
-                ]
-            })))
-            .mount(&server).await;
+        mount_login(&server).await;
+        mount_orgs(&server, vec![mock_org(1, "Org A", "org-a")]).await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -130,16 +180,8 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn get_current_org_slug_via_trait() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "organizations": [
-                    {"id": 1, "name": "Org A", "slug": "org-a"}
-                ]
-            })))
-            .mount(&server).await;
+        mount_login(&server).await;
+        mount_orgs(&server, vec![mock_org(1, "Org A", "org-a")]).await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -153,17 +195,20 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn set_current_org_directly() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
+        mount_login(&server).await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
 
         manager.login("dev@test.com", "pass").await.unwrap();
         let org = agentsmesh_types::Organization {
-            id: 99, name: "Direct Org".into(), slug: "direct-org".into(),
-            role: None, logo_url: None, subscription_plan: None, subscription_status: None,
+            id: 99,
+            name: "Direct Org".into(),
+            slug: "direct-org".into(),
+            role: None,
+            logo_url: None,
+            subscription_plan: None,
+            subscription_status: None,
         };
         manager.set_current_org(Some(org));
         let current = manager.get_current_org().unwrap();
@@ -174,13 +219,15 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn fetch_organizations_failure() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/organizations"))
-            .respond_with(ResponseTemplate::new(500)
-                .set_body_json(serde_json::json!({"message": "internal"})))
-            .mount(&server).await;
+        mount_login(&server).await;
+        Mock::given(method("POST"))
+            .and(path("/proto.org.v1.OrgService/ListMyOrgs"))
+            .respond_with(
+                ResponseTemplate::new(500)
+                    .set_body_json(serde_json::json!({"message": "internal"})),
+            )
+            .mount(&server)
+            .await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -201,9 +248,7 @@ mod auth_org_token_tests {
     #[tokio::test]
     async fn auth_token_store_trait() {
         let server = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/auth/login"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(session_json()))
-            .mount(&server).await;
+        mount_login(&server).await;
 
         let storage = InMemoryStorage::new();
         let manager = AuthManager::new(server.uri(), storage);
@@ -237,8 +282,4 @@ mod auth_org_token_tests {
         assert!(!manager.is_authenticated());
         assert!(manager.current_user().is_none());
     }
-
-    // bearer_header_with_token / is_authenticated_expired_session 已移到
-    // bootstrap_tests.rs：bootstrap_happy_path 覆盖前者，
-    // bootstrap_expired_session_refreshes / refresh_failure_cleans 覆盖后者。
 }
