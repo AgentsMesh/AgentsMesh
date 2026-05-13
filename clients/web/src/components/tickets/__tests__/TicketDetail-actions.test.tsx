@@ -1,7 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@/test/test-utils'
+import { render, screen, waitFor } from '@/test/test-utils'
 import { TicketDetail } from '../TicketDetail'
-import { getTicketRelationsService, getApiClient, getOrgApiService } from '@/lib/wasm-core'
+import { getApiClient, getOrgApiService } from '@/lib/wasm-core'
+import * as ticketRelations from '@/lib/api/ticketRelations'
+
+vi.mock('@/lib/api/ticketRelations', () => ({
+  listRelations: vi.fn(),
+  listCommits: vi.fn(),
+  listComments: vi.fn(),
+  listMergeRequests: vi.fn(),
+}))
 
 // Mock next/navigation
 const mockRouterBack = vi.fn()
@@ -128,9 +136,12 @@ describe('TicketDetail - Editing, Status & Delete', () => {
 
     const client = getApiClient()
     vi.mocked(client.get).mockResolvedValue(JSON.stringify({ sub_tickets: [], pods: [] }))
-    vi.mocked(getTicketRelationsService().list_relations_connect).mockResolvedValue(new Uint8Array())
-    vi.mocked(getTicketRelationsService().list_commits_connect).mockResolvedValue(new Uint8Array())
-    vi.mocked(getTicketRelationsService().list_comments_connect).mockResolvedValue(new Uint8Array())
+    vi.mocked(ticketRelations.listRelations).mockResolvedValue({ relations: [] })
+    vi.mocked(ticketRelations.listCommits).mockResolvedValue({ commits: [] })
+    vi.mocked(ticketRelations.listComments).mockResolvedValue({
+      comments: [], total: 0, limit: 0, offset: 0,
+    })
+    vi.mocked(ticketRelations.listMergeRequests).mockResolvedValue({ merge_requests: [] })
 
     vi.mocked(getOrgApiService().list_members).mockResolvedValue(JSON.stringify({ members: [] }))
   })
