@@ -1,11 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@/test/test-utils";
-import { ImportRepositoryModal } from "../ImportRepositoryModal";
+import * as repositoryConnect from "@/lib/api/repositoryConnect";
 import {
   setupProviderMocks,
   mockRepositoryCreate,
-  stableRepoSvc,
+  mockCreatedRepository,
 } from "./ImportRepositoryModal.utils";
+
+// Stable references so React's useCallback([currentOrg]) doesn't churn.
+// vi.hoisted survives vi.mock's factory hoisting.
+const stable = vi.hoisted(() => ({
+  org: { id: 1, name: "TestOrg", slug: "test-org" },
+  user: { id: 1, email: "u@e.com", username: "u" },
+}));
+
+// Production calls createRepository (Connect adapter) which encodes proto
+// via .toBinary(); mock the adapter so tests assert structured input
+// instead of stringified JSON (legacy stableRepoSvc.create lane is gone).
+vi.mock("@/lib/api/repositoryConnect", () => ({
+  createRepository: vi.fn(),
+  fromProtoRepository: vi.fn(),
+}));
+
+// useImportWizard.handleImport bails on !currentOrg; provide a non-null org.
+vi.mock("@/stores/auth", () => ({
+  useCurrentOrg: () => stable.org,
+  useCurrentUser: () => stable.user,
+  useAuthOrganizations: () => [],
+  useAuthStore: () => ({ currentOrg: stable.org }),
+  useIsAuthenticated: () => true,
+  readCurrentUser: () => stable.user,
+  readCurrentOrg: () => stable.org,
+  readOrganizations: () => [],
+}));
+
+import { ImportRepositoryModal } from "../ImportRepositoryModal";
 
 describe("ImportRepositoryModal - Confirmation Step", () => {
   const mockOnClose = vi.fn();
@@ -14,6 +43,7 @@ describe("ImportRepositoryModal - Confirmation Step", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupProviderMocks();
+    vi.mocked(repositoryConnect.createRepository).mockResolvedValue(mockCreatedRepository);
   });
 
   it("should navigate to confirm step after selecting repository", async () => {
@@ -115,8 +145,9 @@ describe("ImportRepositoryModal - Confirmation Step", () => {
     fireEvent.click(screen.getByRole("button", { name: "Import Repository" }));
 
     await waitFor(() => {
-      expect(stableRepoSvc.create).toHaveBeenCalledWith(
-        expect.stringContaining('"ticket_prefix":"TEST"'),
+      expect(vi.mocked(repositoryConnect.createRepository)).toHaveBeenCalledWith(
+        "test-org",
+        expect.objectContaining({ ticket_prefix: "TEST" }),
       );
     });
   });

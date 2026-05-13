@@ -1,11 +1,34 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@/test/test-utils";
-import { ImportRepositoryModal } from "../ImportRepositoryModal";
+import * as repositoryConnect from "@/lib/api/repositoryConnect";
 import {
   setupProviderMocks,
   mockRepositoryCreate,
-  stableRepoSvc,
+  mockCreatedRepository,
 } from "./ImportRepositoryModal.utils";
+
+const stable = vi.hoisted(() => ({
+  org: { id: 1, name: "TestOrg", slug: "test-org" },
+  user: { id: 1, email: "u@e.com", username: "u" },
+}));
+
+vi.mock("@/lib/api/repositoryConnect", () => ({
+  createRepository: vi.fn(),
+  fromProtoRepository: vi.fn(),
+}));
+
+vi.mock("@/stores/auth", () => ({
+  useCurrentOrg: () => stable.org,
+  useCurrentUser: () => stable.user,
+  useAuthOrganizations: () => [],
+  useAuthStore: () => ({ currentOrg: stable.org }),
+  useIsAuthenticated: () => true,
+  readCurrentUser: () => stable.user,
+  readCurrentOrg: () => stable.org,
+  readOrganizations: () => [],
+}));
+
+import { ImportRepositoryModal } from "../ImportRepositoryModal";
 
 describe("ImportRepositoryModal - Import Actions", () => {
   const mockOnClose = vi.fn();
@@ -14,6 +37,7 @@ describe("ImportRepositoryModal - Import Actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setupProviderMocks();
+    vi.mocked(repositoryConnect.createRepository).mockResolvedValue(mockCreatedRepository);
   });
 
   it("should call createRepository (Connect) when import is clicked", async () => {
@@ -41,13 +65,16 @@ describe("ImportRepositoryModal - Import Actions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Import Repository" }));
 
-    // Migration: production now calls create_repository_connect (proto binary).
-    // The Bazel-sandboxed vitest can't resolve `@proto/*` aliases (proto/gen
-    // is in .bazelignore), so we can't proto-encode a fixture in test setup.
-    // Assertion deferred until ts_proto_library macro lands — see runbook
-    // "TS proto codegen toolchain". Test currently only verifies the modal
-    // flow reaches the import click without error.
-    expect(stableRepoSvc).toBeDefined();
+    // Production now calls createRepository (Connect adapter) which encodes
+    // the request via protobuf .toBinary() and dispatches over the wasm bridge.
+    // We assert the adapter mock received the orgSlug + structured payload,
+    // matching the dual-track pattern (see lib/api/__tests__/repositoryConnect.test.ts).
+    await waitFor(() => {
+      expect(vi.mocked(repositoryConnect.createRepository)).toHaveBeenCalledWith(
+        "test-org",
+        expect.objectContaining({ provider_type: "github" }),
+      );
+    });
   });
 
   it("should call onImported and onClose after successful import", async () => {
@@ -83,7 +110,7 @@ describe("ImportRepositoryModal - Import Actions", () => {
 
   it("should handle import error", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    stableRepoSvc.create.mockRejectedValue(new Error("Import failed"));
+    vi.mocked(repositoryConnect.createRepository).mockRejectedValue(new Error("Import failed"));
 
     render(
       <ImportRepositoryModal open={true} onClose={mockOnClose} onImported={mockOnImported} />
