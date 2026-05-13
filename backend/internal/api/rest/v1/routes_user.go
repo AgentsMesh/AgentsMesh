@@ -1,15 +1,11 @@
 package v1
 
 import (
-	"time"
-
-	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	"github.com/anthropics/agentsmesh/backend/internal/service/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
 // RegisterUserRoutes registers user routes
@@ -59,27 +55,4 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 
 	// User search
 	rg.GET("/search", userHandler.SearchUsers)
-}
-
-// RegisterOrganizationRoutes registers organization routes.
-// redisClient may be nil; when set, applies a per-user rate limit on
-// /personal to prevent onboarding spam.
-func RegisterOrganizationRoutes(rg *gin.RouterGroup, orgSvc *organization.Service, userSvc *user.Service, redisClient *redis.Client) {
-	handler := NewOrganizationHandler(orgSvc, userSvc)
-
-	// Organization CRUD
-	rg.GET("", handler.ListOrganizations)
-	rg.POST("", handler.CreateOrganization)
-	rg.POST("/personal",
-		middleware.UserRateLimiter(redisClient, "orgs-personal", 5, time.Minute),
-		handler.CreatePersonalOrganization)
-	rg.GET("/:slug", handler.GetOrganization)
-	rg.PUT("/:slug", handler.UpdateOrganization)
-	rg.DELETE("/:slug", handler.DeleteOrganization)
-
-	// Member management
-	rg.GET("/:slug/members", handler.ListMembers)
-	rg.POST("/:slug/members", handler.InviteMember)
-	rg.PUT("/:slug/members/:user_id", handler.UpdateMemberRole)
-	rg.DELETE("/:slug/members/:user_id", handler.RemoveMember)
 }
