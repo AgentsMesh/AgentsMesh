@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
 import { Cpu, HardDrive, Terminal, ArrowUpCircle } from "lucide-react";
 import type { RunnerData, RelayConnectionInfo } from "@/lib/api/runnerTypes";
-import { getRunnerService } from "@/lib/wasm-core";
+import { upgradeRunner } from "@/lib/api/runnerConnect";
 import { isVersionOutdated } from "@/lib/utils/version";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ interface RunnerOverviewTabProps {
 
 export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersion }: RunnerOverviewTabProps) {
   const t = useTranslations();
+  const params = useParams();
+  const orgSlug = String(params.org ?? "");
   const [upgrading, setUpgrading] = useState(false);
   const { dialogProps, confirm } = useConfirmDialog();
 
@@ -40,7 +43,7 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
 
     setUpgrading(true);
     try {
-      await getRunnerService().upgrade_runner(BigInt(runner.id), JSON.stringify({}));
+      await upgradeRunner(orgSlug, runner.id);
       toast.success(t("runners.detail.upgradeSent"));
     } catch {
       toast.error(t("runners.detail.upgradeFailed"));
