@@ -145,7 +145,7 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 	mountNotificationService(mux, svc, opts)
 	mountLoopService(mux, svc, rest, opts)
 	mountLicenseService(mux, svc, opts)
-	mountAdminServices(mux, svc, opts)
+	mountAdminServices(mux, svc, rest, opts)
 }
 
 // mountAdminServices wires the platform-admin Connect surface. Every
@@ -153,11 +153,19 @@ func mountConnectServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Se
 // against svc.adminDB to mirror REST's AdminMiddleware. Skips silently
 // when svc.admin is nil (admin disabled by config) — same gate the REST
 // router applies at router.go:202.
-func mountAdminServices(mux *http.ServeMux, svc *serviceContainer, opts []connect.HandlerOption) {
+//
+// rest.RelayManager (optional) threads through WithRelayManager so the
+// 4 relay RPCs work in deployments that wire the relay subsystem. Same
+// nil-guard pattern as REST's admin/routes.go:70.
+func mountAdminServices(mux *http.ServeMux, svc *serviceContainer, rest *v1.Services, opts []connect.HandlerOption) {
 	if svc.admin == nil {
 		return
 	}
-	adminconnect.Mount(mux, adminconnect.NewServer(svc.admin, svc.adminDB), opts...)
+	adminOpts := []adminconnect.Option{}
+	if rest != nil && rest.RelayManager != nil {
+		adminOpts = append(adminOpts, adminconnect.WithRelayManager(rest.RelayManager))
+	}
+	adminconnect.Mount(mux, adminconnect.NewServer(svc.admin, svc.adminDB, adminOpts...), opts...)
 	promocodeadminconnect.Mount(mux, promocodeadminconnect.NewServer(svc.admin, svc.adminDB), opts...)
 	if svc.billing != nil {
 		subscriptionadminconnect.Mount(mux, subscriptionadminconnect.NewServer(svc.admin, svc.billing, svc.adminDB), opts...)
