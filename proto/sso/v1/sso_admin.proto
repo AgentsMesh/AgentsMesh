@@ -1,0 +1,228 @@
+// SSOAdminService — platform-admin SSO config management.
+//
+// Migrated from REST handlers in
+//   backend/internal/api/rest/v1/admin/sso.go         (CRUD + list)
+//   backend/internal/api/rest/v1/admin/sso_actions.go (test/enable/disable)
+//
+// The public SSOService (sso.proto, Discover + LdapAuth) is unaffected —
+// it terminates pre-auth at the login page; this admin surface runs
+// behind ResolveSystemAdmin (is_system_admin = true).
+//
+// Per conventions §3.5 exception #2, admin requests do NOT carry org_slug
+// — tenant is the whole platform, implied by the admin interceptor.
+// Field shape mirrors service/sso.ConfigResponse (no secrets, no
+// certs, no passwords) — the wire DTO the REST handler already
+// emitted. Protocol-specific fields are `optional` because
+// ToConfigResponse only populates the subset matching cfg.Protocol.
+//
+// Field set reconciled against three layers (runbook §1.5):
+//   - service/sso/types.go ConfigResponse — admin GET payload
+//   - service/sso/types.go {Create,Update}ConfigRequest — write surface
+//     (includes write-only secrets: oidc_client_secret, saml_idp_cert,
+//     saml_idp_metadata_xml, ldap_bind_password — see SENSITIVE DATA)
+//   - clients/web-admin/src/lib/api/sso.ts SSOConfig / Create / Update
+//
+// SENSITIVE DATA: CreateSSOConfigRequest + UpdateSSOConfigRequest carry
+// write-only secrets (oidc_client_secret, saml_idp_cert,
+// saml_idp_metadata_xml, ldap_bind_password). These transit binary-encoded
+// over the same TLS channel REST used. Response messages never echo them
+// back — the AdminSSOConfig DTO matches ConfigResponse, which strips
+// secrets in service/sso/config_response.go.
+//
+// SAML metadata XML: write surface allows inline XML up to 1 MB (matches
+// maxMetadataXMLSize in config_write.go). Not surfaced on the read
+// response — large XML blobs stay server-side.
+
+syntax = "proto3";
+
+package proto.sso.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/sso/v1;ssov1";
+
+service SSOAdminService {
+  rpc ListSSOConfigs(ListSSOConfigsRequest) returns (ListSSOConfigsResponse);
+  rpc GetSSOConfig(GetSSOConfigRequest) returns (AdminSSOConfig);
+  rpc CreateSSOConfig(CreateSSOConfigRequest) returns (AdminSSOConfig);
+  rpc UpdateSSOConfig(UpdateSSOConfigRequest) returns (AdminSSOConfig);
+  rpc DeleteSSOConfig(DeleteSSOConfigRequest) returns (DeleteSSOConfigResponse);
+  rpc TestSSOConnection(TestSSOConnectionRequest) returns (TestSSOConnectionResponse);
+  rpc EnableSSOConfig(EnableSSOConfigRequest) returns (AdminSSOConfig);
+  rpc DisableSSOConfig(DisableSSOConfigRequest) returns (AdminSSOConfig);
+}
+
+// AdminSSOConfig mirrors service/sso.ConfigResponse — the secret-stripped
+// admin GET payload. Protocol-specific fields are optional because
+// ToConfigResponse populates only the subset matching cfg.Protocol; any
+// other-protocol field on the wire would be a value the GORM model carries
+// as a GORM default (e.g. ldap_port=389 on an OIDC config). REST emits
+// `omitempty` JSON; proto `optional` reproduces that exact shape.
+message AdminSSOConfig {
+  int64 id = 1;
+  string domain = 2;
+  string name = 3;
+  // oidc / saml / ldap — matches sso.Protocol on the backend.
+  string protocol = 4;
+  bool is_enabled = 5;
+  bool enforce_sso = 6;
+
+  // OIDC (no secrets).
+  optional string oidc_issuer_url = 7;
+  optional string oidc_client_id = 8;
+  optional string oidc_scopes = 9;
+
+  // SAML (no certs / XML).
+  optional string saml_idp_metadata_url = 10;
+  optional string saml_idp_sso_url = 11;
+  optional string saml_sp_entity_id = 12;
+  optional string saml_name_id_format = 13;
+
+  // LDAP (no passwords).
+  optional string ldap_host = 14;
+  optional int32 ldap_port = 15;
+  optional bool ldap_use_tls = 16;
+  optional string ldap_bind_dn = 17;
+  optional string ldap_base_dn = 18;
+  optional string ldap_user_filter = 19;
+  optional string ldap_email_attr = 20;
+  optional string ldap_name_attr = 21;
+  optional string ldap_username_attr = 22;
+
+  // Audit metadata.
+  optional int64 created_by = 23;
+  string created_at = 24;
+  string updated_at = 25;
+}
+
+// ---- List ----
+
+message ListSSOConfigsRequest {
+  // Substring filter applied to domain + name (ILIKE on the backend).
+  // Empty = no search filter.
+  string search = 1;
+  // oidc / saml / ldap. Empty = all protocols.
+  string protocol = 2;
+  // 1-based page index. Empty / 0 = page 1.
+  int32 page = 3;
+  // 1..100. Empty / 0 = 20. Out-of-range falls back to 20 on the server.
+  int32 page_size = 4;
+}
+
+message ListSSOConfigsResponse {
+  repeated AdminSSOConfig data = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int64 total_pages = 5;
+}
+
+// ---- CRUD ----
+
+message GetSSOConfigRequest {
+  int64 id = 1;
+}
+
+// CreateSSOConfigRequest carries every field the REST handler accepts on
+// POST /sso/configs. Write-only secrets (oidc_client_secret, saml_idp_cert,
+// saml_idp_metadata_xml, ldap_bind_password) are intentionally included
+// here but NOT in AdminSSOConfig — they never round-trip.
+message CreateSSOConfigRequest {
+  string domain = 1;
+  string name = 2;
+  // oidc / saml / ldap.
+  string protocol = 3;
+  bool is_enabled = 4;
+  bool enforce_sso = 5;
+
+  // OIDC.
+  optional string oidc_issuer_url = 6;
+  optional string oidc_client_id = 7;
+  // Write-only — never returned in any response.
+  optional string oidc_client_secret = 8;
+  optional string oidc_scopes = 9;
+
+  // SAML.
+  optional string saml_idp_metadata_url = 10;
+  // Write-only inline metadata XML (up to 1 MB — maxMetadataXMLSize).
+  optional string saml_idp_metadata_xml = 11;
+  optional string saml_idp_sso_url = 12;
+  // Write-only IdP cert — encrypted at rest server-side.
+  optional string saml_idp_cert = 13;
+  optional string saml_sp_entity_id = 14;
+  optional string saml_name_id_format = 15;
+
+  // LDAP.
+  optional string ldap_host = 16;
+  optional int32 ldap_port = 17;
+  optional bool ldap_use_tls = 18;
+  optional string ldap_bind_dn = 19;
+  // Write-only LDAP bind password.
+  optional string ldap_bind_password = 20;
+  optional string ldap_base_dn = 21;
+  optional string ldap_user_filter = 22;
+  optional string ldap_email_attr = 23;
+  optional string ldap_name_attr = 24;
+  optional string ldap_username_attr = 25;
+}
+
+// UpdateSSOConfigRequest mirrors PUT /sso/configs/:id. Every body field is
+// optional — only present fields are written (matches REST's pointer-based
+// UpdateConfigRequest semantics where nil = leave alone).
+message UpdateSSOConfigRequest {
+  int64 id = 1;
+  optional string name = 2;
+  optional bool is_enabled = 3;
+  optional bool enforce_sso = 4;
+
+  optional string oidc_issuer_url = 5;
+  optional string oidc_client_id = 6;
+  optional string oidc_client_secret = 7;
+  optional string oidc_scopes = 8;
+
+  optional string saml_idp_metadata_url = 9;
+  optional string saml_idp_metadata_xml = 10;
+  optional string saml_idp_sso_url = 11;
+  optional string saml_idp_cert = 12;
+  optional string saml_sp_entity_id = 13;
+  optional string saml_name_id_format = 14;
+
+  optional string ldap_host = 15;
+  optional int32 ldap_port = 16;
+  optional bool ldap_use_tls = 17;
+  optional string ldap_bind_dn = 18;
+  optional string ldap_bind_password = 19;
+  optional string ldap_base_dn = 20;
+  optional string ldap_user_filter = 21;
+  optional string ldap_email_attr = 22;
+  optional string ldap_name_attr = 23;
+  optional string ldap_username_attr = 24;
+}
+
+message DeleteSSOConfigRequest {
+  int64 id = 1;
+}
+
+message DeleteSSOConfigResponse {}
+
+// ---- Actions ----
+
+message TestSSOConnectionRequest {
+  int64 id = 1;
+}
+
+// TestSSOConnectionResponse mirrors REST's `{success, message?, error?}`
+// envelope — the handler returns 200 even on connection failure with
+// success=false (mirrors sso_actions.go:23-31). The frontend toggles
+// between toast.success / toast.error based on `success`.
+message TestSSOConnectionResponse {
+  bool success = 1;
+  optional string message = 2;
+  optional string error = 3;
+}
+
+message EnableSSOConfigRequest {
+  int64 id = 1;
+}
+
+message DisableSSOConfigRequest {
+  int64 id = 1;
+}

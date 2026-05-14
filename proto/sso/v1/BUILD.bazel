@@ -14,7 +14,10 @@ load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
 
 proto_library(
     name = "sso_proto",
-    srcs = ["sso.proto"],
+    srcs = [
+        "sso.proto",
+        "sso_admin.proto",
+    ],
     visibility = ["//visibility:public"],
 )
 
