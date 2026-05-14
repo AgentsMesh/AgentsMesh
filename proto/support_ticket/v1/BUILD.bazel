@@ -15,7 +15,10 @@ load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
 
 proto_library(
     name = "support_ticket_proto",
-    srcs = ["support_ticket.proto"],
+    srcs = [
+        "support_ticket.proto",
+        "support_ticket_admin.proto",
+    ],
     visibility = ["//visibility:public"],
 )
 

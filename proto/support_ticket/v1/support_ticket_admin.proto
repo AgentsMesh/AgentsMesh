@@ -1,0 +1,197 @@
+// SupportTicketAdminService — platform-admin support ticket management.
+//
+// Migrated from REST handlers in
+//   backend/internal/api/rest/v1/admin/support_tickets.go      (list/stats/get/messages)
+//   backend/internal/api/rest/v1/admin/support_ticket_actions.go (reply/status/assign/attachment URL)
+//
+// The user-facing SupportTicketService (support_ticket.proto: List/Get/
+// GetAttachmentUrl) is unaffected — it terminates behind the standard
+// auth interceptor and scopes by JWT UserID; this admin surface runs
+// behind ResolveSystemAdmin (is_system_admin = true).
+//
+// Per conventions §3.5 exception #2, admin requests do NOT carry org_slug
+// — tenant is the whole platform, implied by the admin interceptor.
+//
+// File-upload REPLY paths (multipart POST on Reply) stay on REST during
+// the dual-track window — Connect-RPC has no multipart story. The Connect
+// Reply RPC therefore covers JSON-only replies (no attachments); the REST
+// /reply endpoint stays available for the upload case until the web-admin
+// renderer is updated to a separate presigned-upload flow.
+//
+// Standalone: no proto import of support_ticket.proto. The same SupportTicket*
+// message types are not re-used as-is — the admin GET response carries
+// AssignedAdminID which the user-facing wire intentionally omits, and the
+// message/attachment subviews are identical-shape but redeclared here to
+// keep the file standalone (mirrors skill_registry_admin.proto pattern).
+
+syntax = "proto3";
+
+package proto.support_ticket.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/support_ticket/v1;supportticketv1";
+
+service SupportTicketAdminService {
+  rpc ListSupportTickets(AdminListSupportTicketsRequest) returns (AdminListSupportTicketsResponse);
+  rpc GetSupportTicketStats(GetSupportTicketStatsRequest) returns (SupportTicketStats);
+  rpc GetSupportTicket(AdminGetSupportTicketRequest) returns (AdminSupportTicketDetail);
+  rpc ListSupportTicketMessages(AdminListSupportTicketMessagesRequest) returns (AdminListSupportTicketMessagesResponse);
+  rpc ReplySupportTicket(AdminReplySupportTicketRequest) returns (AdminSupportTicketMessage);
+  rpc UpdateSupportTicketStatus(AdminUpdateSupportTicketStatusRequest) returns (AdminUpdateSupportTicketStatusResponse);
+  rpc AssignSupportTicket(AdminAssignSupportTicketRequest) returns (AdminAssignSupportTicketResponse);
+  rpc GetSupportTicketAttachmentUrl(AdminGetSupportTicketAttachmentUrlRequest) returns (AdminGetSupportTicketAttachmentUrlResponse);
+}
+
+// AdminSupportTicket carries the full ticket including AssignedAdminID,
+// which the user-facing SupportTicket message omits by design.
+message AdminSupportTicket {
+  int64 id = 1;
+  int64 user_id = 2;
+  string title = 3;
+  string category = 4;
+  string status = 5;
+  string priority = 6;
+  string created_at = 7;
+  string updated_at = 8;
+  optional string resolved_at = 9;
+  optional int64 assigned_admin_id = 10;
+}
+
+// AdminSupportTicketUser is the trimmed user view embedded in messages.
+message AdminSupportTicketUser {
+  int64 id = 1;
+  optional string name = 2;
+  string email = 3;
+  optional string avatar_url = 4;
+}
+
+// AdminSupportTicketAttachment mirrors the renderer-facing fields
+// (storage_key hidden — internal).
+message AdminSupportTicketAttachment {
+  int64 id = 1;
+  int64 ticket_id = 2;
+  optional int64 message_id = 3;
+  int64 uploader_id = 4;
+  string original_name = 5;
+  string mime_type = 6;
+  int64 size = 7;
+  string created_at = 8;
+}
+
+// AdminSupportTicketMessage mirrors the renderer shape used by the
+// admin detail page (with eager-loaded User + Attachments).
+message AdminSupportTicketMessage {
+  int64 id = 1;
+  int64 ticket_id = 2;
+  int64 user_id = 3;
+  string content = 4;
+  bool is_admin_reply = 5;
+  string created_at = 6;
+  optional AdminSupportTicketUser user = 7;
+  repeated AdminSupportTicketAttachment attachments = 8;
+}
+
+// ---- List ----
+
+message AdminListSupportTicketsRequest {
+  // Substring filter applied to title (ILIKE on the backend). Empty = no filter.
+  string search = 1;
+  // open / in_progress / resolved / closed. Empty = all statuses.
+  string status = 2;
+  // bug / feature_request / usage_question / account / other. Empty = all.
+  string category = 3;
+  // low / medium / high. Empty = all priorities.
+  string priority = 4;
+  // 1-based page index. Empty / 0 = page 1.
+  int32 page = 5;
+  // 1..100. Empty / 0 = 20. Out-of-range falls back to 20 on the server.
+  int32 page_size = 6;
+}
+
+message AdminListSupportTicketsResponse {
+  repeated AdminSupportTicket data = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  int32 total_pages = 5;
+}
+
+// ---- Stats ----
+
+message GetSupportTicketStatsRequest {}
+
+message SupportTicketStats {
+  int64 total = 1;
+  int64 open = 2;
+  int64 in_progress = 3;
+  int64 resolved = 4;
+  int64 closed = 5;
+}
+
+// ---- Get ----
+
+message AdminGetSupportTicketRequest {
+  int64 id = 1;
+}
+
+// AdminSupportTicketDetail mirrors REST's `{ticket, messages}` envelope
+// from GET /support-tickets/:id (support_tickets.go:114).
+message AdminSupportTicketDetail {
+  AdminSupportTicket ticket = 1;
+  repeated AdminSupportTicketMessage messages = 2;
+}
+
+// ---- ListMessages ----
+
+message AdminListSupportTicketMessagesRequest {
+  int64 id = 1;
+}
+
+message AdminListSupportTicketMessagesResponse {
+  repeated AdminSupportTicketMessage data = 1;
+}
+
+// ---- Reply ----
+
+// AdminReplySupportTicketRequest covers the JSON-only path. Multipart
+// attachment uploads stay on REST for now — handler returns the new
+// message without attachments. The web-admin renderer falls back to the
+// REST /reply endpoint when files are attached.
+message AdminReplySupportTicketRequest {
+  int64 id = 1;
+  string content = 2;
+}
+
+// ---- UpdateStatus ----
+
+message AdminUpdateSupportTicketStatusRequest {
+  int64 id = 1;
+  string status = 2;
+}
+
+message AdminUpdateSupportTicketStatusResponse {
+  string message = 1;
+}
+
+// ---- Assign ----
+
+// AdminAssignSupportTicketRequest mirrors POST /:id/assign. If admin_id
+// is nil, the server falls back to the calling admin (REST behavior at
+// support_ticket_actions.go:155-159).
+message AdminAssignSupportTicketRequest {
+  int64 id = 1;
+  optional int64 admin_id = 2;
+}
+
+message AdminAssignSupportTicketResponse {
+  string message = 1;
+}
+
+// ---- GetAttachmentURL ----
+
+message AdminGetSupportTicketAttachmentUrlRequest {
+  int64 attachment_id = 1;
+}
+
+message AdminGetSupportTicketAttachmentUrlResponse {
+  string url = 1;
+}
