@@ -52,10 +52,12 @@ ts_project(
     tsconfig = "tsconfig.bazel.json",
     deps = [
         "//:node_modules",
-        # `@proto/*` alias (tsconfig.json paths) resolves to
-        # `../../proto/gen/ts/*`; tsc needs the generated sources in its
-        # input set or the type-check action can't see them.
-        "//proto:proto_gen_ts",
+        # Bazel-native first-party package mounting the generated TS
+        # Connect-RPC proto modules. tsc resolves `@proto/<svc>/v1/...`
+        # imports through this node-module walk; the tsconfig path
+        # alias `@proto/*` is a fallback that aspect_rules_ts can't use
+        # because the underlying files sit outside the project rootDir.
+        "//:node_modules/@agentsmesh/proto",
     ],
 )
 
