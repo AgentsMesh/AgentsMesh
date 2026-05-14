@@ -15,6 +15,8 @@
 //   - convert.go              — domain ↔ proto field translation
 //   - convert_relay.go        — relay.RelayInfo → proto translation
 //   - audit.go                — Connect-context audit log helper
+//   - handlers_dashboard.go   — GetDashboardStats
+//   - handlers_audit.go       — ListAuditLogs
 //   - handlers_users_query.go — ListUsers / GetUser / UpdateUser
 //   - handlers_users_actions.go — Disable / Enable / GrantAdmin / RevokeAdmin /
 //                                 VerifyUserEmail / UnverifyUserEmail
@@ -38,6 +40,8 @@ import (
 const ServiceName = "proto.admin.v1.AdminService"
 
 const (
+	GetDashboardStatsProcedure = "/" + ServiceName + "/GetDashboardStats"
+
 	ListUsersProcedure         = "/" + ServiceName + "/ListUsers"
 	GetUserProcedure           = "/" + ServiceName + "/GetUser"
 	UpdateUserProcedure        = "/" + ServiceName + "/UpdateUser"
@@ -53,15 +57,17 @@ const (
 	GetOrganizationMembersProcedure = "/" + ServiceName + "/GetOrganizationMembers"
 	DeleteOrganizationProcedure     = "/" + ServiceName + "/DeleteOrganization"
 
+	ListAuditLogsProcedure = "/" + ServiceName + "/ListAuditLogs"
+
 	ListRelaysProcedure           = "/" + ServiceName + "/ListRelays"
 	GetRelayProcedure             = "/" + ServiceName + "/GetRelay"
 	GetRelayStatsProcedure        = "/" + ServiceName + "/GetRelayStats"
 	ForceUnregisterRelayProcedure = "/" + ServiceName + "/ForceUnregisterRelay"
 )
 
-// Server implements the user + organization + relay slice of
-// proto.admin.v1.AdminService. Dashboard / Runner / AuditLog RPCs live in
-// the same proto service but stay on REST until follow-up PRs migrate them.
+// Server implements the dashboard + user + organization + audit + relay
+// slice of proto.admin.v1.AdminService. Runner RPCs live in the same proto
+// service but stay on REST until a follow-up PR migrates them.
 //
 // relayMgr is optional — only deployments that wire the relay subsystem
 // surface the 4 relay RPCs. When nil, the handlers return CodeUnavailable
@@ -98,6 +104,10 @@ func NewServer(svc *adminservice.Service, db database.DB, opts ...Option) *Serve
 // enforces is_system_admin (handler-level so the interceptor stays generic
 // across user-scoped + admin-scoped services).
 func Mount(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {
+	mux.Handle(GetDashboardStatsProcedure, connect.NewUnaryHandler(
+		GetDashboardStatsProcedure, srv.GetDashboardStats, opts...,
+	))
+
 	mux.Handle(ListUsersProcedure, connect.NewUnaryHandler(
 		ListUsersProcedure, srv.ListUsers, opts...,
 	))
@@ -137,6 +147,10 @@ func Mount(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {
 	))
 	mux.Handle(DeleteOrganizationProcedure, connect.NewUnaryHandler(
 		DeleteOrganizationProcedure, srv.DeleteOrganization, opts...,
+	))
+
+	mux.Handle(ListAuditLogsProcedure, connect.NewUnaryHandler(
+		ListAuditLogsProcedure, srv.ListAuditLogs, opts...,
 	))
 
 	mux.Handle(ListRelaysProcedure, connect.NewUnaryHandler(
