@@ -8,6 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/agentfile/parser"
 	"github.com/anthropics/agentsmesh/agentfile/resolve"
 	"github.com/anthropics/agentsmesh/agentfile/serialize"
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
 // agentfileExtractResult holds values extracted from a merged AgentFile (base + user layer).
@@ -21,6 +22,7 @@ type agentfileExtractResult struct {
 	RepoSlug          string // REPO "slug" (e.g., "dev-org/demo-api")
 	PermissionMode    string // CONFIG permission_mode = "bypassPermissions"
 	Prompt            string // PROMPT "prompt content"
+	ConfigValues      agentDomain.ConfigValues
 	// Merged AgentFile source (for Runner, avoids re-parsing in ConfigBuilder).
 	// CONFIG declarations contain final resolved values (post-resolve).
 	MergedAgentfileSource string
@@ -59,6 +61,7 @@ func extractFromAgentfileLayer(
 		CredentialProfile:     spec.CredentialProfile,
 		Prompt:                spec.Prompt,
 		MergedAgentfileSource: mergedSource,
+		ConfigValues:          make(agentDomain.ConfigValues),
 	}
 
 	if spec.Repo != nil {
@@ -67,6 +70,9 @@ func extractFromAgentfileLayer(
 	}
 
 	for _, cfg := range spec.Config {
+		if !isSystemConfigKey(cfg.Name) {
+			result.ConfigValues[cfg.Name] = cfg.Default
+		}
 		if cfg.Name == "permission_mode" {
 			if s, ok := cfg.Default.(string); ok {
 				result.PermissionMode = s

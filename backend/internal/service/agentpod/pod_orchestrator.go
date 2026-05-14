@@ -151,6 +151,7 @@ type agentfileResolved struct {
 	Prompt               string
 	MergedAgentfileSource string
 	CredentialProfile    string
+	ConfigValues         agentDomain.ConfigValues
 }
 
 func NewPodOrchestrator(deps *PodOrchestratorDeps) *PodOrchestrator {

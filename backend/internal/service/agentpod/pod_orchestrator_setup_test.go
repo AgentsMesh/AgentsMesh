@@ -198,6 +198,64 @@ PROMPT_POSITION prepend
 	}
 }
 
+func newCodexTestProvider() *mockAgentConfigProvider {
+	agentfile := `
+AGENT codex
+EXECUTABLE codex
+MODE pty
+MODE acp "app-server"
+CONFIG approval_mode SELECT("untrusted", "on-request", "never") = "untrusted"
+ENV OPENAI_API_KEY SECRET OPTIONAL
+ENV CODEX_HOME = sandbox.root + "/codex-home"
+PROMPT_POSITION append
+MCP ON
+arg "resume" "--last" when config.resume_enabled and mode != "acp"
+arg "--ask-for-approval" config.approval_mode when config.approval_mode != "" and mode != "acp"
+`
+	return &mockAgentConfigProvider{
+		agentDef: &agentDomain.Agent{
+			Slug:            "codex-cli",
+			Name:            "Codex CLI",
+			LaunchCommand:   "codex",
+			SupportedModes:  "pty,acp",
+			AgentfileSource: &agentfile,
+		},
+		config:   agentDomain.ConfigValues{},
+		creds:    agentDomain.EncryptedCredentials{},
+		isRunner: true,
+	}
+}
+
+func newClaudePermissionTestProvider() *mockAgentConfigProvider {
+	agentfile := `
+AGENT claude
+EXECUTABLE claude
+MODE pty
+CONFIG permission_mode SELECT("default", "plan", "acceptEdits", "dontAsk", "bypassPermissions") = "bypassPermissions"
+arg "--session-id" config.session_id when config.session_id != "" and not config.resume_enabled
+arg "--resume" config.resume_session when config.resume_enabled
+if config.permission_mode == "plan" and mode != "acp" {
+  arg "--permission-mode" "plan"
+}
+if config.permission_mode != "default" and config.permission_mode != "plan" and config.permission_mode != "" {
+  arg "--permission-mode" config.permission_mode
+}
+PROMPT_POSITION prepend
+`
+	return &mockAgentConfigProvider{
+		agentDef: &agentDomain.Agent{
+			Slug:            "claude-code",
+			Name:            "Claude Code",
+			LaunchCommand:   "claude",
+			SupportedModes:  "pty",
+			AgentfileSource: &agentfile,
+		},
+		config:   agentDomain.ConfigValues{},
+		creds:    agentDomain.EncryptedCredentials{},
+		isRunner: true,
+	}
+}
+
 func setupOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDeps)) (*PodOrchestrator, *PodService, *gorm.DB) {
 	t.Helper()
 	db := setupOrchestratorTestDB(t)
@@ -245,6 +303,13 @@ func withRunnerSelector(rs RunnerSelectorForOrchestrator) func(*PodOrchestratorD
 
 func withAgentResolver(ar AgentResolverForOrchestrator) func(*PodOrchestratorDeps) {
 	return func(d *PodOrchestratorDeps) { d.AgentResolver = ar }
+}
+
+func withAgentConfigProvider(provider *mockAgentConfigProvider) func(*PodOrchestratorDeps) {
+	return func(d *PodOrchestratorDeps) {
+		d.ConfigBuilder = agent.NewConfigBuilder(provider)
+		d.AgentResolver = &mockAgentResolver{agentDef: provider.agentDef, err: provider.agentErr}
+	}
 }
 
 func ptrStr(s string) *string { return &s }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
@@ -52,6 +53,7 @@ type CreatePodRequest struct {
 	SkipPermissions   bool
 	PreparationConfig *agentpod.PreparationConfig
 	EnvVars           map[string]string
+	ConfigOverrides   agentDomain.ConfigValues
 
 	// CredentialProfileID records which credential profile was selected.
 	// nil = default resolution, >0 = specific profile. 0 is not stored (FK constraint).
@@ -83,12 +85,21 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 	podKey := fmt.Sprintf("%d-%s-%s", req.CreatedByID, ticketPart, randomSuffix)
 
 	model := req.Model
-	if model == "" {
+	if model == "" && shouldDefaultLegacyClaudeFields(req.AgentSlug) {
 		model = "opus"
 	}
+	var modelPtr *string
+	if model != "" {
+		modelPtr = &model
+	}
+
 	permissionMode := req.PermissionMode
-	if permissionMode == "" {
+	if permissionMode == "" && shouldDefaultLegacyClaudeFields(req.AgentSlug) {
 		permissionMode = agentpod.PermissionModeBypass
+	}
+	var permissionModePtr *string
+	if permissionMode != "" {
+		permissionModePtr = &permissionMode
 	}
 	// Handle session ID
 	var sessionID *string
@@ -121,13 +132,14 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		Prompt:              req.Prompt,
 		Alias:               req.Alias,
 		BranchName:          req.BranchName,
-		Model:               &model,
-		PermissionMode:      &permissionMode,
+		Model:               modelPtr,
+		PermissionMode:      permissionModePtr,
 		SessionID:           sessionID,
 		SourcePodKey:        sourcePodKey,
 		CredentialProfileID: req.CredentialProfileID,
 		InteractionMode:     interactionMode,
 		Perpetual:           req.Perpetual,
+		ConfigOverrides:     req.ConfigOverrides,
 	}
 
 	if err := s.repo.Create(ctx, pod); err != nil {
@@ -141,6 +153,10 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 	// Do NOT increment here to avoid double-counting.
 
 	return pod, nil
+}
+
+func shouldDefaultLegacyClaudeFields(agentSlug string) bool {
+	return agentSlug == "" || isClaudeAgentSlug(agentSlug)
 }
 
 // CreatePodForTicket creates a pod with ticket context

@@ -39,6 +39,26 @@ func TestExtractAgentfileOverrides_PermissionMode(t *testing.T) {
 	assert.Equal(t, "bypassPermissions", ov.PermissionMode)
 }
 
+func TestExtractAgentfileOverrides_ConfigValuesSnapshot(t *testing.T) {
+	userLayer := `CONFIG permission_mode = "plan"`
+	userPrefs := map[string]interface{}{"model": "sonnet"}
+	systemOverrides := map[string]interface{}{
+		"session_id":     "session-1",
+		"resume_enabled": true,
+		"resume_session": "session-1",
+	}
+
+	ov, err := extractFromAgentfileLayer(baseAgentfileSrc, userLayer, userPrefs, systemOverrides)
+	require.NoError(t, err)
+
+	assert.Equal(t, true, ov.ConfigValues["mcp_enabled"])
+	assert.Equal(t, "sonnet", ov.ConfigValues["model"])
+	assert.Equal(t, "plan", ov.ConfigValues["permission_mode"])
+	assert.NotContains(t, ov.ConfigValues, "session_id")
+	assert.NotContains(t, ov.ConfigValues, "resume_enabled")
+	assert.NotContains(t, ov.ConfigValues, "resume_session")
+}
+
 func TestExtractAgentfileOverrides_RepoSlug(t *testing.T) {
 	userLayer := `REPO "dev-org/demo-api"`
 

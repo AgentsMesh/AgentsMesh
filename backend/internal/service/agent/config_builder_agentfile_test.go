@@ -174,12 +174,13 @@ ENV OPENAI_API_KEY SECRET OPTIONAL
 ENV CODEX_HOME = sandbox.root + "/codex-home"
 
 # === Prompt ===
-PROMPT_POSITION prepend
+PROMPT_POSITION append
 
 # === Capabilities ===
 MCP ON
 
 # === Build Logic ===
+arg "resume" "--last" when config.resume_enabled and mode != "acp"
 arg "--ask-for-approval" config.approval_mode when config.approval_mode != "" and mode != "acp"
 
 if mcp.enabled {
@@ -193,6 +194,8 @@ if mcp.enabled {
 	require.NoError(t, err)
 	require.NotNil(t, cmd)
 	assert.Equal(t, "{{sandbox_root}}/codex-home", cmd.EnvVars["CODEX_HOME"])
+	assert.Equal(t, "append", cmd.PromptPosition)
+	assert.Equal(t, []string{"--ask-for-approval", "untrusted"}, cmd.LaunchArgs)
 	assert.Len(t, cmd.FilesToCreate, 3)
 
 	files := map[string]*runnerv1.FileToCreate{}

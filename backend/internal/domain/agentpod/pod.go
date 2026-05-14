@@ -106,8 +106,8 @@ type Pod struct {
 	// Sentinel value 0 is NOT stored (FK constraint); explicit RunnerHost is stored as nil.
 	CredentialProfileID *int64 `json:"credential_profile_id,omitempty"`
 
-	// ConfigOverrides stores pod-level configuration overrides
-	// Merged with organization defaults during Pod creation
+	// ConfigOverrides stores the resolved pod-level AgentFile CONFIG snapshot.
+	// Resume uses it to preserve the source pod's runtime configuration.
 	ConfigOverrides agent.ConfigValues `gorm:"type:jsonb;default:'{}'" json:"config_overrides,omitempty"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`

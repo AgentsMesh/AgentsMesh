@@ -192,6 +192,29 @@ func TestCreatePod_DefaultValues(t *testing.T) {
 	}
 }
 
+func TestCreatePod_NonClaudeDoesNotDefaultLegacyFields(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestPodService(db)
+	ctx := context.Background()
+
+	pod, err := svc.CreatePod(ctx, &CreatePodRequest{
+		OrganizationID: 1,
+		RunnerID:       1,
+		AgentSlug:      "codex-cli",
+		CreatedByID:    1,
+	})
+	if err != nil {
+		t.Fatalf("CreatePod failed: %v", err)
+	}
+
+	if pod.Model != nil {
+		t.Errorf("non-Claude pod model should not default, got %q", *pod.Model)
+	}
+	if pod.PermissionMode != nil {
+		t.Errorf("non-Claude pod permission_mode should not default, got %q", *pod.PermissionMode)
+	}
+}
+
 func TestGetPod(t *testing.T) {
 	db := setupTestDB(t)
 	svc := newTestPodService(db)

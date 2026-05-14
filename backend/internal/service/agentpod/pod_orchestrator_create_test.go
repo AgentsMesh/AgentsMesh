@@ -442,6 +442,30 @@ func TestCreatePod_AgentFilePermissionMode_ExtractedToDB(t *testing.T) {
 	assert.Equal(t, "bypassPermissions", *dbPod.PermissionMode, "AgentFile CONFIG permission_mode should be extracted to DB")
 }
 
+func TestCreatePod_CodexUsesConfigOverridesNotClaudeLegacyFields(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, _ := setupOrchestrator(t,
+		withCoordinator(coord),
+		withAgentConfigProvider(newCodexTestProvider()),
+	)
+
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		RunnerID:       1,
+		AgentSlug:      "codex-cli",
+		AgentfileLayer: ptrStr(`CONFIG approval_mode = "never"`),
+	})
+
+	require.NoError(t, err)
+	dbPod, err := podSvc.GetPod(context.Background(), result.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Nil(t, dbPod.Model)
+	assert.Nil(t, dbPod.PermissionMode)
+	assert.Equal(t, "never", dbPod.ConfigOverrides["approval_mode"])
+	assert.Equal(t, []string{"--ask-for-approval", "never"}, coord.lastCmd.LaunchArgs)
+}
+
 func TestCreatePod_NoLayer_BranchInheritedFromResume(t *testing.T) {
 	coord := &mockPodCoordinator{}
 	orch, podSvc, _ := setupOrchestrator(t, withCoordinator(coord))
