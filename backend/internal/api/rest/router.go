@@ -203,10 +203,9 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		dbWrapper := database.NewGormWrapper(db)
 		adminSvc := adminservice.NewService(dbWrapper)
 		admin.RegisterRoutes(r, cfg, dbWrapper, &admin.Services{
-			Auth:          svc.Auth,
-			Admin:         adminSvc,
-			Billing:       svc.Billing,
-			SupportTicket: svc.SupportTicket,
+			Auth:    svc.Auth,
+			Admin:   adminSvc,
+			Billing: svc.Billing,
 		})
 	}
 

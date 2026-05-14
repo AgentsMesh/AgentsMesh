@@ -7,17 +7,15 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
 	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
-	"github.com/anthropics/agentsmesh/backend/internal/service/supportticket"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Services contains all admin-related services
 type Services struct {
-	Auth          *auth.Service
-	Admin         *admin.Service
-	Billing       *billing.Service
-	SupportTicket *supportticket.Service
+	Auth    *auth.Service
+	Admin   *admin.Service
+	Billing *billing.Service
 }
 
 // RegisterRoutes registers all admin console routes
@@ -77,9 +75,10 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	// proto.sso.v1.SSOAdminService). The mount keeps the same SSO != nil
 	// gate via mountAdminServices in cmd/server.
 
-	// Support Tickets (optional - only if support ticket service is available)
-	if svc.SupportTicket != nil {
-		supportTicketHandler := NewSupportTicketHandler(svc.SupportTicket, svc.Admin)
-		supportTicketHandler.RegisterRoutes(protected)
-	}
+	// Support Tickets moved to Connect-RPC
+	// (backend/internal/api/connect/admin/support_ticket/server.go,
+	// proto.support_ticket.v1.SupportTicketAdminService). The mount keeps
+	// the same SupportTicket != nil gate via mountAdminServices in cmd/server.
+	// Multipart attachment uploads on Reply continue to use the user-facing
+	// REST endpoint at /api/v1/support-tickets/:id/reply.
 }
