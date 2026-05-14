@@ -5,7 +5,9 @@ go_library(
     srcs = [
         "audit.go",
         "convert.go",
+        "convert_relay.go",
         "handlers_orgs.go",
+        "handlers_relays.go",
         "handlers_users_actions.go",
         "handlers_users_query.go",
         "server.go",
@@ -19,6 +21,7 @@ go_library(
         "//backend/internal/domain/user",
         "//backend/internal/infra/database",
         "//backend/internal/service/admin",
+        "//backend/internal/service/relay",
         "//proto/admin/v1:admin_go_proto",
         "@com_connectrpc_connect//:connect",
     ],

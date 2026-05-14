@@ -13,12 +13,15 @@
 // Split rationale (CLAUDE.md 200-line rule):
 //   - server.go               — service scaffolding + Mount (this file)
 //   - convert.go              — domain ↔ proto field translation
+//   - convert_relay.go        — relay.RelayInfo → proto translation
 //   - audit.go                — Connect-context audit log helper
 //   - handlers_users_query.go — ListUsers / GetUser / UpdateUser
 //   - handlers_users_actions.go — Disable / Enable / GrantAdmin / RevokeAdmin /
 //                                 VerifyUserEmail / UnverifyUserEmail
 //   - handlers_orgs.go        — ListOrganizations / GetOrganization /
 //                               GetOrganizationMembers / DeleteOrganization
+//   - handlers_relays.go      — ListRelays / GetRelay / GetRelayStats /
+//                               ForceUnregisterRelay (gated on WithRelayManager)
 package adminconnect
 
 import (
@@ -29,6 +32,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	adminservice "github.com/anthropics/agentsmesh/backend/internal/service/admin"
+	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 )
 
 const ServiceName = "proto.admin.v1.AdminService"
@@ -48,18 +52,45 @@ const (
 	GetOrganizationProcedure        = "/" + ServiceName + "/GetOrganization"
 	GetOrganizationMembersProcedure = "/" + ServiceName + "/GetOrganizationMembers"
 	DeleteOrganizationProcedure     = "/" + ServiceName + "/DeleteOrganization"
+
+	ListRelaysProcedure           = "/" + ServiceName + "/ListRelays"
+	GetRelayProcedure             = "/" + ServiceName + "/GetRelay"
+	GetRelayStatsProcedure        = "/" + ServiceName + "/GetRelayStats"
+	ForceUnregisterRelayProcedure = "/" + ServiceName + "/ForceUnregisterRelay"
 )
 
-// Server implements the user + organization slice of proto.admin.v1.AdminService.
-// Dashboard / Runner / AuditLog RPCs live in the same proto service but stay
-// on REST until follow-up PRs migrate them.
+// Server implements the user + organization + relay slice of
+// proto.admin.v1.AdminService. Dashboard / Runner / AuditLog RPCs live in
+// the same proto service but stay on REST until follow-up PRs migrate them.
+//
+// relayMgr is optional — only deployments that wire the relay subsystem
+// surface the 4 relay RPCs. When nil, the handlers return CodeUnavailable
+// to mirror REST's apierr.ServiceUnavailable behavior in relays.go.
 type Server struct {
-	svc *adminservice.Service
-	db  database.DB
+	svc      *adminservice.Service
+	db       database.DB
+	relayMgr *relay.Manager
 }
 
-func NewServer(svc *adminservice.Service, db database.DB) *Server {
-	return &Server{svc: svc, db: db}
+// Option configures optional dependencies on Server. Mirrors the option
+// pattern in podconnect / runnerconnect — required deps stay positional in
+// NewServer, optional deps come through With* funcs so callers can skip
+// when a subsystem is disabled.
+type Option func(*Server)
+
+// WithRelayManager wires the relay manager so the 4 relay RPCs (List /
+// Get / Stats / ForceUnregister) can serve. Without it those RPCs return
+// CodeUnavailable.
+func WithRelayManager(mgr *relay.Manager) Option {
+	return func(s *Server) { s.relayMgr = mgr }
+}
+
+func NewServer(svc *adminservice.Service, db database.DB, opts ...Option) *Server {
+	s := &Server{svc: svc, db: db}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // Mount wires each implemented AdminService procedure onto mux. The auth
@@ -106,6 +137,19 @@ func Mount(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {
 	))
 	mux.Handle(DeleteOrganizationProcedure, connect.NewUnaryHandler(
 		DeleteOrganizationProcedure, srv.DeleteOrganization, opts...,
+	))
+
+	mux.Handle(ListRelaysProcedure, connect.NewUnaryHandler(
+		ListRelaysProcedure, srv.ListRelays, opts...,
+	))
+	mux.Handle(GetRelayProcedure, connect.NewUnaryHandler(
+		GetRelayProcedure, srv.GetRelay, opts...,
+	))
+	mux.Handle(GetRelayStatsProcedure, connect.NewUnaryHandler(
+		GetRelayStatsProcedure, srv.GetRelayStats, opts...,
+	))
+	mux.Handle(ForceUnregisterRelayProcedure, connect.NewUnaryHandler(
+		ForceUnregisterRelayProcedure, srv.ForceUnregisterRelay, opts...,
 	))
 }
 
