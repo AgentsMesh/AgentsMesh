@@ -15,7 +15,13 @@ load("//tools/validate_prost_tags:rule.bzl", "validate_prost_tags")
 
 proto_library(
     name = "billing_proto",
-    srcs = ["billing.proto"],
+    # Admin surface lives next door in billing_admin.proto. Same go_package
+    # option so both compile into one generated Go pkg; Bazel groups them into
+    # the same go_proto_library by virtue of the shared srcs entry.
+    srcs = [
+        "billing.proto",
+        "billing_admin.proto",
+    ],
     visibility = ["//visibility:public"],
 )
 

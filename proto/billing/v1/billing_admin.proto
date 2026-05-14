@@ -1,0 +1,167 @@
+// SubscriptionAdminService — platform-admin subscription management.
+//
+// Migrated from REST handlers in
+// backend/internal/api/rest/v1/admin/subscriptions{,_mutations,_status}.go.
+// The org-scoped BillingService lives in billing.proto. The split exists
+// because of auth surface: BillingService runs through ResolveOrgScope +
+// org membership; this admin service runs through the system-admin
+// interceptor (TenantContext.UserID + is_system_admin DB lookup). Any
+// drift between the two membership checks would be a security bug if they
+// shared transport plumbing.
+//
+// The admin Subscription / Plan / SeatUsage types mirror their billing.proto
+// twins (no import dependency to keep `_admin.proto` standalone, matching
+// the promocode_admin.proto split). Admin endpoints additionally surface
+// the payment-provider flags + custom_quotas blob that the inline REST
+// `subscriptionResponse` helper computes.
+
+syntax = "proto3";
+
+package proto.billing.v1;
+
+option go_package = "github.com/anthropics/agentsmesh/proto/gen/go/billing/v1;billingv1";
+
+// ============================================================================
+// SubscriptionAdminService — platform-admin only. Mirrors REST routes at
+// /api/v1/admin/organizations/:id/subscription/*.
+// ============================================================================
+service SubscriptionAdminService {
+  rpc GetSubscription(GetAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc ListPlans(ListAdminPlansRequest) returns (ListAdminPlansResponse);
+  rpc CreateSubscription(CreateAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc UpdatePlan(UpdateAdminPlanRequest) returns (AdminSubscription);
+  rpc UpdateSeats(UpdateAdminSeatsRequest) returns (AdminSubscription);
+  rpc UpdateCycle(UpdateAdminCycleRequest) returns (AdminSubscription);
+  rpc Freeze(FreezeAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc Unfreeze(UnfreezeAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc Cancel(CancelAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc Renew(RenewAdminSubscriptionRequest) returns (AdminSubscription);
+  rpc SetAutoRenew(SetAdminAutoRenewRequest) returns (AdminSubscription);
+  rpc SetCustomQuota(SetAdminCustomQuotaRequest) returns (AdminSubscription);
+}
+
+// AdminSubscription is the admin-facing response combining Subscription
+// + seat usage + payment-provider flags REST's subscriptionResponse
+// derives.
+message AdminSubscription {
+  AdminSubscriptionEntity subscription = 1;
+  optional AdminSeatUsage seat_usage = 2;
+  bool has_stripe = 3;
+  bool has_alipay = 4;
+  bool has_wechat = 5;
+  bool has_lemonsqueezy = 6;
+  // custom_quotas JSON-encoded (admin UI reads as Record<string, number>).
+  // Wire as string to avoid a recursive Struct dependency.
+  optional string custom_quotas_json = 7;
+}
+
+message AdminSubscriptionEntity {
+  int64 id = 1;
+  int64 organization_id = 2;
+  int64 plan_id = 3;
+  string status = 4;
+  string billing_cycle = 5;
+  string current_period_start = 6;
+  string current_period_end = 7;
+  optional AdminSubscriptionPlan plan = 8;
+  optional string payment_provider = 9;
+  optional string payment_method = 10;
+  bool auto_renew = 11;
+  int32 seat_count = 12;
+  optional string stripe_customer_id = 13;
+  optional string stripe_subscription_id = 14;
+  optional string lemonsqueezy_customer_id = 15;
+  optional string lemonsqueezy_subscription_id = 16;
+  optional string canceled_at = 17;
+  bool cancel_at_period_end = 18;
+  optional string frozen_at = 19;
+  optional string downgrade_to_plan = 20;
+  optional string next_billing_cycle = 21;
+  string created_at = 22;
+  string updated_at = 23;
+}
+
+message AdminSubscriptionPlan {
+  int64 id = 1;
+  string name = 2;
+  string display_name = 3;
+  double price_per_seat_monthly = 4;
+  double price_per_seat_yearly = 5;
+  int32 included_pod_minutes = 6;
+  double price_per_extra_minute = 7;
+  int32 max_users = 8;
+  int32 max_runners = 9;
+  int32 max_concurrent_pods = 10;
+  int32 max_repositories = 11;
+  bool is_active = 12;
+  string created_at = 13;
+}
+
+message AdminSeatUsage {
+  int32 total_seats = 1;
+  int32 used_seats = 2;
+  int32 available_seats = 3;
+  int32 max_seats = 4;
+  bool can_add_seats = 5;
+}
+
+message GetAdminSubscriptionRequest {
+  int64 org_id = 1;
+}
+
+message ListAdminPlansRequest {
+  int64 org_id = 1;
+}
+
+message ListAdminPlansResponse {
+  repeated AdminSubscriptionPlan data = 1;
+}
+
+message CreateAdminSubscriptionRequest {
+  int64 org_id = 1;
+  string plan_name = 2;
+  int32 months = 3;
+}
+
+message UpdateAdminPlanRequest {
+  int64 org_id = 1;
+  string plan_name = 2;
+}
+
+message UpdateAdminSeatsRequest {
+  int64 org_id = 1;
+  int32 seat_count = 2;
+}
+
+message UpdateAdminCycleRequest {
+  int64 org_id = 1;
+  string billing_cycle = 2;
+}
+
+message FreezeAdminSubscriptionRequest {
+  int64 org_id = 1;
+}
+
+message UnfreezeAdminSubscriptionRequest {
+  int64 org_id = 1;
+}
+
+message CancelAdminSubscriptionRequest {
+  int64 org_id = 1;
+}
+
+message RenewAdminSubscriptionRequest {
+  int64 org_id = 1;
+  int32 months = 2;
+}
+
+message SetAdminAutoRenewRequest {
+  int64 org_id = 1;
+  bool auto_renew = 2;
+}
+
+message SetAdminCustomQuotaRequest {
+  int64 org_id = 1;
+  string resource = 2;
+  int32 limit = 3;
+}

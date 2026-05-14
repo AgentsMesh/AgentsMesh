@@ -10,6 +10,7 @@ import (
 	agentpodsettingsconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings"
 	adminconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin"
 	promocodeadminconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/promocode"
+	subscriptionadminconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/subscription"
 	apikeyconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/apikey"
 	authconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/auth"
 	autopilotconnect "github.com/anthropics/agentsmesh/backend/internal/api/connect/autopilot"
@@ -157,6 +158,9 @@ func mountAdminServices(mux *http.ServeMux, svc *serviceContainer, opts []connec
 	}
 	adminconnect.Mount(mux, adminconnect.NewServer(svc.admin, svc.adminDB), opts...)
 	promocodeadminconnect.Mount(mux, promocodeadminconnect.NewServer(svc.admin, svc.adminDB), opts...)
+	if svc.billing != nil {
+		subscriptionadminconnect.Mount(mux, subscriptionadminconnect.NewServer(svc.admin, svc.billing, svc.adminDB), opts...)
+	}
 }
 
 // mountAuthService wires both AuthService (PUBLIC — no auth interceptor)

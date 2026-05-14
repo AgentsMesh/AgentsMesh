@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "subscription",
+    srcs = [
+        "audit.go",
+        "convert.go",
+        "handlers_mutations.go",
+        "handlers_query.go",
+        "handlers_status.go",
+        "server.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/subscription",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/internal/api/connect/interceptors",
+        "//backend/internal/domain/admin",
+        "//backend/internal/domain/billing",
+        "//backend/internal/infra/database",
+        "//backend/internal/service/admin",
+        "//backend/internal/service/billing",
+        "//proto/billing/v1:billing_go_proto",
+        "@com_connectrpc_connect//:connect",
+    ],
+)

@@ -66,11 +66,9 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	promoCodeHandler := NewPromoCodeHandler(svc.Admin)
 	promoCodeHandler.RegisterRoutes(protected)
 
-	// Subscriptions (optional - only if billing service is available)
-	if svc.Billing != nil {
-		subscriptionHandler := NewSubscriptionHandler(svc.Admin, svc.Billing)
-		subscriptionHandler.RegisterRoutes(protected)
-	}
+	// Subscriptions moved to Connect-RPC
+	// (backend/internal/api/connect/admin/subscription/server.go,
+	// proto.billing.v1.SubscriptionAdminService).
 
 	// Relays (optional - only if relay manager is available)
 	if svc.RelayManager != nil {
