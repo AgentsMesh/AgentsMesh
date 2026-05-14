@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${backendUrl}/api/:path*`,
       },
+      // Connect-RPC: backend serves /proto.<svc>.v1.<Service>/<Method>
+      // at the root path (no /api prefix) — see backend/cmd/server/connect_init.go
+      {
+        source: "/proto.:path*",
+        destination: `${backendUrl}/proto.:path*`,
+      },
     ];
   },
 

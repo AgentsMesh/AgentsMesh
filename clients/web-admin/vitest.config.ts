@@ -35,6 +35,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      "@proto": resolve(__dirname, "../../proto/gen/ts"),
     },
     // Force a single copy of React across the workspace — same reason
     // documented in clients/web/vitest.config.ts: pnpm's virtual store

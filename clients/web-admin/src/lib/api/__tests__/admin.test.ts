@@ -1,33 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock the apiClient
+// Users / Organizations migrated to Connect-RPC — see adminUsers.test.ts
+// and adminOrganizations.test.ts. The rest (Dashboard / Runners /
+// Audit Logs / Auth) still routes through REST apiClient.
 const mockGet = vi.fn();
 const mockPost = vi.fn();
-const mockPut = vi.fn();
 const mockDelete = vi.fn();
 
 vi.mock("../base", () => ({
   apiClient: {
     get: (...args: unknown[]) => mockGet(...args),
     post: (...args: unknown[]) => mockPost(...args),
-    put: (...args: unknown[]) => mockPut(...args),
+    put: (...args: unknown[]) => vi.fn()(...args),
     delete: (...args: unknown[]) => mockDelete(...args),
   },
 }));
 
 import {
   getDashboardStats,
-  listUsers,
-  getUser,
-  updateUser,
-  disableUser,
-  enableUser,
-  grantAdmin,
-  revokeAdmin,
-  listOrganizations,
-  getOrganization,
-  getOrganizationMembers,
-  deleteOrganization,
   listRunners,
   getRunner,
   disableRunner,
@@ -38,12 +28,11 @@ import {
   getCurrentAdmin,
 } from "../admin";
 
-describe("Admin API - Core", () => {
+describe("Admin API - REST surface", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // --- Dashboard ---
   describe("Dashboard", () => {
     it("getDashboardStats calls GET /dashboard/stats", async () => {
       mockGet.mockResolvedValue({ total_users: 100 });
@@ -53,93 +42,13 @@ describe("Admin API - Core", () => {
     });
   });
 
-  // --- Users ---
-  describe("Users", () => {
-    it("listUsers calls GET /users with params", async () => {
-      mockGet.mockResolvedValue({ data: [], total: 0 });
-      await listUsers({ search: "admin", page: 2, page_size: 10 });
-      expect(mockGet).toHaveBeenCalledWith(
-        "/users",
-        expect.objectContaining({ search: "admin", page: 2, page_size: 10 })
-      );
-    });
-
-    it("getUser calls GET /users/:id", async () => {
-      mockGet.mockResolvedValue({ id: 5, email: "a@b.com" });
-      const result = await getUser(5);
-      expect(mockGet).toHaveBeenCalledWith("/users/5");
-      expect(result.id).toBe(5);
-    });
-
-    it("disableUser calls POST /users/:id/disable", async () => {
-      mockPost.mockResolvedValue({ id: 1, is_active: false });
-      await disableUser(1);
-      expect(mockPost).toHaveBeenCalledWith("/users/1/disable");
-    });
-
-    it("enableUser calls POST /users/:id/enable", async () => {
-      mockPost.mockResolvedValue({ id: 1, is_active: true });
-      await enableUser(1);
-      expect(mockPost).toHaveBeenCalledWith("/users/1/enable");
-    });
-
-    it("grantAdmin calls POST /users/:id/grant-admin", async () => {
-      mockPost.mockResolvedValue({ id: 1, is_system_admin: true });
-      await grantAdmin(1);
-      expect(mockPost).toHaveBeenCalledWith("/users/1/grant-admin");
-    });
-
-    it("revokeAdmin calls POST /users/:id/revoke-admin", async () => {
-      mockPost.mockResolvedValue({ id: 1, is_system_admin: false });
-      await revokeAdmin(1);
-      expect(mockPost).toHaveBeenCalledWith("/users/1/revoke-admin");
-    });
-
-    it("updateUser calls PUT /users/:id", async () => {
-      mockPut.mockResolvedValue({ id: 1, name: "Updated" });
-      await updateUser(1, { name: "Updated" });
-      expect(mockPut).toHaveBeenCalledWith("/users/1", { name: "Updated" });
-    });
-  });
-
-  // --- Organizations ---
-  describe("Organizations", () => {
-    it("listOrganizations calls GET /organizations", async () => {
-      mockGet.mockResolvedValue({ data: [], total: 0 });
-      await listOrganizations({ search: "test" });
-      expect(mockGet).toHaveBeenCalledWith(
-        "/organizations",
-        expect.objectContaining({ search: "test" })
-      );
-    });
-
-    it("getOrganization calls GET /organizations/:id", async () => {
-      mockGet.mockResolvedValue({ id: 1, name: "Org" });
-      await getOrganization(1);
-      expect(mockGet).toHaveBeenCalledWith("/organizations/1");
-    });
-
-    it("deleteOrganization calls DELETE /organizations/:id", async () => {
-      mockDelete.mockResolvedValue({ message: "deleted" });
-      await deleteOrganization(1);
-      expect(mockDelete).toHaveBeenCalledWith("/organizations/1");
-    });
-
-    it("getOrganizationMembers calls GET /organizations/:id/members", async () => {
-      mockGet.mockResolvedValue({ organization: {}, members: [] });
-      await getOrganizationMembers(1);
-      expect(mockGet).toHaveBeenCalledWith("/organizations/1/members");
-    });
-  });
-
-  // --- Runners ---
   describe("Runners", () => {
     it("listRunners calls GET /runners with params", async () => {
       mockGet.mockResolvedValue({ data: [], total: 0 });
       await listRunners({ org_id: 5 });
       expect(mockGet).toHaveBeenCalledWith(
         "/runners",
-        expect.objectContaining({ org_id: 5 })
+        expect.objectContaining({ org_id: 5 }),
       );
     });
 
@@ -168,19 +77,17 @@ describe("Admin API - Core", () => {
     });
   });
 
-  // --- Audit Logs ---
   describe("Audit Logs", () => {
     it("listAuditLogs calls GET /audit-logs with params", async () => {
       mockGet.mockResolvedValue({ data: [], total: 0 });
       await listAuditLogs({ target_type: "user", page: 1 });
       expect(mockGet).toHaveBeenCalledWith(
         "/audit-logs",
-        expect.objectContaining({ target_type: "user", page: 1 })
+        expect.objectContaining({ target_type: "user", page: 1 }),
       );
     });
   });
 
-  // --- Auth ---
   describe("Auth", () => {
     it("login calls POST /auth/login", async () => {
       mockPost.mockResolvedValue({ token: "t", user: {} });

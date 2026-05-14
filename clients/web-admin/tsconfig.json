@@ -25,6 +25,10 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@proto/*": [
+        "../../node_modules/@agentsmesh/proto/*",
+        "../../proto/gen/ts/*"
       ]
     }
   },

@@ -50,7 +50,13 @@ ts_project(
     no_emit = True,
     resolve_json_module = True,
     tsconfig = "tsconfig.bazel.json",
-    deps = ["//:node_modules"],
+    deps = [
+        "//:node_modules",
+        # `@proto/*` alias (tsconfig.json paths) resolves to
+        # `../../proto/gen/ts/*`; tsc needs the generated sources in its
+        # input set or the type-check action can't see them.
+        "//proto:proto_gen_ts",
+    ],
 )
 
 # Common build inputs — see clients/web/BUILD.bazel for the rationale.
@@ -62,6 +68,11 @@ _NEXT_DATA_COMMON = [
     "//:node_modules/@agentsmesh/service-runtime",
     "//:node_modules/agentsmesh-wasm",
     "//:package_json_bin",
+    # Generated TS proto modules — `@proto/*` alias (tsconfig.json
+    # paths) resolves to `../../proto/gen/ts/*`. Next.js's bundler
+    # reads the .ts files directly; the alias maps imports to disk
+    # paths inside the Bazel sandbox.
+    "//proto:proto_gen_ts",
 ]
 
 # Dev path — keeps next.config.ts so existing `bazel run :next_dev` works.
@@ -163,6 +174,11 @@ vitest_test(
         "tsconfig.json",
         "//:node_modules",
         "//:package_json_bin",
+        # Generated TS proto modules — vitest's `@proto/*` alias
+        # (vitest.config.ts) resolves to `../../proto/gen/ts/*`. The
+        # runfiles must contain the generated sources or vite's
+        # import-analysis plugin rejects the alias.
+        "//proto:proto_gen_ts",
     ] + glob(
         [
             "src/**/*.ts",
