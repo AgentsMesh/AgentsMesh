@@ -44,9 +44,9 @@ func RegisterRoutes(router *gin.Engine, cfg *config.Config, db database.DB, svc 
 	// surface (proto.admin.v1.AdminService). The Connect handlers run
 	// behind the same admin gate via interceptors.ResolveSystemAdmin.
 
-	// Runners
-	runnerHandler := NewRunnerHandler(svc.Admin)
-	runnerHandler.RegisterRoutes(protected)
+	// Runners moved to Connect-RPC
+	// (backend/internal/api/connect/admin/handlers_runners_{query,actions}.go,
+	// proto.admin.v1.AdminService).
 
 	// Audit Logs
 	auditLogHandler := NewAuditLogHandler(svc.Admin)
