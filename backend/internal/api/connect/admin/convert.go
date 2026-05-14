@@ -3,6 +3,7 @@ package adminconnect
 import (
 	"time"
 
+	"github.com/anthropics/agentsmesh/backend/internal/domain/admin"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/organization"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 	adminv1 "github.com/anthropics/agentsmesh/proto/gen/go/admin/v1"
@@ -80,6 +81,53 @@ func toProtoAdminOrganizationMember(m *organization.Member) *adminv1.AdminOrgani
 			summary.AvatarUrl = &v
 		}
 		out.User = summary
+	}
+	return out
+}
+
+func toProtoAdminAuditLog(l *admin.AuditLog) *adminv1.AdminAuditLog {
+	if l == nil {
+		return nil
+	}
+	out := &adminv1.AdminAuditLog{
+		Id:          l.ID,
+		AdminUserId: l.AdminUserID,
+		Action:      string(l.Action),
+		TargetType:  string(l.TargetType),
+		TargetId:    l.TargetID,
+		CreatedAt:   l.CreatedAt.Format(time.RFC3339),
+	}
+	if l.OldData != nil {
+		v := *l.OldData
+		out.OldData = &v
+	}
+	if l.NewData != nil {
+		v := *l.NewData
+		out.NewData = &v
+	}
+	if l.IPAddress != nil {
+		v := *l.IPAddress
+		out.IpAddress = &v
+	}
+	if l.UserAgent != nil {
+		v := *l.UserAgent
+		out.UserAgent = &v
+	}
+	if l.AdminUser != nil {
+		summary := &adminv1.AdminUserSummary{
+			Id:       l.AdminUser.ID,
+			Email:    l.AdminUser.Email,
+			Username: l.AdminUser.Username,
+		}
+		if l.AdminUser.Name != nil {
+			v := *l.AdminUser.Name
+			summary.Name = &v
+		}
+		if l.AdminUser.AvatarURL != nil {
+			v := *l.AdminUser.AvatarURL
+			summary.AvatarUrl = &v
+		}
+		out.AdminUser = summary
 	}
 	return out
 }

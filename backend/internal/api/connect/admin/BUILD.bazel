@@ -6,6 +6,8 @@ go_library(
         "audit.go",
         "convert.go",
         "convert_relay.go",
+        "handlers_audit.go",
+        "handlers_dashboard.go",
         "handlers_orgs.go",
         "handlers_relays.go",
         "handlers_users_actions.go",
