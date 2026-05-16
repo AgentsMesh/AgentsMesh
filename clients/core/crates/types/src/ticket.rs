@@ -4,6 +4,11 @@ use crate::{TicketPriority, TicketStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ticket {
+    // Backend's primary key. Required by buildTicketContext (clients/web/src/components/tickets/buildTicketContext.ts:11),
+    // which short-circuits to undefined when falsy — breaking the ticket→spawn-pod flow.
+    // `default` keeps minimal-JSON tests deserializing; prod backend always sends a non-zero id.
+    #[serde(default)]
+    pub id: i64,
     pub slug: String,
     pub title: String,
     pub content: Option<String>,
@@ -95,6 +100,7 @@ mod tests {
     #[test]
     fn ticket_roundtrip() {
         let ticket = Ticket {
+            id: 1,
             slug: "TICKET-1".into(),
             title: "Fix login bug".into(),
             content: Some("Users can't login".into()),
@@ -128,6 +134,7 @@ mod tests {
         let col = BoardColumn {
             status: TicketStatus::InProgress,
             tickets: vec![Ticket {
+                id: 1,
                 slug: "T-1".into(),
                 title: "task".into(),
                 content: None,
@@ -179,5 +186,34 @@ mod tests {
         assert_eq!(parsed["total"], serde_json::json!(42));
         assert_eq!(parsed["limit"], serde_json::json!(20));
         assert_eq!(parsed["offset"], serde_json::json!(20));
+    }
+
+    // Regression: id must survive the backend → Rust → JS round-trip. Without
+    // `pub id` on Ticket, serde silently drops the field during from_str,
+    // and current_ticket_json() then emits a ticket without id. JS-side
+    // buildTicketContext returns undefined when !ticket.id, which collapses
+    // the spawn-pod-from-ticket flow into the workspace scenario (no prompt
+    // seeded, no ticket_slug sent). See TICKET-146.
+    #[test]
+    fn ticket_id_survives_backend_roundtrip() {
+        let backend_envelope = r#"{
+            "id": 123,
+            "organization_id": 5,
+            "number": 42,
+            "slug": "AM-42",
+            "title": "x",
+            "content": "body",
+            "status": "todo",
+            "priority": "high",
+            "repository_id": 7,
+            "reporter_id": 1,
+            "created_at": "2026-05-16T00:00:00Z",
+            "updated_at": "2026-05-16T00:00:00Z"
+        }"#;
+        let t: Ticket = serde_json::from_str(backend_envelope).unwrap();
+        assert_eq!(t.id, 123);
+        let relayed = serde_json::to_string(&t).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&relayed).unwrap();
+        assert_eq!(parsed["id"], serde_json::json!(123));
     }
 }

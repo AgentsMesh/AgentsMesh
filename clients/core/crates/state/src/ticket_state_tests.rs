@@ -1,7 +1,7 @@
 use crate::ticket_state::{TicketState, ViewMode};
 use agentsmesh_types::*;
 
-fn tk(slug: &str, title: &str) -> Ticket { Ticket { slug: slug.into(), title: title.into(), content: None, status: TicketStatus::Todo, priority: TicketPriority::Medium, repository_id: None, parent_slug: None, created_at: None, updated_at: None } }
+fn tk(slug: &str, title: &str) -> Ticket { Ticket { id: 0, slug: slug.into(), title: title.into(), content: None, status: TicketStatus::Todo, priority: TicketPriority::Medium, repository_id: None, parent_slug: None, created_at: None, updated_at: None } }
 fn lbl(id: i64, name: &str) -> Label { Label { id, name: name.into(), color: "#000".into() } }
 
 #[test] fn new_state() { let s = TicketState::new(); assert!(s.get_tickets().is_empty()); assert!(s.get_labels().is_empty()); assert_eq!(s.get_view_mode(), ViewMode::List); }

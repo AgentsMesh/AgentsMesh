@@ -58,6 +58,7 @@ mod tests {
 
     fn make_ticket(slug: &str, status: TicketStatus, priority: TicketPriority) -> Ticket {
         Ticket {
+            id: 0,
             slug: slug.into(), title: slug.into(), content: None,
             status, priority, repository_id: None, parent_slug: None,
             created_at: None, updated_at: None,

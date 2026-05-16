@@ -87,6 +87,7 @@ impl From<TicketPriorityDto> for TicketPriority {
 
 #[derive(Clone, Debug, uniffi::Record)]
 pub struct TicketDto {
+    pub id: i64,
     pub slug: String,
     pub title: String,
     pub content: Option<String>,
@@ -101,6 +102,7 @@ pub struct TicketDto {
 impl From<Ticket> for TicketDto {
     fn from(t: Ticket) -> Self {
         Self {
+            id: t.id,
             slug: t.slug,
             title: t.title,
             content: t.content,
