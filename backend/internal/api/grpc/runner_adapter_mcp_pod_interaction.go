@@ -112,9 +112,11 @@ func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.
 		return nil, newMcpError(503, "pod router not available")
 	}
 
-	// Send text via mode-agnostic RoutePrompt (PTY: writes to stdin, ACP: sends prompt).
+	// Send text via RoutePodInput (raw write, no auto-submit). RoutePrompt
+	// now submits on PTY too — use it only when the caller intends submission.
+	// MCP exposes Enter as an explicit `keys: ["enter"]` opt-in.
 	if params.Text != "" {
-		if err := a.podRouter.RoutePrompt(params.PodKey, params.Text); err != nil {
+		if err := a.podRouter.RoutePodInput(params.PodKey, []byte(params.Text)); err != nil {
 			return nil, newMcpErrorf(500, "failed to send pod input text: %v", err)
 		}
 	}
