@@ -4,12 +4,21 @@ use crate::paths::InstallPaths;
 use serde::{Deserialize, Serialize};
 
 /// OS service status as reported by `agentsmesh-runner service status`.
+///
+/// `Stale` is the runner-CLI's own signal that the launchd/systemd job is
+/// installed but the runner config (`~/.agentsmesh/config.yaml`) is missing,
+/// so the daemon physically cannot run. The UI must treat this as "not
+/// registered" — the user needs to either re-register or
+/// `service uninstall` to clean up the orphan job. Without this state, a
+/// stale launchd job from an old registration would still report `Running`
+/// or `Stopped` and the UI would falsely claim the Mac is registered.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ServiceStatus {
     Running,
     Stopped,
     Unknown,
     NotInstalled,
+    Stale,
 }
 
 pub async fn install(paths: &InstallPaths) -> Result<()> {
@@ -53,6 +62,7 @@ fn parse_status(stdout: &str) -> Result<ServiceStatus> {
             return Ok(match rest.trim() {
                 "Running" => ServiceStatus::Running,
                 "Stopped" => ServiceStatus::Stopped,
+                "Stale" => ServiceStatus::Stale,
                 "Unknown" => ServiceStatus::Unknown,
                 _ => ServiceStatus::Unknown,
             });
@@ -73,6 +83,11 @@ mod tests {
     #[test]
     fn parses_stopped() {
         assert_eq!(parse_status("Service Status: Stopped\n").unwrap(), ServiceStatus::Stopped);
+    }
+
+    #[test]
+    fn parses_stale() {
+        assert_eq!(parse_status("Service Status: Stale\n").unwrap(), ServiceStatus::Stale);
     }
 
     #[test]

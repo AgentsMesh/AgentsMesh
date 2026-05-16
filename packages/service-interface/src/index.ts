@@ -342,7 +342,7 @@ export interface IInvitationService {
   revoke(id: bigint): Promise<void>;
 }
 
-export type LocalRunnerStatus = "running" | "stopped" | "unknown" | "not_installed";
+export type LocalRunnerStatus = "running" | "stopped" | "unknown" | "not_installed" | "stale";
 
 export interface ILocalRunnerService {
   binary_path(): Promise<string>;

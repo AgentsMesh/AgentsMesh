@@ -145,5 +145,22 @@ func runServiceStatus() {
 		statusText = "Unknown"
 	}
 
-	fmt.Printf("Service Status: %s\n", statusText)
+	fmt.Printf("Service Status: %s\n", reconcileServiceStatus(statusText, svc.GetDefaultConfigPath()))
+}
+
+// reconcileServiceStatus promotes the OS-reported status to "Stale" when the
+// launchd/systemd job is loaded but the registration config is gone. The
+// daemon physically cannot run without config, so reporting Running/Stopped
+// to the desktop UI used to cause TICKET-145 — a leftover launchd job from
+// an old registration made the workspace falsely claim "This Mac is
+// registered as a Runner". Centralized so it's unit-testable without
+// shelling out to a real service.
+func reconcileServiceStatus(rawStatus, configPath string) string {
+	if rawStatus == "Unknown" {
+		return rawStatus
+	}
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return "Stale"
+	}
+	return rawStatus
 }

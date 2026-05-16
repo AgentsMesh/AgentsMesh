@@ -83,7 +83,7 @@ impl AppState {
     }
 
     /// Returns the service status as a stable string token —
-    /// "running" | "stopped" | "unknown" | "not_installed".
+    /// "running" | "stopped" | "unknown" | "not_installed" | "stale".
     /// String form keeps the IPC contract stable across napi enum-codegen
     /// drift; the renderer maps it back to a typed enum on the TS side.
     #[napi]
@@ -94,6 +94,7 @@ impl AppState {
             agentsmesh_local_runner::ServiceStatus::Stopped => "stopped",
             agentsmesh_local_runner::ServiceStatus::Unknown => "unknown",
             agentsmesh_local_runner::ServiceStatus::NotInstalled => "not_installed",
+            agentsmesh_local_runner::ServiceStatus::Stale => "stale",
         }
         .to_string())
     }

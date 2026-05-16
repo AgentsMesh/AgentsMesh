@@ -52,7 +52,12 @@ setup("authenticate as test user (Electron)", async () => {
     await expectHashMatches(
       page,
       new RegExp(`/${TEST_ORG_SLUG}/|/onboarding|/workspace`),
-      30_000
+      // macmini-03 cold-starts the renderer + backs the login request through
+      // the full docker stack — same reason firstWindow above bumps to 90s on
+      // CI. The 30s post-login redirect ceiling tripped TICKET-145's PR twice
+      // before any spec ran (login succeeded; renderer just hadn't hydrated +
+      // routed yet). Use the same CI bump.
+      isCi() ? 90_000 : 30_000,
     );
 
     const snap = await captureStorage(page);
