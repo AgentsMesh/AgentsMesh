@@ -1,4 +1,4 @@
-import { createHashRouter as createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createHashRouter as createBrowserRouter, Navigate, Outlet, useParams } from "react-router-dom";
 import { DashboardShell } from "@/pages/layouts/DashboardShell";
 import { useAuthStore, useCurrentOrg, useAuthOrganizations, useIsAuthenticated } from "@/stores/auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
@@ -50,6 +50,17 @@ import { PopoutTerminalPage } from "@/pages/popout/terminal/PopoutTerminalPage";
 // the whole window (HashRouter has no server-side fallback in Electron).
 import { RouteErrorBoundary } from "@/pages/RouteErrorBoundary";
 
+// react-router v7's `<Navigate to="../infra?tab=runners">` drops the query
+// string when resolved against a hash-router parent (verified against the
+// repositories-nav / runners-nav specs: hash settles on /infra, then
+// InfraPage's "default tab" effect rewrites it to ?tab=repositories,
+// shadowing ?tab=runners). Build an absolute path with the live :org param
+// so the search string survives navigation.
+function LegacyInfraTabRedirect({ tab }: { tab: "runners" | "repositories" }) {
+  const { org } = useParams<{ org: string }>();
+  return <Navigate to={`/${org}/infra?tab=${tab}`} replace />;
+}
+
 export const router = createBrowserRouter([
   // Auth routes (no shell)
   { path: "/login", element: <LoginPage /> },
@@ -90,14 +101,14 @@ export const router = createBrowserRouter([
       { path: "tickets/:slug", element: <TicketDetailPage /> },
       { path: "channels", element: <ChannelsPage /> },
       { path: "channels/:id", element: <ChannelsPage /> },
-      { path: "runners", element: <Navigate to="../infra?tab=runners" replace /> },
+      { path: "runners", element: <LegacyInfraTabRedirect tab="runners" /> },
       { path: "runners/:id", element: <RunnerDetailPage /> },
       { path: "loops", element: <LoopsPage /> },
       { path: "loops/:slug", element: <LoopDetailPage /> },
       { path: "mesh", element: <MeshPage /> },
       { path: "blocks", element: <BlocksPage /> },
       { path: "infra", element: <InfraPage /> },
-      { path: "repositories", element: <Navigate to="../infra?tab=repositories" replace /> },
+      { path: "repositories", element: <LegacyInfraTabRedirect tab="repositories" /> },
       { path: "repositories/:id", element: <RepositoryDetailPage /> },
       { path: "settings", element: <SettingsPage /> },
     ],

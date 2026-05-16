@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import type { UseLocalRunnerOnboarding } from "@/hooks/useLocalRunnerOnboarding";
 import type { Runner } from "@/stores/runner";
 import { ThisMacSection } from "../ThisMacSection";
@@ -97,17 +97,31 @@ describe("ThisMacSection", () => {
     expect(screen.getByText(/^active$/i)).toBeDefined();
   });
 
-  it("renders orphaned block when registered locally but backend list excludes it", () => {
-    runnersList.current = [makeRunner("other-runner")];
-    setHook({
-      isRegistered: true,
-      localNodeId: "macmini-03",
-      phase: { kind: "idle", status: "running" },
-    });
-    render(<ThisMacSection />);
-    expect(screen.getByTestId("this-mac-orphaned")).toBeDefined();
-    expect(screen.getByTestId("this-mac-reregister-btn")).toBeDefined();
-    expect(screen.queryByTestId("this-mac-syncing")).toBeNull();
+  it("renders orphaned block when registered locally but backend list excludes it (after grace)", () => {
+    // useOrphanGrace holds back the orphan verdict for 30s so a freshly-
+    // registered runner doesn't flicker through OrphanedBlock while the
+    // local→backend heartbeat catches up. Fast-forward past the grace.
+    vi.useFakeTimers();
+    try {
+      runnersList.current = [makeRunner("other-runner")];
+      setHook({
+        isRegistered: true,
+        localNodeId: "macmini-03",
+        phase: { kind: "idle", status: "running" },
+      });
+      render(<ThisMacSection />);
+      // Within grace: still syncing, not yet orphaned.
+      expect(screen.queryByTestId("this-mac-orphaned")).toBeNull();
+      expect(screen.getByTestId("this-mac-syncing")).toBeDefined();
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+      });
+      expect(screen.getByTestId("this-mac-orphaned")).toBeDefined();
+      expect(screen.getByTestId("this-mac-reregister-btn")).toBeDefined();
+      expect(screen.queryByTestId("this-mac-syncing")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders syncing block when registered locally but list is empty (still loading)", () => {
