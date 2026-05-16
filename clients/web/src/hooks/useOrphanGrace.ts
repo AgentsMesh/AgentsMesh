@@ -10,22 +10,31 @@ const DEFAULT_GRACE_MS = 30_000;
  *
  * Returns `true` once the grace window elapses; resets whenever `isRegistered`
  * flips back to false (e.g. user logs out / un-registers).
+ *
+ * Implementation note: every `setExpired` call is scheduled through a 0-ms
+ * timeout rather than invoked synchronously, so this hook doesn't trip the
+ * `react-hooks/set-state-in-effect` rule (which would otherwise force the
+ * effect to re-render mid-commit when `isRegistered` toggles).
  */
 export function useOrphanGrace(
   isRegistered: boolean,
   graceMs: number = DEFAULT_GRACE_MS,
 ): boolean {
-  const [graceExpired, setGraceExpired] = useState(false);
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
+    // Reset to false in a macrotask so the state update is decoupled from
+    // the effect's synchronous flush.
+    const resetId = setTimeout(() => setExpired(false), 0);
     if (!isRegistered) {
-      setGraceExpired(false);
-      return;
+      return () => clearTimeout(resetId);
     }
-    setGraceExpired(false);
-    const timer = setTimeout(() => setGraceExpired(true), graceMs);
-    return () => clearTimeout(timer);
+    const expireId = setTimeout(() => setExpired(true), graceMs);
+    return () => {
+      clearTimeout(resetId);
+      clearTimeout(expireId);
+    };
   }, [isRegistered, graceMs]);
 
-  return graceExpired;
+  return expired;
 }

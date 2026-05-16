@@ -16,6 +16,12 @@ export function ThisMacSection() {
   const router = useRouter();
   const currentOrg = useCurrentOrg();
   const runners = useRunners();
+  // Grace-wait so fresh registrants don't flicker through OrphanedBlock
+  // while the local→backend heartbeat catches up, and so an empty list
+  // ("never fetched" vs. "truly empty") doesn't false-positive without
+  // coupling to the store loading flag. Must run before any early
+  // return — React's rules-of-hooks demand a stable call order.
+  const graceExpired = useOrphanGrace(isRegistered);
 
   if (unsupported) return null;
   if (phase.kind === "loading") {
@@ -33,12 +39,8 @@ export function ThisMacSection() {
   const matchingRunner = localNodeId
     ? runners.find((r) => r.node_id === localNodeId) ?? null
     : null;
-  // Orphan = registered but the runners list (after load) doesn't contain
-  // this node_id. Grace-wait so fresh registrants don't flicker through
-  // OrphanedBlock while the local→backend heartbeat catches up, and so
-  // an empty list ("never fetched" vs. "truly empty") doesn't false-
-  // positive without coupling to the store loading flag.
-  const graceExpired = useOrphanGrace(isRegistered);
+  // Orphan = registered but the runners list (after load) doesn't
+  // contain this node_id, after the orphan grace window has elapsed.
   const orphaned =
     isRegistered && !matchingRunner && runners.length > 0 && graceExpired;
   const isStale = phase.kind === "idle" && phase.status === "stale";
