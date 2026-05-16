@@ -793,6 +793,28 @@ jobs:
           fi
           ibazel -h | head -3 || true
 
+      - name: Isolate bazel server from GitLab CI
+        # macmini-03 is also a GitLab CI runner sharing the same `stone`
+        # user. ~/.bazelrc pins `startup --output_base=/Users/stone/.bazel`,
+        # so both pipelines hit a single bazel server and serialize on its
+        # lock — last observation: a GitLab pipeline held the lock for 55+
+        # min, busting the 60-min job timeout three runs in a row.
+        #
+        # Shim `bazel` ahead of the homebrew binary on PATH so every
+        # invocation in this job (including ibazel-spawned `bazel build`
+        # inside deploy/dev:backend_only) lands on this job's private
+        # output base. The outer `bazel --output_base=...` flags on the
+        # explicit commands are kept as belt-and-suspenders.
+        run: |
+          REAL_BAZEL="$(command -v bazel)"
+          mkdir -p "$HOME/.gha-bin"
+          cat > "$HOME/.gha-bin/bazel" <<EOF
+          #!/usr/bin/env bash
+          exec "$REAL_BAZEL" --output_base="\$HOME/.bazel-github" "\$@"
+          EOF
+          chmod +x "$HOME/.gha-bin/bazel"
+          echo "$HOME/.gha-bin" >> "$GITHUB_PATH"
+
       - name: Pre-clean lingering host processes
         # Self-hosted runner: previous failed runs may have left stale
         # backend/relay binaries holding worktree-allocated ports
@@ -800,12 +822,18 @@ jobs:
         # parent PID, not its bazel-spawned children). Run the canonical
         # cleanup once before bring-up so this run starts on a clean
         # host. Idempotent on a clean box.
+        #
+        # `--output_base` pins this job to its own bazel server so it
+        # never blocks on the GitLab CI server that shares the default
+        # `/Users/stone/.bazel` output base on macmini-03 (those two
+        # workloads previously serialized through the same lock, burning
+        # 55+ min waiting and busting the 60-min job timeout).
         run: |
-          bazel run //deploy/dev:clean || true
+          bazel --output_base="$HOME/.bazel-github" run //deploy/dev:clean || true
 
       - name: Bring up dev backend stack
         run: |
-          bazel run //deploy/dev:backend_only
+          bazel --output_base="$HOME/.bazel-github" run //deploy/dev:backend_only
           sleep 10
 
       - name: Resolve worktree-allocated ports
@@ -827,7 +855,7 @@ jobs:
           echo "backend never reported healthy"; exit 1
 
       - name: Build desktop bundle
-        run: bazel build //clients/desktop:out
+        run: bazel --output_base="$HOME/.bazel-github" build //clients/desktop:out
 
       - name: Run Desktop Playwright e2e
         env:
@@ -835,7 +863,7 @@ jobs:
           POSTGRES_PORT: ${{ steps.ports.outputs.POSTGRES_PORT }}
           COMPOSE_PROJECT_NAME: ${{ steps.ports.outputs.COMPOSE_PROJECT_NAME }}
         run: |
-          bazel test //clients/desktop:e2e \
+          bazel --output_base="$HOME/.bazel-github" test //clients/desktop:e2e \
             --test_tag_filters=e2e \
             --test_output=errors \
             --test_env=HTTP_PORT \
