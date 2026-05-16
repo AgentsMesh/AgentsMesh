@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useLocalRunnerOnboarding } from "../useLocalRunnerOnboarding";
 
-type Status = "running" | "stopped" | "unknown" | "not_installed";
+type Status = "running" | "stopped" | "unknown" | "not_installed" | "stale";
 
 interface FakeService {
   state: {
@@ -221,5 +221,43 @@ describe("useLocalRunnerOnboarding", () => {
     await act(async () => { await result.current.onRegister(); });
     expect(result.current.phase.kind).toBe("idle");
     expect(result.current.phase).toEqual({ kind: "idle", status: "running" });
+  });
+
+  // Regression for TICKET-145: isRegistered is the SSOT for "this Mac is
+  // registered as a runner" — it must be derived from localNodeId (i.e.
+  // ~/.agentsmesh/config.yaml exists with node_id) NOT from service status.
+  // Earlier the card read phase.status === "running" directly and a stale
+  // launchd job from a previous registration falsely claimed registration.
+  it("isRegistered is false when localNodeId is null, regardless of service status", async () => {
+    svc!.state.installed = true;
+    svc!.state.running = true;
+    svc!.state.registered = false;
+    svc!.state.nodeId = null;
+    const { result } = renderHook(() => useLocalRunnerOnboarding());
+    await waitFor(() => expect(result.current.phase.kind).toBe("idle"));
+    expect(result.current.isRegistered).toBe(false);
+  });
+
+  it("isRegistered is true once localNodeId is populated", async () => {
+    svc!.state.installed = true;
+    svc!.state.registered = true;
+    svc!.state.nodeId = "macmini-03";
+    svc!.state.running = false;
+    svc!.state.serviceInstalled = true;
+    const { result } = renderHook(() => useLocalRunnerOnboarding());
+    await waitFor(() => expect(result.current.phase.kind).toBe("idle"));
+    expect(result.current.isRegistered).toBe(true);
+    expect(result.current.localNodeId).toBe("macmini-03");
+    expect(result.current.phase).toEqual({ kind: "idle", status: "stopped" });
+  });
+
+  it("surfaces the new 'stale' service status from the IPC contract", async () => {
+    const fake = makeService();
+    fake.service_status = async () => "stale" as Status;
+    svc = fake;
+    const { result } = renderHook(() => useLocalRunnerOnboarding());
+    await waitFor(() => expect(result.current.phase.kind).toBe("idle"));
+    expect(result.current.phase).toEqual({ kind: "idle", status: "stale" });
+    expect(result.current.isRegistered).toBe(false);
   });
 });

@@ -9,6 +9,7 @@ const VALID_STATUSES = new Set<LocalRunnerStatus>([
   "stopped",
   "unknown",
   "not_installed",
+  "stale",
 ]);
 
 export class ElectronLocalRunnerService implements ILocalRunnerService {

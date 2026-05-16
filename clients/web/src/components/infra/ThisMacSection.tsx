@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Laptop, Loader2 } from "lucide-react";
+import { Laptop, Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrentOrg } from "@/stores/auth";
 import { useRunners, getRunnerStatusInfo } from "@/stores/runner";
@@ -10,16 +10,8 @@ import { STEP_LABELS, useLocalRunnerOnboarding } from "@/hooks/useLocalRunnerOnb
 
 const SECTION_HEADER = "px-3 pt-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground";
 
-/**
- * Sidebar footer section for the user's own machine. Shows either an
- * onboarding card (when this Mac isn't registered) or a row that mirrors
- * normal runners but is keyed off the local-runner config — clicking jumps
- * to the matching runner detail.
- *
- * Renders nothing on web (no electron adapter → no local runner service).
- */
 export function ThisMacSection() {
-  const { unsupported, localNodeId, phase, onRegister } = useLocalRunnerOnboarding();
+  const { unsupported, isRegistered, localNodeId, phase, onRegister } = useLocalRunnerOnboarding();
   const router = useRouter();
   const currentOrg = useCurrentOrg();
   const runners = useRunners();
@@ -40,7 +32,12 @@ export function ThisMacSection() {
   const matchingRunner = localNodeId
     ? runners.find((r) => r.node_id === localNodeId) ?? null
     : null;
-  const isRegistered = phase.kind === "idle" && phase.status === "running" && !!localNodeId;
+  // Orphaned: backend list has been loaded (has other runners) but doesn't
+  // include this node_id — it was deleted server-side. Empty list is treated
+  // as "still syncing" because we can't distinguish "never fetched" from
+  // "truly empty" here without coupling to the store's loading flag.
+  const orphaned = isRegistered && !matchingRunner && runners.length > 0;
+  const isStale = phase.kind === "idle" && phase.status === "stale";
 
   return (
     <div className="border-t border-border">
@@ -48,14 +45,16 @@ export function ThisMacSection() {
       {isRegistered && matchingRunner ? (
         <RegisteredRow
           runner={matchingRunner}
+          serviceRunning={phase.kind === "idle" && phase.status === "running"}
           onClick={() => {
             if (currentOrg) {
               router.push(`/${currentOrg.slug}/infra?tab=runners&id=${matchingRunner.id}`);
             }
           }}
         />
-      ) : isRegistered && !matchingRunner ? (
-        // Registered locally but backend list hasn't picked it up yet (heartbeat in flight).
+      ) : orphaned ? (
+        <OrphanedBlock onReRegister={onRegister} />
+      ) : isRegistered ? (
         <div
           data-testid="this-mac-syncing"
           className="px-3 pb-3 text-xs text-muted-foreground"
@@ -65,6 +64,7 @@ export function ThisMacSection() {
       ) : (
         <OnboardingBlock
           phase={phase}
+          isStale={isStale}
           onRegister={onRegister}
         />
       )}
@@ -74,9 +74,11 @@ export function ThisMacSection() {
 
 function RegisteredRow({
   runner,
+  serviceRunning,
   onClick,
 }: {
   runner: ReturnType<typeof useRunners>[number];
+  serviceRunning: boolean;
   onClick: () => void;
 }) {
   const statusInfo = getRunnerStatusInfo(runner.status);
@@ -102,18 +104,44 @@ function RegisteredRow({
             </>
           )}
           <span>·</span>
-          <span className="text-green-600 dark:text-green-400">active</span>
+          {serviceRunning ? (
+            <span className="text-green-600 dark:text-green-400">active</span>
+          ) : (
+            <span className="text-yellow-600 dark:text-yellow-400">service stopped</span>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+function OrphanedBlock({ onReRegister }: { onReRegister: () => void }) {
+  return (
+    <div className="px-3 pb-3" data-testid="this-mac-orphaned">
+      <div className="mb-2 flex items-start gap-1.5 text-xs text-yellow-600 dark:text-yellow-400">
+        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+        <p>Server doesn&apos;t recognize this runner. It may have been removed remotely.</p>
+      </div>
+      <Button
+        data-testid="this-mac-reregister-btn"
+        size="sm"
+        variant="default"
+        className="h-8 w-full text-xs"
+        onClick={onReRegister}
+      >
+        Re-register This Mac
+      </Button>
+    </div>
+  );
+}
+
 function OnboardingBlock({
   phase,
+  isStale,
   onRegister,
 }: {
   phase: ReturnType<typeof useLocalRunnerOnboarding>["phase"];
+  isStale: boolean;
   onRegister: () => void;
 }) {
   const busy = phase.kind === "installing";
@@ -127,7 +155,9 @@ function OnboardingBlock({
   return (
     <div className="px-3 pb-3">
       <p className="mb-2 text-xs text-muted-foreground">
-        Run pods locally with no cloud relay round-trip.
+        {isStale
+          ? "Old Runner service is installed but registration config is missing."
+          : "Run pods locally with no cloud relay round-trip."}
       </p>
       <Button
         data-testid="this-mac-register-btn"
@@ -137,7 +167,13 @@ function OnboardingBlock({
         onClick={onRegister}
         disabled={busy}
       >
-        {busy ? "Working…" : phase.kind === "error" ? "Retry" : "Register This Mac"}
+        {busy
+          ? "Working…"
+          : phase.kind === "error"
+            ? "Retry"
+            : isStale
+              ? "Re-register This Mac"
+              : "Register This Mac"}
       </Button>
       {stepLabel && (
         <p className="mt-2 truncate text-[11px] text-muted-foreground" title={stepLabel}>

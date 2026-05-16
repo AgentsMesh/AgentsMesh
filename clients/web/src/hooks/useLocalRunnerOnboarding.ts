@@ -61,6 +61,16 @@ export interface UseLocalRunnerOnboarding {
   unsupported: boolean;
   /** Cached node_id of the locally registered runner; null when not registered. */
   localNodeId: string | null;
+  /**
+   * SSOT for "is this Mac registered as a runner?". True iff the local
+   * `~/.agentsmesh/config.yaml` exists and parses out a `node_id`. Independent
+   * of OS-service status — a registered runner with the service stopped is
+   * still registered. Components must derive their "registered" UI from this,
+   * NOT from `phase.status === "running"` (which is what caused TICKET-145:
+   * a stale launchd job reported Running even after the user removed the
+   * config, and the workspace falsely claimed the Mac was registered).
+   */
+  isRegistered: boolean;
   phase: Phase;
   onRegister: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -163,5 +173,5 @@ export function useLocalRunnerOnboarding(): UseLocalRunnerOnboarding {
     }
   }, [svc, refresh]);
 
-  return { unsupported: !svc, localNodeId, phase, onRegister, refresh };
+  return { unsupported: !svc, localNodeId, isRegistered: localNodeId !== null, phase, onRegister, refresh };
 }
