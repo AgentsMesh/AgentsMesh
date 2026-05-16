@@ -13,6 +13,13 @@ import { expectHashMatches } from "./helpers/nav";
 import { captureStorage, saveStorageFile } from "./helpers/storage-state";
 
 setup("authenticate as test user (Electron)", async () => {
+  // Worst-case CI budget: electron.launch 240s + firstWindow 90s +
+  // login/redirect 90s + small overhead. Playwright's global 180s
+  // (playwright.config.ts) is per-test and would trip before the
+  // bumped launch+window timeouts could ever apply. Override locally
+  // so other specs keep the tighter default.
+  if (isCi()) setup.setTimeout(480_000);
+
   // Reset userData so login always starts fresh — avoids leaking dev-profile session.
   const userDataDir = getUserDataDir();
   rmSync(userDataDir, { recursive: true, force: true });
