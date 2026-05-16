@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Reply, Pencil, Trash2 } from "lucide-react";
 import type { TicketComment } from "@/lib/api/ticketTypes";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Markdown } from "@/components/ui/markdown";
 import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import { CommentInput } from "./CommentInput";
 
@@ -22,40 +23,6 @@ interface CommentsListProps {
   ) => Promise<void>;
   onDeleteComment: (commentId: number) => Promise<void>;
   className?: string;
-}
-
-const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]!?])/g;
-
-function renderContent(content: string) {
-  // Split by @mentions and URLs
-  const tokens = content.split(/(@\w+|https?:\/\/[^\s<]+[^\s<.,:;"')\]!?])/g);
-  return tokens.map((token, i) => {
-    if (token.startsWith("@")) {
-      return (
-        <span
-          key={i}
-          className="text-primary font-medium bg-primary/10 rounded px-0.5"
-        >
-          {token}
-        </span>
-      );
-    }
-    if (URL_REGEX.test(token)) {
-      URL_REGEX.lastIndex = 0;
-      return (
-        <a
-          key={i}
-          href={token}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline underline-offset-2 hover:text-primary/80 break-all"
-        >
-          {token}
-        </a>
-      );
-    }
-    return <span key={i}>{token}</span>;
-  });
 }
 
 function formatRelativeDate(dateString: string) {
@@ -201,9 +168,12 @@ export function CommentsList({
                 onCancel={() => setEditingId(null)}
               />
             ) : (
-              <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                {renderContent(comment.content)}
-              </div>
+              <Markdown
+                content={comment.content}
+                compact
+                highlightMentions
+                className="text-sm text-foreground/90"
+              />
             )}
           </div>
 
