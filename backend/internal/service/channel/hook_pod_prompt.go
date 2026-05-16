@@ -13,6 +13,9 @@ import (
 const podMentionTextLen = 8
 
 // PodPromptRouter sends prompts to a pod (mode-agnostic: PTY or ACP).
+// SendPrompt on both modes submits — PTY writes the body then presses Enter
+// inside the runner (see runner.OnSendPrompt); ACP submits via its structured
+// SendPrompt RPC.
 type PodPromptRouter interface {
 	RoutePrompt(podKey string, prompt string) error
 }
@@ -39,7 +42,7 @@ func NewPodPromptHook(router PodPromptRouter, msgWriter SystemMessageWriter) Pos
 				continue
 			}
 
-			if err := router.RoutePrompt(podKey, prompt+"\r"); err != nil {
+			if err := router.RoutePrompt(podKey, prompt); err != nil {
 				slog.WarnContext(ctx, "pod unreachable for prompt",
 					"pod_key", podKey,
 					"channel", mc.Channel.Name,

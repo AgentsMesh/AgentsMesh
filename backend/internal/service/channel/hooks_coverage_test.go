@@ -73,6 +73,11 @@ func TestNewPodPromptHook_SendsPrompt(t *testing.T) {
 	if router.prompts[0].podKey != "abcd1234efgh5678" {
 		t.Errorf("PodKey = %s, want abcd1234efgh5678", router.prompts[0].podKey)
 	}
+	// Submission (Enter) is the runner's job inside OnSendPrompt; the hook
+	// must hand off a clean prompt body, not pre-append \r.
+	if router.prompts[0].prompt[len(router.prompts[0].prompt)-1] == '\r' {
+		t.Errorf("prompt body must not include trailing CR; got %q", router.prompts[0].prompt)
+	}
 }
 
 func TestNewPodPromptHook_SkipsSenderPod(t *testing.T) {

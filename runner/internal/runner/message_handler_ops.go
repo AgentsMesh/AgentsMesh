@@ -120,7 +120,10 @@ func (h *RunnerMessageHandler) OnObservePod(req client.ObservePodRequest) error 
 }
 
 // OnSendPrompt handles send_prompt command from server (gRPC control plane).
-// Routes through PodIO.SendInput — PTY writes to stdin, ACP sends prompt.
+// Mode-transparent submission: ACP submits via its structured SendPrompt RPC;
+// PTY writes the text to stdin then presses Enter as a *separate* write so the
+// TUI input editor sees a real keystroke (a combined "text\r" write lands
+// inside the editor's paste buffer and never submits).
 // For ACP mode, also echoes the user message via Relay so it appears in the
 // chat UI (consistent with the Relay command path in handleAcpRelayCommand).
 func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) error {
@@ -140,5 +143,11 @@ func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) err
 			"text": cmd.Prompt, "role": "user",
 		})
 	}
-	return pod.IO.SendInput(cmd.Prompt)
+	if err := pod.IO.SendInput(cmd.Prompt); err != nil {
+		return err
+	}
+	if pod.IO.Mode() == InteractionModePTY {
+		return pod.IO.SendInput("\r")
+	}
+	return nil
 }

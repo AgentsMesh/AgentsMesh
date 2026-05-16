@@ -131,6 +131,7 @@ go_test(
         "message_handler_relay_connections_test.go",
         "message_handler_relay_deadlock_test.go",
         "message_handler_relay_test.go",
+        "message_handler_send_prompt_test.go",
         "message_handler_terminal_test.go",
         "message_handler_upgrade_apply_test.go",
         "message_handler_upgrade_test.go",
