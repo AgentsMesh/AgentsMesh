@@ -33,7 +33,12 @@ setup("authenticate as test user (Electron)", async () => {
       NODE_ENV: "test",
       ELECTRON_DISABLE_SECURITY_WARNINGS: "true",
     },
-    timeout: isCi() ? 120_000 : 30_000,
+    // macmini-03 cold-starts the Electron renderer in 30-60s under normal
+    // load, but the shared CI box drifts to load avg 5-8 when dev residue
+    // accumulates (Simulators, Chrome). 120s was tripping electron.launch
+    // before firstWindow could even open. Match the firstWindow 90s bump
+    // + headroom for the Electron process to spawn.
+    timeout: isCi() ? 240_000 : 30_000,
   });
 
   try {
