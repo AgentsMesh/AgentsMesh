@@ -4,6 +4,19 @@ import type { BlockOp } from "@/lib/api/blockstoreTypes";
 import { getBlockstoreService } from "@/lib/wasm-core";
 import { useBlockstoreStore, readLastOpIds } from "./blockstore";
 
+// Coalesce _tick bumps during op bursts. Catchup after reconnect can apply
+// dozens of ops in a tight loop; bumping per-op turned every consumer
+// (useCurrentOrg, useAuthOrganizations, etc.) into a new-reference firehose
+// and was implicated in a React #185 commit-phase loop on Desktop.
+let bumpTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleBump() {
+  if (bumpTimer) return;
+  bumpTimer = setTimeout(() => {
+    bumpTimer = null;
+    useBlockstoreStore.setState((s) => ({ _tick: s._tick + 1 }));
+  }, 100);
+}
+
 // handleBlockstoreEvent is invoked by RealtimeProvider for every
 // `blockstore:*` event received over the org-wide WebSocket.
 //
@@ -30,7 +43,7 @@ export function handleBlockstoreEvent(event: RealtimeEvent) {
   } catch {
     return;
   }
-  useBlockstoreStore.setState((s) => ({ _tick: s._tick + 1 }));
+  scheduleBump();
 }
 
 // Register on module load so every consumer of the store gets catch-up for free

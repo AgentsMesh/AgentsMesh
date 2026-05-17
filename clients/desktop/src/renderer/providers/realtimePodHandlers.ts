@@ -6,14 +6,36 @@ import type {
   PodTitleChangedData, PodAliasChangedData, PodInitProgressData,
 } from "@/lib/realtime";
 
+// Coalesce burst-y refetches: pod terminate fires status_changed + terminated
+// back-to-back, and reconnect catchup can replay many old events at once.
+// Without debounce each event triggers fetchSidebarPods + fetchTopology, and
+// the resulting setState storm has been linked to React #185 loops.
+let sidebarTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSidebarRefresh() {
+  if (sidebarTimer) clearTimeout(sidebarTimer);
+  sidebarTimer = setTimeout(() => {
+    sidebarTimer = null;
+    const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
+    fetchSidebarPods?.(currentSidebarFilter);
+  }, 500);
+}
+
+let topologyTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedFetchTopology() {
+  if (topologyTimer) clearTimeout(topologyTimer);
+  topologyTimer = setTimeout(() => {
+    topologyTimer = null;
+    useMeshStore.getState().fetchTopology?.();
+  }, 500);
+}
+
 export function handlePodEvent(event: RealtimeEvent) {
   switch (event.type) {
     case "pod:created": {
       const data = event.data as PodCreatedData;
       usePodStore.getState().fetchPod?.(data.pod_key);
-      const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
-      fetchSidebarPods?.(currentSidebarFilter);
-      useMeshStore.getState().fetchTopology?.();
+      debouncedSidebarRefresh();
+      debouncedFetchTopology();
       break;
     }
     case "pod:status_changed": {
@@ -28,7 +50,7 @@ export function handlePodEvent(event: RealtimeEvent) {
       if (data.status === "terminated" || data.status === "failed" || data.status === "error") {
         useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
       }
-      useMeshStore.getState().fetchTopology?.();
+      debouncedFetchTopology();
       break;
     }
     case "pod:agent_status_changed": {
@@ -40,7 +62,7 @@ export function handlePodEvent(event: RealtimeEvent) {
       const data = event.data as PodStatusChangedData;
       usePodStore.getState().updatePodStatus?.(data.pod_key, "terminated");
       useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
-      useMeshStore.getState().fetchTopology?.();
+      debouncedFetchTopology();
       break;
     }
     case "pod:title_changed": {
@@ -61,6 +83,7 @@ export function handlePodEvent(event: RealtimeEvent) {
     case "pod:restarting": {
       const data = event.data as { pod_key: string };
       usePodStore.getState().fetchPod?.(data.pod_key);
+      debouncedSidebarRefresh();
       break;
     }
   }

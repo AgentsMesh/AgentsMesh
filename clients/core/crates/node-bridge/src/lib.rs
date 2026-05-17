@@ -252,4 +252,24 @@ impl AppState {
     }
 }
 
+// Bootstrap the global tracing subscriber. `log_dir` is created if missing;
+// logs roll daily, retaining 7 days. Idempotent — repeated calls (host
+// retries, double-bootstrap) are silent no-ops. `level` accepts the usual
+// env-filter syntax (`info`, `agentsmesh=debug,warn`, etc.).
+#[napi]
+pub fn init_logger(log_dir: String, level: String) -> napi::Result<()> {
+    agentsmesh_logging::init(agentsmesh_logging::LogConfig::file(log_dir, level))
+        .map_err(err)?;
+    agentsmesh_logging::install_panic_hook();
+    Ok(())
+}
+
+// Host-side log entrypoint for the renderer / main process. Routes through
+// the same subscriber as Rust-side `tracing::*` so a single rolling file
+// captures both worlds in timestamp order.
+#[napi]
+pub fn log_event(level: String, target: String, msg: String) {
+    agentsmesh_logging::log_event(&level, &target, &msg);
+}
+
 mod commands;

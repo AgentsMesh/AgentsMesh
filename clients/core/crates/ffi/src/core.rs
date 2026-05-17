@@ -88,3 +88,28 @@ impl AgentsMeshCore {
         BootstrapResultDto::from(self.auth.bootstrap().await)
     }
 }
+
+/// Bootstrap the global tracing subscriber. Pass `log_dir = None` for
+/// stderr-only output (tests, early boot before sandbox path is known);
+/// otherwise we create the directory and roll daily files inside it.
+/// Idempotent — Swift can call this from every app launch without guarding.
+#[uniffi::export]
+pub fn init_logger(log_dir: Option<String>, level: String) -> Result<(), CoreError> {
+    let cfg = match log_dir {
+        Some(p) => agentsmesh_logging::LogConfig::file(p, level),
+        None => agentsmesh_logging::LogConfig::console(level),
+    };
+    agentsmesh_logging::init(cfg).map_err(|e| CoreError::Unknown {
+        message: e.to_string(),
+    })?;
+    agentsmesh_logging::install_panic_hook();
+    Ok(())
+}
+
+/// Host-side log entrypoint for Swift/Kotlin callers. Re-emits through the
+/// same `tracing` subscriber the Rust workspace uses, so iOS-side events
+/// land in the same rolling file as Rust `tracing::*` calls.
+#[uniffi::export]
+pub fn log_event(level: String, target: String, msg: String) {
+    agentsmesh_logging::log_event(&level, &target, &msg);
+}

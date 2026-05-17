@@ -1,0 +1,34 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+# Cross-platform logging facade. Native targets get a rolling file appender
+# (tracing-appender) plus stderr; wasm32 routes through tracing-wasm into
+# the browser console. Hosts (NAPI / UniFFI / wasm-bindgen) call `init` once
+# at bootstrap and the existing `tracing::*` macros across the workspace
+# start producing output. BUILD.bazel deps must mirror the cfg gating
+# inside the crate — wasm32 cannot link tracing-appender (filesystem),
+# and tracing-wasm cannot link on native (web-sys).
+rust_library(
+    name = "logging",
+    srcs = glob(["src/**/*.rs"]),
+    crate_name = "agentsmesh_logging",
+    edition = "2021",
+    visibility = ["//clients/core:__subpackages__"],
+    deps = [
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:tracing-subscriber",
+    ] + select({
+        "@rules_rust//rust/platform:wasm32-unknown-unknown": [
+            "@crates//:tracing-wasm",
+        ],
+        "//conditions:default": [
+            "@crates//:tracing-appender",
+        ],
+    }),
+)
+
+rust_test(
+    name = "logging_test",
+    crate = ":logging",
+    edition = "2021",
+)

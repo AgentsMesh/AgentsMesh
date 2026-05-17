@@ -37,6 +37,11 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Throttle the "connected → fan-out 7 fetches" burst. If the WebSocket
+  // flaps (disconnected → connecting → connected → disconnected → …) during
+  // a pod state change, each cycle would otherwise re-trigger every fetch,
+  // and the resulting setState storm has been linked to React #185 loops.
+  const lastReconnectFetchRef = useRef(0);
 
   const handleEvent = useCallback(
     (event: RealtimeEvent) => {
@@ -67,15 +72,17 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   }, []);
 
   useEffect(() => {
-    if (connectionState === "connected") {
-      usePodStore.getState().fetchSidebarPods?.(usePodStore.getState().currentSidebarFilter);
-      useRunnerStore.getState().fetchRunners?.();
-      useTicketStore.getState().fetchTickets?.();
-      useMeshStore.getState().fetchTopology?.();
-      useAutopilotStore.getState().fetchAutopilotControllers?.();
-      useLoopStore.getState().fetchLoops?.();
-      useChannelMessageStore.getState().fetchUnreadCounts?.();
-    }
+    if (connectionState !== "connected") return;
+    const now = Date.now();
+    if (now - lastReconnectFetchRef.current < 1500) return;
+    lastReconnectFetchRef.current = now;
+    usePodStore.getState().fetchSidebarPods?.(usePodStore.getState().currentSidebarFilter);
+    useRunnerStore.getState().fetchRunners?.();
+    useTicketStore.getState().fetchTickets?.();
+    useMeshStore.getState().fetchTopology?.();
+    useAutopilotStore.getState().fetchAutopilotControllers?.();
+    useLoopStore.getState().fetchLoops?.();
+    useChannelMessageStore.getState().fetchUnreadCounts?.();
   }, [connectionState]);
 
   const value = useMemo<RealtimeContextValue>(

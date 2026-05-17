@@ -20,7 +20,29 @@ public final class CoreBridge: @unchecked Sendable {
     public func bootstrap(baseURL: String, storage: KeychainStorage) {
         lock.lock(); defer { lock.unlock() }
         guard _core == nil else { return }
+        installLogger()
         _core = AgentsMeshCore(baseUrl: baseURL, storage: storage)
+    }
+
+    /// Install the cross-platform tracing subscriber before constructing the
+    /// Rust core. Logs roll daily under `Library/Logs/agentsmesh/` inside
+    /// the iOS app sandbox; if the directory cannot be created we fall
+    /// through to stderr-only — preferable to crashing the launch flow.
+    private func installLogger() {
+        let level = ProcessInfo.processInfo.environment["AGENTSMESH_LOG_LEVEL"] ?? "info"
+        guard let libDir = FileManager.default
+            .urls(for: .libraryDirectory, in: .userDomainMask).first else {
+            try? initLogger(logDir: nil, level: level)
+            return
+        }
+        let logDir = libDir.appendingPathComponent("Logs/agentsmesh", isDirectory: true)
+        try? FileManager.default.createDirectory(
+            at: logDir, withIntermediateDirectories: true)
+        do {
+            try initLogger(logDir: logDir.path, level: level)
+        } catch {
+            try? initLogger(logDir: nil, level: level)
+        }
     }
 
     /// Access the underlying Rust core. Traps if `bootstrap` wasn't called.

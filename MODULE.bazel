@@ -253,6 +253,25 @@ crate.spec(
     package = "tracing",
     version = "0.1",
 )
+crate.spec(
+    features = [
+        "env-filter",
+        "fmt",
+        "json",
+    ],
+    package = "tracing-subscriber",
+    version = "0.3",
+)
+crate.spec(
+    package = "tracing-appender",
+    version = "0.2",
+)
+
+# WASM-only console sink (gated by BUILD.bazel select).
+crate.spec(
+    package = "tracing-wasm",
+    version = "0.2",
+)
 
 # Testing fixtures.
 crate.spec(

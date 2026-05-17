@@ -16,6 +16,15 @@ const queryClient = new QueryClient({
   },
 });
 
+// Dev-only: detect store update bursts (>30/s) — fingerprint of React #185
+// render loops. Lazy-imported so production bundles don't pull in the
+// subscribe wiring or pin extra stores into the entry chunk.
+if (import.meta.env.DEV) {
+  import("@/lib/debug/storeBurstDetector")
+    .then(({ installStoreBurstDetector }) => installStoreBurstDetector(30))
+    .catch((err) => console.warn("[storeBurst] install failed:", err));
+}
+
 // Deep-link OAuth callback. Main process forwards `agentsmesh://oauth/callback?token=...`
 // after the system browser completes GitHub/Google OAuth and the backend 302-redirects
 // to our custom scheme. We translate the deep-link URL into an in-app navigation to

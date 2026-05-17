@@ -1,4 +1,5 @@
 import { EventSubscriptionManager } from "./EventSubscriptionManager";
+import { logger } from "@/lib/logger";
 
 // Singleton instance
 let instance: EventSubscriptionManager | null = null;
@@ -14,7 +15,11 @@ export function getEventSubscriptionManager(): EventSubscriptionManager {
   if (!instance) {
     instance = new EventSubscriptionManager({
       onConnectionStateChange: (state) => {
-        console.log(`[EventSubscriptionManager] Connection state: ${state}`);
+        // Route through logger (not console.log) so the realtime connection
+        // timeline lands in the rolling log file alongside Rust events —
+        // this is the cross-cutting signal we need when chasing #185-class
+        // store/reconnect loops.
+        logger.info("EventSubscriptionManager", `Connection state: ${state}`);
       },
     });
   }

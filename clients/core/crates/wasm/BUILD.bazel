@@ -10,6 +10,7 @@ _WASM_DEPS = [
     "//clients/core/crates/api-client:api_client",
     "//clients/core/crates/auth",
     "//clients/core/crates/events",
+    "//clients/core/crates/logging",
     "//clients/core/crates/persistence",
     "//clients/core/crates/protocol",
     "//clients/core/crates/relay",

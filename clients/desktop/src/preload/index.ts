@@ -27,6 +27,14 @@ const api = {
     return () => ipcRenderer.removeListener(channel, listener);
   },
   shellOpen: (url: string) => ipcRenderer.invoke("shellOpen", url),
+  // Forward a log event to the Rust subscriber so renderer-side events
+  // (storeBurst alarms, React error boundaries, …) land in the same
+  // rolling log file as native Rust `tracing::*` output.
+  log: (level: string, target: string, message: string) =>
+    ipcRenderer.invoke("core:log", level, target, message),
+  // Reveals the rolling log directory in Finder/Explorer — same target the
+  // Help → Open Logs menu item points to.
+  openLogsFolder: () => ipcRenderer.invoke("logs:openFolder"),
   // Deep-link OAuth callback: main forwards `agentsmesh://oauth/callback?token=...`
   // here when the system browser hands the URL back via open-url (mac) or
   // second-instance argv (win/linux). Returns an unsubscribe so React Strict

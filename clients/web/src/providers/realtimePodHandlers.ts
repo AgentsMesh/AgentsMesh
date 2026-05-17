@@ -23,13 +23,25 @@ function debouncedSidebarRefresh(ref?: DebounceRef) {
   }, 500);
 }
 
+// Coalesce mesh topology refetches during pod burst (e.g. pod terminate
+// triggers status_changed + terminated in quick succession; reconnect
+// catchup may replay many old events at once).
+let topologyTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedFetchTopology() {
+  if (topologyTimer) clearTimeout(topologyTimer);
+  topologyTimer = setTimeout(() => {
+    topologyTimer = null;
+    useMeshStore.getState().fetchTopology?.();
+  }, 500);
+}
+
 export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: DebounceRef) {
   switch (event.type) {
     case "pod:created": {
       const data = event.data as PodCreatedData;
       usePodStore.getState().fetchPod?.(data.pod_key);
       debouncedSidebarRefresh(sidebarDebounceRef);
-      useMeshStore.getState().fetchTopology?.();
+      debouncedFetchTopology();
       break;
     }
     case "pod:status_changed": {
@@ -45,7 +57,7 @@ export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: Deboun
         useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
       }
       debouncedSidebarRefresh(sidebarDebounceRef);
-      useMeshStore.getState().fetchTopology?.();
+      debouncedFetchTopology();
       break;
     }
     case "pod:agent_status_changed": {
@@ -58,7 +70,7 @@ export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: Deboun
       usePodStore.getState().updatePodStatus?.(data.pod_key, "terminated");
       useWorkspaceStore.getState().removePaneByPodKey(data.pod_key);
       debouncedSidebarRefresh(sidebarDebounceRef);
-      useMeshStore.getState().fetchTopology?.();
+      debouncedFetchTopology();
       break;
     }
     case "pod:title_changed": {

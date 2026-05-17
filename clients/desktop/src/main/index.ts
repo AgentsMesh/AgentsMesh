@@ -1,6 +1,6 @@
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import path from "path";
-import { AppState } from "@agentsmesh/node-bridge";
+import { AppState, initLogger, logEvent } from "@agentsmesh/node-bridge";
 import { createLocalRunnerStubs, type LocalRunnerStubMap } from "./local_runner_stubs";
 import { acquireSingleInstance } from "./single_instance";
 import {
@@ -46,6 +46,10 @@ let currentCfg = serverConfig.load();
 let currentApiUrl = resolveColdStartApiUrl(currentCfg);
 
 const storageDir = path.join(app.getPath("userData"), "agentsmesh");
+// Electron resolves "logs" to ~/Library/Logs/<AppName>/ on macOS,
+// %APPDATA%\<AppName>\logs\ on Windows, ~/.config/<AppName>/logs/ on Linux.
+// The Rust logger creates the dir if missing and rolls files daily inside it.
+const logsDir = app.getPath("logs");
 
 // Headless flag for e2e: keeps the window invisible + drops the macOS
 // dock icon so the test process doesn't steal focus from the user's IDE.
@@ -163,6 +167,18 @@ function registerStaticHandlers() {
     }
   });
 
+  // Renderer-side log forwarding. Renderer calls `electronAPI.log(...)` →
+  // we hand it to the Rust subscriber so renderer + main + Rust all land
+  // in one rolling file in timestamp order.
+  ipcMain.handle("core:log", (_e, level: string, target: string, msg: string) => {
+    logEvent(level, target, msg);
+  });
+
+  // Help → Open Logs reveals the rolling log directory in Finder/Explorer.
+  ipcMain.handle("logs:openFolder", async () => {
+    await shell.openPath(logsDir);
+  });
+
   // server-config IPC. The sync variants are deliberate: preload reads
   // them at boot to populate `window.electronAPI.apiUrl` / serverConfig
   // .snapshot synchronously, so renderer's getApiBaseUrl() stays
@@ -209,8 +225,49 @@ function registerStaticHandlers() {
   });
 }
 
+function buildMenu() {
+  // Default-role menus give us the standard macOS/Win/Linux items (Quit,
+  // Cut/Copy/Paste, View, Window) without re-implementing them. The Help
+  // submenu is the only item we customise — it exposes the rolling log
+  // directory so users can ship logs back when reporting bugs.
+  const isMac = process.platform === "darwin";
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac ? ([{ role: "appMenu" }] as Electron.MenuItemConstructorOptions[]) : []),
+    { role: "fileMenu" },
+    { role: "editMenu" },
+    { role: "viewMenu" },
+    { role: "windowMenu" },
+    {
+      role: "help",
+      submenu: [
+        {
+          label: "Open Logs",
+          click: async () => {
+            await shell.openPath(logsDir);
+          },
+        },
+      ],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 app.whenReady().then(() => {
-  console.log(`[electron] Starting, API: ${currentApiUrl}, storage: ${storageDir}`);
+  // Install the global tracing subscriber FIRST — every Rust call after
+  // this (including AppState construction) emits through it. Failure here
+  // is logged but not fatal; renderer still works, just without persistent
+  // logs. Idempotent on the Rust side.
+  try {
+    initLogger(logsDir, process.env.AGENTSMESH_LOG_LEVEL ?? "info");
+    // First post-init record proves the file sink is live. The Rust
+    // non-blocking writer flushes per-line, so this lands on disk
+    // immediately — useful as a "logger is wired up" smoke marker for
+    // bug reports.
+    logEvent("info", "electron-main", `Starting, API: ${currentApiUrl}`);
+  } catch (e) {
+    console.warn("[electron] initLogger failed:", e);
+  }
+  console.log(`[electron] Starting, API: ${currentApiUrl}, storage: ${storageDir}, logs: ${logsDir}`);
   if (isHeadlessTest && process.platform === "darwin") {
     app.dock?.hide();
   }
@@ -230,6 +287,7 @@ app.whenReady().then(() => {
   }
   registerStaticHandlers();
   bindAppStateHandlers();
+  buildMenu();
   installOpenUrlHandler(getMainWindow);
   createWindow();
 
