@@ -1,5 +1,3 @@
-import { wasmLogEvent } from "./wasm-core";
-
 type Level = "trace" | "debug" | "info" | "warn" | "error";
 
 declare global {
@@ -13,24 +11,20 @@ declare global {
 // Single fan-out point for renderer-side log emission. Routes (in priority
 // order):
 //   1. Electron IPC → main → Rust subscriber → rolling file (Desktop)
-//   2. Direct wasm-bindgen call → Rust subscriber → console (Web)
-//   3. Native console fallback when wasm hasn't initialised yet, so
-//      early-boot logs don't disappear.
+//   2. Native console — on Web the wasm-side tracing subscriber renders
+//      Rust events to console too, so the destination is the same.
 //
-// All three branches end up funnelled through the same Rust subscriber
-// (where one exists), so the log format, level filtering, and rotation
-// behave identically across platforms.
+// Why not also push to the wasm subscriber from here: doing so requires
+// importing `wasm-core` (which depends on the `agentsmesh-wasm` package).
+// Desktop bundles that package out via vite alias, so a renderer-shared
+// dependency on it breaks the Desktop build. Keeping logger console-only
+// avoids that coupling; Desktop gets file persistence via IPC, Web gets
+// console output where the wasm subscriber also writes.
 function emit(level: Level, target: string, msg: string): void {
   const electronLog = typeof window !== "undefined" ? window.electronAPI?.log : undefined;
   if (electronLog) {
     void electronLog(level, target, msg);
     return;
-  }
-  try {
-    wasmLogEvent(level, target, msg);
-    return;
-  } catch {
-    // wasm not ready — fall through to console fallback below.
   }
   const formatted = `[${target}] ${msg}`;
   switch (level) {
