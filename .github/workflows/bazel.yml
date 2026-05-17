@@ -782,8 +782,12 @@ jobs:
 
       # Same dev.sh prereq as Web E2E. ibazel ships only as GitHub Release
       # binaries (no homebrew formula for `bazel-watcher`); pick the
-      # darwin slice that matches the runner's arch so this lane works on
-      # both macmini-03 (arm64) and macmini-04 (amd64/Intel).
+      # darwin slice that matches the runner's arch.
+      #
+      # Version pinning is arch-aware: upstream stopped publishing
+      # `ibazel_darwin_amd64` after v0.28.0 (v0.28.1+ are arm64-only on
+      # macOS), so Intel runners stay on the last release that still
+      # shipped an Intel macOS binary. arm64 stays on 0.29.0.
       #
       # Writes to ~/.local/bin so the runner doesn't need sudo (which
       # would require passwordless-sudo config on the self-hosted host).
@@ -792,10 +796,9 @@ jobs:
       - name: Ensure ibazel installed
         run: |
           if ! command -v ibazel >/dev/null 2>&1; then
-            IBAZEL_VERSION="0.29.0"
             case "$(uname -m)" in
-              arm64)  IBAZEL_ARCH="darwin_arm64" ;;
-              x86_64) IBAZEL_ARCH="darwin_amd64" ;;
+              arm64)  IBAZEL_VERSION="0.29.0"; IBAZEL_ARCH="darwin_arm64" ;;
+              x86_64) IBAZEL_VERSION="0.28.0"; IBAZEL_ARCH="darwin_amd64" ;;
               *) echo "::error::unsupported arch for ibazel: $(uname -m)"; exit 1 ;;
             esac
             mkdir -p "$HOME/.local/bin"
