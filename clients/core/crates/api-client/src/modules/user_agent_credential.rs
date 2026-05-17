@@ -12,7 +12,7 @@ impl ApiClient {
     pub async fn list_user_agent_credentials_for_agent(
         &self,
         agent_slug: &str,
-    ) -> Result<AgentCredentialProfileListResponse, ApiError> {
+    ) -> Result<AgentCredentialProfilesForAgentResponse, ApiError> {
         self.get(&format!(
             "/api/v1/users/agent-credentials/agents/{agent_slug}"
         ))

@@ -53,7 +53,7 @@ export function useAgentCredentials(
       agentList.forEach((a: AgentData, i: number) => {
         const result = schemaResults[i];
         if (result.status === "fulfilled") {
-          fieldsMap.set(a.slug, result.value.schema?.credential_fields || []);
+          fieldsMap.set(a.slug, result.value.credential_fields || []);
         }
       });
       setCredentialFieldsByAgent(fieldsMap);

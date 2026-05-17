@@ -58,16 +58,16 @@ export function useAgentConfig(
 
       // Load data in parallel
       const [schemaRes, credentialsRes] = await Promise.all([
-        getAgentService().get_config_schema(foundAgent.slug).then((j: string) => JSON.parse(j)).catch(() => ({ schema: { fields: [], credential_fields: [] } })),
+        getAgentService().get_config_schema(foundAgent.slug).then((j: string) => JSON.parse(j)).catch(() => ({ fields: [], credential_fields: [] })),
         getUserCredentialService().list_agent_credentials().then((j: string) => JSON.parse(j)).catch(() => ({ items: [] })),
       ]);
 
       // Set config schema fields
-      const fields = schemaRes.schema?.fields || [];
+      const fields = schemaRes.fields || [];
       setConfigFields(fields);
 
       // Set credential fields from AgentFile ENV SECRET/TEXT declarations
-      setCredentialFields(schemaRes.schema?.credential_fields || []);
+      setCredentialFields(schemaRes.credential_fields || []);
 
       // Initialize config values with defaults from schema
       const defaultValues: Record<string, unknown> = {};

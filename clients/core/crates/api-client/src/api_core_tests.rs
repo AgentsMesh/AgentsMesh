@@ -581,7 +581,7 @@ mod api_core_tests {
     async fn list_user_agent_credentials() {
         let s = MockServer::start().await;
         Mock::given(method("GET")).and(path("/api/v1/users/agent-credentials"))
-            .respond_with(ok(json!({"profiles":[]})))
+            .respond_with(ok(json!({"items":[]})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
         let _ = c.list_user_agent_credentials().await.unwrap();

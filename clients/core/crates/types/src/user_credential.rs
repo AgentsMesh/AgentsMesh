@@ -75,9 +75,32 @@ pub struct UpdateAgentCredentialProfileRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AgentCredentialProfileListResponse {
-    #[serde(alias = "items", default)]
+pub struct CredentialProfilesByAgent {
+    pub agent_slug: String,
+    #[serde(default)]
+    pub agent_name: Option<String>,
+    #[serde(default)]
     pub profiles: Vec<AgentCredentialProfile>,
+}
+
+// Backend wire format: `GET /api/v1/users/agent-credentials` returns
+// `{ "items": [{ agent_slug, agent_name, profiles: [...] }] }` — a grouped
+// view across all agents. Distinct from the per-agent endpoint below.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentCredentialProfileListResponse {
+    #[serde(default)]
+    pub items: Vec<CredentialProfilesByAgent>,
+}
+
+// Backend wire format: `GET /api/v1/users/agent-credentials/agents/:slug`
+// returns `{ "profiles": [...], "runner_host": {...} }` — a flat list for a
+// single agent plus the virtual RunnerHost descriptor.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentCredentialProfilesForAgentResponse {
+    #[serde(default)]
+    pub profiles: Vec<AgentCredentialProfile>,
+    #[serde(default)]
+    pub runner_host: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,6 +175,87 @@ pub struct ProviderRepositoryListResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn agent_credential_list_decodes_backend_grouped_shape() {
+        // Wire shape produced by ListProfiles handler — grouped by agent.
+        // Regression: prior type modelled this as a flat profiles list which
+        // failed reverse-serialization (missing `id` on group items) and
+        // collapsed the renderer's credential list to empty.
+        let backend_json = r#"{
+            "items": [
+                {
+                    "agent_slug": "claude",
+                    "agent_name": "Claude",
+                    "profiles": [
+                        {
+                            "id": 7,
+                            "agent_slug": "claude",
+                            "name": "personal",
+                            "description": "my key",
+                            "is_runner_host": false,
+                            "is_default": true,
+                            "credentials": null,
+                            "created_at": "2026-05-01T00:00:00Z",
+                            "updated_at": "2026-05-01T00:00:00Z"
+                        }
+                    ]
+                },
+                { "agent_slug": "codex", "agent_name": "Codex", "profiles": [] }
+            ]
+        }"#;
+
+        let resp: AgentCredentialProfileListResponse =
+            serde_json::from_str(backend_json).unwrap();
+        assert_eq!(resp.items.len(), 2);
+        assert_eq!(resp.items[0].agent_slug, "claude");
+        assert_eq!(resp.items[0].profiles.len(), 1);
+        assert_eq!(resp.items[0].profiles[0].id, 7);
+        assert_eq!(resp.items[0].profiles[0].is_default, Some(true));
+        assert_eq!(resp.items[1].agent_slug, "codex");
+        assert!(resp.items[1].profiles.is_empty());
+
+        // Re-serialize: front-end relays the JSON unchanged, so the renderer
+        // must still see `items`, not `profiles`.
+        let relayed = serde_json::to_value(&resp).unwrap();
+        assert!(relayed.get("items").is_some());
+        assert!(relayed.get("profiles").is_none());
+    }
+
+    #[test]
+    fn agent_credential_list_tolerates_empty_items() {
+        let resp: AgentCredentialProfileListResponse =
+            serde_json::from_str(r#"{"items":[]}"#).unwrap();
+        assert!(resp.items.is_empty());
+    }
+
+    #[test]
+    fn agent_credential_for_agent_decodes_flat_shape() {
+        // Wire shape produced by ListProfilesForAgent handler — flat profiles
+        // list plus the virtual RunnerHost descriptor.
+        let backend_json = r#"{
+            "profiles": [
+                {
+                    "id": 11,
+                    "agent_slug": "claude",
+                    "name": "work",
+                    "description": null,
+                    "is_runner_host": false,
+                    "is_default": false,
+                    "credentials": null,
+                    "created_at": "2026-05-01T00:00:00Z",
+                    "updated_at": "2026-05-01T00:00:00Z"
+                }
+            ],
+            "runner_host": { "available": true, "description": "Use Runner machine" }
+        }"#;
+
+        let resp: AgentCredentialProfilesForAgentResponse =
+            serde_json::from_str(backend_json).unwrap();
+        assert_eq!(resp.profiles.len(), 1);
+        assert_eq!(resp.profiles[0].id, 11);
+        assert!(resp.runner_host.is_some());
+    }
 
     #[test]
     fn repository_provider_preserves_backend_fields() {
