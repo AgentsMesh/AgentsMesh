@@ -84,7 +84,3 @@ build:ci --stamp
 
 # Optional local overrides.
 try-import %workspace%/.bazelrc.local
-
-# Temporary: surface full Swift compile stderr on PR #392 iOS regression debugging.
-# Default 1MB cuts off the actual error message for AgentsMeshCore — bump 10x.
-build --experimental_ui_max_stdouterr_bytes=10485760
