@@ -67,7 +67,7 @@ export function useConfigOptions(
 
         if (cancelled) return;
 
-        const schema = schemaResponse.schema || { fields: [] };
+        const schema = schemaResponse || { fields: [] };
         const baseFields = schema.fields || [];
 
         // Step 1: Initialize config with ConfigSchema defaults
