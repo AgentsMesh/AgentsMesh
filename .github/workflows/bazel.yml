@@ -751,11 +751,20 @@ jobs:
 
   desktop-e2e:
     name: E2E (Desktop — Electron)
-    # Self-hosted M-series macmini-03. OrbStack provides Docker; Electron
-    # launches natively (no xvfb / chrome-sandbox dance). Hosted GHA
-    # macOS runners can't run Docker (no nested virt) and ubuntu's
-    # Electron-under-xvfb cold-launch is too flaky on shared CPU.
-    runs-on: [self-hosted, macmini-03]
+    # Self-hosted macmini-04 (Intel x86_64, Mac mini 2018, dongzhao user).
+    # Replaces the earlier macmini-03 (M-series) lane because macmini-03
+    # doubles as a GitLab CI runner and a desktop dev box — the shared
+    # bazel server kept losing 55+ min waiting on the GitLab pipeline's
+    # output-base lock, busting the 60-min job timeout. macmini-04 is a
+    # dedicated x64 e2e host. OrbStack provides Docker; Electron launches
+    # natively. Hosted GHA macOS runners can't run Docker (no nested
+    # virt) and ubuntu's Electron-under-xvfb cold-launch is too flaky on
+    # shared CPU, so self-hosted remains the only viable path.
+    #
+    # Side benefit: this lane now exercises the x64 Electron build that
+    # `clients/desktop/electron-builder.yml` ships under `mac.target.x64`,
+    # which the previous arm64-only lane never verified natively.
+    runs-on: [self-hosted, macmini-04]
     timeout-minutes: 60
     needs: smoke
     steps:
@@ -771,10 +780,10 @@ jobs:
           docker version
           docker compose version
 
-      # Same dev.sh prereq as Web E2E. macmini-03 is a self-hosted M-series
-      # runner — install the darwin-arm64 ibazel release directly (no
-      # homebrew formula exists for `bazel-watcher`; the project ships
-      # GitHub Release binaries instead).
+      # Same dev.sh prereq as Web E2E. ibazel ships only as GitHub Release
+      # binaries (no homebrew formula for `bazel-watcher`); pick the
+      # darwin slice that matches the runner's arch so this lane works on
+      # both macmini-03 (arm64) and macmini-04 (amd64/Intel).
       #
       # Writes to ~/.local/bin so the runner doesn't need sudo (which
       # would require passwordless-sudo config on the self-hosted host).
@@ -784,8 +793,13 @@ jobs:
         run: |
           if ! command -v ibazel >/dev/null 2>&1; then
             IBAZEL_VERSION="0.29.0"
+            case "$(uname -m)" in
+              arm64)  IBAZEL_ARCH="darwin_arm64" ;;
+              x86_64) IBAZEL_ARCH="darwin_amd64" ;;
+              *) echo "::error::unsupported arch for ibazel: $(uname -m)"; exit 1 ;;
+            esac
             mkdir -p "$HOME/.local/bin"
-            curl -fsSL "https://github.com/bazelbuild/bazel-watcher/releases/download/v${IBAZEL_VERSION}/ibazel_darwin_arm64" \
+            curl -fsSL "https://github.com/bazelbuild/bazel-watcher/releases/download/v${IBAZEL_VERSION}/ibazel_${IBAZEL_ARCH}" \
               -o "$HOME/.local/bin/ibazel"
             chmod +x "$HOME/.local/bin/ibazel"
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
