@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useMemo } from "react";
 import { RepositoryData } from "@/lib/api";
-import { getRepositoryService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore } from "@/stores/repository";
 
 export interface RepositorySelectProps {
   value: number | null;
@@ -22,31 +22,17 @@ export function RepositorySelect({
   className = "",
   activeOnly = true,
 }: RepositorySelectProps) {
-  const [repositories, setRepositories] = useState<RepositoryData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const allRepos = useRepositories();
+  const loading = useRepositoryStore((s) => s.isLoading);
+  const error = useRepositoryStore((s) => s.error);
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
 
-  const loadRepositories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = JSON.parse(await getRepositoryService().list());
-      let repos: RepositoryData[] = res.repositories || [];
-      if (activeOnly) {
-        repos = repos.filter((r: RepositoryData) => r.is_active);
-      }
-      setRepositories(repos);
-    } catch (err) {
-      console.error("Failed to load repositories:", err);
-      setError("Failed to load repositories");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeOnly]);
+  useEffect(() => { fetchRepositories(); }, [fetchRepositories]);
 
-  useEffect(() => {
-    loadRepositories();
-  }, [loadRepositories]);
+  const repositories = useMemo(
+    () => (activeOnly ? allRepos.filter((r) => r.is_active) : allRepos),
+    [allRepos, activeOnly],
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
@@ -65,7 +51,7 @@ export function RepositorySelect({
         {error}
         <button
           type="button"
-          onClick={loadRepositories}
+          onClick={() => fetchRepositories()}
           className="ml-2 underline hover:no-underline"
         >
           Retry

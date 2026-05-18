@@ -15,7 +15,7 @@ export type { GitProvider, GitProviderProject } from "./gitProvider";
 
 // Repository store
 export { useRepositoryStore } from "./repository";
-export type { Repository, Branch } from "./repository";
+export type { Repository } from "./repository";
 
 // Runner store
 export { useRunnerStore } from "./runner";

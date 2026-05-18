@@ -2,12 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@/test/test-utils";
 import InfraPage from "../page";
 
-const mockPush = vi.fn();
 const mockReplace = vi.fn();
 let mockSearch = "tab=runners";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  useRouter: () => ({ push: vi.fn(), replace: mockReplace }),
   useParams: () => ({ org: "rcx" }),
   useSearchParams: () => new URLSearchParams(mockSearch),
 }));
@@ -20,38 +19,93 @@ vi.mock("@/components/infra/InfraRunnerDetail", () => ({
   InfraRunnerDetail: () => <div data-testid="runner-detail" />,
 }));
 
-describe("InfraPage runner empty state", () => {
+vi.mock("@/components/ide/modals/AddRunnerModal", () => ({
+  AddRunnerModal: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
+    open ? (
+      <div data-testid="add-runner-modal">
+        <button onClick={onClose}>close-add-runner</button>
+      </div>
+    ) : null,
+}));
+
+vi.mock("@/components/ide/modals/ImportRepositoryModal", () => ({
+  ImportRepositoryModal: ({ open, onClose }: { open: boolean; onClose: () => void }) =>
+    open ? (
+      <div data-testid="import-repo-modal">
+        <button onClick={onClose}>close-import-repo</button>
+      </div>
+    ) : null,
+}));
+
+vi.mock("@/stores/auth", () => ({
+  useCurrentOrg: () => ({ slug: "rcx", id: 1 }),
+}));
+
+vi.mock("@/stores/runner", () => ({
+  useRunners: () => [],
+  useRunnerStore: (selector: (s: { loading: boolean; fetchRunners: () => void }) => unknown) =>
+    selector({ loading: false, fetchRunners: vi.fn() }),
+}));
+
+vi.mock("@/stores/repository", () => ({
+  useRepositories: () => [],
+  useRepositoryStore: (
+    selector: (s: {
+      isLoading: boolean;
+      error: string | null;
+      fetchRepositories: () => Promise<void>;
+    }) => unknown,
+  ) => selector({ isLoading: false, error: null, fetchRepositories: vi.fn() }),
+}));
+
+describe("InfraPage — Runner empty state", () => {
   beforeEach(() => {
     mockSearch = "tab=runners";
-    mockPush.mockReset();
     mockReplace.mockReset();
   });
 
-  it("sets the add query when the empty-state Add Runner button is clicked", () => {
+  it("opens the Add Runner modal when the empty-state button is clicked", () => {
+    render(<InfraPage />);
+
+    expect(screen.queryByTestId("add-runner-modal")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add Runner" }));
+    expect(screen.getByTestId("add-runner-modal")).toBeInTheDocument();
+  });
+
+  it("closes the Add Runner modal via onClose", () => {
     render(<InfraPage />);
 
     fireEvent.click(screen.getByRole("button", { name: "Add Runner" }));
+    expect(screen.getByTestId("add-runner-modal")).toBeInTheDocument();
 
-    expect(mockPush).toHaveBeenCalledWith("/rcx/infra?tab=runners&add=1");
+    fireEvent.click(screen.getByRole("button", { name: "close-add-runner" }));
+    expect(screen.queryByTestId("add-runner-modal")).not.toBeInTheDocument();
+  });
+});
+
+describe("InfraPage — Repository empty state", () => {
+  beforeEach(() => {
+    mockSearch = "tab=repositories";
+    mockReplace.mockReset();
   });
 
-  it("opens the Add Runner modal from the add query", () => {
-    mockSearch = "tab=runners&add=1";
-
+  it("opens the Import Repository modal when the empty-state button is clicked", async () => {
     render(<InfraPage />);
 
-    expect(
-      screen.getByText("Generate a registration token to connect a new Runner"),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Generate Token" })).toBeInTheDocument();
+    const importBtn = await screen.findByRole("button", { name: /^Import/ });
+    expect(screen.queryByTestId("import-repo-modal")).not.toBeInTheDocument();
+    fireEvent.click(importBtn);
+    expect(screen.getByTestId("import-repo-modal")).toBeInTheDocument();
   });
 
-  it("removes the add query when the Add Runner modal closes", () => {
-    mockSearch = "tab=runners&add=1";
-
+  it("closes the Import Repository modal via onClose", async () => {
     render(<InfraPage />);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(mockReplace).toHaveBeenCalledWith("/rcx/infra?tab=runners");
+    const importBtn = await screen.findByRole("button", { name: /^Import/ });
+    fireEvent.click(importBtn);
+    expect(screen.getByTestId("import-repo-modal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "close-import-repo" }));
+    expect(screen.queryByTestId("import-repo-modal")).not.toBeInTheDocument();
   });
 });

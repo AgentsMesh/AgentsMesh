@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { useCtaModal } from "@/hooks/useCtaModal";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { ActivityBar } from "./ActivityBar";
 import { SideBar } from "./SideBar";
@@ -102,8 +103,8 @@ export function IDEShell({
   const fetchPods = usePodStore((state) => state.fetchPods);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
-  const [addRunnerModalOpen, setAddRunnerModalOpen] = useState(false);
-  const [importRepoModalOpen, setImportRepoModalOpen] = useState(false);
+  const addRunnerModal = useCtaModal();
+  const importRepoModal = useCtaModal();
 
   // Handle pod creation
   const handleCreatePod = useCallback(() => {
@@ -122,21 +123,11 @@ export function IDEShell({
     }
   }, [addPane, fetchPods]);
 
-  // Handle add runner
-  const handleAddRunner = useCallback(() => {
-    setAddRunnerModalOpen(true);
-  }, []);
-
-  // Handle import repository
-  const handleImportRepo = useCallback(() => {
-    setImportRepoModalOpen(true);
-  }, []);
-
   // Use provided sidebar content or auto-generate based on activity
   const sidebarCallbacks: SidebarCallbacks = {
     onCreatePod: handleCreatePod,
-    onAddRunner: handleAddRunner,
-    onImportRepo: handleImportRepo,
+    onAddRunner: addRunnerModal.open,
+    onImportRepo: importRepoModal.open,
   };
   const effectiveSidebarContent = sidebarContent ?? getSidebarContent(activeActivity, sidebarCallbacks);
 
@@ -188,16 +179,16 @@ export function IDEShell({
 
       {/* Add Runner Modal */}
       <AddRunnerModal
-        open={addRunnerModalOpen}
-        onClose={() => setAddRunnerModalOpen(false)}
-        onCreated={() => setAddRunnerModalOpen(false)}
+        open={addRunnerModal.isOpen}
+        onClose={addRunnerModal.close}
+        onCreated={addRunnerModal.commit}
       />
 
       {/* Import Repository Modal */}
       <ImportRepositoryModal
-        open={importRepoModalOpen}
-        onClose={() => setImportRepoModalOpen(false)}
-        onImported={() => setImportRepoModalOpen(false)}
+        open={importRepoModal.isOpen}
+        onClose={importRepoModal.close}
+        onImported={importRepoModal.commit}
       />
     </div>
   );

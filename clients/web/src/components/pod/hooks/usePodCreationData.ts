@@ -4,7 +4,8 @@ import {
   AgentData,
   RepositoryData,
 } from "@/lib/api";
-import { getRunnerService, getAgentService, getRepositoryService } from "@/lib/wasm-core";
+import { getRunnerService, getAgentService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore } from "@/stores/repository";
 
 export interface PodCreationData {
   runners: RunnerData[];
@@ -27,12 +28,18 @@ export interface PodCreationData {
 export function usePodCreationData(enabled: boolean): PodCreationData {
   const [runners, setRunners] = useState<RunnerData[]>([]);
   const [agents, setAgents] = useState<AgentData[]>([]);
-  const [repositories, setRepositories] = useState<RepositoryData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedRunnerId, setSelectedRunnerId] = useState<number | null>(null);
 
-  // Load runners, agents, and repositories
+  // Repos come from the shared store; trigger a fetch when the consumer enables.
+  const repositories = useRepositories();
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
+  useEffect(() => {
+    if (enabled) fetchRepositories();
+  }, [enabled, fetchRepositories]);
+
+  // Load runners and agents (repos handled by store)
   useEffect(() => {
     if (!enabled) return;
 
@@ -42,10 +49,9 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
       setLoading(true);
       setError(null);
       try {
-        const [runnersRes, agentsRes, reposRes] = await Promise.allSettled([
+        const [runnersRes, agentsRes] = await Promise.allSettled([
           getRunnerService().fetch_runners(null).then((j: string) => JSON.parse(j)),
           getAgentService().list_agents().then((j: string) => JSON.parse(j)),
-          getRepositoryService().list().then((j: string) => JSON.parse(j)),
         ]);
 
         if (cancelled) return;
@@ -60,9 +66,6 @@ export function usePodCreationData(enabled: boolean): PodCreationData {
           const res = agentsRes.value;
           const agentList = [...(res.builtin_agents || []), ...(res.custom_agents || []), ...(res.agents || [])];
           setAgents(agentList);
-        }
-        if (reposRes.status === "fulfilled") {
-          setRepositories(reposRes.value.repositories || []);
         }
       } catch (err) {
         if (cancelled) return;

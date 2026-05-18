@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getPodService, getTicketService, getRepositoryService } from "@/lib/wasm-core";
+import { getPodService, getTicketService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore } from "@/stores/repository";
 import type { SearchResults, PodSearchResult, TicketSearchResult, RepositorySearchResult } from "./types";
 
 /**
@@ -12,6 +13,11 @@ export function useCommandPaletteSearch(search: string): SearchResults {
   const [tickets, setTickets] = useState<TicketSearchResult[]>([]);
   const [repositories, setRepositories] = useState<RepositorySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Repos come from the shared store; ensure it's populated on first open.
+  const allRepos = useRepositories();
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
+  useEffect(() => { fetchRepositories(); }, [fetchRepositories]);
 
   useEffect(() => {
     if (!search || search.length < 2) {
@@ -24,10 +30,9 @@ export function useCommandPaletteSearch(search: string): SearchResults {
     const loadSearchResults = async () => {
       setLoading(true);
       try {
-        const [podsRes, ticketsRes, reposRes] = await Promise.all([
+        const [podsRes, ticketsRes] = await Promise.all([
           getPodService().fetch_pods(null, null, null, null, null).then((j: string) => JSON.parse(j)).catch(() => ({ pods: [] })),
           getTicketService().fetch_tickets(undefined, 500, undefined).then((j: string) => JSON.parse(j)).catch(() => ({ tickets: [] })),
-          getRepositoryService().list().then((j: string) => JSON.parse(j)).catch(() => ({ repositories: [] })),
         ]);
 
         // Filter by search term
@@ -47,8 +52,8 @@ export function useCommandPaletteSearch(search: string): SearchResults {
             .slice(0, 5)
         );
         setRepositories(
-          (reposRes.repositories || [])
-            .filter((r: { slug: string }) => r.slug.toLowerCase().includes(searchLower))
+          allRepos
+            .filter((r) => r.slug.toLowerCase().includes(searchLower))
             .slice(0, 5)
         );
       } catch (error) {
@@ -60,7 +65,7 @@ export function useCommandPaletteSearch(search: string): SearchResults {
 
     const debounce = setTimeout(loadSearchResults, 300);
     return () => clearTimeout(debounce);
-  }, [search]);
+  }, [search, allRepos]);
 
   return { pods, tickets, repositories, loading };
 }

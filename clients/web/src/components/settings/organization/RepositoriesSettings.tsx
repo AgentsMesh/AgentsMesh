@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { useConfirmDialog, ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { RepositoryData } from "@/lib/api/repositoryTypes";
-import { getRepositoryService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore, type Repository } from "@/stores/repository";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { getLocalizedErrorMessage } from "@/lib/api/errors";
@@ -21,8 +20,10 @@ import { FolderGit2, Trash2, Plus } from "lucide-react";
 export function RepositoriesSettings() {
   const { org: orgSlug } = useParams<{ org: string }>();
   const t = useTranslations();
-  const [repositories, setRepositories] = useState<RepositoryData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const repositories = useRepositories();
+  const loading = useRepositoryStore((s) => s.isLoading);
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
+  const deleteRepository = useRepositoryStore((s) => s.deleteRepository);
   const [filter, setFilter] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
 
@@ -33,29 +34,16 @@ export function RepositoriesSettings() {
     variant: "destructive",
   });
 
-  const fetchRepositories = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = JSON.parse(await getRepositoryService().list()) as { repositories?: RepositoryData[] };
-      setRepositories(response.repositories ?? []);
-    } catch (err) {
-      toast.error(getLocalizedErrorMessage(err, t, t("common.error")));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
   useEffect(() => {
     fetchRepositories();
   }, [fetchRepositories]);
 
-  const handleDelete = async (repo: RepositoryData) => {
+  const handleDelete = async (repo: Repository) => {
     const ok = await confirmDelete();
     if (!ok) return;
     try {
-      await getRepositoryService().delete(BigInt(repo.id));
+      await deleteRepository(repo.id);
       toast.success(t("repositories.deleteSuccess"));
-      await fetchRepositories();
     } catch (err) {
       toast.error(getLocalizedErrorMessage(err, t, t("common.error")));
     }
@@ -89,8 +77,8 @@ export function RepositoriesSettings() {
         <EmptyState
           size="default"
           icon={<FolderGit2 className="w-10 h-10" />}
-          title={t("repositories.emptyTitle")}
-          description={t("repositories.emptyDescription")}
+          title={t("repositories.emptyState.title")}
+          description={t("repositories.emptyState.description")}
           actions={
             <Button onClick={() => setShowImportModal(true)}>
               <Plus className="w-4 h-4 mr-1" />

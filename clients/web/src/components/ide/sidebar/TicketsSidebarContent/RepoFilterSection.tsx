@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { GitBranch, CircleOff } from "lucide-react";
-import { type RepositoryData } from "@/lib/api";
-import { getRepositoryService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore } from "@/stores/repository";
 import type { Ticket } from "@/stores/ticket";
 import { FilterSection } from "./FilterSection";
 
@@ -25,7 +24,7 @@ interface RepoFilterSectionProps {
 
 /**
  * RepoFilterSection - Repository checkbox filter with show more/less.
- * Loads repository list from API on mount, derives ticket counts from allTickets.
+ * Reads repository list from the shared store; counts come from allTickets.
  */
 export function RepoFilterSection({
   expanded,
@@ -35,22 +34,14 @@ export function RepoFilterSection({
   allTickets,
   t,
 }: RepoFilterSectionProps) {
-  const [repositories, setRepositories] = useState<RepositoryData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const allRepos = useRepositories();
+  const loading = useRepositoryStore((s) => s.isLoading);
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
   const [showAll, setShowAll] = useState(false);
 
-  const loadRepos = useCallback(async () => {
-    try {
-      const res = JSON.parse(await getRepositoryService().list());
-      setRepositories((res.repositories || []).filter((r: RepositoryData) => r.is_active));
-    } catch {
-      // Silently fail — filter section simply won't render
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  useEffect(() => { fetchRepositories(); }, [fetchRepositories]);
 
-  useEffect(() => { loadRepos(); }, [loadRepos]);
+  const repositories = useMemo(() => allRepos.filter((r) => r.is_active), [allRepos]);
 
   // Count tickets per repository (0 = no repository)
   const repoCounts = useMemo(() => {

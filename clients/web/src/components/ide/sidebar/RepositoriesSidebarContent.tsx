@@ -4,8 +4,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useCurrentOrg, useAuthStore } from "@/stores/auth";
-import { RepositoryData } from "@/lib/api";
-import { getRepositoryService } from "@/lib/wasm-core";
+import { useRepositories, useRepositoryStore, type Repository } from "@/stores/repository";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,9 +32,10 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
   const searchParams = useSearchParams();
   const currentOrg = useCurrentOrg();
 
-  // State
-  const [repositories, setRepositories] = useState<RepositoryData[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Store-backed list (SSOT). Local UI state only for filters/search.
+  const repositories = useRepositories();
+  const loading = useRepositoryStore((s) => s.isLoading);
+  const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("all");
@@ -48,33 +48,18 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     return Number.isNaN(n) ? null : n;
   }, [searchParams]);
 
-  // Load repositories on mount
   useEffect(() => {
-    if (currentOrg) {
-      loadRepositories();
-    }
-  }, [currentOrg]);
+    if (currentOrg) fetchRepositories();
+  }, [currentOrg, fetchRepositories]);
 
-  const loadRepositories = async () => {
-    try {
-      const response = JSON.parse(await getRepositoryService().list());
-      setRepositories(response.repositories || []);
-    } catch (error) {
-      console.error("Failed to load repositories:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Refresh handler
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await loadRepositories();
+      await fetchRepositories();
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [fetchRepositories]);
 
   // Filter repositories — memoized for stable ref
   const filteredRepositories = useMemo(() => repositories.filter((repo) => {
@@ -94,7 +79,7 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     return true;
   }), [repositories, searchQuery, selectedProvider]);
 
-  const handleRepoClick = (repo: RepositoryData) => {
+  const handleRepoClick = (repo: Repository) => {
     router.push(`/${currentOrg?.slug}/infra?tab=repositories&id=${repo.id}`);
   };
 

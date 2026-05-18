@@ -30,7 +30,7 @@ import { LoopsPage } from "@/pages/dashboard/loops/LoopsPage";
 import { LoopDetailPage } from "@/pages/dashboard/loop-detail/LoopDetailPage";
 import { MeshPage } from "@/pages/dashboard/mesh/MeshPage";
 import { BlocksPage } from "@/pages/dashboard/blocks/BlocksPage";
-import { InfraPage } from "@/pages/dashboard/infra/InfraPage";
+import InfraPage from "@/app/(dashboard)/[org]/infra/page";
 import { RepositoryDetailPage } from "@/pages/dashboard/repository-detail/RepositoryDetailPage";
 import { SettingsPage } from "@/pages/dashboard/settings/OrgSettingsPage";
 
