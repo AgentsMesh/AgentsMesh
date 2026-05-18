@@ -30,6 +30,7 @@ export function RunnerSection({
   const currentOrg = useCurrentOrg();
   const runners = useRunners();
   const loading = useRunnerStore((s) => s.loading);
+  const fetched = useRunnerStore((s) => s.fetched);
   const fetchRunners = useRunnerStore((s) => s.fetchRunners);
   const addModal = useCtaModal(fetchRunners);
 
@@ -43,6 +44,7 @@ export function RunnerSection({
     firstId,
     idMissing,
     loading,
+    fetched,
     onNavigate: useCallback(
       (id) => router.replace(`/${orgSlug}/infra?tab=runners&id=${id}`),
       [router, orgSlug],

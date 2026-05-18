@@ -43,8 +43,8 @@ vi.mock("@/stores/auth", () => ({
 
 vi.mock("@/stores/runner", () => ({
   useRunners: () => [],
-  useRunnerStore: (selector: (s: { loading: boolean; fetchRunners: () => void }) => unknown) =>
-    selector({ loading: false, fetchRunners: vi.fn() }),
+  useRunnerStore: (selector: (s: { loading: boolean; fetched: boolean; fetchRunners: () => void }) => unknown) =>
+    selector({ loading: false, fetched: true, fetchRunners: vi.fn() }),
 }));
 
 vi.mock("@/stores/repository", () => ({
@@ -52,10 +52,11 @@ vi.mock("@/stores/repository", () => ({
   useRepositoryStore: (
     selector: (s: {
       isLoading: boolean;
+      fetched: boolean;
       error: string | null;
       fetchRepositories: () => Promise<void>;
     }) => unknown,
-  ) => selector({ isLoading: false, error: null, fetchRepositories: vi.fn() }),
+  ) => selector({ isLoading: false, fetched: true, error: null, fetchRepositories: vi.fn() }),
 }));
 
 describe("InfraPage — Runner empty state", () => {

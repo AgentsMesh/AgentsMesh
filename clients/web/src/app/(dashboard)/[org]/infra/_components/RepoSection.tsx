@@ -30,6 +30,7 @@ export function RepoSection({
   const currentOrg = useCurrentOrg();
   const repositories = useRepositories();
   const loading = useRepositoryStore((s) => s.isLoading);
+  const fetched = useRepositoryStore((s) => s.fetched);
   const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
   const importModal = useCtaModal(fetchRepositories);
 
@@ -43,6 +44,7 @@ export function RepoSection({
     firstId,
     idMissing,
     loading,
+    fetched,
     onNavigate: useCallback(
       (id) => router.replace(`/${orgSlug}/infra?tab=repositories&id=${id}`),
       [router, orgSlug],

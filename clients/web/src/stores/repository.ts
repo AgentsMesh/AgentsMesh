@@ -12,6 +12,7 @@ export type Repository = RepositoryData;
 interface RepositoryState {
   _tick: number;
   isLoading: boolean;
+  fetched: boolean;
   error: string | null;
   fetchRepositories: () => Promise<void>;
   deleteRepository: (id: number) => Promise<void>;
@@ -29,6 +30,7 @@ export function useRepositories(): Repository[] {
 export const useRepositoryStore = create<RepositoryState>((set) => ({
   _tick: 0,
   isLoading: false,
+  fetched: false,
   error: null,
 
   fetchRepositories: async () => {
@@ -38,7 +40,7 @@ export const useRepositoryStore = create<RepositoryState>((set) => ({
       const parsed = JSON.parse(raw) as { repositories?: Repository[] };
       rs().set_repositories(JSON.stringify(parsed.repositories ?? []));
       bump();
-      set({ isLoading: false });
+      set({ isLoading: false, fetched: true });
     } catch (e) {
       set({ isLoading: false, error: getErrorMessage(e, "Failed to fetch repositories") });
     }

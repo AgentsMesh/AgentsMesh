@@ -9,7 +9,7 @@ export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 export type Runner = RunnerData;
 
 interface RunnerState {
-  _tick: number; loading: boolean; error: string | null;
+  _tick: number; loading: boolean; fetched: boolean; error: string | null;
   fetchRunners: (status?: RunnerStatus) => Promise<void>;
   fetchAvailableRunners: () => Promise<void>;
   fetchRunner: (id: number) => Promise<void>;
@@ -46,13 +46,13 @@ export function useCurrentRunner(): Runner | null {
 }
 
 export const useRunnerStore = create<RunnerState>((set, get) => ({
-  _tick: 0, loading: false, error: null,
+  _tick: 0, loading: false, fetched: false, error: null,
 
   fetchRunners: async (status) => {
     set({ loading: true, error: null });
     try {
       await svc().fetch_runners(status ?? null);
-      set({ loading: false, _tick: get()._tick + 1 });
+      set({ loading: false, fetched: true, _tick: get()._tick + 1 });
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch runners"), loading: false }); }
   },
 
