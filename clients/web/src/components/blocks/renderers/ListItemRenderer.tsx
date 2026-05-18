@@ -15,6 +15,7 @@ import { EditableText } from "../editor/EditableText";
 import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 import { useRefs, useNestChildrenIndex, useBlocks } from "@/stores/blockstore";
+import { readBlockText } from "./readBlockText";
 
 // ListItemRenderer handles both bulleted and numbered items. Bullet is a
 // plain "•"; number is derived from the item's position among siblings of
@@ -22,7 +23,7 @@ import { useRefs, useNestChildrenIndex, useBlocks } from "@/stores/blockstore";
 export function ListItemRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);
-  const text = (block.data?.text as string | undefined) ?? "";
+  const text = readBlockText(block);
   const numbered = block.type === BLOCK_TYPE_NUMBERED_LIST_ITEM;
   const marker = useListMarker(block.id, numbered);
 

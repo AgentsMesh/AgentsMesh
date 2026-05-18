@@ -23,6 +23,7 @@ go_test(
     deps = [
         "//tests/mcp-e2e/client",
         "//tests/mcp-e2e/fixture",
+        "@com_github_google_uuid//:uuid",
         "@com_github_lib_pq//:pq",
     ],
 )
@@ -35,6 +36,7 @@ go_test(
         "block_crud_test.go",
         "block_errors_test.go",
         "block_query_test.go",
+        "block_text_field_test.go",
         "channel_rich_test.go",
         "channel_test.go",
         "concurrency_test.go",
@@ -62,6 +64,7 @@ go_test(
     deps = [
         "//tests/mcp-e2e/client",
         "//tests/mcp-e2e/fixture",
+        "@com_github_google_uuid//:uuid",
         "@com_github_lib_pq//:pq",
     ],
 )

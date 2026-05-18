@@ -13,11 +13,12 @@ import { SlashMenu } from "../editor/SlashMenu";
 import { standardSlashOptions } from "../editor/slashOptions";
 import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
+import { readBlockText } from "./readBlockText";
 
 export function ParagraphRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);
-  const text = (block.data?.text as string | undefined) ?? "";
+  const text = readBlockText(block);
   const [slashOpen, setSlashOpen] = useState(false);
 
   const handleDelete = () => {

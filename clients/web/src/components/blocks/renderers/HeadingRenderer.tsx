@@ -12,6 +12,7 @@ import { CommentsSection } from "../editor/CommentsSection";
 import { EditableText } from "../editor/EditableText";
 import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
+import { readBlockText } from "./readBlockText";
 
 type HeadingLevel = 1 | 2 | 3;
 
@@ -20,7 +21,7 @@ type HeadingLevel = 1 | 2 | 3;
 export function HeadingRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);
-  const text = (block.data?.text as string | undefined) ?? "";
+  const text = readBlockText(block);
   const rawLevel = block.data?.level;
   const level: HeadingLevel = rawLevel === 2 || rawLevel === 3 ? rawLevel : 1;
 

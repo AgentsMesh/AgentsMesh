@@ -58,6 +58,7 @@ go_test(
         "cascade_delete_integration_test.go",
         "correlation_integration_test.go",
         "correlation_test.go",
+        "embedding_test.go",
         "indicator_lifecycle_integration_test.go",
         "openai_embedder_test.go",
         "ref_add_integration_test.go",

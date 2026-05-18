@@ -89,3 +89,18 @@ func (d *DB) GetWorkspaceIDBySlug(ctx context.Context, orgSlug, wsSlug string) (
 	}
 	return id, err
 }
+
+// GetBlockTexts returns (data.text, top-level text) for a block. Used by the
+// data-vs-search field separation spec (issue #366): agents that put content
+// only in top-level text leave data.text empty, which makes the UI render
+// blank even though memory.retrieve still hits the block.
+func (d *DB) GetBlockTexts(ctx context.Context, blockID string) (dataText, topText sql.NullString, err error) {
+	err = d.conn.QueryRowContext(ctx,
+		`SELECT data->>'text', text FROM blocks WHERE id = $1`,
+		blockID,
+	).Scan(&dataText, &topText)
+	if err == sql.ErrNoRows {
+		err = fmt.Errorf("block %s not found", blockID)
+	}
+	return
+}

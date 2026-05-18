@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"math"
 	"strings"
+	"unicode"
 )
 
 // EmbeddingProvider turns a block's text summary into a fixed-dim float vector.
@@ -55,11 +56,19 @@ func (h *HashEmbedder) Embed(_ context.Context, text string) ([]float32, error) 
 	return l2Normalize(vec), nil
 }
 
-// tokenize splits text into lowercase alphanumeric tokens, dropping the rest.
-// A whitespace + punctuation split is sufficient for a bag-of-words model.
+// tokenize splits text on non-letter/non-digit boundaries. CJK ideographs are
+// emitted per-codepoint so non-ASCII text still produces non-zero vectors;
+// a zero vector poisons pgvector cosine distance with NaN (json.Marshal then
+// fails — issue #366 follow-up).
 func tokenize(s string) []string {
 	s = strings.ToLower(s)
-	out := make([]string, 0, 8)
+	// Heuristic capacity: long CJK strings tokenize to one entry per rune, so
+	// `len(s)/3` (~average UTF-8 bytes per rune) avoids most reallocations.
+	capHint := len(s) / 3
+	if capHint < 8 {
+		capHint = 8
+	}
+	out := make([]string, 0, capHint)
 	var buf strings.Builder
 	flush := func() {
 		if buf.Len() > 0 {
@@ -68,7 +77,22 @@ func tokenize(s string) []string {
 		}
 	}
 	for _, r := range s {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		// ASCII fast-path — the hot path for English/code text. Skips the
+		// unicode table lookups + CJK range switch entirely.
+		if r < 0x80 {
+			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+				buf.WriteRune(r)
+				continue
+			}
+			flush()
+			continue
+		}
+		if isCJKIdeograph(r) {
+			flush()
+			out = append(out, string(r))
+			continue
+		}
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			buf.WriteRune(r)
 			continue
 		}
@@ -76,6 +100,22 @@ func tokenize(s string) []string {
 	}
 	flush()
 	return out
+}
+
+// isCJKIdeograph covers Han / Hiragana / Katakana / Hangul, where word
+// boundaries are not whitespace-delimited; each codepoint is its own token.
+func isCJKIdeograph(r rune) bool {
+	switch {
+	case r >= 0x4E00 && r <= 0x9FFF: // CJK Unified Ideographs
+		return true
+	case r >= 0x3040 && r <= 0x309F: // Hiragana
+		return true
+	case r >= 0x30A0 && r <= 0x30FF: // Katakana
+		return true
+	case r >= 0xAC00 && r <= 0xD7AF: // Hangul Syllables
+		return true
+	}
+	return false
 }
 
 // l2Normalize scales the vector so its L2 norm is 1; returns zero vector as-is

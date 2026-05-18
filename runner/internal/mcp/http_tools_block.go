@@ -27,7 +27,7 @@ func (s *HTTPServer) createBlockCreateTool() *MCPTool {
 			"properties": map[string]interface{}{
 				"workspace_id":    blockstoreStringProp("Workspace UUID. Required. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional client-supplied key; second call with same key is a no-op replay returning the original op_ids."),
-				"payload":         blockstoreObjectProp("Block spec: {id?, type, data, text?, meta?}. `type` must be a registered block type key."),
+				"payload":         blockstoreObjectProp("Block spec: {id?, type, data, text?, meta?}. `type` must be a registered block type key. IMPORTANT — two text fields with DIFFERENT roles: (1) `data.text` is the **UI-rendered content** for paragraph / heading / bulleted_list_item / numbered_list_item / quote / callout — agents MUST put displayable content here, or the UI will render blank. (2) top-level `text` is a plain-text summary used only for full-text search and semantic embedding (memory.retrieve); the server does not derive it from data and the UI does not read it. To make a block both visible AND searchable, populate BOTH fields with the same string. Heading also needs `data.level` (1|2|3)."),
 			},
 			"required": []string{"workspace_id", "payload"},
 		},
@@ -46,7 +46,7 @@ func (s *HTTPServer) createBlockUpdateTool() *MCPTool {
 			"properties": map[string]interface{}{
 				"workspace_id":    blockstoreStringProp("Workspace UUID. Use block.list_workspaces / block.get_default_workspace to obtain it."),
 				"idempotency_key": blockstoreStringProp("Optional retry key."),
-				"payload":         blockstoreObjectProp("{id, data?, text?, meta?, expected_updated_at?}"),
+				"payload":         blockstoreObjectProp("{id, data?, text?, meta?, expected_updated_at?}. SAME `text` semantics as block.create: `data.text` is the UI-rendered content; top-level `text` is only the search/embedding summary. Update both when the visible string changes."),
 			},
 			"required": []string{"workspace_id", "payload"},
 		},

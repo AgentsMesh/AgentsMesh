@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 	"github.com/google/uuid"
@@ -122,8 +123,13 @@ func (r *Repository) SearchEmbeddings(
 		if !ok {
 			continue
 		}
-		// pgvector cosine distance = 1 - cosine similarity.
-		er.Score = float32(1.0 - r.Distance)
+		// pgvector returns NaN distance for the zero vector; clamp so the row
+		// ranks below any non-zero min_score (json.Marshal can't encode NaN).
+		if math.IsNaN(r.Distance) || math.IsInf(r.Distance, 0) {
+			er.Score = -1
+		} else {
+			er.Score = float32(1.0 - r.Distance)
+		}
 		out = append(out, er)
 	}
 	return out, nil
