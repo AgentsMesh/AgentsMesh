@@ -7,7 +7,8 @@
       "signIn": "Anmelden",
       "getStarted": "Loslegen",
       "console": "Konsole",
-      "language": "Sprache"
+      "language": "Sprache",
+      "download": "Download"
     },
     "hero": {
       "badge": "Die AI-Agent-Workforce-Plattform",
@@ -415,7 +416,8 @@
         "tutorials": "Tutorials",
         "github": "GitHub",
         "changelog": "Changelog",
-        "status": "Status"
+        "status": "Status",
+        "download": "Download"
       },
       "company": {
         "title": "Unternehmen",
@@ -450,6 +452,70 @@
       "thankYou": "Vielen Dank!",
       "thankYouDescription": "Wir haben Ihre Demo-Anfrage erhalten und melden uns innerhalb von 1 Werktag.",
       "backToHome": "Zurück zur Startseite"
+    },
+    "download": {
+      "hero": {
+        "badge": "Aktuelle Version",
+        "title": "Download",
+        "titleHighlight": "AgentsMesh",
+        "subtitle": "Native Desktop-Apps für jede Plattform — plus der selbst gehostete Runner, der Agents, Code und Daten auf deiner Infrastruktur belässt.",
+        "downloadFor": "Download für {platform}",
+        "releasedOn": "Veröffentlicht am {date}",
+        "viewReleaseNotes": "Release Notes auf GitHub ansehen"
+      },
+      "platforms": {
+        "title": "Wähle deine Plattform",
+        "description": "Alle Builds sind code-signiert und notarisiert. Automatische Updates halten dich auf der neuesten stabilen Version.",
+        "unavailable": "Für diese Plattform noch kein Build verfügbar",
+        "checkBack": "Schau beim nächsten Release wieder vorbei",
+        "macos": {
+          "title": "macOS",
+          "requirements": "macOS 11 Big Sur oder neuer"
+        },
+        "windows": {
+          "title": "Windows",
+          "requirements": "Windows 10 oder neuer · x64 / ARM64"
+        },
+        "linux": {
+          "title": "Linux",
+          "requirements": "Ubuntu 20.04 / Debian 11 oder neuer"
+        }
+      },
+      "runner": {
+        "badge": "Runner CLI",
+        "title": "Agents auf deiner eigenen Infrastruktur ausführen",
+        "description": "Der Runner ist ein selbst gehosteter Daemon, der AI-Agents in isolierten Terminal-Pods ausführt. Dein Code verlässt deine Maschinen nicht.",
+        "macLinux": "macOS · Linux",
+        "windows": "Windows · PowerShell",
+        "manualTitle": "Oder Binaries direkt herunterladen"
+      },
+      "resources": {
+        "older": {
+          "title": "Ältere Versionen",
+          "description": "Brauchst du einen bestimmten Build? Jedes Release enthält Changelogs und signierte Assets.",
+          "cta": "Alle Releases ansehen"
+        },
+        "verify": {
+          "title": "Download verifizieren",
+          "description": "Vergleiche den SHA-256-Hash deiner Datei mit den veröffentlichten Checksums.",
+          "cta": "checksums.txt herunterladen"
+        },
+        "runner": {
+          "title": "Runner-Setup-Anleitung",
+          "description": "Schritt-für-Schritt-Anleitung zur Registrierung eines Runners und Verbindung mit deiner Organisation.",
+          "cta": "Anleitung lesen"
+        },
+        "changelog": {
+          "title": "Neuigkeiten",
+          "description": "Sieh dir jedes neue Feature, jeden Fix und jede Verbesserung an.",
+          "cta": "Changelog ansehen"
+        }
+      },
+      "fallback": {
+        "title": "Downloads vorübergehend nicht verfügbar",
+        "description": "Wir konnten die neueste Release-Info nicht von GitHub abrufen. Bitte gehe direkt zur Releases-Seite.",
+        "cta": "Releases auf GitHub ansehen"
+      }
     }
   }
 }

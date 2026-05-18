@@ -7,7 +7,8 @@
       "signIn": "로그인",
       "getStarted": "시작하기",
       "console": "콘솔",
-      "language": "언어"
+      "language": "언어",
+      "download": "다운로드"
     },
     "hero": {
       "badge": "AI 에이전트 워크포스 플랫폼",
@@ -415,7 +416,8 @@
         "tutorials": "튜토리얼",
         "github": "GitHub",
         "changelog": "변경 로그",
-        "status": "상태"
+        "status": "상태",
+        "download": "다운로드"
       },
       "company": {
         "title": "회사",
@@ -450,6 +452,70 @@
       "thankYou": "감사합니다!",
       "thankYouDescription": "데모 요청을 접수했습니다. 1영업일 이내에 연락드리겠습니다.",
       "backToHome": "홈으로 돌아가기"
+    },
+    "download": {
+      "hero": {
+        "badge": "최신 릴리스",
+        "title": "다운로드",
+        "titleHighlight": "AgentsMesh",
+        "subtitle": "모든 플랫폼을 위한 네이티브 데스크톱 앱과, 에이전트·코드·데이터를 자체 인프라에 보관하는 셀프 호스팅 Runner.",
+        "downloadFor": "{platform} 버전 다운로드",
+        "releasedOn": "{date} 릴리스",
+        "viewReleaseNotes": "GitHub에서 릴리스 노트 보기"
+      },
+      "platforms": {
+        "title": "플랫폼을 선택하세요",
+        "description": "모든 빌드는 코드 서명과 공증을 완료했으며, 자동 업데이트로 항상 최신 안정 버전을 유지합니다.",
+        "unavailable": "아직 이 플랫폼 빌드는 제공되지 않습니다",
+        "checkBack": "다음 릴리스를 기대해 주세요",
+        "macos": {
+          "title": "macOS",
+          "requirements": "macOS 11 Big Sur 이상"
+        },
+        "windows": {
+          "title": "Windows",
+          "requirements": "Windows 10 이상 · x64 / ARM64"
+        },
+        "linux": {
+          "title": "Linux",
+          "requirements": "Ubuntu 20.04 / Debian 11 이상"
+        }
+      },
+      "runner": {
+        "badge": "Runner CLI",
+        "title": "자체 인프라에서 에이전트를 실행하세요",
+        "description": "Runner는 격리된 터미널 Pod에서 AI 에이전트 작업을 실행하는 셀프 호스팅 데몬입니다. 코드는 머신을 벗어나지 않습니다.",
+        "macLinux": "macOS · Linux",
+        "windows": "Windows · PowerShell",
+        "manualTitle": "또는 바이너리 직접 다운로드"
+      },
+      "resources": {
+        "older": {
+          "title": "이전 버전",
+          "description": "특정 빌드가 필요하신가요? 모든 릴리스에는 전체 변경 사항과 서명된 자산이 포함됩니다.",
+          "cta": "모든 릴리스 보기"
+        },
+        "verify": {
+          "title": "다운로드 검증",
+          "description": "공개된 SHA-256 해시와 대조하여 파일을 검증하세요.",
+          "cta": "checksums.txt 다운로드"
+        },
+        "runner": {
+          "title": "Runner 설정 가이드",
+          "description": "Runner를 등록하고 조직에 연결하는 단계별 안내입니다.",
+          "cta": "가이드 읽기"
+        },
+        "changelog": {
+          "title": "새로운 소식",
+          "description": "릴리스마다 추가된 기능과 수정 사항을 확인하세요.",
+          "cta": "변경 로그 보기"
+        }
+      },
+      "fallback": {
+        "title": "다운로드를 일시적으로 사용할 수 없습니다",
+        "description": "GitHub에서 최신 릴리스 정보를 가져오지 못했습니다. 릴리스 페이지에서 직접 다운로드하세요.",
+        "cta": "GitHub 릴리스 보기"
+      }
     }
   }
 }

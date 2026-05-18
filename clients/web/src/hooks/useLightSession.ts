@@ -7,9 +7,10 @@ import { readLightSession, type LightSession } from "@/lib/light-session";
 // after mount (avoids SSR flash) and listens for cross-tab logout via the
 // `storage` event so a logout in (auth) reflects on the open tab.
 //
-// Implemented with useSyncExternalStore (the React 18+ cross-tab pattern):
-// no setState-in-effect, no manual hydration flag — React handles SSR /
-// client-mount transitions via getServerSnapshot.
+// Both `session` and `hydrated` route through useSyncExternalStore so React
+// uses getServerSnapshot during SSR and swaps to the client snapshot only
+// after hydration commit — preventing hydration mismatch when callers gate
+// rendering on `hydrated`.
 
 const subscribe = (cb: () => void) => {
   const handler = (e: StorageEvent) => {
@@ -37,11 +38,12 @@ const getSnapshot = (): LightSession | null => {
 
 const getServerSnapshot = (): LightSession | null => null;
 
+const noopSubscribe = () => () => {};
+const getHydratedClient = () => true;
+const getHydratedServer = () => false;
+
 export function useLightSession(): { session: LightSession | null; hydrated: boolean } {
   const session = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  // useSyncExternalStore returns getServerSnapshot value during SSR, then
-  // swaps to client snapshot on hydrate. Callers that need to gate render
-  // until hydrate use `hydrated` — true once we're on the client.
-  const hydrated = typeof window !== "undefined";
+  const hydrated = useSyncExternalStore(noopSubscribe, getHydratedClient, getHydratedServer);
   return { session, hydrated };
 }

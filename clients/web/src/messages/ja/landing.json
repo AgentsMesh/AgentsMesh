@@ -7,7 +7,8 @@
       "signIn": "ログイン",
       "getStarted": "始める",
       "console": "コンソール",
-      "language": "言語"
+      "language": "言語",
+      "download": "ダウンロード"
     },
     "hero": {
       "badge": "AI エージェントワークフォースプラットフォーム",
@@ -415,7 +416,8 @@
         "tutorials": "チュートリアル",
         "github": "GitHub",
         "changelog": "変更履歴",
-        "status": "ステータス"
+        "status": "ステータス",
+        "download": "ダウンロード"
       },
       "company": {
         "title": "会社",
@@ -450,6 +452,70 @@
       "thankYou": "ありがとうございます！",
       "thankYouDescription": "デモリクエストを受け付けました。1営業日以内にご連絡いたします。",
       "backToHome": "ホームに戻る"
+    },
+    "download": {
+      "hero": {
+        "badge": "最新リリース",
+        "title": "ダウンロード",
+        "titleHighlight": "AgentsMesh",
+        "subtitle": "各プラットフォーム向けのネイティブ デスクトップ アプリと、エージェント・コード・データを自分のインフラに留めるセルフホスト型 Runner。",
+        "downloadFor": "{platform} 版をダウンロード",
+        "releasedOn": "{date} リリース",
+        "viewReleaseNotes": "GitHub でリリースノートを見る"
+      },
+      "platforms": {
+        "title": "プラットフォームを選択",
+        "description": "すべてのビルドはコード署名とノータライズ済み。自動アップデートで常に最新の安定版を利用できます。",
+        "unavailable": "このプラットフォームのビルドはまだ提供していません",
+        "checkBack": "次のリリースをお待ちください",
+        "macos": {
+          "title": "macOS",
+          "requirements": "macOS 11 Big Sur 以降"
+        },
+        "windows": {
+          "title": "Windows",
+          "requirements": "Windows 10 以降 · x64 / ARM64"
+        },
+        "linux": {
+          "title": "Linux",
+          "requirements": "Ubuntu 20.04 / Debian 11 以降"
+        }
+      },
+      "runner": {
+        "badge": "Runner CLI",
+        "title": "自分のインフラでエージェントを実行",
+        "description": "Runner はセルフホスト型デーモンで、隔離されたターミナル Pod 内で AI エージェントのタスクを実行します。コードがマシンから出ることはありません。",
+        "macLinux": "macOS · Linux",
+        "windows": "Windows · PowerShell",
+        "manualTitle": "またはバイナリを直接ダウンロード"
+      },
+      "resources": {
+        "older": {
+          "title": "過去のバージョン",
+          "description": "特定のビルドが必要ですか？すべてのリリースに変更履歴と署名済みアセットが付属します。",
+          "cta": "すべてのリリースを見る"
+        },
+        "verify": {
+          "title": "ダウンロードを検証",
+          "description": "公開されている SHA-256 ハッシュと照合してください。",
+          "cta": "checksums.txt をダウンロード"
+        },
+        "runner": {
+          "title": "Runner セットアップガイド",
+          "description": "Runner を登録して組織に接続する手順を解説しています。",
+          "cta": "ガイドを読む"
+        },
+        "changelog": {
+          "title": "最新情報",
+          "description": "リリースごとの新機能・修正・改善をまとめてご覧ください。",
+          "cta": "更新履歴を見る"
+        }
+      },
+      "fallback": {
+        "title": "ダウンロードを一時的に取得できません",
+        "description": "GitHub から最新リリース情報を取得できませんでした。リリースページから直接ダウンロードしてください。",
+        "cta": "GitHub のリリースを見る"
+      }
     }
   }
 }

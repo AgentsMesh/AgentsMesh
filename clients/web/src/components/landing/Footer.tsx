@@ -51,6 +51,7 @@ export function Footer() {
     resources: {
       title: t("landing.footer.resources.title"),
       links: [
+        { label: t("landing.footer.resources.download"), href: "/download" },
         { label: t("landing.footer.resources.documentation"), href: "/docs" },
         { label: t("landing.footer.resources.github"), href: "https://github.com/AgentsMesh/AgentsMesh" },
         { label: t("landing.footer.resources.changelog"), href: "/changelog" },
