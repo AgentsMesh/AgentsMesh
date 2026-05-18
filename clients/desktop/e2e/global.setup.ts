@@ -56,6 +56,17 @@ setup("authenticate as test user (Electron)", async () => {
     page.on("pageerror", (err) => console.log(`[pageerror]`, err.message));
     await page.waitForLoadState("domcontentloaded");
 
+    // Pin renderer locale to English before login so the captured
+    // localStorage snapshot bakes `app_locale=en` in. macmini-04 (and
+    // most CI hosts) default to non-English system locales; without this
+    // pin, every spec's role-by-name locator matching English strings
+    // (e.g. "Email" on the login form) trips 30s timeouts on the
+    // translated variant. The reload makes IntlProvider re-read this on
+    // mount before the login UI renders.
+    await page.evaluate(() => localStorage.setItem("app_locale", "en"));
+    await page.reload();
+    await page.waitForLoadState("domcontentloaded");
+
     await page.waitForSelector("input#email", { timeout: 30_000 });
     await page.fill("input#email", TEST_USER.email);
     await page.fill("input#password", TEST_USER.password);

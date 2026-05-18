@@ -65,22 +65,31 @@ export const test = base.extend<ElectronFixtures>({
     const page = await electronApp.firstWindow({ timeout: isCi() ? 90_000 : 30_000 });
     await page.waitForLoadState("domcontentloaded");
 
-    if (!skipAuthRestore) {
-      const snap = loadStorageFile(authFile);
-      if (snap) {
-        await restoreStorage(page, snap);
-        await page.reload().catch(() => undefined);
-        await page.waitForLoadState("domcontentloaded");
-        // Restore main-process Rust auth state from the disk-persisted
-        // session global.setup wrote on login. Rust core intentionally
-        // does not auto-bootstrap (see node-bridge/lib.rs:61); without
-        // this call ApiClient.org_path() returns non-org URLs and every
-        // org-scoped IPC (channel/runner/autopilot/...) 404s with
-        // ResourceNotFound { resource: "resource", id: null }. Failures
-        // here surface immediately rather than producing mysterious IPC
-        // errors deep inside individual tests.
-        await invokeIpc(page, "authBootstrap");
-      }
+    const snap = skipAuthRestore ? null : loadStorageFile(authFile);
+    if (snap) await restoreStorage(page, snap);
+
+    // Pin renderer locale to English AFTER any restoreStorage call so the
+    // snapshot can't override it. macmini-04 (and most CI hosts) default
+    // to non-English system locales that IntlProvider picks up via
+    // navigator.language — turning role-by-name locators matching English
+    // strings (e.g. /^add runner$/i) into 30s misses on translated
+    // variants (e.g. "添加 Runner"). The reload below makes IntlProvider
+    // re-read localStorage on mount and stick to English for the session.
+    await page.evaluate(() => localStorage.setItem("app_locale", "en"));
+
+    await page.reload().catch(() => undefined);
+    await page.waitForLoadState("domcontentloaded");
+
+    if (snap) {
+      // Restore main-process Rust auth state from the disk-persisted
+      // session global.setup wrote on login. Rust core intentionally
+      // does not auto-bootstrap (see node-bridge/lib.rs:61); without
+      // this call ApiClient.org_path() returns non-org URLs and every
+      // org-scoped IPC (channel/runner/autopilot/...) 404s with
+      // ResourceNotFound { resource: "resource", id: null }. Failures
+      // here surface immediately rather than producing mysterious IPC
+      // errors deep inside individual tests.
+      await invokeIpc(page, "authBootstrap");
     }
 
     await use(page);
