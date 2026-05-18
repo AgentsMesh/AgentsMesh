@@ -10,33 +10,52 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// MarketplaceWorker runs background sync for platform-level Skill Registries
-// and the official MCP Registry.
+// MarketplaceWorker runs background sync for all active Skill Registries
+// (platform-level and org-level) and the official MCP Registry.
 type MarketplaceWorker struct {
-	importer       *SkillImporter
+	importer       SkillSyncer
 	registrySyncer *McpRegistrySyncer
 	repo           extension.Repository
 	syncInterval   time.Duration
+
+	// syncConcurrency caps in-flight per-cycle syncs. Field rather than const
+	// so deployments / tests can tune the dispatch fan-out without recompiling.
+	syncConcurrency int
 
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
 	startOnce sync.Once
 }
 
+// defaultSyncConcurrency caps how many registries are cloned/synced in
+// parallel per cycle by default. Each sync involves a git clone + storage
+// upload, so bounding this keeps wall-clock cycle time sub-linear in
+// registry count without flooding the network/disk.
+const defaultSyncConcurrency = 4
+
 // NewMarketplaceWorker creates a new MarketplaceWorker.
 // Registries are read from the DB on each sync cycle (no static URL list).
 // registrySyncer may be nil if MCP Registry sync is disabled.
 func NewMarketplaceWorker(
 	repo extension.Repository,
-	importer *SkillImporter,
+	importer SkillSyncer,
 	registrySyncer *McpRegistrySyncer,
 	syncInterval time.Duration,
 ) *MarketplaceWorker {
 	return &MarketplaceWorker{
-		importer:       importer,
-		registrySyncer: registrySyncer,
-		repo:           repo,
-		syncInterval:   syncInterval,
+		importer:        importer,
+		registrySyncer:  registrySyncer,
+		repo:            repo,
+		syncInterval:    syncInterval,
+		syncConcurrency: defaultSyncConcurrency,
+	}
+}
+
+// SetSyncConcurrency overrides the per-cycle in-flight cap. Non-positive
+// values are ignored. Call before Start().
+func (w *MarketplaceWorker) SetSyncConcurrency(n int) {
+	if n > 0 {
+		w.syncConcurrency = n
 	}
 }
 
@@ -117,27 +136,37 @@ func (w *MarketplaceWorker) SyncSingle(ctx context.Context, registryID int64) er
 	return nil
 }
 
-// syncAll queries the DB for all platform-level skill registries and syncs each one.
+// syncAll queries the DB for every active skill registry (platform + org-level)
+// and syncs each one. Org-level inclusion is what makes org-registered skill
+// repos appear in the marketplace without manual refresh — see #375.
 func (w *MarketplaceWorker) syncAll(ctx context.Context) {
-	// Query platform-level registries (organization_id IS NULL)
-	registries, err := w.repo.ListSkillRegistries(ctx, nil)
+	registries, err := w.repo.ListAllActiveSkillRegistries(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "MarketplaceWorker: failed to list platform skill registries", "error", err)
+		slog.ErrorContext(ctx, "MarketplaceWorker: failed to list skill registries", "error", err)
 		return
 	}
 
 	slog.InfoContext(ctx, "MarketplaceWorker: starting sync cycle",
-		"registries", len(registries))
+		"registries", len(registries),
+		"concurrency", w.syncConcurrency)
+
+	sem := make(chan struct{}, w.syncConcurrency)
+	var wg sync.WaitGroup
 
 	for _, reg := range registries {
 		if ctx.Err() != nil {
-			return
+			break
 		}
-		if !reg.IsActive {
-			continue
-		}
-		w.syncRegistry(ctx, reg)
+		sem <- struct{}{}
+		wg.Add(1)
+		go func(r *extension.SkillRegistry) {
+			defer wg.Done()
+			defer func() { <-sem }()
+			w.syncRegistry(ctx, r)
+		}(reg)
 	}
+
+	wg.Wait()
 
 	// Sync MCP Registry
 	if w.registrySyncer != nil {
@@ -155,7 +184,6 @@ func (w *MarketplaceWorker) syncAll(ctx context.Context) {
 	slog.InfoContext(ctx, "MarketplaceWorker: sync cycle completed")
 }
 
-// syncRegistry syncs a single platform-level skill registry
 func (w *MarketplaceWorker) syncRegistry(ctx context.Context, registry *extension.SkillRegistry) {
 	if err := w.importer.SyncSource(ctx, registry.ID); err != nil {
 		slog.ErrorContext(ctx, "MarketplaceWorker: sync failed",

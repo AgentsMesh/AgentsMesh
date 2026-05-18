@@ -31,9 +31,10 @@ func TestSyncRegistry_SyncSourceSuccess(t *testing.T) {
 	}
 
 	w := &MarketplaceWorker{
-		importer:     imp,
-		repo:         repo,
-		syncInterval: time.Hour,
+		importer:        imp,
+		repo:            repo,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 
 	registry := &extension.SkillRegistry{
@@ -66,7 +67,8 @@ func TestSyncAll_WithRegistrySyncer_Success(t *testing.T) {
 		importer:       NewSkillImporter(repo, nil),
 		registrySyncer: syncer,
 		repo:           repo,
-		syncInterval:   time.Hour,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 
 	w.syncAll(context.Background())
@@ -85,7 +87,8 @@ func TestSyncAll_WithRegistrySyncer_Error(t *testing.T) {
 		importer:       NewSkillImporter(repo, nil),
 		registrySyncer: syncer,
 		repo:           repo,
-		syncInterval:   time.Hour,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 
 	w.syncAll(context.Background())
@@ -111,7 +114,8 @@ func TestSyncAll_WithRegistrySyncer_ContextCancelled(t *testing.T) {
 		importer:       NewSkillImporter(repo, nil),
 		registrySyncer: syncer,
 		repo:           repo,
-		syncInterval:   time.Hour,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 
 	w.syncAll(ctx)
@@ -143,9 +147,10 @@ func TestSyncSingle_SuccessPath(t *testing.T) {
 	}
 
 	w := &MarketplaceWorker{
-		importer:     imp,
-		repo:         repo,
-		syncInterval: time.Hour,
+		importer:        imp,
+		repo:            repo,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 
 	err := w.SyncSingle(context.Background(), 1)

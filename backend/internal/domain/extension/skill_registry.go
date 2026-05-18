@@ -28,22 +28,28 @@ const (
 	AuthTypeSSHKey    = "ssh_key"
 )
 
-// SkillRegistry represents a GitHub/GitLab repository used as a Skill import source
+// SkillRegistry represents a GitHub/GitLab repository used as a Skill import source.
+//
+// SkillCount is a derived value computed at query time by joining against
+// skill_market_items — it is NOT persisted on this table. Callers that
+// fetch a SkillRegistry through SkillRegistryRepository receive the
+// populated count; direct GORM access bypasses the join and leaves
+// SkillCount at its zero value.
 type SkillRegistry struct {
 	ID               int64           `gorm:"primaryKey" json:"id"`
-	OrganizationID   *int64          `gorm:"index" json:"organization_id"`                          // NULL = platform-level
+	OrganizationID   *int64          `gorm:"index" json:"organization_id"` // NULL = platform-level
 	RepositoryURL    string          `gorm:"size:500;not null" json:"repository_url"`
 	Branch           string          `gorm:"size:100;default:main" json:"branch"`
-	SourceType       string          `gorm:"size:20;default:auto" json:"source_type"`               // auto / collection / single
-	DetectedType     string          `gorm:"size:20" json:"detected_type,omitempty"`                // collection / single
+	SourceType       string          `gorm:"size:20;default:auto" json:"source_type"`                                   // auto / collection / single
+	DetectedType     string          `gorm:"size:20" json:"detected_type,omitempty"`                                    // collection / single
 	CompatibleAgents json.RawMessage `gorm:"type:jsonb;default:'[\"claude-code\"]'" json:"compatible_agents,omitempty"` // agent whitelist
-	AuthType         string          `gorm:"size:20;default:none" json:"auth_type"`                 // none / github_pat / gitlab_pat / ssh_key
-	AuthCredential   string          `gorm:"column:auth_credential" json:"-"`                       // encrypted, never exposed in JSON
+	AuthType         string          `gorm:"size:20;default:none" json:"auth_type"`                                     // none / github_pat / gitlab_pat / ssh_key
+	AuthCredential   string          `gorm:"column:auth_credential" json:"-"`                                           // encrypted, never exposed in JSON
 	LastSyncedAt     *time.Time      `json:"last_synced_at,omitempty"`
 	LastCommitSha    string          `gorm:"size:40" json:"last_commit_sha,omitempty"`
-	SyncStatus       string          `gorm:"size:20;default:pending" json:"sync_status"`            // pending/syncing/success/failed
+	SyncStatus       string          `gorm:"size:20;default:pending" json:"sync_status"` // pending/syncing/success/failed
 	SyncError        string          `json:"sync_error,omitempty"`
-	SkillCount       int             `gorm:"default:0" json:"skill_count"`
+	SkillCount       int             `gorm:"-" json:"skill_count"` // DERIVED — populated by repo via JOIN; never persisted
 	IsActive         bool            `gorm:"not null;default:true" json:"is_active"`
 	CreatedAt        time.Time       `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt        time.Time       `gorm:"not null;default:now()" json:"updated_at"`

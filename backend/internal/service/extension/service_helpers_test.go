@@ -23,40 +23,42 @@ import (
 
 type svcMockRepo struct {
 	// Skill Registries
-	listSkillRegistriesFn            func(ctx context.Context, orgID *int64) ([]*extension.SkillRegistry, error)
-	getSkillRegistryFn              func(ctx context.Context, id int64) (*extension.SkillRegistry, error)
-	createSkillRegistryFn           func(ctx context.Context, source *extension.SkillRegistry) error
-	updateSkillRegistryFn           func(ctx context.Context, source *extension.SkillRegistry) error
-	deleteSkillRegistryFn           func(ctx context.Context, id int64) error
-	findSkillRegistryByURLFn        func(ctx context.Context, orgID *int64, repoURL string) (*extension.SkillRegistry, error)
+	listSkillRegistriesFn          func(ctx context.Context, orgID *int64) ([]*extension.SkillRegistry, error)
+	listAllActiveSkillRegistriesFn func(ctx context.Context) ([]*extension.SkillRegistry, error)
+	getSkillRegistryFn             func(ctx context.Context, id int64) (*extension.SkillRegistry, error)
+	createSkillRegistryFn          func(ctx context.Context, source *extension.SkillRegistry) error
+	updateSkillRegistryFn          func(ctx context.Context, source *extension.SkillRegistry) error
+	deleteSkillRegistryFn          func(ctx context.Context, id int64) error
+	findSkillRegistryByURLFn       func(ctx context.Context, orgID *int64, repoURL string) (*extension.SkillRegistry, error)
+	claimSyncLockFn                func(ctx context.Context, id int64, staleAfter time.Duration) (bool, bool, error)
 
 	// Skill Market Items
-	listSkillMarketItemsFn              func(ctx context.Context, orgID *int64, query string, category string) ([]*extension.SkillMarketItem, error)
-	getSkillMarketItemFn                func(ctx context.Context, id int64) (*extension.SkillMarketItem, error)
-	findSkillMarketItemBySlugFn         func(ctx context.Context, registryID int64, slug string) (*extension.SkillMarketItem, error)
-	createSkillMarketItemFn             func(ctx context.Context, item *extension.SkillMarketItem) error
-	updateSkillMarketItemFn             func(ctx context.Context, item *extension.SkillMarketItem) error
-	deactivateSkillMarketItemsNotInFn   func(ctx context.Context, registryID int64, slugs []string) error
+	listSkillMarketItemsFn            func(ctx context.Context, orgID *int64, query string, category string) ([]*extension.SkillMarketItem, error)
+	getSkillMarketItemFn              func(ctx context.Context, id int64) (*extension.SkillMarketItem, error)
+	findSkillMarketItemBySlugFn       func(ctx context.Context, registryID int64, slug string) (*extension.SkillMarketItem, error)
+	createSkillMarketItemFn           func(ctx context.Context, item *extension.SkillMarketItem) error
+	updateSkillMarketItemFn           func(ctx context.Context, item *extension.SkillMarketItem) error
+	deactivateSkillMarketItemsNotInFn func(ctx context.Context, registryID int64, slugs []string) error
 
 	// MCP Market Items
 	listMcpMarketItemsFn func(ctx context.Context, query string, category string, limit, offset int) ([]*extension.McpMarketItem, int64, error)
 	getMcpMarketItemFn   func(ctx context.Context, id int64) (*extension.McpMarketItem, error)
 
 	// Installed MCP Servers
-	listInstalledMcpServersFn    func(ctx context.Context, orgID, repoID int64, scope string) ([]*extension.InstalledMcpServer, error)
-	getInstalledMcpServerFn      func(ctx context.Context, id int64) (*extension.InstalledMcpServer, error)
-	createInstalledMcpServerFn   func(ctx context.Context, server *extension.InstalledMcpServer) error
-	updateInstalledMcpServerFn   func(ctx context.Context, server *extension.InstalledMcpServer) error
-	deleteInstalledMcpServerFn   func(ctx context.Context, id int64) error
-	getEffectiveMcpServersFn     func(ctx context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error)
+	listInstalledMcpServersFn  func(ctx context.Context, orgID, repoID int64, scope string) ([]*extension.InstalledMcpServer, error)
+	getInstalledMcpServerFn    func(ctx context.Context, id int64) (*extension.InstalledMcpServer, error)
+	createInstalledMcpServerFn func(ctx context.Context, server *extension.InstalledMcpServer) error
+	updateInstalledMcpServerFn func(ctx context.Context, server *extension.InstalledMcpServer) error
+	deleteInstalledMcpServerFn func(ctx context.Context, id int64) error
+	getEffectiveMcpServersFn   func(ctx context.Context, orgID, userID, repoID int64) ([]*extension.InstalledMcpServer, error)
 
 	// Installed Skills
-	listInstalledSkillsFn    func(ctx context.Context, orgID, repoID int64, scope string) ([]*extension.InstalledSkill, error)
-	getInstalledSkillFn      func(ctx context.Context, id int64) (*extension.InstalledSkill, error)
-	createInstalledSkillFn   func(ctx context.Context, skill *extension.InstalledSkill) error
-	updateInstalledSkillFn   func(ctx context.Context, skill *extension.InstalledSkill) error
-	deleteInstalledSkillFn   func(ctx context.Context, id int64) error
-	getEffectiveSkillsFn     func(ctx context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error)
+	listInstalledSkillsFn  func(ctx context.Context, orgID, repoID int64, scope string) ([]*extension.InstalledSkill, error)
+	getInstalledSkillFn    func(ctx context.Context, id int64) (*extension.InstalledSkill, error)
+	createInstalledSkillFn func(ctx context.Context, skill *extension.InstalledSkill) error
+	updateInstalledSkillFn func(ctx context.Context, skill *extension.InstalledSkill) error
+	deleteInstalledSkillFn func(ctx context.Context, id int64) error
+	getEffectiveSkillsFn   func(ctx context.Context, orgID, userID, repoID int64) ([]*extension.InstalledSkill, error)
 
 	// Skill Registry Overrides
 	setSkillRegistryOverrideFn   func(ctx context.Context, orgID int64, registryID int64, isDisabled bool) error
@@ -68,6 +70,20 @@ func (m *svcMockRepo) ListSkillRegistries(ctx context.Context, orgID *int64) ([]
 		return m.listSkillRegistriesFn(ctx, orgID)
 	}
 	return nil, nil
+}
+
+func (m *svcMockRepo) ListAllActiveSkillRegistries(ctx context.Context) ([]*extension.SkillRegistry, error) {
+	if m.listAllActiveSkillRegistriesFn != nil {
+		return m.listAllActiveSkillRegistriesFn(ctx)
+	}
+	return nil, nil
+}
+
+func (m *svcMockRepo) ClaimSyncLock(ctx context.Context, id int64, staleAfter time.Duration) (bool, bool, error) {
+	if m.claimSyncLockFn != nil {
+		return m.claimSyncLockFn(ctx, id, staleAfter)
+	}
+	return true, false, nil
 }
 
 func (m *svcMockRepo) GetSkillRegistry(ctx context.Context, id int64) (*extension.SkillRegistry, error) {
@@ -283,10 +299,10 @@ var _ extension.Repository = (*svcMockRepo)(nil)
 // ---------------------------------------------------------------------------
 
 type svcMockStorage struct {
-	uploadFn  func(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*storage.FileInfo, error)
-	deleteFn  func(ctx context.Context, key string) error
-	getURLFn  func(ctx context.Context, key string, expiry time.Duration) (string, error)
-	existsFn  func(ctx context.Context, key string) (bool, error)
+	uploadFn func(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*storage.FileInfo, error)
+	deleteFn func(ctx context.Context, key string) error
+	getURLFn func(ctx context.Context, key string, expiry time.Duration) (string, error)
+	existsFn func(ctx context.Context, key string) (bool, error)
 }
 
 func (m *svcMockStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*storage.FileInfo, error) {

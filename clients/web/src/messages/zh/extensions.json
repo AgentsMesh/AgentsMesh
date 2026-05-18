@@ -97,7 +97,7 @@
       "sshKeyLabel": "SSH 私钥",
       "sshKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n..."
     },
-    "sourceAdded": "Skill 注册表已添加",
+    "sourceAdded": "Skill 注册表已添加 — 正在后台导入 skills，稍后即可在市场看到",
     "failedToAddSource": "添加 Skill 注册表失败",
     "syncStarted": "同步已开始",
     "failedToSync": "同步失败",

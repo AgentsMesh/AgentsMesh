@@ -36,7 +36,6 @@ func TestDoSync_SingleSkill(t *testing.T) {
 
 	assert.Equal(t, "single", source.DetectedType)
 	assert.Equal(t, "abc123def456abc123def456abc123def456abc1", source.LastCommitSha)
-	assert.Equal(t, 1, source.SkillCount)
 	require.NotNil(t, createdItem)
 	assert.Equal(t, "single-skill", createdItem.Slug)
 }
@@ -66,7 +65,6 @@ func TestDoSync_CollectionSkills(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "collection", source.DetectedType)
-	assert.Equal(t, 2, source.SkillCount)
 	assert.Len(t, createdItems, 2)
 }
 
@@ -81,8 +79,6 @@ func TestDoSync_EmptyRepo(t *testing.T) {
 	source := &extension.SkillRegistry{ID: 3, RepositoryURL: "https://example.com/empty", Branch: "main"}
 	err := imp.doSync(context.Background(), source)
 	require.NoError(t, err)
-
-	assert.Equal(t, 0, source.SkillCount)
 }
 
 func TestDoSync_CloneError(t *testing.T) {
@@ -139,7 +135,6 @@ func TestDoSync_ProcessSkillError(t *testing.T) {
 	source := &extension.SkillRegistry{ID: 1, RepositoryURL: "https://example.com/repo", Branch: "main"}
 	err := imp.doSync(context.Background(), source)
 	require.NoError(t, err)
-	assert.Equal(t, 2, source.SkillCount)
 }
 
 func TestDoSync_ScanCollectionError(t *testing.T) {
@@ -194,7 +189,6 @@ func TestDoSync_DeactivateError(t *testing.T) {
 	err := imp.doSync(context.Background(), source)
 	require.NoError(t, err)
 	assert.True(t, deactivateCalled, "DeactivateSkillMarketItemsNotIn should have been called")
-	assert.Equal(t, 1, source.SkillCount)
 }
 
 func TestDoSync_SingleSkillParseError(t *testing.T) {

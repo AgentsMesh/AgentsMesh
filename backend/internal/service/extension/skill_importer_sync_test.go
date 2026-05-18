@@ -130,21 +130,6 @@ func TestSyncSource_GetSourceError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to get skill registry")
 }
 
-func TestSyncSource_UpdateStatusError(t *testing.T) {
-	repo := newMockExtensionRepo()
-	repo.getSourceFunc = func(_ context.Context, id int64) (*extension.SkillRegistry, error) {
-		return &extension.SkillRegistry{ID: id, RepositoryURL: "https://example.com/repo", Branch: "main"}, nil
-	}
-	repo.updateSourceFunc = func(_ context.Context, _ *extension.SkillRegistry) error {
-		return errors.New("db write failed")
-	}
-
-	imp := NewSkillImporter(repo, nil)
-	err := imp.SyncSource(context.Background(), 1)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to update sync status")
-}
-
 func TestSyncSource_DoSyncFails_StatusRecorded(t *testing.T) {
 	repo := newMockExtensionRepo()
 	repo.getSourceFunc = func(_ context.Context, id int64) (*extension.SkillRegistry, error) {
@@ -165,8 +150,8 @@ func TestSyncSource_DoSyncFails_StatusRecorded(t *testing.T) {
 	err := imp.SyncSource(context.Background(), 1)
 
 	assert.Error(t, err)
-	assert.GreaterOrEqual(t, updateCalls, 2)
-	assert.Equal(t, "failed", lastStatus)
+	assert.GreaterOrEqual(t, updateCalls, 1)
+	assert.Equal(t, extension.SyncStatusFailed, lastStatus)
 	assert.NotEmpty(t, lastError)
 }
 
@@ -179,17 +164,15 @@ func TestSyncSource_FinalUpdateError(t *testing.T) {
 	updateCallCount := 0
 	repo.updateSourceFunc = func(_ context.Context, _ *extension.SkillRegistry) error {
 		updateCallCount++
-		if updateCallCount == 2 {
-			return errors.New("db write failed on final update")
-		}
-		return nil
+		return errors.New("db write failed on final update")
 	}
 
 	imp := NewSkillImporter(repo, nil)
 	err := imp.SyncSource(context.Background(), 1)
 
+	// SyncSource surfaces the doSync error, not the secondary update error.
 	assert.Error(t, err)
-	assert.GreaterOrEqual(t, updateCallCount, 2)
+	assert.GreaterOrEqual(t, updateCallCount, 1)
 }
 
 // =============================================================================

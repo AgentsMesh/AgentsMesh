@@ -97,7 +97,7 @@
       "sshKeyLabel": "Privater SSH-Schlüssel",
       "sshKeyPlaceholder": "-----BEGIN OPENSSH PRIVATE KEY-----\n..."
     },
-    "sourceAdded": "Skill registry added",
+    "sourceAdded": "Skill registry added — importing skills in the background, they will appear shortly",
     "failedToAddSource": "Failed to add skill registry",
     "syncStarted": "Sync started",
     "failedToSync": "Failed to sync",

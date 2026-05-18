@@ -100,6 +100,8 @@ alias(
 go_test(
     name = "infra_test",
     srcs = [
+        "extension_repo_claim_lock_test.go",
+        "extension_repo_skill_count_test.go",
         "loop_repo_cron_test.go",
         "loop_repo_test.go",
         "loop_run_repo_test.go",
@@ -112,6 +114,7 @@ go_test(
     ],
     embed = [":infra"],
     deps = [
+        "//backend/internal/domain/extension",
         "//backend/internal/domain/loop",
         "//backend/internal/domain/organization",
         "//backend/internal/domain/tokenusage",

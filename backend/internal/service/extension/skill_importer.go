@@ -20,6 +20,11 @@ type SkillImporter struct {
 	repo    extension.Repository
 	storage storage.Storage
 
+	// staleSyncTimeout is the threshold beyond which a registry stuck in
+	// sync_status="syncing" is considered abandoned and may be reclaimed.
+	// Tunable via SetStaleSyncTimeout (default: defaultStaleSyncTimeout).
+	staleSyncTimeout time.Duration
+
 	// credentialDecryptor decrypts auth credentials stored on SkillRegistry.
 	// Set via SetCredentialDecryptor to avoid circular init.
 	credentialDecryptor func(encrypted string) (string, error)
@@ -35,8 +40,9 @@ type SkillImporter struct {
 // NewSkillImporter creates a new SkillImporter
 func NewSkillImporter(repo extension.Repository, storage storage.Storage) *SkillImporter {
 	return &SkillImporter{
-		repo:    repo,
-		storage: storage,
+		repo:             repo,
+		storage:          storage,
+		staleSyncTimeout: defaultStaleSyncTimeout,
 	}
 }
 
@@ -57,40 +63,39 @@ type SkillInfo struct {
 	DirPath       string // absolute path to the skill directory
 }
 
-// SyncSource syncs a skill registry by cloning/pulling the repo and importing skills
+// SyncSource syncs a skill registry by cloning/pulling the repo and importing skills.
+// The lock is claimed atomically via the repository before any work begins —
+// concurrent callers either get the lock or ErrSyncInProgress.
 func (imp *SkillImporter) SyncSource(ctx context.Context, sourceID int64) error {
+	claimed, wasStale, err := imp.repo.ClaimSyncLock(ctx, sourceID, imp.staleSyncTimeout)
+	if err != nil {
+		return fmt.Errorf("failed to claim sync lock: %w", err)
+	}
+	if !claimed {
+		return fmt.Errorf("%w: registry %d", ErrSyncInProgress, sourceID)
+	}
+	if wasStale {
+		slog.WarnContext(ctx, "reclaimed stale syncing registry", "registry_id", sourceID)
+	}
+
 	source, err := imp.repo.GetSkillRegistry(ctx, sourceID)
 	if err != nil {
 		return fmt.Errorf("failed to get skill registry: %w", err)
 	}
 
-	// Prevent concurrent sync of the same registry
-	if source.SyncStatus == "syncing" {
-		return fmt.Errorf("registry %d is already syncing", sourceID)
-	}
-
-	// Update status
-	source.SyncStatus = "syncing"
-	source.SyncError = ""
-	if err := imp.repo.UpdateSkillRegistry(ctx, source); err != nil {
-		return fmt.Errorf("failed to update sync status: %w", err)
-	}
-
-	// Perform sync
 	syncErr := imp.doSync(ctx, source)
 
-	// Update final status
 	now := time.Now()
 	source.LastSyncedAt = &now
 	if syncErr != nil {
-		source.SyncStatus = "failed"
+		source.SyncStatus = extension.SyncStatusFailed
 		source.SyncError = syncErr.Error()
 		slog.ErrorContext(ctx, "Skill registry sync failed",
 			"registry_id", sourceID,
 			"url", source.RepositoryURL,
 			"error", syncErr)
 	} else {
-		source.SyncStatus = "success"
+		source.SyncStatus = extension.SyncStatusSuccess
 		source.SyncError = ""
 	}
 
@@ -152,7 +157,6 @@ func (imp *SkillImporter) doSync(ctx context.Context, source *extension.SkillReg
 
 	if len(skills) == 0 {
 		slog.InfoContext(ctx, "No skills found in source", "registry_id", source.ID, "url", source.RepositoryURL)
-		source.SkillCount = 0
 		return nil
 	}
 
@@ -173,12 +177,12 @@ func (imp *SkillImporter) doSync(ctx context.Context, source *extension.SkillReg
 		}
 	}
 
-	// 5. Deactivate skills no longer in the repo
+	// 5. Deactivate skills no longer in the repo. SkillCount is derived at
+	// query time by SkillRegistryRepository — no field write needed here.
 	if err := imp.repo.DeactivateSkillMarketItemsNotIn(ctx, source.ID, activeSlugs); err != nil {
 		slog.ErrorContext(ctx, "Failed to deactivate removed skills", "registry_id", source.ID, "error", err)
 	}
 
-	source.SkillCount = len(activeSlugs)
 	return nil
 }
 

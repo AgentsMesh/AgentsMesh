@@ -1,0 +1,12 @@
+-- Drop skill_count column from skill_registries.
+--
+-- skill_count was a derived/cached value (count of active rows in
+-- skill_market_items where registry_id = id). Persisting it created a
+-- consistency risk: any code path that mutated skill_market_items
+-- without also updating skill_registries would leave the count stale.
+--
+-- After this migration the count is computed at query time via a
+-- LEFT JOIN against skill_market_items in the repository layer. The
+-- JSON field skill_count is preserved on the API surface — clients
+-- are unaffected.
+ALTER TABLE skill_registries DROP COLUMN IF EXISTS skill_count;

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -41,6 +42,42 @@ func NewExtensionRepository(db *gorm.DB) extension.Repository {
 
 // --- Skill Registries ---
 
+// attachSkillCounts populates the derived SkillCount field on each registry
+// by counting active rows in skill_market_items grouped by registry_id.
+// One batched query regardless of slice size; absent rows imply count=0.
+func (r *extensionRepo) attachSkillCounts(ctx context.Context, registries []*extension.SkillRegistry) error {
+	if len(registries) == 0 {
+		return nil
+	}
+	ids := make([]int64, 0, len(registries))
+	for _, reg := range registries {
+		ids = append(ids, reg.ID)
+	}
+
+	type countRow struct {
+		RegistryID int64 `gorm:"column:registry_id"`
+		Count      int   `gorm:"column:count"`
+	}
+	var rows []countRow
+	if err := r.db.WithContext(ctx).
+		Table("skill_market_items").
+		Select("registry_id, COUNT(*) AS count").
+		Where("registry_id IN ? AND is_active = ?", ids, true).
+		Group("registry_id").
+		Scan(&rows).Error; err != nil {
+		return err
+	}
+
+	counts := make(map[int64]int, len(rows))
+	for _, row := range rows {
+		counts[row.RegistryID] = row.Count
+	}
+	for _, reg := range registries {
+		reg.SkillCount = counts[reg.ID]
+	}
+	return nil
+}
+
 func (r *extensionRepo) ListSkillRegistries(ctx context.Context, orgID *int64) ([]*extension.SkillRegistry, error) {
 	var registries []*extension.SkillRegistry
 	query := r.db.WithContext(ctx)
@@ -52,12 +89,32 @@ func (r *extensionRepo) ListSkillRegistries(ctx context.Context, orgID *int64) (
 	if err := query.Order("organization_id ASC NULLS FIRST, created_at DESC").Find(&registries).Error; err != nil {
 		return nil, err
 	}
+	if err := r.attachSkillCounts(ctx, registries); err != nil {
+		return nil, err
+	}
+	return registries, nil
+}
+
+func (r *extensionRepo) ListAllActiveSkillRegistries(ctx context.Context) ([]*extension.SkillRegistry, error) {
+	var registries []*extension.SkillRegistry
+	if err := r.db.WithContext(ctx).
+		Where("is_active = ?", true).
+		Order("organization_id ASC NULLS FIRST, created_at DESC").
+		Find(&registries).Error; err != nil {
+		return nil, err
+	}
+	if err := r.attachSkillCounts(ctx, registries); err != nil {
+		return nil, err
+	}
 	return registries, nil
 }
 
 func (r *extensionRepo) GetSkillRegistry(ctx context.Context, id int64) (*extension.SkillRegistry, error) {
 	var registry extension.SkillRegistry
 	if err := r.db.WithContext(ctx).First(&registry, id).Error; err != nil {
+		return nil, err
+	}
+	if err := r.attachSkillCounts(ctx, []*extension.SkillRegistry{&registry}); err != nil {
 		return nil, err
 	}
 	return &registry, nil
@@ -92,7 +149,38 @@ func (r *extensionRepo) FindSkillRegistryByURL(ctx context.Context, orgID *int64
 	if err := query.First(&registry).Error; err != nil {
 		return nil, err
 	}
+	if err := r.attachSkillCounts(ctx, []*extension.SkillRegistry{&registry}); err != nil {
+		return nil, err
+	}
 	return &registry, nil
+}
+
+// ClaimSyncLock implements atomic CAS: an UPDATE that only succeeds if the
+// row is not already syncing (or is stale). One SELECT precedes the UPDATE
+// to surface the wasStale signal for ops logging — the SELECT result has no
+// effect on the CAS itself, which is the authoritative gate.
+func (r *extensionRepo) ClaimSyncLock(ctx context.Context, registryID int64, staleAfter time.Duration) (bool, bool, error) {
+	var existing extension.SkillRegistry
+	if err := r.db.WithContext(ctx).Select("sync_status", "updated_at").
+		First(&existing, registryID).Error; err != nil {
+		return false, false, err
+	}
+	wasStale := existing.SyncStatus == extension.SyncStatusSyncing &&
+		time.Since(existing.UpdatedAt) >= staleAfter
+
+	staleBefore := time.Now().Add(-staleAfter)
+	result := r.db.WithContext(ctx).
+		Model(&extension.SkillRegistry{}).
+		Where("id = ?", registryID).
+		Where("sync_status <> ? OR updated_at < ?", extension.SyncStatusSyncing, staleBefore).
+		Updates(map[string]any{
+			"sync_status": extension.SyncStatusSyncing,
+			"sync_error":  "",
+		})
+	if result.Error != nil {
+		return false, false, result.Error
+	}
+	return result.RowsAffected == 1, wasStale, nil
 }
 
 // --- Skill Market Items ---

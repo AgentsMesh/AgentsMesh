@@ -138,14 +138,14 @@ func TestSyncSkillRegistry_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Importer should have called UpdateSkillRegistry at least twice:
-	// 1. Set status to "syncing"
-	// 2. Set status to "success" (final)
-	if len(updateCalls) < 2 {
-		t.Fatalf("expected at least 2 update calls, got %d: %v", len(updateCalls), updateCalls)
+	// Importer should have called UpdateSkillRegistry exactly once with the
+	// terminal status — the "syncing" transition is now persisted atomically
+	// by Repository.ClaimSyncLock before SyncSource runs.
+	if len(updateCalls) < 1 {
+		t.Fatalf("expected at least 1 update call, got %d: %v", len(updateCalls), updateCalls)
 	}
-	if updateCalls[0] != "syncing" {
-		t.Errorf("first update should set status 'syncing', got %q", updateCalls[0])
+	if updateCalls[len(updateCalls)-1] != extension.SyncStatusSuccess {
+		t.Errorf("final update should set status 'success', got %q", updateCalls[len(updateCalls)-1])
 	}
 
 	// The final reload returns whatever getSkillRegistryFn returns

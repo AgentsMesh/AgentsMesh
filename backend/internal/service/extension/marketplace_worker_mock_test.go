@@ -20,11 +20,13 @@ type mockExtensionRepo struct {
 	mu sync.Mutex
 
 	// Configurable function hooks (used by marketplace worker tests).
-	findSourceFunc          func(ctx context.Context, orgID *int64, repoURL string) (*extension.SkillRegistry, error)
-	createSourceFunc        func(ctx context.Context, source *extension.SkillRegistry) error
-	getSourceFunc           func(ctx context.Context, id int64) (*extension.SkillRegistry, error)
-	updateSourceFunc        func(ctx context.Context, source *extension.SkillRegistry) error
-	listSkillRegistriesFunc func(ctx context.Context, orgID *int64) ([]*extension.SkillRegistry, error)
+	findSourceFunc              func(ctx context.Context, orgID *int64, repoURL string) (*extension.SkillRegistry, error)
+	createSourceFunc            func(ctx context.Context, source *extension.SkillRegistry) error
+	getSourceFunc               func(ctx context.Context, id int64) (*extension.SkillRegistry, error)
+	updateSourceFunc            func(ctx context.Context, source *extension.SkillRegistry) error
+	listSkillRegistriesFunc     func(ctx context.Context, orgID *int64) ([]*extension.SkillRegistry, error)
+	listAllActiveRegistriesFunc func(ctx context.Context) ([]*extension.SkillRegistry, error)
+	claimSyncLockFunc           func(ctx context.Context, id int64, staleAfter time.Duration) (bool, bool, error)
 
 	// Track what was created (used for assertions).
 	createdSources []*extension.SkillRegistry
@@ -73,6 +75,22 @@ func (m *mockExtensionRepo) ListSkillRegistries(ctx context.Context, orgID *int6
 		return m.listSkillRegistriesFunc(ctx, orgID)
 	}
 	return nil, nil
+}
+
+func (m *mockExtensionRepo) ListAllActiveSkillRegistries(ctx context.Context) ([]*extension.SkillRegistry, error) {
+	if m.listAllActiveRegistriesFunc != nil {
+		return m.listAllActiveRegistriesFunc(ctx)
+	}
+	return nil, nil
+}
+
+func (m *mockExtensionRepo) ClaimSyncLock(ctx context.Context, id int64, staleAfter time.Duration) (bool, bool, error) {
+	if m.claimSyncLockFunc != nil {
+		return m.claimSyncLockFunc(ctx, id, staleAfter)
+	}
+	// Default: lock is always claimable. Tests targeting lock contention
+	// override claimSyncLockFunc explicitly.
+	return true, false, nil
 }
 
 func (m *mockExtensionRepo) DeleteSkillRegistry(_ context.Context, _ int64) error {
@@ -200,9 +218,10 @@ var _ extension.Repository = (*mockExtensionRepo)(nil)
 
 func newTestWorker(repo *mockExtensionRepo) *MarketplaceWorker {
 	return &MarketplaceWorker{
-		importer:     NewSkillImporter(repo, nil),
-		repo:         repo,
-		syncInterval: time.Hour,
+		importer:        NewSkillImporter(repo, nil),
+		repo:            repo,
+		syncInterval:    time.Hour,
+		syncConcurrency: defaultSyncConcurrency,
 	}
 }
 

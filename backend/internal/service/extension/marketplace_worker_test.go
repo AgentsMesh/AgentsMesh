@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -15,20 +16,16 @@ import (
 // syncAll tests (DB-driven)
 // ---------------------------------------------------------------------------
 
-func TestSyncAll_QueriesDBForPlatformSources(t *testing.T) {
+func TestSyncAll_QueriesDBForRegistries(t *testing.T) {
 	repo := newMockExtensionRepo()
 
 	var mu sync.Mutex
 	syncedIDs := []int64{}
 
-	repo.listSkillRegistriesFunc = func(_ context.Context, orgID *int64) ([]*extension.SkillRegistry, error) {
-		if orgID != nil {
-			t.Errorf("expected nil orgID for platform-level query, got %v", *orgID)
-		}
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return []*extension.SkillRegistry{
 			{ID: 1, RepositoryURL: "https://github.com/org/repo1", Branch: "main", IsActive: true},
 			{ID: 2, RepositoryURL: "https://github.com/org/repo2", Branch: "main", IsActive: true},
-			{ID: 3, RepositoryURL: "https://github.com/org/repo3", Branch: "main", IsActive: false},
 		}, nil
 	}
 
@@ -48,15 +45,20 @@ func TestSyncAll_QueriesDBForPlatformSources(t *testing.T) {
 	if len(syncedIDs) != 2 {
 		t.Fatalf("expected 2 synced sources, got %d: %v", len(syncedIDs), syncedIDs)
 	}
-	if syncedIDs[0] != 1 || syncedIDs[1] != 2 {
-		t.Errorf("expected synced IDs [1, 2], got %v", syncedIDs)
+	// Concurrent dispatch doesn't preserve order — assert the set.
+	got := map[int64]bool{}
+	for _, id := range syncedIDs {
+		got[id] = true
+	}
+	if !got[1] || !got[2] {
+		t.Errorf("expected synced IDs {1, 2}, got %v", syncedIDs)
 	}
 }
 
 func TestSyncAll_EmptyDBSources(t *testing.T) {
 	repo := newMockExtensionRepo()
 
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return nil, nil
 	}
 
@@ -67,7 +69,7 @@ func TestSyncAll_EmptyDBSources(t *testing.T) {
 func TestSyncAll_DBQueryError(t *testing.T) {
 	repo := newMockExtensionRepo()
 
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return nil, errors.New("db connection error")
 	}
 
@@ -75,15 +77,19 @@ func TestSyncAll_DBQueryError(t *testing.T) {
 	w.syncAll(context.Background())
 }
 
-func TestSyncAll_ContextCancelledStopsEarly(t *testing.T) {
+// TestSyncAll_ContextCancelledBeforeDispatch verifies that a context cancelled
+// before dispatch begins prevents any sync from running. Concurrent dispatch
+// is too fast to test mid-loop cancellation deterministically; the pre-cancel
+// case is the strongest contract we can assert without flakiness.
+func TestSyncAll_ContextCancelledBeforeDispatch(t *testing.T) {
 	repo := newMockExtensionRepo()
 
-	var mu sync.Mutex
-	callCount := 0
-
 	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel before syncAll is even invoked
 
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	var listed bool
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
+		listed = true
 		return []*extension.SkillRegistry{
 			{ID: 1, RepositoryURL: "https://github.com/org/repo1", Branch: "main", IsActive: true},
 			{ID: 2, RepositoryURL: "https://github.com/org/repo2", Branch: "main", IsActive: true},
@@ -91,26 +97,20 @@ func TestSyncAll_ContextCancelledStopsEarly(t *testing.T) {
 		}, nil
 	}
 
+	var syncCalled int32
 	repo.getSourceFunc = func(_ context.Context, id int64) (*extension.SkillRegistry, error) {
-		mu.Lock()
-		callCount++
-		current := callCount
-		mu.Unlock()
-
-		if current == 1 {
-			cancel()
-		}
+		atomic.AddInt32(&syncCalled, 1)
 		return &extension.SkillRegistry{ID: id, RepositoryURL: "https://github.com/org/repo", Branch: "main"}, nil
 	}
 
 	w := newTestWorker(repo)
 	w.syncAll(ctx)
 
-	mu.Lock()
-	defer mu.Unlock()
-
-	if callCount >= 3 {
-		t.Errorf("expected early stop, but all %d sources were processed", callCount)
+	if !listed {
+		t.Error("expected list call even with cancelled ctx, got none")
+	}
+	if got := atomic.LoadInt32(&syncCalled); got != 0 {
+		t.Errorf("expected dispatch to bail on cancelled ctx, but %d syncs started", got)
 	}
 }
 
@@ -183,7 +183,7 @@ func TestSyncSingle_SourceNotFound(t *testing.T) {
 
 func TestMarketplaceWorker_GracefulShutdown(t *testing.T) {
 	repo := newMockExtensionRepo()
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return []*extension.SkillRegistry{
 			{ID: 1, RepositoryURL: "https://github.com/org/repo", Branch: "main", IsActive: true},
 		}, nil
@@ -248,7 +248,7 @@ func TestMarketplaceWorker_Start_TimerFires(t *testing.T) {
 	}
 
 	repo := newMockExtensionRepo()
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return nil, nil
 	}
 
@@ -289,7 +289,7 @@ func TestStop_WithoutStart(t *testing.T) {
 
 func TestStart_CalledTwice_NoLeak(t *testing.T) {
 	repo := newMockExtensionRepo()
-	repo.listSkillRegistriesFunc = func(_ context.Context, _ *int64) ([]*extension.SkillRegistry, error) {
+	repo.listAllActiveRegistriesFunc = func(_ context.Context) ([]*extension.SkillRegistry, error) {
 		return nil, nil
 	}
 

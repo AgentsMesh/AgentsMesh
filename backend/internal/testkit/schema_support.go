@@ -38,7 +38,6 @@ func supportTableDDLs() []string {
 			auth_type TEXT DEFAULT 'none', auth_credential TEXT,
 			last_synced_at DATETIME, last_commit_sha TEXT,
 			sync_status TEXT DEFAULT 'pending', sync_error TEXT,
-			skill_count INTEGER DEFAULT 0,
 			is_active INTEGER NOT NULL DEFAULT 1,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
