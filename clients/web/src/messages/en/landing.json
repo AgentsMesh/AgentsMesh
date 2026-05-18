@@ -7,7 +7,8 @@
       "signIn": "Sign In",
       "getStarted": "Get Started",
       "console": "Console",
-      "language": "Language"
+      "language": "Language",
+      "download": "Download"
     },
     "hero": {
       "badge": "The AI Agent Workforce Platform",
@@ -424,7 +425,8 @@
         "tutorials": "Tutorials",
         "github": "GitHub",
         "changelog": "Changelog",
-        "status": "Status"
+        "status": "Status",
+        "download": "Download"
       },
       "company": {
         "title": "Company",
@@ -459,6 +461,70 @@
       "thankYou": "Thank You!",
       "thankYouDescription": "We've received your demo request and will get back to you within 1 business day.",
       "backToHome": "Back to Home"
+    },
+    "download": {
+      "hero": {
+        "badge": "Latest release",
+        "title": "Download",
+        "titleHighlight": "AgentsMesh",
+        "subtitle": "Native desktop apps for every platform — plus the self-hosted Runner that keeps your agents, code, and data on your own infrastructure.",
+        "downloadFor": "Download for {platform}",
+        "releasedOn": "Released {date}",
+        "viewReleaseNotes": "View release notes on GitHub"
+      },
+      "platforms": {
+        "title": "Choose your platform",
+        "description": "All builds are code-signed and notarized. Auto-update keeps you on the latest stable release.",
+        "unavailable": "Build not available yet",
+        "checkBack": "Check back on the next release",
+        "macos": {
+          "title": "macOS",
+          "requirements": "macOS 11 Big Sur or later"
+        },
+        "windows": {
+          "title": "Windows",
+          "requirements": "Windows 10 or later · x64 / ARM64"
+        },
+        "linux": {
+          "title": "Linux",
+          "requirements": "Ubuntu 20.04 / Debian 11 or later"
+        }
+      },
+      "runner": {
+        "badge": "Runner CLI",
+        "title": "Run agents on your own infrastructure",
+        "description": "The Runner is a self-hosted daemon that executes AI agents in isolated terminal pods. Your code never leaves your machines.",
+        "macLinux": "macOS · Linux",
+        "windows": "Windows · PowerShell",
+        "manualTitle": "Or download binaries directly"
+      },
+      "resources": {
+        "older": {
+          "title": "Older versions",
+          "description": "Need a specific build? Every release ships with full changelogs and signed assets.",
+          "cta": "Browse all releases"
+        },
+        "verify": {
+          "title": "Verify your download",
+          "description": "Match the SHA-256 hash of your file against the published checksums.",
+          "cta": "Download checksums.txt"
+        },
+        "runner": {
+          "title": "Runner setup guide",
+          "description": "Step-by-step instructions for registering a Runner and connecting it to your organization.",
+          "cta": "Read the guide"
+        },
+        "changelog": {
+          "title": "What's new",
+          "description": "See every shipped feature, fix, and improvement across releases.",
+          "cta": "View changelog"
+        }
+      },
+      "fallback": {
+        "title": "Downloads temporarily unavailable",
+        "description": "We couldn't fetch the latest release info from GitHub. Head over to the releases page to grab the latest build directly.",
+        "cta": "View releases on GitHub"
+      }
     }
   }
 }

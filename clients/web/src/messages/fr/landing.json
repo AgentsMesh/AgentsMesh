@@ -7,7 +7,8 @@
       "signIn": "Connexion",
       "getStarted": "Commencer",
       "console": "Console",
-      "language": "Langue"
+      "language": "Langue",
+      "download": "Télécharger"
     },
     "hero": {
       "badge": "La plateforme AI Agent Workforce",
@@ -415,7 +416,8 @@
         "tutorials": "Tutoriels",
         "github": "GitHub",
         "changelog": "Journal des modifications",
-        "status": "Statut"
+        "status": "Statut",
+        "download": "Télécharger"
       },
       "company": {
         "title": "Entreprise",
@@ -450,6 +452,70 @@
       "thankYou": "Merci !",
       "thankYouDescription": "Nous avons reçu votre demande de démo et vous recontacterons sous 1 jour ouvré.",
       "backToHome": "Retour à l'accueil"
+    },
+    "download": {
+      "hero": {
+        "badge": "Dernière version",
+        "title": "Télécharger",
+        "titleHighlight": "AgentsMesh",
+        "subtitle": "Applications de bureau natives pour chaque plateforme — plus un Runner auto-hébergé qui garde vos agents, votre code et vos données sur votre infrastructure.",
+        "downloadFor": "Télécharger pour {platform}",
+        "releasedOn": "Publié le {date}",
+        "viewReleaseNotes": "Voir les notes de version sur GitHub"
+      },
+      "platforms": {
+        "title": "Choisissez votre plateforme",
+        "description": "Toutes les builds sont signées et notariées. La mise à jour automatique vous maintient à jour.",
+        "unavailable": "Pas encore de build pour cette plateforme",
+        "checkBack": "Revenez à la prochaine version",
+        "macos": {
+          "title": "macOS",
+          "requirements": "macOS 11 Big Sur ou plus récent"
+        },
+        "windows": {
+          "title": "Windows",
+          "requirements": "Windows 10 ou plus récent · x64 / ARM64"
+        },
+        "linux": {
+          "title": "Linux",
+          "requirements": "Ubuntu 20.04 / Debian 11 ou plus récent"
+        }
+      },
+      "runner": {
+        "badge": "Runner CLI",
+        "title": "Exécutez les agents sur votre propre infrastructure",
+        "description": "Le Runner est un daemon auto-hébergé qui exécute les agents IA dans des pods de terminal isolés. Votre code ne quitte jamais vos machines.",
+        "macLinux": "macOS · Linux",
+        "windows": "Windows · PowerShell",
+        "manualTitle": "Ou téléchargez les binaires directement"
+      },
+      "resources": {
+        "older": {
+          "title": "Versions précédentes",
+          "description": "Besoin d'une build spécifique ? Chaque version inclut changelog et assets signés.",
+          "cta": "Voir toutes les versions"
+        },
+        "verify": {
+          "title": "Vérifiez votre téléchargement",
+          "description": "Comparez le hash SHA-256 de votre fichier aux checksums publiés.",
+          "cta": "Télécharger checksums.txt"
+        },
+        "runner": {
+          "title": "Guide d'installation du Runner",
+          "description": "Instructions pas à pas pour enregistrer un Runner et le connecter à votre organisation.",
+          "cta": "Lire le guide"
+        },
+        "changelog": {
+          "title": "Nouveautés",
+          "description": "Découvrez chaque fonctionnalité, correctif et amélioration.",
+          "cta": "Voir le changelog"
+        }
+      },
+      "fallback": {
+        "title": "Téléchargements temporairement indisponibles",
+        "description": "Impossible de récupérer la dernière version depuis GitHub. Rendez-vous sur la page des releases.",
+        "cta": "Voir les releases sur GitHub"
+      }
     }
   }
 }
