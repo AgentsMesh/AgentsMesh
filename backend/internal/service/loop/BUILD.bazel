@@ -27,6 +27,7 @@ go_library(
     visibility = ["//backend:__subpackages__"],
     deps = [
         "//agentfile/serialize",
+        "//backend/internal/domain/agent",
         "//backend/internal/domain/agentpod",
         "//backend/internal/domain/gitprovider",
         "//backend/internal/domain/loop",

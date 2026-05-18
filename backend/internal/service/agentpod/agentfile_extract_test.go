@@ -36,7 +36,7 @@ func TestExtractAgentfileOverrides_PermissionMode(t *testing.T) {
 
 	ov, err := extractFromAgentfileLayer(baseAgentfileSrc, userLayer, nil, nil)
 	require.NoError(t, err)
-	assert.Equal(t, "bypassPermissions", ov.PermissionMode)
+	assert.Equal(t, "bypassPermissions", ov.ConfigValues["permission_mode"])
 }
 
 func TestExtractAgentfileOverrides_ConfigValuesSnapshot(t *testing.T) {
@@ -97,7 +97,7 @@ BRANCH "develop"
 	assert.Equal(t, "acp", ov.Mode)
 	assert.Equal(t, "my-profile", ov.CredentialProfile)
 	assert.Equal(t, "fix this bug", ov.Prompt)
-	assert.Equal(t, "bypassPermissions", ov.PermissionMode)
+	assert.Equal(t, "bypassPermissions", ov.ConfigValues["permission_mode"])
 	assert.Equal(t, "dev-org/demo-api", ov.RepoSlug)
 	assert.Equal(t, "develop", ov.Branch)
 }
@@ -118,7 +118,7 @@ func TestExtractAgentfileOverrides_EmptyLayer(t *testing.T) {
 	require.NoError(t, err)
 	// All overrides should carry the base defaults (MODE pty, permission_mode "bypassPermissions").
 	assert.Equal(t, "pty", ov.Mode)
-	assert.Equal(t, "bypassPermissions", ov.PermissionMode)
+	assert.Equal(t, "bypassPermissions", ov.ConfigValues["permission_mode"])
 	// Fields absent in the base AgentFile stay empty.
 	assert.Empty(t, ov.Branch)
 	assert.Empty(t, ov.RepoSlug)
@@ -134,5 +134,5 @@ func TestExtractAgentfileOverrides_MergeCorrectness(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "acp", ov.Mode, "user layer MODE should override base MODE")
 	// Other base values remain intact.
-	assert.Equal(t, "bypassPermissions", ov.PermissionMode)
+	assert.Equal(t, "bypassPermissions", ov.ConfigValues["permission_mode"])
 }

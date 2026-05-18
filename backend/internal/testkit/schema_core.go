@@ -75,6 +75,7 @@ func coreTableDDLs() []string {
 			config_schema TEXT DEFAULT '{}', agentfile_source TEXT,
 			is_builtin INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1,
 			supported_modes TEXT NOT NULL DEFAULT 'pty',
+			uses_legacy_columns INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,

@@ -39,6 +39,9 @@ func (o *PodOrchestrator) handleResumeMode(ctx context.Context, req *Orchestrate
 	}
 
 	// Inherit configuration from source pod
+	if req.AgentSlug != "" && req.AgentSlug != sourcePod.AgentSlug {
+		return nil, "", ErrResumeAgentMismatch
+	}
 	if req.AgentSlug == "" {
 		req.AgentSlug = sourcePod.AgentSlug
 	}
@@ -60,11 +63,6 @@ func (o *PodOrchestrator) handleResumeMode(ctx context.Context, req *Orchestrate
 	} else {
 		sessionID = uuid.New().String()
 	}
-
-	resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
-	// Resume fields (resume_enabled, resume_session) are injected into AgentFile
-	// via systemOverrides in CreatePod, not through ConfigOverrides.
-	_ = resumeAgentSession
 
 	return sourcePod, sessionID, nil
 }

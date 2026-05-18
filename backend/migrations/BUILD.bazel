@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 # `migrations` is a Go package now: it embeds every `*.sql` file via
 # //go:embed so the agentsmesh-backend binary ships its own migration
@@ -24,4 +24,10 @@ alias(
     name = "go_default_library",
     actual = ":migrations",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "migrations_test",
+    srcs = ["embed_test.go"],
+    embed = [":migrations"],
 )

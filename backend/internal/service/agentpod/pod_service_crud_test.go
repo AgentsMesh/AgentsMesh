@@ -172,6 +172,37 @@ func TestCreatePod_DefaultValues(t *testing.T) {
 	svc := newTestPodService(db)
 	ctx := context.Background()
 
+	// PodService is agent-agnostic: it persists what callers give it and does
+	// NOT inject any agent-specific defaults. This test verifies that explicit
+	// caller-supplied Model/PermissionMode round-trip correctly.
+	req := &CreatePodRequest{
+		OrganizationID: 1,
+		RunnerID:       1,
+		CreatedByID:    1,
+		AgentSlug:      "claude-code",
+		Model:          "opus",
+		PermissionMode: agentpod.PermissionModeBypass,
+	}
+
+	sess, err := svc.CreatePod(ctx, req)
+	if err != nil {
+		t.Fatalf("CreatePod failed: %v", err)
+	}
+
+	if sess.Model == nil || *sess.Model != "opus" {
+		t.Error("Caller-supplied model should round-trip")
+	}
+	if sess.PermissionMode == nil || *sess.PermissionMode != agentpod.PermissionModeBypass {
+		t.Error("Caller-supplied permission mode should round-trip")
+	}
+}
+
+func TestCreatePod_NoDefaultingByService(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestPodService(db)
+	ctx := context.Background()
+
+	// Empty AgentSlug used to trigger Claude defaulting; after Fix #2 it must not.
 	req := &CreatePodRequest{
 		OrganizationID: 1,
 		RunnerID:       1,
@@ -182,13 +213,11 @@ func TestCreatePod_DefaultValues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreatePod failed: %v", err)
 	}
-
-	// Check defaults
-	if sess.Model == nil || *sess.Model != "opus" {
-		t.Error("Default model should be opus")
+	if sess.Model != nil {
+		t.Errorf("PodService should not default model for empty agent slug, got %q", *sess.Model)
 	}
-	if sess.PermissionMode == nil || *sess.PermissionMode != agentpod.PermissionModeBypass {
-		t.Error("Default permission mode should be bypassPermissions")
+	if sess.PermissionMode != nil {
+		t.Errorf("PodService should not default permission_mode for empty agent slug, got %q", *sess.PermissionMode)
 	}
 }
 

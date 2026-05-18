@@ -12,19 +12,15 @@ import (
 )
 
 // agentfileExtractResult holds values extracted from a merged AgentFile (base + user layer).
-// It contains both overrides for DB write and the serialized merged source for Runner,
-// eliminating the need for downstream re-parsing.
+// CONFIG values land in ConfigValues; the serialized merged source goes to Runner so
+// downstream consumers never re-parse the AgentFile.
 type agentfileExtractResult struct {
-	// Overrides for DB write
-	Mode              string // MODE pty/acp
-	CredentialProfile string // CREDENTIAL "profile-name"
-	Branch            string // BRANCH "branch-name"
-	RepoSlug          string // REPO "slug" (e.g., "dev-org/demo-api")
-	PermissionMode    string // CONFIG permission_mode = "bypassPermissions"
-	Prompt            string // PROMPT "prompt content"
-	ConfigValues      agentDomain.ConfigValues
-	// Merged AgentFile source (for Runner, avoids re-parsing in ConfigBuilder).
-	// CONFIG declarations contain final resolved values (post-resolve).
+	Mode                  string // MODE pty/acp
+	CredentialProfile     string // CREDENTIAL "profile-name"
+	Branch                string // BRANCH "branch-name"
+	RepoSlug              string // REPO "slug" (e.g., "dev-org/demo-api")
+	Prompt                string // PROMPT "prompt content"
+	ConfigValues          agentDomain.ConfigValues
 	MergedAgentfileSource string
 }
 
@@ -72,11 +68,6 @@ func extractFromAgentfileLayer(
 	for _, cfg := range spec.Config {
 		if !isSystemConfigKey(cfg.Name) {
 			result.ConfigValues[cfg.Name] = cfg.Default
-		}
-		if cfg.Name == "permission_mode" {
-			if s, ok := cfg.Default.(string); ok {
-				result.PermissionMode = s
-			}
 		}
 	}
 

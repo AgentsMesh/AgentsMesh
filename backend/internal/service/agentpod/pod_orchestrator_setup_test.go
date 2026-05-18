@@ -149,6 +149,7 @@ func setupOrchestratorTestDB(t *testing.T) *gorm.DB {
 		config_schema TEXT DEFAULT '{}',
 		agentfile_source TEXT,
 		supported_modes TEXT NOT NULL DEFAULT 'pty',
+		uses_legacy_columns INTEGER NOT NULL DEFAULT 0,
 		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 	)`)
@@ -186,11 +187,12 @@ PROMPT_POSITION prepend
 `
 	return &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{
-			Slug:           "claude-code",
-			Name:           "Claude Code",
-			LaunchCommand:  "claude",
-			SupportedModes: "pty",
-			AgentfileSource:  &agentfile,
+			Slug:              "claude-code",
+			Name:              "Claude Code",
+			LaunchCommand:     "claude",
+			SupportedModes:    "pty",
+			AgentfileSource:   &agentfile,
+			UsesLegacyColumns: true,
 		},
 		config:   agentDomain.ConfigValues{},
 		creds:    agentDomain.EncryptedCredentials{},
@@ -244,11 +246,12 @@ PROMPT_POSITION prepend
 `
 	return &mockAgentConfigProvider{
 		agentDef: &agentDomain.Agent{
-			Slug:            "claude-code",
-			Name:            "Claude Code",
-			LaunchCommand:   "claude",
-			SupportedModes:  "pty",
-			AgentfileSource: &agentfile,
+			Slug:              "claude-code",
+			Name:              "Claude Code",
+			LaunchCommand:     "claude",
+			SupportedModes:    "pty",
+			AgentfileSource:   &agentfile,
+			UsesLegacyColumns: true,
 		},
 		config:   agentDomain.ConfigValues{},
 		creds:    agentDomain.EncryptedCredentials{},

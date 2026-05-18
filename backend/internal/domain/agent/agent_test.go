@@ -74,15 +74,16 @@ func TestAgentStruct(t *testing.T) {
 	args := "--verbose"
 
 	at := Agent{
-		Slug:          "test-agent",
-		Name:          "Test Agent",
-		Description:   &desc,
-		LaunchCommand: "test-cli",
-		DefaultArgs:   &args,
-		IsBuiltin:     true,
-		IsActive:      true,
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		Slug:              "test-agent",
+		Name:              "Test Agent",
+		Description:       &desc,
+		LaunchCommand:     "test-cli",
+		DefaultArgs:       &args,
+		IsBuiltin:         true,
+		IsActive:          true,
+		UsesLegacyColumns: false,
+		CreatedAt:         now,
+		UpdatedAt:         now,
 	}
 
 	if at.Slug != "test-agent" {
@@ -93,6 +94,20 @@ func TestAgentStruct(t *testing.T) {
 	}
 	if at.LaunchCommand != "test-cli" {
 		t.Errorf("expected LaunchCommand 'test-cli', got %s", at.LaunchCommand)
+	}
+	if at.UsesLegacyColumns {
+		t.Error("expected UsesLegacyColumns to default to false")
+	}
+}
+
+func TestAgentUsesLegacyColumnsFlag(t *testing.T) {
+	claude := Agent{Slug: "claude-code", UsesLegacyColumns: true}
+	codex := Agent{Slug: "codex-cli"} // zero value
+	if !claude.UsesLegacyColumns {
+		t.Error("claude-code agent should opt in to legacy columns")
+	}
+	if codex.UsesLegacyColumns {
+		t.Error("codex-cli agent must default to false (AgentFile-only config)")
 	}
 }
 

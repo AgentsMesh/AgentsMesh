@@ -67,9 +67,20 @@ func CreatePod(t *testing.T, db *gorm.DB, orgID, runnerID, userID int64) (podKey
 // CreateAgent inserts a test agent definition.
 func CreateAgent(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string) {
 	t.Helper()
+	CreateAgentWithLegacyFlag(t, db, slug, name, agentfileSrc, false)
+}
+
+// CreateAgentWithLegacyFlag inserts a test agent and sets uses_legacy_columns.
+// Use this when the test relies on Claude-style legacy column persistence.
+func CreateAgentWithLegacyFlag(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string, usesLegacy bool) {
+	t.Helper()
+	flag := 0
+	if usesLegacy {
+		flag = 1
+	}
 	result := db.Exec(
-		`INSERT INTO agents (slug, name, launch_command, agentfile_source, supported_modes) VALUES (?, ?, ?, ?, 'pty')`,
-		slug, name, slug, agentfileSrc,
+		`INSERT INTO agents (slug, name, launch_command, agentfile_source, supported_modes, uses_legacy_columns) VALUES (?, ?, ?, ?, 'pty', ?)`,
+		slug, name, slug, agentfileSrc, flag,
 	)
 	if result.Error != nil {
 		t.Fatalf("testkit.CreateAgent: %v", result.Error)

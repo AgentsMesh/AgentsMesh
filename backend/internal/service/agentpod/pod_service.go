@@ -53,7 +53,7 @@ type CreatePodRequest struct {
 	SkipPermissions   bool
 	PreparationConfig *agentpod.PreparationConfig
 	EnvVars           map[string]string
-	ConfigOverrides   agentDomain.ConfigValues
+	ResolvedConfig    agentDomain.ConfigValues
 
 	// CredentialProfileID records which credential profile was selected.
 	// nil = default resolution, >0 = specific profile. 0 is not stored (FK constraint).
@@ -84,22 +84,16 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 	}
 	podKey := fmt.Sprintf("%d-%s-%s", req.CreatedByID, ticketPart, randomSuffix)
 
-	model := req.Model
-	if model == "" && shouldDefaultLegacyClaudeFields(req.AgentSlug) {
-		model = "opus"
-	}
 	var modelPtr *string
-	if model != "" {
-		modelPtr = &model
+	if req.Model != "" {
+		m := req.Model
+		modelPtr = &m
 	}
 
-	permissionMode := req.PermissionMode
-	if permissionMode == "" && shouldDefaultLegacyClaudeFields(req.AgentSlug) {
-		permissionMode = agentpod.PermissionModeBypass
-	}
 	var permissionModePtr *string
-	if permissionMode != "" {
-		permissionModePtr = &permissionMode
+	if req.PermissionMode != "" {
+		pm := req.PermissionMode
+		permissionModePtr = &pm
 	}
 	// Handle session ID
 	var sessionID *string
@@ -139,7 +133,7 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 		CredentialProfileID: req.CredentialProfileID,
 		InteractionMode:     interactionMode,
 		Perpetual:           req.Perpetual,
-		ConfigOverrides:     req.ConfigOverrides,
+		ResolvedConfig:      req.ResolvedConfig,
 	}
 
 	if err := s.repo.Create(ctx, pod); err != nil {
@@ -153,10 +147,6 @@ func (s *PodService) CreatePod(ctx context.Context, req *CreatePodRequest) (*age
 	// Do NOT increment here to avoid double-counting.
 
 	return pod, nil
-}
-
-func shouldDefaultLegacyClaudeFields(agentSlug string) bool {
-	return agentSlug == "" || isClaudeAgentSlug(agentSlug)
 }
 
 // CreatePodForTicket creates a pod with ticket context

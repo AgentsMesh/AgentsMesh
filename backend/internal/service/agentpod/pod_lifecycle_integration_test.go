@@ -36,7 +36,7 @@ func setupIntegrationOrchestrator(t *testing.T, opts ...func(*PodOrchestratorDep
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty",
-			AgentfileSource: &agentfileSrc,
+			AgentfileSource: &agentfileSrc, UsesLegacyColumns: true,
 		},
 		config: agentDomain.ConfigValues{},
 		creds:  agentDomain.EncryptedCredentials{},
@@ -176,7 +176,7 @@ func TestPodLifecycle_RunnerAutoSelect(t *testing.T) {
 	resolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty",
-			AgentfileSource: &agentfileSrc,
+			AgentfileSource: &agentfileSrc, UsesLegacyColumns: true,
 		},
 	}
 
@@ -232,7 +232,7 @@ func TestPodLifecycle_AgentfileLayerMerge(t *testing.T) {
 	resolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty,acp",
-			AgentfileSource: &baseAgentfile,
+			AgentfileSource: &baseAgentfile, UsesLegacyColumns: true,
 		},
 	}
 

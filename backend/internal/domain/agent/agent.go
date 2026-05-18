@@ -26,6 +26,15 @@ type Agent struct {
 
 	SupportedModes string `gorm:"column:supported_modes;type:varchar(50);default:pty;not null" json:"supported_modes"`
 
+	// UsesLegacyColumns is IMMUTABLE: set at agent registration, never toggled
+	// at runtime. Pods rely on it for schema decisions (whether pods.model /
+	// pods.permission_mode are written), so flipping it on a live agent would
+	// silently desync existing pod data. Do NOT expose mutators via update APIs.
+	//
+	// True for Claude-family agents (claude-code / claude). New agents must
+	// default to false and rely on the AgentFile CONFIG snapshot exclusively.
+	UsesLegacyColumns bool `gorm:"column:uses_legacy_columns;not null;default:false" json:"uses_legacy_columns"`
+
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }

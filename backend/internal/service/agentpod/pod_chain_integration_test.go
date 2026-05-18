@@ -26,7 +26,7 @@ func acpProvider(agentfileSrc string) *mockAgentConfigProvider {
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty,acp",
-			AgentfileSource: &agentfileSrc,
+			AgentfileSource: &agentfileSrc, UsesLegacyColumns: true,
 		},
 		config: agentDomain.ConfigValues{}, creds: agentDomain.EncryptedCredentials{},
 		isRunner: true,
@@ -38,7 +38,7 @@ func acpResolver(agentfileSrc string) *mockAgentResolver {
 	return &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty,acp",
-			AgentfileSource: &agentfileSrc,
+			AgentfileSource: &agentfileSrc, UsesLegacyColumns: true,
 		},
 	}
 }
@@ -155,7 +155,7 @@ func TestPodChain_CredentialFlow(t *testing.T) {
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", Name: "Claude Code",
 			LaunchCommand: "claude", SupportedModes: "pty,acp",
-			AgentfileSource: &agentfileSrc,
+			AgentfileSource: &agentfileSrc, UsesLegacyColumns: true,
 		},
 		config:   agentDomain.ConfigValues{},
 		creds:    agentDomain.EncryptedCredentials{"ANTHROPIC_API_KEY": "enc-key-123"},
@@ -197,7 +197,7 @@ func TestPodChain_UnsupportedInteractionMode(t *testing.T) {
 	ptyOnlyResolver := &mockAgentResolver{
 		agentDef: &agentDomain.Agent{
 			Slug: "claude-code", SupportedModes: "pty",
-			AgentfileSource: &ptyOnlySrc,
+			AgentfileSource: &ptyOnlySrc, UsesLegacyColumns: true,
 		},
 	}
 	provider := acpProvider(ptyOnlySrc) // provider doesn't matter for mode validation
@@ -299,4 +299,87 @@ func TestPodChain_DispatchFailureMarksError(t *testing.T) {
 	assert.Equal(t, errCodeRunnerUnreachable, *dbPod.ErrorCode)
 	require.NotNil(t, dbPod.ErrorMessage)
 	assert.Contains(t, *dbPod.ErrorMessage, "runner connection refused")
+}
+
+// TestResumeIntegration_CodexFullChain exercises the full create → snapshot →
+// terminate → resume chain for a non-Claude (Codex) agent. It verifies that:
+//   - the resolved AgentFile CONFIG snapshot lands on Pod.ResolvedConfig
+//   - codex pods do NOT touch legacy Pod.Model / Pod.PermissionMode columns
+//   - resume re-injects the source pod's CONFIG snapshot and produces the
+//     `codex resume --last` launch command honored by Codex CLI
+func TestResumeIntegration_CodexFullChain(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	codexAgentfile := "AGENT codex\nEXECUTABLE codex\nMODE pty\n" +
+		"CONFIG approval_mode SELECT(\"untrusted\", \"on-request\", \"never\") = \"untrusted\"\n" +
+		"PROMPT_POSITION append\n" +
+		"arg \"resume\" \"--last\" when config.resume_enabled and mode != \"acp\"\n" +
+		"arg \"--ask-for-approval\" config.approval_mode when config.approval_mode != \"\" and mode != \"acp\"\n"
+
+	codexProvider := &mockAgentConfigProvider{
+		agentDef: &agentDomain.Agent{
+			Slug:              "codex-cli",
+			Name:              "Codex CLI",
+			LaunchCommand:     "codex",
+			SupportedModes:    "pty",
+			AgentfileSource:   &codexAgentfile,
+			UsesLegacyColumns: false,
+		},
+		config:   agentDomain.ConfigValues{},
+		creds:    agentDomain.EncryptedCredentials{},
+		isRunner: true,
+	}
+	codexResolver := &mockAgentResolver{agentDef: codexProvider.agentDef}
+
+	orch, podSvc, ctx := setupIntegrationOrchestrator(t,
+		withCoordinator(coord),
+		withAgentResolver(codexResolver),
+		withConfigBuilder(agent.NewConfigBuilder(codexProvider)),
+	)
+
+	sourceLayer := `CONFIG approval_mode = "never"`
+	source, err := orch.CreatePod(ctx, &OrchestrateCreatePodRequest{
+		OrganizationID: ctxOrgID(ctx),
+		UserID:         ctxUserID(ctx),
+		RunnerID:       ctxRunnerID(ctx),
+		AgentSlug:      "codex-cli",
+		AgentfileLayer: &sourceLayer,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, source.Pod)
+
+	sourceDB, err := podSvc.GetPod(ctx, source.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Equal(t, "never", sourceDB.ResolvedConfig["approval_mode"], "snapshot should land on ResolvedConfig")
+	assert.Nil(t, sourceDB.Model, "codex must not write legacy Model column")
+	assert.Nil(t, sourceDB.PermissionMode, "codex must not write legacy PermissionMode column")
+
+	// Terminate + attach a sandbox path so resume can pick up local_path.
+	sandboxPath := "/home/user/sandbox/codex-source"
+	_, err = podSvc.UpdateByKey(ctx, source.Pod.PodKey, map[string]interface{}{
+		"sandbox_path": sandboxPath,
+		"status":       podDomain.StatusTerminated,
+	})
+	require.NoError(t, err)
+
+	resumed, err := orch.CreatePod(ctx, &OrchestrateCreatePodRequest{
+		OrganizationID: ctxOrgID(ctx),
+		UserID:         ctxUserID(ctx),
+		SourcePodKey:   source.Pod.PodKey,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resumed.Pod)
+
+	resumedDB, err := podSvc.GetPod(ctx, resumed.Pod.PodKey)
+	require.NoError(t, err)
+	assert.Equal(t, "never", resumedDB.ResolvedConfig["approval_mode"], "snapshot should survive resume")
+	assert.Nil(t, resumedDB.Model)
+	assert.Nil(t, resumedDB.PermissionMode)
+	assert.Equal(t, "codex-cli", resumedDB.AgentSlug, "agent slug should be inherited from source pod")
+
+	require.NotNil(t, coord.lastCmd)
+	assert.Equal(t, "codex", coord.lastCmd.LaunchCommand)
+	assert.Equal(t, "append", coord.lastCmd.PromptPosition)
+	assert.Equal(t, []string{"resume", "--last", "--ask-for-approval", "never"}, coord.lastCmd.LaunchArgs)
+	require.NotNil(t, coord.lastCmd.SandboxConfig)
+	assert.Equal(t, sandboxPath, coord.lastCmd.SandboxConfig.LocalPath)
 }

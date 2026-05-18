@@ -69,18 +69,8 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	// --- AgentFile Layer resolution ---
 	resolved := &agentfileResolved{}
 
-	// Build systemOverrides: truly system-internal values injected into AgentFile.
-	systemOverrides := make(map[string]interface{})
-	if !isResumeMode {
-		systemOverrides["session_id"] = sessionID
-	} else {
-		systemOverrides["session_id"] = ""
-		resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
-		if resumeAgentSession {
-			systemOverrides["resume_enabled"] = true
-			systemOverrides["resume_session"] = sessionID
-		}
-	}
+	resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
+	systemOverrides := newSystemOverrides(sessionID, isResumeMode, resumeAgentSession)
 
 	// AgentFile SSOT: resolve CONFIG values from base AgentFile + optional user Layer.
 	if agentDef != nil && agentDef.AgentfileSource != nil {
@@ -89,7 +79,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 			userPrefs = o.userConfigQuery.GetUserConfigPrefs(ctx, req.UserID, req.AgentSlug)
 		}
 		if isResumeMode {
-			userPrefs = mergeSourcePodConfigPrefs(userPrefs, sourcePod)
+			userPrefs = mergeSourcePodConfigPrefs(userPrefs, sourcePod, agentDef)
 		}
 
 		layerSrc := ""
@@ -113,9 +103,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		if result.Branch != "" {
 			resolved.BranchName = result.Branch
 		}
-		if result.PermissionMode != "" {
-			resolved.PermissionMode = result.PermissionMode
-		}
 		if result.RepoSlug != "" && o.repoService != nil {
 			repo, repoErr := o.repoService.FindByOrgSlug(ctx, req.OrganizationID, result.RepoSlug)
 			if repoErr == nil && repo != nil {
@@ -127,24 +114,12 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- Compute effective values: resolved (AgentFile) > source pod (resume) > defaults ---
+	// Effective Model / PermissionMode come from resolved.ConfigValues — the
+	// single source of truth post-resolve. mergeSourcePodConfigPrefs already
+	// projects legacy Claude columns into userPrefs so they re-emerge here.
 	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, podDomain.InteractionModePTY)
-	effectiveModel := ""
-	effectivePermissionMode := ""
-	if isClaudeAgentSlug(req.AgentSlug) {
-		sourceModel := ""
-		if sourcePod != nil && sourcePod.Model != nil {
-			sourceModel = *sourcePod.Model
-		}
-		effectiveModel = firstNonEmpty(configString(resolved.ConfigValues, "model"), sourceModel)
-
-		// Legacy Claude permission mode column: AgentFile > source pod (resume inheritance) > default.
-		sourcePermMode := ""
-		if sourcePod != nil && sourcePod.PermissionMode != nil {
-			sourcePermMode = *sourcePod.PermissionMode
-		}
-		effectivePermissionMode = firstNonEmpty(resolved.PermissionMode, sourcePermMode, podDomain.PermissionModeBypass)
-	}
+	effectiveModel := resolved.ConfigValues.GetString(agentDomain.ConfigKeyModel)
+	effectivePermissionMode := resolved.ConfigValues.GetString(agentDomain.ConfigKeyPermissionMode)
 	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName) // req.BranchName only from resume
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
@@ -194,7 +169,7 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		CredentialProfileID: dbCredProfileID,
 		InteractionMode:     effectiveInteractionMode,
 		Perpetual:           req.Perpetual,
-		ConfigOverrides:     resolved.ConfigValues,
+		ResolvedConfig:      resolved.ConfigValues,
 	})
 	if err != nil {
 		return nil, err
@@ -222,62 +197,4 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 	}
 
 	return &OrchestrateCreatePodResult{Pod: pod}, nil
-}
-
-func mergeSourcePodConfigPrefs(userPrefs map[string]interface{}, sourcePod *podDomain.Pod) map[string]interface{} {
-	if sourcePod == nil {
-		return userPrefs
-	}
-
-	merged := make(map[string]interface{}, len(userPrefs)+len(sourcePod.ConfigOverrides)+1)
-	for k, v := range userPrefs {
-		merged[k] = v
-	}
-
-	// Legacy Claude pods may only have the top-level permission_mode column.
-	if isClaudeAgentSlug(sourcePod.AgentSlug) {
-		if sourcePod.Model != nil && *sourcePod.Model != "" {
-			merged["model"] = *sourcePod.Model
-		}
-		if sourcePod.PermissionMode != nil && *sourcePod.PermissionMode != "" {
-			merged["permission_mode"] = *sourcePod.PermissionMode
-		}
-	}
-
-	for k, v := range sourcePod.ConfigOverrides {
-		if isSystemConfigKey(k) {
-			continue
-		}
-		merged[k] = v
-	}
-
-	return merged
-}
-
-func isClaudeAgentSlug(slug string) bool {
-	return slug == "claude-code" || slug == "claude"
-}
-
-func isSystemConfigKey(name string) bool {
-	switch name {
-	case "session_id", "resume_enabled", "resume_session":
-		return true
-	default:
-		return false
-	}
-}
-
-func configString(values agentDomain.ConfigValues, key string) string {
-	if values == nil {
-		return ""
-	}
-	v, ok := values[key]
-	if !ok {
-		return ""
-	}
-	s, ok := v.(string)
-	if !ok {
-		return ""
-	}
-	return s
 }

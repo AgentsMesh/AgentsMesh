@@ -8,8 +8,62 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
+
+func TestCreatePod_ResumeMode_AgentSlugMismatch_Rejected(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
+
+	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
+		OrganizationID: 1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		CreatedByID:    1,
+		SessionID:      "session-1",
+	})
+	require.NoError(t, err)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		AgentSlug:      "codex-cli", // Different agent than source pod
+		SourcePodKey:   sourcePod.PodKey,
+	})
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrResumeAgentMismatch))
+	assert.Nil(t, result)
+	assert.False(t, coord.createPodCalled, "no runner dispatch should happen on cross-agent resume")
+}
+
+func TestCreatePod_ResumeMode_AgentSlugMatch_Accepted(t *testing.T) {
+	coord := &mockPodCoordinator{}
+	orch, podSvc, db := setupOrchestrator(t, withCoordinator(coord))
+
+	sourcePod, err := podSvc.CreatePod(context.Background(), &CreatePodRequest{
+		OrganizationID: 1,
+		RunnerID:       1,
+		AgentSlug:      "claude-code",
+		CreatedByID:    1,
+		SessionID:      "session-1",
+	})
+	require.NoError(t, err)
+	db.Exec("UPDATE pods SET status = ? WHERE pod_key = ?", podDomain.StatusTerminated, sourcePod.PodKey)
+
+	// Explicit AgentSlug matching source — should be accepted (not rejected).
+	result, err := orch.CreatePod(context.Background(), &OrchestrateCreatePodRequest{
+		OrganizationID: 1,
+		UserID:         1,
+		AgentSlug:      "claude-code",
+		SourcePodKey:   sourcePod.PodKey,
+	})
+
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+}
 
 func TestCreatePod_ResumeMode_Success(t *testing.T) {
 	coord := &mockPodCoordinator{}
@@ -317,7 +371,7 @@ func TestCreatePod_ResumeMode_CodexPreservesSourceApprovalMode(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, sourcePod.Model)
 	assert.Nil(t, sourcePod.PermissionMode)
-	assert.Equal(t, "never", sourcePod.ConfigOverrides["approval_mode"])
+	assert.Equal(t, "never", sourcePod.ResolvedConfig["approval_mode"])
 
 	sandboxPath := "/home/user/sandbox/codex-never"
 	db.Model(&podDomain.Pod{}).Where("pod_key = ?", source.Pod.PodKey).Updates(map[string]interface{}{
@@ -334,7 +388,7 @@ func TestCreatePod_ResumeMode_CodexPreservesSourceApprovalMode(t *testing.T) {
 
 	assert.Nil(t, result.Pod.Model)
 	assert.Nil(t, result.Pod.PermissionMode)
-	assert.Equal(t, "never", result.Pod.ConfigOverrides["approval_mode"])
+	assert.Equal(t, "never", result.Pod.ResolvedConfig["approval_mode"])
 	assert.Equal(t, []string{"resume", "--last", "--ask-for-approval", "never"}, coord.lastCmd.LaunchArgs)
 }
 
@@ -357,7 +411,7 @@ func TestCreatePod_ResumeMode_ClaudePreservesSourcePermissionMode(t *testing.T) 
 
 	sourcePod, err := podSvc.GetPod(context.Background(), source.Pod.PodKey)
 	require.NoError(t, err)
-	assert.Equal(t, "plan", sourcePod.ConfigOverrides["permission_mode"])
+	assert.Equal(t, "plan", sourcePod.ResolvedConfig[agentDomain.ConfigKeyPermissionMode])
 
 	db.Model(&podDomain.Pod{}).Where("pod_key = ?", source.Pod.PodKey).Update("status", podDomain.StatusTerminated)
 
@@ -368,7 +422,7 @@ func TestCreatePod_ResumeMode_ClaudePreservesSourcePermissionMode(t *testing.T) 
 	})
 	require.NoError(t, err)
 
-	assert.Equal(t, "plan", result.Pod.ConfigOverrides["permission_mode"])
+	assert.Equal(t, "plan", result.Pod.ResolvedConfig[agentDomain.ConfigKeyPermissionMode])
 	assert.Contains(t, coord.lastCmd.LaunchArgs, "--resume")
 	assert.Contains(t, coord.lastCmd.LaunchArgs, "--permission-mode")
 	assert.Contains(t, coord.lastCmd.LaunchArgs, "plan")
@@ -400,7 +454,7 @@ func TestCreatePod_ResumeMode_ClaudePreservesLegacyPermissionColumn(t *testing.T
 	})
 	require.NoError(t, err)
 
-	assert.Equal(t, "dontAsk", result.Pod.ConfigOverrides["permission_mode"])
+	assert.Equal(t, "dontAsk", result.Pod.ResolvedConfig[agentDomain.ConfigKeyPermissionMode])
 	assert.Contains(t, coord.lastCmd.LaunchArgs, "--permission-mode")
 	assert.Contains(t, coord.lastCmd.LaunchArgs, "dontAsk")
 	assert.NotContains(t, coord.lastCmd.LaunchArgs, "bypassPermissions")

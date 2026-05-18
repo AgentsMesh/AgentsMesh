@@ -462,7 +462,7 @@ func TestCreatePod_CodexUsesConfigOverridesNotClaudeLegacyFields(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, dbPod.Model)
 	assert.Nil(t, dbPod.PermissionMode)
-	assert.Equal(t, "never", dbPod.ConfigOverrides["approval_mode"])
+	assert.Equal(t, "never", dbPod.ResolvedConfig["approval_mode"])
 	assert.Equal(t, []string{"--ask-for-approval", "never"}, coord.lastCmd.LaunchArgs)
 }
 
@@ -484,4 +484,31 @@ func TestCreatePod_NoLayer_BranchInheritedFromResume(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dbPod.BranchName)
 	assert.Equal(t, "my-branch", *dbPod.BranchName, "Without AgentFile Layer, req.BranchName (resume inheritance) should be used")
+}
+
+func TestSystemConfigKeys_SSOT(t *testing.T) {
+	for key := range systemConfigKeySet {
+		assert.True(t, isSystemConfigKey(key), "expected %q to be a system config key", key)
+	}
+	for _, key := range []string{"", agentDomain.ConfigKeyModel, agentDomain.ConfigKeyPermissionMode, "approval_mode", "mcp_enabled"} {
+		assert.False(t, isSystemConfigKey(key), "expected %q to NOT be a system config key", key)
+	}
+
+	for _, tc := range []struct {
+		name               string
+		isResume           bool
+		resumeAgentSession bool
+	}{
+		{"fresh_create", false, false},
+		{"resume_with_session", true, true},
+		{"resume_without_session", true, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			overrides := newSystemOverrides("sid-1", tc.isResume, tc.resumeAgentSession)
+			for key := range overrides {
+				_, ok := systemConfigKeySet[key]
+				assert.True(t, ok, "newSystemOverrides emitted non-system key %q", key)
+			}
+		})
+	}
 }

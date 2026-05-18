@@ -22,6 +22,8 @@ go_library(
         "pod_orchestrator_create.go",
         "pod_orchestrator_helpers.go",
         "pod_orchestrator_resume.go",
+        "pod_orchestrator_resume_merge.go",
+        "pod_orchestrator_system_config.go",
         "pod_query.go",
         "pod_service.go",
         "pod_store_ops.go",

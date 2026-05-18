@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
@@ -26,7 +27,7 @@ func (o *LoopOrchestrator) buildLoopAgentfileLayer(ctx context.Context, loop *lo
 	if permissionMode == "" {
 		permissionMode = "bypassPermissions"
 	}
-	lines = append(lines, fmt.Sprintf(`CONFIG permission_mode = "%s"`, permissionMode))
+	lines = append(lines, fmt.Sprintf(`CONFIG %s = "%s"`, agentDomain.ConfigKeyPermissionMode, permissionMode))
 
 	// Config overrides
 	var configOverrides map[string]interface{}
@@ -34,7 +35,7 @@ func (o *LoopOrchestrator) buildLoopAgentfileLayer(ctx context.Context, loop *lo
 		_ = json.Unmarshal(loop.ConfigOverrides, &configOverrides)
 	}
 	for k, v := range configOverrides {
-		if k == "permission_mode" {
+		if k == agentDomain.ConfigKeyPermissionMode {
 			continue // already handled above
 		}
 		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, serialize.FormatValue(v)))

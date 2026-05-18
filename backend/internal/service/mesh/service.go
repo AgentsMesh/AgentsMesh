@@ -192,16 +192,29 @@ func (s *Service) getChannelMessageCount(ctx context.Context, channelID int64) i
 	return int(count)
 }
 
-// CreatePodForTicket creates a new pod associated with a ticket
+// CreatePodForTicket creates a new pod associated with a ticket.
+// Legacy ticket-pod API: predates the AgentFile SSOT flow and is Claude-only by
+// historical convention. Defaults live as constants on the mesh domain
+// (`mesh.LegacyTicketPod*`) so the convention is explicit at the boundary.
+// New pod creation should go through PodOrchestrator instead.
 func (s *Service) CreatePodForTicket(ctx context.Context, req *mesh.CreatePodForTicketRequest) (*agentpod.Pod, error) {
+	model := req.Model
+	if model == "" {
+		model = mesh.LegacyTicketPodModel
+	}
+	permissionMode := req.PermissionMode
+	if permissionMode == "" {
+		permissionMode = mesh.LegacyTicketPodPermissionMode
+	}
 	return s.podService.CreatePodForTicket(ctx, &podService.CreatePodRequest{
 		OrganizationID: req.OrganizationID,
 		RunnerID:       req.RunnerID,
+		AgentSlug:      mesh.LegacyTicketPodAgentSlug,
 		TicketID:       &req.TicketID,
 		CreatedByID:    req.CreatedByID,
 		Prompt:         req.Prompt,
-		Model:          req.Model,
-		PermissionMode: req.PermissionMode,
+		Model:          model,
+		PermissionMode: permissionMode,
 	})
 }
 
