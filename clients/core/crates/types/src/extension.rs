@@ -50,8 +50,9 @@ pub struct SkillRegistryOverride {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarketSkill {
     pub id: i64,
-    pub name: String,
     pub slug: Option<String>,
+    #[serde(default, alias = "name")]
+    pub display_name: Option<String>,
     pub description: Option<String>,
     pub category: Option<String>,
     pub author: Option<String>,

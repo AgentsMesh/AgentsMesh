@@ -336,12 +336,35 @@ mod api_core_tests {
     #[tokio::test]
     async fn list_market_skills() {
         let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/market/skills"))
+        Mock::given(method("GET"))
+            .and(path("/api/v1/orgs/acme/market/skills"))
             .and(query_param("q", "git"))
-            .respond_with(ok(json!({"skills":[]})))
-            .expect(1).mount(&s).await;
+            .respond_with(ok(json!({
+                "skills": [{
+                    "id": 1,
+                    "registry_id": 10,
+                    "slug": "git-commit",
+                    "display_name": "Git Commit",
+                    "description": "Create polished commits",
+                    "category": "dev",
+                    "content_sha": "abc123",
+                    "storage_key": "skills/git-commit.tgz",
+                    "is_active": true,
+                    "registry": {
+                        "id": 10,
+                        "organization_id": 42,
+                        "repository_url": "https://github.com/acme/skills",
+                        "branch": "main",
+                        "sync_status": "success"
+                    }
+                }]
+            })))
+            .expect(1)
+            .mount(&s)
+            .await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.list_market_skills(Some("git"), None).await.unwrap();
+        let r = c.list_market_skills(Some("git"), None).await.unwrap();
+        assert_eq!(r.skills[0].display_name.as_deref(), Some("Git Commit"));
     }
 
     // ── file ────────────────────────────────────────────────────────────
