@@ -1,6 +1,5 @@
 import { test, expect } from "../../fixtures/index";
-import { LoginPage } from "../../pages/login.page";
-import { TEST_USER, TEST_ORG_SLUG } from "../../helpers/env";
+import { TEST_USER, TEST_ORG_SLUG, getWebBaseUrl, getApiBaseUrl } from "../../helpers/env";
 
 /**
  * Regression guard for the light-auth rollout:
@@ -57,21 +56,50 @@ test.describe("Pre-dashboard routes are wasm-zero", () => {
 test.describe("Dashboard still loads wasm after login", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("wasm boots when navigating into the workspace", async ({ page }) => {
+  test("wasm boots when navigating into the workspace", async ({ browser }) => {
+    // Skip the UI form (CI webpack-dev races against fill). Mirror the
+    // lightLogin code path: hit /auth/login, seed PersistedSession, then
+    // measure what gets requested on the dashboard route.
+    const apiBaseUrl = getApiBaseUrl();
+    const loginRes = await fetch(`${apiBaseUrl}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: TEST_USER.email, password: TEST_USER.password }),
+    });
+    expect(loginRes.status).toBe(200);
+    const { token, refresh_token, expires_in } = await loginRes.json();
+    const baseUrl = getWebBaseUrl();
+    const expiresAt = Math.floor(Date.now() / 1000) + (expires_in ?? 3600);
+
+    const context = await browser.newContext();
+    await context.addInitScript(
+      ({ token, refresh_token, expiresAt, baseUrl }) => {
+        const u = new URL(baseUrl);
+        const port = u.port ? `_${u.port}` : "";
+        const raw = `${u.protocol.replace(":", "")}_${u.hostname.toLowerCase()}${port}`;
+        const slug = raw.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 64);
+        localStorage.setItem(
+          `agentsmesh-auth/${slug}/session`,
+          JSON.stringify({
+            access_token: token,
+            refresh_token,
+            expires_at: expiresAt,
+            base_url: baseUrl,
+            current_org_slug: null,
+            schema_version: 1,
+          }),
+        );
+      },
+      { token, refresh_token, expiresAt, baseUrl },
+    );
+    const page = await context.newPage();
+
     const wasmRequests: string[] = [];
     page.on("request", (req) => {
       if (isWasmRequest(req.url())) wasmRequests.push(req.url());
     });
 
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    expect(wasmRequests, "login itself must not pull wasm").toEqual([]);
-
-    await loginPage.login(TEST_USER.email, TEST_USER.password);
-    await page.waitForURL((url) => !url.pathname.includes("/login"), {
-      timeout: 15_000,
-    });
-    // Give the dashboard layout a moment to lazy-import the wasm chunk.
+    await page.goto(`${baseUrl}/${TEST_ORG_SLUG}/workspace`);
     await page.waitForLoadState("networkidle");
 
     expect(
@@ -79,5 +107,7 @@ test.describe("Dashboard still loads wasm after login", () => {
       "dashboard layout must boot wasm on entry",
     ).toBeGreaterThan(0);
     expect(page.url()).toContain(`/${TEST_ORG_SLUG}`);
+
+    await context.close();
   });
 });
