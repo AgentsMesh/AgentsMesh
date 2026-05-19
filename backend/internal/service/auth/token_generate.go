@@ -13,12 +13,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// GenerateTokenPair generates access and refresh tokens
 func (s *Service) GenerateTokenPair(u *user.User, orgID int64, role string) (*TokenPair, error) {
 	return s.GenerateTokenPairWithContext(context.Background(), u, orgID, role)
 }
 
-// GenerateTokenPairWithContext generates access and refresh tokens with context
 func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User, orgID int64, role string) (*TokenPair, error) {
 	now := time.Now()
 	expiresAt := now.Add(s.config.JWTExpiration)
@@ -46,7 +44,6 @@ func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User
 		return nil, err
 	}
 
-	// Generate refresh token
 	refreshBytes := make([]byte, 32)
 	if _, err := rand.Read(refreshBytes); err != nil {
 		slog.ErrorContext(ctx, "failed to generate refresh token bytes", "user_id", u.ID, "error", err)
@@ -54,7 +51,6 @@ func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User
 	}
 	refreshToken := base64.URLEncoding.EncodeToString(refreshBytes)
 
-	// Store refresh token in Redis if available
 	if s.redis != nil {
 		tokenData := &RefreshTokenData{
 			UserID:         u.ID,
@@ -78,7 +74,6 @@ func (s *Service) GenerateTokenPairWithContext(ctx context.Context, u *user.User
 	}, nil
 }
 
-// storeRefreshToken stores refresh token data in Redis
 func (s *Service) storeRefreshToken(ctx context.Context, refreshToken string, data *RefreshTokenData) error {
 	tokenHash := hashToken(refreshToken)
 	key := refreshTokenPrefix + tokenHash
@@ -92,7 +87,6 @@ func (s *Service) storeRefreshToken(ctx context.Context, refreshToken string, da
 	return s.redis.Set(ctx, key, jsonData, ttl).Err()
 }
 
-// GenerateState generates a random state for OAuth
 func GenerateState() (string, error) {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
@@ -101,7 +95,6 @@ func GenerateState() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-// GenerateTokens generates tokens for a user (used after email verification)
 func (s *Service) GenerateTokens(ctx context.Context, u *user.User) (*LoginResult, error) {
 	tokens, err := s.GenerateTokenPairWithContext(ctx, u, 0, "")
 	if err != nil {

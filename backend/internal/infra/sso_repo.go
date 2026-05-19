@@ -13,7 +13,6 @@ type ssoConfigRepository struct{ db *gorm.DB }
 
 var _ sso.Repository = (*ssoConfigRepository)(nil)
 
-// NewSSOConfigRepository creates a new GORM-backed SSO config repository.
 func NewSSOConfigRepository(db *gorm.DB) sso.Repository {
 	return &ssoConfigRepository{db: db}
 }
@@ -69,7 +68,6 @@ func (r *ssoConfigRepository) List(ctx context.Context, query *sso.ListQuery, of
 
 	if query != nil {
 		if query.Search != "" {
-			// Escape ILIKE wildcards to prevent pattern injection
 			escaped := strings.NewReplacer("%", "\\%", "_", "\\_").Replace(query.Search)
 			pattern := "%" + escaped + "%"
 			db = db.Where("domain ILIKE ? OR name ILIKE ?", pattern, pattern)

@@ -22,7 +22,6 @@ interface AutopilotPanelContentProps {
 
 export function AutopilotPanelContent({ podKey, className }: AutopilotPanelContentProps) {
   const [activeTab, setActiveTab] = React.useState<"thinking" | "progress" | "history">("thinking");
-  // Reactive selectors — re-render only when the matched controller or its thinking changes
   const activePhases = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
   const controllers = useAutopilotControllers();
   const autopilotController = podKey
@@ -31,7 +30,6 @@ export function AutopilotPanelContent({ podKey, className }: AutopilotPanelConte
   const autopilotControllerKey = autopilotController?.autopilot_controller_key;
   const thinking = useAutopilotThinking(autopilotControllerKey);
 
-  // Auto switch to thinking tab when help is needed
   const decisionType = thinking?.decision_type;
   React.useEffect(() => {
     if (!decisionType) return;
@@ -41,7 +39,6 @@ export function AutopilotPanelContent({ podKey, className }: AutopilotPanelConte
     }
   }, [decisionType]);
 
-  // No pod selected
   if (!podKey) {
     return (
       <div className={cn("flex items-center justify-center h-full text-muted-foreground text-sm", className)}>
@@ -51,7 +48,6 @@ export function AutopilotPanelContent({ podKey, className }: AutopilotPanelConte
     );
   }
 
-  // No autopilot for this pod
   if (!autopilotController) {
     return (
       <div className={cn("flex flex-col items-center justify-center h-full text-muted-foreground", className)}>

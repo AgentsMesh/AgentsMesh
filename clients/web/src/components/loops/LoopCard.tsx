@@ -26,8 +26,6 @@ import {
 import { useTranslations } from "next-intl";
 import { formatTimeAgo, formatTimeUntil } from "@/lib/utils/time";
 
-// --- Component ---
-
 interface LoopCardProps {
   loop: LoopData;
   onClick: (slug: string) => void;

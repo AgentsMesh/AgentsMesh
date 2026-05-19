@@ -84,7 +84,6 @@ export function SideBar({ className, children }: SideBarProps) {
       )}
       style={{ width: sidebarWidth }}
     >
-      {/* Activity title header (org switcher now lives in ActivityBar per design) */}
       {activeActivity !== "settings" && (
         <div className="flex h-12 items-center justify-between border-b border-border px-3">
           <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">

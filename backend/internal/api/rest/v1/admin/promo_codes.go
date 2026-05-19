@@ -13,17 +13,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PromoCodeHandler handles admin promo code requests
 type PromoCodeHandler struct {
 	service *admin.Service
 }
 
-// NewPromoCodeHandler creates a new promo code handler
 func NewPromoCodeHandler(service *admin.Service) *PromoCodeHandler {
 	return &PromoCodeHandler{service: service}
 }
 
-// RegisterRoutes registers promo code routes
 func (h *PromoCodeHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	promoCodes := rg.Group("/promo-codes")
 	{
@@ -38,8 +35,6 @@ func (h *PromoCodeHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// List lists promo codes
-// GET /api/v1/admin/promo-codes
 func (h *PromoCodeHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -73,7 +68,6 @@ func (h *PromoCodeHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// CreatePromoCodeRequest represents create promo code request body
 type CreatePromoCodeRequest struct {
 	Code           string `json:"code" binding:"required,min=4,max=50"`
 	Name           string `json:"name" binding:"required,min=1,max=100"`
@@ -87,8 +81,6 @@ type CreatePromoCodeRequest struct {
 	ExpiresAt      string `json:"expires_at"`
 }
 
-// Create creates a new promo code
-// POST /api/v1/admin/promo-codes
 func (h *PromoCodeHandler) Create(c *gin.Context) {
 	adminUserID := c.MustGet("user_id").(int64)
 
@@ -98,7 +90,6 @@ func (h *PromoCodeHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Parse times
 	var startsAt time.Time
 	var expiresAt *time.Time
 
@@ -154,8 +145,6 @@ func (h *PromoCodeHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, promoCode)
 }
 
-// Get gets a promo code by ID
-// GET /api/v1/admin/promo-codes/:id
 func (h *PromoCodeHandler) Get(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

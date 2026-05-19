@@ -5,13 +5,12 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// SSR-safe hook to detect client-side mounting
 const emptySubscribe = () => () => {};
 function useIsMounted() {
   return useSyncExternalStore(
     emptySubscribe,
-    () => true,  // Client: always mounted
-    () => false  // Server: never mounted
+    () => true,
+    () => false
   );
 }
 
@@ -29,7 +28,6 @@ interface ResponsiveDialogContentProps {
 interface ResponsiveDialogHeaderProps {
   children: React.ReactNode;
   className?: string;
-  /** Close handler for mobile back/close button */
   onClose?: () => void;
 }
 
@@ -58,11 +56,6 @@ interface ResponsiveDialogCloseProps {
   className?: string;
 }
 
-/**
- * ResponsiveDialog - A dialog component that adapts to screen size
- * - Both mobile and desktop: floating centered modal dialog with overlay
- * - Uses responsive padding (px-4 on mobile, px-6 on desktop)
- */
 export function ResponsiveDialog({
   open,
   onOpenChange,
@@ -71,7 +64,6 @@ export function ResponsiveDialog({
   const overlayRef = useRef<HTMLDivElement>(null);
   const mounted = useIsMounted();
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
@@ -82,7 +74,6 @@ export function ResponsiveDialog({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onOpenChange]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -103,10 +94,8 @@ export function ResponsiveDialog({
     [onOpenChange]
   );
 
-  // Wait for mount to ensure document.body is available (SSR-safe)
   if (!open || !mounted) return null;
 
-  // Both mobile and desktop: centered floating dialog with overlay
   return createPortal(
     <div
       ref={overlayRef}

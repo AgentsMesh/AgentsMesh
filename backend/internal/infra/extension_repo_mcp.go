@@ -9,8 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// --- MCP Market Items ---
-
 func (r *extensionRepo) ListMcpMarketItems(ctx context.Context, queryStr string, category string, limit, offset int) ([]*extension.McpMarketItem, int64, error) {
 	var items []*extension.McpMarketItem
 	var total int64

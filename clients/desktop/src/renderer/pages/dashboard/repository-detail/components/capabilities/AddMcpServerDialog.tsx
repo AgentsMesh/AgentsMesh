@@ -21,14 +21,12 @@ export function AddMcpServerDialog({ repositoryId, scope, open, onOpenChange, on
   const t = useTranslations();
   const [installing, setInstalling] = useState(false);
 
-  // Market state
   const [marketServers, setMarketServers] = useState<McpMarketItem[]>([]);
   const [marketQuery, setMarketQuery] = useState("");
   const [loadingMarket, setLoadingMarket] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<McpMarketItem | null>(null);
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
 
-  // Custom form state
   const [customName, setCustomName] = useState("");
   const [customSlug, setCustomSlug] = useState("");
   const [customTransport, setCustomTransport] = useState("stdio");

@@ -3,7 +3,6 @@ package blockstore
 import "errors"
 
 var (
-	// Entity lookup failures
 	ErrWorkspaceNotFound = errors.New("block workspace not found")
 	ErrBlockNotFound     = errors.New("block not found")
 	ErrRefNotFound       = errors.New("block ref not found")
@@ -14,7 +13,6 @@ var (
 	// idempotent re-read instead of a 500.
 	ErrWorkspaceAlreadyExists = errors.New("block workspace with this slug already exists")
 
-	// Validation failures
 	ErrUnknownBlockType   = errors.New("unknown block type")
 	ErrUnknownOpKind      = errors.New("unknown op kind")
 	ErrMissingRequiredKey = errors.New("missing required data key")
@@ -23,7 +21,6 @@ var (
 	ErrOrderKeyRequired   = errors.New("order_key required for ordered rel")
 	ErrCrossWorkspaceRef  = errors.New("ref to_id must live in same workspace as from_id")
 
-	// Concurrency
 	ErrStaleUpdate           = errors.New("block updated_at mismatch — stale write")
 	ErrIdempotencyKeyReplay  = errors.New("idempotency key already processed")
 	ErrSingleNestParent      = errors.New("block already has a nest parent")
@@ -31,13 +28,10 @@ var (
 	ErrApplyOpsEmpty         = errors.New("apply_ops payload must contain at least one op")
 	ErrWorkspaceLockTimeout  = errors.New("workspace advisory lock acquisition timed out")
 
-	// Authorization
 	ErrOrgMismatch    = errors.New("workspace does not belong to caller organization")
 	ErrBlockForbidden = errors.New("actor is not authorized to access this block")
 
-	// Semantic search / embeddings
 	ErrEmbeddingDisabled = errors.New("embedding provider not configured")
 
-	// Column-driven validation
 	ErrColumnValueInvalid = errors.New("column value failed validation")
 )

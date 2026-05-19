@@ -18,8 +18,6 @@ pub struct SkillRegistry {
     pub is_active: Option<bool>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
-    /// Legacy alias for `is_active` — kept readable so older clients sending
-    /// `is_disabled` continue to round-trip during a partial rollout.
     #[serde(default)]
     pub is_disabled: Option<bool>,
 }

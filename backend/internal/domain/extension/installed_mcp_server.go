@@ -6,13 +6,11 @@ import (
 	"time"
 )
 
-// Scope constants
 const (
 	ScopeOrg  = "org"
 	ScopeUser = "user"
 )
 
-// InstalledMcpServer represents an MCP Server installed for a specific repository
 type InstalledMcpServer struct {
 	ID             int64           `gorm:"primaryKey" json:"id"`
 	OrganizationID int64           `gorm:"not null" json:"organization_id"`
@@ -32,14 +30,11 @@ type InstalledMcpServer struct {
 	CreatedAt      time.Time       `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt      time.Time       `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Relations
 	MarketItem *McpMarketItem `gorm:"foreignKey:MarketItemID" json:"market_item,omitempty"`
 }
 
 func (InstalledMcpServer) TableName() string { return "installed_mcp_servers" }
 
-// ToMcpConfig converts the installed server to an MCP config map entry.
-// Merges with market item defaults if present.
 func (s *InstalledMcpServer) ToMcpConfig() map[string]interface{} {
 	config := make(map[string]interface{})
 
@@ -62,7 +57,6 @@ func (s *InstalledMcpServer) ToMcpConfig() map[string]interface{} {
 			config["headers"] = headers
 		}
 	} else {
-		// stdio transport
 		command := s.Command
 		if command == "" && s.MarketItem != nil {
 			command = s.MarketItem.Command
@@ -87,7 +81,6 @@ func (s *InstalledMcpServer) ToMcpConfig() map[string]interface{} {
 		}
 	}
 
-	// Merge env vars
 	var envVars map[string]string
 	if len(s.EnvVars) > 0 {
 		if err := json.Unmarshal(s.EnvVars, &envVars); err != nil {

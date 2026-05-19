@@ -22,11 +22,10 @@ function SSOCallbackContent() {
   const processedRef = useRef(false);
 
   useEffect(() => {
-    // Guard against duplicate execution (e.g., dependency change triggering re-run)
     if (processedRef.current) return;
     processedRef.current = true;
 
-    // Remove tokens from URL to prevent leaking via browser history/Referer
+    // Strip tokens from URL — prevents browser history/Referer leak.
     if (token || refreshToken || error) {
       window.history.replaceState({}, "", window.location.pathname);
     }
@@ -38,7 +37,7 @@ function SSOCallbackContent() {
     const handleCallback = async () => {
       if (error) {
         setStatus("error");
-        // Only display known error codes to avoid leaking internal details
+        // Whitelist known error codes — never echo backend internals.
         const knownErrors: Record<string, string> = {
           access_denied: t("auth.sso.callbackAccessDenied"),
           authentication_failed: t("auth.sso.callbackGenericError"),
@@ -58,14 +57,11 @@ function SSOCallbackContent() {
       }
 
       try {
-        // Set token so subsequent API calls work
         await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
-        // Get user info
         const userResponse = await userApi.getMe();
         await setAuth(token, userResponse.user, refreshToken || undefined);
 
-        // Get organizations and redirect
         try {
           const orgsResponse = await organizationApi.list();
           const orgs = orgsResponse.organizations;
@@ -98,7 +94,6 @@ function SSOCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6 text-center">
-        {/* Logo */}
         <div>
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -108,7 +103,6 @@ function SSOCallbackContent() {
           </Link>
         </div>
 
-        {/* Loading State */}
         {status === "loading" && (
           <>
             <div className="flex justify-center">
@@ -145,7 +139,6 @@ function SSOCallbackContent() {
           </>
         )}
 
-        {/* Success State */}
         {status === "success" && (
           <>
             <div className="flex justify-center">
@@ -178,7 +171,6 @@ function SSOCallbackContent() {
           </>
         )}
 
-        {/* Error State */}
         {status === "error" && (
           <>
             <div className="flex justify-center">

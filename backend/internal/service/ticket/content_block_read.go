@@ -8,15 +8,6 @@ import (
 	domainTicket "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// hydrateContentFromBlock rebuilds the legacy Content string from the
-// backing document block when ContentBlockID is set. REST consumers still
-// expect `content` (BlockNote JSON) on ticket responses, so single-ticket
-// reads route through here. List endpoints skip it on purpose — hydrating
-// N blocks per list is too expensive and list rows usually omit content.
-//
-// Missing / deleted blocks are tolerated: Content is left as the DB value
-// (usually nil) and the error is logged. The ticket row survives a dangling
-// pointer by design — no FK, business-layer cascade best-effort.
 func (s *Service) hydrateContentFromBlock(ctx context.Context, t *domainTicket.Ticket) {
 	if t == nil || t.ContentBlockID == nil || s.blockstore == nil {
 		return

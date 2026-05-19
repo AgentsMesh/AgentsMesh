@@ -39,7 +39,6 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
     if (!open) return;
 
     if (hasSchema) {
-      // Market-installed: use schema structure, pre-fill with existing values
       const entries: EnvVarEntry[] = mcpServer.market_item!.env_var_schema!.map((entry) => ({
         key: entry.name,
         value: mcpServer.env_vars?.[entry.name] || "",
@@ -51,7 +50,6 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
       }));
       setEnvVars(entries);
     } else {
-      // Custom-installed: show existing key-value pairs
       const entries: EnvVarEntry[] = Object.entries(mcpServer.env_vars || {}).map(([key, value]) => ({
         key,
         value,
@@ -94,7 +92,6 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
           </p>
 
           {hasSchema ? (
-            // Schema-based form (for market-installed MCP servers)
             <div className="space-y-3">
               {envVars.map((entry, idx) => (
                 <div key={entry.key}>
@@ -116,7 +113,6 @@ export function EditMcpEnvVarsDialog({ repositoryId, mcpServer, open, onOpenChan
               ))}
             </div>
           ) : (
-            // Free-form key-value editor (for custom MCP servers)
             <div className="space-y-2">
               {envVars.length === 0 && (
                 <p className="text-sm text-muted-foreground py-2">{t("extensions.noEnvVars")}</p>

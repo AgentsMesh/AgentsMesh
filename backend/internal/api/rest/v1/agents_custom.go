@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateCustomAgent creates a custom agent
 func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	var req CreateCustomAgentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,7 +76,6 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"custom_agent": customAgent})
 }
 
-// UpdateCustomAgent updates a custom agent
 func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 	customAgentSlug := c.Param("agent_slug")
 
@@ -102,7 +100,6 @@ func (h *AgentHandler) UpdateCustomAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"custom_agent": customAgent})
 }
 
-// DeleteCustomAgent deletes a custom agent
 func (h *AgentHandler) DeleteCustomAgent(c *gin.Context) {
 	customAgentSlug := c.Param("agent_slug")
 

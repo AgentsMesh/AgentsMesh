@@ -15,24 +15,20 @@ import (
 	"gorm.io/gorm"
 )
 
-// domainRegexp validates email domain format (e.g., "company.com", "sub.company.co.uk").
 var domainRegexp = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$`)
 
-// CreateConfig creates a new SSO configuration
 func (s *Service) CreateConfig(ctx context.Context, req *CreateConfigRequest, createdBy int64) (*sso.Config, error) {
 	protocol := sso.Protocol(req.Protocol)
 	if !sso.IsValidProtocol(protocol) {
 		return nil, ErrInvalidProtocol
 	}
 
-	// Validate domain format
 	domain := strings.ToLower(strings.TrimSpace(req.Domain))
 	if !domainRegexp.MatchString(domain) {
 		return nil, fmt.Errorf("invalid domain format: %q", req.Domain)
 	}
 	req.Domain = domain
 
-	// Check for duplicate
 	existing, err := s.repo.GetByDomainAndProtocol(ctx, req.Domain, protocol)
 	if err == nil && existing != nil {
 		return nil, ErrDuplicateConfig
@@ -50,7 +46,6 @@ func (s *Service) CreateConfig(ctx context.Context, req *CreateConfigRequest, cr
 		CreatedBy:  &createdBy,
 	}
 
-	// Set protocol-specific fields
 	var fieldErr error
 	switch protocol {
 	case sso.ProtocolOIDC:
@@ -75,7 +70,6 @@ func (s *Service) CreateConfig(ctx context.Context, req *CreateConfigRequest, cr
 	return cfg, nil
 }
 
-// setOIDCFields sets OIDC-specific fields on a config
 func (s *Service) setOIDCFields(cfg *sso.Config, req *CreateConfigRequest) error {
 	if req.OIDCIssuerURL == "" {
 		return fmt.Errorf("OIDC issuer URL is required")
@@ -103,14 +97,11 @@ func (s *Service) setOIDCFields(cfg *sso.Config, req *CreateConfigRequest) error
 // This matches the limit applied when fetching metadata via URL in the provider layer.
 const maxMetadataXMLSize = 1 << 20
 
-// setSAMLFields sets SAML-specific fields on a config
 func (s *Service) setSAMLFields(cfg *sso.Config, req *CreateConfigRequest) error {
-	// Validate metadata XML size before any other checks
 	if len(req.SAMLIDPMetadataXML) > maxMetadataXMLSize {
 		return fmt.Errorf("SAML IdP metadata XML exceeds maximum size of %d bytes", maxMetadataXMLSize)
 	}
 
-	// At least one IdP source is required: metadata URL, metadata XML, or (SSO URL + cert)
 	hasMetadataURL := req.SAMLIDPMetadataURL != ""
 	hasMetadataXML := req.SAMLIDPMetadataXML != ""
 	hasManualConfig := req.SAMLIDPSSOURL != "" && req.SAMLIDPCert != ""
@@ -121,7 +112,6 @@ func (s *Service) setSAMLFields(cfg *sso.Config, req *CreateConfigRequest) error
 		cfg.SAMLIDPMetadataURL = &req.SAMLIDPMetadataURL
 	}
 	if req.SAMLIDPMetadataXML != "" {
-		// Validate XML is well-formed and parseable as SAML metadata
 		var metadata samlLib.EntityDescriptor
 		if err := xml.Unmarshal([]byte(req.SAMLIDPMetadataXML), &metadata); err != nil {
 			return fmt.Errorf("invalid SAML IdP metadata XML: %w", err)
@@ -139,7 +129,6 @@ func (s *Service) setSAMLFields(cfg *sso.Config, req *CreateConfigRequest) error
 		}
 		cfg.SAMLIDPCertEncrypted = &encrypted
 	}
-	// Auto-generate SP Entity ID if not provided
 	if req.SAMLSPEntityID != "" {
 		cfg.SAMLSPEntityID = &req.SAMLSPEntityID
 	} else {
@@ -152,7 +141,6 @@ func (s *Service) setSAMLFields(cfg *sso.Config, req *CreateConfigRequest) error
 	return nil
 }
 
-// setLDAPFields sets LDAP-specific fields on a config
 func (s *Service) setLDAPFields(cfg *sso.Config, req *CreateConfigRequest) error {
 	if req.LDAPHost == "" {
 		return fmt.Errorf("LDAP host is required")

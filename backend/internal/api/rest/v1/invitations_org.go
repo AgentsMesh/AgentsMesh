@@ -13,8 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateInvitation creates a new invitation
-// POST /api/v1/organizations/:org/invitations
 func (h *InvitationHandler) CreateInvitation(c *gin.Context) {
 	var req CreateInvitationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -28,14 +26,11 @@ func (h *InvitationHandler) CreateInvitation(c *gin.Context) {
 		return
 	}
 
-	// Only admins and owners can invite
 	if tc.UserRole != organization.RoleOwner && tc.UserRole != organization.RoleAdmin {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Check seat availability before inviting
-	// This checks purchased seats vs used seats (not plan limits)
 	if h.billingService != nil {
 		if err := h.billingService.CheckSeatAvailability(c.Request.Context(), tc.OrganizationID, 1); err != nil {
 			if errors.Is(err, billingSvc.ErrQuotaExceeded) {
@@ -51,14 +46,12 @@ func (h *InvitationHandler) CreateInvitation(c *gin.Context) {
 		}
 	}
 
-	// Get inviter info
 	inviter, err := h.userService.GetByID(c.Request.Context(), tc.UserID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to get user info")
 		return
 	}
 
-	// Get org info
 	org, err := h.orgService.GetByID(c.Request.Context(), tc.OrganizationID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to get organization info")
@@ -99,8 +92,6 @@ func (h *InvitationHandler) CreateInvitation(c *gin.Context) {
 	})
 }
 
-// ListOrgInvitations lists all invitations for an organization
-// GET /api/v1/organizations/:org/invitations
 func (h *InvitationHandler) ListOrgInvitations(c *gin.Context) {
 	tc := middleware.GetTenant(c)
 	if tc == nil {
@@ -117,8 +108,6 @@ func (h *InvitationHandler) ListOrgInvitations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"invitations": invitations})
 }
 
-// RevokeInvitation revokes a pending invitation
-// DELETE /api/v1/organizations/:org/invitations/:id
 func (h *InvitationHandler) RevokeInvitation(c *gin.Context) {
 	tc := middleware.GetTenant(c)
 	if tc == nil {
@@ -126,7 +115,6 @@ func (h *InvitationHandler) RevokeInvitation(c *gin.Context) {
 		return
 	}
 
-	// Only admins and owners can revoke
 	if tc.UserRole != organization.RoleOwner && tc.UserRole != organization.RoleAdmin {
 		apierr.ForbiddenAdmin(c)
 		return
@@ -139,7 +127,6 @@ func (h *InvitationHandler) RevokeInvitation(c *gin.Context) {
 		return
 	}
 
-	// Verify invitation belongs to this org
 	inv, err := h.invitationService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Invitation not found")
@@ -164,8 +151,6 @@ func (h *InvitationHandler) RevokeInvitation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Invitation revoked successfully"})
 }
 
-// ResendInvitation resends an invitation email
-// POST /api/v1/organizations/:org/invitations/:id/resend
 func (h *InvitationHandler) ResendInvitation(c *gin.Context) {
 	tc := middleware.GetTenant(c)
 	if tc == nil {
@@ -173,7 +158,6 @@ func (h *InvitationHandler) ResendInvitation(c *gin.Context) {
 		return
 	}
 
-	// Only admins and owners can resend
 	if tc.UserRole != organization.RoleOwner && tc.UserRole != organization.RoleAdmin {
 		apierr.ForbiddenAdmin(c)
 		return
@@ -186,7 +170,6 @@ func (h *InvitationHandler) ResendInvitation(c *gin.Context) {
 		return
 	}
 
-	// Verify invitation belongs to this org
 	inv, err := h.invitationService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Invitation not found")
@@ -198,7 +181,6 @@ func (h *InvitationHandler) ResendInvitation(c *gin.Context) {
 		return
 	}
 
-	// Get inviter and org info
 	inviter, _ := h.userService.GetByID(c.Request.Context(), tc.UserID)
 	org, _ := h.orgService.GetByID(c.Request.Context(), tc.OrganizationID)
 

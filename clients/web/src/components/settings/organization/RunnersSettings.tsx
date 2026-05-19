@@ -103,7 +103,6 @@ function RunnersPanel({
   onGenerateToken,
   t,
 }: RunnersPanelProps) {
-  // Confirm dialog for delete
   const { dialogProps, confirm } = useConfirmDialog();
 
   const handleDeleteWithConfirm = useCallback(async (id: number) => {

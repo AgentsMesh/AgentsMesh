@@ -12,7 +12,6 @@ package slugkit
 //   - Onboarding/special endpoints: onboarding, personal, invite
 //   - Polite booby-traps that look like literals: me, new, null, true, false, undefined
 var reserved = map[string]struct{}{
-	// Auth flows
 	"auth":             {},
 	"forgot-password":  {},
 	"invite":           {},
@@ -22,13 +21,11 @@ var reserved = map[string]struct{}{
 	"register":         {},
 	"reset-password":   {},
 	"verify-email":     {},
-	// Dashboard chrome
 	"admin":     {},
 	"billing":   {},
 	"dashboard": {},
 	"settings":  {},
 	"support":   {},
-	// Marketing / static pages
 	"about":         {},
 	"blog":          {},
 	"careers":       {},
@@ -41,17 +38,14 @@ var reserved = map[string]struct{}{
 	"popout":        {},
 	"privacy":       {},
 	"terms":         {},
-	// API / system
 	"api": {},
 	"app": {},
 	"www": {},
-	// Special endpoints / collection-level paths
 	"organizations": {},
 	"orgs":          {},
 	"personal":      {},
 	"runners":       {},
 	"agents":        {},
-	// Literal-looking traps
 	"me":        {},
 	"new":       {},
 	"null":      {},
@@ -65,8 +59,6 @@ func IsReserved(s string) bool {
 	return ok
 }
 
-// ReservedList returns a deterministic slice of all reserved slugs.
-// Used by cross-language drift tests.
 func ReservedList() []string {
 	out := make([]string, 0, len(reserved))
 	for k := range reserved {

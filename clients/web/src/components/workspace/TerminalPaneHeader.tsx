@@ -89,7 +89,6 @@ export function TerminalPaneHeader({
   );
 }
 
-/** Toolbar action buttons — extracted to keep header under 200 lines. */
 function HeaderActions({
   isPodReady,
   isMaximized,
@@ -134,7 +133,6 @@ function HeaderActions({
   );
 }
 
-/** Small icon button for the terminal header toolbar. */
 function IconButton({ onClick, title, icon, hoverClass }: {
   onClick: () => void;
   title: string;

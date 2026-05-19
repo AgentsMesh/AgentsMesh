@@ -4,11 +4,12 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { getAuthApiService, getOrgApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import {
+  lightVerifyEmail,
+  lightResendVerification,
+  resolvePostLoginUrlLight,
+} from "@/lib/light-auth";
 import { useTranslations } from "next-intl";
-import { getDefaultRoute } from "@/lib/default-route";
-import { useAuthStore } from "@/stores/auth";
 import { VerifyingScreen, SuccessScreen, LogoHeader } from "./VerifyStateScreens";
 
 type VerifyState = "idle" | "verifying" | "success" | "error";
@@ -25,32 +26,17 @@ function VerifyEmailContent() {
   const [error, setError] = useState("");
   const [verifyState, setVerifyState] = useState<VerifyState>("idle");
 
-  const { setAuth, setOrganizations } = useAuthStore();
-
-  // Auto-verify when token is present in URL
   const handleVerifyToken = useCallback(async (verificationToken: string) => {
-    await initWasmCore();
     setVerifyState("verifying");
     setError("");
     setMessage("");
 
     try {
-      const result = JSON.parse(await getAuthApiService().verify_email(verificationToken));
-      await setAuth(result.token, result.user, result.refresh_token);
+      await lightVerifyEmail(verificationToken);
       setVerifyState("success");
       setMessage(t("auth.verifyEmailPage.verificationSuccess"));
-
-      try {
-        const orgsResponse = JSON.parse(await getOrgApiService().list());
-        if (orgsResponse.organizations && orgsResponse.organizations.length > 0) {
-          await setOrganizations(orgsResponse.organizations);
-          router.push(getDefaultRoute(orgsResponse.organizations[0].slug));
-        } else {
-          router.push("/onboarding");
-        }
-      } catch {
-        router.push("/onboarding");
-      }
+      const url = await resolvePostLoginUrlLight({ redirectParam: null });
+      router.push(url);
     } catch (err) {
       setVerifyState("error");
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -62,7 +48,7 @@ function VerifyEmailContent() {
         setError(t("auth.verifyEmailPage.verificationFailed"));
       }
     }
-  }, [setAuth, setOrganizations, router, t]);
+  }, [router, t]);
 
   useEffect(() => {
     if (token && verifyState === "idle") {
@@ -71,13 +57,12 @@ function VerifyEmailContent() {
   }, [token, verifyState, handleVerifyToken]);
 
   const handleResend = async () => {
-    await initWasmCore();
     if (!email) { setError(t("auth.verifyEmailPage.emailMissing")); return; }
     setLoading(true);
     setError("");
     setMessage("");
     try {
-      await getAuthApiService().resend_verification(email);
+      await lightResendVerification(email);
       setMessage(t("auth.verifyEmailPage.emailSent"));
     } catch {
       setError(t("auth.verifyEmailPage.resendFailed"));
@@ -94,7 +79,6 @@ function VerifyEmailContent() {
       <div className="w-full max-w-sm space-y-6 text-center">
         <LogoHeader />
 
-        {/* Email icon */}
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
             <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

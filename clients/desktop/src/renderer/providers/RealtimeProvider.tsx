@@ -37,10 +37,8 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Throttle the "connected → fan-out 7 fetches" burst. If the WebSocket
-  // flaps (disconnected → connecting → connected → disconnected → …) during
-  // a pod state change, each cycle would otherwise re-trigger every fetch,
-  // and the resulting setState storm has been linked to React #185 loops.
+  // Throttle reconnect fetch burst: WebSocket flap would otherwise re-trigger
+  // every fetch per cycle; resulting setState storm linked to React #185.
   const lastReconnectFetchRef = useRef(0);
 
   const handleEvent = useCallback(

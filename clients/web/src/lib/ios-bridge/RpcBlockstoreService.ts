@@ -1,17 +1,5 @@
-/**
- * iOS embed-mode `BlockstoreService`. Mirrors `ElectronBlockstoreService`
- * (`packages/electron-adapter/src/blockstore.ts`):
- *
- *   1. Async writes/fetches go through the bridge to the native Rust
- *      `BlockstoreService` SSOT.
- *   2. Sync flat-map getters serve from a renderer-side mirror; after
- *      every mutation we eagerly call `refreshFlatCaches()` so the
- *      next zustand selector tick reads the freshest state.
- *
- * Contract is JSON-string in / JSON-string out — same as the WASM
- * `WasmBlockstoreService`. That's why swapping providers is a one-line
- * change in `registerServiceProvider`.
- */
+// Mirrors packages/electron-adapter/src/blockstore.ts ElectronBlockstoreService:
+// async writes via bridge to native Rust SSOT, sync flat-map getters via mirror.
 
 let nextId = 1;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
@@ -49,12 +37,6 @@ export function rpc<T>(method: string, args: Record<string, unknown> = {}): Prom
   });
 }
 
-/**
- * Sync getters need a value the millisecond a zustand selector fires.
- * Native is async, so we mirror the flat maps here — same trick the
- * Electron adapter uses. `refreshFlatCaches` runs after every mutation
- * to keep the mirror tight.
- */
 export class RpcBlockstoreService {
   private _workspacesJson = "{}";
   private _blocksJson = "{}";
@@ -79,8 +61,6 @@ export class RpcBlockstoreService {
     this._backlinksJson = bl || "{}";
     this._lastOpIdsJson = lo || "{}";
   }
-
-  // ── Async mutations / fetches
 
   async apply_ops(reqJson: string): Promise<string> {
     const r = await rpc<unknown>("apply_ops", { req: JSON.parse(reqJson) });
@@ -127,20 +107,12 @@ export class RpcBlockstoreService {
     void rpc("set_last_op_id", { wsId, id });
   }
 
-  // ── Sync flat-map readers (used by zustand selectors)
-
   workspaces_json(): string { return this._workspacesJson; }
   blocks_json(): string { return this._blocksJson; }
   refs_json(): string { return this._refsJson; }
   nest_children_json(): string { return this._nestChildrenJson; }
   backlinks_json(): string { return this._backlinksJson; }
   last_op_ids_json(): string { return this._lastOpIdsJson; }
-
-  // ── Sync per-id readers — must round-trip into native to read SSOT.
-  // Only safe to call after `load_subtree` has populated the cache and
-  // a tick has fired; we serve the last value the bridge handed us.
-  // Web's `readBlock` / `listChildren` paths are sync, so we can't await
-  // here — primeSubtreeCache + flat caches keep these warm.
 
   get_block_json(id: string): string | null {
     const map = safeParse<Record<string, unknown>>(this._blocksJson);
@@ -178,8 +150,6 @@ export class RpcBlockstoreService {
   }
 
   type_defs_json(_wsId: string): string {
-    // Reads come right after load_type_defs; flat blocks_json carries
-    // type defs (workspace_id == wsId, type == 'type-def').
     const blocks = safeParse<Record<string, { workspace_id?: string; type?: string }>>(this._blocksJson) ?? {};
     const out: unknown[] = [];
     for (const b of Object.values(blocks)) {

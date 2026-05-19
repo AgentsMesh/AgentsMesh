@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EventType {
-    // Pod events
     #[serde(rename = "pod:created")]
     PodCreated,
     #[serde(rename = "pod:status_changed")]
@@ -20,7 +19,6 @@ pub enum EventType {
     #[serde(rename = "pod:restarting")]
     PodRestarting,
 
-    // Channel events
     #[serde(rename = "channel:message")]
     ChannelMessage,
     #[serde(rename = "channel:message_edited")]
@@ -28,7 +26,6 @@ pub enum EventType {
     #[serde(rename = "channel:message_deleted")]
     ChannelMessageDeleted,
 
-    // Ticket events
     #[serde(rename = "ticket:created")]
     TicketCreated,
     #[serde(rename = "ticket:updated")]
@@ -40,7 +37,6 @@ pub enum EventType {
     #[serde(rename = "ticket:deleted")]
     TicketDeleted,
 
-    // Runner events
     #[serde(rename = "runner:online")]
     RunnerOnline,
     #[serde(rename = "runner:offline")]
@@ -48,7 +44,6 @@ pub enum EventType {
     #[serde(rename = "runner:updated")]
     RunnerUpdated,
 
-    // Autopilot events
     #[serde(rename = "autopilot:status_changed")]
     AutopilotStatusChanged,
     #[serde(rename = "autopilot:iteration")]
@@ -60,7 +55,6 @@ pub enum EventType {
     #[serde(rename = "autopilot:thinking")]
     AutopilotThinking,
 
-    // MergeRequest events
     #[serde(rename = "mr:created")]
     MrCreated,
     #[serde(rename = "mr:updated")]
@@ -70,11 +64,9 @@ pub enum EventType {
     #[serde(rename = "mr:closed")]
     MrClosed,
 
-    // Pipeline events
     #[serde(rename = "pipeline:updated")]
     PipelineUpdated,
 
-    // Loop events
     #[serde(rename = "loop_run:started")]
     LoopRunStarted,
     #[serde(rename = "loop_run:completed")]
@@ -90,15 +82,12 @@ pub enum EventType {
     #[serde(rename = "blockstore:op")]
     BlockstoreOp,
 
-    // Notification events
     #[serde(rename = "notification")]
     Notification,
 
-    // System events
     #[serde(rename = "system:maintenance")]
     SystemMaintenance,
 
-    // Connection events (client-side only)
     #[serde(rename = "connected")]
     Connected,
     #[serde(rename = "ping")]

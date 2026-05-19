@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Config holds all configuration for the application
 type Config struct {
 	Server      ServerConfig
 	Database    DatabaseConfig
@@ -23,29 +22,21 @@ type Config struct {
 	Relay       RelayConfig
 	Marketplace MarketplaceConfig
 
-	// Unified domain configuration - all URLs are derived from these two values
 	PrimaryDomain string // Primary domain (e.g., "localhost:10000" or "agentsmesh.ai")
 	UseHTTPS      bool   // Use HTTPS/WSS protocols
 }
 
-// MarketplaceConfig configures the platform-level Marketplace for Skills and MCP servers.
-// Platform-level Skill Registries are managed via Admin API (stored in DB).
-// MCP servers are synced from the official MCP Registry.
 type MarketplaceConfig struct {
 	SyncInterval    time.Duration // Interval between marketplace sync cycles (e.g., "1h", "30m")
 	RegistryEnabled bool          // Enable MCP Registry sync (default: true)
 	RegistryURL     string        // MCP Registry API URL (default: https://registry.modelcontextprotocol.io)
 }
 
-// Load loads configuration from environment variables
-// All URLs are derived from PRIMARY_DOMAIN and USE_HTTPS
 func Load() (*Config, error) {
 	return &Config{
-		// Unified Domain Configuration
 		PrimaryDomain: getEnv("PRIMARY_DOMAIN", "localhost:10000"),
 		UseHTTPS:      getEnvBool("USE_HTTPS", false),
 
-		// Server Configuration
 		Server: ServerConfig{
 			Address:            getEnv("SERVER_ADDRESS", ":8080"),
 			Debug:              getEnvBool("DEBUG", false),
@@ -53,7 +44,6 @@ func Load() (*Config, error) {
 			InternalAPISecret:  getEnv("INTERNAL_API_SECRET", "change-me-internal-secret"),
 		},
 
-		// Database Configuration
 		Database: DatabaseConfig{
 			Host:        getEnv("DB_HOST", "localhost"),
 			Port:        getEnvInt("DB_PORT", 5432),
@@ -64,7 +54,6 @@ func Load() (*Config, error) {
 			ReplicaDSNs: getEnvList("DB_REPLICA_DSNS", nil),
 		},
 
-		// Redis Configuration
 		Redis: RedisConfig{
 			URL:      getEnv("REDIS_URL", ""),
 			Host:     getEnv("REDIS_HOST", "localhost"),
@@ -73,13 +62,11 @@ func Load() (*Config, error) {
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 
-		// JWT Configuration
 		JWT: JWTConfig{
 			Secret:          getEnv("JWT_SECRET", "change-me-in-production"),
 			ExpirationHours: getEnvInt("JWT_EXPIRATION_HOURS", 24),
 		},
 
-		// OAuth Configuration
 		OAuth: OAuthConfig{
 			DefaultRedirectURL: getEnv("OAUTH_DEFAULT_REDIRECT_URL", "/"),
 			GitHub: OAuthProviderConfig{
@@ -101,37 +88,26 @@ func Load() (*Config, error) {
 			},
 		},
 
-		// Webhook Configuration
 		Webhook: WebhookConfig{
 			GitLabSecret: getEnv("GITLAB_WEBHOOK_SECRET", ""),
 			GitHubSecret: getEnv("GITHUB_WEBHOOK_SECRET", ""),
 			GiteeSecret:  getEnv("GITEE_WEBHOOK_SECRET", ""),
 		},
 
-		// Logging Configuration
 		Log: LogConfig{
 			Level:  getEnv("LOG_LEVEL", "info"),
 			Format: getEnv("LOG_FORMAT", "text"),
-			// stdout-only by default — container runtimes (docker/swarm/k8s)
-			// already collect stdout via the configured logging driver
-			// (loki/json-file/etc). The previous default `logs/agentsmesh.log`
-			// required the working directory to be writable, which broke
-			// distroless+nonroot images. Set LOG_FILE explicitly when an
-			// on-disk log file is actually wanted (and ensure the path is
-			// writable by the container's user).
 			FilePath:   getEnv("LOG_FILE", ""),
 			MaxSizeMB:  getEnvInt("LOG_MAX_SIZE_MB", 100),
 			MaxBackups: getEnvInt("LOG_MAX_BACKUPS", 5),
 		},
 
-		// Email Configuration
 		Email: EmailConfig{
 			Provider:    getEnv("EMAIL_PROVIDER", "console"),
 			ResendKey:   getEnv("RESEND_API_KEY", ""),
 			FromAddress: getEnv("EMAIL_FROM_ADDRESS", "AgentsMesh <noreply@agentsmesh.ai>"),
 		},
 
-		// Storage Configuration
 		Storage: StorageConfig{
 			Endpoint:       getEnv("STORAGE_ENDPOINT", ""),
 			PublicEndpoint: getEnv("STORAGE_PUBLIC_ENDPOINT", ""),
@@ -145,7 +121,6 @@ func Load() (*Config, error) {
 			AllowedTypes:   getEnvList("STORAGE_ALLOWED_TYPES", []string{"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}),
 		},
 
-		// Payment Configuration
 		Payment: PaymentConfig{
 			DeploymentType: DeploymentType(getEnv("DEPLOYMENT_TYPE", "global")),
 			MockEnabled:    getEnvBool("PAYMENT_MOCK", false),
@@ -182,7 +157,6 @@ func Load() (*Config, error) {
 			},
 		},
 
-		// PKI Configuration
 		PKI: PKIConfig{
 			CACertFile:     getEnv("PKI_CA_CERT_FILE", ""),
 			CAKeyFile:      getEnv("PKI_CA_KEY_FILE", ""),
@@ -191,25 +165,21 @@ func Load() (*Config, error) {
 			ValidityDays:   getEnvInt("PKI_VALIDITY_DAYS", 365),
 		},
 
-		// gRPC Configuration
 		GRPC: GRPCConfig{
 			Address:  getEnv("GRPC_ADDRESS", ":9090"),
 			Endpoint: getEnv("GRPC_PUBLIC_ENDPOINT", ""),
 		},
 
-		// Admin Configuration
 		Admin: AdminConfig{
 			Enabled: getEnvBool("ADMIN_ENABLED", true),
 		},
 
-		// Marketplace Configuration
 		Marketplace: MarketplaceConfig{
 			SyncInterval:    getEnvDuration("MARKETPLACE_SYNC_INTERVAL", 1*time.Hour),
 			RegistryEnabled: getEnvBool("MCP_REGISTRY_ENABLED", true),
 			RegistryURL:     getEnv("MCP_REGISTRY_URL", "https://registry.modelcontextprotocol.io"),
 		},
 
-		// Relay Management Configuration
 		Relay: RelayConfig{
 			BaseDomain: getEnv("RELAY_BASE_DOMAIN", ""),
 			DNS: DNSConfig{
@@ -230,8 +200,6 @@ func Load() (*Config, error) {
 	}, nil
 }
 
-// WarnInsecureDefaults logs warnings for insecure default configuration values.
-// Should be called at startup after loading configuration.
 func (c *Config) WarnInsecureDefaults() {
 	if c.Server.InternalAPISecret == "change-me-internal-secret" {
 		slog.Warn("SECURITY: INTERNAL_API_SECRET is using the default value; set a strong random secret via environment variable")

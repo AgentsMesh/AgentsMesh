@@ -19,6 +19,11 @@ setup("authenticate as test user", async ({ browser }) => {
   const attempt = async (timeoutMs: number) => {
     await page.goto(`${getWebBaseUrl()}/login`, { waitUntil: "domcontentloaded" });
     await page.locator("#email").waitFor({ state: "visible", timeout: timeoutMs });
+    // Webpack dev's large main-app.js takes time; if we interact before
+    // React hydrates, onSubmit doesn't attach and the form falls back to
+    // a native GET, leaving the URL at /login? — wait for the network to
+    // quiesce so all client chunks are in.
+    await page.waitForLoadState("networkidle", { timeout: timeoutMs });
     await page.locator("#email").fill(TEST_USER.email);
     await page.locator("#password").fill(TEST_USER.password);
     await page.locator('button[type="submit"]').click();

@@ -11,16 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Subscription Cancellation and Reactivation
-// ===========================================
-
-// RequestCancelSubscriptionRequest represents a cancel subscription request
 type RequestCancelSubscriptionRequest struct {
 	Immediate bool `json:"immediate"` // If true, cancel immediately; if false, cancel at period end
 }
 
-// RequestCancelSubscription cancels the subscription
 func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -31,7 +25,6 @@ func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 
 	var req RequestCancelSubscriptionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Default to cancel at period end
 		req.Immediate = false
 	}
 
@@ -41,14 +34,12 @@ func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 		return
 	}
 
-	// Cancel via payment provider
 	factory := h.billingService.GetPaymentFactory()
 	if factory != nil {
 		var provider payment.Provider
 		var subscriptionID string
 		var providerErr error
 
-		// Determine which provider to use based on subscription IDs
 		if sub.LemonSqueezySubscriptionID != nil {
 			provider, providerErr = factory.GetProvider(billing.PaymentProviderLemonSqueezy)
 			subscriptionID = *sub.LemonSqueezySubscriptionID
@@ -65,7 +56,6 @@ func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 		}
 	}
 
-	// Update local subscription
 	if req.Immediate {
 		if err := h.billingService.CancelSubscription(c.Request.Context(), tenant.OrganizationID); err != nil {
 			apierr.InternalError(c, err.Error())
@@ -73,7 +63,6 @@ func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "subscription cancelled"})
 	} else {
-		// Mark to cancel at period end and save to database
 		if err := h.billingService.SetCancelAtPeriodEnd(c.Request.Context(), tenant.OrganizationID, true); err != nil {
 			apierr.InternalError(c, err.Error())
 			return
@@ -85,7 +74,6 @@ func (h *BillingHandler) RequestCancelSubscription(c *gin.Context) {
 	}
 }
 
-// ReactivateSubscription undoes a pending cancellation
 func (h *BillingHandler) ReactivateSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -100,20 +88,17 @@ func (h *BillingHandler) ReactivateSubscription(c *gin.Context) {
 		return
 	}
 
-	// Check if subscription is set to cancel at period end
 	if !sub.CancelAtPeriodEnd {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "subscription is not pending cancellation")
 		return
 	}
 
-	// Reactivate via payment provider API
 	factory := h.billingService.GetPaymentFactory()
 	if factory != nil {
 		var provider payment.Provider
 		var subscriptionID string
 		var providerErr error
 
-		// Determine which provider to use based on subscription IDs
 		if sub.LemonSqueezySubscriptionID != nil {
 			provider, providerErr = factory.GetProvider(billing.PaymentProviderLemonSqueezy)
 			subscriptionID = *sub.LemonSqueezySubscriptionID
@@ -123,7 +108,6 @@ func (h *BillingHandler) ReactivateSubscription(c *gin.Context) {
 		}
 
 		if providerErr == nil && provider != nil && subscriptionID != "" {
-			// For both Stripe and LemonSqueezy: setting cancel_at_period_end to false reactivates
 			if err := provider.CancelSubscription(c.Request.Context(), subscriptionID, false); err != nil {
 				apierr.InternalError(c, fmt.Sprintf("failed to reactivate subscription: %v", err))
 				return
@@ -131,7 +115,6 @@ func (h *BillingHandler) ReactivateSubscription(c *gin.Context) {
 		}
 	}
 
-	// Update local subscription to remove cancel_at_period_end
 	if err := h.billingService.SetCancelAtPeriodEnd(c.Request.Context(), tenant.OrganizationID, false); err != nil {
 		apierr.InternalError(c, err.Error())
 		return

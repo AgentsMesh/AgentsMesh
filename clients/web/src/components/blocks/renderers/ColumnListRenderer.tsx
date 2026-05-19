@@ -11,10 +11,6 @@ import { BlockRenderer, NestChildren } from "../BlockRenderer";
 import { BlockChrome } from "../editor/BlockChrome";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// ColumnListRenderer lays out its direct children (columns) horizontally.
-// Each column owns its own nest tree, rendered vertically inside.
-// Widths default to equal share; individual columns can override via
-// data.width (0..1 fractional).
 export function ColumnListRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const refIDs = useNestChildren(block.id);
@@ -87,5 +83,4 @@ export function ColumnRenderer({ block, depth }: { block: Block; depth: number }
   );
 }
 
-// Keep BlockRenderer import referenced (TypeScript tree-shake hint).
 export { BlockRenderer };

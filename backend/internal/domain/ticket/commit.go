@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// Commit represents a git commit linked to a ticket
 type Commit struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
@@ -22,7 +21,6 @@ type Commit struct {
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 
-	// Associations
 	Ticket *Ticket `gorm:"foreignKey:TicketID" json:"ticket,omitempty"`
 }
 

@@ -12,17 +12,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// ===========================================
-// Payment Webhook Event Handlers
-// ===========================================
-
-// HandlePaymentSucceeded handles a successful payment webhook event
 func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	attrs := []any{"event_id", event.EventID, "provider", event.Provider, "event_type", event.EventType}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			return nil
@@ -38,7 +32,6 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 		}
 	}()
 
-	// Try to find order by order_no first, then by external_order_no
 	var order *billing.PaymentOrder
 	var err error
 
@@ -57,13 +50,11 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 		}
 	}
 
-	// For recurring payments (invoice.paid), there may not be an order in our system
 	if order == nil && event.SubscriptionID != "" {
 		return s.handleRecurringPaymentSuccess(ctx, event)
 	}
 
 	if order == nil {
-		// No order found and not a recurring payment — nothing to process
 		if err != nil {
 			slog.ErrorContext(c.Request.Context(), "order not found for payment webhook", attrs...)
 			return fmt.Errorf("order not found: %w", err)
@@ -71,13 +62,11 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 		return nil
 	}
 
-	// Update order status
 	if err := s.UpdatePaymentOrderStatus(ctx, order.OrderNo, billing.OrderStatusSucceeded, nil); err != nil {
 		slog.ErrorContext(c.Request.Context(), "failed to update order status", append(attrs, "order_no", order.OrderNo, "error", err)...)
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
-	// Create transaction record
 	tx := &billing.PaymentTransaction{
 		PaymentOrderID:        order.ID,
 		TransactionType:       billing.TransactionTypePayment,
@@ -96,7 +85,6 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 
 	slog.InfoContext(c.Request.Context(), "payment succeeded", append(attrs, "order_no", order.OrderNo, "org_id", order.OrganizationID, "order_type", order.OrderType, "amount", event.Amount)...)
 
-	// Process based on order type
 	switch order.OrderType {
 	case billing.OrderTypeSubscription:
 		return s.activateSubscription(ctx, order, event)
@@ -111,13 +99,11 @@ func (s *Service) HandlePaymentSucceeded(c *gin.Context, event *payment.WebhookE
 	return nil
 }
 
-// HandlePaymentFailed handles a failed payment webhook event
 func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
 	attrs := []any{"event_id", event.EventID, "provider", event.Provider, "event_type", event.EventType}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			return nil
@@ -131,13 +117,11 @@ func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEven
 		}
 	}()
 
-	// For recurring payment failures, freeze the subscription
 	if event.SubscriptionID != "" {
 		slog.WarnContext(c.Request.Context(), "recurring payment failed", append(attrs, "subscription_id", event.SubscriptionID)...)
 		return s.handleRecurringPaymentFailure(ctx, event)
 	}
 
-	// Try to find and update the order
 	var order *billing.PaymentOrder
 	var err error
 
@@ -157,16 +141,14 @@ func (s *Service) HandlePaymentFailed(c *gin.Context, event *payment.WebhookEven
 	}
 
 	if err != nil || order == nil {
-		return nil // Order not found, nothing to update
+		return nil
 	}
 
 	slog.WarnContext(c.Request.Context(), "payment failed", append(attrs, "order_no", order.OrderNo, "reason", event.FailedReason)...)
 
-	// Update order status
 	return s.UpdatePaymentOrderStatus(ctx, order.OrderNo, billing.OrderStatusFailed, &event.FailedReason)
 }
 
-// HandleSubscriptionCanceled handles subscription cancellation webhook event
 func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -176,7 +158,6 @@ func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.Webh
 
 	attrs := []any{"event_id", event.EventID, "provider", event.Provider, "subscription_id", event.SubscriptionID}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			return nil
@@ -193,10 +174,9 @@ func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.Webh
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		slog.WarnContext(c.Request.Context(), "subscription not found for cancellation webhook", append(attrs, "error", err)...)
-		return nil // Subscription not found
+		return nil
 	}
 
-	// Update subscription status
 	now := time.Now()
 	sub.Status = billing.SubscriptionStatusCanceled
 	sub.CanceledAt = &now
@@ -208,7 +188,6 @@ func (s *Service) HandleSubscriptionCanceled(c *gin.Context, event *payment.Webh
 
 	slog.InfoContext(c.Request.Context(), "subscription canceled", append(attrs, "org_id", sub.OrganizationID)...)
 
-	// Sync organization table
 	status := billing.SubscriptionStatusCanceled
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
 	return nil

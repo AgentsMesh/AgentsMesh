@@ -6,7 +6,6 @@ import (
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
 
-// mcpLoopSummary is a token-efficient Loop representation for MCP responses.
 type mcpLoopSummary struct {
 	Slug           string  `json:"slug"`
 	Name           string  `json:"name"`
@@ -50,7 +49,6 @@ func toMCPLoopSummary(l *loopDomain.Loop) *mcpLoopSummary {
 	return s
 }
 
-// mcpRunSummary is a token-efficient LoopRun representation for MCP responses.
 type mcpRunSummary struct {
 	ID          int64  `json:"id"`
 	RunNumber   int    `json:"run_number"`

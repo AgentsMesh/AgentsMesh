@@ -1,14 +1,3 @@
-/**
- * Relay connection backend abstraction.
- *
- * Defines the interface between the RelayConnectionPool (subscriber management,
- * status tracking, deduplication) and the actual transport layer.
- *
- * Backends:
- * - TsRelayBackend:   browser `new WebSocket` (fallback / tests)
- * - WasmRelayBackend: WASM WebSocket via agentsmesh-wasm WasmWebSocket
- */
-
 import type { WasmWebSocket as WasmWebSocketType } from "@/lib/wasm-core";
 
 export type RelayMessageHandler = (data: ArrayBuffer) => void;

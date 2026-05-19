@@ -1,8 +1,4 @@
-/**
- * Event types from the backend
- */
 export type EventType =
-  // Entity events (broadcast to organization)
   | "pod:created"
   | "pod:status_changed"
   | "pod:agent_status_changed"
@@ -25,43 +21,29 @@ export type EventType =
   | "runner:online"
   | "runner:offline"
   | "runner:updated"
-  // AutopilotController events
   | "autopilot:status_changed"
   | "autopilot:iteration"
   | "autopilot:created"
   | "autopilot:terminated"
   | "autopilot:thinking"
-  // MergeRequest events
   | "mr:created"
   | "mr:updated"
   | "mr:merged"
   | "mr:closed"
-  // Pipeline events
   | "pipeline:updated"
-  // Loop events
   | "loop_run:started"
   | "loop_run:completed"
   | "loop_run:failed"
   | "loop_run:warning"
-  // Block Store events (broadcast per-organization; client filters by workspace)
   | "blockstore:op"
-  // Notification events (targeted to specific users)
   | "notification"
-  // System events
   | "system:maintenance"
-  // Connection events (client-side only)
   | "connected"
   | "ping"
   | "pong";
 
-/**
- * Event categories
- */
 export type EventCategory = "entity" | "notification" | "system";
 
-/**
- * Base event structure from the server
- */
 export interface RealtimeEvent<T = unknown> {
   type: EventType;
   category: EventCategory;
@@ -74,21 +56,14 @@ export interface RealtimeEvent<T = unknown> {
   timestamp: number;
 }
 
-/**
- * Event handler function type
- */
 export type EventHandler<T = unknown> = (event: RealtimeEvent<T>) => void;
 
-/**
- * Connection state
- */
 export type ConnectionState =
   | "disconnected"
   | "connecting"
   | "connected"
   | "reconnecting";
 
-// Re-export all event payload types from split files
 export type {
   PodStatusChangedData,
   PodCreatedData,

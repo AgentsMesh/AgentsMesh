@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// ActivateTrialSubscription converts a trial subscription to active
 func (s *Service) ActivateTrialSubscription(ctx context.Context, orgID int64, billingCycle string) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -42,7 +41,6 @@ func (s *Service) ActivateTrialSubscription(ctx context.Context, orgID int64, bi
 	return nil
 }
 
-// FreezeSubscription freezes a subscription due to non-payment
 func (s *Service) FreezeSubscription(ctx context.Context, orgID int64) error {
 	now := time.Now()
 	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
@@ -56,7 +54,6 @@ func (s *Service) FreezeSubscription(ctx context.Context, orgID int64) error {
 	return nil
 }
 
-// UnfreezeSubscription reactivates a frozen subscription
 func (s *Service) UnfreezeSubscription(ctx context.Context, orgID int64, billingCycle string) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -87,7 +84,6 @@ func (s *Service) UnfreezeSubscription(ctx context.Context, orgID int64, billing
 	return nil
 }
 
-// CancelSubscription cancels a subscription
 func (s *Service) CancelSubscription(ctx context.Context, orgID int64) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -99,7 +95,6 @@ func (s *Service) CancelSubscription(ctx context.Context, orgID int64) error {
 	sub.Status = billing.SubscriptionStatusCanceled
 	sub.CanceledAt = &now
 
-	// Cancel Stripe subscription if enabled
 	if s.stripeEnabled && s.stripeClient != nil && sub.StripeSubscriptionID != nil {
 		_, err := s.stripeClient.CancelSubscription(*sub.StripeSubscriptionID, nil)
 		if err != nil {
@@ -116,21 +111,18 @@ func (s *Service) CancelSubscription(ctx context.Context, orgID int64) error {
 	return nil
 }
 
-// SetCancelAtPeriodEnd sets or clears the cancel_at_period_end flag
 func (s *Service) SetCancelAtPeriodEnd(ctx context.Context, orgID int64, cancel bool) error {
 	return s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"cancel_at_period_end": cancel,
 	})
 }
 
-// SetNextBillingCycle sets the next billing cycle (takes effect on renewal)
 func (s *Service) SetNextBillingCycle(ctx context.Context, orgID int64, cycle string) error {
 	return s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"next_billing_cycle": cycle,
 	})
 }
 
-// RenewSubscription renews subscription for next period
 func (s *Service) RenewSubscription(ctx context.Context, orgID int64) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -138,7 +130,6 @@ func (s *Service) RenewSubscription(ctx context.Context, orgID int64) error {
 		return err
 	}
 
-	// Set new period
 	sub.CurrentPeriodStart = sub.CurrentPeriodEnd
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		sub.CurrentPeriodEnd = sub.CurrentPeriodStart.AddDate(1, 0, 0)
@@ -154,7 +145,6 @@ func (s *Service) RenewSubscription(ctx context.Context, orgID int64) error {
 	return nil
 }
 
-// SetAutoRenew sets the auto_renew flag for a subscription
 func (s *Service) SetAutoRenew(ctx context.Context, orgID int64, autoRenew bool) error {
 	return s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"auto_renew": autoRenew,

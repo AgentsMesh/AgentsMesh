@@ -118,9 +118,7 @@ pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
-// Bootstrap the global tracing subscriber so `tracing::warn!/error!` across
-// the workspace land in the browser console. Idempotent: subsequent calls
-// (e.g. from React StrictMode double-init) are silently ignored.
+// Idempotent: repeated calls (React StrictMode double-init) are no-ops.
 #[wasm_bindgen]
 pub fn init_logger(level: String) -> Result<(), JsValue> {
     agentsmesh_logging::init(agentsmesh_logging::LogConfig::wasm_console(level))
@@ -129,9 +127,6 @@ pub fn init_logger(level: String) -> Result<(), JsValue> {
     Ok(())
 }
 
-// Host-side log entrypoint: JS callers can route their own events through
-// the same sink stack used by Rust. `target` is the logical source name
-// (e.g. "renderer", "storeBurst"); we surface it as a structured field.
 #[wasm_bindgen]
 pub fn log_event(level: String, target: String, msg: String) {
     agentsmesh_logging::log_event(&level, &target, &msg);

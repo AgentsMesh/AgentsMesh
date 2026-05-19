@@ -1,4 +1,3 @@
-// Channel components
 export { CreateChannelDialog } from "./CreateChannelDialog";
 export { default as ChannelChatPanel } from "./ChannelChatPanel";
 export { default as ChannelDocument } from "./ChannelDocument";
@@ -11,6 +10,5 @@ export { default as MessageBubble } from "./MessageBubble";
 export { default as MobileChannelChat } from "./MobileChannelChat";
 export { default as MentionDropdown } from "./MentionDropdown";
 
-// Types and utilities
 export type { TransformedMessage } from "./types";
 export { getMentionQuery } from "./mention";

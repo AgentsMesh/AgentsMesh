@@ -60,7 +60,3 @@ export function ParagraphRenderer({ block, depth }: { block: Block; depth: numbe
     </BlockChrome>
   );
 }
-
-
-
-

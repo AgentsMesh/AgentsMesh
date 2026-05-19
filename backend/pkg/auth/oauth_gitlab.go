@@ -10,13 +10,11 @@ import (
 	"strings"
 )
 
-// GitLabProvider implements OAuth for GitLab
 type GitLabProvider struct {
 	config  *OAuthConfig
 	baseURL string
 }
 
-// NewGitLabProvider creates a new GitLab OAuth provider
 func NewGitLabProvider(config *OAuthConfig, baseURL string) *GitLabProvider {
 	if baseURL == "" {
 		baseURL = "https://gitlab.com"
@@ -24,7 +22,6 @@ func NewGitLabProvider(config *OAuthConfig, baseURL string) *GitLabProvider {
 	return &GitLabProvider{config: config, baseURL: baseURL}
 }
 
-// GetAuthURL returns the GitLab OAuth authorization URL
 func (p *GitLabProvider) GetAuthURL(state string) string {
 	params := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -36,7 +33,6 @@ func (p *GitLabProvider) GetAuthURL(state string) string {
 	return p.baseURL + "/oauth/authorize?" + params.Encode()
 }
 
-// ExchangeCode exchanges authorization code for tokens
 func (p *GitLabProvider) ExchangeCode(ctx context.Context, code string) (*OAuthToken, error) {
 	data := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -66,7 +62,6 @@ func (p *GitLabProvider) ExchangeCode(ctx context.Context, code string) (*OAuthT
 	return &token, nil
 }
 
-// GetUserInfo retrieves user info from GitLab
 func (p *GitLabProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", p.baseURL+"/api/v4/user", nil)
 	if err != nil {

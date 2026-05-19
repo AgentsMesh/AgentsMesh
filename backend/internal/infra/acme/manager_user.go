@@ -15,7 +15,6 @@ import (
 	"github.com/go-acme/lego/v4/registration"
 )
 
-// acmeUser implements registration.User interface
 type acmeUser struct {
 	Email        string                 `json:"email"`
 	Registration *registration.Resource `json:"registration"`
@@ -35,19 +34,16 @@ func (u *acmeUser) GetPrivateKey() crypto.PrivateKey {
 	return u.Key
 }
 
-// loadOrCreateUser loads existing user or creates a new one
 func (m *Manager) loadOrCreateUser() error {
 	userPath := filepath.Join(m.cfg.StorageDir, "user.json")
 
 	data, err := os.ReadFile(userPath)
 	if err == nil {
-		// Load existing user
 		var user acmeUser
 		if err := json.Unmarshal(data, &user); err != nil {
 			return fmt.Errorf("failed to unmarshal user: %w", err)
 		}
 
-		// Decode private key
 		block, _ := pem.Decode(user.KeyPEM)
 		if block == nil {
 			return fmt.Errorf("failed to decode user key PEM")
@@ -64,7 +60,6 @@ func (m *Manager) loadOrCreateUser() error {
 		return nil
 	}
 
-	// Create new user
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return fmt.Errorf("failed to generate user key: %w", err)
@@ -90,7 +85,6 @@ func (m *Manager) loadOrCreateUser() error {
 	return nil
 }
 
-// saveUser saves user data to disk
 func (m *Manager) saveUser() error {
 	userPath := filepath.Join(m.cfg.StorageDir, "user.json")
 

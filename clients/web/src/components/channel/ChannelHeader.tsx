@@ -17,18 +17,11 @@ interface ChannelHeaderProps {
   ticket?: Channel["ticket"];
   repository?: Channel["repository"];
   onOpenSearch?: () => void;
-  /** Toggles the right-side drawer (Pods / Members / Linked / Document). */
   onToggleRail?: () => void;
   railOpen?: boolean;
   compact?: boolean;
 }
 
-/**
- * Channel header — design/desktop/pages/channels.pastel `chan_header`. Left: `#` +
- * name + subtitle (pods · members · linked · repo). Right: 🔍 search plus
- * ⋯ "More" which opens/closes the right drawer (members are inside the
- * drawer, no duplicate pill on the header).
- */
 export function ChannelHeader({
   name,
   channelId,

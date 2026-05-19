@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// SSOLoginRequest represents an SSO login request with user info from the SSO provider.
 type SSOLoginRequest struct {
 	ProviderName string
 	ExternalID   string

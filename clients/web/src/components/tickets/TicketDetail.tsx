@@ -25,8 +25,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const t = useTranslations();
   const currentOrg = useCurrentOrg();
 
-  // Use individual selectors to prevent re-renders from unrelated store changes
-  // (e.g., fetchTickets() triggered by WebSocket events sets shared `loading`)
   const currentTicket = useCurrentTicket();
   const fetchTicket = useTicketStore(state => state.fetchTicket);
   const updateTicket = useTicketStore(state => state.updateTicket);
@@ -35,8 +33,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const setCurrentTicket = useTicketStore(state => state.setCurrentTicket);
   const error = useTicketStore(state => state.error);
 
-  // Local loading state to avoid re-renders from shared store `loading`
-  // Derived from whether we've loaded the current slug (avoids setState in effect)
   const [loadedSlug, setLoadedSlug] = useState<string | null>(null);
   const initialLoading = loadedSlug !== slug;
 
@@ -54,8 +50,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   }, []);
 
   useEffect(() => {
-    // Clear stale ticket from previous slug so the skeleton shows
-    // instead of briefly rendering old ticket data
     setCurrentTicket(null);
     fetchTicket(slug).finally(() => setLoadedSlug(slug));
   }, [slug, fetchTicket, setCurrentTicket]);
@@ -142,12 +136,9 @@ export function TicketDetail({ slug }: TicketDetailProps) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-      {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-6">
-        {/* Header — matches the design's prominent header with meta row + big CTA */}
         <div className="border-b border-border pb-6">
           <div className="flex items-start justify-between gap-6">
-            {/* Left: slug + status, title, meta row, labels */}
             <div className="flex-1 min-w-0 space-y-3">
               <div className="flex items-center gap-2.5">
                 <span className="font-mono text-[13px] text-muted-foreground">{slug}</span>
@@ -161,7 +152,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
                 inputClassName="text-[22px] font-semibold"
               />
 
-              {/* Meta row: Repo / Priority / Due / Opened */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
                 {currentTicket.repository && (
                   <div className="flex items-center gap-1.5">
@@ -202,7 +192,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
               )}
             </div>
 
-            {/* Right: big Spawn Pod CTA + helper text + secondary actions */}
             <div className="flex shrink-0 flex-col items-end gap-2 w-[260px]">
               <SpawnPodButton
                 ticket={currentTicket}
@@ -239,7 +228,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
           </div>
         </div>
 
-        {/* Content */}
         <div className="rounded-md border border-border overflow-hidden bg-card shadow-xs min-h-[200px] max-h-[65vh] overflow-y-auto">
           <Suspense fallback={<div className="h-[200px] animate-pulse bg-muted/30 rounded-md" />}>
             <BlockEditor
@@ -251,10 +239,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
           </Suspense>
         </div>
 
-        {/* Linked items moved into the right rail per design. Leave hook in place
-            so the data is still fetched — render only the comments thread here. */}
-
-        {/* Comments (large screens only — on small screens shown above delete in sidebar) */}
         <div className="hidden lg:block">
           <CommentsList
             comments={comments}
@@ -266,7 +250,6 @@ export function TicketDetail({ slug }: TicketDetailProps) {
 
       </div>
 
-      {/* Sidebar — 4-section rail per design */}
       <TicketDetailSidebar
         ticket={currentTicket}
         ticketSlug={slug}

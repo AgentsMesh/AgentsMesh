@@ -7,19 +7,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ user.Repository = (*userRepo)(nil)
 
 type userRepo struct {
 	db *gorm.DB
 }
 
-// NewUserRepository creates a new GORM-based user repository
 func NewUserRepository(db *gorm.DB) user.Repository {
 	return &userRepo{db: db}
 }
-
-// --- User CRUD ---
 
 func (r *userRepo) CreateUser(ctx context.Context, u *user.User) error {
 	return r.db.WithContext(ctx).Create(u).Error
@@ -91,8 +87,6 @@ func (r *userRepo) SearchUsers(ctx context.Context, query string, limit int) ([]
 	return users, err
 }
 
-// --- Auth token queries ---
-
 func (r *userRepo) GetByVerificationToken(ctx context.Context, token string) (*user.User, error) {
 	var u user.User
 	if err := r.db.WithContext(ctx).Where("email_verification_token = ?", token).First(&u).Error; err != nil {
@@ -114,8 +108,6 @@ func (r *userRepo) GetByResetToken(ctx context.Context, token string) (*user.Use
 	}
 	return &u, nil
 }
-
-// --- Identity (OAuth) ---
 
 func (r *userRepo) GetIdentityByProviderUser(ctx context.Context, provider, providerUserID string) (*user.Identity, error) {
 	var identity user.Identity
@@ -166,4 +158,3 @@ func (r *userRepo) DeleteIdentity(ctx context.Context, userID int64, provider st
 		Where("user_id = ? AND provider = ?", userID, provider).
 		Delete(&user.Identity{}).Error
 }
-

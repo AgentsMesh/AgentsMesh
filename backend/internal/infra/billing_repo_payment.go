@@ -7,8 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// --- PaymentOrder ---
-
 func (r *billingRepository) CreatePaymentOrder(ctx context.Context, order *billing.PaymentOrder) error {
 	return r.db.WithContext(ctx).Create(order).Error
 }
@@ -39,13 +37,9 @@ func (r *billingRepository) UpdatePaymentOrderStatus(ctx context.Context, orderN
 	return r.db.WithContext(ctx).Model(&billing.PaymentOrder{}).Where("order_no = ?", orderNo).Updates(updates).Error
 }
 
-// --- PaymentTransaction ---
-
 func (r *billingRepository) CreatePaymentTransaction(ctx context.Context, tx *billing.PaymentTransaction) error {
 	return r.db.WithContext(ctx).Create(tx).Error
 }
-
-// --- Invoice ---
 
 func (r *billingRepository) CreateInvoice(ctx context.Context, invoice *billing.Invoice) error {
 	return r.db.WithContext(ctx).Create(invoice).Error
@@ -62,8 +56,6 @@ func (r *billingRepository) ListInvoicesByOrg(ctx context.Context, orgID int64, 
 	}
 	return invoices, nil
 }
-
-// --- UsageRecord ---
 
 func (r *billingRepository) CreateUsageRecord(ctx context.Context, record *billing.UsageRecord) error {
 	return r.db.WithContext(ctx).Create(record).Error
@@ -92,8 +84,6 @@ func (r *billingRepository) ListUsageHistory(ctx context.Context, orgID int64, u
 	}
 	return records, nil
 }
-
-// --- WebhookEvent ---
 
 func (r *billingRepository) CreateWebhookEvent(ctx context.Context, event *billing.WebhookEvent) error {
 	return r.db.WithContext(ctx).Create(event).Error

@@ -1,96 +1,26 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
-import { getUserApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
-import { resolvePostLoginUrl } from "@/lib/auth/post-login";
+import { useOAuthCallback } from "@/hooks/useOAuthCallback";
 import { Logo } from "@/components/common";
 import { useTranslations } from "next-intl";
 
 function SSOCallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations();
-  const token = searchParams.get("token");
-  const refreshToken = searchParams.get("refresh_token");
-  const error = searchParams.get("error");
-  const redirectParam = searchParams.get("redirect");
-  const { setAuth, setOrganizations } = useAuthStore();
+  const { status, errorReason } = useOAuthCallback(searchParams);
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const processedRef = useRef(false);
-
-  useEffect(() => {
-    // Guard against duplicate execution (e.g., dependency change triggering re-run)
-    if (processedRef.current) return;
-    processedRef.current = true;
-
-    // Remove tokens from URL to prevent leaking via browser history/Referer.
-    // redirectParam is already captured into closure above so this is safe.
-    if (token || refreshToken || error) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-
-    const scheduleRedirect = (path: string) => {
-      redirectTimerRef.current = setTimeout(() => router.push(path), 1500);
-    };
-
-    const handleCallback = async () => {
-      await initWasmCore();
-      if (error) {
-        setStatus("error");
-        // Only display known error codes to avoid leaking internal details
-        const knownErrors: Record<string, string> = {
-          access_denied: t("auth.sso.callbackAccessDenied"),
-          authentication_failed: t("auth.sso.callbackGenericError"),
-          missing_state: t("auth.sso.callbackGenericError"),
-          invalid_state: t("auth.sso.callbackGenericError"),
-        };
-        setErrorMessage(
-          knownErrors[error] ?? t("auth.sso.callbackGenericError")
-        );
-        return;
-      }
-
-      if (!token) {
-        setStatus("error");
-        setErrorMessage(t("auth.sso.callbackMissingToken"));
-        return;
-      }
-
-      try {
-        // Set token so subsequent API calls work
-        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
-
-        // Get user info
-        const userResponse = JSON.parse(await getUserApiService().get_me());
-        await setAuth(token, userResponse.user, refreshToken || undefined);
-
-        const url = await resolvePostLoginUrl({
-          redirectParam,
-          setOrganizations,
-        });
-        setStatus("success");
-        scheduleRedirect(url);
-      } catch {
-        setStatus("error");
-        setErrorMessage(t("auth.sso.callbackGenericError"));
-      }
-    };
-
-    handleCallback();
-
-    return () => {
-      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- processedRef ensures single execution
-  }, [token, refreshToken, error, redirectParam]);
+  const errorMessages: Record<string, string> = {
+    access_denied: t("auth.sso.callbackAccessDenied"),
+    missing_token: t("auth.sso.callbackMissingToken"),
+    authentication_failed: t("auth.sso.callbackGenericError"),
+    missing_state: t("auth.sso.callbackGenericError"),
+    invalid_state: t("auth.sso.callbackGenericError"),
+  };
+  const errorMessage = errorMessages[errorReason] ?? t("auth.sso.callbackGenericError");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

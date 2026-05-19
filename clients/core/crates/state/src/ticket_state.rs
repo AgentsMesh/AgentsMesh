@@ -43,8 +43,6 @@ impl TicketState {
         }
     }
 
-    // --- Ticket CRUD ---
-
     pub fn get_tickets(&self) -> &[Ticket] { &self.tickets }
 
     pub fn get_ticket_by_slug(&self, slug: &str) -> Option<&Ticket> {
@@ -69,13 +67,11 @@ impl TicketState {
             *t = updated.clone();
             if let Some(repo) = &self.repo { save_ticket(repo, t); }
         }
-        // Also update in board columns if present
         for col in &mut self.board_columns {
             if let Some(t) = col.tickets.iter_mut().find(|t| t.slug == slug) {
                 *t = updated.clone();
             }
         }
-        // Update current ticket if it matches
         if self.current_ticket.as_ref().is_some_and(|ct| ct.slug == slug) {
             self.current_ticket = Some(updated);
         }
@@ -104,8 +100,6 @@ impl TicketState {
         if let Some(repo) = &self.repo { let _ = repo.delete_ticket(slug); }
     }
 
-    // --- Filtering ---
-
     pub fn filter_tickets(
         &self,
         search: Option<&str>,
@@ -130,10 +124,7 @@ impl TicketState {
         }).collect()
     }
 
-    // --- Board columns ---
-
     pub fn set_board_columns(&mut self, columns: Vec<BoardColumn>) {
-        // Sync flat ticket list from board columns
         self.tickets = columns.iter().flat_map(|c| c.tickets.clone()).collect();
         if let Some(repo) = &self.repo {
             let _ = repo.clear();
@@ -154,12 +145,8 @@ impl TicketState {
         }
     }
 
-    // --- View mode ---
-
     pub fn set_view_mode(&mut self, mode: ViewMode) { self.view_mode = mode; }
     pub fn get_view_mode(&self) -> ViewMode { self.view_mode }
-
-    // --- Labels ---
 
     pub fn get_labels(&self) -> &[Label] { &self.labels }
     pub fn set_labels(&mut self, labels: Vec<Label>) { self.labels = labels; }
@@ -173,12 +160,8 @@ impl TicketState {
 
     pub fn remove_label(&mut self, id: i64) { self.labels.retain(|l| l.id != id); }
 
-    // --- Current ticket ---
-
     pub fn set_current_ticket(&mut self, ticket: Option<Ticket>) { self.current_ticket = ticket; }
     pub fn get_current_ticket(&self) -> Option<&Ticket> { self.current_ticket.as_ref() }
-
-    // --- Pods per ticket cache ---
 
     pub fn set_ticket_pods(&mut self, slug: &str, pods: Vec<Pod>) {
         self.pods_by_ticket_slug.insert(slug.to_string(), pods);

@@ -16,12 +16,6 @@ interface MeshFilterSectionProps {
   onToggle: (id: string) => void;
 }
 
-/**
- * Multi-select filter list matching design/desktop/pages/mesh.pastel sidebar pattern:
- *   ┌─ RUNNER ────────────┐
- *   │ [✓] ● dev-runner   3 │
- *   │ [ ] ● staging-2    1 │
- */
 export function MeshFilterSection({ title, options, selected, onToggle }: MeshFilterSectionProps) {
   if (options.length === 0) return null;
 

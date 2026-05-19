@@ -2,7 +2,6 @@
 
 import { useEffect, useCallback, useRef, useState } from "react";
 
-// LemonSqueezy global types
 declare global {
   interface Window {
     createLemonSqueezy?: () => void;
@@ -17,7 +16,6 @@ declare global {
   }
 }
 
-// LemonSqueezy event types
 export interface LemonSqueezyEvent {
   event:
     | "Checkout.Success"
@@ -47,26 +45,6 @@ export interface UseLemonSqueezyOptions {
 
 const LEMON_JS_URL = "https://app.lemonsqueezy.com/js/lemon.js";
 
-/**
- * Hook to load and use LemonSqueezy overlay checkout
- *
- * @example
- * ```tsx
- * const { openCheckout, isLoaded } = useLemonSqueezy({
- *   onCheckoutSuccess: (event) => {
- *     console.log("Payment successful:", event.data?.order);
- *     router.refresh();
- *   },
- *   onCheckoutClose: () => {
- *     console.log("Checkout closed");
- *   },
- * });
- *
- * // Open overlay checkout
- * openCheckout("https://checkout.lemonsqueezy.com/...");
- * ```
- */
-// Check if script is already loaded (outside of component for lazy init)
 function checkScriptLoaded(): boolean {
   if (typeof window === "undefined") return false;
   return !!(window.LemonSqueezy || document.querySelector(`script[src="${LEMON_JS_URL}"]`));
@@ -74,24 +52,18 @@ function checkScriptLoaded(): boolean {
 
 export function useLemonSqueezy(options: UseLemonSqueezyOptions = {}) {
   const { onCheckoutSuccess, onCheckoutClose } = options;
-  // Use lazy initialization to avoid effect setState issue
   const [isLoaded, setIsLoaded] = useState(checkScriptLoaded);
   const callbacksRef = useRef({ onCheckoutSuccess, onCheckoutClose });
 
-  // Update callbacks ref when they change
   useEffect(() => {
     callbacksRef.current = { onCheckoutSuccess, onCheckoutClose };
   }, [onCheckoutSuccess, onCheckoutClose]);
 
-  // Load Lemon.js script
   useEffect(() => {
-    // Skip if already loaded (checked via state init)
     if (isLoaded) {
       return;
     }
 
-    // Double-check in case state init missed it (SSR)
-    // This is a valid synchronization pattern - we're syncing React state with external script state
     if (window.LemonSqueezy || document.querySelector(`script[src="${LEMON_JS_URL}"]`)) {
        
       setIsLoaded(true);
@@ -102,7 +74,6 @@ export function useLemonSqueezy(options: UseLemonSqueezyOptions = {}) {
     script.src = LEMON_JS_URL;
     script.defer = true;
     script.onload = () => {
-      // Initialize LemonSqueezy after script loads
       if (window.createLemonSqueezy) {
         window.createLemonSqueezy();
       }
@@ -115,12 +86,10 @@ export function useLemonSqueezy(options: UseLemonSqueezyOptions = {}) {
     document.head.appendChild(script);
 
     return () => {
-      // Clean up is not needed as the script should persist
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- isLoaded is intentionally not in deps
   }, []);
 
-  // Setup event handler
   useEffect(() => {
     if (!window.LemonSqueezy) return;
 
@@ -138,16 +107,13 @@ export function useLemonSqueezy(options: UseLemonSqueezyOptions = {}) {
     });
   }, []);
 
-  // Open checkout overlay
   const openCheckout = useCallback((url: string) => {
     if (!window.LemonSqueezy) {
-      // Fallback to redirect if LemonSqueezy is not loaded
       console.warn("LemonSqueezy not loaded, falling back to redirect");
       window.location.href = url;
       return;
     }
 
-    // Setup event handler before opening
     window.LemonSqueezy.Setup({
       eventHandler: (event: LemonSqueezyEvent) => {
         switch (event.event) {
@@ -164,14 +130,12 @@ export function useLemonSqueezy(options: UseLemonSqueezyOptions = {}) {
     window.LemonSqueezy.Url.Open(url);
   }, []);
 
-  // Close checkout overlay
   const closeCheckout = useCallback(() => {
     if (window.LemonSqueezy) {
       window.LemonSqueezy.Url.Close();
     }
   }, []);
 
-  // Refresh checkout data (useful after updating customer info)
   const refreshCheckout = useCallback(() => {
     if (window.LemonSqueezy) {
       window.LemonSqueezy.Refresh();

@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetDefault sets a repository provider as default
-// POST /api/v1/user/repository-providers/:id/default
 func (h *UserRepositoryProviderHandler) SetDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -36,8 +34,6 @@ func (h *UserRepositoryProviderHandler) SetDefault(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Default provider set"})
 }
 
-// TestConnection tests the connection to a repository provider
-// POST /api/v1/user/repository-providers/:id/test
 func (h *UserRepositoryProviderHandler) TestConnection(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -47,7 +43,6 @@ func (h *UserRepositoryProviderHandler) TestConnection(c *gin.Context) {
 		return
 	}
 
-	// Get provider
 	provider, err := h.userService.GetRepositoryProvider(c.Request.Context(), userID, providerID)
 	if err != nil {
 		if errors.Is(err, user.ErrProviderNotFound) {
@@ -58,7 +53,6 @@ func (h *UserRepositoryProviderHandler) TestConnection(c *gin.Context) {
 		return
 	}
 
-	// Get decrypted token
 	token, err := h.userService.GetDecryptedProviderToken(c.Request.Context(), userID, providerID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to decrypt token")
@@ -70,14 +64,12 @@ func (h *UserRepositoryProviderHandler) TestConnection(c *gin.Context) {
 		return
 	}
 
-	// Create git provider and test connection
 	gitProvider, err := git.NewProvider(provider.ProviderType, provider.BaseURL, token)
 	if err != nil {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Failed to create git provider: "+err.Error())
 		return
 	}
 
-	// Try to list projects to verify connection
 	_, err = gitProvider.ListProjects(c.Request.Context(), 1, 1)
 	if err != nil {
 		if errors.Is(err, git.ErrUnauthorized) {
@@ -94,8 +86,6 @@ func (h *UserRepositoryProviderHandler) TestConnection(c *gin.Context) {
 	})
 }
 
-// ListRepositories lists repositories accessible through a repository provider
-// GET /api/v1/user/repository-providers/:id/repositories
 func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -105,7 +95,6 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
 	search := c.Query("search")
@@ -117,7 +106,6 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		perPage = 20
 	}
 
-	// Get provider
 	provider, err := h.userService.GetRepositoryProvider(c.Request.Context(), userID, providerID)
 	if err != nil {
 		if errors.Is(err, user.ErrProviderNotFound) {
@@ -128,7 +116,6 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	// Get decrypted token
 	token, err := h.userService.GetDecryptedProviderToken(c.Request.Context(), userID, providerID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to decrypt token")
@@ -140,14 +127,12 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	// Create git provider
 	gitProvider, err := git.NewProvider(provider.ProviderType, provider.BaseURL, token)
 	if err != nil {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Failed to create git provider: "+err.Error())
 		return
 	}
 
-	// Fetch repositories
 	var projects []*git.Project
 	if search != "" {
 		projects, err = gitProvider.SearchProjects(c.Request.Context(), search, page, perPage)
@@ -168,7 +153,6 @@ func (h *UserRepositoryProviderHandler) ListRepositories(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	repositories := make([]*RepositoryResponse, len(projects))
 	for i, p := range projects {
 		repositories[i] = &RepositoryResponse{

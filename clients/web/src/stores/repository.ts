@@ -4,9 +4,6 @@ import { getRepoState, getRepositoryService } from "@/lib/wasm-core";
 import { getErrorMessage } from "@/lib/utils";
 import type { RepositoryData } from "@/lib/api/repositoryTypes";
 
-// Single source of truth for the repository shape is `RepositoryData`
-// in @/lib/api/repositoryTypes. The store re-exports it as `Repository`
-// for ergonomic naming at call sites that already speak the domain.
 export type Repository = RepositoryData;
 
 interface RepositoryState {

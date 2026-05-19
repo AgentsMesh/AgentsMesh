@@ -10,8 +10,6 @@ import { ViewHeader } from "./ViewListFallback";
 import { SummaryBar } from "./SummaryBar";
 import { useViewBlocks } from "./useViewBlocks";
 
-// GalleryView displays source blocks as card tiles. data.cover_url is rendered
-// as a preview image when present; data.title / data.name as the card label.
 export function GalleryView({ viewBlock, spec }: { viewBlock: Block; spec: ViewSpec }) {
   const items = useViewBlocks(spec, viewBlock.workspace_id);
   const dispatch = useBlockstoreDispatch(viewBlock.workspace_id);

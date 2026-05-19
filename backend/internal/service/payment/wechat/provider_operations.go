@@ -18,9 +18,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// HandleWebhook parses and validates a WeChat Pay notification
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
-	// Parse notification content
 	var notification struct {
 		ID           string `json:"id"`
 		CreateTime   string `json:"create_time"`
@@ -45,7 +43,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		Currency:  "CNY",
 	}
 
-	// Decrypt the resource content
 	plaintext, err := utils.DecryptAES256GCM(
 		p.apiV3Key,
 		notification.Resource.AssociatedData,
@@ -92,7 +89,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	return result, nil
 }
 
-// RefundPayment initiates a refund
 func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) (*types.RefundResponse, error) {
 	svc := refunddomestic.RefundsApiService{Client: p.client}
 
@@ -139,7 +135,6 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 	}, nil
 }
 
-// CancelSubscription closes a pending order
 func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string, immediate bool) error {
 	svc := native.NativeApiService{Client: p.client}
 
@@ -162,7 +157,6 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 	return nil
 }
 
-// CreateAgreementSign creates a contract signing request (委托代扣签约)
 func (p *Provider) CreateAgreementSign(ctx context.Context, req *types.AgreementSignRequest) (*types.AgreementSignResponse, error) {
 	contractID := fmt.Sprintf("contract_org_%d_%d", req.OrganizationID, time.Now().Unix())
 
@@ -184,17 +178,14 @@ func (p *Provider) CreateAgreementSign(ctx context.Context, req *types.Agreement
 	}, nil
 }
 
-// ExecuteAgreementPay executes a payment using the contract (代扣)
 func (p *Provider) ExecuteAgreementPay(ctx context.Context, req *types.AgreementPayRequest) (*types.AgreementPayResponse, error) {
 	return nil, fmt.Errorf("wechat agreement pay requires additional merchant configuration")
 }
 
-// CancelAgreement cancels a contract (解约)
 func (p *Provider) CancelAgreement(ctx context.Context, agreementNo string) error {
 	return fmt.Errorf("wechat agreement cancellation requires additional merchant configuration")
 }
 
-// GetAgreementStatus checks the status of a contract
 func (p *Provider) GetAgreementStatus(ctx context.Context, agreementNo string) (string, error) {
 	return "", fmt.Errorf("wechat agreement query requires additional merchant configuration")
 }

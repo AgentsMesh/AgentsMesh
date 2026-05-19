@@ -5,9 +5,6 @@ import (
 	"fmt"
 )
 
-// payloadAs decodes a raw op payload into a concrete struct via a JSON round-trip.
-// Using JSON rather than reflection keeps field-name mapping predictable and
-// matches what REST clients already send.
 func payloadAs[T any](raw map[string]any) (T, error) {
 	var out T
 	buf, err := json.Marshal(raw)

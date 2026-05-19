@@ -4,9 +4,6 @@ import { Input } from "@/components/ui/input";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 import type { StepProps } from "../types";
 
-/**
- * Step 4: Confirm - Review and confirm import settings
- */
 export function ConfirmStep({ state, actions, t }: StepProps) {
   const {
     manualProviderType,

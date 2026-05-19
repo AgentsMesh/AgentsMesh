@@ -10,12 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface compliance check.
 var _ mesh.MeshRepository = (*meshRepository)(nil)
 
 type meshRepository struct{ db *gorm.DB }
 
-// NewMeshRepository creates a new GORM-backed MeshRepository.
 func NewMeshRepository(db *gorm.DB) mesh.MeshRepository {
 	return &meshRepository{db: db}
 }

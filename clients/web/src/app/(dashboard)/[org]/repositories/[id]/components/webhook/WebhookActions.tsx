@@ -4,9 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import type { WebhookActionsProps } from "./types";
 
-/**
- * Action buttons for webhook management
- */
 export function WebhookActions({
   status,
   actionLoading,

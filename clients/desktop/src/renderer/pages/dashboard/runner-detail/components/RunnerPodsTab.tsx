@@ -32,9 +32,6 @@ interface RunnerPodsTabProps {
   onResume: (pod: RunnerPodData) => void;
 }
 
-/**
- * Pods tab content showing pod list with filtering and pagination
- */
 export function RunnerPodsTab({
   runner,
   pods,
@@ -66,7 +63,6 @@ export function RunnerPodsTab({
 
   return (
     <div className="space-y-4">
-      {/* Filters and Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <select
@@ -107,7 +103,6 @@ export function RunnerPodsTab({
         </div>
       </div>
 
-      {/* Pods Table */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted">
@@ -256,7 +251,6 @@ export function RunnerPodsTab({
         </table>
       </div>
 
-      {/* Pagination */}
       {total > limit && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">

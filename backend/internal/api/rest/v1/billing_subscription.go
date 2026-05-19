@@ -10,17 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Basic Subscription Operations (CRUD)
-// ===========================================
-
-// CreateSubscriptionRequest represents the subscription creation request
 type CreateSubscriptionRequest struct {
 	PlanName     string `json:"plan_name" binding:"required"`
 	BillingCycle string `json:"billing_cycle"` // monthly or yearly
 }
 
-// GetSubscription returns the current subscription
 func (h *BillingHandler) GetSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -37,7 +31,6 @@ func (h *BillingHandler) GetSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"subscription": sub})
 }
 
-// CreateSubscription creates a new subscription
 func (h *BillingHandler) CreateSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -60,12 +53,10 @@ func (h *BillingHandler) CreateSubscription(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"subscription": sub})
 }
 
-// UpdateSubscriptionRequest represents the subscription update request
 type UpdateSubscriptionRequest struct {
 	PlanName string `json:"plan_name" binding:"required"`
 }
 
-// UpdateSubscription updates the subscription plan
 func (h *BillingHandler) UpdateSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -93,7 +84,6 @@ func (h *BillingHandler) UpdateSubscription(c *gin.Context) {
 		return
 	}
 
-	// Check if downgrade is scheduled
 	response := gin.H{"subscription": sub}
 	if sub.DowngradeToPlan != nil {
 		response["message"] = "downgrade scheduled for end of billing period"
@@ -103,7 +93,6 @@ func (h *BillingHandler) UpdateSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// CancelSubscription cancels the current subscription
 func (h *BillingHandler) CancelSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 

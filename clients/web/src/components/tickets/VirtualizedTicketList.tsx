@@ -15,10 +15,6 @@ interface VirtualizedTicketListProps {
   estimatedRowHeight?: number;
 }
 
-/**
- * Virtualized ticket list for handling large datasets efficiently.
- * Uses @tanstack/react-virtual for windowing.
- */
 export function VirtualizedTicketList({
   tickets,
   selectedSlug,
@@ -34,7 +30,7 @@ export function VirtualizedTicketList({
     count: tickets.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => estimatedRowHeight,
-    overscan: 10, // Render 10 extra items above and below the visible area
+    overscan: 10,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -51,7 +47,6 @@ export function VirtualizedTicketList({
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
-      {/* Header */}
       <div className="bg-muted/50 border-b border-border">
         <div className="grid grid-cols-[1fr_2fr_120px_100px_100px] gap-2 px-4 py-2.5">
           <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -72,7 +67,6 @@ export function VirtualizedTicketList({
         </div>
       </div>
 
-      {/* Virtualized Body */}
       <div
         ref={parentRef}
         className="overflow-auto"
@@ -109,7 +103,6 @@ export function VirtualizedTicketList({
                 onMouseLeave={cancelPrefetch}
               >
                 <div className="grid grid-cols-[1fr_2fr_120px_100px_100px] gap-2 px-4 py-2.5 items-center">
-                  {/* ID */}
                   <div className="flex items-center gap-2 min-w-0">
                     <code
                       className={cn(
@@ -121,12 +114,10 @@ export function VirtualizedTicketList({
                     </code>
                   </div>
 
-                  {/* Title */}
                   <div className="text-sm text-foreground truncate">
                     {ticket.title}
                   </div>
 
-                  {/* Status */}
                   <div>
                     <span
                       className={cn(
@@ -140,7 +131,6 @@ export function VirtualizedTicketList({
                     </span>
                   </div>
 
-                  {/* Priority */}
                   <div className="flex items-center gap-1.5">
                     <PriorityIcon priority={ticket.priority} size="sm" />
                     <span className="text-sm text-muted-foreground truncate">
@@ -148,7 +138,6 @@ export function VirtualizedTicketList({
                     </span>
                   </div>
 
-                  {/* Created Date */}
                   <div className="text-sm text-muted-foreground">
                     {ticket.created_at
                       ? new Date(ticket.created_at).toLocaleDateString()

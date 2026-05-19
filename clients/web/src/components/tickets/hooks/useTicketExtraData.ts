@@ -5,9 +5,6 @@ import { Ticket } from "@/stores/ticket";
 import { TicketRelation, TicketCommit, TicketComment } from "@/lib/api";
 import { getTicketRelationsService, getTicketService } from "@/lib/wasm-core";
 
-/**
- * Extra data associated with a ticket (sub-tickets, relations, commits, comments)
- */
 export interface TicketExtraData {
   subTickets: Ticket[];
   relations: TicketRelation[];
@@ -15,12 +12,6 @@ export interface TicketExtraData {
   comments: TicketComment[];
 }
 
-/**
- * Hook for fetching extra ticket data (sub-tickets, relations, commits, comments)
- *
- * @param slug - Ticket slug
- * @param enabled - Whether to enable fetching (e.g., when ticket is loaded)
- */
 export function useTicketExtraData(slug: string, enabled: boolean) {
   const [subTickets, setSubTickets] = useState<Ticket[]>([]);
   const [relations, setRelations] = useState<TicketRelation[]>([]);
@@ -55,7 +46,6 @@ export function useTicketExtraData(slug: string, enabled: boolean) {
     fetchExtraData();
   }, [fetchExtraData]);
 
-  // Comment CRUD operations
   const addComment = useCallback(
     async (
       content: string,

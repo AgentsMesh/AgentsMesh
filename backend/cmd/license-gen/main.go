@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// LicenseData represents the license file structure
 type LicenseData struct {
 	LicenseKey       string        `json:"license_key"`
 	OrganizationName string        `json:"organization_name"`
@@ -23,7 +22,6 @@ type LicenseData struct {
 	Signature        string        `json:"signature"`
 }
 
-// LicenseLimits defines the resource limits
 type LicenseLimits struct {
 	MaxUsers        int `json:"max_users"`
 	MaxRunners      int `json:"max_runners"`
@@ -31,7 +29,6 @@ type LicenseLimits struct {
 	MaxPodMinutes   int `json:"max_pod_minutes"`
 }
 
-// PlanDefaults defines default limits for each plan type
 var PlanDefaults = map[string]LicenseLimits{
 	"starter": {
 		MaxUsers:        5,
@@ -53,7 +50,6 @@ var PlanDefaults = map[string]LicenseLimits{
 	},
 }
 
-// PlanFeatures defines features available for each plan
 var PlanFeatures = map[string][]string{
 	"starter": {
 		"basic_agents",
@@ -80,7 +76,6 @@ var PlanFeatures = map[string][]string{
 }
 
 func main() {
-	// Command line flags
 	org := flag.String("org", "", "Organization name (required)")
 	email := flag.String("email", "", "Contact email (required)")
 	plan := flag.String("plan", "professional", "License plan: starter, professional, enterprise")
@@ -97,7 +92,6 @@ func main() {
 
 	flag.Parse()
 
-	// Handle key generation mode
 	if *genKeys {
 		if err := generateKeyPair(*keyOutput); err != nil {
 			fmt.Fprintf(os.Stderr, "Error generating keys: %v\n", err)
@@ -106,7 +100,6 @@ func main() {
 		return
 	}
 
-	// Validate required flags
 	if *org == "" || *email == "" || *expires == "" || *privateKeyPath == "" || *output == "" {
 		fmt.Fprintln(os.Stderr, "Error: Missing required arguments")
 		fmt.Fprintln(os.Stderr, "")
@@ -141,30 +134,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Validate plan
 	defaults, ok := PlanDefaults[*plan]
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Error: Invalid plan '%s'. Valid plans: starter, professional, enterprise\n", *plan)
 		os.Exit(1)
 	}
 
-	// Parse expiration date
 	expiresAt, err := time.Parse("2006-01-02", *expires)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: Invalid expiration date format. Use YYYY-MM-DD\n")
 		os.Exit(1)
 	}
-	// Set to end of day
 	expiresAt = expiresAt.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 
-	// Load private key
 	privateKey, err := loadPrivateKey(*privateKeyPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading private key: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Build license data
 	license := LicenseData{
 		LicenseKey:       generateLicenseKey(*plan),
 		OrganizationName: *org,
@@ -175,7 +163,6 @@ func main() {
 		ExpiresAt:        expiresAt.UTC(),
 	}
 
-	// Apply overrides
 	if *maxUsers != 0 {
 		license.Limits.MaxUsers = *maxUsers
 	}
@@ -189,7 +176,6 @@ func main() {
 		license.Limits.MaxPodMinutes = *maxPodMinutes
 	}
 
-	// Set features
 	if *features != "" {
 		license.Features = strings.Split(*features, ",")
 		for i := range license.Features {
@@ -199,7 +185,6 @@ func main() {
 		license.Features = PlanFeatures[*plan]
 	}
 
-	// Sign the license
 	signature, err := signLicense(&license, privateKey)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error signing license: %v\n", err)
@@ -207,7 +192,6 @@ func main() {
 	}
 	license.Signature = signature
 
-	// Write to file
 	outputData, err := json.MarshalIndent(license, "", "  ")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error marshaling license: %v\n", err)
@@ -227,17 +211,13 @@ func main() {
 	fmt.Printf("  Output: %s\n", *output)
 }
 
-// generateLicenseKey generates a unique license key
 func generateLicenseKey(plan string) string {
-	// Format: AM-{PLAN}-{YEAR}-{RANDOM}
 	planPrefix := strings.ToUpper(plan[:3])
 	year := time.Now().Year()
 
-	// Generate random suffix
 	randomBytes := make([]byte, 4)
 	rand.Read(randomBytes)
 	randomStr := strings.ToUpper(fmt.Sprintf("%x", randomBytes))
 
 	return fmt.Sprintf("AM-%s-%d-%s", planPrefix, year, randomStr)
 }
-

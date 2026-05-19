@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetDefault returns the user's default Git credential
-// GET /api/v1/user/git-credentials/default
 func (h *UserGitCredentialHandler) GetDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -23,7 +21,6 @@ func (h *UserGitCredentialHandler) GetDefault(c *gin.Context) {
 	}
 
 	if credential == nil {
-		// No default set, return runner_local as default
 		c.JSON(http.StatusOK, gin.H{
 			"credential":      domainUser.RunnerLocalCredentialResponse(),
 			"is_runner_local": true,
@@ -37,13 +34,10 @@ func (h *UserGitCredentialHandler) GetDefault(c *gin.Context) {
 	})
 }
 
-// SetDefaultRequest represents a request to set the default Git credential
 type SetDefaultRequest struct {
 	CredentialID *int64 `json:"credential_id"` // nil means runner_local
 }
 
-// SetDefault sets the user's default Git credential
-// POST /api/v1/user/git-credentials/default
 func (h *UserGitCredentialHandler) SetDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -54,7 +48,6 @@ func (h *UserGitCredentialHandler) SetDefault(c *gin.Context) {
 	}
 
 	if req.CredentialID == nil {
-		// Set runner_local as default (clear default credential)
 		err := h.userService.ClearDefaultGitCredential(c.Request.Context(), userID)
 		if err != nil {
 			apierr.InternalError(c, "Failed to set default")
@@ -83,8 +76,6 @@ func (h *UserGitCredentialHandler) SetDefault(c *gin.Context) {
 	})
 }
 
-// ClearDefault clears the user's default Git credential (falls back to runner_local)
-// DELETE /api/v1/user/git-credentials/default
 func (h *UserGitCredentialHandler) ClearDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

@@ -1,9 +1,7 @@
-// Package runnerlog defines the domain model for runner diagnostic log uploads.
 package runnerlog
 
 import "time"
 
-// Status constants for runner log upload lifecycle.
 const (
 	StatusPending    = "pending"
 	StatusCollecting = "collecting"
@@ -12,7 +10,6 @@ const (
 	StatusFailed     = "failed"
 )
 
-// ValidStatuses is the set of allowed status values.
 var ValidStatuses = map[string]bool{
 	StatusPending:    true,
 	StatusCollecting: true,
@@ -21,12 +18,10 @@ var ValidStatuses = map[string]bool{
 	StatusFailed:     true,
 }
 
-// IsTerminalStatus returns true if the status is a final state.
 func IsTerminalStatus(s string) bool {
 	return s == StatusCompleted || s == StatusFailed
 }
 
-// RunnerLog represents a runner diagnostic log upload record.
 type RunnerLog struct {
 	ID             int64      `json:"id" gorm:"primaryKey"`
 	OrganizationID int64      `json:"organization_id"`
@@ -41,7 +36,6 @@ type RunnerLog struct {
 	CompletedAt    *time.Time `json:"completed_at"`
 }
 
-// TableName returns the database table name.
 func (RunnerLog) TableName() string {
 	return "runner_logs"
 }

@@ -2,9 +2,6 @@ import type React from "react";
 
 import type { ChartSubType, JSONMap } from "@/lib/api/blockstoreTypes";
 
-// Shared internal shape for a decoded chart block. We normalise once and then
-// hand this structure to the per-variant renderers — that way each variant
-// file stays small and focused on its recharts composition.
 export interface ChartSeries {
   name?: string;
   color?: string;
@@ -46,9 +43,6 @@ export function normalize(raw: JSONMap): ChartData | null {
   };
 }
 
-// mergeSeries pivots series-of-rows into recharts' cartesian shape:
-// [{month: "Jan", Revenue: 12000, Profit: 3400}, …]. Series without a name
-// fall back to `series_i` so dataKey still resolves.
 export function mergeSeries(series: ChartSeries[], xKey: string): JSONMap[] {
   const byX = new Map<string, JSONMap>();
   series.forEach((s, i) => {
@@ -70,8 +64,6 @@ export const tooltipStyle: React.CSSProperties = {
   fontSize: "12px",
 };
 
-// colorAt picks a palette entry when a series has no explicit color. Pure so
-// variants can share it without re-deriving the closure each render.
 export function colorAt(series: ChartSeries, index: number, palette: string[]): string {
   return series.color ?? palette[index % palette.length];
 }

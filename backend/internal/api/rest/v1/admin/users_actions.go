@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DisableUser disables a user account
 func (h *UserHandler) DisableUser(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -21,14 +20,12 @@ func (h *UserHandler) DisableUser(c *gin.Context) {
 		return
 	}
 
-	// Prevent disabling self
 	adminUserID := middleware.GetAdminUserID(c)
 	if userID == adminUserID {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Cannot disable your own account")
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.DisableUser(c.Request.Context(), userID)
@@ -41,13 +38,11 @@ func (h *UserHandler) DisableUser(c *gin.Context) {
 		return
 	}
 
-	// Log disable action
 	h.logAction(c, admin.AuditActionUserDisable, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// EnableUser enables a user account
 func (h *UserHandler) EnableUser(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -55,7 +50,6 @@ func (h *UserHandler) EnableUser(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.EnableUser(c.Request.Context(), userID)
@@ -68,13 +62,11 @@ func (h *UserHandler) EnableUser(c *gin.Context) {
 		return
 	}
 
-	// Log enable action
 	h.logAction(c, admin.AuditActionUserEnable, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// GrantAdmin grants system admin privileges to a user
 func (h *UserHandler) GrantAdmin(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -82,7 +74,6 @@ func (h *UserHandler) GrantAdmin(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.GrantAdmin(c.Request.Context(), userID)
@@ -95,13 +86,11 @@ func (h *UserHandler) GrantAdmin(c *gin.Context) {
 		return
 	}
 
-	// Log grant admin action
 	h.logAction(c, admin.AuditActionUserGrantAdmin, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// RevokeAdmin revokes system admin privileges from a user
 func (h *UserHandler) RevokeAdmin(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -111,7 +100,6 @@ func (h *UserHandler) RevokeAdmin(c *gin.Context) {
 
 	adminUserID := middleware.GetAdminUserID(c)
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.RevokeAdmin(c.Request.Context(), userID, adminUserID)
@@ -128,13 +116,11 @@ func (h *UserHandler) RevokeAdmin(c *gin.Context) {
 		return
 	}
 
-	// Log revoke admin action
 	h.logAction(c, admin.AuditActionUserRevokeAdmin, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// VerifyUserEmail marks a user's email as verified
 func (h *UserHandler) VerifyUserEmail(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -142,7 +128,6 @@ func (h *UserHandler) VerifyUserEmail(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.VerifyUserEmail(c.Request.Context(), userID)
@@ -155,13 +140,11 @@ func (h *UserHandler) VerifyUserEmail(c *gin.Context) {
 		return
 	}
 
-	// Log verify email action
 	h.logAction(c, admin.AuditActionUserVerifyEmail, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// UnverifyUserEmail marks a user's email as unverified
 func (h *UserHandler) UnverifyUserEmail(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -169,7 +152,6 @@ func (h *UserHandler) UnverifyUserEmail(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
 	user, err := h.adminService.UnverifyUserEmail(c.Request.Context(), userID)
@@ -182,7 +164,6 @@ func (h *UserHandler) UnverifyUserEmail(c *gin.Context) {
 		return
 	}
 
-	// Log unverify email action
 	h.logAction(c, admin.AuditActionUserUnverifyEmail, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))

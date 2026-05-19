@@ -8,9 +8,6 @@ interface ResizeHandleProps {
   direction: "horizontal" | "vertical";
 }
 
-/**
- * VS Code style resize handle - hidden by default, highlights on hover
- */
 export function ResizeHandle({ direction }: ResizeHandleProps) {
   const isHorizontal = direction === "horizontal";
 

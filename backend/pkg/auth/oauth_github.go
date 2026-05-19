@@ -10,17 +10,14 @@ import (
 	"strings"
 )
 
-// GitHubProvider implements OAuth for GitHub
 type GitHubProvider struct {
 	config *OAuthConfig
 }
 
-// NewGitHubProvider creates a new GitHub OAuth provider
 func NewGitHubProvider(config *OAuthConfig) *GitHubProvider {
 	return &GitHubProvider{config: config}
 }
 
-// GetAuthURL returns the GitHub OAuth authorization URL
 func (p *GitHubProvider) GetAuthURL(state string) string {
 	params := url.Values{
 		"client_id":    {p.config.ClientID},
@@ -31,7 +28,6 @@ func (p *GitHubProvider) GetAuthURL(state string) string {
 	return "https://github.com/login/oauth/authorize?" + params.Encode()
 }
 
-// ExchangeCode exchanges authorization code for tokens
 func (p *GitHubProvider) ExchangeCode(ctx context.Context, code string) (*OAuthToken, error) {
 	data := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -65,7 +61,6 @@ func (p *GitHubProvider) ExchangeCode(ctx context.Context, code string) (*OAuthT
 	return &token, nil
 }
 
-// GetUserInfo retrieves user info from GitHub
 func (p *GitHubProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user", nil)
 	if err != nil {
@@ -92,7 +87,6 @@ func (p *GitHubProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*O
 		return nil, err
 	}
 
-	// If email is not public, fetch it separately
 	if ghUser.Email == "" {
 		email, _ := p.fetchPrimaryEmail(ctx, token)
 		ghUser.Email = email

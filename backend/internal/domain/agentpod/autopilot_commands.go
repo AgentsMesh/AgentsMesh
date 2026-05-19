@@ -1,11 +1,9 @@
 package agentpod
 
-// CreateAutopilotControllerCommand represents a command to create a AutopilotController
 type CreateAutopilotControllerCommand struct {
 	AutopilotControllerKey string `json:"autopilot_controller_key"`
 	PodKey                 string `json:"pod_key,omitempty"`
 
-	// Configuration
 	Prompt                string `json:"prompt,omitempty"`
 	MaxIterations         int32  `json:"max_iterations,omitempty"`
 	IterationTimeoutSec   int32  `json:"iteration_timeout_sec,omitempty"`
@@ -17,7 +15,6 @@ type CreateAutopilotControllerCommand struct {
 	MCPConfigJSON         string `json:"mcp_config_json,omitempty"`
 }
 
-// AutopilotControlAction represents control action types
 type AutopilotControlAction string
 
 const (
@@ -29,7 +26,6 @@ const (
 	AutopilotControlHandback AutopilotControlAction = "handback"
 )
 
-// AutopilotApproveOptions represents options for approval action
 type AutopilotApproveOptions struct {
 	ContinueExecution    bool  `json:"continue_execution"`
 	AdditionalIterations int32 `json:"additional_iterations,omitempty"`

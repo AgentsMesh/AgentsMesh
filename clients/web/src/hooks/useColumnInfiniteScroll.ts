@@ -6,14 +6,9 @@ interface UseColumnInfiniteScrollOptions {
   hasMore: boolean;
   loading: boolean;
   onLoadMore: () => void;
-  /** Root element for IntersectionObserver (the scrollable container) */
   root?: Element | null;
 }
 
-/**
- * Hook that triggers onLoadMore when a sentinel element becomes visible.
- * Returns a ref to attach to a sentinel element at the bottom of a scrollable list.
- */
 export function useColumnInfiniteScroll({
   hasMore,
   loading,

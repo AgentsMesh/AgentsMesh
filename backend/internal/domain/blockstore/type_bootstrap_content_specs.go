@@ -1,8 +1,5 @@
 package blockstore
 
-// registerContentSpecs seeds text / structure block types. These are the
-// "notion-like" content primitives — paragraphs, headings, lists, columns —
-// plus the container types (page, task, list, view, comment) that hold them.
 func registerContentSpecs(m map[string]BlockTypeSpec) {
 	m[BlockTypePage] = BlockTypeSpec{
 		Type:            BlockTypePage,
@@ -44,15 +41,12 @@ func registerContentSpecs(m map[string]BlockTypeSpec) {
 		DefaultView:     "list",
 		SupportedViews:  []string{"list"},
 		RequiredDataKey: []string{"text"},
-		// Threaded replies attach via rel='comments_on' on another comment,
-		// not via nest — so comments never hold nest children.
 		AllowedChildren: []string{},
 	}
 	m[BlockTypeHeading] = BlockTypeSpec{
 		Type:            BlockTypeHeading,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document"},
-		// data: {level: 1|2|3, text: string}
 		RequiredDataKey: []string{"level"},
 		AllowedChildren: []string{},
 	}
@@ -66,7 +60,6 @@ func registerContentSpecs(m map[string]BlockTypeSpec) {
 		Type:            BlockTypeCode,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document"},
-		// data: {code: string, language: string}
 		RequiredDataKey: []string{"code"},
 		AllowedChildren: []string{},
 	}
@@ -98,14 +91,12 @@ func registerContentSpecs(m map[string]BlockTypeSpec) {
 		Type:            BlockTypeToggle,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document"},
-		// data: {summary: string, collapsed: bool}
 		AllowedChildren: nil,
 	}
 	m[BlockTypeLinkToPage] = BlockTypeSpec{
 		Type:            BlockTypeLinkToPage,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document", "list"},
-		// data: {target_id: string} — renderer looks up the target block's title
 		RequiredDataKey: []string{"target_id"},
 		AllowedChildren: []string{},
 	}
@@ -113,31 +104,24 @@ func registerContentSpecs(m map[string]BlockTypeSpec) {
 		Type:            BlockTypeTable,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document"},
-		// data: {rows: [[cell, …]], header_row?: bool}
-		// Distinct from `view` with layout=table which projects other blocks as
-		// rows; this type is for static content (comparison, schedule).
 		AllowedChildren: []string{},
 	}
 	m[BlockTypeColumnList] = BlockTypeSpec{
 		Type:           BlockTypeColumnList,
 		DefaultView:    "document",
 		SupportedViews: []string{"document"},
-		// Horizontal container; children must be column blocks.
 		AllowedChildren: []string{BlockTypeColumn},
 	}
 	m[BlockTypeColumn] = BlockTypeSpec{
 		Type:           BlockTypeColumn,
 		DefaultView:    "document",
 		SupportedViews: []string{"document"},
-		// data: { width?: number }  — fractional width (0..1). Missing width
-		// defaults to equal distribution at render time.
 		AllowedChildren: nil,
 	}
 	m[BlockTypeMention] = BlockTypeSpec{
 		Type:            BlockTypeMention,
 		DefaultView:     "document",
 		SupportedViews:  []string{"document", "list"},
-		// data: {user_id: number, display?: string}
 		RequiredDataKey: []string{"user_id"},
 		AllowedChildren: []string{},
 	}

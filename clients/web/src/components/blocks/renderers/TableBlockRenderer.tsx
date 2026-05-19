@@ -10,10 +10,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { CommentsSection } from "../editor/CommentsSection";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// TableBlockRenderer is the "static content" table — data.rows is a 2D grid
-// of strings. Distinct from `view` with layout=table, which projects other
-// blocks as rows. Use this for comparison tables, schedules, reference data
-// that doesn't warrant promoting cells to first-class blocks.
 export function TableBlockRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const rows = extractRows(block.data?.rows);

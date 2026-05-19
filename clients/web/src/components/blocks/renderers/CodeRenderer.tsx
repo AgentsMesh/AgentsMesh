@@ -16,9 +16,6 @@ const LANGUAGES = [
   "rust", "java", "c", "cpp", "sql", "json", "yaml", "markdown",
 ];
 
-// CodeRenderer holds a monospace code block with selectable language.
-// data: { code: string, language: string }. No per-token syntax highlighting
-// yet — renderer stays simple; callers that want Prism can wrap later.
 export function CodeRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);

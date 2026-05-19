@@ -5,11 +5,6 @@ import { getFileService } from "@/lib/wasm-core";
 import { toast } from "sonner";
 import type { TerminalConnection } from "./useTerminalConnection";
 
-/**
- * Tracks IME composition state on the xterm helper textarea.
- * Runs on all platforms — needed to prevent sending incomplete
- * IME input via term.onData.
- */
 function setupCompositionTracking(
   textarea: HTMLTextAreaElement,
   disposables: IDisposable[],
@@ -32,14 +27,7 @@ function setupCompositionTracking(
   return { isComposing };
 }
 
-/**
- * Syncs the xterm helper textarea position to follow the terminal cursor.
- * Touch-device only — on desktop, xterm.js internally positions the textarea
- * for IME via its CompositionHelper.
- *
- * Only binds to onCursorMove (not onWriteParsed) to avoid output→input
- * coupling that causes IME candidate box flickering on Windows.
- */
+// Workaround: only onCursorMove (not onWriteParsed) — output→input coupling flickers IME on Windows.
 function setupMobileTextareaSync(
   textarea: HTMLTextAreaElement,
   term: XTerm,
@@ -63,10 +51,6 @@ function setupMobileTextareaSync(
   );
 }
 
-/**
- * Sets up IME composition tracking and, on touch devices, textarea
- * position sync for correct IME candidate box placement.
- */
 export function setupIME(
   container: HTMLDivElement,
   term: XTerm,
@@ -77,9 +61,6 @@ export function setupIME(
 
   const result = setupCompositionTracking(textarea, disposables);
 
-  // On touch devices, manually sync textarea position to follow cursor.
-  // On desktop, xterm.js handles this internally — manual override would
-  // conflict and cause IME candidate box flickering (e.g. Windows CJK IME).
   if (isTouchPrimaryInput()) {
     setupMobileTextareaSync(textarea, term, disposables);
   }
@@ -87,10 +68,6 @@ export function setupIME(
   return result;
 }
 
-/**
- * Intercepts paste events containing images — uploads them and sends
- * the resulting URL to the terminal connection.
- */
 export function setupImagePaste(
   container: HTMLDivElement,
   connectionRef: MutableRefObject<TerminalConnection | null>,
@@ -108,7 +85,6 @@ export function setupImagePaste(
         const blob = item.getAsFile();
         if (!blob) continue;
 
-        // Check connection before starting upload to fail fast
         if (!connectionRef.current) {
           toast.error('Terminal not connected');
           return;
@@ -120,7 +96,6 @@ export function setupImagePaste(
           return getFileService().upload_file(bytes, blob.name || 'pasted-image.png', blob.type || 'application/octet-stream');
         })()
           .then((url) => {
-            // Re-check connection — it may have dropped during upload
             if (!connectionRef.current) {
               toast.error('Terminal disconnected during upload', { id: toastId });
               return;

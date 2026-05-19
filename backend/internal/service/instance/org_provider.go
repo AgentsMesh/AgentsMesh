@@ -10,52 +10,29 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// LocalOrgProvider returns the set of organization IDs that this server instance
-// currently serves. Used by background tasks (LoopScheduler, timeout detection)
-// to scope processing to only the orgs whose Runners are connected to this instance.
-//
-// Architecture: Traefik routes API requests by org slug, so each backend instance
-// handles a subset of orgs. Background tasks (cron, timeout) must respect the
-// same partitioning. The org set is derived from connected Runners — if an org
-// has no Runner on this instance, there's no point scheduling Pods for it.
 type LocalOrgProvider interface {
-	// GetLocalOrgIDs returns org IDs that have at least one connected Runner
-	// on this server instance. Returns nil if all orgs should be processed
-	// (single-instance mode or no Runners connected yet).
 	GetLocalOrgIDs() []int64
 }
 
-// ConnectedRunnerIDsProvider abstracts RunnerConnectionManager to avoid
-// importing the runner package (prevents circular dependency).
 type ConnectedRunnerIDsProvider interface {
 	GetConnectedRunnerIDs() []int64
 }
 
-// RunnerOrgQuerier resolves organization IDs from runner IDs.
 type RunnerOrgQuerier interface {
 	GetOrgIDsByRunnerIDs(ctx context.Context, runnerIDs []int64) ([]int64, error)
 }
 
 const (
-	// redisKeyPrefix is used for storing local org IDs in Redis
 	redisKeyPrefix = "instance:local_orgs:"
 
-	// refreshInterval is the periodic refresh interval for the org cache
 	refreshInterval = 30 * time.Second
 
-	// redisTTL is the TTL for the Redis key (slightly longer than refresh interval)
 	redisTTL = 60 * time.Second
 )
 
-// OrgAwarenessService maintains an in-memory cache of organization IDs served
-// by this server instance, derived from connected Runners. Optionally syncs
-// to Redis for cross-component visibility.
-//
-// Usage:
-//   - Call Start() to begin periodic refresh
-//   - Call Refresh() after runner connect/disconnect events
-//   - Call GetLocalOrgIDs() from any goroutine (thread-safe)
-//   - Call Stop() on shutdown
+// OrgAwarenessService GetLocalOrgIDs is read by tasks/loop runners to filter
+// work to this instance's connected orgs; refresh runs every 30s + on
+// runner connect/disconnect events; Redis mirror has 60s TTL.
 type OrgAwarenessService struct {
 	mu     sync.RWMutex
 	orgIDs []int64
@@ -64,19 +41,11 @@ type OrgAwarenessService struct {
 	runnerConnector ConnectedRunnerIDsProvider
 	redisClient     *redis.Client
 	logger          *slog.Logger
-	instanceID      string // unique ID for this instance (used as Redis key suffix)
+	instanceID      string
 	stopCh          chan struct{}
-	wg              sync.WaitGroup // tracks the background refresh goroutine
+	wg              sync.WaitGroup
 }
 
-// NewOrgAwarenessService creates a new OrgAwarenessService.
-//
-// Parameters:
-//   - orgQuerier: resolves organization IDs from runner IDs
-//   - runnerConnector: provides connected runner IDs (from RunnerConnectionManager)
-//   - redisClient: optional, for cross-component visibility (nil to disable)
-//   - instanceID: unique identifier for this server instance (e.g., hostname:port)
-//   - logger: structured logger
 func NewOrgAwarenessService(
 	orgQuerier RunnerOrgQuerier,
 	runnerConnector ConnectedRunnerIDsProvider,
@@ -94,7 +63,6 @@ func NewOrgAwarenessService(
 	}
 }
 
-// Start performs an initial refresh and begins periodic background refresh.
 func (s *OrgAwarenessService) Start() {
 	s.Refresh()
 
@@ -116,12 +84,10 @@ func (s *OrgAwarenessService) Start() {
 	s.logger.Info("org awareness service started", "refresh_interval", refreshInterval)
 }
 
-// Stop gracefully stops the periodic refresh.
 func (s *OrgAwarenessService) Stop() {
 	close(s.stopCh)
-	s.wg.Wait() // wait for background goroutine to exit
+	s.wg.Wait()
 
-	// Clean up Redis key on shutdown
 	if s.redisClient != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
@@ -131,9 +97,8 @@ func (s *OrgAwarenessService) Stop() {
 	s.logger.Info("org awareness service stopped")
 }
 
-// GetLocalOrgIDs returns the cached list of local org IDs.
-// Returns nil if no Runners are connected (process all orgs / single-instance mode).
-// Thread-safe for concurrent access.
+// GetLocalOrgIDs returns nil when no Runners connected (single-instance mode
+// or empty); callers treat nil as "process all orgs".
 func (s *OrgAwarenessService) GetLocalOrgIDs() []int64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -142,15 +107,11 @@ func (s *OrgAwarenessService) GetLocalOrgIDs() []int64 {
 		return nil
 	}
 
-	// Return a copy to prevent callers from mutating the internal slice
 	result := make([]int64, len(s.orgIDs))
 	copy(result, s.orgIDs)
 	return result
 }
 
-// Refresh queries connected runners and updates the cached org ID set.
-// Call this after runner connect/disconnect events for immediate consistency.
-// Thread-safe for concurrent calls.
 func (s *OrgAwarenessService) Refresh() {
 	runnerIDs := s.runnerConnector.GetConnectedRunnerIDs()
 
@@ -171,7 +132,6 @@ func (s *OrgAwarenessService) Refresh() {
 	}
 	s.mu.Unlock()
 
-	// Sync to Redis for cross-component visibility
 	if s.redisClient != nil {
 		s.syncToRedis(orgIDs)
 	}
@@ -185,7 +145,6 @@ func (s *OrgAwarenessService) Refresh() {
 	}
 }
 
-// syncToRedis stores the current org ID set in Redis with a TTL.
 func (s *OrgAwarenessService) syncToRedis(orgIDs []int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -208,7 +167,6 @@ func (s *OrgAwarenessService) syncToRedis(orgIDs []int64) {
 	}
 }
 
-// redisKey returns the Redis key for this instance's org IDs.
 func (s *OrgAwarenessService) redisKey() string {
 	return redisKeyPrefix + s.instanceID
 }

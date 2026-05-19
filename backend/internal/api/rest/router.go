@@ -23,7 +23,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewRouter creates and configures the Gin router
 func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.Logger, redisClient *redis.Client) *gin.Engine {
 	if !cfg.Server.Debug {
 		gin.SetMode(gin.ReleaseMode)
@@ -41,13 +40,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		c.AbortWithStatusJSON(500, apierr.ErrorResponse{Error: "Internal server error", Code: apierr.INTERNAL_ERROR})
 	}))
 
-	// CORS configuration
-	// gin-contrib/cors does an exact-string match against AllowOrigins, so
-	// the literal "null" origin (sent by Electron renderer when loading
-	// out/renderer/index.html via file://) never matches the configured
-	// host:port allowlist. Use AllowOriginFunc to accept "null" / file://
-	// in addition to the configured allowlist; preserves the prod
-	// allowlist semantics while letting desktop renderers connect.
 	allowed := cfg.Server.CORSAllowedOrigins
 	if len(allowed) == 0 {
 		allowed = []string{"*"}
@@ -72,8 +64,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 			if _, ok := allowedSet[origin]; ok {
 				return true
 			}
-			// Electron file:// loader sends Origin: null; some browsers
-			// also send file:// directly. Accept both for desktop.
 			if origin == "null" || strings.HasPrefix(origin, "file://") {
 				return true
 			}
@@ -82,7 +72,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 	}
 	r.Use(cors.New(corsConfig))
 
-	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
@@ -96,8 +85,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		})
 	})
 
-	// Initialize email service
-	// BaseURL is derived from PrimaryDomain
 	emailSvc := email.NewService(email.Config{
 		Provider:    cfg.Email.Provider,
 		ResendKey:   cfg.Email.ResendKey,
@@ -105,35 +92,27 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		BaseURL:     cfg.FrontendURL(), // Derived from PrimaryDomain
 	})
 
-	// API v1
 	apiV1 := r.Group("/api/v1")
 	{
-		// Public routes (no auth required, with rate limiting)
 		authHandler := v1.NewAuthHandler(svc.Auth, svc.User, emailSvc, cfg)
 		authGroup := apiV1.Group("/auth")
 		authGroup.Use(middleware.IPRateLimiter(redisClient, "auth", 20, time.Minute))
 		authHandler.RegisterRoutes(authGroup)
 
-		// SSO authentication routes (public, under /auth/sso)
 		if svc.SSO != nil {
 			ssoAuthHandler := v1.NewSSOAuthHandler(svc.SSO, svc.Auth, cfg)
 			ssoAuthHandler.RegisterRoutes(authGroup.Group("/sso"))
 		}
 
-		// Public config endpoints (deployment info for frontend)
 		v1.RegisterPublicConfigRoutes(apiV1.Group("/config"), svc.Billing)
 
-		// Public runner release endpoint (consumed by desktop onboarding)
 		v1.RegisterRunnerReleaseRoutes(apiV1)
 
-		// gRPC Runner routes (public, for Runner CLI registration with mTLS)
+		// Public mTLS endpoints for Runner CLI registration.
 		if svc.GRPCRunnerHandler != nil {
 			v1.RegisterGRPCRunnerRoutes(apiV1, svc.GRPCRunnerHandler)
 		}
 
-		// Webhook endpoints (no auth required, use token verification)
-		// Use shared billing service to ensure mock provider sessions are shared
-		// Inject services for MR/Pipeline event processing
 		webhookOpts := []webhooks.WebhookRouterOption{}
 		if svc.Repository != nil {
 			webhookOpts = append(webhookOpts, webhooks.WithRepositoryService(svc.Repository))
@@ -153,39 +132,28 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		webhookRouter := webhooks.NewWebhookRouterWithBillingSvc(db, cfg, logger, svc.Billing, webhookOpts...)
 		webhookRouter.RegisterRoutes(apiV1.Group("/webhooks"))
 
-		// Public invitation routes (token-based access)
 		if svc.Invitation != nil {
 			invitationHandler := v1.NewInvitationHandler(svc.Invitation, svc.Org, svc.User, svc.Billing)
 			invitationHandler.RegisterRoutes(apiV1, middleware.AuthMiddleware(cfg.JWT.Secret))
 		}
 
-		// Protected routes (auth required)
 		protected := apiV1.Group("")
 		protected.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
 		{
-			// User-level routes (no tenant context required)
 			v1.RegisterUserRoutes(protected.Group("/users"), svc.User, svc.Org, svc.AgentSvc, svc.CredentialProfile, svc.UserConfig, svc.AgentPodSettings, svc.AgentPodAIProvider)
 
-			// Organization routes (authenticated, some require org context)
-			// Path changed: /organizations → /orgs
 			v1.RegisterOrganizationRoutes(protected.Group("/orgs"), svc.Org, svc.User, redisClient)
 
-			// Support Tickets (user-level, no tenant context required)
 			if svc.SupportTicket != nil {
 				supportTicketHandler := v1.NewSupportTicketHandler(svc.SupportTicket)
 				supportTicketHandler.RegisterRoutes(protected.Group("/support-tickets"))
 			}
 
-			// Organization-scoped routes (require tenant context)
-			// Path changed: /organizations/:slug → /orgs/:slug
 			orgScoped := protected.Group("/orgs/:slug")
 			orgScoped.Use(middleware.TenantMiddleware(svc.Org))
 			{
 				v1.RegisterOrgScopedRoutes(orgScoped, svc)
 
-				// WebSocket endpoints for real-time events
-				// Note: Terminal WebSocket has been moved to Relay architecture
-				// Use GET /pods/:key/relay/connect to get Relay URL and token
 				wsGroup := orgScoped.Group("/ws")
 				{
 					eventHandler := ws.NewEventsHandler(svc.Hub)
@@ -193,15 +161,9 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 				}
 			}
 
-			// Note: /org alias route removed - all org-scoped requests must use /orgs/:slug/*
 		}
-
-		// Note: Runner communication is now via gRPC/mTLS (see internal/api/grpc/)
-		// MCP tool communication has been migrated to gRPC bidirectional stream.
-		// The Pod REST API (/api/v1/orgs/:slug/pod/*) has been removed.
 	}
 
-	// External API (API key authenticated, for third-party service access)
 	if svc.APIKeyAdapter != nil {
 		extScoped := apiV1.Group("/ext/orgs/:slug")
 		extScoped.Use(middleware.APIKeyAuthMiddleware(svc.APIKeyAdapter, svc.Org))
@@ -210,7 +172,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		}
 	}
 
-	// Admin Console routes
 	if cfg.Admin.IsEnabled() {
 		dbWrapper := database.NewGormWrapper(db)
 		adminSvc := adminservice.NewService(dbWrapper)
@@ -226,7 +187,6 @@ func NewRouter(cfg *config.Config, svc *v1.Services, db *gorm.DB, logger *slog.L
 		})
 	}
 
-	// Internal API routes (Relay communication)
 	if svc.RelayManager != nil {
 		internal.RegisterRelayRoutes(r.Group("/api/internal/relays"), &internal.RelayRouterDeps{
 			RelayManager:   svc.RelayManager,

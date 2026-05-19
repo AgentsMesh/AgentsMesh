@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// setupPerpetualPodCallbacks wires the PodCoordinator's perpetual pod restart
-// callback to publish events via EventBus.
 func setupPerpetualPodCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, eventBus *eventbus.EventBus) {
 	podCoordinator.SetPodRestartingCallback(func(podKey string, exitCode, restartCount int32) {
 		var pod struct {

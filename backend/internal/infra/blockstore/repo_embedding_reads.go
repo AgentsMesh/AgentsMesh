@@ -11,9 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// ListEmbeddings returns every embedding row for the given workspace joined
-// with blocks for ACL projection (created_by, meta). Callers rank in memory
-// when pgvector is unavailable.
 func (r *Repository) ListEmbeddings(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -52,9 +49,6 @@ func (r *Repository) ListEmbeddings(
 	return out, nil
 }
 
-// GetEmbeddingHash looks up the current source_hash for a block, or "" when
-// no row exists. Used by the service to short-circuit re-embedding unchanged
-// text.
 func (r *Repository) GetEmbeddingHash(ctx context.Context, blockID uuid.UUID) (string, error) {
 	var hash string
 	err := r.db.WithContext(ctx).
@@ -69,9 +63,6 @@ func (r *Repository) GetEmbeddingHash(ctx context.Context, blockID uuid.UUID) (s
 	return hash, nil
 }
 
-// SearchEmbeddings uses pgvector + HNSW to rank server-side when available
-// (`ORDER BY vec <=> $1 LIMIT topK`). Falls back to ListEmbeddings on SQLite
-// / extension-less Postgres; service layer ranks in memory in that case.
 func (r *Repository) SearchEmbeddings(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -81,8 +72,6 @@ func (r *Repository) SearchEmbeddings(
 ) ([]blockstore.EmbeddingRow, error) {
 	usePgvector, colDims := r.detectPgvector()
 	if !usePgvector || colDims != len(queryVec) {
-		// Dim mismatch means the column can't answer this query anyway —
-		// return the full set so the service ranks in memory.
 		return r.ListEmbeddings(ctx, workspaceID, model)
 	}
 	type row struct {
@@ -123,8 +112,6 @@ func (r *Repository) SearchEmbeddings(
 		if !ok {
 			continue
 		}
-		// pgvector returns NaN distance for the zero vector; clamp so the row
-		// ranks below any non-zero min_score (json.Marshal can't encode NaN).
 		if math.IsNaN(r.Distance) || math.IsInf(r.Distance, 0) {
 			er.Score = -1
 		} else {
@@ -135,9 +122,6 @@ func (r *Repository) SearchEmbeddings(
 	return out, nil
 }
 
-// oneEmbeddingRow parses a single projection into an EmbeddingRow. Factored
-// so both the pgvector and JSONB read paths share decoding rules (skip rows
-// whose vector JSON or id is corrupt — log-and-continue semantics).
 func oneEmbeddingRow(
 	blockID, blockType string,
 	text *string,

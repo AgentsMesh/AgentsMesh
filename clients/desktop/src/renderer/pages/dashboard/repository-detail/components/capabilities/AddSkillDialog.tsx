@@ -23,17 +23,14 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
   const t = useTranslations();
   const [installing, setInstalling] = useState(false);
 
-  // Marketplace state
   const [marketSkills, setMarketSkills] = useState<SkillMarketItem[]>([]);
   const [marketQuery, setMarketQuery] = useState("");
   const [loadingMarket, setLoadingMarket] = useState(false);
 
-  // GitHub form state
   const [githubUrl, setGithubUrl] = useState("");
   const [githubBranch, setGithubBranch] = useState("");
   const [githubPath, setGithubPath] = useState("");
 
-  // Upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMarketSkills = useCallback(async (query?: string) => {
@@ -109,7 +106,6 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
         toast.error(getLocalizedErrorMessage(error, t, t("extensions.failedToInstall")));
       } finally {
         setInstalling(false);
-        // Reset file input
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -132,7 +128,6 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
               <TabsTrigger value="upload">{t("extensions.upload")}</TabsTrigger>
             </TabsList>
 
-            {/* Marketplace tab */}
             <TabsContent value="market">
               <div className="flex gap-2 mb-4">
                 <div className="relative flex-1">
@@ -208,7 +203,6 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
               )}
             </TabsContent>
 
-            {/* GitHub tab */}
             <TabsContent value="github">
               <div className="space-y-4">
                 <div>
@@ -253,7 +247,6 @@ export function AddSkillDialog({ repositoryId, scope, open, onOpenChange, onInst
               </div>
             </TabsContent>
 
-            {/* Upload tab */}
             <TabsContent value="upload">
               <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
                 <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />

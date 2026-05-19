@@ -9,10 +9,6 @@ interface BoardViewLayoutProps {
   onCreatePodRequest?: (ticket: Ticket) => void;
 }
 
-/**
- * Board view layout — bridges store state to KanbanBoard props.
- * KanbanBoard is a pure rendering component; all store access is here.
- */
 export function BoardViewLayout({
   tickets,
   onStatusChange,

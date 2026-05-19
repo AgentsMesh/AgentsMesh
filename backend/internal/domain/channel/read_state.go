@@ -2,7 +2,6 @@ package channel
 
 import "time"
 
-// ReadState tracks a user's last read position in a channel
 type ReadState struct {
 	ChannelID         int64     `gorm:"primaryKey" json:"channel_id"`
 	UserID            int64     `gorm:"primaryKey" json:"user_id"`

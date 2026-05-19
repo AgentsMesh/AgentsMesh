@@ -24,8 +24,6 @@ export function ChannelChatPanel({ channelId }: ChannelChatPanelProps) {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Right rail (drawer) visibility — toggled via the "⋯" header button.
-  // Open by default so pods / members / linked / document stay reachable.
   const [railOpen, setRailOpen] = useState(true);
 
   if (chat.channelLoading && !chat.currentChannel) {

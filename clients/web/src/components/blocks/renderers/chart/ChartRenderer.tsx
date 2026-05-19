@@ -12,12 +12,6 @@ import { useBlockstoreDispatch } from "../../editor/useBlockstoreDispatch";
 
 import { ChartPreview } from "./ChartPreview";
 
-// ChartRenderer is the block-level shell around ChartPreview. It owns the
-// view/edit toggle: in view mode it renders the chart plus a compact header;
-// in edit mode it swaps in a JSON textarea with a live preview on the right.
-// JSON is kept as a free-form string while editing (rather than round-tripping
-// through JSON.parse on every keystroke) so trailing commas / newlines don't
-// blow up the preview and the user can stop mid-edit without losing work.
 export function ChartRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const title = (block.data?.title as string | undefined) ?? "Chart";

@@ -15,7 +15,6 @@ var (
 	ErrNoRepositoryLink = errors.New("ticket has no repository linked")
 )
 
-// ticketSlugRegex matches patterns like "AM-123" in branch names.
 var ticketSlugRegex = regexp.MustCompile(`([A-Z]+-\d+)`)
 
 // MRSyncService handles MR synchronization with git providers.
@@ -24,7 +23,6 @@ type MRSyncService struct {
 	gitProvider git.Provider
 }
 
-// NewMRSyncService creates a new MR sync service.
 func NewMRSyncService(repo ticket.MRSyncRepository, gitProvider git.Provider) *MRSyncService {
 	return &MRSyncService{
 		repo:        repo,
@@ -32,7 +30,6 @@ func NewMRSyncService(repo ticket.MRSyncRepository, gitProvider git.Provider) *M
 	}
 }
 
-// MRData represents MR data from git provider.
 type MRData struct {
 	IID            int
 	WebURL         string

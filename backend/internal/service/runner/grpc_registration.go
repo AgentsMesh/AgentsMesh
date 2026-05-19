@@ -8,23 +8,18 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// ==================== Request/Response Types ====================
-
-// RequestAuthURLRequest represents a request for an authorization URL.
 type RequestAuthURLRequest struct {
 	MachineKey string            `json:"machine_key"`
 	NodeID     string            `json:"node_id,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`
 }
 
-// RequestAuthURLResponse represents the response with auth URL.
 type RequestAuthURLResponse struct {
 	AuthURL   string `json:"auth_url"`
 	AuthKey   string `json:"auth_key"`
 	ExpiresIn int    `json:"expires_in"` // seconds
 }
 
-// AuthStatusResponse represents the status of a pending authorization.
 type AuthStatusResponse struct {
 	Status        string `json:"status"` // "pending", "authorized", "expired"
 	NodeID        string `json:"node_id,omitempty"`
@@ -37,7 +32,6 @@ type AuthStatusResponse struct {
 	GRPCEndpoint  string `json:"grpc_endpoint,omitempty"`
 }
 
-// GenerateGRPCRegistrationTokenRequest represents a request to generate a registration token.
 type GenerateGRPCRegistrationTokenRequest struct {
 	Name      string            `json:"name,omitempty"`
 	Labels    map[string]string `json:"labels,omitempty"`
@@ -46,7 +40,6 @@ type GenerateGRPCRegistrationTokenRequest struct {
 	ExpiresIn int               `json:"expires_in"` // seconds, default 3600 (1 hour)
 }
 
-// GenerateGRPCRegistrationTokenResponse represents the generated token response.
 type GenerateGRPCRegistrationTokenResponse struct {
 	ID        int64     `json:"id"`
 	Token     string    `json:"token"`
@@ -54,13 +47,11 @@ type GenerateGRPCRegistrationTokenResponse struct {
 	Command   string    `json:"command"` // Example CLI command
 }
 
-// RegisterWithTokenRequest represents a request to register using a pre-generated token.
 type RegisterWithTokenRequest struct {
 	Token  string `json:"token"`
 	NodeID string `json:"node_id,omitempty"`
 }
 
-// RegisterWithTokenResponse represents the registration response.
 type RegisterWithTokenResponse struct {
 	RunnerID      int64  `json:"runner_id"`
 	Certificate   string `json:"certificate"`
@@ -70,7 +61,6 @@ type RegisterWithTokenResponse struct {
 	GRPCEndpoint  string `json:"grpc_endpoint,omitempty"`
 }
 
-// GetRunnerByNodeID returns a runner by node_id.
 func (s *Service) GetRunnerByNodeID(ctx context.Context, nodeID string) (*runner.Runner, error) {
 	r, err := s.repo.GetByNodeID(ctx, nodeID)
 	if err != nil {
@@ -82,14 +72,10 @@ func (s *Service) GetRunnerByNodeID(ctx context.Context, nodeID string) (*runner
 	return r, nil
 }
 
-// ListGRPCRegistrationTokens lists all gRPC registration tokens for an organization.
 func (s *Service) ListGRPCRegistrationTokens(ctx context.Context, orgID int64) ([]runner.GRPCRegistrationToken, error) {
 	return s.repo.ListRegistrationTokensByOrg(ctx, orgID)
 }
 
-// DeleteGRPCRegistrationToken deletes a gRPC registration token.
-// Only deletes if the token belongs to the specified organization (prevents cross-org deletion).
-// Returns ErrGRPCTokenNotFound if the token doesn't exist or belongs to a different organization.
 func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgID int64) error {
 	rowsAffected, err := s.repo.DeleteRegistrationToken(ctx, tokenID, orgID)
 	if err != nil {
@@ -103,7 +89,6 @@ func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgI
 	return nil
 }
 
-// CleanupExpiredPendingAuths removes expired pending auth records.
 func (s *Service) CleanupExpiredPendingAuths(ctx context.Context) error {
 	if err := s.repo.CleanupExpiredPendingAuths(ctx); err != nil {
 		slog.ErrorContext(ctx, "failed to cleanup expired pending auths", "error", err)

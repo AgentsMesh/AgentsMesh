@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListAgents lists available agents (builtin + custom)
 func (h *AgentHandler) ListAgents(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -30,7 +29,6 @@ func (h *AgentHandler) ListAgents(c *gin.Context) {
 	})
 }
 
-// GetAgent returns details of a specific agent
 func (h *AgentHandler) GetAgent(c *gin.Context) {
 	agentSlug := c.Param("agent_slug")
 
@@ -43,7 +41,6 @@ func (h *AgentHandler) GetAgent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"agent": agentDef})
 }
 
-// GetAgentConfigSchema returns the config schema for an agent
 func (h *AgentHandler) GetAgentConfigSchema(c *gin.Context) {
 	agentSlug := c.Param("agent_slug")
 

@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check.
 var _ tokenusage.Repository = (*tokenUsageRepository)(nil)
 
 type tokenUsageRepository struct {
 	db *gorm.DB
 }
 
-// NewTokenUsageRepository creates a new TokenUsageRepository backed by GORM.
 func NewTokenUsageRepository(db *gorm.DB) tokenusage.Repository {
 	return &tokenUsageRepository{db: db}
 }
@@ -40,7 +38,6 @@ func (r *tokenUsageRepository) GetSummary(ctx context.Context, orgID int64, f to
 			COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens),0) as total_tokens`).
 		Where("organization_id = ? AND created_at >= ? AND created_at < ?", orgID, f.StartTime, f.EndTime)
 	q = applyOptionalFilters(q, f, false)
-	// Single-row aggregation — LIMIT 1 as a safety net.
 	if err := q.Limit(1).Scan(&result).Error; err != nil {
 		return nil, err
 	}
@@ -126,7 +123,6 @@ func (r *tokenUsageRepository) GetByModel(ctx context.Context, orgID int64, f to
 	return results, nil
 }
 
-// validGranularity returns a safe granularity value (whitelist).
 func validGranularity(g string) string {
 	switch g {
 	case "day", "week", "month":
@@ -136,8 +132,6 @@ func validGranularity(g string) string {
 	}
 }
 
-// applyOptionalFilters applies optional WHERE clauses for agent, user, and model.
-// When qualified is true, column names are prefixed with "token_usages." for JOIN queries.
 func applyOptionalFilters(q *gorm.DB, f tokenusage.AggregationFilter, qualified bool) *gorm.DB {
 	prefix := ""
 	if qualified {
@@ -155,7 +149,6 @@ func applyOptionalFilters(q *gorm.DB, f tokenusage.AggregationFilter, qualified 
 	return q
 }
 
-// effectiveLimit returns the limit to use, defaulting to 100 if not set.
 func effectiveLimit(limit int) int {
 	if limit > 0 {
 		return limit

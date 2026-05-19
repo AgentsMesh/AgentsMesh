@@ -7,18 +7,11 @@ import (
 	"time"
 )
 
-// Heartbeat updates relay health status (connections, CPU, memory).
-// Delegates to HeartbeatWithLatency with latencyMs=0 (preserves existing latency).
 func (m *Manager) Heartbeat(relayID string, connections int, cpuUsage, memoryUsage float64) error {
 	return m.HeartbeatWithLatency(relayID, connections, cpuUsage, memoryUsage, 0)
 }
 
-// HeartbeatWithLatency updates relay health status including latency metric.
-// Negative values for connections, cpuUsage, memoryUsage are clamped to zero.
-// latencyMs <= 0 is ignored (preserves the existing AvgLatencyMs value).
 func (m *Manager) HeartbeatWithLatency(relayID string, connections int, cpuUsage, memoryUsage float64, latencyMs int) error {
-	// Clamp invalid values to zero (defensive against buggy reporters).
-	// NaN/Inf check must precede comparison: NaN < 0 is false, so NaN would bypass a simple clamp.
 	if connections < 0 {
 		connections = 0
 	}
@@ -46,12 +39,10 @@ func (m *Manager) HeartbeatWithLatency(relayID string, connections int, cpuUsage
 	relay.LastHeartbeat = now
 	relay.Healthy = true
 
-	// Update latency with exponential moving average for smoothing
 	if latencyMs > 0 {
 		if relay.AvgLatencyMs == 0 {
 			relay.AvgLatencyMs = latencyMs
 		} else {
-			// EMA with alpha = 0.3 for moderate smoothing; math.Round avoids truncation bias
 			relay.AvgLatencyMs = int(math.Round(float64(relay.AvgLatencyMs)*0.7 + float64(latencyMs)*0.3))
 		}
 	}

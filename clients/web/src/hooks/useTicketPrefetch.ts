@@ -3,23 +3,14 @@
 import { useCallback, useRef } from "react";
 import { getTicketService, getTicketRelationsService } from "@/lib/wasm-core";
 
-// Cache for prefetched ticket data
 const prefetchCache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000;
 
-// Pending prefetch requests to avoid duplicates
 const pendingRequests = new Set<string>();
 
-/**
- * Hook for prefetching ticket details on hover.
- * Uses a simple in-memory cache with TTL.
- */
 export function useTicketPrefetch() {
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  /**
-   * Check if data is cached and still valid
-   */
   const isCached = useCallback((slug: string): boolean => {
     const cached = prefetchCache.get(slug);
     if (!cached) return false;
@@ -32,29 +23,20 @@ export function useTicketPrefetch() {
     return true;
   }, []);
 
-  /**
-   * Get cached data if available
-   */
   const getCached = useCallback(<T>(slug: string): T | null => {
     if (!isCached(slug)) return null;
     return prefetchCache.get(slug)?.data as T;
   }, [isCached]);
 
-  /**
-   * Prefetch ticket details after a short delay (to avoid prefetching on quick hovers)
-   */
   const prefetchOnHover = useCallback((slug: string) => {
-    // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
-    // Skip if already cached or pending
     if (isCached(slug) || pendingRequests.has(slug)) {
       return;
     }
 
-    // Delay prefetch by 150ms to avoid unnecessary requests on quick hovers
     hoverTimeoutRef.current = setTimeout(async () => {
       if (isCached(slug) || pendingRequests.has(slug)) {
         return;
@@ -63,21 +45,18 @@ export function useTicketPrefetch() {
       pendingRequests.add(slug);
 
       try {
-        // Prefetch main ticket data
         const ticketData = JSON.parse(await getTicketService().fetch_ticket(slug));
         prefetchCache.set(slug, {
           data: ticketData,
           timestamp: Date.now(),
         });
 
-        // Also prefetch related data in parallel
         const [subTickets, relations, commits] = await Promise.allSettled([
           getTicketService().get_sub_tickets(slug).then((j: string) => JSON.parse(j)),
           getTicketRelationsService().list_relations(slug).then((j: string) => JSON.parse(j)),
           getTicketRelationsService().list_commits(slug).then((j: string) => JSON.parse(j)),
         ]);
 
-        // Cache related data
         if (subTickets.status === "fulfilled") {
           prefetchCache.set(`${slug}:subTickets`, {
             data: subTickets.value,
@@ -97,7 +76,6 @@ export function useTicketPrefetch() {
           });
         }
       } catch (error) {
-        // Silently fail - prefetch is best-effort
         console.debug("Prefetch failed for:", slug, error);
       } finally {
         pendingRequests.delete(slug);
@@ -105,9 +83,6 @@ export function useTicketPrefetch() {
     }, 150);
   }, [isCached]);
 
-  /**
-   * Cancel any pending prefetch (call on mouse leave)
-   */
   const cancelPrefetch = useCallback(() => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -115,9 +90,6 @@ export function useTicketPrefetch() {
     }
   }, []);
 
-  /**
-   * Clear all cached data
-   */
   const clearCache = useCallback(() => {
     prefetchCache.clear();
   }, []);

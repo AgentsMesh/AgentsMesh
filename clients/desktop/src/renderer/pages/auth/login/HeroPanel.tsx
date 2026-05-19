@@ -1,18 +1,6 @@
 import { Logo } from "@/components/common";
 import { useTranslations } from "next-intl";
 
-/**
- * Left-pane brand panel for the auth screens (login + register). The
- * right pane carries the actual form; this side stays purely
- * decorative + tagline so the form below is the only thing competing
- * for the user's attention.
- *
- * Animation is CSS-only (no Lottie / framer-motion dependencies):
- *   - the AgentsMesh control-tower mark gently floats up + down
- *   - a soft radial gradient pulses behind it
- * Both run on transform/opacity so the GPU handles them and the
- * Electron main thread stays free for the render of the form.
- */
 export function HeroPanel() {
   const t = useTranslations();
   return (

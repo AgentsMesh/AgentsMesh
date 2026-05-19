@@ -29,7 +29,6 @@ export default function LoopsIndexPage() {
     if (currentOrg) fetchLoops();
   }, [currentOrg, fetchLoops]);
 
-  // If there are loops, auto-redirect to the first enabled one (master-detail master view).
   useEffect(() => {
     if (loading || loops.length === 0) return;
     const first = loops.find((l) => l.status === "enabled") ?? loops[0];
@@ -81,6 +80,5 @@ export default function LoopsIndexPage() {
     );
   }
 
-  // While redirecting
   return <CenteredSpinner className="h-full" />;
 }

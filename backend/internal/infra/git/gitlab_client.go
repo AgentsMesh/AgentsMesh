@@ -11,14 +11,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// GitLabProvider implements Provider interface for GitLab
 type GitLabProvider struct {
 	baseURL     string
 	accessToken string
 	httpClient  *http.Client
 }
 
-// NewGitLabProvider creates a new GitLab provider
 func NewGitLabProvider(baseURL, accessToken string) (*GitLabProvider, error) {
 	if baseURL == "" {
 		baseURL = "https://gitlab.com"
@@ -66,7 +64,6 @@ func (p *GitLabProvider) doRequest(ctx context.Context, method, path string, bod
 		return nil, ErrRateLimited
 	}
 
-	// Handle other 4xx/5xx errors
 	if resp.StatusCode >= 400 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()

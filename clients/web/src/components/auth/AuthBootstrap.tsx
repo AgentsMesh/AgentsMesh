@@ -5,18 +5,6 @@ import { useAuthStore } from "@/stores/auth";
 import { WasmProvider } from "@/providers/WasmProvider";
 import { CenteredSpinner } from "@/components/ui/spinner";
 
-// Single hydrate entry for any wasm-bound route group.
-//
-// Wraps WasmProvider and, once wasm is ready, runs the Rust auth
-// bootstrap protocol (storage → token validation → optional refresh →
-// identity re-fetch) before flipping `_hasHydrated`. Downstream
-// components that gate on `_hasHydrated && user` therefore see a
-// consistent state — no false-anonymous flash, no premature `/login`
-// redirect for users whose session lives in localStorage of a window
-// just opened (e.g. the popout terminal).
-//
-// Bootstrap is a no-op for genuinely anonymous users — the result is
-// `Anonymous` and `_hasHydrated` still flips so /login can render.
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   return (
     <WasmProvider>

@@ -14,8 +14,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// BlockstoreHandler serves the `/blocks/*` family of endpoints.
-// All routes require tenant context; actor is derived from the authenticated user.
 type BlockstoreHandler struct {
 	service *blockstoreservice.Service
 }
@@ -24,15 +22,6 @@ func NewBlockstoreHandler(svc *blockstoreservice.Service) *BlockstoreHandler {
 	return &BlockstoreHandler{service: svc}
 }
 
-// actorFrom builds the service-layer ActorContext from the gin context.
-// Phase 1 treats every authenticated caller as a user; Agent / Runner signed
-// tokens can override ActorType in Phase 2 when we add token-bound middleware.
-//
-// Audit metadata (TraceID/RequestID/IP/UserAgent) is populated from the OTel
-// span (otelgin middleware injects per-request) plus gin's client IP and
-// User-Agent header. They flow through ApplyOps into BlockOp.Context for
-// audit + forensics. RequestID currently aliases TraceID — when we add an
-// X-Request-ID middleware they can diverge.
 func actorFrom(c *gin.Context) (blockstoreservice.ActorContext, bool) {
 	tc := middleware.GetTenant(c)
 	if tc == nil {
@@ -52,10 +41,6 @@ func actorFrom(c *gin.Context) (blockstoreservice.ActorContext, bool) {
 	}, true
 }
 
-// traceIDFromContext returns the active OTel trace id as a 32-char hex
-// string, or "" when no valid span is present (e.g., tests that bypass the
-// otelgin middleware). Both REST and gRPC paths call this so audit metadata
-// in BlockOp.Context lines up across transports.
 func traceIDFromContext(ctx context.Context) string {
 	if sc := trace.SpanContextFromContext(ctx); sc.IsValid() {
 		return sc.TraceID().String()
@@ -63,11 +48,9 @@ func traceIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-// translateErr maps domain errors to HTTP apierr responses. Uses errors.Is
-// so wrapped errors (service-layer %w-formatted with context) still map to
-// the right HTTP status — switch-by-identity would otherwise fall through to
-// InternalError and mask legitimate 4xx validation failures as 500s.
-// Callers return immediately after a non-nil return.
+// errors.Is required: wrapped errors (service %w-formatted) MUST still map correctly,
+// else switch-by-identity falls through to InternalError, masking 4xx as 500.
+// Callers MUST return immediately after a non-nil return.
 func translateErr(c *gin.Context, err error) bool {
 	if err == nil {
 		return false
@@ -99,10 +82,6 @@ func translateErr(c *gin.Context, err error) bool {
 			"error": apierr.VALIDATION_FAILED, "message": err.Error(),
 		})
 	default:
-		// Unknown errors must not leak internals to callers. Log the full
-		// message for operators and return a generic 500 so attackers can't
-		// probe the system by inspecting error bodies (driver name, SQL
-		// fragments, file paths, etc.).
 		slog.Warn("blockstore.internal_error", "err", err.Error())
 		apierr.InternalError(c, "internal error")
 	}

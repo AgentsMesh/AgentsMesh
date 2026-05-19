@@ -10,8 +10,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Access tracking ---
-
 func (r *channelRepository) UpsertAccess(ctx context.Context, channelID int64, podKey *string, userID *int64) error {
 	query := r.db.WithContext(ctx).Where("channel_id = ?", channelID)
 	if podKey != nil {
@@ -70,8 +68,6 @@ func (r *channelRepository) GetAccessCount(ctx context.Context, channelID int64)
 	return count, err
 }
 
-// --- Channel Pods ---
-
 func (r *channelRepository) AddPodToChannel(ctx context.Context, channelID int64, podKey string) error {
 	return r.db.WithContext(ctx).Create(&channelPod{
 		ChannelID: channelID,
@@ -105,8 +101,6 @@ func (r *channelRepository) GetChannelPods(ctx context.Context, channelID int64)
 	}
 	return pods, nil
 }
-
-// --- Bindings (channel-level) ---
 
 func (r *channelRepository) CreateBinding(ctx context.Context, binding *channel.PodBinding) error {
 	return r.db.WithContext(ctx).Create(binding).Error

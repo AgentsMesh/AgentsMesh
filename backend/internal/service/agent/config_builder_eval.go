@@ -10,8 +10,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// buildEvalContext creates the AgentFile eval context with placeholder sandbox paths.
-// CONFIG values are populated by CONFIG declarations during eval (resolve step already injected defaults).
 func buildEvalContext(
 	req *ConfigBuildRequest,
 	creds agentDomain.EncryptedCredentials,
@@ -41,15 +39,12 @@ func buildEvalContext(
 	return ctx
 }
 
-// buildResultToProto converts eval.BuildResult to a CreatePodCommand proto.
-// Paths contain placeholders ({{sandbox_root}}, {{work_dir}}) for Runner to resolve.
 func buildResultToProto(
 	req *ConfigBuildRequest,
 	br *eval.BuildResult,
 	creds agentDomain.EncryptedCredentials,
 	isRunnerHost bool,
 ) *runnerv1.CreatePodCommand {
-	// Convert dirs + files to proto FileToCreate list
 	var files []*runnerv1.FileToCreate
 	for _, dir := range br.Dirs {
 		files = append(files, &runnerv1.FileToCreate{Path: dir, IsDirectory: true})
@@ -64,16 +59,11 @@ func buildResultToProto(
 		})
 	}
 
-	// Determine prompt from AgentFile PROMPT declaration
 	prompt := br.Prompt
 	if prompt == "" {
 		prompt = req.Prompt
 	}
 
-	// Prompt injection into LaunchArgs is handled by Runner (based on PromptPosition).
-	// Backend only passes Prompt and PromptPosition as separate proto fields.
-
-	// Determine interaction mode
 	mode := br.Mode
 	if mode == "" {
 		mode = "pty"
@@ -96,7 +86,6 @@ func buildResultToProto(
 	}
 }
 
-// buildSandboxConfig builds sandbox config from request fields.
 func buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
 	if req.HttpCloneURL == "" && req.SshCloneURL == "" && req.LocalPath == "" && req.PreparationScript == "" {
 		return nil
@@ -121,7 +110,6 @@ func buildSandboxConfig(req *ConfigBuildRequest) *runnerv1.SandboxConfig {
 	}
 }
 
-// buildMCPContext loads MCP server configurations.
 func (b *ConfigBuilder) buildMCPContext(ctx context.Context, req *ConfigBuildRequest, agentSlug string) (map[string]interface{}, map[string]interface{}) {
 	builtinMCP := map[string]interface{}{
 		"agentsmesh": map[string]interface{}{

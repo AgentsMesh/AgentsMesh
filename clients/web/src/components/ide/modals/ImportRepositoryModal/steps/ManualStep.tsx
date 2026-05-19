@@ -3,9 +3,6 @@
 import { Input } from "@/components/ui/input";
 import type { StepProps } from "../types";
 
-/**
- * Step 3: Manual Entry - Enter repository details manually
- */
 export function ManualStep({ state, actions, t }: StepProps) {
   const {
     manualProviderType,

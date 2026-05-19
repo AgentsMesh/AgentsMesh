@@ -49,11 +49,6 @@ impl AuthManager {
     pub async fn logout(&self) -> Result<(), AuthError> {
         let auth = self.bearer_header()?;
 
-        // Best-effort server logout. Network errors and non-2xx responses
-        // (token already revoked, server 5xx) MUST NOT leave the caller
-        // logged in — plan I3 forbids the in-memory-user-but-no-token
-        // middle state. Local cleanup runs unconditionally; server-side
-        // failure is logged but swallowed so the user lands on /login.
         let server_result = self
             .http
             .post(format!("{}/api/v1/auth/logout", self.base_url))
@@ -81,10 +76,8 @@ impl AuthManager {
     }
 
     pub async fn refresh_token(&self) -> Result<AuthTokens, AuthError> {
-        // Snapshot the refresh token we intend to spend BEFORE blocking on
-        // the lock. If a concurrent refresh on the same manager already
-        // rotated tokens while we waited, our snapshot will differ from
-        // the post-lock state — short-circuit and return the new tokens.
+        // Snapshot the refresh token BEFORE blocking on the lock so we can
+        // detect a concurrent rotation by another caller on the same manager.
         let pre_lock_refresh = self
             .read_state()
             .refresh_token()
@@ -95,10 +88,10 @@ impl AuthManager {
 
         let current_refresh = self.read_state().refresh_token().map(String::from);
         if current_refresh.as_deref() != Some(pre_lock_refresh.as_str()) {
-            // Another caller already rotated. Return the in-memory tokens
-            // without burning a second `/auth/refresh` round-trip — that
-            // call would 401 (refresh_token rotates one-shot server-side)
-            // and incorrectly cleanup an otherwise-healthy session.
+            // Another caller already rotated. Returning the in-memory tokens
+            // avoids a second `/auth/refresh` round-trip that would 401
+            // (refresh_token rotates one-shot server-side) and incorrectly
+            // clean up an otherwise-healthy session.
             let state = self.read_state();
             let s = state.session.as_ref().ok_or(AuthError::NotAuthenticated)?;
             return Ok(AuthTokens {
@@ -199,7 +192,6 @@ impl AuthManager {
             return Err(parse_error_response(resp).await);
         }
 
-        // Server wraps user in `{ "user": {...} }`
         #[derive(serde::Deserialize)]
         struct Wrapper {
             user: agentsmesh_types::User,

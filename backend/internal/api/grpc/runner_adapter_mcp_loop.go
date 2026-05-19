@@ -12,7 +12,6 @@ import (
 	loopService "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 )
 
-// mcpListLoops handles the "list_loops" MCP method.
 func (a *GRPCRunnerAdapter) mcpListLoops(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	if a.loopService == nil {
 		return nil, newMcpError(500, "loop service not available")
@@ -51,7 +50,6 @@ func (a *GRPCRunnerAdapter) mcpListLoops(ctx context.Context, tc *middleware.Ten
 		return nil, newMcpError(500, "failed to list loops")
 	}
 
-	// Enrich with active run counts
 	if len(loops) > 0 && a.loopRunService != nil {
 		loopIDs := make([]int64, len(loops))
 		for i, l := range loops {
@@ -74,7 +72,6 @@ func (a *GRPCRunnerAdapter) mcpListLoops(ctx context.Context, tc *middleware.Ten
 	return map[string]interface{}{"loops": summaries}, nil
 }
 
-// mcpTriggerLoop handles the "trigger_loop" MCP method.
 func (a *GRPCRunnerAdapter) mcpTriggerLoop(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	if a.loopService == nil || a.loopOrchestrator == nil {
 		return nil, newMcpError(500, "loop service not available")
@@ -121,7 +118,6 @@ func (a *GRPCRunnerAdapter) mcpTriggerLoop(ctx context.Context, tc *middleware.T
 		}, nil
 	}
 
-	// Start run asynchronously (same pattern as loop_handler.go)
 	startCtx, startCancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	go func() {
 		defer startCancel()

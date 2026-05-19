@@ -11,13 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AgentPodHandler handles AgentPod settings and AI provider endpoints
 type AgentPodHandler struct {
 	settingsService   *agentpod.SettingsService
 	aiProviderService *agentpod.AIProviderService
 }
 
-// NewAgentPodHandler creates a new AgentPod handler
 func NewAgentPodHandler(settingsService *agentpod.SettingsService, aiProviderService *agentpod.AIProviderService) *AgentPodHandler {
 	return &AgentPodHandler{
 		settingsService:   settingsService,
@@ -25,8 +23,6 @@ func NewAgentPodHandler(settingsService *agentpod.SettingsService, aiProviderSer
 	}
 }
 
-// GetSettings returns the AgentPod settings for the current user
-// GET /api/v1/users/me/agentpod/settings
 func (h *AgentPodHandler) GetSettings(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -39,7 +35,6 @@ func (h *AgentPodHandler) GetSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"settings": settings})
 }
 
-// UpdateSettingsRequest represents settings update request
 type UpdateSettingsRequest struct {
 	DefaultAgentSlug *string  `json:"default_agent_slug"`
 	DefaultModel       *string `json:"default_model"`
@@ -48,8 +43,6 @@ type UpdateSettingsRequest struct {
 	TerminalTheme      *string `json:"terminal_theme"`
 }
 
-// UpdateSettings updates the AgentPod settings for the current user
-// PUT /api/v1/users/me/agentpod/settings
 func (h *AgentPodHandler) UpdateSettings(c *gin.Context) {
 	var req UpdateSettingsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,8 +69,6 @@ func (h *AgentPodHandler) UpdateSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"settings": settings})
 }
 
-// ListProviders returns all AI providers for the current user
-// GET /api/v1/users/me/agentpod/providers
 func (h *AgentPodHandler) ListProviders(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -87,7 +78,6 @@ func (h *AgentPodHandler) ListProviders(c *gin.Context) {
 		return
 	}
 
-	// Don't return encrypted credentials
 	for _, p := range providers {
 		p.EncryptedCredentials = ""
 	}
@@ -95,7 +85,6 @@ func (h *AgentPodHandler) ListProviders(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"providers": providers})
 }
 
-// CreateProviderRequest represents AI provider creation request
 type CreateProviderRequest struct {
 	ProviderType string            `json:"provider_type" binding:"required,oneof=claude gemini codex openai"`
 	Name         string            `json:"name" binding:"required,min=1,max=100"`
@@ -103,8 +92,6 @@ type CreateProviderRequest struct {
 	IsDefault    bool              `json:"is_default"`
 }
 
-// CreateProvider creates a new AI provider for the current user
-// POST /api/v1/users/me/agentpod/providers
 func (h *AgentPodHandler) CreateProvider(c *gin.Context) {
 	var req CreateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -112,7 +99,6 @@ func (h *AgentPodHandler) CreateProvider(c *gin.Context) {
 		return
 	}
 
-	// Validate credentials
 	if err := h.aiProviderService.ValidateCredentials(req.ProviderType, req.Credentials); err != nil {
 		apierr.ValidationError(c, err.Error())
 		return
@@ -133,13 +119,11 @@ func (h *AgentPodHandler) CreateProvider(c *gin.Context) {
 		return
 	}
 
-	// Don't return encrypted credentials
 	provider.EncryptedCredentials = ""
 
 	c.JSON(http.StatusCreated, gin.H{"provider": provider})
 }
 
-// UpdateProviderRequest represents AI provider update request
 type UpdateProviderRequest struct {
 	Name        string            `json:"name" binding:"omitempty,min=1,max=100"`
 	Credentials map[string]string `json:"credentials"`
@@ -147,8 +131,6 @@ type UpdateProviderRequest struct {
 	IsEnabled   *bool             `json:"is_enabled"`
 }
 
-// UpdateProvider updates an AI provider
-// PUT /api/v1/users/me/agentpod/providers/:id
 func (h *AgentPodHandler) UpdateProvider(c *gin.Context) {
 	idStr := c.Param("id")
 	providerID, err := strconv.ParseInt(idStr, 10, 64)
@@ -163,7 +145,6 @@ func (h *AgentPodHandler) UpdateProvider(c *gin.Context) {
 		return
 	}
 
-	// Set defaults for booleans
 	isDefault := false
 	if req.IsDefault != nil {
 		isDefault = *req.IsDefault
@@ -190,14 +171,11 @@ func (h *AgentPodHandler) UpdateProvider(c *gin.Context) {
 		return
 	}
 
-	// Don't return encrypted credentials
 	provider.EncryptedCredentials = ""
 
 	c.JSON(http.StatusOK, gin.H{"provider": provider})
 }
 
-// DeleteProvider deletes an AI provider
-// DELETE /api/v1/users/me/agentpod/providers/:id
 func (h *AgentPodHandler) DeleteProvider(c *gin.Context) {
 	idStr := c.Param("id")
 	providerID, err := strconv.ParseInt(idStr, 10, 64)
@@ -214,8 +192,6 @@ func (h *AgentPodHandler) DeleteProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Provider deleted"})
 }
 
-// SetDefaultProvider sets a provider as the default for its type
-// POST /api/v1/users/me/agentpod/providers/:id/default
 func (h *AgentPodHandler) SetDefaultProvider(c *gin.Context) {
 	idStr := c.Param("id")
 	providerID, err := strconv.ParseInt(idStr, 10, 64)

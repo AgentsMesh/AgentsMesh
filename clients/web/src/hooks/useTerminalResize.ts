@@ -6,15 +6,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { relayPool } from "@/stores/workspace";
 import { safeFit } from "./useTerminalInit";
 
-/** Debounce delay for size sync operations (ms) */
 const SIZE_SYNC_DEBOUNCE_MS = 100;
 
-/**
- * Manages all terminal resize concerns: debounced pod sync,
- * ResizeObserver, visibility change, active-pane focus, and font size updates.
- *
- * Extracted from useTerminal for SRP.
- */
 export function useTerminalResize(
   podKey: string,
   fitAddonRef: MutableRefObject<FitAddon | null>,
@@ -27,7 +20,6 @@ export function useTerminalResize(
   const sizeSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSizeRef = useRef<{ cols: number; rows: number } | null>(null);
 
-  /** Debounced size sync to pod. Only sends if size actually changed. */
   const debouncedSizeSync = useCallback((cols: number, rows: number) => {
     const last = lastSyncedSizeRef.current;
     if (last && last.cols === cols && last.rows === rows) return;
@@ -42,7 +34,6 @@ export function useTerminalResize(
     }, SIZE_SYNC_DEBOUNCE_MS);
   }, [podKey]);
 
-  /** Force immediate size sync (no debounce). */
   const forceImmediateSizeSync = useCallback((cols: number, rows: number) => {
     if (cols <= 0 || rows <= 0) return;
     const last = lastSyncedSizeRef.current;
@@ -56,7 +47,6 @@ export function useTerminalResize(
     relayPool.forceResize(podKey, cols, rows);
   }, [podKey]);
 
-  // ResizeObserver + window resize — bound to terminal lifecycle
   useEffect(() => {
     const fitAddon = fitAddonRef.current;
     const container = containerRef.current;
@@ -84,7 +74,6 @@ export function useTerminalResize(
     };
   }, [fitAddonRef, containerRef, debouncedSizeSync, isTerminalReady]);
 
-  // Visibility change — re-fit when tab becomes visible
   useEffect(() => {
     let rafId: number | undefined;
 
@@ -106,7 +95,6 @@ export function useTerminalResize(
     };
   }, [isActive, fitAddonRef, debouncedSizeSync]);
 
-  // Focus terminal and sync size when pane becomes active
   useEffect(() => {
     let rafId: number | undefined;
 
@@ -126,7 +114,6 @@ export function useTerminalResize(
     };
   }, [isActive, xtermRef, fitAddonRef, forceImmediateSizeSync]);
 
-  // Update font size
   useEffect(() => {
     const term = xtermRef.current;
     const fitAddon = fitAddonRef.current;
@@ -137,7 +124,6 @@ export function useTerminalResize(
     }
   }, [fontSize, xtermRef, fitAddonRef, debouncedSizeSync]);
 
-  // Manual sync trigger
   const syncSize = useCallback(() => {
     const term = xtermRef.current;
     if (term && term.cols > 0 && term.rows > 0) {

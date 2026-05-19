@@ -9,17 +9,14 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// CheckQuota checks if organization has quota available
 func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, requestedAmount int) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 
 	var plan *billing.SubscriptionPlan
 	if err != nil {
-		// No subscription found, use Based plan as default
 		if errors.Is(err, ErrSubscriptionNotFound) {
 			plan, _ = s.GetPlan(ctx, billing.PlanBased)
 			if plan == nil {
-				// No Based plan in database, allow by default
 				slog.WarnContext(ctx, "no based plan found in database, allowing by default", "org_id", orgID, "resource", resource)
 				return nil
 			}
@@ -27,7 +24,6 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 			return err
 		}
 	} else {
-		// Check frozen status - frozen subscriptions cannot create new resources
 		if sub.IsFrozen() {
 			slog.WarnContext(ctx, "quota check denied: subscription frozen", "org_id", orgID, "resource", resource)
 			return ErrSubscriptionFrozen
@@ -43,7 +39,6 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 		return ErrPlanNotFound
 	}
 
-	// Check custom quotas first (only if subscription exists)
 	if sub != nil && sub.CustomQuotas != nil {
 		if customLimit, ok := sub.CustomQuotas[resource]; ok {
 			if limit, ok := customLimit.(float64); ok && int(limit) != -1 {
@@ -59,7 +54,6 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 		}
 	}
 
-	// Check plan limits
 	var limit int
 	switch resource {
 	case "users":
@@ -76,7 +70,6 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 		return nil
 	}
 
-	// -1 means unlimited
 	if limit == -1 {
 		return nil
 	}
@@ -93,25 +86,19 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 	return nil
 }
 
-// CheckSeatAvailability checks if there are available seats to add members
-// This is different from CheckQuota - it checks purchased seats vs used seats,
-// not plan limits. Use this for member invitations.
+// CheckSeatAvailability gates member invitations against purchased seats (not plan limits).
 func (s *Service) CheckSeatAvailability(ctx context.Context, orgID int64, requestedSeats int) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
-		// No subscription = Free plan with default 1 seat
 		sub = &billing.Subscription{
 			SeatCount: 1,
 		}
 	}
 
-	// Count current members (used seats)
 	usedSeats, _ := s.repo.CountOrgMembers(ctx, orgID)
 
-	// Count pending invitations (reserved seats)
 	pendingInvitations, _ := s.repo.CountPendingInvitations(ctx, orgID)
 
-	// Available seats = purchased seats - used seats - pending invitations
 	availableSeats := sub.SeatCount - int(usedSeats) - int(pendingInvitations)
 
 	if availableSeats < requestedSeats {
@@ -143,12 +130,10 @@ func (s *Service) getCurrentResourceCount(ctx context.Context, orgID int64, reso
 	return int(count), err
 }
 
-// GetCurrentConcurrentPods returns the number of currently active pods for an organization
 func (s *Service) GetCurrentConcurrentPods(ctx context.Context, orgID int64) (int, error) {
 	return s.getCurrentResourceCount(ctx, orgID, "concurrent_pods")
 }
 
-// SetCustomQuota sets a custom quota for an organization
 func (s *Service) SetCustomQuota(ctx context.Context, orgID int64, resource string, limit int) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {

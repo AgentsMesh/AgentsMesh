@@ -1,8 +1,3 @@
-/**
- * WebSocket lifecycle management for relay connections.
- * Uses IRelayBackend abstraction so the transport can be swapped
- * from browser WebSocket to WASM without changing this file.
- */
 import { MsgType, encodeMessage, encodeResize } from "./relayProtocol";
 import type { RelayConnection, ConnectionHandle } from "./relayConnectionTypes";
 import { getRelayBackend, type IRelayTransport } from "./relayBackend";
@@ -164,9 +159,6 @@ export async function reconnectConnection(ctx: PoolContext, podKey: string): Pro
       return;
     }
     console.warn(`[Relay] Retryable error for ${podKey}, scheduling retry:`, error);
-    // Create a placeholder stub so scheduleReconnect can find the connection
-    // and the caller sees a visible "error" state in the UI while we wait
-    // to retry.
     const stubTransport: IRelayTransport = {
       get isOpen() { return false; },
       get isClosed() { return true; },

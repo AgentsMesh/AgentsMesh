@@ -23,9 +23,6 @@ function debouncedSidebarRefresh(ref?: DebounceRef) {
   }, 500);
 }
 
-// Coalesce mesh topology refetches during pod burst (e.g. pod terminate
-// triggers status_changed + terminated in quick succession; reconnect
-// catchup may replay many old events at once).
 let topologyTimer: ReturnType<typeof setTimeout> | null = null;
 function debouncedFetchTopology() {
   if (topologyTimer) clearTimeout(topologyTimer);

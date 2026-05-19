@@ -6,9 +6,6 @@ interface ResizeHandleProps {
   direction: "horizontal" | "vertical";
 }
 
-/**
- * VS Code style resize handle - hidden by default, highlights on hover
- */
 export function ResizeHandle({ direction }: ResizeHandleProps) {
   const isHorizontal = direction === "horizontal";
 
@@ -21,14 +18,12 @@ export function ResizeHandle({ direction }: ResizeHandleProps) {
           : "h-1 cursor-row-resize hover:bg-primary"
       )}
     >
-      {/* Expand hit area */}
       <div
         className={cn(
           "absolute z-10",
           isHorizontal ? "w-3 h-full -left-1" : "h-3 w-full -top-1"
         )}
       />
-      {/* Grip indicator */}
       <div className={cn(
         "opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground"
       )}>

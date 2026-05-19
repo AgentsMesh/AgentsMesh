@@ -10,9 +10,6 @@ import { ViewHeader } from "./ViewListFallback";
 import { SummaryBar } from "./SummaryBar";
 import { useViewBlocks } from "./useViewBlocks";
 
-// TreeView renders the view's source blocks as top-level roots, each recursive
-// via nest refs. Differs from DocumentView in that it never renders the view
-// block's own content — only projects its source rows as a forest.
 export function TreeView({ viewBlock, spec }: { viewBlock: Block; spec: ViewSpec }) {
   const roots = useViewBlocks(spec, viewBlock.workspace_id);
   return (

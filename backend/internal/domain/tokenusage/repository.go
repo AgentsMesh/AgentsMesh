@@ -2,7 +2,6 @@ package tokenusage
 
 import "context"
 
-// Repository defines the data-access contract for token usage records.
 type Repository interface {
 	Create(ctx context.Context, record *TokenUsage) error
 	CreateBatch(ctx context.Context, records []*TokenUsage) error

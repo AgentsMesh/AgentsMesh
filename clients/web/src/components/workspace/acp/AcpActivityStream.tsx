@@ -11,7 +11,6 @@ interface AcpActivityStreamProps {
   podKey: string;
 }
 
-/** Discriminated union for the merged activity timeline. */
 type TimelineItem =
   | { kind: "message"; key: string; timestamp: number; role: string; text: string }
   | { kind: "tool"; key: string; timestamp: number; data: AcpToolCall }
@@ -22,7 +21,6 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   const session = useAcpSession(podKey);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Build a unified timeline: messages + toolCalls + thinkings, sorted by timestamp.
   const timeline = useMemo<TimelineItem[]>(() => {
     if (!session) return [];
     const items: TimelineItem[] = [];
@@ -56,7 +54,6 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
     return items;
   }, [session]);
 
-  // Auto-scroll to bottom on new activity.
   const messageCount = session?.messages.length ?? 0;
   const toolCallCount = session ? Object.keys(session.toolCalls).length : 0;
   const thinkingCount = session?.thinkings.length ?? 0;
@@ -97,7 +94,6 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   );
 }
 
-/** User instruction: "> " prefix, muted style, no bubble. Slash commands get distinct styling. */
 function UserInstruction({ text }: { text: string }) {
   const isSlashCommand = text.startsWith("/");
   return (
@@ -116,7 +112,6 @@ function UserInstruction({ text }: { text: string }) {
   );
 }
 
-/** Assistant output: Markdown rendered, no bubble, no role label. */
 function AssistantOutput({ text }: { text: string }) {
   return (
     <div className="py-1">
@@ -125,7 +120,6 @@ function AssistantOutput({ text }: { text: string }) {
   );
 }
 
-/** Thinking indicator: collapsed "Thinking..." with expandable full text. */
 function ThinkingIndicator({ thinking }: { thinking: AcpThinking }) {
   return (
     <details className="py-1 group">
@@ -144,7 +138,6 @@ function ThinkingIndicator({ thinking }: { thinking: AcpThinking }) {
   );
 }
 
-/** Log entry: error (red) or warn (yellow) styled inline card. */
 function LogEntry({ log }: { log: AcpLog }) {
   const isError = log.level === "error";
   return (

@@ -11,17 +11,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// ApplyOps is the sole write entry point. It runs the entire batch inside a
-// workspace-scoped advisory-locked transaction. Any single op failure rolls
-// back the whole batch and returns the concrete domain error.
-//
-// Idempotency: if IdempotencyKey is non-empty and already recorded, the stored
-// op ids are returned without re-executing. This makes the batch safe to retry
-// on network failure.
+// ApplyOps is the sole write entry point — entire batch runs in a
+// workspace-scoped advisory-locked transaction; IdempotencyKey replay returns
+// recorded op ids without re-execution.
 func (s *Service) ApplyOps(ctx context.Context, actor ActorContext, in ApplyOpsInput) (*ApplyOpsResult, error) {
-	// Fires once, lazily, on the first real write — so operators who forget
-	// to call SetEmbedder in production still see a warning in their logs
-	// rather than silently running semantic search on bag-of-words vectors.
 	s.WarnIfDefaultEmbedder()
 	start := time.Now()
 	defer func() {
@@ -47,8 +40,6 @@ func (s *Service) ApplyOps(ctx context.Context, actor ActorContext, in ApplyOpsI
 	result := &ApplyOpsResult{ParentOpID: in.ParentOpID}
 
 	err = s.repo.WithinWorkspaceTx(ctx, wsID, func(tx blockstore.TxWriter) error {
-		// Idempotency short-circuit: if key already processed, find the
-		// op chain parented by its first entry and return those ids.
 		if in.IdempotencyKey != "" {
 			existing, err := tx.FindOpByIdempotencyKey(ctx, in.IdempotencyKey)
 			if err != nil {
@@ -57,10 +48,7 @@ func (s *Service) ApplyOps(ctx context.Context, actor ActorContext, in ApplyOpsI
 			if existing != nil {
 				result.WasReplay = true
 				result.OpIDs = append(result.OpIDs, existing.ID)
-				// Fetch sibling ops (parent_op_id == existing.ID) so the
-				// replay response mirrors the original batch exactly. Without
-				// this, a client retrying a 2-op batch would see only the
-				// first op_id and incorrectly assume the second never applied.
+				// Replay must return every op id from the original batch, not just the first.
 				siblings, err := tx.ListOpsByParent(ctx, existing.ID)
 				if err != nil {
 					return err
@@ -86,7 +74,7 @@ func (s *Service) ApplyOps(ctx context.Context, actor ActorContext, in ApplyOpsI
 			if err != nil {
 				return err
 			}
-			// First op of the batch carries idempotency_key; siblings link via parent_op_id.
+			// IdempotencyKey attaches to op[0]; op[1..] link via parent_op_id so replay can reassemble.
 			if idx == 0 {
 				if in.IdempotencyKey != "" {
 					op.IdempotencyKey = &in.IdempotencyKey
@@ -120,30 +108,18 @@ func (s *Service) ApplyOps(ctx context.Context, actor ActorContext, in ApplyOpsI
 			))
 	}
 
-	// Publish after successful commit; best-effort, failure is logged only.
 	if s.publisher != nil && !result.WasReplay {
 		s.publisher.PublishBatch(ctx, actor.OrgID, applied)
 	}
-	// Embedding refresh runs off the write path entirely so a slow provider
-	// (OpenAI API latency, cold network) doesn't stall ApplyOps.
 	if !result.WasReplay {
 		s.enqueueEmbeddings(applied)
 	}
-	// Tier 3: trigger dispatch. Matching runs synchronously so each op
-	// evaluates against its own post-commit state (GetBlock sees the just-
-	// applied diff, not a later op's). Action firing is dispatched to its
-	// own goroutine inside dispatchTriggers so slow webhooks never stall
-	// the write path. SuppressTriggers is set by internal callers
-	// (fireAgentAction) to prevent cascading trigger→agent_event loops.
 	if !result.WasReplay && !in.SuppressTriggers {
 		s.dispatchTriggers(ctx, wsID, applied)
 	}
 	return result, nil
 }
 
-// applyOne dispatches a single envelope to its per-kind handler.
-// Handlers return a partially-populated BlockOp (forward/inverse/payload/op)
-// that ApplyOps then augments with idempotency/parent_op_id.
 func (s *Service) applyOne(
 	ctx context.Context,
 	tx blockstore.TxWriter,

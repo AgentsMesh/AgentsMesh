@@ -32,10 +32,8 @@ export type { NotificationPreference } from "./notificationTypes";
 export type { TokenUsageSummary, TokenUsageTimeSeriesPoint, TokenUsageByAgent, TokenUsageByUser, TokenUsageByModel, TokenUsageQueryParams } from "./tokenUsageTypes";
 export type { MessageContent, MessageMentions, InlineElement, Block, MentionRefInput, MessageSendPayload, MessageEditPayload } from "./channel-message-types";
 
-// Re-export ProviderRepositoryData under the old alias for backward compatibility
 export type { ProviderRepositoryData as UserRemoteRepositoryData } from "./userRepositoryProviderTypes";
 
-// API wrapper re-exports
 export { organizationApi } from "./organization";
 export { grantApi } from "./grant";
 export type { ResourceGrant } from "./grant";

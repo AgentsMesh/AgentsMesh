@@ -7,18 +7,12 @@ import { cn } from "@/lib/utils";
 interface MarkdownProps {
   content: string;
   className?: string;
-  /** Compact mode with smaller text for embedded use */
   compact?: boolean;
-  /** Enable @mention highlighting in text nodes */
   highlightMentions?: boolean;
 }
 
 const remarkPlugins = [remarkGfm];
 
-/**
- * Render text with @mention highlighting.
- * Splits text on @word patterns and wraps matches in styled spans.
- */
 function TextWithMentions({ children }: { children: string }) {
   const mentionRegex = /(@[\w.\-]+)/g;
   const parts = children.split(mentionRegex);
@@ -44,9 +38,6 @@ function TextWithMentions({ children }: { children: string }) {
   );
 }
 
-/**
- * Custom components for react-markdown that highlight @mentions in text nodes.
- */
 const mentionComponents: Components = {
   p({ children }) {
     return <p>{processMentions(children)}</p>;
@@ -62,9 +53,6 @@ const mentionComponents: Components = {
   },
 };
 
-/**
- * Process children to replace plain string nodes with mention-highlighted versions.
- */
 function processMentions(children: React.ReactNode): React.ReactNode {
   if (!children) return children;
   if (typeof children === "string") {
@@ -81,9 +69,6 @@ function processMentions(children: React.ReactNode): React.ReactNode {
   return children;
 }
 
-/**
- * Markdown renderer component using react-markdown with GFM support
- */
 export function Markdown({
   content,
   className,
@@ -95,7 +80,6 @@ export function Markdown({
       className={cn(
         "prose max-w-none",
         compact && "prose-sm",
-        // Override prose defaults for compact mode
         compact && "[&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-xs",
         className
       )}

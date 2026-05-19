@@ -8,13 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ChannelMarkReadRequest represents a mark-as-read request for a channel
 type ChannelMarkReadRequest struct {
 	MessageID int64 `json:"message_id" binding:"required"`
 }
 
-// MarkRead marks a channel as read up to a specific message
-// POST /api/v1/organizations/:slug/channels/:id/read
 func (h *ChannelHandler) MarkRead(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -36,8 +33,6 @@ func (h *ChannelHandler) MarkRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// GetUnreadCounts returns unread message counts for all channels the user is a member of
-// GET /api/v1/organizations/:slug/channels/unread
 func (h *ChannelHandler) GetUnreadCounts(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -50,8 +45,6 @@ func (h *ChannelHandler) GetUnreadCounts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"unread": counts})
 }
 
-// MuteChannel mutes/unmutes a channel for the current user
-// POST /api/v1/organizations/:slug/channels/:id/mute
 func (h *ChannelHandler) MuteChannel(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

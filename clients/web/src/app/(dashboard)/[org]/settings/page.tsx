@@ -17,9 +17,7 @@ export default function SettingsPage() {
   const t = useTranslations();
 
   const renderContent = () => {
-    // Personal settings
     if (scope === "personal") {
-      // Handle agent config pages (agents/{slug})
       if (activeTab.startsWith("agents/")) {
         const agentSlug = activeTab.replace("agents/", "");
         return <AgentConfigPage agentSlug={agentSlug} />;
@@ -41,7 +39,6 @@ export default function SettingsPage() {
       }
     }
 
-    // Organization settings
     switch (activeTab) {
       case "general":
         return <GeneralSettings org={currentOrg} t={t} />;
@@ -68,8 +65,6 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-// ===== Personal Settings Components =====
 
 function PersonalGeneralSettings() {
   const router = useRouter();

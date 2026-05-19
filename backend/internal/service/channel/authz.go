@@ -40,8 +40,6 @@ func (s *Service) IsMember(ctx context.Context, channelID, userID int64) (bool, 
 	return s.repo.IsMember(ctx, channelID, userID)
 }
 
-// validateOrgMembers filters user IDs to only those belonging to the given organization.
-// Returns the input as-is if UserLookup is not configured (graceful degradation).
 func (s *Service) validateOrgMembers(ctx context.Context, orgID int64, userIDs []int64) []int64 {
 	if len(userIDs) == 0 || s.userLookup == nil {
 		return userIDs

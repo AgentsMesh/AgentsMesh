@@ -14,9 +14,6 @@ interface EditRepositoryModalProps {
   onUpdated: () => void;
 }
 
-/**
- * EditRepositoryModal - Modal for editing repository settings
- */
 export function EditRepositoryModal({
   repository,
   onClose,

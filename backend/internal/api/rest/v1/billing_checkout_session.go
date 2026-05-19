@@ -14,11 +14,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// createCheckoutSession creates the checkout session and stores the order
 func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middleware.TenantContext, req *CreateCheckoutRequest, priceCalc *billingService.PriceCalculation, providerName string, providerInterface interface{}) {
 	provider := providerInterface.(payment.Provider)
 
-	// Extract values from price calculation
 	amount := priceCalc.Amount
 	actualAmount := priceCalc.ActualAmount
 	seats := priceCalc.Seats
@@ -27,10 +25,8 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 		planID = &priceCalc.PlanID
 	}
 
-	// Generate order number
 	orderNo := fmt.Sprintf("ORD-%d-%s", tenant.OrganizationID, uuid.New().String()[:8])
 
-	// Build metadata with provider-specific IDs
 	metadata := map[string]string{
 		"order_no": orderNo,
 	}
@@ -41,11 +37,9 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 		metadata["stripe_price_id"] = priceCalc.StripePrice
 	}
 
-	// Get user email from JWT claims (set by auth middleware)
 	userEmail, _ := c.Get("email")
 	userEmailStr, _ := userEmail.(string)
 
-	// Create checkout session
 	checkoutReq := &payment.CheckoutRequest{
 		OrganizationID: tenant.OrganizationID,
 		UserID:         tenant.UserID,
@@ -72,7 +66,6 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 		return
 	}
 
-	// Store order in database
 	order := &billingdomain.PaymentOrder{
 		OrganizationID:  tenant.OrganizationID,
 		OrderNo:         orderNo,
@@ -90,8 +83,6 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 		CreatedByID:     tenant.UserID,
 	}
 	if err := h.billingService.CreatePaymentOrder(c.Request.Context(), order); err != nil {
-		// Order must be persisted before returning the checkout URL to the user.
-		// Without a local order record, webhook reconciliation will be unreliable.
 		slog.ErrorContext(c.Request.Context(), "failed to save payment order",
 			"order_no", orderNo, "error", err)
 		apierr.InternalError(c, "failed to create payment order")
@@ -108,7 +99,6 @@ func (h *BillingHandler) createCheckoutSession(c *gin.Context, tenant *middlewar
 	})
 }
 
-// GetCheckoutStatus returns the status of a checkout/order
 func (h *BillingHandler) GetCheckoutStatus(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	orderNo := c.Param("order_no")
@@ -119,7 +109,6 @@ func (h *BillingHandler) GetCheckoutStatus(c *gin.Context) {
 		return
 	}
 
-	// Verify ownership
 	if order.OrganizationID != tenant.OrganizationID {
 		apierr.ForbiddenAccess(c)
 		return

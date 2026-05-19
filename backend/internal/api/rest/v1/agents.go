@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 )
 
-// AgentHandler handles agent-related requests
 type AgentHandler struct {
 	agentSvc  *agent.AgentService
 	credentialSvc *agent.CredentialProfileService
@@ -15,7 +14,6 @@ type AgentHandler struct {
 	configBuilder *agent.ConfigBuilder
 }
 
-// NewAgentHandler creates a new agent handler
 func NewAgentHandler(
 	agentSvc *agent.AgentService,
 	credentialSvc *agent.CredentialProfileService,
@@ -32,7 +30,6 @@ func NewAgentHandler(
 	}
 }
 
-// compositeProvider implements AgentConfigProvider by combining sub-services
 type compositeProvider struct {
 	agentSvc  *agent.AgentService
 	credentialSvc *agent.CredentialProfileService
@@ -50,8 +47,6 @@ func (p *compositeProvider) ResolveCredentialsByName(ctx context.Context, userID
 	return p.credentialSvc.ResolveCredentialsByName(ctx, userID, agentSlug, profileName)
 }
 
-// CreateCustomAgentRequest represents custom agent creation request.
-// When AgentfileSource is provided, LaunchCommand becomes optional (extracted from AgentFile).
 type CreateCustomAgentRequest struct {
 	Slug          string `json:"slug" binding:"required,min=2,max=50,alphanum"`
 	Name          string `json:"name" binding:"required,min=2,max=100"`
@@ -61,7 +56,6 @@ type CreateCustomAgentRequest struct {
 	DefaultArgs   string `json:"default_args"`
 }
 
-// SetUserAgentConfigRequest represents a request to set user's personal config
 type SetUserAgentConfigRequest struct {
 	ConfigValues map[string]interface{} `json:"config_values" binding:"required"`
 }

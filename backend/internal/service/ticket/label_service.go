@@ -7,9 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// ========== Label Operations ==========
-
-// CreateLabel creates a new label.
 func (s *Service) CreateLabel(ctx context.Context, orgID int64, repoID *int64, name, color string) (*ticket.Label, error) {
 	existing, err := s.repo.GetLabelByOrgNameRepo(ctx, orgID, name, repoID)
 	if err != nil {
@@ -33,7 +30,6 @@ func (s *Service) CreateLabel(ctx context.Context, orgID int64, repoID *int64, n
 	return label, nil
 }
 
-// GetLabel returns a label by ID.
 func (s *Service) GetLabel(ctx context.Context, labelID int64) (*ticket.Label, error) {
 	label, err := s.repo.GetLabel(ctx, labelID)
 	if err != nil {
@@ -45,12 +41,10 @@ func (s *Service) GetLabel(ctx context.Context, labelID int64) (*ticket.Label, e
 	return label, nil
 }
 
-// ListLabels returns labels for an organization/repository.
 func (s *Service) ListLabels(ctx context.Context, orgID int64, repoID *int64) ([]*ticket.Label, error) {
 	return s.repo.ListLabels(ctx, orgID, repoID)
 }
 
-// UpdateLabel updates a label.
 func (s *Service) UpdateLabel(ctx context.Context, orgID, labelID int64, updates map[string]interface{}) (*ticket.Label, error) {
 	if len(updates) > 0 {
 		if err := s.repo.UpdateLabelFields(ctx, orgID, labelID, updates); err != nil {
@@ -62,7 +56,6 @@ func (s *Service) UpdateLabel(ctx context.Context, orgID, labelID int64, updates
 	return s.GetLabel(ctx, labelID)
 }
 
-// DeleteLabel deletes a label.
 func (s *Service) DeleteLabel(ctx context.Context, orgID, labelID int64) error {
 	if err := s.repo.DeleteLabelAtomic(ctx, orgID, labelID); err != nil {
 		slog.ErrorContext(ctx, "failed to delete label", "label_id", labelID, "org_id", orgID, "error", err)
@@ -72,12 +65,10 @@ func (s *Service) DeleteLabel(ctx context.Context, orgID, labelID int64) error {
 	return nil
 }
 
-// GetTicketLabels returns labels for a ticket.
 func (s *Service) GetTicketLabels(ctx context.Context, ticketID int64) ([]*ticket.Label, error) {
 	return s.repo.GetTicketLabels(ctx, ticketID)
 }
 
-// AddLabel adds a label to a ticket.
 func (s *Service) AddLabel(ctx context.Context, ticketID, labelID int64) error {
 	if err := s.repo.AddTicketLabel(ctx, ticketID, labelID); err != nil {
 		slog.ErrorContext(ctx, "failed to add label to ticket", "ticket_id", ticketID, "label_id", labelID, "error", err)
@@ -87,7 +78,6 @@ func (s *Service) AddLabel(ctx context.Context, ticketID, labelID int64) error {
 	return nil
 }
 
-// RemoveLabel removes a label from a ticket.
 func (s *Service) RemoveLabel(ctx context.Context, ticketID, labelID int64) error {
 	if err := s.repo.RemoveTicketLabel(ctx, ticketID, labelID); err != nil {
 		slog.ErrorContext(ctx, "failed to remove label from ticket", "ticket_id", ticketID, "label_id", labelID, "error", err)

@@ -162,7 +162,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
 
   return (
     <div className={cn("flex h-full flex-col", className)}>
-      {/* Search + CTA */}
       <div className="flex flex-col gap-2 px-3 pb-2 pt-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -183,7 +182,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
         </Button>
       </div>
 
-      {/* Groups */}
       <div className="flex-1 overflow-y-auto">
         {loading && channels.length === 0 ? (
           <div className="flex items-center justify-center py-8">
@@ -207,7 +205,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
         )}
       </div>
 
-      {/* Footer: archive toggle + refresh */}
       <div className="flex items-center justify-between border-t border-border px-3 py-2.5 text-[12px]">
         <button
           type="button"

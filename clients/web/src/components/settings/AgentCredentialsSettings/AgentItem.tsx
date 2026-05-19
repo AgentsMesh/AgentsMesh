@@ -16,20 +16,11 @@ import {
 import type { AgentItemProps } from "./types";
 import { getCredentialFieldLabel } from "../credentialFieldLabel";
 
-/**
- * AgentIcon - Returns an icon based on agent slug
- */
 function AgentIcon({ slug: _slug }: { slug: string }) {
   void _slug; // Reserved for future per-agent icons
   return <Bot className="w-5 h-5" />;
 }
 
-/**
- * AgentItem - Expandable panel for a single agent's credentials
- *
- * Shows the agent header with expand/collapse toggle,
- * RunnerHost as first option, and custom credential profiles below.
- */
 export function AgentItem({
   agent,
   profiles,

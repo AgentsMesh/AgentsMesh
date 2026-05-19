@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// --- Members ---
-
 func (r *channelRepository) UpsertMember(ctx context.Context, channelID, userID int64) error {
 	member := channel.Member{
 		ChannelID: channelID,
@@ -36,8 +34,6 @@ func (r *channelRepository) AddMemberWithRole(ctx context.Context, channelID, us
 	if result.Error != nil {
 		return result.Error
 	}
-	// Initialize read_state to latest message so new members don't see all history as unread.
-	// Only for genuinely new members (RowsAffected > 0, not conflict/no-op).
 	if result.RowsAffected > 0 {
 		r.initReadStateToLatest(ctx, channelID, userID)
 	}

@@ -12,11 +12,11 @@ pub struct AuthManager {
     pub(crate) base_url: String,
     pub(crate) http: reqwest::Client,
     /// Serializes concurrent calls to `refresh_token()` within this
-    /// process. Plan I6 invariant: bootstrap-triggered refresh and any
-    /// other in-flight refresh on the same `AuthManager` must not race.
-    /// Cross-process contention (e.g. two web tabs) is mediated by the
-    /// server's one-shot refresh-token rotation: whichever side loses
-    /// the race gets a 401 and lands on cleanup.
+    /// process: bootstrap-triggered refresh and any other in-flight
+    /// refresh on the same `AuthManager` must not race. Cross-process
+    /// contention (e.g. two web tabs) is mediated by the server's
+    /// one-shot refresh-token rotation: whichever side loses the race
+    /// gets a 401 and lands on cleanup.
     pub(crate) refresh_lock: futures::lock::Mutex<()>,
 }
 
@@ -47,9 +47,6 @@ impl AuthManager {
         }
     }
 
-    /// Unix-seconds expiry of the current access token, or `None` if no
-    /// session is loaded. Exposed so platform adapters can mirror the
-    /// expiry locally and avoid recomputing it across IPC.
     pub fn expires_at(&self) -> Option<i64> {
         self.read_state().session.as_ref().map(|s| s.expires_at)
     }
@@ -58,11 +55,6 @@ impl AuthManager {
         self.read_state().user.clone()
     }
 
-    /// Replace the in-memory organizations list. If no current_org is
-    /// set, auto-promotes the first one (mirroring its slug into the
-    /// persisted session blob via `set_current_org`). Organizations
-    /// themselves are never persisted (per I2 — only `current_org_slug`
-    /// is, as a hint for the next bootstrap).
     pub fn replace_organizations(&self, orgs: Vec<Organization>) {
         let promote = {
             let mut s = self.write_state();
@@ -78,11 +70,6 @@ impl AuthManager {
         }
     }
 
-    /// Set or clear the current organization. Mirrors the slug into the
-    /// persisted session blob so the next bootstrap restores the same
-    /// selection. Used by both internal flows (bootstrap auto-select,
-    /// switch_org) and external entry points (OAuth callback hydrate
-    /// from web/desktop, after the renderer already has the org payload).
     pub fn set_current_org(&self, org: Option<Organization>) {
         {
             let mut s = self.write_state();
@@ -98,11 +85,6 @@ impl AuthManager {
         self.reset_local();
     }
 
-    /// Single source of truth for "drop everything we know locally":
-    /// in-memory session/user/org state + the on-disk session blob.
-    /// All four entry points (`clear`, `clear_tokens`, `logout`, bootstrap
-    /// `cleanup`) funnel through this so the two-step (memory + storage)
-    /// reset can never drift between callers.
     pub(crate) fn reset_local(&self) {
         self.write_state().clear();
         self.storage.remove(&self.session_key());
@@ -127,11 +109,10 @@ impl AuthManager {
             .ok_or(AuthError::NotAuthenticated)
     }
 
-    /// Poison-tolerant read guard. Production code never recovers from a
-    /// panic that left the lock poisoned, so reading the snapshot is
-    /// always safe — the alternative (panic-propagate) is worse for IPC
-    /// callers since the napi/wasm boundary surfaces it as an opaque
-    /// runtime error. Centralized so all readers handle poison the same way.
+    /// Poison-tolerant read guard: never recover from a panic that left
+    /// the lock poisoned — reading the snapshot is always safe; the
+    /// alternative (panic-propagate) surfaces as an opaque runtime error
+    /// across the napi/wasm boundary.
     pub(crate) fn read_state(&self) -> std::sync::RwLockReadGuard<'_, AuthState> {
         self.state.read().unwrap_or_else(|e| e.into_inner())
     }

@@ -7,8 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// checkSameWorkspace asserts that both from and to blocks belong to wsID.
-// Cross-workspace refs are reserved for Phase 2+ business rels.
 func checkSameWorkspace(ctx context.Context, tx blockstore.TxWriter, wsID, from, to uuid.UUID) error {
 	fromBlock, err := tx.FindBlockByID(ctx, from)
 	if err != nil {
@@ -27,8 +25,6 @@ func checkSameWorkspace(ctx context.Context, tx blockstore.TxWriter, wsID, from,
 	return nil
 }
 
-// ensureNoCycle walks up `from`'s ancestor chain (via rel='nest') and fails if
-// `to` appears. A self-nest (from == to) is also a cycle.
 func ensureNoCycle(ctx context.Context, tx blockstore.TxWriter, from, to uuid.UUID) error {
 	if from == to {
 		return blockstore.ErrNestCycle
@@ -45,9 +41,6 @@ func ensureNoCycle(ctx context.Context, tx blockstore.TxWriter, from, to uuid.UU
 	return nil
 }
 
-// ensureChildAllowed consults the workspace-aware type resolver to block
-// incompatible nest relations (e.g. paragraph → page). Dynamic block_type_def
-// rows take precedence over the bootstrap registry.
 func (s *Service) ensureChildAllowed(
 	ctx context.Context,
 	tx blockstore.TxWriter,

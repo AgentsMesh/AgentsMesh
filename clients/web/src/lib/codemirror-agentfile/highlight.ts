@@ -13,7 +13,6 @@
 import { StreamLanguage, type StringStream, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 
-/** Uppercase declaration keywords */
 const DECL_KEYWORDS = new Set([
   "AGENT", "EXECUTABLE", "CONFIG", "ENV", "REPO", "BRANCH",
   "GIT_CREDENTIAL", "MCP", "SKILLS", "SETUP", "ON", "OFF",
@@ -22,7 +21,6 @@ const DECL_KEYWORDS = new Set([
   "BOOL", "STRING", "NUMBER", "SECRET", "TEXT", "SELECT",
 ]);
 
-/** Lowercase build logic keywords */
 const BUILD_KEYWORDS = new Set([
   "arg", "file", "mkdir",
   "when", "if", "else", "for", "in", "and", "or", "not",
@@ -36,14 +34,12 @@ interface AgentFileState {
   heredocMarker: string;
 }
 
-/** StreamLanguage tokenizer for AgentFile */
 const agentfileTokenizer = {
   startState(): AgentFileState {
     return { inHeredoc: false, heredocMarker: "" };
   },
 
   token(stream: StringStream, state: AgentFileState): string | null {
-    // Heredoc body
     if (state.inHeredoc) {
       if (stream.sol() && stream.match(new RegExp(`^${state.heredocMarker}\\s*$`))) {
         state.inHeredoc = false;
@@ -56,20 +52,17 @@ const agentfileTokenizer = {
 
     if (stream.eatSpace()) return null;
 
-    // Comment
     if (stream.match("#")) {
       stream.skipToEnd();
       return "comment";
     }
 
-    // Heredoc start: <<MARKER
     if (stream.match(/^<<([A-Z_]+)/)) {
       state.inHeredoc = true;
       state.heredocMarker = stream.current().slice(2);
       return "string";
     }
 
-    // String: "..."
     if (stream.match('"')) {
       while (!stream.eol()) {
         const ch = stream.next();
@@ -79,17 +72,13 @@ const agentfileTokenizer = {
       return "string";
     }
 
-    // Number
     if (stream.match(/^-?\d+(\.\d+)?/)) return "number";
 
-    // Operators
     if (stream.match("==") || stream.match("!=")) return "operator";
     if (stream.match("=") || stream.match("+")) return "operator";
 
-    // Punctuation
     if (stream.match(/^[(){}[\]:,.]/)) return "punctuation";
 
-    // Words
     if (stream.match(/^[a-zA-Z_][a-zA-Z0-9_]*/)) {
       const word = stream.current();
       if (DECL_KEYWORDS.has(word)) return "keyword";
@@ -107,13 +96,8 @@ const agentfileTokenizer = {
   },
 };
 
-/** CodeMirror StreamLanguage for AgentFile */
 export const agentfileLanguage = StreamLanguage.define(agentfileTokenizer);
 
-/**
- * Highlight style using inline colors for theme-independent rendering.
- * StreamLanguage maps token names to standard tags automatically.
- */
 const agentfileHighlight = HighlightStyle.define([
   { tag: tags.keyword, color: "#7c3aed", fontWeight: "600" },      // purple
   { tag: tags.string, color: "#16a34a" },                           // green
@@ -125,5 +109,4 @@ const agentfileHighlight = HighlightStyle.define([
   { tag: tags.punctuation, color: "#94a3b8" },                      // light slate
 ]);
 
-/** Syntax highlighting extension — add this alongside agentfileLanguage */
 export const agentfileSyntaxHighlighting = syntaxHighlighting(agentfileHighlight);

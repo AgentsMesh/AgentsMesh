@@ -13,15 +13,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// Provider implements payment.SubscriptionProvider for testing/mocking
-// It simulates payment flows without calling real payment providers
 type Provider struct {
 	mu       sync.RWMutex
 	sessions map[string]*mockSession // sessionID -> session data
 	baseURL  string                  // Base URL for mock checkout page
 }
 
-// mockSession stores mock checkout session data
 type mockSession struct {
 	ID             string
 	Status         string
@@ -33,7 +30,6 @@ type mockSession struct {
 	SubscriptionID string
 }
 
-// NewProvider creates a new mock payment provider
 func NewProvider(baseURL string) *Provider {
 	return &Provider{
 		sessions: make(map[string]*mockSession),
@@ -41,19 +37,16 @@ func NewProvider(baseURL string) *Provider {
 	}
 }
 
-// GetProviderName returns the provider name
 func (p *Provider) GetProviderName() string {
 	return "mock"
 }
 
-// generateID generates a random ID with a prefix
 func generateID(prefix string) string {
 	bytes := make([]byte, 12)
 	_, _ = rand.Read(bytes)
 	return prefix + "_" + hex.EncodeToString(bytes)
 }
 
-// CreateCheckoutSession creates a mock checkout session
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
 	sessionID := generateID("mock_cs")
 	customerID := generateID("mock_cus")
@@ -73,8 +66,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 	p.sessions[sessionID] = session
 	p.mu.Unlock()
 
-	// Build mock checkout URL
-	// The URL points to a mock checkout page that auto-completes
 	checkoutURL := fmt.Sprintf("%s/mock-checkout?session_id=%s&order_no=%s", p.baseURL, sessionID, req.IdempotencyKey)
 
 	return &types.CheckoutResponse{
@@ -86,7 +77,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 	}, nil
 }
 
-// GetCheckoutStatus checks the status of a checkout session
 func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (string, error) {
 	p.mu.RLock()
 	session, ok := p.sessions[sessionID]
@@ -96,7 +86,6 @@ func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (str
 		return "", fmt.Errorf("session not found: %s", sessionID)
 	}
 
-	// Check if expired
 	if time.Now().After(session.ExpiresAt) && session.Status == billing.OrderStatusPending {
 		return billing.OrderStatusCanceled, nil
 	}
@@ -104,7 +93,6 @@ func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (str
 	return session.Status, nil
 }
 
-// CompleteSession marks a session as completed (called by mock checkout handler)
 func (p *Provider) CompleteSession(sessionID string) (*mockSession, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -125,7 +113,6 @@ func (p *Provider) CompleteSession(sessionID string) (*mockSession, error) {
 	return session, nil
 }
 
-// GetSession retrieves a session by ID
 func (p *Provider) GetSession(sessionID string) (*mockSession, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -138,10 +125,7 @@ func (p *Provider) GetSession(sessionID string) (*mockSession, error) {
 	return session, nil
 }
 
-// HandleWebhook handles mock webhook events
-// In mock mode, webhooks are triggered directly via API
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
-	// Parse the mock webhook payload
 	var mockEvent struct {
 		EventType string `json:"event_type"`
 		SessionID string `json:"session_id"`
@@ -152,7 +136,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		return nil, fmt.Errorf("failed to parse mock webhook: %w", err)
 	}
 
-	// Get session data
 	session, err := p.GetSession(mockEvent.SessionID)
 	if err != nil {
 		return nil, err
@@ -188,7 +171,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	return event, nil
 }
 
-// RefundPayment simulates a refund
 func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) (*types.RefundResponse, error) {
 	return &types.RefundResponse{
 		RefundID: generateID("mock_re"),
@@ -198,35 +180,28 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 	}, nil
 }
 
-// CancelSubscription simulates subscription cancellation
 func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string, immediate bool) error {
-	// In mock mode, just return success
 	return nil
 }
 
-// CreateCustomer creates a mock customer
 func (p *Provider) CreateCustomer(ctx context.Context, email string, name string, metadata map[string]string) (string, error) {
 	return generateID("mock_cus"), nil
 }
 
-// GetCustomerPortalURL returns a mock customer portal URL
 func (p *Provider) GetCustomerPortalURL(ctx context.Context, req *types.CustomerPortalRequest) (*types.CustomerPortalResponse, error) {
 	return &types.CustomerPortalResponse{
 		URL: fmt.Sprintf("%s/mock-portal?customer_id=%s", p.baseURL, req.CustomerID),
 	}, nil
 }
 
-// UpdateSubscriptionSeats simulates updating subscription seats
 func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID string, seats int) error {
 	return nil
 }
 
-// UpdateSubscriptionPlan simulates changing subscription plan variant
 func (p *Provider) UpdateSubscriptionPlan(ctx context.Context, subscriptionID string, newVariantID string) error {
 	return nil
 }
 
-// GetSubscription returns mock subscription details
 func (p *Provider) GetSubscription(ctx context.Context, subscriptionID string) (*types.SubscriptionDetails, error) {
 	return &types.SubscriptionDetails{
 		ID:                 subscriptionID,

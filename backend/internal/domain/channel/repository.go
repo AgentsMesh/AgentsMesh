@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
-// ChannelListFilter contains optional filters for listing channels.
 type ChannelListFilter struct {
 	IncludeArchived bool
 	RepositoryID    *int64
@@ -17,7 +16,6 @@ type ChannelListFilter struct {
 	Offset          int
 }
 
-// ChannelStore defines CRUD operations for channels.
 type ChannelStore interface {
 	GetByID(ctx context.Context, channelID int64) (*Channel, error)
 	GetByOrgAndName(ctx context.Context, orgID int64, name string) (*Channel, error)
@@ -30,7 +28,6 @@ type ChannelStore interface {
 	TouchChannel(ctx context.Context, channelID int64) error
 }
 
-// MessageStore defines operations for channel messages.
 type MessageStore interface {
 	CreateMessage(ctx context.Context, msg *Message) error
 	GetMessages(ctx context.Context, channelID int64, before *time.Time, after *time.Time, limit int) ([]*Message, error)
@@ -46,7 +43,6 @@ type MessageStore interface {
 	GetMessageEdits(ctx context.Context, messageID int64) ([]*MessageEdit, error)
 }
 
-// MemberStore defines membership and read-state operations.
 type MemberStore interface {
 	UpsertMember(ctx context.Context, channelID, userID int64) error
 	AddMemberWithRole(ctx context.Context, channelID, userID int64, role string) error
@@ -61,7 +57,6 @@ type MemberStore interface {
 	GetUnreadCounts(ctx context.Context, userID int64) (map[int64]int64, error)
 }
 
-// AccessStore defines pod access tracking and binding operations.
 type AccessStore interface {
 	UpsertAccess(ctx context.Context, channelID int64, podKey *string, userID *int64) error
 	GetChannelsForPod(ctx context.Context, podKey string) ([]*Channel, error)
@@ -77,7 +72,6 @@ type AccessStore interface {
 	UpdateBindingFields(ctx context.Context, bindingID int64, updates map[string]interface{}) error
 }
 
-// CleanupStore defines destructive cleanup operations.
 type CleanupStore interface {
 	DeleteWithCleanup(ctx context.Context, channelID int64) error
 	DeleteChannelsByOrg(ctx context.Context, orgID int64) error

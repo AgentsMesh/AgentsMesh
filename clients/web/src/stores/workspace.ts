@@ -7,7 +7,6 @@ import {
   replaceNode, removeLeaf, updateSizes, insertChildAt,
 } from "./workspaceSplitTree";
 
-// Re-export types and singletons for consumer convenience
 export { relayPool } from "./relayConnection";
 export { terminalRegistry } from "./workspaceTypes";
 export type {
@@ -150,9 +149,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         mobileActiveIndex: state.mobileActiveIndex,
         terminalFontSize: state.terminalFontSize,
       }),
-      // Guard against corrupted / pre-v4 localStorage that serialised
-      // `panes: null`. Default zustand merge would then shadow the `[]`
-      // initial value, breaking every `.find()` in the store.
+      // Workaround: pre-v4 localStorage serialised `panes: null`; zustand merge would shadow `[]` initial.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<WorkspaceState>;
         return {
@@ -166,15 +163,11 @@ export const useWorkspaceStore = create<WorkspaceState>()(
   )
 );
 
-// --- Size strategy helpers (business logic) ---
-
-/** addPane: add new leaf to active pane's parent group with even distribution */
 function addPaneToTree(
   tree: SplitTreeNode,
   newLeaf: SplitTreeLeaf,
   activePaneId: string | null,
 ): SplitTreeNode {
-  // Find active leaf's node in tree
   const activeLeaf = activePaneId ? findLeafByPaneId(tree, activePaneId) : null;
   const parent = activeLeaf ? findParentSplit(tree, activeLeaf.id) : null;
 
@@ -185,7 +178,6 @@ function addPaneToTree(
     return insertChildAt(tree, parent.id, newLeaf, idx, evenSizes);
   }
 
-  // Root is a leaf or no active pane — wrap in new horizontal split
   const split: SplitTreeSplit = {
     type: "split", id: generateNodeId(), direction: "horizontal",
     children: [tree, newLeaf], sizes: [50, 50],
@@ -193,7 +185,6 @@ function addPaneToTree(
   return split;
 }
 
-/** splitPane: same-direction bubbles up (halve target), cross-direction nests */
 function splitLeafInTree(
   tree: SplitTreeNode,
   leaf: SplitTreeLeaf,
@@ -202,7 +193,6 @@ function splitLeafInTree(
 ): SplitTreeNode {
   const parent = findParentSplit(tree, leaf.id);
 
-  // Same-direction bubbling: add to parent group, halve target's size
   if (parent && parent.direction === direction) {
     const idx = parent.children.findIndex((c) => c.id === leaf.id);
     const targetSize = parent.sizes[idx];
@@ -212,7 +202,6 @@ function splitLeafInTree(
     return insertChildAt(tree, parent.id, newLeaf, idx, newSizes);
   }
 
-  // Cross-direction: create new nested split
   const splitNode: SplitTreeSplit = {
     type: "split", id: generateNodeId(), direction,
     children: [{ ...leaf }, newLeaf], sizes: [50, 50],

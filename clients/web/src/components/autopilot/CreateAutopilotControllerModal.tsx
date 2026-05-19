@@ -25,10 +25,8 @@ export function CreateAutopilotControllerModal({
   const error = useAutopilotStore((s) => s.error);
   const clearError = useAutopilotStore((s) => s.clearError);
 
-  // Local submitting state — store's shared `loading` is reserved for list fetch
   const [submitting, setSubmitting] = useState(false);
 
-  // Form state
   const [promptText, setPromptText] = useState("");
   const [maxIterations, setMaxIterations] = useState(10);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -37,7 +35,6 @@ export function CreateAutopilotControllerModal({
   const [sameErrorThreshold, setSameErrorThreshold] = useState(5);
   const [approvalTimeoutMin, setApprovalTimeoutMin] = useState(30);
 
-  // Reset form when modal opens/closes
   React.useEffect(() => {
     if (!open) {
       setPromptText("");
@@ -67,7 +64,6 @@ export function CreateAutopilotControllerModal({
       });
       onClose();
     } catch {
-      // Error is handled by store
     } finally {
       setSubmitting(false);
     }

@@ -3,9 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { getDemoFrames } from "./demoFrames";
 
-/**
- * Custom hook for managing kanban + terminal animation state
- */
 export function useKanbanAnimation() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [displayedLines, setDisplayedLines] = useState<number>(0);
@@ -13,7 +10,6 @@ export function useKanbanAnimation() {
   const frames = useMemo(() => getDemoFrames(), []);
   const currentFrame = frames[frameIndex];
 
-  // Cycle through frames
   useEffect(() => {
     const nextFrame = frames[frameIndex + 1];
     if (nextFrame) {
@@ -32,7 +28,6 @@ export function useKanbanAnimation() {
     }
   }, [frameIndex, frames, currentFrame.time]);
 
-  // Animate terminal lines appearing
   useEffect(() => {
     const maxLines = Math.max(
       ...currentFrame.terminals.map((t) => t.lines.length),

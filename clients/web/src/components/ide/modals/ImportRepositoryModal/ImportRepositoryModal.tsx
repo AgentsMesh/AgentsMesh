@@ -7,25 +7,12 @@ import { useImportWizard } from "./useImportWizard";
 import { SourceStep, BrowseStep, ManualStep, ConfirmStep } from "./steps";
 import type { ImportRepositoryModalProps } from "./types";
 
-/**
- * ImportRepositoryModal - Modal for importing repositories from git providers
- *
- * Uses conditional rendering to mount/unmount the inner content component,
- * which automatically resets state when the modal reopens.
- *
- * Refactored with step components following SRP:
- * - SourceStep: Select provider or manual entry
- * - BrowseStep: Browse and search repositories from provider
- * - ManualStep: Enter repository details manually
- * - ConfirmStep: Review and confirm import
- */
 export function ImportRepositoryModal({
   open,
   onClose,
   onImported,
   existingRepositories = [],
 }: ImportRepositoryModalProps) {
-  // Unmounting when closed automatically resets all state
   if (!open) return null;
 
   return (
@@ -37,11 +24,6 @@ export function ImportRepositoryModal({
   );
 }
 
-/**
- * Inner content component that contains the wizard logic.
- * Mounting this component triggers provider loading via useEffect.
- * Unmounting automatically resets all state.
- */
 function ImportRepositoryModalContent({
   onClose,
   onImported,
@@ -57,14 +39,9 @@ function ImportRepositoryModalContent({
     t,
   });
 
-  // Load providers on mount - this is acceptable because:
-  // 1. The component is freshly mounted (state is fresh)
-  // 2. We use a ref to ensure it only runs once
-  // 3. The async callback pattern avoids synchronous setState in effect body
   useEffect(() => {
     if (!loadStartedRef.current) {
       loadStartedRef.current = true;
-      // Using void to handle promise - setState happens asynchronously in the callback
       void actions.loadProviders();
     }
   }, [actions]);

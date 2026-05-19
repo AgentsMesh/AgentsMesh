@@ -9,25 +9,18 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-// Service defines the email service interface
 type Service interface {
-	// SendVerificationEmail sends an email verification link
 	SendVerificationEmail(ctx context.Context, to, token string) error
 
-	// SendPasswordResetEmail sends a password reset link
 	SendPasswordResetEmail(ctx context.Context, to, token string) error
 
-	// SendOrgInvitationEmail sends an organization invitation
 	SendOrgInvitationEmail(ctx context.Context, to, orgName, inviterName, token string) error
 }
 
-// RenewalReminderSender is an optional interface for sending renewal reminders
 type RenewalReminderSender interface {
-	// SendRenewalReminder sends a subscription renewal reminder email
 	SendRenewalReminder(ctx context.Context, to, orgName, planName string, expiryDate time.Time, daysRemaining int, orgSlug string) error
 }
 
-// Config holds email service configuration
 type Config struct {
 	Provider    string // "resend" or "console" (for development)
 	ResendKey   string
@@ -35,7 +28,6 @@ type Config struct {
 	BaseURL     string // Frontend base URL for links, e.g., "https://agentsmesh.dev"
 }
 
-// NewService creates a new email service based on configuration
 func NewService(cfg Config) Service {
 	if cfg.Provider == "console" || cfg.ResendKey == "" {
 		return &ConsoleService{
@@ -49,16 +41,12 @@ func NewService(cfg Config) Service {
 	}
 }
 
-// ResendService implements email sending via Resend
 type ResendService struct {
 	client      *resend.Client
 	fromAddress string
 	baseURL     string
 }
 
-// send 是所有 Resend 调用的唯一入口。集中在这里是为了可观测性：
-// SDK 任何失败都会带 kind/to/from 落日志——没有这层，"用户收不到激活邮件"
-// 的投诉在后端日志里没有任何痕迹（之前 4 个发送方法 return err 后丢日志）。
 func (s *ResendService) send(ctx context.Context, kind, to string, req *resend.SendEmailRequest) error {
 	resp, err := s.client.Emails.SendWithContext(ctx, req)
 	if err != nil {
@@ -71,7 +59,6 @@ func (s *ResendService) send(ctx context.Context, kind, to string, req *resend.S
 	return nil
 }
 
-// SendVerificationEmail sends email verification via Resend
 func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token string) error {
 	verifyURL := fmt.Sprintf("%s/verify-email/callback?token=%s", s.baseURL, token)
 
@@ -104,7 +91,6 @@ func (s *ResendService) SendVerificationEmail(ctx context.Context, to, token str
 	})
 }
 
-// SendPasswordResetEmail sends password reset email via Resend
 func (s *ResendService) SendPasswordResetEmail(ctx context.Context, to, token string) error {
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.baseURL, token)
 
@@ -137,7 +123,6 @@ func (s *ResendService) SendPasswordResetEmail(ctx context.Context, to, token st
 	})
 }
 
-// SendOrgInvitationEmail sends organization invitation via Resend
 func (s *ResendService) SendOrgInvitationEmail(ctx context.Context, to, orgName, inviterName, token string) error {
 	inviteURL := fmt.Sprintf("%s/invite/%s", s.baseURL, token)
 
@@ -170,7 +155,6 @@ func (s *ResendService) SendOrgInvitationEmail(ctx context.Context, to, orgName,
 	})
 }
 
-// SendRenewalReminder sends subscription renewal reminder via Resend
 func (s *ResendService) SendRenewalReminder(ctx context.Context, to, orgName, planName string, expiryDate time.Time, daysRemaining int, orgSlug string) error {
 	renewURL := fmt.Sprintf("%s/%s/settings?scope=organization&tab=billing", s.baseURL, orgSlug)
 	expiryDateStr := expiryDate.Format("2006-01-02")
@@ -178,13 +162,13 @@ func (s *ResendService) SendRenewalReminder(ctx context.Context, to, orgName, pl
 	var urgencyClass, urgencyText string
 	switch {
 	case daysRemaining <= 1:
-		urgencyClass = "color: #dc2626;" // red
+		urgencyClass = "color: #dc2626;"
 		urgencyText = "Your subscription expires tomorrow!"
 	case daysRemaining <= 3:
-		urgencyClass = "color: #ea580c;" // orange
+		urgencyClass = "color: #ea580c;"
 		urgencyText = fmt.Sprintf("Your subscription expires in %d days", daysRemaining)
 	default:
-		urgencyClass = "color: #ca8a04;" // yellow
+		urgencyClass = "color: #ca8a04;"
 		urgencyText = fmt.Sprintf("Your subscription expires in %d days", daysRemaining)
 	}
 
@@ -218,12 +202,10 @@ func (s *ResendService) SendRenewalReminder(ctx context.Context, to, orgName, pl
 	})
 }
 
-// ConsoleService implements email service for development (prints to console)
 type ConsoleService struct {
 	baseURL string
 }
 
-// SendVerificationEmail prints verification email to console
 func (s *ConsoleService) SendVerificationEmail(ctx context.Context, to, token string) error {
 	verifyURL := fmt.Sprintf("%s/verify-email/callback?token=%s", s.baseURL, token)
 	slog.Info("console email: verification",
@@ -231,7 +213,6 @@ func (s *ConsoleService) SendVerificationEmail(ctx context.Context, to, token st
 	return nil
 }
 
-// SendPasswordResetEmail prints password reset email to console
 func (s *ConsoleService) SendPasswordResetEmail(ctx context.Context, to, token string) error {
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.baseURL, token)
 	slog.Info("console email: password reset",
@@ -239,7 +220,6 @@ func (s *ConsoleService) SendPasswordResetEmail(ctx context.Context, to, token s
 	return nil
 }
 
-// SendOrgInvitationEmail prints organization invitation to console
 func (s *ConsoleService) SendOrgInvitationEmail(ctx context.Context, to, orgName, inviterName, token string) error {
 	inviteURL := fmt.Sprintf("%s/invite/%s", s.baseURL, token)
 	slog.Info("console email: organization invitation",
@@ -247,7 +227,6 @@ func (s *ConsoleService) SendOrgInvitationEmail(ctx context.Context, to, orgName
 	return nil
 }
 
-// SendRenewalReminder prints renewal reminder to console
 func (s *ConsoleService) SendRenewalReminder(ctx context.Context, to, orgName, planName string, expiryDate time.Time, daysRemaining int, orgSlug string) error {
 	renewURL := fmt.Sprintf("%s/%s/settings?scope=organization&tab=billing", s.baseURL, orgSlug)
 	slog.Info("console email: renewal reminder",

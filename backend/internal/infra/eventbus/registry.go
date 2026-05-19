@@ -4,25 +4,18 @@ import (
 	"sync"
 )
 
-// EventDefinition contains metadata about an event type
 type EventDefinition struct {
-	// Type is the event type identifier
 	Type EventType
-	// Category determines routing (entity=broadcast, notification=targeted)
 	Category EventCategory
-	// EntityType is the related entity type (pod, ticket, runner, channel, "")
 	EntityType string
-	// Description is a human-readable description
 	Description string
 }
 
-// EventRegistry manages event type definitions
 type EventRegistry struct {
 	definitions map[EventType]*EventDefinition
 	mu          sync.RWMutex
 }
 
-// NewEventRegistry creates a new event registry
 func NewEventRegistry() *EventRegistry {
 	r := &EventRegistry{
 		definitions: make(map[EventType]*EventDefinition),
@@ -31,32 +24,27 @@ func NewEventRegistry() *EventRegistry {
 	return r
 }
 
-// Register registers a new event type definition
 func (r *EventRegistry) Register(def *EventDefinition) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.definitions[def.Type] = def
 }
 
-// Get returns the definition for an event type
 func (r *EventRegistry) Get(eventType EventType) *EventDefinition {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.definitions[eventType]
 }
 
-// GetCategory returns the category for an event type
 func (r *EventRegistry) GetCategory(eventType EventType) EventCategory {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	if def, ok := r.definitions[eventType]; ok {
 		return def.Category
 	}
-	// Default to entity category if not registered
 	return CategoryEntity
 }
 
-// ListByCategory returns all event types in a category
 func (r *EventRegistry) ListByCategory(category EventCategory) []EventType {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -70,7 +58,6 @@ func (r *EventRegistry) ListByCategory(category EventCategory) []EventType {
 	return types
 }
 
-// ListAll returns all registered event types
 func (r *EventRegistry) ListAll() []EventType {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -82,9 +69,7 @@ func (r *EventRegistry) ListAll() []EventType {
 	return types
 }
 
-// registerBuiltinEvents registers all built-in event types
 func (r *EventRegistry) registerBuiltinEvents() {
-	// Pod events
 	r.definitions[EventPodCreated] = &EventDefinition{
 		Type:        EventPodCreated,
 		Category:    CategoryEntity,
@@ -116,7 +101,6 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		Description: "Perpetual pod is restarting",
 	}
 
-	// Ticket events
 	r.definitions[EventTicketCreated] = &EventDefinition{
 		Type:        EventTicketCreated,
 		Category:    CategoryEntity,
@@ -148,7 +132,6 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		Description: "Ticket has been deleted",
 	}
 
-	// Runner events
 	r.definitions[EventRunnerOnline] = &EventDefinition{
 		Type:        EventRunnerOnline,
 		Category:    CategoryEntity,
@@ -168,7 +151,6 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		Description: "Runner has been updated",
 	}
 
-	// System events
 	r.definitions[EventSystemMaintenance] = &EventDefinition{
 		Type:        EventSystemMaintenance,
 		Category:    CategorySystem,
@@ -176,7 +158,6 @@ func (r *EventRegistry) registerBuiltinEvents() {
 		Description: "System maintenance notification",
 	}
 
-	// AutopilotController events
 	r.definitions[EventAutopilotStatusChanged] = &EventDefinition{
 		Type:        EventAutopilotStatusChanged,
 		Category:    CategoryEntity,
@@ -209,5 +190,4 @@ func (r *EventRegistry) registerBuiltinEvents() {
 	}
 }
 
-// DefaultRegistry is the global default event registry
 var DefaultRegistry = NewEventRegistry()

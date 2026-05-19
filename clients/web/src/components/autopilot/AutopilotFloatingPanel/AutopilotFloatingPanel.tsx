@@ -11,14 +11,6 @@ import { ProgressTab } from "./ProgressTab";
 import { HistoryTab } from "./HistoryTab";
 import type { AutopilotFloatingPanelProps } from "./types";
 
-/**
- * AutopilotFloatingPanel - Displays autopilot status, thinking, and history
- *
- * Shows three tabs:
- * - Thinking: Current decision and reasoning
- * - Progress: Task completion status
- * - History: Past iterations
- */
 export function AutopilotFloatingPanel({
   autopilotController,
   className,
@@ -26,10 +18,8 @@ export function AutopilotFloatingPanel({
 }: AutopilotFloatingPanelProps) {
   const [activeTab, setActiveTab] = React.useState<"thinking" | "progress" | "history">("thinking");
 
-  // Reactive thinking selector — re-renders when this controller's thinking changes
   const thinking = useAutopilotThinking(autopilotController.autopilot_controller_key);
 
-  // Auto switch to thinking tab when help is needed
   React.useEffect(() => {
     if (thinking?.decision_type === "need_help") {
       setActiveTab("thinking");

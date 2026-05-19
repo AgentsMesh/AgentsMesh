@@ -18,7 +18,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 )
 
-// PodConnectHandler handles pod connection requests via Relay
 type PodConnectHandler struct {
 	podService     PodServiceForHandler
 	relayManager   *relay.Manager
@@ -29,7 +28,6 @@ type PodConnectHandler struct {
 	grantService   *grantservice.Service
 }
 
-// NewPodConnectHandler creates a new pod connect handler
 func NewPodConnectHandler(
 	podService PodServiceForHandler,
 	relayManager *relay.Manager,
@@ -64,8 +62,6 @@ func (h *PodConnectHandler) podResourceWithGrants(ctx context.Context, podKey st
 	return rc
 }
 
-// PodConnectResponse is the response for pod connect request
-// Note: SessionID has been removed - channels are now identified by PodKey only
 type PodConnectResponse struct {
 	RelayURL string `json:"relay_url"`
 	Token    string `json:"token"`
@@ -79,30 +75,20 @@ type PodConnectResponse struct {
 	LocalRelayNodeID string `json:"local_relay_node_id,omitempty"` // Runner's node_id; renderer skips probe when this != its own host node_id.
 }
 
-// GetPodConnection returns Relay connection info for a pod
-// GET /api/v1/orgs/:slug/pods/:key/relay/connect
-//
-// The channel is identified by PodKey (not session ID):
-// - Multiple browsers can subscribe to the same pod's channel
-// - Runner maintains a single connection per pod
-// - No new session ID is generated per request
 func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 	podKey := c.Param("key")
 
-	// Check if relay is available
 	if h.relayManager == nil || !h.relayManager.HasHealthyRelays() {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay service is not available")
 		return
 	}
 
-	// Get pod info
 	pod, err := h.podService.GetPod(c.Request.Context(), podKey)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Pod not found")
 		return
 	}
 
-	// Check organization access
 	tenant := middleware.GetTenant(c)
 	if tenant == nil {
 		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Unauthorized")
@@ -116,20 +102,17 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 		return
 	}
 
-	// Check pod is active
 	if !pod.IsActive() {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Pod is not active")
 		return
 	}
 
-	// Get user ID
 	userID := middleware.GetUserID(c)
 	if userID == 0 {
 		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "User not found")
 		return
 	}
 
-	// Select relay for this pod using geo-aware + org-affinity based selection
 	opts := relay.GeoSelectOptions{OrgSlug: tenant.OrganizationSlug}
 	if h.geoResolver != nil {
 		if loc := h.geoResolver.Resolve(c.ClientIP()); loc != nil {
@@ -148,8 +131,6 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 	// Runner handles idempotency - if already connected to same relay, it just updates the token
 	var localRelayURL, localToken, localRelayNodeID string
 	if h.commandSender != nil && pod.RunnerID > 0 {
-		// Generate runner token for authentication
-		// userID=0 indicates this is a runner token (not a browser token)
 		runnerToken, err := h.tokenGenerator.GenerateToken(
 			podKey,
 			pod.RunnerID,
@@ -192,7 +173,6 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 			true, // include snapshot
 			1000, // snapshot history lines
 		); err != nil {
-			// Log but don't fail - runner might connect later
 			slog.WarnContext(c.Request.Context(), "Failed to send subscribe pod command to runner",
 				"pod_key", podKey,
 				"runner_id", pod.RunnerID,
@@ -200,7 +180,6 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 		}
 	}
 
-	// Generate token for browser
 	runnerID := pod.RunnerID
 
 	token, err := h.tokenGenerator.GenerateToken(
@@ -225,7 +204,6 @@ func (h *PodConnectHandler) GetPodConnection(c *gin.Context) {
 	})
 }
 
-// RegisterPodConnectRoutes registers pod connect routes
 func RegisterPodConnectRoutes(
 	router *gin.RouterGroup,
 	podService PodServiceForHandler,

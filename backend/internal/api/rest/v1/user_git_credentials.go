@@ -12,21 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserGitCredentialHandler handles user Git credential requests
 type UserGitCredentialHandler struct {
 	userService *user.Service
 }
 
-// NewUserGitCredentialHandler creates a new user Git credential handler
 func NewUserGitCredentialHandler(userSvc *user.Service) *UserGitCredentialHandler {
 	return &UserGitCredentialHandler{
 		userService: userSvc,
 	}
 }
 
-// RegisterRoutes registers user Git credential routes
-// Note: rg is already prefixed with /users, so we use /git-credentials
-// Final path: /api/v1/users/git-credentials
 func (h *UserGitCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	credentials := rg.Group("/git-credentials")
 	{
@@ -41,13 +36,10 @@ func (h *UserGitCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// toGitCredentialResponse converts domain model to API response
 func toGitCredentialResponse(c *domainUser.GitCredential) *domainUser.GitCredentialResponse {
 	return c.ToResponse()
 }
 
-// ListCredentials lists all Git credentials for the current user
-// GET /api/v1/user/git-credentials
 func (h *UserGitCredentialHandler) ListCredentials(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -57,15 +49,12 @@ func (h *UserGitCredentialHandler) ListCredentials(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	responses := make([]*domainUser.GitCredentialResponse, len(credentials))
 	for i, cred := range credentials {
 		responses[i] = toGitCredentialResponse(cred)
 	}
 
-	// Prepend virtual "Runner Local" option
 	runnerLocal := domainUser.RunnerLocalCredentialResponse()
-	// Check if runner_local is the default (no default credential set)
 	defaultCred, _ := h.userService.GetDefaultGitCredential(c.Request.Context(), userID)
 	if defaultCred == nil {
 		runnerLocal.IsDefault = true
@@ -77,7 +66,6 @@ func (h *UserGitCredentialHandler) ListCredentials(c *gin.Context) {
 	})
 }
 
-// CreateCredentialRequest represents a request to create a Git credential
 type CreateCredentialRequest struct {
 	Name                 string `json:"name" binding:"required"`
 	CredentialType       string `json:"credential_type" binding:"required"`
@@ -87,8 +75,6 @@ type CreateCredentialRequest struct {
 	HostPattern          string `json:"host_pattern"`
 }
 
-// CreateCredential creates a new Git credential
-// POST /api/v1/user/git-credentials
 func (h *UserGitCredentialHandler) CreateCredential(c *gin.Context) {
 	var req CreateCredentialRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -127,8 +113,6 @@ func (h *UserGitCredentialHandler) CreateCredential(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"credential": toGitCredentialResponse(credential)})
 }
 
-// GetCredential returns a single Git credential
-// GET /api/v1/user/git-credentials/:id
 func (h *UserGitCredentialHandler) GetCredential(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -151,7 +135,6 @@ func (h *UserGitCredentialHandler) GetCredential(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"credential": toGitCredentialResponse(credential)})
 }
 
-// UpdateCredentialRequest represents a request to update a Git credential
 type UpdateCredentialRequest struct {
 	Name        *string `json:"name"`
 	PAT         *string `json:"pat"`
@@ -159,8 +142,6 @@ type UpdateCredentialRequest struct {
 	HostPattern *string `json:"host_pattern"`
 }
 
-// UpdateCredential updates a Git credential
-// PUT /api/v1/user/git-credentials/:id
 func (h *UserGitCredentialHandler) UpdateCredential(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -199,8 +180,6 @@ func (h *UserGitCredentialHandler) UpdateCredential(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"credential": toGitCredentialResponse(credential)})
 }
 
-// DeleteCredential deletes a Git credential
-// DELETE /api/v1/user/git-credentials/:id
 func (h *UserGitCredentialHandler) DeleteCredential(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

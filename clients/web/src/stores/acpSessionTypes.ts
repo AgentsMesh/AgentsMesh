@@ -107,8 +107,6 @@ function permReqToWasmObj(req: AcpPermissionRequest): Record<string, any> {
   };
 }
 
-/** Inverse of sessionFromWasm — converts JS-shape session back to the wasm
- *  object the AcpManager understands. Test-only helper for seeding state. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function wasmFromSession(s: AcpSessionState): Record<string, any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

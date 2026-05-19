@@ -5,9 +5,6 @@ import { Input } from "@/components/ui/input";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import type { StepProps } from "../types";
 
-/**
- * Step 2: Browse Repositories - Search and select from provider
- */
 export function BrowseStep({ state, actions, existingRepositories = [], t }: StepProps) {
   const { selectedProvider, repositories, search, page, loadingRepos } = state;
 

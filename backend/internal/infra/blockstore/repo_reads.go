@@ -49,9 +49,6 @@ func (r *Repository) ListBlocks(ctx context.Context, f blockstore.BlockFilter) (
 	return out, total, nil
 }
 
-// ListChildren returns blocks that are directly referenced from parentID via
-// the given rel, ordered by order_key (nulls last). The parallel slice of
-// refs preserves the edges for callers that need anchor / order_key metadata.
 func (r *Repository) ListChildren(ctx context.Context, parentID uuid.UUID, rel string) ([]*blockstore.Block, []*blockstore.BlockRef, error) {
 	var refs []*blockstore.BlockRef
 	err := r.db.WithContext(ctx).
@@ -87,14 +84,6 @@ func (r *Repository) ListChildren(ctx context.Context, parentID uuid.UUID, rel s
 	return orderedBlocks, refs, nil
 }
 
-// ListBacklinks returns refs whose to_id equals targetID, filtered by:
-//   - default: exclude refs originating from a soft-deleted block (prevents
-//     "dangling" backlinks from tombstoned content)
-//   - excludeNest: also drop rel='nest' edges (parent-of refs are usually
-//     noise in a mention/backlink UI)
-//
-// A future `includeDeleted` flag can re-enable tombstones for audit / time-
-// travel use cases without breaking the default call sites.
 func (r *Repository) ListBacklinks(ctx context.Context, targetID uuid.UUID, excludeNest bool) ([]*blockstore.BlockRef, error) {
 	q := r.db.WithContext(ctx).
 		Table("block_refs AS r").
@@ -149,11 +138,6 @@ func (r *Repository) StreamOps(ctx context.Context, f blockstore.OpStreamFilter)
 	return ops, nil
 }
 
-// GetTypeDefByKey returns the freshest block_type_def whose data.type_key
-// equals typeKey, or (nil, nil) when none is registered. Postgres uses a
-// JSONB expression so the DB can index the lookup; SQLite tests fall back to
-// a LIKE probe — correct but O(N) in test workspaces, which is irrelevant
-// since the set is tiny there.
 func (r *Repository) GetTypeDefByKey(
 	ctx context.Context,
 	workspaceID uuid.UUID,
@@ -169,8 +153,6 @@ func (r *Repository) GetTypeDefByKey(
 	if r.db.Name() == "postgres" {
 		q = q.Where("data->>'type_key' = ?", typeKey)
 	} else {
-		// SQLite fallback: data is stored as TEXT JSON; match the key literal.
-		// This is a correctness-only path — perf doesn't matter in tests.
 		q = q.Where("data LIKE ?", `%"type_key":"`+typeKey+`"%`)
 	}
 

@@ -6,7 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// Category constants
 const (
 	CategoryBug            = "bug"
 	CategoryFeatureRequest = "feature_request"
@@ -15,7 +14,6 @@ const (
 	CategoryOther          = "other"
 )
 
-// Status constants
 const (
 	StatusOpen       = "open"
 	StatusInProgress = "in_progress"
@@ -23,14 +21,12 @@ const (
 	StatusClosed     = "closed"
 )
 
-// Priority constants
 const (
 	PriorityLow    = "low"
 	PriorityMedium = "medium"
 	PriorityHigh   = "high"
 )
 
-// ValidCategories is the set of allowed categories
 var ValidCategories = map[string]bool{
 	CategoryBug:            true,
 	CategoryFeatureRequest: true,
@@ -39,7 +35,6 @@ var ValidCategories = map[string]bool{
 	CategoryOther:          true,
 }
 
-// ValidStatuses is the set of allowed statuses
 var ValidStatuses = map[string]bool{
 	StatusOpen:       true,
 	StatusInProgress: true,
@@ -47,7 +42,6 @@ var ValidStatuses = map[string]bool{
 	StatusClosed:     true,
 }
 
-// ValidTransitions defines allowed status transitions
 var ValidTransitions = map[string]map[string]bool{
 	StatusOpen:       {StatusInProgress: true, StatusResolved: true, StatusClosed: true},
 	StatusInProgress: {StatusOpen: true, StatusResolved: true, StatusClosed: true},
@@ -55,14 +49,12 @@ var ValidTransitions = map[string]map[string]bool{
 	StatusClosed:     {StatusOpen: true},
 }
 
-// ValidPriorities is the set of allowed priorities
 var ValidPriorities = map[string]bool{
 	PriorityLow:    true,
 	PriorityMedium: true,
 	PriorityHigh:   true,
 }
 
-// SupportTicket represents a user support ticket
 type SupportTicket struct {
 	ID              int64      `gorm:"primaryKey" json:"id"`
 	UserID          int64      `gorm:"not null;index" json:"user_id"`
@@ -75,7 +67,6 @@ type SupportTicket struct {
 	UpdatedAt       time.Time  `gorm:"not null;default:now()" json:"updated_at"`
 	ResolvedAt      *time.Time `json:"resolved_at,omitempty"`
 
-	// Associations (for eager loading)
 	User          *user.User             `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	AssignedAdmin *user.User             `gorm:"foreignKey:AssignedAdminID" json:"assigned_admin,omitempty"`
 	Messages      []SupportTicketMessage `gorm:"foreignKey:TicketID" json:"messages,omitempty"`
@@ -85,7 +76,6 @@ func (SupportTicket) TableName() string {
 	return "support_tickets"
 }
 
-// SupportTicketMessage represents a message in a support ticket conversation
 type SupportTicketMessage struct {
 	ID           int64     `gorm:"primaryKey" json:"id"`
 	TicketID     int64     `gorm:"not null;index" json:"ticket_id"`
@@ -94,7 +84,6 @@ type SupportTicketMessage struct {
 	IsAdminReply bool      `gorm:"not null;default:false" json:"is_admin_reply"`
 	CreatedAt    time.Time `gorm:"not null;default:now()" json:"created_at"`
 
-	// Associations
 	User        *user.User                  `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Attachments []SupportTicketAttachment    `gorm:"foreignKey:MessageID" json:"attachments,omitempty"`
 }
@@ -103,7 +92,6 @@ func (SupportTicketMessage) TableName() string {
 	return "support_ticket_messages"
 }
 
-// SupportTicketAttachment represents a file attached to a support ticket
 type SupportTicketAttachment struct {
 	ID           int64     `gorm:"primaryKey" json:"id"`
 	TicketID     int64     `gorm:"not null;index" json:"ticket_id"`

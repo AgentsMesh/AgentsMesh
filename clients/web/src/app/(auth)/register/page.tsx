@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthStore } from "@/stores/auth";
-import { getAuthApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import { ApiError } from "@/lib/api/api-types";
+import { lightRegister } from "@/lib/light-auth";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 import { useTranslations } from "next-intl";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { OAuthButtons } from "../login/OAuthButtons";
@@ -16,7 +16,8 @@ import { Divider } from "../login/Divider";
 export default function RegisterPage() {
   const router = useRouter();
   const t = useTranslations();
-  const { setAuth } = useAuthStore();
+  useRedirectIfAuthenticated();
+
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -33,37 +34,30 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await initWasmCore();
-    setLoading(true);
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
       setError(t("auth.registerPage.passwordsNotMatch"));
-      setLoading(false);
       return;
     }
     if (formData.password.length < 8) {
       setError(t("auth.registerPage.passwordTooShort"));
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
     try {
-      const response = JSON.parse(await getAuthApiService().register(JSON.stringify({
+      await lightRegister({
         email: formData.email,
         username: formData.username,
         password: formData.password,
         name: formData.name,
-      })));
-      await setAuth(response.token, response.user, response.refresh_token);
+      });
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "data" in err) {
-        const apiErr = err as { data?: { error?: string } };
-        setError(apiErr.data?.error || t("auth.registerPage.registrationFailed"));
-      } else {
-        setError(t("auth.registerPage.registrationFailed"));
-      }
+      setError(err instanceof ApiError && err.serverMessage
+        ? err.serverMessage
+        : t("auth.registerPage.registrationFailed"));
     } finally {
       setLoading(false);
     }

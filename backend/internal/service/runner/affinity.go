@@ -7,10 +7,6 @@ import (
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// ScoreRunners ranks candidate runners by weighted affinity.
-// Candidates must be pre-filtered (online, has capacity, supports agent, visibility ok).
-// Returns candidates sorted by score descending (best first).
-// If hints is nil, falls back to simple least-pods ordering.
 func ScoreRunners(
 	candidates []*ActiveRunner,
 	userID int64,

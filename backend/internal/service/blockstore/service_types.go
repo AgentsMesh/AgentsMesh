@@ -12,31 +12,20 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/otel"
 )
 
-// Service is the Block Store facade. It accepts semantic ops, validates them
-// against block-type specs, applies them atomically inside a workspace-scoped
-// advisory-locked transaction, and emits one BlockOp row per primitive change.
 type Service struct {
 	repo      blockstore.Repository
 	publisher *blockstoreinfra.OpPublisher
 	embedder  EmbeddingProvider
 	logger    *slog.Logger
 
-	// Embedding pipeline: writes land in a buffered channel and one worker
-	// drains it. Non-blocking: if the queue is full the op is dropped with a
-	// warning — embeddings are an auxiliary index and stale-for-a-few-seconds
-	// is acceptable under load.
-	//
-	// closed is flipped atomically to 1 by Close() so late-arriving
-	// enqueueEmbeddings calls short-circuit instead of silently leaking into
-	// embedInflight (no worker will ever Done() them post-Close).
+	// Embeddings drain non-blocking; queue-full drops are tolerated (auxiliary index).
+	// embedClosed gates late enqueues so they don't leak into embedInflight after Close.
 	embedQueue    chan embedJob
 	embedWG       sync.WaitGroup
 	embedInflight sync.WaitGroup
 	embedCancel   context.CancelFunc
 	embedClosed   atomic.Bool
 
-	// warnDefaultEmbedderOnce guards the startup warning emitted when the
-	// service is still on HashEmbedder at first traffic. See WarnIfDefaultEmbedder.
 	warnDefaultEmbedderOnce sync.Once
 }
 
@@ -58,8 +47,6 @@ func NewService(repo blockstore.Repository, logger *slog.Logger) *Service {
 	return s
 }
 
-// startEmbedWorker launches the background drain loop. Kept unexported — the
-// worker lifecycle is bound to the Service; callers shut it down via Close.
 func (s *Service) startEmbedWorker() {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.embedCancel = cancel
@@ -87,8 +74,6 @@ func (s *Service) startEmbedWorker() {
 	}()
 }
 
-// Close drains any in-flight embedding work and stops the worker. Called by
-// main.go on graceful shutdown. Safe to call more than once.
 func (s *Service) Close() {
 	if !s.embedClosed.CompareAndSwap(false, true) {
 		return
@@ -99,10 +84,6 @@ func (s *Service) Close() {
 	s.embedWG.Wait()
 }
 
-// enqueueEmbeddings hands a finished op batch to the background worker. Drops
-// the job non-blockingly if the queue is saturated so ApplyOps never stalls.
-// After Close() it is a no-op — without this guard, Add(1) on a stopped
-// worker would leak an inflight count that FlushEmbeddings can never drain.
 func (s *Service) enqueueEmbeddings(ops []*blockstore.BlockOp) {
 	if s.embedder == nil || len(ops) == 0 || s.embedClosed.Load() {
 		return
@@ -118,33 +99,18 @@ func (s *Service) enqueueEmbeddings(ops []*blockstore.BlockOp) {
 	}
 }
 
-// FlushEmbeddings blocks until every enqueued embed job has finished. Used by
-// integration tests that call ApplyOps then immediately SemanticSearch; not
-// intended for production code paths.
 func (s *Service) FlushEmbeddings() {
 	s.embedInflight.Wait()
 }
 
-// SetPublisher wires the EventBus publisher. Called by main.go after the bus
-// is constructed. Passing nil disables external op broadcasting but keeps all
-// writes working.
 func (s *Service) SetPublisher(p *blockstoreinfra.OpPublisher) {
 	s.publisher = p
 }
 
-// SetEmbedder swaps the default HashEmbedder for a production embedding
-// provider (e.g. OpenAI, Voyage). Passing nil disables auto-embedding.
 func (s *Service) SetEmbedder(e EmbeddingProvider) {
 	s.embedder = e
 }
 
-// WarnIfDefaultEmbedder emits a one-shot warning when the service is still
-// using the bootstrap HashEmbedder (which produces low-quality vectors and
-// should never be the final choice in production). Callers invoke this
-// after all wiring is complete (end of server startup). Silent by design
-// if SetEmbedder has already installed a real provider. The warning surface
-// is explicit so operators don't quietly run semantic search on bag-of-words
-// vectors and wonder why results look random.
 func (s *Service) WarnIfDefaultEmbedder() {
 	s.warnDefaultEmbedderOnce.Do(func() {
 		if s.embedder == nil {

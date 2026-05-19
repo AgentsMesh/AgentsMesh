@@ -20,31 +20,13 @@ pub enum BootstrapResult {
     },
 }
 
-/// First disqualifying check encountered during `bootstrap()`. The
-/// protocol short-circuits at the first failure (legacy purge → schema
-/// validity → base_url match → token freshness → identity 401), so this
-/// enum carries one *primary* reason — never a composite. UI / telemetry
-/// should treat the variants as mutually exclusive labels for the step
-/// where bootstrap decided to drop local state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BootstrapCleanupReason {
-    /// Stored `base_url` doesn't match the manager's current `base_url`.
-    /// Happens after a server switch when an old namespaced blob survives.
     BaseUrlMismatch,
-    /// Access token expired (or about to within `REFRESH_LEAD_SECS`) and
-    /// the refresh attempt against `/auth/refresh` itself failed (network,
-    /// 401 from server, malformed response).
     TokenExpiredAndRefreshFailed,
-    /// `/users/me` or `/users/me/organizations` returned 401 even though
-    /// the local token wasn't yet expired — server has revoked it.
     UnauthorizedFromIdentityCall,
-    /// `serde_json::from_str::<PersistedSession>` failed — disk blob was
-    /// truncated, hand-edited, or written by an incompatible schema.
     StorageCorrupt,
-    /// One-shot migration: legacy global `agentsmesh-auth` key existed
-    /// alongside (or instead of) the new namespaced key. Always purged
-    /// on first bootstrap of a v0.32+ build.
     LegacyDataPurged,
 }
 
@@ -103,8 +85,6 @@ impl AuthManager {
                 return self.cleanup(BootstrapCleanupReason::UnauthorizedFromIdentityCall);
             }
             Err(e) => {
-                // Transient error (network, 5xx) — keep session, present anonymous
-                // for now so caller can retry; storage is not wiped.
                 tracing::warn!("auth bootstrap: identity transient failure: {e}");
                 return BootstrapResult::Anonymous;
             }
@@ -113,15 +93,9 @@ impl AuthManager {
         let orgs = match self.fetch_organizations().await {
             Ok(o) => o,
             Err(AuthError::Server { status: 401, .. }) | Err(AuthError::NotAuthenticated) => {
-                // Token rejected mid-bootstrap (server revoked between
-                // /users/me and /users/me/organizations). Same cleanup
-                // semantics as the identity-call 401 path.
                 return self.cleanup(BootstrapCleanupReason::UnauthorizedFromIdentityCall);
             }
             Err(e) => {
-                // Transient (5xx, network) — we already have user, so the
-                // dashboard can render with empty orgs and let the user
-                // retry. Don't wipe the session.
                 tracing::warn!("auth bootstrap: orgs transient failure: {e}");
                 Vec::new()
             }

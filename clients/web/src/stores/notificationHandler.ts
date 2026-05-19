@@ -1,10 +1,6 @@
 import { toast } from "sonner";
 import type { RealtimeEvent, NotificationPayloadData } from "@/lib/realtime";
 
-/**
- * When both toast and browser channels are enabled, shows toast when tab is visible
- * and browser notification when tab is hidden — avoids duplicate notifications.
- */
 export function handleNotificationEvent(
   event: RealtimeEvent,
   opts: {

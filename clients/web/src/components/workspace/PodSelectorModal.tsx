@@ -12,8 +12,6 @@ interface PodSelectorModalProps {
 }
 
 export function PodSelectorModal({ openPodKeys, onSelect, onClose }: PodSelectorModalProps) {
-  // Subscribe to raw pods array — filter in useMemo to avoid creating
-  // a new array reference inside the selector (causes infinite re-render loop).
   const allPods = usePods();
   const pods = useMemo(
     () => allPods.filter(

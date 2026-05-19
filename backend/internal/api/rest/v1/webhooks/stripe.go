@@ -12,26 +12,18 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// StripeWebhookHandler handles Stripe webhook events
 type StripeWebhookHandler struct {
 	provider       payment.Provider
 	billingService BillingServiceInterface
 }
 
-// BillingServiceInterface defines the interface for billing service operations
-// needed by the webhook handler
 type BillingServiceInterface interface {
-	// HandlePaymentSucceeded handles a successful payment
 	HandlePaymentSucceeded(ctx *gin.Context, event *payment.WebhookEvent) error
-	// HandlePaymentFailed handles a failed payment
 	HandlePaymentFailed(ctx *gin.Context, event *payment.WebhookEvent) error
-	// HandleSubscriptionCanceled handles subscription cancellation
 	HandleSubscriptionCanceled(ctx *gin.Context, event *payment.WebhookEvent) error
-	// HandleSubscriptionUpdated handles subscription updates
 	HandleSubscriptionUpdated(ctx *gin.Context, event *payment.WebhookEvent) error
 }
 
-// NewStripeWebhookHandler creates a new Stripe webhook handler
 func NewStripeWebhookHandler(provider payment.Provider, billingSvc BillingServiceInterface) *StripeWebhookHandler {
 	return &StripeWebhookHandler{
 		provider:       provider,
@@ -39,9 +31,7 @@ func NewStripeWebhookHandler(provider payment.Provider, billingSvc BillingServic
 	}
 }
 
-// Handle processes incoming Stripe webhooks
 func (h *StripeWebhookHandler) Handle(c *gin.Context) {
-	// Read the request body
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		slog.ErrorContext(c.Request.Context(), "Failed to read webhook body", "error", err)
@@ -49,7 +39,6 @@ func (h *StripeWebhookHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// Get the Stripe signature header
 	signature := c.GetHeader("Stripe-Signature")
 	if signature == "" {
 		slog.WarnContext(c.Request.Context(), "Missing Stripe-Signature header")
@@ -57,7 +46,6 @@ func (h *StripeWebhookHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the webhook
 	event, err := h.provider.HandleWebhook(c.Request.Context(), payload, signature)
 	if err != nil {
 		slog.ErrorContext(c.Request.Context(), "Failed to validate webhook", "error", err)
@@ -70,7 +58,6 @@ func (h *StripeWebhookHandler) Handle(c *gin.Context) {
 		"event_type", event.EventType,
 	)
 
-	// Process the event based on type
 	switch event.EventType {
 	case billing.WebhookEventCheckoutCompleted:
 		if err := h.handleCheckoutCompleted(c, event); err != nil {
@@ -128,11 +115,9 @@ func (h *StripeWebhookHandler) Handle(c *gin.Context) {
 		)
 	}
 
-	// Acknowledge receipt
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
-// handleCheckoutCompleted processes checkout.session.completed events
 func (h *StripeWebhookHandler) handleCheckoutCompleted(c *gin.Context, event *payment.WebhookEvent) error {
 	slog.InfoContext(c.Request.Context(), "Processing checkout.session.completed",
 		"order_no", event.OrderNo,
@@ -146,7 +131,6 @@ func (h *StripeWebhookHandler) handleCheckoutCompleted(c *gin.Context, event *pa
 	return h.billingService.HandlePaymentSucceeded(c, event)
 }
 
-// handleInvoicePaid processes invoice.paid events (for recurring payments)
 func (h *StripeWebhookHandler) handleInvoicePaid(c *gin.Context, event *payment.WebhookEvent) error {
 	slog.InfoContext(c.Request.Context(), "Processing invoice.paid",
 		"external_order_no", event.ExternalOrderNo,
@@ -158,7 +142,6 @@ func (h *StripeWebhookHandler) handleInvoicePaid(c *gin.Context, event *payment.
 	return h.billingService.HandlePaymentSucceeded(c, event)
 }
 
-// handleInvoicePaymentFailed processes invoice.payment_failed events
 func (h *StripeWebhookHandler) handleInvoicePaymentFailed(c *gin.Context, event *payment.WebhookEvent) error {
 	slog.WarnContext(c.Request.Context(), "Processing invoice.payment_failed",
 		"external_order_no", event.ExternalOrderNo,
@@ -170,7 +153,6 @@ func (h *StripeWebhookHandler) handleInvoicePaymentFailed(c *gin.Context, event 
 	return h.billingService.HandlePaymentFailed(c, event)
 }
 
-// handleSubscriptionDeleted processes customer.subscription.deleted events
 func (h *StripeWebhookHandler) handleSubscriptionDeleted(c *gin.Context, event *payment.WebhookEvent) error {
 	slog.InfoContext(c.Request.Context(), "Processing customer.subscription.deleted",
 		"subscription_id", event.SubscriptionID,
@@ -181,7 +163,6 @@ func (h *StripeWebhookHandler) handleSubscriptionDeleted(c *gin.Context, event *
 	return h.billingService.HandleSubscriptionCanceled(c, event)
 }
 
-// handleSubscriptionUpdated processes customer.subscription.updated events
 func (h *StripeWebhookHandler) handleSubscriptionUpdated(c *gin.Context, event *payment.WebhookEvent) error {
 	slog.InfoContext(c.Request.Context(), "Processing customer.subscription.updated",
 		"subscription_id", event.SubscriptionID,

@@ -11,17 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// APIKeyHandler handles API key management endpoints
 type APIKeyHandler struct {
 	apiKeyService apikey.Interface
 }
 
-// NewAPIKeyHandler creates a new API key handler
 func NewAPIKeyHandler(apiKeyService apikey.Interface) *APIKeyHandler {
 	return &APIKeyHandler{apiKeyService: apiKeyService}
 }
 
-// CreateAPIKey creates a new API key for the organization
 func (h *APIKeyHandler) CreateAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -56,7 +53,6 @@ func (h *APIKeyHandler) CreateAPIKey(c *gin.Context) {
 	})
 }
 
-// ListAPIKeys lists all API keys for the organization
 func (h *APIKeyHandler) ListAPIKeys(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -79,7 +75,6 @@ func (h *APIKeyHandler) ListAPIKeys(c *gin.Context) {
 	})
 }
 
-// GetAPIKey retrieves a single API key
 func (h *APIKeyHandler) GetAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -98,7 +93,6 @@ func (h *APIKeyHandler) GetAPIKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"api_key": key})
 }
 
-// UpdateAPIKey updates an API key's metadata
 func (h *APIKeyHandler) UpdateAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -123,7 +117,6 @@ func (h *APIKeyHandler) UpdateAPIKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"api_key": key})
 }
 
-// DeleteAPIKey permanently deletes an API key
 func (h *APIKeyHandler) DeleteAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -141,7 +134,6 @@ func (h *APIKeyHandler) DeleteAPIKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "API key deleted"})
 }
 
-// RevokeAPIKey disables an API key
 func (h *APIKeyHandler) RevokeAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -159,7 +151,6 @@ func (h *APIKeyHandler) RevokeAPIKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "API key revoked"})
 }
 
-// handleAPIKeyServiceError maps service errors to HTTP responses using errors.Is()
 func handleAPIKeyServiceError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, apikey.ErrAPIKeyNotFound):

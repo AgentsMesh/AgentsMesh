@@ -22,7 +22,6 @@ const SAVE_DEBOUNCE_MS = 300;
 // Block Store block. data.blocknote_ast holds the BlockNote JSON tree; the
 // top-level Block.text is maintained as a flattened plain string so search
 // and semantic embeddings see the document contents.
-//
 // Architectural note: this is exactly the split from the Plan — Block Store
 // manages structure between document units (nest / mention / ref), and
 // BlockNote handles inline formatting + slash commands inside one unit.
@@ -125,6 +124,4 @@ function flattenBlockNoteAST(ast: unknown): string {
   return out.join("").trim();
 }
 
-// Re-export so type-checkers still see the constant when this file is the
-// only surface touching it.
 export { BLOCK_TYPE_DOCUMENT };

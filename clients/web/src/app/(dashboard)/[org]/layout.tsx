@@ -33,7 +33,6 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
         void setCurrentOrg(targetOrg);
       }
     } else if (organizations.length > 0) {
-      // Organization not found, redirect to first available org
       console.warn(`Organization "${orgSlug}" not found, redirecting...`);
       router.replace(getDefaultRoute(organizations[0].slug));
     }
@@ -44,7 +43,6 @@ export default function OrgLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  // If org from URL doesn't match any known org and we have orgs, show loading
   const orgExists = organizations.some((org) => org.slug === orgSlug);
   if (!orgExists && organizations.length > 0) {
     return (

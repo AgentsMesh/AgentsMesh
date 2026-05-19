@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl";
 import { getNotificationService } from "@/lib/wasm-core";
 import type { NotificationPreference } from "@/lib/api";
 
-// Available notification sources with i18n keys
 const NOTIFICATION_SOURCES = [
   { source: "channel:message", labelKey: "settings.notifications.channelMessage", descKey: "settings.notifications.channelMessageDesc" },
   { source: "channel:mention", labelKey: "settings.notifications.channelMention", descKey: "settings.notifications.channelMentionDesc" },
@@ -16,7 +15,6 @@ const NOTIFICATION_SOURCES = [
   { source: "task:completed", labelKey: "settings.notifications.taskCompleted", descKey: "settings.notifications.taskCompletedDesc" },
 ] as const;
 
-// Channel label mapping for known delivery channels
 const CHANNEL_LABELS: Record<string, string> = {
   toast: "Toast",
   browser: "Browser",
@@ -24,9 +22,6 @@ const CHANNEL_LABELS: Record<string, string> = {
   email: "Email",
 };
 
-/**
- * Server-synced notification preferences: mute / channels per source.
- */
 export function ServerNotificationPreferences() {
   const t = useTranslations();
   const [prefs, setPrefs] = useState<NotificationPreference[]>([]);
@@ -37,7 +32,6 @@ export function ServerNotificationPreferences() {
       const res = JSON.parse(await getNotificationService().get_preferences());
       setPrefs(res.preferences || []);
     } catch {
-      // Silently fail - user might not have org context yet
     } finally {
       setLoading(false);
     }

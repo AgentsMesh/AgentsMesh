@@ -41,7 +41,6 @@ export function ServiceWorkerRegistration({
         .getRegistrations()
         .then((regs) => regs.forEach((r) => r.unregister()))
         .catch(() => undefined);
-      // Also drop caches so offline shell doesn't resurface.
       if ("caches" in window) {
         caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => undefined);
       }
@@ -57,7 +56,6 @@ export function ServiceWorkerRegistration({
         setRegistration(reg);
         onRegistered?.(reg);
 
-        // Check for updates
         reg.addEventListener("updatefound", () => {
           const newWorker = reg.installing;
           if (!newWorker) return;
@@ -78,9 +76,7 @@ export function ServiceWorkerRegistration({
           });
         });
 
-        // Handle controller change (when skipWaiting is called)
         navigator.serviceWorker.addEventListener("controllerchange", () => {
-          // Optionally reload the page
         });
 
         console.log("[PWA] Service Worker registered successfully");
@@ -91,9 +87,7 @@ export function ServiceWorkerRegistration({
 
     registerSW();
 
-    // Cleanup
     return () => {
-      // No cleanup needed for service worker
     };
   }, [onRegistered, onUpdateAvailable, handleUpdate]);
 
@@ -111,11 +105,9 @@ export function ServiceWorkerRegistration({
   return null;
 }
 
-// Hook to get service worker registration
 export function useServiceWorker() {
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
-  // Derive isSupported from environment - no state needed
   const isSupported = typeof window !== "undefined" && "serviceWorker" in navigator;
 
   useEffect(() => {

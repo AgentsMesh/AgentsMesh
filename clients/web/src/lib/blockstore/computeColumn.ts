@@ -1,15 +1,5 @@
 import type { JSONMap } from "@/lib/api/blockstoreTypes";
 
-// Minimal, safe expression evaluator for computed columns. Supports:
-//   - numeric literals (integers / decimals)
-//   - column references via {column_key}
-//   - arithmetic: + - * / with precedence + parentheses
-//   - unary minus
-//
-// Does NOT support function calls, string ops, comparisons, or variable
-// bindings — keep the surface small so it can't grow into an eval() hole.
-// Invalid expressions return `null` (renderer shows "—").
-
 export function computeColumn(expr: string, data: JSONMap): number | null {
   try {
     const tokens = tokenize(expr);
@@ -72,7 +62,6 @@ class Parser {
     return this.tokens[this.pos];
   }
 
-  // expr := term (("+" | "-") term)*
   parseExpression(): number {
     let value = this.parseTerm();
     while (!this.atEnd()) {
@@ -85,7 +74,6 @@ class Parser {
     return value;
   }
 
-  // term := factor (("*" | "/") factor)*
   private parseTerm(): number {
     let value = this.parseFactor();
     while (!this.atEnd()) {
@@ -98,7 +86,6 @@ class Parser {
     return value;
   }
 
-  // factor := "-" factor | "(" expr ")" | num | ref
   private parseFactor(): number {
     const t = this.peek();
     if (!t) throw new Error("unexpected end");

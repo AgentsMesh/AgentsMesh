@@ -8,7 +8,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// sendMcpResponse sends a successful MCP response back to the Runner.
 func (a *GRPCRunnerAdapter) sendMcpResponse(conn *runner.GRPCConnection, requestID string, result interface{}) {
 	var payload []byte
 	if result != nil {
@@ -39,7 +38,6 @@ func (a *GRPCRunnerAdapter) sendMcpResponse(conn *runner.GRPCConnection, request
 	}
 }
 
-// sendMcpError sends an error MCP response back to the Runner.
 func (a *GRPCRunnerAdapter) sendMcpError(conn *runner.GRPCConnection, requestID string, code int32, message string) {
 	msg := &runnerv1.ServerMessage{
 		Payload: &runnerv1.ServerMessage_McpResponse{
@@ -63,10 +61,9 @@ func (a *GRPCRunnerAdapter) sendMcpError(conn *runner.GRPCConnection, requestID 
 	}
 }
 
-// unmarshalPayload is a helper to unmarshal JSON payload into a struct.
 func unmarshalPayload(payload []byte, v interface{}) *mcpError {
 	if len(payload) == 0 {
-		return nil // No payload to parse
+		return nil
 	}
 	if err := json.Unmarshal(payload, v); err != nil {
 		return newMcpErrorf(400, "invalid request payload: %v", err)

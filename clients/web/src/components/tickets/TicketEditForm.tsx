@@ -3,7 +3,6 @@
 import { Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
 
-// Lazy load BlockEditor to avoid SSR issues
 const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
 
 interface TicketEditFormProps {
@@ -16,9 +15,6 @@ interface TicketEditFormProps {
   t: (key: string) => string;
 }
 
-/**
- * Inline edit form for ticket title and content
- */
 export function TicketEditForm({
   title,
   content,
@@ -30,7 +26,6 @@ export function TicketEditForm({
 }: TicketEditFormProps) {
   return (
     <div className="space-y-4">
-      {/* Title Input */}
       <input
         type="text"
         className="w-full text-2xl font-semibold px-3 py-2 border border-border rounded-md"
@@ -38,7 +33,6 @@ export function TicketEditForm({
         onChange={(e) => onTitleChange(e.target.value)}
       />
 
-      {/* Rich Content Editor */}
       <div>
         <label className="text-sm font-medium text-muted-foreground mb-1 block">
           {t("tickets.detail.content")}
@@ -54,7 +48,6 @@ export function TicketEditForm({
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex gap-2">
         <Button size="sm" onClick={onSave}>
           {t("common.save")}

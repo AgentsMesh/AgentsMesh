@@ -9,8 +9,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { EditableText } from "../editor/EditableText";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// ListRenderer displays an optional heading (data.name) and renders all of
-// its nest children as a bulleted list. Children choose their own renderers.
 export function ListRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const name = (block.data?.name as string | undefined) ?? "";
@@ -40,4 +38,3 @@ export function ListRenderer({ block, depth }: { block: Block; depth: number }) 
     </BlockChrome>
   );
 }
-

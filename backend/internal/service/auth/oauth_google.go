@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// getGoogleAuthURL returns Google OAuth authorization URL
 func getGoogleAuthURL(cfg OAuthConfig, state string) string {
 	return "https://accounts.google.com/o/oauth2/v2/auth" +
 		"?client_id=" + cfg.ClientID +
@@ -23,7 +22,6 @@ func getGoogleAuthURL(cfg OAuthConfig, state string) string {
 		"&state=" + state
 }
 
-// handleGoogleCallback exchanges code for token and fetches user info
 func handleGoogleCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
 	accessToken, err := exchangeGoogleCode(ctx, cfg, code)
 	if err != nil {
@@ -33,7 +31,6 @@ func handleGoogleCallback(ctx context.Context, cfg OAuthConfig, code string) (*O
 	return fetchGoogleUserInfo(ctx, accessToken)
 }
 
-// exchangeGoogleCode exchanges authorization code for access token
 func exchangeGoogleCode(ctx context.Context, cfg OAuthConfig, code string) (string, error) {
 	client := &http.Client{
 		Timeout:   10 * time.Second,
@@ -70,7 +67,6 @@ func exchangeGoogleCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 	return tokenData.AccessToken, nil
 }
 
-// fetchGoogleUserInfo fetches user info from Google API
 func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 	if err != nil {
@@ -106,7 +102,6 @@ func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 
-	// Generate username from email if not provided
 	username := strings.Split(googleUser.Email, "@")[0]
 
 	return &OAuthUserInfo{

@@ -11,21 +11,13 @@ import { AgentItem } from "./AgentItem";
 import { CredentialProfileDialog } from "./CredentialProfileDialog";
 import type { CredentialFormData } from "./types";
 
-/**
- * AgentCredentialsSettings - Manages credential profiles for all agents
- *
- * Displays a collapsible list of agents, each with RunnerHost as the
- * default option and custom credential profiles below.
- */
 export function AgentCredentialsSettings() {
   const t = useTranslations();
 
-  // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CredentialProfileData | null>(null);
   const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(null);
 
-  // Use the custom hook for data and actions
   const {
     loading,
     error,
@@ -44,24 +36,20 @@ export function AgentCredentialsSettings() {
     setSuccess,
   } = useAgentCredentials(t);
 
-  // Confirm dialog for delete
   const { dialogProps, confirm } = useConfirmDialog();
 
-  // Open add dialog
   const handleOpenAddDialog = useCallback((agentSlug: string) => {
     setSelectedAgentSlug(agentSlug);
     setEditingProfile(null);
     setShowDialog(true);
   }, []);
 
-  // Open edit dialog
   const handleOpenEditDialog = useCallback((profile: CredentialProfileData) => {
     setSelectedAgentSlug(profile.agent_slug);
     setEditingProfile(profile);
     setShowDialog(true);
   }, []);
 
-  // Handle dialog submit
   const handleDialogSubmit = useCallback(async (data: CredentialFormData) => {
     if (!selectedAgentSlug) {
       throw new Error("No agent selected");
@@ -70,7 +58,6 @@ export function AgentCredentialsSettings() {
     setShowDialog(false);
   }, [selectedAgentSlug, editingProfile, handleSaveProfile]);
 
-  // Handle delete with confirmation
   const handleDeleteWithConfirm = useCallback(async (profileId: number) => {
     const confirmed = await confirm({
       title: t("common.confirmDelete"),

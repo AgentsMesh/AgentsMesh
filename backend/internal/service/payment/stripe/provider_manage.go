@@ -17,18 +17,15 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// RefundPayment initiates a refund
 func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) (*types.RefundResponse, error) {
 	params := &stripe.RefundParams{
 		Amount: stripe.Int64(int64(req.Amount * 100)),
 	}
 
-	// Set reason if provided
 	if req.Reason != "" {
 		params.Reason = stripe.String(req.Reason)
 	}
 
-	// Try to find the payment intent from checkout session
 	if req.ExternalOrderNo != "" {
 		sess, err := checkoutsession.Get(req.ExternalOrderNo, nil)
 		if err == nil && sess.PaymentIntent != nil {
@@ -55,7 +52,6 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 	}, nil
 }
 
-// CancelSubscription cancels a Stripe subscription
 func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string, immediate bool) error {
 	if immediate {
 		_, err := subscription.Cancel(subscriptionID, nil)
@@ -76,7 +72,6 @@ func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string
 	return nil
 }
 
-// CreateCustomer creates a Stripe customer
 func (p *Provider) CreateCustomer(ctx context.Context, email string, name string, metadata map[string]string) (string, error) {
 	params := &stripe.CustomerParams{
 		Email: stripe.String(email),
@@ -96,7 +91,6 @@ func (p *Provider) CreateCustomer(ctx context.Context, email string, name string
 	return c.ID, nil
 }
 
-// GetCustomerPortalURL returns a URL for the customer billing portal
 func (p *Provider) GetCustomerPortalURL(ctx context.Context, req *types.CustomerPortalRequest) (*types.CustomerPortalResponse, error) {
 	params := &stripe.BillingPortalSessionParams{
 		Customer:  stripe.String(req.CustomerID),
@@ -113,9 +107,7 @@ func (p *Provider) GetCustomerPortalURL(ctx context.Context, req *types.Customer
 	}, nil
 }
 
-// UpdateSubscriptionSeats updates the seat count for a subscription
 func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID string, seats int) error {
-	// Get current subscription
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get stripe subscription for seat update", "subscription_id", subscriptionID, "error", err)
@@ -126,7 +118,6 @@ func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID s
 		return fmt.Errorf("subscription has no items")
 	}
 
-	// Update the first item's quantity
 	_, err = subscription.Update(subscriptionID, &stripe.SubscriptionParams{
 		Items: []*stripe.SubscriptionItemsParams{
 			{
@@ -145,7 +136,6 @@ func (p *Provider) UpdateSubscriptionSeats(ctx context.Context, subscriptionID s
 	return nil
 }
 
-// GetSubscription retrieves subscription details
 func (p *Provider) GetSubscription(ctx context.Context, subscriptionID string) (*types.SubscriptionDetails, error) {
 	sub, err := subscription.Get(subscriptionID, nil)
 	if err != nil {
@@ -164,7 +154,6 @@ func (p *Provider) GetSubscription(ctx context.Context, subscriptionID string) (
 		result.CustomerID = sub.Customer.ID
 	}
 
-	// Get seats from first item
 	if len(sub.Items.Data) > 0 {
 		result.Seats = int(sub.Items.Data[0].Quantity)
 		if sub.Items.Data[0].Price != nil {

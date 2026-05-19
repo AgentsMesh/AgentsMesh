@@ -14,10 +14,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// setupPodEventCallbacks sets up pod coordinator callbacks to publish events
 func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, eventBus *eventbus.EventBus, notifDispatcher *notifService.Dispatcher) {
 	podCoordinator.SetStatusChangeCallback(func(podKey string, status string, agentStatus string) {
-		// Query pod to get organization ID and other metadata
 		var pod struct {
 			OrganizationID int64   `gorm:"column:organization_id"`
 			CreatedByID    int64   `gorm:"column:created_by_id"`
@@ -31,28 +29,23 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			return
 		}
 
-		// Determine event type
-		// Note: pod.Status is the previous status (before this callback updates it)
 		var eventType eventbus.EventType
 		if agentStatus != "" {
 			eventType = eventbus.EventPodAgentChanged
 		} else if status == agentpod.StatusCompleted || status == agentpod.StatusTerminated {
 			eventType = eventbus.EventPodTerminated
 		} else if pod.Status == agentpod.StatusInitializing && status == agentpod.StatusRunning {
-			// Pod transitioned from initializing to running - this is a newly created pod starting
 			eventType = eventbus.EventPodCreated
 		} else {
 			eventType = eventbus.EventPodStatusChanged
 		}
 
-		// Create and publish event
 		data := &eventbus.PodStatusChangedData{
 			PodKey:         podKey,
 			Status:         status,
 			PreviousStatus: "",
 			AgentStatus:    agentStatus,
 		}
-		// Include error details if present
 		if pod.ErrorCode != nil {
 			data.ErrorCode = *pod.ErrorCode
 		}
@@ -87,9 +80,7 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 	})
 
-	// Set up init progress callback
 	podCoordinator.SetInitProgressCallback(func(podKey string, phase string, progress int, message string) {
-		// Query pod to get organization ID
 		var pod struct {
 			OrganizationID int64 `gorm:"column:organization_id"`
 		}
@@ -98,7 +89,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			return
 		}
 
-		// Create and publish init progress event
 		data := &eventbus.PodInitProgressData{
 			PodKey:   podKey,
 			Phase:    phase,
@@ -115,7 +105,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 	})
 
-	// Set up AutopilotController status change callback
 	podCoordinator.SetAutopilotStatusChangeCallback(func(
 		autopilotKey string,
 		podKey string,
@@ -126,7 +115,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		circuitBreakerReason string,
 		userTakeover bool,
 	) {
-		// Query AutopilotController to get organization ID
 		var autopilot struct {
 			OrganizationID int64 `gorm:"column:organization_id"`
 		}
@@ -135,7 +123,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			return
 		}
 
-		// Create and publish AutopilotController status event
 		data := &eventbus.AutopilotStatusChangedData{
 			AutopilotControllerKey: autopilotKey,
 			PodKey:                 podKey,
@@ -156,7 +143,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 	})
 
-	// Set up AutopilotController iteration callback
 	podCoordinator.SetAutopilotIterationChangeCallback(func(
 		autopilotKey string,
 		iteration int32,
@@ -165,7 +151,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		filesChanged []string,
 		durationMs int64,
 	) {
-		// Query AutopilotController to get organization ID
 		var autopilot struct {
 			OrganizationID int64 `gorm:"column:organization_id"`
 		}
@@ -174,7 +159,6 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			return
 		}
 
-		// Create and publish AutopilotController iteration event
 		data := &eventbus.AutopilotIterationData{
 			AutopilotControllerKey: autopilotKey,
 			Iteration:              iteration,
@@ -193,11 +177,9 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 		}
 	})
 
-	// Set up AutopilotController thinking callback
 	podCoordinator.SetAutopilotThinkingCallback(func(runnerID int64, protoData *runnerv1.AutopilotThinkingEvent) {
 		autopilotKey := protoData.GetAutopilotKey()
 
-		// Query AutopilotController to get organization ID
 		var autopilot struct {
 			OrganizationID int64 `gorm:"column:organization_id"`
 		}
@@ -206,10 +188,8 @@ func setupPodEventCallbacks(db *gorm.DB, podCoordinator *runner.PodCoordinator, 
 			return
 		}
 
-		// Convert Proto to eventbus data
 		data := protoToEventbusThinking(protoData)
 
-		// Create and publish AutopilotController thinking event
 		event, err := eventbus.NewEntityEvent(eventbus.EventAutopilotThinking, autopilot.OrganizationID, "autopilot_controller", autopilotKey, data)
 		if err != nil {
 			slog.Error("failed to create autopilot thinking event", "error", err)

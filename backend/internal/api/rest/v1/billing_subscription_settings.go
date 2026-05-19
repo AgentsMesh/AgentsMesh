@@ -11,21 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Subscription Settings (Portal, Auto-Renew, Customer)
-// ===========================================
-
-// CreateStripeCustomerRequest represents the Stripe customer creation request
 type CreateStripeCustomerRequest struct {
 	Email string `json:"email" binding:"required,email"`
 	Name  string `json:"name" binding:"required"`
 }
 
-// CreateStripeCustomer creates a Stripe customer for the organization
 func (h *BillingHandler) CreateStripeCustomer(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
-	// Only owners can create Stripe customers
 	if tenant.UserRole != "owner" {
 		apierr.Forbidden(c, apierr.INSUFFICIENT_PERMISSIONS, "insufficient permissions")
 		return
@@ -46,12 +39,10 @@ func (h *BillingHandler) CreateStripeCustomer(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"customer_id": customerID})
 }
 
-// CustomerPortalRequest represents a customer portal request
 type CustomerPortalRequest struct {
 	ReturnURL string `json:"return_url" binding:"required"`
 }
 
-// GetCustomerPortal returns a customer portal URL (Stripe or LemonSqueezy)
 func (h *BillingHandler) GetCustomerPortal(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -78,7 +69,6 @@ func (h *BillingHandler) GetCustomerPortal(c *gin.Context) {
 		return
 	}
 
-	// Determine which provider to use based on subscription IDs
 	var provider payment.Provider
 	var customerID string
 	var subscriptionID string
@@ -108,7 +98,6 @@ func (h *BillingHandler) GetCustomerPortal(c *gin.Context) {
 		return
 	}
 
-	// Cast to SubscriptionProvider to access GetCustomerPortalURL
 	subProvider, ok := provider.(payment.SubscriptionProvider)
 	if !ok {
 		apierr.InternalError(c, "provider does not support customer portal")
@@ -130,12 +119,10 @@ func (h *BillingHandler) GetCustomerPortal(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": resp.URL})
 }
 
-// UpdateAutoRenewRequest represents an auto-renew update request
 type UpdateAutoRenewRequest struct {
 	AutoRenew bool `json:"auto_renew"`
 }
 
-// UpdateAutoRenew updates the auto-renew setting for a subscription
 func (h *BillingHandler) UpdateAutoRenew(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -150,20 +137,17 @@ func (h *BillingHandler) UpdateAutoRenew(c *gin.Context) {
 		return
 	}
 
-	// Get current subscription to verify it exists
 	sub, err := h.billingService.GetSubscription(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "no active subscription")
 		return
 	}
 
-	// Update auto_renew setting
 	if err := h.billingService.SetAutoRenew(c.Request.Context(), tenant.OrganizationID, req.AutoRenew); err != nil {
 		apierr.InternalError(c, err.Error())
 		return
 	}
 
-	// Return updated subscription
 	sub.AutoRenew = req.AutoRenew
 	c.JSON(http.StatusOK, gin.H{
 		"subscription": sub,

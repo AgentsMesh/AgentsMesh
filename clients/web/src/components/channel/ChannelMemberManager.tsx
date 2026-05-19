@@ -37,7 +37,6 @@ export function ChannelMemberManager({
     const load = async () => {
       setLoading(true);
       try {
-        // Warm Rust cache; `useChannelMembers` picks it up via tick bump.
         await channelApi.listMembers(channelId);
         useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
         if (currentOrg?.slug) {

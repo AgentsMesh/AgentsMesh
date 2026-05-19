@@ -1,7 +1,3 @@
-/**
- * Utility functions for Pod display
- */
-
 interface PodDisplayInfo {
   pod_key: string;
   alias?: string | null;
@@ -38,7 +34,6 @@ export function getPodDisplayName(
   pod: PodDisplayInfo,
   maxLength: number = 20
 ): string {
-  // Priority 1: Alias (user-defined display name)
   if (pod.alias) {
     if (pod.alias.length > maxLength) {
       return pod.alias.substring(0, maxLength - 3) + "...";
@@ -56,7 +51,6 @@ export function getPodDisplayName(
     return pod.ticket.title;
   }
 
-  // Priority 3: Loop name
   if (pod.loop?.name) {
     if (pod.loop.name.length > maxLength) {
       return pod.loop.name.substring(0, maxLength - 3) + "...";
@@ -64,7 +58,6 @@ export function getPodDisplayName(
     return pod.loop.name;
   }
 
-  // Priority 4: OSC title (set by terminal applications)
   if (pod.title) {
     if (pod.title.length > maxLength) {
       return pod.title.substring(0, maxLength - 3) + "...";
@@ -87,17 +80,10 @@ export function getPodDisplayName(
   return `${keyPrefix}...`;
 }
 
-/**
- * Get a standardized short form of a pod key (first 8 characters).
- */
 export function getShortPodKey(podKey: string): string {
   return podKey.substring(0, 8);
 }
 
-/**
- * Get a mention-safe name for a Pod — no whitespace, suitable for @mention text.
- * Priority: sanitized alias (spaces → underscores) → ticket slug → short pod key.
- */
 export function getMentionSafeName(pod: PodDisplayInfo): string {
   if (pod.alias) {
     return pod.alias.replace(/\s+/g, "_");

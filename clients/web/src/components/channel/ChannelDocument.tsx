@@ -8,10 +8,6 @@ interface ChannelDocumentProps {
   document: string;
 }
 
-/**
- * Collapsible document section that renders channel document as markdown.
- * Displayed between the channel header and message list.
- */
 export function ChannelDocument({ document }: ChannelDocumentProps) {
   const [expanded, setExpanded] = useState(false);
 

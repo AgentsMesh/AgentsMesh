@@ -2,24 +2,17 @@ package websocket
 
 import "sync"
 
-// hubShard holds a subset of clients with its own channel set
 type hubShard struct {
-	// Registered clients
 	clients map[*Client]bool
 
-	// Clients by pod (local to shard)
 	podClients map[string]map[*Client]bool
 
-	// Clients by channel (local to shard)
 	channelClients map[int64]map[*Client]bool
 
-	// Clients by organization (for events channel)
 	orgClients map[int64]map[*Client]bool
 
-	// Clients by user (for targeted notifications)
 	userClients map[int64]map[*Client]bool
 
-	// Channels for async operations
 	register   chan *Client
 	unregister chan *Client
 	stopCh     chan struct{}
@@ -27,7 +20,6 @@ type hubShard struct {
 	mu sync.RWMutex
 }
 
-// newHubShard creates a new hub shard with initialized maps and channels
 func newHubShard() *hubShard {
 	return &hubShard{
 		clients:        make(map[*Client]bool),
@@ -41,7 +33,6 @@ func newHubShard() *hubShard {
 	}
 }
 
-// run processes register/unregister requests for a shard
 func (s *hubShard) run() {
 	for {
 		select {
@@ -50,7 +41,6 @@ func (s *hubShard) run() {
 		case client := <-s.unregister:
 			s.handleUnregister(client)
 		case <-s.stopCh:
-			// Clean up all clients before exiting
 			s.mu.Lock()
 			for client := range s.clients {
 				s.closeClientUnsafe(client)
@@ -66,16 +56,13 @@ func (s *hubShard) run() {
 	}
 }
 
-// closeClientUnsafe closes client's send channel safely (must hold lock)
 func (s *hubShard) closeClientUnsafe(client *Client) {
-	// Use recover to handle potential double-close panic
 	defer func() {
 		_ = recover() //nolint:errcheck // intentional: suppress double-close panic
 	}()
 	close(client.send)
 }
 
-// handleRegister handles client registration for a shard
 func (s *hubShard) handleRegister(client *Client) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -111,7 +98,6 @@ func (s *hubShard) handleRegister(client *Client) {
 	}
 }
 
-// handleUnregister handles client unregistration for a shard
 func (s *hubShard) handleUnregister(client *Client) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Git Credentials ---
-
 func (r *userRepo) CreateGitCredential(ctx context.Context, credential *user.GitCredential) error {
 	return r.db.WithContext(ctx).Create(credential).Error
 }
@@ -69,21 +67,18 @@ func (r *userRepo) ClearUserDefaultCredential(ctx context.Context, userID, crede
 
 func (r *userRepo) SetDefaultGitCredential(ctx context.Context, userID, credentialID int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Clear all defaults for this user
 		if err := tx.Model(&user.GitCredential{}).
 			Where("user_id = ?", userID).
 			Update("is_default", false).Error; err != nil {
 			return err
 		}
 
-		// Set the new default
 		if err := tx.Model(&user.GitCredential{}).
 			Where("id = ? AND user_id = ?", credentialID, userID).
 			Update("is_default", true).Error; err != nil {
 			return err
 		}
 
-		// Update user's default credential reference
 		return tx.Model(&user.User{}).
 			Where("id = ?", userID).
 			Update("default_git_credential_id", credentialID).Error
@@ -92,14 +87,12 @@ func (r *userRepo) SetDefaultGitCredential(ctx context.Context, userID, credenti
 
 func (r *userRepo) ClearAllDefaultGitCredentials(ctx context.Context, userID int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Clear all is_default flags
 		if err := tx.Model(&user.GitCredential{}).
 			Where("user_id = ?", userID).
 			Update("is_default", false).Error; err != nil {
 			return err
 		}
 
-		// Clear user's default credential reference
 		return tx.Model(&user.User{}).
 			Where("id = ?", userID).
 			Update("default_git_credential_id", nil).Error
@@ -114,14 +107,12 @@ func (r *userRepo) GetDefaultGitCredential(ctx context.Context, userID int64) (*
 		First(&credential).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, nil // No default set
+			return nil, nil
 		}
 		return nil, err
 	}
 	return &credential, nil
 }
-
-// --- Repository Providers ---
 
 func (r *userRepo) CreateRepositoryProvider(ctx context.Context, provider *user.RepositoryProvider) error {
 	return r.db.WithContext(ctx).Create(provider).Error
@@ -219,14 +210,12 @@ func (r *userRepo) GetRepositoryProviderByIdentityID(ctx context.Context, userID
 
 func (r *userRepo) SetDefaultRepositoryProvider(ctx context.Context, userID, providerID int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Clear all defaults for this user
 		if err := tx.Model(&user.RepositoryProvider{}).
 			Where("user_id = ?", userID).
 			Update("is_default", false).Error; err != nil {
 			return err
 		}
 
-		// Set the new default
 		return tx.Model(&user.RepositoryProvider{}).
 			Where("id = ? AND user_id = ?", providerID, userID).
 			Update("is_default", true).Error

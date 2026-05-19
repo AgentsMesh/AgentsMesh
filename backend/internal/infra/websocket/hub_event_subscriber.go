@@ -7,9 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// HubEventSubscriber routes EventBus events to WebSocket clients.
-// Entity/System events → BroadcastToOrg. Notifications bypass EventBus
-// and are delivered directly via NotificationRelay (see notification_relay.go).
 type HubEventSubscriber struct {
 	hub    *Hub
 	logger *slog.Logger
@@ -32,7 +29,6 @@ func (s *HubEventSubscriber) Subscribe(eb *eventbus.EventBus) {
 }
 
 func (s *HubEventSubscriber) handleEntityEvent(event *eventbus.Event) {
-	// Build a client-safe copy without infrastructure fields
 	clientEvent := *event
 	clientEvent.TargetUserIDs = nil
 	clientEvent.SourceInstanceID = ""

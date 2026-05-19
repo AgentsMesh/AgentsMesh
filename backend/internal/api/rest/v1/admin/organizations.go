@@ -13,19 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// OrganizationHandler handles organization management requests
 type OrganizationHandler struct {
 	adminService *adminservice.Service
 }
 
-// NewOrganizationHandler creates a new organization handler
 func NewOrganizationHandler(adminSvc *adminservice.Service) *OrganizationHandler {
 	return &OrganizationHandler{
 		adminService: adminSvc,
 	}
 }
 
-// RegisterRoutes registers organization management routes
 func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	orgsGroup := rg.Group("/organizations")
 	{
@@ -36,7 +33,6 @@ func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListOrganizations returns a list of organizations with pagination
 func (h *OrganizationHandler) ListOrganizations(c *gin.Context) {
 	query := &adminservice.OrganizationListQuery{
 		Search:   c.Query("search"),
@@ -57,7 +53,6 @@ func (h *OrganizationHandler) ListOrganizations(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	orgs := make([]gin.H, len(result.Data))
 	for i, org := range result.Data {
 		orgs[i] = organizationResponse(&org)
@@ -72,7 +67,6 @@ func (h *OrganizationHandler) ListOrganizations(c *gin.Context) {
 	})
 }
 
-// GetOrganization returns a single organization
 func (h *OrganizationHandler) GetOrganization(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -90,13 +84,11 @@ func (h *OrganizationHandler) GetOrganization(c *gin.Context) {
 		return
 	}
 
-	// Log view action
 	h.logAction(c, admin.AuditActionOrgView, admin.TargetTypeOrganization, orgID, nil, nil)
 
 	c.JSON(http.StatusOK, organizationResponse(org))
 }
 
-// GetOrganizationMembers returns the members of an organization
 func (h *OrganizationHandler) GetOrganizationMembers(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -114,7 +106,6 @@ func (h *OrganizationHandler) GetOrganizationMembers(c *gin.Context) {
 		return
 	}
 
-	// Convert members to response format
 	memberList := make([]gin.H, len(members))
 	for i, m := range members {
 		memberList[i] = memberResponse(&m)
@@ -126,7 +117,6 @@ func (h *OrganizationHandler) GetOrganizationMembers(c *gin.Context) {
 	})
 }
 
-// DeleteOrganization deletes an organization
 func (h *OrganizationHandler) DeleteOrganization(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -134,7 +124,6 @@ func (h *OrganizationHandler) DeleteOrganization(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldOrg, _ := h.adminService.GetOrganization(c.Request.Context(), orgID)
 
 	if err := h.adminService.DeleteOrganization(c.Request.Context(), orgID); err != nil {
@@ -150,18 +139,15 @@ func (h *OrganizationHandler) DeleteOrganization(c *gin.Context) {
 		return
 	}
 
-	// Log delete action
 	h.logAction(c, admin.AuditActionOrgDelete, admin.TargetTypeOrganization, orgID, oldOrg, nil)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Organization deleted successfully"})
 }
 
-// logAction is a helper method that delegates to the shared LogAdminAction function
 func (h *OrganizationHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// organizationResponse creates a sanitized organization response
 func organizationResponse(org *organization.Organization) gin.H {
 	return gin.H{
 		"id":                  org.ID,
@@ -175,7 +161,6 @@ func organizationResponse(org *organization.Organization) gin.H {
 	}
 }
 
-// memberResponse creates a sanitized member response
 func memberResponse(m *organization.Member) gin.H {
 	response := gin.H{
 		"id":        m.ID,

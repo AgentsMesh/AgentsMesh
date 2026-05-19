@@ -70,7 +70,6 @@ function Terminal({
 }) {
   return (
     <div className="bg-[#0d1117] rounded-lg border border-[#30363d] overflow-hidden shadow-xl">
-      {/* Title bar */}
       <div className="flex items-center justify-between px-3 py-2 bg-[#161b22] border-b border-[#30363d]">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#f85149]" />
@@ -83,14 +82,12 @@ function Terminal({
         </div>
       </div>
 
-      {/* Pod info */}
       <div className="px-3 py-1 bg-[#0d1117] border-b border-[#21262d] text-[10px] font-mono text-[#8b949e] flex gap-3">
         <span className={pod.color}>{pod.agent}</span>
         <span className="text-[#484f58]">|</span>
         <span>{pod.workspace}</span>
       </div>
 
-      {/* Terminal content */}
       <div className="p-3 font-mono text-[11px] leading-[1.6] h-[140px] overflow-hidden">
         {pod.lines.slice(0, displayedLines).map((line, i) => (
           <div

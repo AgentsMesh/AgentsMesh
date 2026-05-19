@@ -12,15 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// SubscriptionRenewJob handles automatic subscription renewals
 type SubscriptionRenewJob struct {
 	db             *gorm.DB
 	paymentFactory *payment.Factory
 	logger         *slog.Logger
 }
 
-// NewSubscriptionRenewJob creates a new subscription renewal job
-// cfg is the full application config, needed for URL derivation in payment providers
 func NewSubscriptionRenewJob(db *gorm.DB, cfg *config.Config, logger *slog.Logger) *SubscriptionRenewJob {
 	return &SubscriptionRenewJob{
 		db:             db,
@@ -29,12 +26,9 @@ func NewSubscriptionRenewJob(db *gorm.DB, cfg *config.Config, logger *slog.Logge
 	}
 }
 
-// Run executes the subscription renewal job
-// This should be called periodically (e.g., every hour) by a scheduler
 func (j *SubscriptionRenewJob) Run(ctx context.Context) error {
 	j.logger.Info("starting subscription renewal job")
 
-	// Find subscriptions that need renewal
 	subscriptions, err := j.findSubscriptionsForRenewal(ctx)
 	if err != nil {
 		return err
@@ -42,7 +36,6 @@ func (j *SubscriptionRenewJob) Run(ctx context.Context) error {
 
 	j.logger.Info("found subscriptions for renewal", "count", len(subscriptions))
 
-	// Process each subscription
 	for _, sub := range subscriptions {
 		if err := j.processRenewal(ctx, &sub); err != nil {
 			j.logger.Error("failed to process subscription renewal",
@@ -50,7 +43,6 @@ func (j *SubscriptionRenewJob) Run(ctx context.Context) error {
 				"organization_id", sub.OrganizationID,
 				"error", err,
 			)
-			// Continue with other subscriptions
 			continue
 		}
 	}
@@ -59,7 +51,6 @@ func (j *SubscriptionRenewJob) Run(ctx context.Context) error {
 	return nil
 }
 
-// findSubscriptionsForRenewal finds subscriptions that need renewal
 func (j *SubscriptionRenewJob) findSubscriptionsForRenewal(ctx context.Context) ([]billing.Subscription, error) {
 	var subscriptions []billing.Subscription
 	checkTime := time.Now().Add(24 * time.Hour)
@@ -78,7 +69,6 @@ func (j *SubscriptionRenewJob) findSubscriptionsForRenewal(ctx context.Context) 
 	return subscriptions, nil
 }
 
-// processRenewal processes a single subscription renewal
 func (j *SubscriptionRenewJob) processRenewal(ctx context.Context, sub *billing.Subscription) error {
 	j.logger.Info("processing subscription renewal",
 		"subscription_id", sub.ID,
@@ -86,19 +76,16 @@ func (j *SubscriptionRenewJob) processRenewal(ctx context.Context, sub *billing.
 		"provider", sub.PaymentProvider,
 	)
 
-	// Create payment order
 	order, currency, err := j.createRenewalOrder(ctx, sub)
 	if err != nil {
 		return err
 	}
 
-	// Determine provider
 	var provider string
 	if sub.PaymentProvider != nil {
 		provider = *sub.PaymentProvider
 	}
 
-	// Execute agreement payment based on provider
 	var payErr error
 	switch provider {
 	case billing.PaymentProviderAlipay:
@@ -106,13 +93,11 @@ func (j *SubscriptionRenewJob) processRenewal(ctx context.Context, sub *billing.
 	case billing.PaymentProviderWeChat:
 		payErr = j.executeWeChatAgreementPay(ctx, sub, order)
 	default:
-		// Stripe handles renewals automatically via their subscription system
 		j.logger.Debug("skipping non-CN subscription renewal", "provider", provider)
 		return nil
 	}
 
 	if payErr != nil {
-		// Update order status to failed
 		j.db.WithContext(ctx).Model(order).Updates(map[string]interface{}{
 			"status":      billing.OrderStatusFailed,
 			"fail_reason": payErr.Error(),
@@ -120,20 +105,16 @@ func (j *SubscriptionRenewJob) processRenewal(ctx context.Context, sub *billing.
 		return payErr
 	}
 
-	// Currency is used for logging/debugging
 	_ = currency
 	return nil
 }
 
-// createRenewalOrder creates a payment order for subscription renewal
 func (j *SubscriptionRenewJob) createRenewalOrder(ctx context.Context, sub *billing.Subscription) (*billing.PaymentOrder, string, error) {
-	// Get the plan to calculate renewal amount
 	var plan billing.SubscriptionPlan
 	if err := j.db.WithContext(ctx).First(&plan, sub.PlanID).Error; err != nil {
 		return nil, "", fmt.Errorf("failed to get plan: %w", err)
 	}
 
-	// Determine currency based on payment provider
 	var provider string
 	if sub.PaymentProvider != nil {
 		provider = *sub.PaymentProvider
@@ -143,13 +124,10 @@ func (j *SubscriptionRenewJob) createRenewalOrder(ctx context.Context, sub *bill
 		currency = billing.CurrencyCNY
 	}
 
-	// Get price from plan_prices table (Single Source of Truth)
 	amount, currency := j.calculateRenewalAmount(ctx, sub, &plan, currency)
 
-	// Generate order number
 	orderNo := fmt.Sprintf("RENEW-%d-%d", sub.OrganizationID, time.Now().Unix())
 
-	// Create payment order
 	expiresAt := time.Now().Add(24 * time.Hour)
 	order := &billing.PaymentOrder{
 		OrganizationID:  sub.OrganizationID,
@@ -177,7 +155,6 @@ func (j *SubscriptionRenewJob) createRenewalOrder(ctx context.Context, sub *bill
 	return order, currency, nil
 }
 
-// calculateRenewalAmount calculates the renewal amount based on plan prices
 func (j *SubscriptionRenewJob) calculateRenewalAmount(ctx context.Context, sub *billing.Subscription, plan *billing.SubscriptionPlan, currency string) (float64, string) {
 	var planPrice billing.PlanPrice
 	if err := j.db.WithContext(ctx).
@@ -191,7 +168,6 @@ func (j *SubscriptionRenewJob) calculateRenewalAmount(ctx context.Context, sub *
 		return 0, currency
 	}
 
-	// Calculate renewal amount from plan_prices
 	var amount float64
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		amount = planPrice.PriceYearly * float64(sub.SeatCount)
@@ -202,7 +178,6 @@ func (j *SubscriptionRenewJob) calculateRenewalAmount(ctx context.Context, sub *
 	return amount, currency
 }
 
-// extendSubscription extends the subscription period after successful payment
 func (j *SubscriptionRenewJob) extendSubscription(ctx context.Context, sub *billing.Subscription) error {
 	var newPeriodEnd time.Time
 	if sub.BillingCycle == billing.BillingCycleYearly {

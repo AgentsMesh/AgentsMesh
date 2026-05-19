@@ -11,7 +11,6 @@ interface HistoryTabProps {
   autopilotControllerKey: string;
 }
 
-// Iteration Item component
 function IterationItem({ iteration }: { iteration: AutopilotIteration }) {
   const [expanded, setExpanded] = React.useState(false);
   const phaseInfo = iterationPhaseConfig[iteration.phase] || {
@@ -96,7 +95,6 @@ export function HistoryTab({ autopilotControllerKey }: HistoryTabProps) {
     );
   }
 
-  // Show iterations in reverse order (most recent first)
   const displayIterations = [...controllerIterations].reverse();
 
   return (

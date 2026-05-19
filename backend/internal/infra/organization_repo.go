@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ organization.Repository = (*organizationRepo)(nil)
 
 type organizationRepo struct {
 	db *gorm.DB
 }
 
-// NewOrganizationRepository creates a new GORM-based organization repository
 func NewOrganizationRepository(db *gorm.DB) organization.Repository {
 	return &organizationRepo{db: db}
 }
@@ -70,7 +68,6 @@ func (r *organizationRepo) CreateWithMember(ctx context.Context, params *organiz
 			return err
 		}
 
-		// Set the organization ID on the member
 		params.OwnerMember.OrganizationID = params.Organization.ID
 		if err := tx.Create(params.OwnerMember).Error; err != nil {
 			return err
@@ -86,7 +83,6 @@ func (r *organizationRepo) CreateWithMember(ctx context.Context, params *organiz
 
 func (r *organizationRepo) DeleteWithCleanup(ctx context.Context, id int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Application-level cleanup for tables without FK CASCADE
 		if err := tx.Exec("DELETE FROM loop_runs WHERE organization_id = ?", id).Error; err != nil {
 			return err
 		}
@@ -118,7 +114,6 @@ func (r *organizationRepo) DeleteWithCleanup(ctx context.Context, id int64) erro
 			return err
 		}
 
-		// Delete the org — remaining FK CASCADE handles other dependent tables
 		return tx.Delete(&organization.Organization{}, id).Error
 	})
 }

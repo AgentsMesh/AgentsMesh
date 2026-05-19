@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
-// Import via the `next-themes` alias (resolves to ./shims/next-themes →
-// ./ThemeProvider) so this file and any web cross-imports of `next-themes`
-// land on the same module identity. Direct `./ThemeProvider` imports
-// can become a separate bundle module from the aliased path, causing
-// the two `ThemeContext` instances and "useTheme must be used within
-// ThemeProvider" failures we saw at runtime.
+// MUST import via `next-themes` alias — direct `./ThemeProvider` produces a separate
+// bundle module, causing two ThemeContext instances + "useTheme must be used within ThemeProvider".
 import { ThemeProvider } from "next-themes";
 import { DesktopIntlProvider } from "./IntlProvider";
 import { RealtimeProvider } from "./RealtimeProvider";

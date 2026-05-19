@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// GetProject returns project details
 func (p *GitLabProvider) GetProject(ctx context.Context, projectID string) (*Project, error) {
 	encodedID := url.PathEscape(projectID)
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/projects/%s", encodedID), nil)
@@ -51,7 +50,6 @@ func (p *GitLabProvider) GetProject(ctx context.Context, projectID string) (*Pro
 	}, nil
 }
 
-// ListProjects returns user's projects
 func (p *GitLabProvider) ListProjects(ctx context.Context, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/projects?membership=true&page=%d&per_page=%d", page, perPage)
 	resp, err := p.doRequest(ctx, "GET", path, nil)
@@ -98,7 +96,6 @@ func (p *GitLabProvider) ListProjects(ctx context.Context, page, perPage int) ([
 	return projects, nil
 }
 
-// SearchProjects searches for projects
 func (p *GitLabProvider) SearchProjects(ctx context.Context, query string, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/projects?search=%s&page=%d&per_page=%d", url.QueryEscape(query), page, perPage)
 	resp, err := p.doRequest(ctx, "GET", path, nil)

@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * Generic CodeMirror 6 React wrapper.
- * Manages EditorView lifecycle and syncs value/extensions with React state.
- * Uses Compartment for dynamic extension reconfiguration.
- */
 import React, { useRef, useEffect } from "react";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { EditorState, Compartment, type Extension } from "@codemirror/state";
@@ -26,13 +21,10 @@ export function CodeMirrorEditor({
   const viewRef = useRef<EditorView | null>(null);
   const compartmentRef = useRef<Compartment>(new Compartment());
   const onChangeRef = useRef(onChange);
-  // Track whether the update came from the editor itself
   const isLocalUpdate = useRef(false);
 
-  // Keep onChange ref up to date without re-creating editor
   onChangeRef.current = onChange;
 
-  // Create editor on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -61,7 +53,6 @@ export function CodeMirrorEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes (skip editor-originated changes)
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;
@@ -79,7 +70,6 @@ export function CodeMirrorEditor({
     }
   }, [value]);
 
-  // Reconfigure extensions via Compartment when they change
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;

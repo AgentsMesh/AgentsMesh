@@ -5,21 +5,18 @@ import (
 	"time"
 )
 
-// Transport type constants
 const (
 	TransportTypeStdio = "stdio"
 	TransportTypeHTTP  = "http"
 	TransportTypeSSE   = "sse"
 )
 
-// MCP market item source constants
 const (
 	McpSourceSeed     = "seed"     // Built-in seed data from migrations
 	McpSourceRegistry = "registry" // Synced from MCP Registry API
 	McpSourceAdmin    = "admin"    // Manually added by admin
 )
 
-// McpMarketItem represents an MCP Server template in the marketplace
 type McpMarketItem struct {
 	ID                 int64           `gorm:"primaryKey" json:"id"`
 	Slug               string          `gorm:"size:100;not null;uniqueIndex" json:"slug"`
@@ -35,14 +32,12 @@ type McpMarketItem struct {
 	AgentFilter    json.RawMessage `gorm:"type:jsonb" json:"agent_filter,omitempty"`
 	Category           string          `gorm:"size:50" json:"category,omitempty"`
 	IsActive           bool            `gorm:"not null;default:true" json:"is_active"`
-	// Registry sync fields
 	Source        string          `gorm:"size:20;default:seed" json:"source"`
 	RegistryName  string          `gorm:"size:200" json:"registry_name,omitempty"`
 	Version       string          `gorm:"size:50" json:"version,omitempty"`
 	RepositoryURL string          `gorm:"size:500" json:"repository_url,omitempty"`
 	RegistryMeta  json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"registry_meta,omitempty"`
 	LastSyncedAt  *time.Time      `json:"last_synced_at,omitempty"`
-	// Timestamps
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
@@ -62,7 +57,6 @@ func (m *McpMarketItem) GetAgentFilter() []string {
 	return filter
 }
 
-// EnvVarSchemaEntry represents a single env var definition in the schema
 type EnvVarSchemaEntry struct {
 	Name        string `json:"name"`
 	Label       string `json:"label"`

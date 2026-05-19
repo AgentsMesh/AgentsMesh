@@ -27,7 +27,6 @@ class RelayConnectionPool {
     }
   }
 
-  /** Build context object for WebSocket lifecycle functions */
   private get ctx(): PoolContext {
     return {
       connections: this.connections,
@@ -196,10 +195,6 @@ class RelayConnectionPool {
   }
 }
 
-// Singleton instance — survive HMR rebuilds without leaking old pool state.
-// In production the module evaluates once and we keep whatever pool already
-// exists; the dev-only branch handles HMR rebuilds where the module evaluates
-// fresh while real WebSocket connections are still live.
 function getOrCreatePool(): RelayConnectionPool {
   const key = "__relayPool" as keyof typeof globalThis;
   const existing = globalThis[key] as RelayConnectionPool | undefined;
@@ -215,16 +210,7 @@ function getOrCreatePool(): RelayConnectionPool {
   return pool;
 }
 
-// isSameHostRunner gates the local-relay probe to runners whose advertised
-// node_id matches this host's local-runner node_id. Without the gate, web
-// users (or desktop users sitting on a different host than the runner) would
-// burn a 1s probe timeout on every subscribe before falling back to cloud
-// relay. When the backend omits the hint we keep the legacy "always probe"
-// behavior for backward compatibility.
-//
-// The local node_id is module-cached so reconnect storms don't re-traverse
-// IPC + yaml read for every retry. Cache only holds resolved non-empty IDs
-// so a pre-onboarding null doesn't pin the renderer to "different host".
+// Cache only resolved non-empty IDs — pre-onboarding null must not pin renderer to "different host".
 let cachedNodeIdPromise: Promise<string | null> | null = null;
 
 async function resolveLocalNodeId(): Promise<string | null> {

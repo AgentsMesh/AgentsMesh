@@ -22,7 +22,6 @@ import type {
 } from "./types";
 import type { AutopilotController } from "@/stores/autopilot";
 
-// Decision type configuration
 export const decisionConfig: Record<NormalizedDecisionType, DecisionTypeConfig> = {
   continue: {
     label: "Continue",
@@ -50,7 +49,6 @@ export const decisionConfig: Record<NormalizedDecisionType, DecisionTypeConfig> 
   },
 };
 
-// Action type configuration
 export const actionConfig: Record<string, ActionTypeConfig> = {
   observe: { label: "Observing", icon: <Eye className="h-3 w-3" /> },
   send_input: { label: "Sending Input", icon: <Send className="h-3 w-3" /> },
@@ -58,7 +56,6 @@ export const actionConfig: Record<string, ActionTypeConfig> = {
   none: { label: "No Action", icon: <MessageSquare className="h-3 w-3" /> },
 };
 
-// Iteration phase display configuration
 export const iterationPhaseConfig: Record<string, IterationPhaseConfig> = {
   prompt: {
     label: "Initial",
@@ -92,7 +89,6 @@ export const iterationPhaseConfig: Record<string, IterationPhaseConfig> = {
   },
 };
 
-// Phase display configuration with colors
 export const phaseConfig: Record<
   AutopilotController["phase"],
   { label: string; color: string; icon: React.ReactNode }

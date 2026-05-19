@@ -1,4 +1,3 @@
-// Auth type constants for skill registries
 export type SkillRegistryAuthType = "none" | "github_pat" | "gitlab_pat" | "ssh_key";
 
 export interface SkillRegistry {
@@ -45,7 +44,6 @@ export interface McpMarketItem {
   default_http_headers?: McpHeaderSchemaEntry[] | null;
   env_var_schema?: EnvVarSchemaEntry[] | null;
   category: string;
-  // Registry sync fields
   source?: string;
   registry_name?: string;
   version?: string;

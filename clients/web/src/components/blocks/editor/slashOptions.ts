@@ -27,7 +27,6 @@ import {
 
 import type { SlashOption } from "./SlashMenu";
 
-// Dispatcher surface that slashOptions needs. Kept narrow for easy reuse.
 export interface SlashDispatcher {
   insertSiblingAfter(
     siblingID: string,
@@ -37,11 +36,6 @@ export interface SlashDispatcher {
   ): Promise<string | null>;
 }
 
-// Build the standard "insert block of type X after current block" options.
-// Every option places the newly created block immediately after `blockID`.
-// Empty `text` is passed through so new paragraph / task blocks are indexed
-// by search (Block.text is the search source; empty string is still present
-// in the column, to be filled as the user types via updateBlockData+text).
 export function standardSlashOptions(
   dispatch: SlashDispatcher,
   blockID: string,

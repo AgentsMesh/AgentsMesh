@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Client represents a WebSocket client
 type Client struct {
 	hub       *Hub
 	conn      *websocket.Conn
@@ -22,17 +21,14 @@ type Client struct {
 	mu        sync.Mutex
 }
 
-// UserID returns the user ID of this client
 func (c *Client) UserID() int64 {
 	return c.userID
 }
 
-// OrgID returns the organization ID of this client
 func (c *Client) OrgID() int64 {
 	return c.orgID
 }
 
-// NewClient creates a new client
 func NewClient(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Client {
 	return &Client{
 		hub:    hub,
@@ -43,7 +39,6 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Client {
 	}
 }
 
-// NewEventsClient creates a new events channel client
 func NewEventsClient(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Client {
 	return &Client{
 		hub:      hub,
@@ -55,15 +50,12 @@ func NewEventsClient(hub *Hub, conn *websocket.Conn, userID, orgID int64) *Clien
 	}
 }
 
-// SetPod sets the pod for this client.
-// Holds shard.mu while writing c.podKey to prevent data race with handleUnregister.
 func (c *Client) SetPod(podKey string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	shard := c.hub.getShardByClient(c)
 
-	// Single shard.mu critical section: remove old, update field, add new
 	shard.mu.Lock()
 	if c.podKey != "" {
 		delete(shard.podClients[c.podKey], c)
@@ -81,15 +73,12 @@ func (c *Client) SetPod(podKey string) {
 	shard.mu.Unlock()
 }
 
-// SetChannel sets the channel subscription for this client.
-// Holds shard.mu while writing c.channelID to prevent data race with handleUnregister.
 func (c *Client) SetChannel(channelID int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	shard := c.hub.getShardByClient(c)
 
-	// Single shard.mu critical section: remove old, update field, add new
 	shard.mu.Lock()
 	if c.channelID != 0 {
 		delete(shard.channelClients[c.channelID], c)
@@ -107,7 +96,6 @@ func (c *Client) SetChannel(channelID int64) {
 	shard.mu.Unlock()
 }
 
-// ReadPump pumps messages from the WebSocket connection to the hub
 func (c *Client) ReadPump(onMessage func(*Client, *Message)) {
 	defer func() {
 		c.hub.Unregister(c)
@@ -138,7 +126,6 @@ func (c *Client) ReadPump(onMessage func(*Client, *Message)) {
 	}
 }
 
-// WritePump pumps messages from the hub to the WebSocket connection
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -174,11 +161,8 @@ func (c *Client) WritePump() {
 	}
 }
 
-// ErrSendBufferFull is returned when the client's send buffer is full.
 var ErrSendBufferFull = fmt.Errorf("websocket: send buffer full")
 
-// Send sends a message to the client.
-// Returns ErrSendBufferFull if the send channel is at capacity.
 func (c *Client) Send(msg *Message) error {
 	data, err := json.Marshal(msg)
 	if err != nil {

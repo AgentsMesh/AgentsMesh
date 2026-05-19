@@ -8,7 +8,6 @@ import (
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
 
-// Update updates a Loop.
 func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req *UpdateLoopRequest) (*loopDomain.Loop, error) {
 	loop, err := s.GetBySlug(ctx, orgID, slug)
 	if err != nil {
@@ -103,7 +102,6 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 		updates["idle_timeout_sec"] = *req.IdleTimeoutSec
 	}
 
-	// When runner changes on a persistent-sandbox loop, break the resume chain.
 	if req.RunnerID != nil {
 		effectiveRunnerID := *req.RunnerID
 		currentRunnerID := int64(0)
@@ -116,14 +114,12 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 		}
 	}
 
-	// When switching from persistent to fresh, clear runtime state
 	if req.SandboxStrategy != nil && *req.SandboxStrategy == loopDomain.SandboxStrategyFresh &&
 		loop.SandboxStrategy == loopDomain.SandboxStrategyPersistent {
 		updates["last_pod_key"] = nil
 		updates["sandbox_path"] = nil
 	}
 
-	// Validate enum fields if present
 	execMode := ""
 	if req.ExecutionMode != nil {
 		execMode = *req.ExecutionMode
@@ -150,4 +146,3 @@ func (s *LoopService) Update(ctx context.Context, orgID int64, slug string, req 
 
 	return s.GetBySlug(ctx, orgID, slug)
 }
-

@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/policy"
 )
 
-// podResourceWithGrants builds a ResourceContext for a pod, including grants if available.
 func (h *PodHandler) podResourceWithGrants(ctx context.Context, podKey string, orgID, createdByID int64) policy.ResourceContext {
 	rc := policy.PodResource(orgID, createdByID)
 	if h.grantService == nil {
@@ -19,7 +18,6 @@ func (h *PodHandler) podResourceWithGrants(ctx context.Context, podKey string, o
 	return rc
 }
 
-// runnerResourceWithGrants builds a ResourceContext for a runner, including grants if available.
 func (h *RunnerHandler) runnerResourceWithGrants(ctx context.Context, runnerID int64, orgID int64, registeredByUserID *int64, visibility string) policy.ResourceContext {
 	rc := policy.VisibleResource(orgID, registeredByUserID, visibility)
 	if h.grantService == nil {
@@ -31,7 +29,6 @@ func (h *RunnerHandler) runnerResourceWithGrants(ctx context.Context, runnerID i
 	return rc
 }
 
-// repoResourceWithGrants builds a ResourceContext for a repository, including grants if available.
 func (h *RepositoryHandler) repoResourceWithGrants(ctx context.Context, repoID int64, orgID int64, importedByUserID *int64, visibility string) policy.ResourceContext {
 	rc := policy.VisibleResource(orgID, importedByUserID, visibility)
 	if h.grantService == nil {

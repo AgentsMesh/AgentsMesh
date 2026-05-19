@@ -1,12 +1,6 @@
-// Host-side log entrypoint. Non-Rust callers (TS/Swift) format their own
-// messages and hand them over here; we re-emit through `tracing` so the
-// configured sinks (file, console, …) pick them up alongside native Rust
-// log events.
-//
-// `target` is the caller's logical source (e.g. "renderer", "storeBurst");
-// we route it as a structured field rather than as tracing's `target:` —
-// tracing's target must be a `'static` string literal in the macro, and we
-// want any user-supplied value to survive into the log record.
+// `target` is routed as a structured field rather than tracing's `target:`
+// because tracing's target must be a `'static` string literal in the macro;
+// user-supplied values would not survive otherwise.
 pub fn log_event(level: &str, target: &str, msg: &str) {
     match parse_level(level) {
         tracing::Level::ERROR => {

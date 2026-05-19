@@ -18,8 +18,6 @@ impl BlockstoreService {
         Self { client, state: RwLock::new(state) }
     }
 
-    // ── Mutations ──
-
     pub async fn apply_ops(&self, req_json: &str) -> Result<String, String> {
         let req: ApplyOpsRequest = serde_json::from_str(req_json)
             .map_err(|e| format!("invalid ApplyOpsRequest JSON: {e}"))?;
@@ -50,8 +48,6 @@ impl BlockstoreService {
         }
     }
 
-    // ── Fetches (cache + return JSON) ──
-
     pub async fn list_workspaces(&self) -> Result<String, String> {
         let list: Vec<Workspace> = self.client.blocks_list_workspaces().await
             .map_err(crate::wire)?;
@@ -73,7 +69,6 @@ impl BlockstoreService {
         let mut state = self.state.write().unwrap();
         for b in res.blocks { state.upsert_block(b); }
         for r in res.refs { state.upsert_ref(r); }
-        // Seed watermark so WS subscription recognises this workspace.
         if state.last_op_id.get(workspace_id).is_none() {
             state.set_last_op_id(workspace_id, 0);
         }
@@ -105,16 +100,12 @@ impl BlockstoreService {
         serde_json::to_string(&serde_json::json!({ "hits": hits })).map_err(crate::wire)
     }
 
-    // ── Remote op stream (realtime) ──
-
     pub fn apply_remote_op(&self, op_json: &str) -> Result<(), String> {
         let op: BlockOp = serde_json::from_str(op_json)
             .map_err(|e| format!("invalid op JSON: {e}"))?;
         self.state.write().unwrap().apply_remote_op(&op);
         Ok(())
     }
-
-    // ── Getters (sync, return JSON) ──
 
     pub fn workspaces_json(&self) -> String {
         self.state.read().unwrap().workspaces_json()
@@ -165,14 +156,8 @@ impl BlockstoreService {
     }
 }
 
-// Synthesize a BlockOp from an envelope when the server returned op_ids but
-// no full ops (happy path on apply_ops). Keeps the local mutation logic in one
-// place (apply_remote_op) so replay and realtime paths converge.
 fn synthesize_op(workspace_id: &str, id: i64, env: &OpEnvelope, applied_at: &str) -> BlockOp {
     let mut forward = env.payload.clone();
-    // Server assigns ids/timestamps on create. For local apply we tolerate
-    // missing fields — the forward is a best-effort projection used only to
-    // keep the client cache warm until `catchup_ops` delivers the canonical op.
     if matches!(env.op, OpKind::AddRef) {
         if let Value::Object(ref mut m) = forward {
             m.entry("id").or_insert(Value::from(id));

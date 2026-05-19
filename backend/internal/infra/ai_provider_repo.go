@@ -12,7 +12,6 @@ var _ agentpod.AIProviderRepository = (*aiProviderRepo)(nil)
 
 type aiProviderRepo struct{ db *gorm.DB }
 
-// NewAIProviderRepository creates a new AIProviderRepository backed by GORM.
 func NewAIProviderRepository(db *gorm.DB) agentpod.AIProviderRepository {
 	return &aiProviderRepo{db: db}
 }
@@ -25,7 +24,7 @@ func (r *aiProviderRepo) GetDefaultByType(ctx context.Context, userID int64, pro
 		First(&provider).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil // not found
+			return nil, nil
 		}
 		return nil, err
 	}

@@ -1,7 +1,3 @@
-/**
- * Git Provider Icons
- * Shared icon components for GitHub, GitLab, Gitee and other git providers.
- */
 
 import { Settings, Key, GitBranch } from "lucide-react";
 import { CredentialType } from "@/lib/api/userGitCredentialTypes";
@@ -11,9 +7,6 @@ interface GitProviderIconProps {
   className?: string;
 }
 
-/**
- * GitProviderIcon - Icon component for git providers (GitHub, GitLab, Gitee)
- */
 export function GitProviderIcon({ provider, className = "w-5 h-5" }: GitProviderIconProps) {
   switch (provider) {
     case "github":
@@ -48,9 +41,6 @@ interface CredentialTypeIconProps {
   className?: string;
 }
 
-/**
- * CredentialTypeIcon - Icon component for git credential types (OAuth, PAT, SSH)
- */
 export function CredentialTypeIcon({ type, className = "w-4 h-4" }: CredentialTypeIconProps) {
   switch (type) {
     case CredentialType.RUNNER_LOCAL:

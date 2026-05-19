@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// Agent represents a code agent definition (builtin or custom)
 type Agent struct {
 	Slug string `gorm:"size:50;primaryKey" json:"slug"`
 	Name string `gorm:"size:100;not null" json:"name"`
@@ -26,13 +25,6 @@ type Agent struct {
 
 	SupportedModes string `gorm:"column:supported_modes;type:varchar(50);default:pty;not null" json:"supported_modes"`
 
-	// UsesLegacyColumns is IMMUTABLE: set at agent registration, never toggled
-	// at runtime. Pods rely on it for schema decisions (whether pods.model /
-	// pods.permission_mode are written), so flipping it on a live agent would
-	// silently desync existing pod data. Do NOT expose mutators via update APIs.
-	//
-	// True for Claude-family agents (claude-code / claude). New agents must
-	// default to false and rely on the AgentFile CONFIG snapshot exclusively.
 	UsesLegacyColumns bool `gorm:"column:uses_legacy_columns;not null;default:false" json:"uses_legacy_columns"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
@@ -43,7 +35,6 @@ func (Agent) TableName() string {
 	return "agents"
 }
 
-// SupportsMode returns true if this agent supports the given interaction mode.
 func (a *Agent) SupportsMode(mode string) bool {
 	for _, m := range strings.Split(a.SupportedModes, ",") {
 		if strings.TrimSpace(m) == mode {
@@ -53,10 +44,8 @@ func (a *Agent) SupportsMode(mode string) bool {
 	return false
 }
 
-// EncryptedCredentials represents encrypted credential storage
 type EncryptedCredentials map[string]string
 
-// Scan implements sql.Scanner for EncryptedCredentials
 func (ec *EncryptedCredentials) Scan(value interface{}) error {
 	if value == nil {
 		*ec = nil
@@ -74,7 +63,6 @@ func (ec *EncryptedCredentials) Scan(value interface{}) error {
 	return json.Unmarshal(data, ec)
 }
 
-// Value implements driver.Valuer for EncryptedCredentials
 func (ec EncryptedCredentials) Value() (driver.Value, error) {
 	if ec == nil {
 		return nil, nil
@@ -82,7 +70,6 @@ func (ec EncryptedCredentials) Value() (driver.Value, error) {
 	return json.Marshal(ec)
 }
 
-// CustomAgent represents an organization-specific custom agent
 type CustomAgent struct {
 	OrganizationID int64  `gorm:"primaryKey;autoIncrement:false" json:"organization_id"`
 	Slug           string `gorm:"primaryKey;size:50" json:"slug"`

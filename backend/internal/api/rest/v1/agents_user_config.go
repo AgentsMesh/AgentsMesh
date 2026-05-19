@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListUserAgentConfigs returns all personal configs for the current user
 func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -27,7 +26,6 @@ func (h *AgentHandler) ListUserAgentConfigs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"configs": responses})
 }
 
-// GetUserAgentConfig returns the user's personal config for an agent
 func (h *AgentHandler) GetUserAgentConfig(c *gin.Context) {
 	agentSlug := c.Param("slug")
 	userID := middleware.GetUserID(c)
@@ -41,7 +39,6 @@ func (h *AgentHandler) GetUserAgentConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
 }
 
-// SetUserAgentConfig sets the user's personal config for an agent
 func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
 	agentSlug := c.Param("slug")
 	userID := middleware.GetUserID(c)
@@ -66,7 +63,6 @@ func (h *AgentHandler) SetUserAgentConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"config": config.ToResponse()})
 }
 
-// DeleteUserAgentConfig deletes the user's personal config for an agent
 func (h *AgentHandler) DeleteUserAgentConfig(c *gin.Context) {
 	agentSlug := c.Param("slug")
 	userID := middleware.GetUserID(c)

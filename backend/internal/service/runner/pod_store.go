@@ -7,9 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
-// PodStore is the pod persistence interface consumed by PodCoordinator.
-// Defined here (runner package) per Interface Segregation Principle.
-// Implemented by agentpod.PodService.
 type PodStore interface {
 	GetByKey(ctx context.Context, podKey string) (*agentpod.Pod, error)
 	GetByKeyAndRunner(ctx context.Context, podKey string, runnerID int64) (*agentpod.Pod, error)

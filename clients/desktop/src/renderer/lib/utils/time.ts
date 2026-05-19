@@ -1,19 +1,6 @@
-/**
- * Shared time formatting utilities.
- *
- * These functions accept an i18n translate function `t` so that
- * all user-facing strings go through next-intl.
- * The `t` parameter is typed as a simple string-returning function
- * to avoid coupling to a specific next-intl version.
- */
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TFunc = (key: string, values?: any) => string;
 
-/**
- * Format a past date as a relative time string (e.g. "3m ago", "2h ago").
- * All strings are i18n'd via the t() function.
- */
 export function formatTimeAgo(dateStr: string, t: TFunc): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -27,10 +14,6 @@ export function formatTimeAgo(dateStr: string, t: TFunc): string {
   return t("common.timeAgoDays", { count: diffDays });
 }
 
-/**
- * Format a future date as a relative time string (e.g. "in 3m", "in 2h").
- * All strings are i18n'd via the t() function.
- */
 export function formatTimeUntil(dateStr: string, t: TFunc): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -45,9 +28,6 @@ export function formatTimeUntil(dateStr: string, t: TFunc): string {
   return t("common.timeInDays", { count: diffDays });
 }
 
-/**
- * Format a duration in seconds as a human-readable string (e.g. "3m 12s").
- */
 export function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const hours = Math.floor(seconds / 3600);

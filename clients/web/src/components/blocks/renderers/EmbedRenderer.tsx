@@ -51,11 +51,6 @@ export function EmbedRenderer({ block }: { block: Block }) {
             src={provider.iframe}
             className="aspect-video w-full rounded-md border border-border"
             allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            // Sandbox: give the embed enough capability to run a player
-            // (scripts + same-origin for iframe-to-iframe protocols +
-            // popups so OAuth flows open in a new tab) but deny top-level
-            // navigation and form submission so a compromised embed can't
-            // redirect the parent page or exfil via form POST.
             sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
             referrerPolicy="no-referrer-when-downgrade"
             allowFullScreen

@@ -1,8 +1,3 @@
-// Client-side URL guardrails for user-authored URLs that end up in
-// <iframe src>, <img src>, <a href>. Browsers already refuse javascript:
-// on <img> but NOT always on <iframe>, and a misconfigured <a href> with
-// javascript: is a one-click XSS. Keep the policy strict and centralised so
-// every renderer flows through the same check.
 
 const SAFE_SCHEMES = new Set(["http:", "https:"]);
 

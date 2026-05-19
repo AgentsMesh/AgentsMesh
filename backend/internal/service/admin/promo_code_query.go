@@ -9,7 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// ListPromoCodes lists promo codes with filtering and pagination
 func (s *Service) ListPromoCodes(ctx context.Context, filter *PromoCodeListFilter) (*PromoCodeListResult, error) {
 	query := s.db.Model(&promocode.PromoCode{})
 
@@ -51,9 +50,7 @@ func (s *Service) ListPromoCodes(ctx context.Context, filter *PromoCodeListFilte
 	}, nil
 }
 
-// ListPromoCodeRedemptions lists redemptions for a promo code
 func (s *Service) ListPromoCodeRedemptions(ctx context.Context, promoCodeID int64, page, pageSize int) (*RedemptionListResult, error) {
-	// Check if promo code exists
 	var code promocode.PromoCode
 	if err := s.db.Model(&promocode.PromoCode{}).Where("id = ?", promoCodeID).First(&code); err != nil {
 		return nil, ErrPromoCodeNotFound
@@ -78,7 +75,6 @@ func (s *Service) ListPromoCodeRedemptions(ctx context.Context, promoCodeID int6
 		return nil, fmt.Errorf("failed to list redemptions: %w", err)
 	}
 
-	// Fetch user and organization details
 	result := make([]*RedemptionWithDetails, len(redemptions))
 	for i, r := range redemptions {
 		detail := &RedemptionWithDetails{
@@ -93,13 +89,11 @@ func (s *Service) ListPromoCodeRedemptions(ctx context.Context, promoCodeID int6
 			CreatedAt:      r.CreatedAt,
 		}
 
-		// Fetch user
 		var u user.User
 		if err := s.db.Model(&user.User{}).Where("id = ?", r.UserID).First(&u); err == nil {
 			detail.User = &u
 		}
 
-		// Fetch organization
 		var org organization.Organization
 		if err := s.db.Model(&organization.Organization{}).Where("id = ?", r.OrganizationID).First(&org); err == nil {
 			detail.Organization = &org

@@ -26,7 +26,6 @@ export function MobileHeader({ className, title, actions }: MobileHeaderProps) {
   const t = useTranslations();
   const orgSlug = currentOrg?.slug || (params.org as string) || "";
 
-  // Get display title for activity
   const getActivityTitle = (activity: ActivityType): string => {
     switch (activity) {
       case "workspace":

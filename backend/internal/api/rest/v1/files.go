@@ -12,32 +12,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// FileServiceInterface defines the interface for file service operations
 type FileServiceInterface interface {
 	RequestPresignedUpload(ctx context.Context, req *fileservice.PresignUploadRequest) (*fileservice.PresignUploadResponse, error)
 }
 
-// FileHandler handles file-related requests
 type FileHandler struct {
 	fileService FileServiceInterface
 }
 
-// NewFileHandler creates a new file handler
 func NewFileHandler(fileService FileServiceInterface) *FileHandler {
 	return &FileHandler{
 		fileService: fileService,
 	}
 }
 
-// presignUploadRequest is the JSON body for presign upload
 type presignUploadRequest struct {
 	Filename    string `json:"filename" binding:"required"`
 	ContentType string `json:"content_type" binding:"required"`
 	Size        int64  `json:"size" binding:"required,gt=0"`
 }
 
-// PresignUpload returns presigned PUT and GET URLs for direct-to-S3 upload
-// POST /api/v1/orgs/:slug/files/presign
 func (h *FileHandler) PresignUpload(c *gin.Context) {
 	if h.fileService == nil {
 		apierr.InternalError(c, "Storage not configured")

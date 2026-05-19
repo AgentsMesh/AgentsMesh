@@ -76,7 +76,6 @@ mod tests {
         assert_eq!(result.count, 42);
     }
 
-    // b. Empty response body → returns {}
     #[tokio::test]
     async fn empty_response_body() {
         let server = MockServer::start().await;
@@ -159,7 +158,6 @@ mod tests {
         assert!(store.get_token().is_none());
     }
 
-    // f. ApiError parsing with code and error
     #[tokio::test]
     async fn api_error_parsing_422() {
         let server = MockServer::start().await;
@@ -201,7 +199,6 @@ mod tests {
         assert_eq!(err.status(), Some(422));
     }
 
-    // g. org_path splicing
     #[tokio::test]
     async fn org_path_with_slug() {
         let store = MockTokenStore::new(Some("tok"), None, Some("my-org"));
@@ -216,7 +213,6 @@ mod tests {
         assert_eq!(client.org_path("/pods"), "/api/v1/pods");
     }
 
-    // h. public_get does not send Authorization header
     #[tokio::test]
     async fn public_get_no_authorization() {
         let server = MockServer::start().await;
@@ -240,7 +236,6 @@ mod tests {
         assert!(auth_header.is_none(), "public_get should not send Authorization");
     }
 
-    // i. Custom headers
     #[tokio::test]
     async fn custom_headers_sent() {
         let server = MockServer::start().await;
@@ -271,7 +266,6 @@ mod tests {
         assert_eq!(result.message, "with-header");
     }
 
-    // j. Network error — connect to non-existent port
     #[tokio::test]
     async fn network_error_unreachable() {
         let store = MockTokenStore::new(Some("tok"), None, None);
@@ -281,7 +275,6 @@ mod tests {
         assert!(matches!(err, ApiError::Network(_)));
     }
 
-    // POST request sends body
     #[tokio::test]
     async fn post_sends_body() {
         let server = MockServer::start().await;
@@ -305,7 +298,6 @@ mod tests {
         assert_eq!(result.message, "created");
     }
 
-    // PUT request
     #[tokio::test]
     async fn put_request() {
         let server = MockServer::start().await;
@@ -326,7 +318,6 @@ mod tests {
         assert_eq!(result.message, "updated");
     }
 
-    // DELETE request
     #[tokio::test]
     async fn delete_request() {
         let server = MockServer::start().await;
@@ -343,7 +334,6 @@ mod tests {
         assert_eq!(result, serde_json::json!({}));
     }
 
-    // PATCH request
     #[tokio::test]
     async fn patch_request() {
         let server = MockServer::start().await;
@@ -364,7 +354,6 @@ mod tests {
         assert_eq!(result.message, "patched");
     }
 
-    // public_post
     #[tokio::test]
     async fn public_post_no_auth() {
         let server = MockServer::start().await;
@@ -388,7 +377,6 @@ mod tests {
         assert!(requests[0].headers.get("Authorization").is_none());
     }
 
-    // ApiError status() for non-Http variants
     #[tokio::test]
     async fn api_error_status_none_for_non_http() {
         let err = ApiError::AuthExpired;
@@ -396,7 +384,6 @@ mod tests {
         assert!(!err.has_code("any"));
     }
 
-    // Refresh with no refresh token clears auth
     #[tokio::test]
     async fn refresh_without_refresh_token() {
         let server = MockServer::start().await;
@@ -415,7 +402,6 @@ mod tests {
         assert!(store.get_token().is_none());
     }
 
-    // Authenticated GET sends Bearer token
     #[tokio::test]
     async fn get_sends_bearer_token() {
         let server = MockServer::start().await;
@@ -436,7 +422,6 @@ mod tests {
         assert_eq!(result.message, "authed");
     }
 
-    // MockTokenStore trait operations
     #[test]
     fn mock_token_store_operations() {
         let store = MockTokenStore::new(Some("t"), Some("r"), Some("org"));

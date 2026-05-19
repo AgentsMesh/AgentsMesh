@@ -10,14 +10,12 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// AutopilotControlRequest represents control action request
 type AutopilotControlRequest struct {
 	Action               string `json:"action" binding:"required,oneof=pause resume stop approve takeover handback"`
 	ContinueExecution    *bool  `json:"continue_execution,omitempty"`    // For approve action
 	AdditionalIterations int32  `json:"additional_iterations,omitempty"` // For approve action
 }
 
-// sendAutopilotControl sends a control command to the runner
 func (h *AutopilotControllerHandler) sendAutopilotControl(c *gin.Context, autopilotPod *agentpod.AutopilotController, action string, req *AutopilotControlRequest) {
 	if h.commandSender == nil {
 		apierr.InternalError(c, "command sender not configured")
@@ -67,7 +65,6 @@ func (h *AutopilotControllerHandler) sendAutopilotControl(c *gin.Context, autopi
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "action": action})
 }
 
-// PauseAutopilotController handles POST /autopilot-controllers/:key/pause
 func (h *AutopilotControllerHandler) PauseAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -76,7 +73,6 @@ func (h *AutopilotControllerHandler) PauseAutopilotController(c *gin.Context) {
 	h.sendAutopilotControl(c, autopilotPod, "pause", nil)
 }
 
-// ResumeAutopilotController handles POST /autopilot-controllers/:key/resume
 func (h *AutopilotControllerHandler) ResumeAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -85,7 +81,6 @@ func (h *AutopilotControllerHandler) ResumeAutopilotController(c *gin.Context) {
 	h.sendAutopilotControl(c, autopilotPod, "resume", nil)
 }
 
-// StopAutopilotController handles POST /autopilot-controllers/:key/stop
 func (h *AutopilotControllerHandler) StopAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -94,7 +89,6 @@ func (h *AutopilotControllerHandler) StopAutopilotController(c *gin.Context) {
 	h.sendAutopilotControl(c, autopilotPod, "stop", nil)
 }
 
-// ApproveAutopilotController handles POST /autopilot-controllers/:key/approve
 func (h *AutopilotControllerHandler) ApproveAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -103,14 +97,12 @@ func (h *AutopilotControllerHandler) ApproveAutopilotController(c *gin.Context) 
 
 	var req AutopilotControlRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Allow empty body for simple approval
 		req.Action = "approve"
 	}
 
 	h.sendAutopilotControl(c, autopilotPod, "approve", &req)
 }
 
-// TakeoverAutopilotController handles POST /autopilot-controllers/:key/takeover
 func (h *AutopilotControllerHandler) TakeoverAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -119,7 +111,6 @@ func (h *AutopilotControllerHandler) TakeoverAutopilotController(c *gin.Context)
 	h.sendAutopilotControl(c, autopilotPod, "takeover", nil)
 }
 
-// HandbackAutopilotController handles POST /autopilot-controllers/:key/handback
 func (h *AutopilotControllerHandler) HandbackAutopilotController(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {

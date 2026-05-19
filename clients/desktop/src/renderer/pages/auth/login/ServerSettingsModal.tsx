@@ -10,18 +10,6 @@ import {
 } from "../../../lib/server-config";
 import { useAuthStore } from "@/stores/auth";
 
-/**
- * Three-mode picker: AgentsMesh Global, AgentsMesh 中国, or 自定义服务器.
- * Custom URL/label inputs only appear when 自定义 is selected, keeping
- * the dialog uncluttered for the 95% who pick a preset.
- *
- * Save flow: `saveConfig` round-trips through main, which persists
- * `userData/server.json`, rebuilds the Rust `AppState` if the resolved
- * URL changed, and calls `mainWindow.reload()` to refresh preload's
- * sync snapshot. The IPC resolves *before* the reload navigation fires,
- * so anything queued in the renderer between `await saveConfig` and
- * the reload is about to be torn down.
- */
 export function ServerSettingsModal({ open, onOpenChange }: {
   open: boolean;
   onOpenChange: (next: boolean) => void;
@@ -58,16 +46,9 @@ function ServerSettingsForm({ onClose }: { onClose: () => void }) {
         return;
       }
     }
-    // Switching server == logging out: tokens/identity for the previous
-    // server are not valid against the new one. Wipe local session before
-    // we hand off to main — main will rebuild AppState + reload the window
-    // on save, so the renderer boots clean against the new base_url.
-    //
-    // Logout MUST be fail-soft: a common reason to switch is that the old
-    // server is unreachable. If the /auth/logout API call throws (network,
-    // 5xx, anything), we still want to proceed with the switch — Rust core
-    // will wipe local tokens during the AppState rebuild either way, and
-    // mainWindow.reload() starts a clean session.
+    // Switching server == logging out. Logout MUST be fail-soft: switch reason is often
+    // that the old server is unreachable; Rust core wipes tokens during AppState rebuild
+    // regardless, and mainWindow.reload() starts a clean session.
     const wasAuthed = useAuthStore.getState().isAuthenticated();
     if (wasAuthed) {
       const ok = window.confirm(
@@ -81,15 +62,11 @@ function ServerSettingsForm({ onClose }: { onClose: () => void }) {
     try {
       await saveConfig(draft);
     } catch (e) {
-      // Main rejects when activeUrl() throws (custom URL malformed past
-      // the renderer's pre-check). Surface inline; don't close the dialog.
+      // Main rejects when activeUrl() throws (malformed custom URL past renderer pre-check).
       setError((e as Error).message || t("auth.loginPage.serverInvalidUrl"));
       return;
     }
     onClose();
-    // No reload here — main calls mainWindow.reload() if the URL actually
-    // changed. If we get past `await saveConfig` it means no-op save
-    // (same URL); closing the dialog is enough.
   };
 
   return (

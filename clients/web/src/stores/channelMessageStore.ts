@@ -11,9 +11,7 @@ import { registerOrgScopedReset } from "@/lib/org-scope/registry";
 
 export { EMPTY_CACHE, type ChannelMessageCache } from "./channelMessageTypes";
 
-/** Number of messages to fetch on initial channel load. */
 export const INITIAL_MESSAGE_LIMIT = 20;
-/** Number of messages to fetch when loading older history. */
 export const LOAD_MORE_MESSAGE_LIMIT = 30;
 
 const svc = () => getChannelService();
@@ -70,7 +68,6 @@ export const useChannelMessageStore = create<ChannelMessageState>((set, get) => 
       const json = await svc().send_message(BigInt(channelId), JSON.stringify(req));
       const msg = JSON.parse(json) as ChannelMessage;
 
-      // POST response may lack sender_user — backfill from auth store.
       if (!msg.sender_user && msg.sender_user_id) {
         const authUser = readCurrentUser();
         if (authUser && authUser.id === msg.sender_user_id) {
@@ -165,9 +162,6 @@ export const useChannelMessageStore = create<ChannelMessageState>((set, get) => 
     set((s) => ({ _unreadTick: s._unreadTick + 1 }));
   },
 }));
-
-// ── Selectors: Rust is SSOT. These hooks subscribe to tick counters so
-// components re-render when Rust state mutates — no parallel JS copy.
 
 export interface ChannelMessagesView {
   messages: ChannelMessage[];

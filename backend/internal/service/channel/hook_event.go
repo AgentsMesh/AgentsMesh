@@ -10,12 +10,10 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// MemberIDProvider resolves member user IDs for a channel.
 type MemberIDProvider interface {
 	GetMemberUserIDs(ctx context.Context, channelID int64) ([]int64, error)
 }
 
-// NewEventPublishHook creates a hook that publishes channel:message events.
 func NewEventPublishHook(eb *eventbus.EventBus, userNames UserNameResolver, members MemberIDProvider) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if eb == nil {

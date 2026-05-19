@@ -13,14 +13,6 @@ import { SearchResultGroups } from "./SearchResultGroups";
 import { CommandGroups } from "./CommandGroups";
 import type { CommandPaletteProps, CommandItemData, PodSearchResult, TicketSearchResult, RepositorySearchResult } from "./types";
 
-/**
- * CommandPalette - Global command palette for quick navigation and actions
- *
- * Supports keyboard navigation (Cmd+K / Ctrl+K) and provides:
- * - Search for pods, tickets, and repositories
- * - Navigation to different sections
- * - Quick actions (create, logout, etc.)
- */
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
   const t = useTranslations();
@@ -30,7 +22,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
   const orgSlug = currentOrg?.slug || "";
 
-  // Wrap onOpenChange to reset search when closing
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
       setSearch("");
@@ -38,13 +29,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     onOpenChange(newOpen);
   }, [onOpenChange]);
 
-  // Search results
   const { pods, tickets, repositories, loading } = useCommandPaletteSearch(search);
 
-  // Commands
   const { navigationCommands, actionCommands } = useCommands(t);
 
-  // Handle keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -59,7 +47,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, handleOpenChange]);
-
 
   const handleSelect = useCallback(
     async (item: CommandItemData) => {

@@ -61,7 +61,6 @@ export function ChannelList({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between p-3 border-b">
         <h2 className="font-semibold">{t("mesh.channelList.title")}</h2>
         <div className="flex items-center gap-2">
@@ -76,7 +75,6 @@ export function ChannelList({
         </div>
       </div>
 
-      {/* Channel List */}
       <div className="flex-1 overflow-y-auto">
         {filteredChannels.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">

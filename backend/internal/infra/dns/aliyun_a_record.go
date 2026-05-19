@@ -5,23 +5,17 @@ import (
 	"fmt"
 )
 
-// CreateRecord creates an A record
-// subdomain should be the full domain name (e.g., "us-east-1.relay.agentsmesh.cn")
 func (p *AliyunProvider) CreateRecord(ctx context.Context, subdomain, ip string) error {
-	// Parse subdomain and domain
 	rr, domainName := p.parseSubdomain(subdomain)
 
-	// Check if record exists
 	existing, err := p.getRecordByRR(ctx, domainName, rr)
 	if err != nil {
 		return err
 	}
 	if existing != nil {
-		// Update existing record
 		return p.updateRecordByID(ctx, existing.RecordID, rr, ip)
 	}
 
-	// Create new record
 	params := map[string]string{
 		"Action":     "AddDomainRecord",
 		"DomainName": domainName,
@@ -43,7 +37,6 @@ func (p *AliyunProvider) CreateRecord(ctx context.Context, subdomain, ip string)
 	return nil
 }
 
-// DeleteRecord deletes an A record
 func (p *AliyunProvider) DeleteRecord(ctx context.Context, subdomain string) error {
 	rr, domainName := p.parseSubdomain(subdomain)
 
@@ -52,7 +45,7 @@ func (p *AliyunProvider) DeleteRecord(ctx context.Context, subdomain string) err
 		return err
 	}
 	if record == nil {
-		return nil // Record doesn't exist
+		return nil
 	}
 
 	params := map[string]string{
@@ -72,7 +65,6 @@ func (p *AliyunProvider) DeleteRecord(ctx context.Context, subdomain string) err
 	return nil
 }
 
-// GetRecord returns the IP for a subdomain
 func (p *AliyunProvider) GetRecord(ctx context.Context, subdomain string) (string, error) {
 	rr, domainName := p.parseSubdomain(subdomain)
 
@@ -86,7 +78,6 @@ func (p *AliyunProvider) GetRecord(ctx context.Context, subdomain string) (strin
 	return record.Value, nil
 }
 
-// UpdateRecord updates an A record
 func (p *AliyunProvider) UpdateRecord(ctx context.Context, subdomain, ip string) error {
 	rr, domainName := p.parseSubdomain(subdomain)
 
@@ -101,7 +92,6 @@ func (p *AliyunProvider) UpdateRecord(ctx context.Context, subdomain, ip string)
 	return p.updateRecordByID(ctx, record.RecordID, rr, ip)
 }
 
-// getRecordByRR finds a record by its RR (subdomain part)
 func (p *AliyunProvider) getRecordByRR(ctx context.Context, domainName, rr string) (*aliyunRecord, error) {
 	params := map[string]string{
 		"Action":      "DescribeDomainRecords",
@@ -123,7 +113,6 @@ func (p *AliyunProvider) getRecordByRR(ctx context.Context, domainName, rr strin
 		return nil, nil
 	}
 
-	// Find exact match
 	for _, record := range resp.DomainRecords.Record {
 		if record.RR == rr && record.Type == "A" {
 			return &record, nil
@@ -133,7 +122,6 @@ func (p *AliyunProvider) getRecordByRR(ctx context.Context, domainName, rr strin
 	return nil, nil
 }
 
-// updateRecordByID updates a record by its ID
 func (p *AliyunProvider) updateRecordByID(ctx context.Context, recordID, rr, ip string) error {
 	params := map[string]string{
 		"Action":   "UpdateDomainRecord",

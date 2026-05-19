@@ -17,7 +17,6 @@ import {
   Send,
 } from "lucide-react";
 
-// Stable empty array — avoids new reference on every selector call
 const EMPTY_HISTORY: never[] = [];
 
 interface AutopilotThinkingPanelProps {
@@ -26,12 +25,8 @@ interface AutopilotThinkingPanelProps {
   showHistory?: boolean;
 }
 
-// Normalized decision types (lowercase only)
 type NormalizedDecisionType = "continue" | "completed" | "need_help" | "give_up";
 
-// Map backend decision types to frontend keys
-// Backend uses: CONTINUE, TASK_COMPLETED, NEED_HUMAN_HELP, GIVE_UP
-// Frontend expects: continue, completed, need_help, give_up
 function normalizeDecisionType(backendType: string): NormalizedDecisionType {
   const mapping: Record<string, NormalizedDecisionType> = {
     "CONTINUE": "continue",
@@ -46,7 +41,6 @@ function normalizeDecisionType(backendType: string): NormalizedDecisionType {
   return mapping[backendType] || "continue";
 }
 
-// Decision type configuration
 const decisionConfig: Record<
   NormalizedDecisionType,
   { label: string; color: string; icon: React.ReactNode }
@@ -73,7 +67,6 @@ const decisionConfig: Record<
   },
 };
 
-// Action type configuration
 const actionConfig: Record<string, { label: string; icon: React.ReactNode }> = {
   observe: { label: "Observing", icon: <Eye className="h-3 w-3" /> },
   send_input: { label: "Sending Input", icon: <Send className="h-3 w-3" /> },
@@ -86,7 +79,6 @@ export function AutopilotThinkingPanel({
   className,
   showHistory = false,
 }: AutopilotThinkingPanelProps) {
-  // Reactive selectors — re-render when this controller's thinking/history changes
   const thinking = useAutopilotThinking(autopilotControllerKey);
   const historyAll = useAutopilotThinkingHistory(autopilotControllerKey);
   const history = showHistory ? historyAll : EMPTY_HISTORY;

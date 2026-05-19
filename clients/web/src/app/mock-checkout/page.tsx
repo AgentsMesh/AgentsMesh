@@ -29,7 +29,6 @@ export default function MockCheckoutPage() {
   const successUrl = searchParams.get("success_url");
   const cancelUrl = searchParams.get("cancel_url");
 
-  // Fetch session info
   useEffect(() => {
     if (!sessionId) {
       setError("Missing session_id parameter");
@@ -47,7 +46,6 @@ export default function MockCheckoutPage() {
         const data = await response.json();
         setSession(data);
 
-        // Check URL params for auto-complete
         if (searchParams.get("auto") === "true") {
           setAutoComplete(true);
         }
@@ -61,7 +59,6 @@ export default function MockCheckoutPage() {
     fetchSession();
   }, [sessionId, searchParams]);
 
-  // Auto-complete if requested
   useEffect(() => {
     if (autoComplete && session && session.status === "pending") {
       handleComplete();
@@ -92,14 +89,11 @@ export default function MockCheckoutPage() {
         throw new Error(data.error || "Payment failed");
       }
 
-      // Redirect to success URL
       if (successUrl) {
-        // Add payment=success query param
         const url = new URL(successUrl, window.location.origin);
         url.searchParams.set("payment", "success");
         router.push(url.toString());
       } else {
-        // Just show success message
         setSession((prev) => (prev ? { ...prev, status: "succeeded" } : null));
       }
     } catch (err) {

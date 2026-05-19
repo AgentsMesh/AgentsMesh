@@ -11,7 +11,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// EditMessage edits a message's content. Only the original sender can edit.
 func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderUserID int64, newContent channel.MessageContent) (*channel.Message, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
@@ -41,7 +40,6 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 	newBody := extractBody(&newContent)
 	newMentions := extractMentions(&newContent)
 
-	// Save edit history before updating
 	edit := &channel.MessageEdit{
 		MessageID:       messageID,
 		EditorUserID:    &senderUserID,
@@ -69,7 +67,6 @@ func (s *Service) EditMessage(ctx context.Context, channelID, messageID, senderU
 	return s.repo.GetMessageByID(ctx, messageID)
 }
 
-// DeleteMessage soft-deletes a message. Only the original sender can delete.
 func (s *Service) DeleteMessage(ctx context.Context, channelID, messageID, senderUserID int64) error {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {

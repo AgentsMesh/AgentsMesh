@@ -11,7 +11,6 @@ import (
 	apikeyDomain "github.com/anthropics/agentsmesh/backend/internal/domain/apikey"
 )
 
-// UpdateAPIKey updates an API key's metadata with organization ownership verification
 func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *UpdateAPIKeyRequest) (*apikeyDomain.APIKey, error) {
 	key, err := s.repo.GetByID(ctx, id, orgID)
 	if err != nil {
@@ -34,7 +33,6 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 			return nil, ErrNameTooLong
 		}
 		req.Name = &trimmed
-		// Check duplicate name within organization (excluding self)
 		exists, err := s.repo.CheckDuplicateName(ctx, key.OrganizationID, *req.Name, &id)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check duplicate name: %w", err)
@@ -68,10 +66,8 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 	}
 
 	slog.InfoContext(ctx, "API key updated", "api_key_id", id, "org_id", orgID)
-	// Invalidate cache
 	s.invalidateCache(ctx, key.KeyHash)
 
-	// Reload with organization ownership
 	key, err = s.repo.GetByID(ctx, id, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reload api key: %w", err)
@@ -80,7 +76,6 @@ func (s *Service) UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *
 	return key, nil
 }
 
-// RevokeAPIKey disables an API key with organization ownership verification
 func (s *Service) RevokeAPIKey(ctx context.Context, id int64, orgID int64) error {
 	key, err := s.repo.GetByID(ctx, id, orgID)
 	if err != nil {
@@ -99,13 +94,11 @@ func (s *Service) RevokeAPIKey(ctx context.Context, id int64, orgID int64) error
 	}
 
 	slog.InfoContext(ctx, "API key revoked", "api_key_id", id, "org_id", orgID)
-	// Invalidate cache
 	s.invalidateCache(ctx, key.KeyHash)
 
 	return nil
 }
 
-// DeleteAPIKey permanently deletes an API key with organization ownership verification
 func (s *Service) DeleteAPIKey(ctx context.Context, id int64, orgID int64) error {
 	key, err := s.repo.GetByID(ctx, id, orgID)
 	if err != nil {
@@ -121,13 +114,11 @@ func (s *Service) DeleteAPIKey(ctx context.Context, id int64, orgID int64) error
 	}
 
 	slog.InfoContext(ctx, "API key deleted", "api_key_id", id, "org_id", orgID)
-	// Invalidate cache
 	s.invalidateCache(ctx, key.KeyHash)
 
 	return nil
 }
 
-// UpdateLastUsed updates the last_used_at timestamp (fire-and-forget, errors are logged)
 func (s *Service) UpdateLastUsed(ctx context.Context, id int64) error {
 	return s.repo.UpdateLastUsed(ctx, id)
 }

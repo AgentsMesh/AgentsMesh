@@ -5,9 +5,6 @@ import { CenteredSpinner } from "@/components/ui/spinner";
 import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 import type { StepProps } from "../types";
 
-/**
- * Step 1: Select Source - Choose provider or manual entry
- */
 export function SourceStep({ state, actions, t }: StepProps) {
   const { providers, loadingProviders } = state;
 

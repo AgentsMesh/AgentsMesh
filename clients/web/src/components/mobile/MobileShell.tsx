@@ -18,20 +18,6 @@ interface MobileShellProps {
   className?: string;
 }
 
-/**
- * MobileShell - Mobile layout
- *
- * Layout structure:
- * ┌─────────────────────────────────┐
- * │ Header (hamburger + title)      │
- * ├─────────────────────────────────┤
- * │                                 │
- * │       Main Content Area         │
- * │                                 │
- * ├─────────────────────────────────┤
- * │   Bottom Tab Bar (5 items)      │
- * └─────────────────────────────────┘
- */
 export function MobileShell({
   children,
   title,
@@ -41,7 +27,6 @@ export function MobileShell({
 }: MobileShellProps) {
   const { _hasHydrated } = useIDEStore();
 
-  // Show loading state while hydrating
   if (!_hasHydrated) {
     return (
       <CenteredSpinner className="h-screen bg-background" />

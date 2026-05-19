@@ -26,7 +26,6 @@ interface AutopilotStatusBarProps {
   onTogglePanel?: () => void;
 }
 
-// Phase display configuration with pulse animation states
 const phaseConfig: Record<
   AutopilotController["phase"],
   { label: string; bgColor: string; textColor: string; icon: React.ReactNode; animate?: boolean }
@@ -90,7 +89,6 @@ const phaseConfig: Record<
   },
 };
 
-// Truncate reasoning text for status bar display
 function truncateReasoning(text: string | undefined, maxLength: number = 60): string {
   if (!text) return "Waiting for Control Agent...";
   if (text.length <= maxLength) return text;
@@ -108,7 +106,6 @@ export function AutopilotStatusBar({
   const takeoverAutopilotController = useAutopilotStore((s) => s.takeoverAutopilotController);
   const handbackAutopilotController = useAutopilotStore((s) => s.handbackAutopilotController);
 
-  // Reactive thinking selector — re-renders when this controller's thinking changes
   const thinking: AutopilotThinking | null = useAutopilotThinking(
     autopilotController.autopilot_controller_key,
   );
@@ -122,8 +119,6 @@ export function AutopilotStatusBar({
   );
   const reasoningText = thinking?.reasoning;
 
-  // Is needing help?
-  // Backend sends NEED_HUMAN_HELP, frontend expects need_help
   const needsHelp =
     thinking?.decision_type === "need_help" ||
     thinking?.decision_type === "NEED_HUMAN_HELP" ||

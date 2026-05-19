@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// handleGitLabWebhookWithRepo handles GitLab webhook events with repo_id
-// POST /webhooks/:org_slug/gitlab/:repo_id
 func (r *WebhookRouter) handleGitLabWebhookWithRepo(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("repo_id"), 10, 64)
 	if err != nil {
@@ -20,12 +18,10 @@ func (r *WebhookRouter) handleGitLabWebhookWithRepo(c *gin.Context) {
 	}
 	orgSlug := c.Param("org_slug")
 
-	// Verify webhook secret using repository-specific secret
 	if r.webhookService != nil {
 		token := c.GetHeader("X-Gitlab-Token")
 		valid, err := r.webhookService.VerifyWebhookSecret(c.Request.Context(), repoID, token)
 		if err != nil || !valid {
-			// Fallback to global secret (constant-time comparison)
 			if r.cfg.Webhook.GitLabSecret == "" || subtle.ConstantTimeCompare([]byte(token), []byte(r.cfg.Webhook.GitLabSecret)) != 1 {
 				apierr.Unauthorized(c, apierr.INVALID_TOKEN, "invalid webhook token")
 				return
@@ -45,8 +41,6 @@ func (r *WebhookRouter) handleGitLabWebhookWithRepo(c *gin.Context) {
 	r.processWebhookWithRepo(c, "gitlab", orgSlug, repoID)
 }
 
-// handleGitHubWebhookWithRepo handles GitHub webhook events with repo_id
-// POST /webhooks/:org_slug/github/:repo_id
 func (r *WebhookRouter) handleGitHubWebhookWithRepo(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("repo_id"), 10, 64)
 	if err != nil {
@@ -55,10 +49,8 @@ func (r *WebhookRouter) handleGitHubWebhookWithRepo(c *gin.Context) {
 	}
 	orgSlug := c.Param("org_slug")
 
-	// Verify webhook secret using repository-specific secret
 	verified := false
 	if r.webhookService != nil {
-		// For GitHub, we need to verify HMAC signature with repo-specific secret
 		repo, err := r.webhookService.GetRepositoryByIDWithWebhook(c.Request.Context(), repoID)
 		if err == nil && repo.WebhookConfig != nil && repo.WebhookConfig.Secret != "" {
 			if r.verifyGitHubSignature(c, repo.WebhookConfig.Secret) {
@@ -67,7 +59,6 @@ func (r *WebhookRouter) handleGitHubWebhookWithRepo(c *gin.Context) {
 		}
 	}
 
-	// Fallback to global secret if repo-specific verification failed
 	if !verified {
 		if r.cfg.Webhook.GitHubSecret == "" {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
@@ -82,8 +73,6 @@ func (r *WebhookRouter) handleGitHubWebhookWithRepo(c *gin.Context) {
 	r.processWebhookWithRepo(c, "github", orgSlug, repoID)
 }
 
-// handleGiteeWebhookWithRepo handles Gitee webhook events with repo_id
-// POST /webhooks/:org_slug/gitee/:repo_id
 func (r *WebhookRouter) handleGiteeWebhookWithRepo(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("repo_id"), 10, 64)
 	if err != nil {
@@ -92,7 +81,6 @@ func (r *WebhookRouter) handleGiteeWebhookWithRepo(c *gin.Context) {
 	}
 	orgSlug := c.Param("org_slug")
 
-	// Verify webhook secret using repository-specific secret
 	verified := false
 	if r.webhookService != nil {
 		repo, err := r.webhookService.GetRepositoryByIDWithWebhook(c.Request.Context(), repoID)
@@ -103,7 +91,6 @@ func (r *WebhookRouter) handleGiteeWebhookWithRepo(c *gin.Context) {
 		}
 	}
 
-	// Fallback to global secret if repo-specific verification failed
 	if !verified {
 		if r.cfg.Webhook.GiteeSecret == "" {
 			apierr.Unauthorized(c, apierr.INVALID_TOKEN, "webhook secret not configured")
@@ -118,7 +105,6 @@ func (r *WebhookRouter) handleGiteeWebhookWithRepo(c *gin.Context) {
 	r.processWebhookWithRepo(c, "gitee", orgSlug, repoID)
 }
 
-// processWebhookWithRepo processes a webhook event with org_slug and repo_id context
 func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug string, repoID int64) {
 	var payload map[string]interface{}
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -130,10 +116,8 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 		return
 	}
 
-	// Determine object kind based on provider
 	objectKind := r.extractObjectKind(payload, provider, c)
 
-	// GitLab legacy compatibility: build -> job
 	if objectKind == "build" {
 		objectKind = "job"
 	}
@@ -144,17 +128,14 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 		"org_slug", orgSlug,
 		"repo_id", repoID)
 
-	// Create webhook context with repo info
 	ctx := NewWebhookContext(c.Request.Context(), r.db, payload)
 	ctx.OrgSlug = orgSlug
 	ctx.RepoID = repoID
 
-	// Override object kind if extracted differently
 	if ctx.ObjectKind == "" {
 		ctx.ObjectKind = objectKind
 	}
 
-	// Get repository to set OrganizationID
 	if r.repoService != nil {
 		repo, err := r.repoService.GetByID(c.Request.Context(), repoID)
 		if err != nil {
@@ -166,17 +147,14 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 		}
 		ctx.OrganizationID = repo.OrganizationID
 
-		// Verify project_id in payload matches repository's external_id
 		if ctx.ProjectID != "" && ctx.ProjectID != repo.ExternalID {
 			r.logger.Warn("project_id mismatch in webhook",
 				"expected", repo.ExternalID,
 				"received", ctx.ProjectID,
 				"repo_id", repoID)
-			// Continue processing but log the warning
 		}
 	}
 
-	// Process MR and Pipeline events with full context
 	if (objectKind == "merge_request" || objectKind == "pipeline") && r.mrSyncService != nil && r.eventBus != nil {
 		result, err := r.processMROrPipelineEvent(ctx, objectKind)
 		if err != nil {
@@ -184,7 +162,6 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 				"object_kind", objectKind,
 				"repo_id", repoID,
 				"error", err)
-			// Don't fail the webhook - just log and return success
 			c.JSON(http.StatusOK, gin.H{
 				"status":  "partial",
 				"error":   err.Error(),
@@ -196,7 +173,6 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 		return
 	}
 
-	// Process other events using registry
 	result, err := r.registry.Process(ctx)
 	if err != nil {
 		r.logger.Error("webhook processing failed",

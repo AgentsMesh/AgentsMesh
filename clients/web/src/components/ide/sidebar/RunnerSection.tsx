@@ -24,9 +24,6 @@ interface RunnerSectionProps {
   t: (key: string) => string;
 }
 
-/**
- * Collapsible runners section in the workspace sidebar
- */
 export function RunnerSection({
   runners,
   loading,

@@ -11,7 +11,6 @@ import (
 	"github.com/crewjam/saml"
 )
 
-// SAMLConfig holds SAML provider configuration
 type SAMLConfig struct {
 	IDPMetadataURL string
 	IDPMetadataXML string // raw XML if URL not provided
@@ -22,13 +21,11 @@ type SAMLConfig struct {
 	NameIDFormat   string
 }
 
-// SAMLProvider implements Provider for SAML 2.0
 type SAMLProvider struct {
 	config *SAMLConfig
 	sp     *saml.ServiceProvider
 }
 
-// NewSAMLProvider creates a new SAML provider
 func NewSAMLProvider(cfg *SAMLConfig) (*SAMLProvider, error) {
 	if cfg.SPEntityID == "" || cfg.SPACSURL == "" {
 		return nil, fmt.Errorf("%w: missing SAML SP configuration", ErrInvalidConfig)
@@ -60,7 +57,6 @@ func NewSAMLProvider(cfg *SAMLConfig) (*SAMLProvider, error) {
 	}, nil
 }
 
-// loadIDPMetadata parses IdP metadata from XML, URL, or manual cert+SSO URL.
 func loadIDPMetadata(sp *saml.ServiceProvider, cfg *SAMLConfig) error {
 	switch {
 	case cfg.IDPMetadataXML != "":
@@ -87,7 +83,6 @@ func loadIDPMetadata(sp *saml.ServiceProvider, cfg *SAMLConfig) error {
 	return nil
 }
 
-// buildManualIDPMetadata creates minimal IdP metadata from a cert and SSO URL.
 func buildManualIDPMetadata(idpCert, idpSSOURLStr string) (*saml.EntityDescriptor, error) {
 	cert, err := parsePEMCertificate(idpCert)
 	if err != nil {
@@ -121,14 +116,11 @@ func buildManualIDPMetadata(idpCert, idpSSOURLStr string) (*saml.EntityDescripto
 	}, nil
 }
 
-// GetAuthURL returns the SAML AuthnRequest redirect URL.
 func (p *SAMLProvider) GetAuthURL(ctx context.Context, state string) (string, error) {
 	authURL, _, err := p.GetAuthURLWithRequestID(ctx, state)
 	return authURL, err
 }
 
-// GetAuthURLWithRequestID returns the SAML AuthnRequest redirect URL along with
-// the AuthnRequest ID. The caller should store this ID for InResponseTo validation.
 func (p *SAMLProvider) GetAuthURLWithRequestID(_ context.Context, state string) (string, string, error) {
 	ssoURL := p.sp.GetSSOBindingLocation(saml.HTTPRedirectBinding)
 	if ssoURL == "" {
@@ -148,7 +140,6 @@ func (p *SAMLProvider) GetAuthURLWithRequestID(_ context.Context, state string) 
 	return redirectURL.String(), authnRequest.ID, nil
 }
 
-// HandleCallback validates the SAML response and extracts user info.
 func (p *SAMLProvider) HandleCallback(_ context.Context, params map[string]string) (*UserInfo, error) {
 	samlResponse := params["SAMLResponse"]
 	if samlResponse == "" {
@@ -180,7 +171,6 @@ func (p *SAMLProvider) HandleCallback(_ context.Context, params map[string]strin
 	return userInfo, nil
 }
 
-// buildSyntheticRequest creates a synthetic POST request with SAMLResponse form data.
 func buildSyntheticRequest(acsURL, samlResponse string) (*http.Request, error) {
 	form := url.Values{}
 	form.Set("SAMLResponse", samlResponse)
@@ -195,12 +185,10 @@ func buildSyntheticRequest(acsURL, samlResponse string) (*http.Request, error) {
 	return req, nil
 }
 
-// Authenticate is not supported for SAML
 func (p *SAMLProvider) Authenticate(_ context.Context, _, _ string) (*UserInfo, error) {
 	return nil, ErrNotSupported
 }
 
-// GenerateMetadata returns the SP metadata XML
 func (p *SAMLProvider) GenerateMetadata() ([]byte, error) {
 	metadata := p.sp.Metadata()
 	data, err := xml.MarshalIndent(metadata, "", "  ")
@@ -210,12 +198,10 @@ func (p *SAMLProvider) GenerateMetadata() ([]byte, error) {
 	return data, nil
 }
 
-// GetServiceProvider returns the underlying SAML ServiceProvider
 func (p *SAMLProvider) GetServiceProvider() *saml.ServiceProvider {
 	return p.sp
 }
 
-// ValidateConfig checks if the SAML configuration is valid (for test connection)
 func (p *SAMLProvider) ValidateConfig() error {
 	if p.sp.IDPMetadata == nil {
 		return fmt.Errorf("%w: IdP metadata not loaded", ErrInvalidConfig)

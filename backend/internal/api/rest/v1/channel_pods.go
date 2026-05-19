@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// JoinPod joins a pod to a channel
-// POST /api/v1/organizations/:slug/channels/:id/pods
 func (h *ChannelHandler) JoinPod(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -31,8 +29,6 @@ func (h *ChannelHandler) JoinPod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Pod joined channel"})
 }
 
-// LeavePod removes a pod from a channel
-// DELETE /api/v1/organizations/:slug/channels/:id/pods/:pod_key
 func (h *ChannelHandler) LeavePod(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -48,8 +44,6 @@ func (h *ChannelHandler) LeavePod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Pod left channel"})
 }
 
-// ListChannelPods returns pods joined to a channel
-// GET /api/v1/organizations/:slug/channels/:id/pods
 func (h *ChannelHandler) ListChannelPods(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

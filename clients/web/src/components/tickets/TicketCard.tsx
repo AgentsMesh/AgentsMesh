@@ -39,7 +39,6 @@ export function TicketCard({ ticket, onClick, showRepository = true, showStatus 
       className="cursor-pointer rounded-md border border-border bg-card p-3.5 transition-colors hover:border-border-strong"
       onClick={onClick}
     >
-      {/* Header: slug (mono) + status badge */}
       <div className="mb-2 flex items-center justify-between gap-2">
         <Link
           href={`/${currentOrg?.slug}/tickets/${ticket.slug}`}
@@ -58,12 +57,10 @@ export function TicketCard({ ticket, onClick, showRepository = true, showStatus 
         )}
       </div>
 
-      {/* Title — clamped to 2 lines */}
       <h3 className="mb-2 line-clamp-2 text-[13px] font-semibold leading-[18px] text-foreground">
         {ticket.title}
       </h3>
 
-      {/* Labels */}
       {ticket.labels && ticket.labels.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1">
           {ticket.labels.map((label) => (
@@ -81,10 +78,8 @@ export function TicketCard({ ticket, onClick, showRepository = true, showStatus 
         </div>
       )}
 
-      {/* Divider */}
       <div className="my-2 h-px w-full bg-border" />
 
-      {/* Footer: priority + due | assignees */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <PriorityIcon priority={ticket.priority} size="sm" />
@@ -132,7 +127,6 @@ export function TicketCard({ ticket, onClick, showRepository = true, showStatus 
         </div>
       </div>
 
-      {/* Repository */}
       {showRepository && ticket.repository && (
         <div className="mt-2 truncate font-mono text-[10px] text-muted-foreground/60">
           {ticket.repository.name}

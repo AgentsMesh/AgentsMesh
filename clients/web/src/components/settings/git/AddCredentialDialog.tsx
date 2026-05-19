@@ -15,9 +15,6 @@ interface AddCredentialDialogProps {
   onSuccess: () => void;
 }
 
-/**
- * AddCredentialDialog - Dialog for adding a new Git credential (PAT or SSH Key)
- */
 export function AddCredentialDialog({ open, onOpenChange, onSuccess }: AddCredentialDialogProps) {
   const t = useTranslations();
   const [credentialType, setCredentialType] = useState<"pat" | "ssh_key">("pat");

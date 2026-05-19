@@ -10,9 +10,7 @@ import (
 	"time"
 )
 
-// GetProject returns repository details
 func (p *GiteeProvider) GetProject(ctx context.Context, projectID string) (*Project, error) {
-	// projectID format: owner/repo
 	resp, err := p.doRequest(ctx, http.MethodGet, fmt.Sprintf("/repos/%s", projectID), nil)
 	if err != nil {
 		return nil, err
@@ -57,7 +55,6 @@ func (p *GiteeProvider) GetProject(ctx context.Context, projectID string) (*Proj
 	}, nil
 }
 
-// ListProjects returns user's repositories
 func (p *GiteeProvider) ListProjects(ctx context.Context, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/user/repos?page=%d&per_page=%d&sort=updated", page, perPage)
 	resp, err := p.doRequest(ctx, http.MethodGet, path, nil)
@@ -108,7 +105,6 @@ func (p *GiteeProvider) ListProjects(ctx context.Context, page, perPage int) ([]
 	return projects, nil
 }
 
-// SearchProjects searches for repositories
 func (p *GiteeProvider) SearchProjects(ctx context.Context, query string, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/search/repositories?q=%s&page=%d&per_page=%d", url.QueryEscape(query), page, perPage)
 	resp, err := p.doRequest(ctx, http.MethodGet, path, nil)

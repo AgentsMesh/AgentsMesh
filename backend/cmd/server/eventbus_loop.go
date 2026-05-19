@@ -12,10 +12,7 @@ import (
 	loop "github.com/anthropics/agentsmesh/backend/internal/service/loop"
 )
 
-// setupLoopEventSubscriptions subscribes to Pod and Autopilot terminal events
-// so the LoopOrchestrator can detect when loop runs complete.
 func setupLoopEventSubscriptions(eventBus *eventbus.EventBus, loopOrchestrator *loop.LoopOrchestrator) {
-	// Pod terminated → check if it's a loop-associated pod and handle completion
 	eventBus.Subscribe(eventbus.EventPodTerminated, func(event *eventbus.Event) {
 		var data eventbus.PodStatusChangedData
 		if err := json.Unmarshal(event.Data, &data); err != nil {
@@ -30,15 +27,12 @@ func setupLoopEventSubscriptions(eventBus *eventbus.EventBus, loopOrchestrator *
 		loopOrchestrator.HandlePodTerminated(context.Background(), data.PodKey, data.Status, finishedAt)
 	})
 
-	// Pod status changed → detect terminal statuses (completed, error, failed)
 	eventBus.Subscribe(eventbus.EventPodStatusChanged, func(event *eventbus.Event) {
 		var data eventbus.PodStatusChangedData
 		if err := json.Unmarshal(event.Data, &data); err != nil {
 			return
 		}
 
-		// Only process terminal pod statuses
-		// Note: Pod has no "failed" status — terminal statuses are "completed", "error", "terminated"
 		switch data.Status {
 		case agentpod.StatusCompleted, agentpod.StatusError:
 			var finishedAt *time.Time
@@ -58,7 +52,6 @@ func setupLoopEventSubscriptions(eventBus *eventbus.EventBus, loopOrchestrator *
 			return
 		}
 
-		// Only process terminal autopilot phases
 		switch data.Phase {
 		case agentpod.AutopilotPhaseCompleted, agentpod.AutopilotPhaseFailed, agentpod.AutopilotPhaseStopped:
 			loopOrchestrator.HandleAutopilotTerminated(context.Background(), data.AutopilotControllerKey, data.Phase)

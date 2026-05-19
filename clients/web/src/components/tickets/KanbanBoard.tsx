@@ -30,10 +30,6 @@ interface KanbanBoardProps {
   excludeStatuses?: Status[];
 }
 
-/**
- * Kanban board — pure rendering component.
- * All data and callbacks are received via props; no direct store access.
- */
 export function KanbanBoard({
   tickets, boardColumns, columnPagination, doneCollapsed,
   onLoadMoreColumn, onSetDoneCollapsed,
@@ -143,7 +139,6 @@ export function KanbanBoard({
   );
 }
 
-/** Wrapper that connects DroppableColumn with infinite scroll */
 function ExpandedColumn({ status, pagination, loadMore, onCollapse, ...props }: {
   status: Status;
   pagination?: ColumnPagination;

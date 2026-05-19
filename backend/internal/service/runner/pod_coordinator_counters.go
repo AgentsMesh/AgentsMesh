@@ -2,10 +2,6 @@ package runner
 
 import "time"
 
-// ==================== Terminate Command Backoff ====================
-
-// isTerminateCooldown checks whether a terminate command for the given podKey
-// is within the cooldown period.
 func (pc *PodCoordinator) isTerminateCooldown(podKey string) bool {
 	pc.terminateCacheMu.Lock()
 	defer pc.terminateCacheMu.Unlock()
@@ -15,8 +11,6 @@ func (pc *PodCoordinator) isTerminateCooldown(podKey string) bool {
 	return false
 }
 
-// recordTerminateSent records that a terminate command was sent.
-// Also performs lazy cleanup of expired entries.
 func (pc *PodCoordinator) recordTerminateSent(podKey string) {
 	pc.terminateCacheMu.Lock()
 	defer pc.terminateCacheMu.Unlock()
@@ -30,9 +24,6 @@ func (pc *PodCoordinator) recordTerminateSent(podKey string) {
 	}
 }
 
-// ==================== Pod Miss Counter ====================
-
-// incrementMissCount increments the consecutive heartbeat miss count for a pod.
 func (pc *PodCoordinator) incrementMissCount(podKey string, runnerID int64) int {
 	pc.podMissMu.Lock()
 	defer pc.podMissMu.Unlock()
@@ -41,7 +32,6 @@ func (pc *PodCoordinator) incrementMissCount(podKey string, runnerID int64) int 
 	return pc.podMissCount[podKey]
 }
 
-// clearMissCount removes the miss counter for a specific pod.
 func (pc *PodCoordinator) clearMissCount(podKey string) {
 	pc.podMissMu.Lock()
 	defer pc.podMissMu.Unlock()
@@ -49,8 +39,6 @@ func (pc *PodCoordinator) clearMissCount(podKey string) {
 	delete(pc.podMissOwner, podKey)
 }
 
-// clearMissCountsForRunner removes all miss counters for pods belonging to the given runner.
-// Uses an in-memory reverse index to avoid TOCTOU races with DB queries.
 func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
 	pc.podMissMu.Lock()
 	defer pc.podMissMu.Unlock()
@@ -61,8 +49,6 @@ func (pc *PodCoordinator) clearMissCountsForRunner(runnerID int64) {
 		}
 	}
 }
-
-// ==================== Init Report Counter ====================
 
 func (pc *PodCoordinator) incrementInitReportCount(podKey string) int {
 	pc.initReportCountMu.Lock()

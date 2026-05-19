@@ -19,7 +19,6 @@ interface TerminalToolbarProps {
   className?: string;
 }
 
-// Special key codes - following Termux/Blink Shell conventions
 const KEYS = {
   TAB: "\t",
   ENTER: "\r",
@@ -48,7 +47,6 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
   const [altActive, setAltActive] = useState(false);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  // Close toolbar when clicking outside (touch-friendly)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -59,7 +57,6 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
       }
     };
 
-    // Delay adding listener to avoid immediate close
     const timer = setTimeout(() => {
       document.addEventListener('click', handleClickOutside);
       document.addEventListener('touchend', handleClickOutside);
@@ -72,11 +69,9 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
     };
   }, [isOpen]);
 
-  // Send key with modifier support (Blink Shell style - modifiers stay active until key press)
   const sendKey = useCallback((key: string) => {
     let finalKey = key;
 
-    // Apply Ctrl modifier for single character keys
     if (ctrlActive && key.length === 1) {
       const charCode = key.toUpperCase().charCodeAt(0) - 64;
       if (charCode >= 1 && charCode <= 26) {
@@ -84,19 +79,16 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
       }
     }
 
-    // Apply Alt modifier (ESC prefix for alt)
     if (altActive && key.length === 1) {
       finalKey = "\x1b" + key;
     }
 
     send(finalKey);
 
-    // Reset modifiers after sending (like Blink Shell)
     setCtrlActive(false);
     setAltActive(false);
   }, [send, ctrlActive, altActive]);
 
-  // Direct key send without modifiers
   const sendDirectKey = useCallback((key: string) => {
     send(key);
     setCtrlActive(false);
@@ -107,12 +99,10 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
     return null;
   }
 
-  // Check if any modifier is active
   const hasActiveModifier = ctrlActive || altActive;
 
   return (
     <div className={cn("relative", className)} data-terminal-toolbar ref={toolbarRef}>
-      {/* Floating trigger button - Blink Shell style */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -123,10 +113,8 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
         </button>
       )}
 
-      {/* Compact two-row toolbar - Termux style */}
       {isOpen && (
         <div className="absolute bottom-0 left-0 right-0 bg-terminal-bg-secondary/95 backdrop-blur-sm border-t border-terminal-border shadow-lg animate-in slide-in-from-bottom-2 duration-150 safe-area-pb z-50">
-          {/* Row 1: ESC, common shortcuts, navigation */}
           <div className="flex items-center gap-0.5 px-1 py-1 border-b border-terminal-border/50">
             <KeyButton label="ESC" onClick={() => sendDirectKey(KEYS.ESCAPE)} />
             <KeyButton
@@ -145,15 +133,12 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
             />
             <KeyButton label="END" onClick={() => sendDirectKey(KEYS.END)} small />
             <KeyButton label="PGUP" onClick={() => sendDirectKey(KEYS.PAGE_UP)} small />
-            {/* Scroll to bottom button */}
             <KeyButton
               icon={<ChevronsDown className="w-4 h-4" />}
               onClick={scrollToBottom}
               title={t("terminalToolbar.scrollToBottom")}
             />
-            {/* Spacer */}
             <div className="flex-1" />
-            {/* Close button */}
             <button
               onClick={() => setIsOpen(false)}
               className="w-7 h-7 flex items-center justify-center text-terminal-text-muted hover:text-terminal-text hover:bg-terminal-bg-active rounded transition-colors"
@@ -163,7 +148,6 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
             </button>
           </div>
 
-          {/* Row 2: TAB, modifiers, arrows, navigation */}
           <div className="flex items-center gap-0.5 px-1 py-1">
             <KeyButton label="TAB" onClick={() => sendKey(KEYS.TAB)} />
             <ModifierKey
@@ -190,20 +174,16 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
               onClick={() => sendDirectKey(KEYS.RIGHT)}
             />
             <KeyButton label="PGDN" onClick={() => sendDirectKey(KEYS.PAGE_DOWN)} small />
-            {/* Spacer */}
             <div className="flex-1" />
-            {/* Modifier indicator */}
             {hasActiveModifier && (
               <span className="text-[10px] text-primary font-medium px-1.5 py-0.5 bg-primary/10 rounded">
                 {ctrlActive && "^"}{altActive && "⌥"}
               </span>
             )}
-            {/* Common symbols for quick input */}
             <KeyButton label="|" onClick={() => sendKey("|")} />
             <KeyButton label="/" onClick={() => sendKey("/")} />
             <KeyButton label="-" onClick={() => sendKey("-")} />
             <KeyButton label="~" onClick={() => sendKey("~")} />
-            {/* Enter key */}
             <KeyButton
               icon={<CornerDownLeft className="w-4 h-4" />}
               onClick={() => sendDirectKey(KEYS.ENTER)}
@@ -216,7 +196,6 @@ export function TerminalToolbar({ className }: TerminalToolbarProps) {
   );
 }
 
-// Compact key button - Termux style
 interface KeyButtonProps {
   label?: string;
   icon?: React.ReactNode;
@@ -255,7 +234,6 @@ function KeyButton({
   );
 }
 
-// Modifier key with toggle state - Blink Shell style
 interface ModifierKeyProps {
   label: string;
   active: boolean;

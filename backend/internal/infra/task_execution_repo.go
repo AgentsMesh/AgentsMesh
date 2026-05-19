@@ -12,7 +12,6 @@ var _ tasks.TaskExecutionRepository = (*taskExecutionRepo)(nil)
 
 type taskExecutionRepo struct{ db *gorm.DB }
 
-// NewTaskExecutionRepository creates a new TaskExecutionRepository backed by GORM.
 func NewTaskExecutionRepository(db *gorm.DB) tasks.TaskExecutionRepository {
 	return &taskExecutionRepo{db: db}
 }

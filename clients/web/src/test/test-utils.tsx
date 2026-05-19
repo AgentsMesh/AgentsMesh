@@ -12,7 +12,6 @@ import runnersMessages from "@/messages/en/runners.json";
 import docsMessages from "@/messages/en/docs.json";
 import contentMessages from "@/messages/en/content.json";
 
-// Mock translations for testing
 const mockTranslations = {
   ...commonMessages,
   ...authMessages,
@@ -26,7 +25,6 @@ const mockTranslations = {
   ...contentMessages,
 };
 
-// Wrapper component that provides all necessary providers for testing
 function AllProviders({ children }: { children: ReactNode }) {
   return (
     <NextIntlClientProvider locale="en" messages={mockTranslations}>
@@ -35,14 +33,11 @@ function AllProviders({ children }: { children: ReactNode }) {
   );
 }
 
-// Custom render function that wraps components with providers
 const customRender = (
   ui: ReactElement,
   options?: Omit<RenderOptions, "wrapper">
 ) => render(ui, { wrapper: AllProviders, ...options });
 
-// Re-export everything from testing-library
 export * from "@testing-library/react";
 
-// Override render method
 export { customRender as render };

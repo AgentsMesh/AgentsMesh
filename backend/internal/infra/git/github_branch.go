@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// ListBranches returns branches for a repository
 func (p *GitHubProvider) ListBranches(ctx context.Context, projectID string) ([]*Branch, error) {
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/repos/%s/branches", projectID), nil)
 	if err != nil {
@@ -47,7 +46,6 @@ func (p *GitHubProvider) ListBranches(ctx context.Context, projectID string) ([]
 	return branches, nil
 }
 
-// GetBranch returns a specific branch
 func (p *GitHubProvider) GetBranch(ctx context.Context, projectID, branchName string) (*Branch, error) {
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/repos/%s/branches/%s", projectID, url.PathEscape(branchName)), nil)
 	if err != nil {
@@ -78,7 +76,6 @@ func (p *GitHubProvider) GetBranch(ctx context.Context, projectID, branchName st
 	}, nil
 }
 
-// CreateBranch creates a new branch
 func (p *GitHubProvider) CreateBranch(ctx context.Context, projectID, branchName, ref string) (*Branch, error) {
 	refResp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/repos/%s/git/refs/heads/%s", projectID, ref), nil)
 	if err != nil {
@@ -108,7 +105,6 @@ func (p *GitHubProvider) CreateBranch(ctx context.Context, projectID, branchName
 	}, nil
 }
 
-// DeleteBranch deletes a branch
 func (p *GitHubProvider) DeleteBranch(ctx context.Context, projectID, branchName string) error {
 	resp, err := p.doRequest(ctx, "DELETE", fmt.Sprintf("/repos/%s/git/refs/heads/%s", projectID, url.PathEscape(branchName)), nil)
 	if err != nil {

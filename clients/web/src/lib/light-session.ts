@@ -1,19 +1,30 @@
-// Pure-TS reader for the PersistedSession blob written by Rust AuthManager.
-// Marketing pages (/, /docs, /about, /blog, ...) read auth state through this
-// module instead of pulling 21MB of wasm just to render a "Sign In / Console"
-// CTA. The schema and url_slug algorithm mirror Rust SSOT at:
+// Pure-TS reader/writer for the PersistedSession blob.
+// Marketing pages and the (auth) route group read & write auth state through
+// this module instead of pulling 40MB of wasm just to render Sign In / handle
+// /login. The schema and url_slug algorithm mirror Rust SSOT at:
 //   clients/core/crates/auth/src/state.rs (PersistedSession + url_slug)
-//
 // MUST NOT import from @/lib/wasm-core, @agentsmesh/service-runtime, or
 // agentsmesh-wasm — that would defeat the whole purpose.
 
+import { getApiBaseUrl } from "@/lib/env";
+
 export interface LightSession {
-  userId: number;
   currentOrgSlug: string | null;
   isAuthenticated: boolean;
   expiresAt: number;
 }
 
+// Cross-language SSOT pin. MUST stay equal to:
+//   clients/core/crates/auth/src/state.rs::SCHEMA_VERSION
+// If you bump this number on either side, you also need to:
+//   1. Decide what to do with blobs written by older clients still in the
+//      wild (forward-compat? cleanup? force re-login?).
+//   2. Confirm Rust bootstrap doesn't reject newer/unknown versions
+//      (today it doesn't — `#[serde(default)]` is tolerant — but a
+//      future version gate would silently break light writes here).
+// In short: don't touch in isolation. Cross-language change requires
+// coordinating both files in one commit + a migration plan.
+const SCHEMA_VERSION = 1;
 const NAMESPACE_PREFIX = "agentsmesh-auth";
 
 // Mirrors Rust state.rs::url_slug — keep in sync. Same algorithm runs in
@@ -33,31 +44,92 @@ export function sessionStorageKey(baseUrl: string): string {
   return `${NAMESPACE_PREFIX}/${urlSlug(baseUrl)}/session`;
 }
 
+// Resolve the canonical base_url light writers use. MUST stay byte-equal with
+// the value wasm-core.ts feeds to WasmAuthManager — bootstrap clears the
+// session if base_url disagrees (see bootstrap.rs::BaseUrlMismatch).
+export function resolveLightBaseUrl(): string {
+  const explicit = getApiBaseUrl();
+  if (explicit) return explicit;
+  // wasm-core falls back to window.location.origin when getApiBaseUrl() is
+  // an empty string (local dev proxy mode); do the same here.
+  if (typeof window !== "undefined") return window.location.origin;
+  return "";
+}
+
 interface PersistedSessionWire {
   access_token?: string;
   refresh_token?: string;
   expires_at?: number;
   base_url?: string;
-  user_id?: number;
   current_org_slug?: string | null;
   schema_version?: number;
 }
 
-export function readLightSession(baseUrl?: string): LightSession | null {
+function readWire(baseUrl: string): PersistedSessionWire | null {
   if (typeof window === "undefined") return null;
-  const url = baseUrl ?? window.location.origin;
-  const raw = window.localStorage.getItem(sessionStorageKey(url));
+  const raw = window.localStorage.getItem(sessionStorageKey(baseUrl));
   if (!raw) return null;
   try {
-    const s = JSON.parse(raw) as PersistedSessionWire;
-    const now = Math.floor(Date.now() / 1000);
-    return {
-      userId: s.user_id ?? 0,
-      currentOrgSlug: s.current_org_slug ?? null,
-      expiresAt: s.expires_at ?? 0,
-      isAuthenticated: !!s.access_token && (s.expires_at ?? 0) > now,
-    };
+    return JSON.parse(raw) as PersistedSessionWire;
   } catch {
     return null;
   }
+}
+
+export function readLightSession(baseUrl?: string): LightSession | null {
+  const url = baseUrl ?? resolveLightBaseUrl();
+  const s = readWire(url);
+  if (!s) return null;
+  const now = Math.floor(Date.now() / 1000);
+  return {
+    currentOrgSlug: s.current_org_slug ?? null,
+    expiresAt: s.expires_at ?? 0,
+    isAuthenticated: !!s.access_token && (s.expires_at ?? 0) > now,
+  };
+}
+
+export function readLightAuthToken(baseUrl?: string): string | null {
+  const url = baseUrl ?? resolveLightBaseUrl();
+  const s = readWire(url);
+  if (!s?.access_token) return null;
+  const now = Math.floor(Date.now() / 1000);
+  if ((s.expires_at ?? 0) <= now) return null;
+  return s.access_token;
+}
+
+export interface PersistedSessionWriteInput {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  currentOrgSlug?: string | null;
+  baseUrl?: string;
+}
+
+export function writeLightSession(input: PersistedSessionWriteInput): void {
+  if (typeof window === "undefined") return;
+  const baseUrl = input.baseUrl ?? resolveLightBaseUrl();
+  const blob: PersistedSessionWire = {
+    access_token: input.accessToken,
+    refresh_token: input.refreshToken,
+    expires_at: input.expiresAt,
+    base_url: baseUrl,
+    current_org_slug: input.currentOrgSlug ?? null,
+    schema_version: SCHEMA_VERSION,
+  };
+  window.localStorage.setItem(sessionStorageKey(baseUrl), JSON.stringify(blob));
+}
+
+export function updateLightSessionOrgSlug(orgSlug: string | null, baseUrl?: string): void {
+  if (typeof window === "undefined") return;
+  const url = baseUrl ?? resolveLightBaseUrl();
+  const existing = readWire(url);
+  if (!existing) return;
+  existing.current_org_slug = orgSlug;
+  window.localStorage.setItem(sessionStorageKey(url), JSON.stringify(existing));
+}
+
+export function clearLightSession(baseUrl?: string): void {
+  if (typeof window === "undefined") return;
+  const url = baseUrl ?? resolveLightBaseUrl();
+  window.localStorage.removeItem(sessionStorageKey(url));
 }

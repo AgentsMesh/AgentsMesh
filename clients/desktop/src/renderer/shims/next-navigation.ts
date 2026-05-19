@@ -10,14 +10,8 @@ interface NavigationOptions {
   scroll?: boolean;
 }
 
-/**
- * Wraps react-router's `navigate` with a hash-assignment fallback. In Electron's
- * file:// production renderer, `navigate(url)` from react-router occasionally
- * fails to mutate `window.location.hash` (the form-onSubmit handler runs but
- * the URL stays put), bouncing post-login routing back to /login. Forcing
- * `window.location.hash = url` after the call guarantees the HashRouter sees
- * the change.
- */
+// Workaround Electron file:// production renderer bug: navigate(url) occasionally fails
+// to mutate window.location.hash; force assignment so HashRouter sees the change.
 function pushWithHashFallback(navigate: ReturnType<typeof useNavigate>) {
   return (url: string) => {
     navigate(url);
@@ -34,7 +28,6 @@ function replaceWithHashFallback(navigate: ReturnType<typeof useNavigate>) {
     if (typeof window !== "undefined") {
       const target = url.startsWith("#") ? url : `#${url.startsWith("/") ? url : `/${url}`}`;
       if (window.location.hash !== target) {
-        // Use replaceState to avoid pushing a history entry.
         const base = window.location.href.split("#")[0];
         window.history.replaceState(null, "", base + target);
         window.dispatchEvent(new HashChangeEvent("hashchange"));

@@ -1,9 +1,5 @@
 import type { Terminal as XTerm } from "@xterm/xterm";
 
-/**
- * Terminal instance registry for cross-component access
- * Allows TerminalToolbar to access xterm instances from TerminalPane
- */
 class TerminalRegistry {
   private terminals: Map<string, XTerm> = new Map();
 
@@ -29,13 +25,11 @@ class TerminalRegistry {
 
 export const terminalRegistry = new TerminalRegistry();
 
-/** Terminal pane configuration */
 export interface WorkspacePane {
   id: string;
   podKey: string;
 }
 
-/** Split tree types for flexible split layouts */
 export type SplitDirection = "horizontal" | "vertical";
 
 export type SplitTreeLeaf = {
@@ -61,7 +55,6 @@ export interface WorkspaceState {
   mobileActiveIndex: number;
   terminalFontSize: number;
 
-  // Actions
   addPane: (podKey: string) => string;
   removePane: (paneId: string) => void;
   setActivePane: (paneId: string | null) => void;
@@ -74,7 +67,6 @@ export interface WorkspaceState {
   clearAllPanes: () => void;
   getPaneByPodKey: (podKey: string) => WorkspacePane | undefined;
 
-  // Hydration
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
 }

@@ -1,4 +1,3 @@
-// Ticket types
 export type TicketStatus = "backlog" | "todo" | "in_progress" | "in_review" | "done";
 export type TicketPriority = "none" | "low" | "medium" | "high" | "urgent";
 

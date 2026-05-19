@@ -12,13 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SkillRegistryHandler handles admin skill registry requests
 type SkillRegistryHandler struct {
 	repo              extension.Repository
 	marketplaceWorker *extensionservice.MarketplaceWorker
 }
 
-// NewSkillRegistryHandler creates a new skill registry handler
 func NewSkillRegistryHandler(repo extension.Repository, worker *extensionservice.MarketplaceWorker) *SkillRegistryHandler {
 	return &SkillRegistryHandler{
 		repo:              repo,
@@ -26,7 +24,6 @@ func NewSkillRegistryHandler(repo extension.Repository, worker *extensionservice
 	}
 }
 
-// RegisterRoutes registers skill registry admin routes
 func (h *SkillRegistryHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	skillRegistries := rg.Group("/skill-registries")
 	{
@@ -37,10 +34,7 @@ func (h *SkillRegistryHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// List lists all platform-level skill registries
-// GET /api/v1/admin/skill-registries
 func (h *SkillRegistryHandler) List(c *gin.Context) {
-	// nil orgID = platform-level registries
 	registries, err := h.repo.ListSkillRegistries(c.Request.Context(), nil)
 	if err != nil {
 		apierr.InternalError(c, err.Error())
@@ -53,14 +47,11 @@ func (h *SkillRegistryHandler) List(c *gin.Context) {
 	})
 }
 
-// CreateSkillRegistryRequest represents the create request body
 type CreateSkillRegistryRequest struct {
 	RepositoryURL string `json:"repository_url" binding:"required,url"`
 	Branch        string `json:"branch"`
 }
 
-// Create creates a new platform-level skill registry
-// POST /api/v1/admin/skill-registries
 func (h *SkillRegistryHandler) Create(c *gin.Context) {
 	var req CreateSkillRegistryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,7 +64,6 @@ func (h *SkillRegistryHandler) Create(c *gin.Context) {
 		branch = "main"
 	}
 
-	// Check for duplicate
 	existing, _ := h.repo.FindSkillRegistryByURL(c.Request.Context(), nil, req.RepositoryURL)
 	if existing != nil {
 		apierr.Conflict(c, apierr.ALREADY_EXISTS, "platform skill registry with this URL already exists")
@@ -94,11 +84,9 @@ func (h *SkillRegistryHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Trigger an async sync if worker is available
 	if h.marketplaceWorker != nil {
 		registryID := registry.ID
 		go func() {
-			// Use a background context with timeout since the HTTP request will complete
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
 			_ = h.marketplaceWorker.SyncSingle(ctx, registryID)
@@ -108,8 +96,6 @@ func (h *SkillRegistryHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, registry)
 }
 
-// Sync triggers a manual sync for a platform-level skill registry
-// POST /api/v1/admin/skill-registries/:id/sync
 func (h *SkillRegistryHandler) Sync(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -117,7 +103,6 @@ func (h *SkillRegistryHandler) Sync(c *gin.Context) {
 		return
 	}
 
-	// Verify registry exists and is platform-level
 	registry, err := h.repo.GetSkillRegistry(c.Request.Context(), id)
 	if err != nil {
 		apierr.ResourceNotFound(c, "skill registry not found")
@@ -134,13 +119,11 @@ func (h *SkillRegistryHandler) Sync(c *gin.Context) {
 		return
 	}
 
-	// Trigger sync synchronously so the caller can see the result
 	if err := h.marketplaceWorker.SyncSingle(c.Request.Context(), id); err != nil {
 		apierr.InternalError(c, "sync failed: "+err.Error())
 		return
 	}
 
-	// Reload registry to get updated status
 	registry, _ = h.repo.GetSkillRegistry(c.Request.Context(), id)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -149,8 +132,6 @@ func (h *SkillRegistryHandler) Sync(c *gin.Context) {
 	})
 }
 
-// Delete deletes a platform-level skill registry
-// DELETE /api/v1/admin/skill-registries/:id
 func (h *SkillRegistryHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -158,7 +139,6 @@ func (h *SkillRegistryHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	// Verify registry exists and is platform-level
 	registry, err := h.repo.GetSkillRegistry(c.Request.Context(), id)
 	if err != nil {
 		apierr.ResourceNotFound(c, "skill registry not found")

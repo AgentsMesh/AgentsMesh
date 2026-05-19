@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// UpgradePlan upgrades the subscription plan via the payment provider API.
 func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -81,7 +80,6 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 		return nil, fmt.Errorf("failed to sync plan locally: %w", err)
 	}
 
-	// Sync organization table redundant fields
 	s.syncOrganizationSubscription(ctx, orgID, &newPlan.Name, nil)
 
 	sub.PlanID = newPlan.ID
@@ -90,7 +88,6 @@ func (s *Service) UpgradePlan(ctx context.Context, orgID int64, planName string)
 	return sub, nil
 }
 
-// UpdateSubscription updates subscription plan (handles upgrade/downgrade)
 func (s *Service) UpdateSubscription(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {

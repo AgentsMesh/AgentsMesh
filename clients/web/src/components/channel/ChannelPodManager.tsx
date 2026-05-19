@@ -14,18 +14,10 @@ import { useTranslations } from "next-intl";
 interface ChannelPodManagerProps {
   channelId: number;
   podCount: number;
-  /** Compact mode for embedded use (e.g., bottom panel) */
   compact?: boolean;
-  /** Callback when pod list changes */
   onPodsChanged?: () => void;
 }
 
-/**
- * Popover component for managing pods in a channel.
- * Shows joined pods and allows adding/removing active pods.
- * Uses `useChannelPods` for the joined-pod list so the fetch is shared with
- * `useMentionCandidates` / `ChannelRightRail` — one network call per channel.
- */
 export function ChannelPodManager({
   channelId,
   podCount,
@@ -40,14 +32,11 @@ export function ChannelPodManager({
   const { pods: channelPods, loading, refresh } = useChannelPods(open ? channelId : null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // When popover opens, make sure the running-pod store is warm too (for the
-  // "available to add" list). The channel-pods side is handled by the hook.
   useEffect(() => {
     if (!open) return;
     void fetchPods({ status: "running" });
   }, [open, fetchPods]);
 
-  // Filter active pods not yet in the channel
   const joinedKeys = new Set(channelPods.map((p) => p.pod_key));
   const availablePods = allPods.filter(
     (p) =>
@@ -55,7 +44,6 @@ export function ChannelPodManager({
       !joinedKeys.has(p.pod_key)
   );
 
-  // Add pod to channel
   const handleJoin = useCallback(
     async (podKey: string) => {
       setActionLoading(podKey);
@@ -73,7 +61,6 @@ export function ChannelPodManager({
     [channelId, onPodsChanged, refresh]
   );
 
-  // Remove pod from channel
   const handleLeave = useCallback(
     async (podKey: string) => {
       setActionLoading(podKey);
@@ -91,7 +78,6 @@ export function ChannelPodManager({
     [channelId, onPodsChanged, refresh]
   );
 
-  // Find pod detail from store
   const getPodDetail = (podKey: string) =>
     allPods.find((p) => p.pod_key === podKey);
 
@@ -132,7 +118,6 @@ export function ChannelPodManager({
           </div>
         ) : (
           <div className="max-h-64 overflow-y-auto">
-            {/* Joined pods */}
             {channelPods.length > 0 && (
               <div className="p-2">
                 <p className="text-xs text-muted-foreground px-2 py-1">
@@ -176,7 +161,6 @@ export function ChannelPodManager({
               </div>
             )}
 
-            {/* Available pods to add */}
             {availablePods.length > 0 && (
               <div className={cn("p-2", channelPods.length > 0 && "border-t border-border")}>
                 <p className="text-xs text-muted-foreground px-2 py-1">
@@ -216,7 +200,6 @@ export function ChannelPodManager({
               </div>
             )}
 
-            {/* Empty state */}
             {channelPods.length === 0 && availablePods.length === 0 && (
               <div className="py-6 text-center text-xs text-muted-foreground">
                 {t("mesh.channelPodManager.empty")}

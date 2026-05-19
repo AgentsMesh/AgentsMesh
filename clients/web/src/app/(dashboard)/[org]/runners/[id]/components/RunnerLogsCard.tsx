@@ -17,9 +17,6 @@ const ACTIVE_STATUSES = ["pending", "collecting", "uploading"];
 const KNOWN_STATUSES = ["pending", "collecting", "uploading", "completed", "failed"];
 const POLL_INTERVAL = 5000;
 
-/**
- * Diagnostic logs card showing log upload history with polling for active uploads
- */
 export function RunnerLogsCard({ runnerId, runnerStatus }: RunnerLogsCardProps) {
   const t = useTranslations();
   const [logs, setLogs] = useState<RunnerLogData[]>([]);
@@ -41,7 +38,6 @@ export function RunnerLogsCard({ runnerId, runnerStatus }: RunnerLogsCardProps) 
 
   const hasActiveLogs = logs.some((log) => ACTIVE_STATUSES.includes(log.status));
 
-  // Track mount state for safe setState
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -49,12 +45,10 @@ export function RunnerLogsCard({ runnerId, runnerStatus }: RunnerLogsCardProps) 
     };
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadLogs();
   }, [loadLogs]);
 
-  // Poll when any log is in an active state
   useEffect(() => {
     if (!hasActiveLogs) return;
     const id = setInterval(loadLogs, POLL_INTERVAL);
@@ -152,7 +146,6 @@ export function RunnerLogsCard({ runnerId, runnerStatus }: RunnerLogsCardProps) 
   );
 }
 
-/** M10: validate URL protocol before rendering download link */
 function isValidDownloadUrl(url: string): boolean {
   try {
     const parsed = new URL(url);

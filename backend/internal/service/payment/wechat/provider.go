@@ -18,7 +18,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// Provider implements payment.AgreementProvider for WeChat Pay
 type Provider struct {
 	client     *core.Client
 	appID      string
@@ -28,16 +27,12 @@ type Provider struct {
 	privateKey *rsa.PrivateKey
 }
 
-// NewProvider creates a new WeChat Pay provider
-// notifyURL is derived from the application's primary domain
 func NewProvider(cfg *config.WeChatConfig, notifyURL string) (*Provider, error) {
-	// Load merchant private key
 	privateKey, err := utils.LoadPrivateKeyWithPath(cfg.KeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load wechat private key: %w", err)
 	}
 
-	// Read certificate serial number from cert file
 	cert, err := utils.LoadCertificateWithPath(cfg.CertPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load wechat cert: %w", err)
@@ -46,7 +41,6 @@ func NewProvider(cfg *config.WeChatConfig, notifyURL string) (*Provider, error) 
 
 	ctx := context.Background()
 
-	// Create client with auto certificate updating
 	opts := []core.ClientOption{
 		option.WithWechatPayAutoAuthCipher(cfg.MchID, certSerialNo, privateKey, cfg.APIv3Key),
 	}
@@ -66,16 +60,13 @@ func NewProvider(cfg *config.WeChatConfig, notifyURL string) (*Provider, error) 
 	}, nil
 }
 
-// GetProviderName returns the provider name
 func (p *Provider) GetProviderName() string {
 	return billing.PaymentProviderWeChat
 }
 
-// CreateCheckoutSession creates a Native payment (扫码支付)
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
 	svc := native.NativeApiService{Client: p.client}
 
-	// Amount in cents (分)
 	amountCents := int64(req.ActualAmount * 100)
 
 	prepayReq := native.PrepayRequest{
@@ -112,7 +103,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 	}, nil
 }
 
-// GetCheckoutStatus checks the status of a payment
 func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (string, error) {
 	svc := native.NativeApiService{Client: p.client}
 

@@ -4,9 +4,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// ==================== Proto Message Handlers (called by GRPCRunnerAdapter) ====================
-
-// HandleHeartbeat handles heartbeat from a runner (Proto type)
 func (cm *RunnerConnectionManager) HandleHeartbeat(runnerID int64, data *runnerv1.HeartbeatData) {
 	cm.UpdateHeartbeat(runnerID)
 	if conn := cm.GetConnection(runnerID); conn != nil {
@@ -17,7 +14,6 @@ func (cm *RunnerConnectionManager) HandleHeartbeat(runnerID int64, data *runnerv
 	}
 }
 
-// HandlePodCreated handles pod created event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("pod created event received",
@@ -29,7 +25,6 @@ func (cm *RunnerConnectionManager) HandlePodCreated(runnerID int64, data *runner
 	}
 }
 
-// HandlePodTerminated handles pod terminated event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *runnerv1.PodTerminatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("pod terminated event received",
@@ -42,7 +37,6 @@ func (cm *RunnerConnectionManager) HandlePodTerminated(runnerID int64, data *run
 	}
 }
 
-// HandlePodRestarting handles perpetual pod restart event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodRestarting(runnerID int64, data *runnerv1.PodRestartingEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	if cm.onPodRestarting != nil {
@@ -50,7 +44,6 @@ func (cm *RunnerConnectionManager) HandlePodRestarting(runnerID int64, data *run
 	}
 }
 
-// HandlePodError handles pod error event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1.ErrorEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Error("pod error event received",
@@ -64,9 +57,6 @@ func (cm *RunnerConnectionManager) HandlePodError(runnerID int64, data *runnerv1
 	}
 }
 
-// NOTE: HandlePodOutput removed - output is exclusively streamed via Relay
-
-// HandleAgentStatus handles agent status event (Proto type)
 func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runnerv1.AgentStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("agent status event received",
@@ -79,7 +69,6 @@ func (cm *RunnerConnectionManager) HandleAgentStatus(runnerID int64, data *runne
 	}
 }
 
-// HandlePodInitProgress handles pod init progress event (Proto type)
 func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *runnerv1.PodInitProgressEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("pod init progress received",
@@ -93,7 +82,6 @@ func (cm *RunnerConnectionManager) HandlePodInitProgress(runnerID int64, data *r
 	}
 }
 
-// HandleInitialized handles initialized confirmation (Proto type)
 func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAgents []string) {
 	cm.UpdateHeartbeat(runnerID)
 
@@ -102,7 +90,6 @@ func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAg
 		"available_agents", availableAgents,
 	)
 
-	// Mark connection as initialized
 	if conn := cm.GetConnection(runnerID); conn != nil {
 		conn.SetInitialized(true, availableAgents)
 	}
@@ -112,7 +99,6 @@ func (cm *RunnerConnectionManager) HandleInitialized(runnerID int64, availableAg
 	}
 }
 
-// HandleRequestRelayToken handles relay token refresh request (Proto type)
 func (cm *RunnerConnectionManager) HandleRequestRelayToken(runnerID int64, data *runnerv1.RequestRelayTokenEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("relay token requested",
@@ -124,7 +110,6 @@ func (cm *RunnerConnectionManager) HandleRequestRelayToken(runnerID int64, data 
 	}
 }
 
-// HandleSandboxesStatus handles sandbox status response event (Proto type)
 func (cm *RunnerConnectionManager) HandleSandboxesStatus(runnerID int64, data *runnerv1.SandboxesStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("sandboxes status received",
@@ -137,8 +122,6 @@ func (cm *RunnerConnectionManager) HandleSandboxesStatus(runnerID int64, data *r
 	}
 }
 
-// HandleOSCNotification handles OSC notification event from terminal (Proto type)
-// OSC 777 (iTerm2/Kitty) or OSC 9 (ConEmu/Windows Terminal) desktop notification
 func (cm *RunnerConnectionManager) HandleOSCNotification(runnerID int64, data *runnerv1.OSCNotificationEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Debug("received OSC notification",
@@ -152,8 +135,6 @@ func (cm *RunnerConnectionManager) HandleOSCNotification(runnerID int64, data *r
 	}
 }
 
-// HandleOSCTitle handles OSC title change event from terminal (Proto type)
-// OSC 0/2 window/tab title change
 func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1.OSCTitleEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Debug("received OSC title change",
@@ -166,9 +147,6 @@ func (cm *RunnerConnectionManager) HandleOSCTitle(runnerID int64, data *runnerv1
 	}
 }
 
-// ==================== Pod Observation Handler ====================
-
-// HandleObservePodResult handles observe pod result event (Proto type)
 func (cm *RunnerConnectionManager) HandleObservePodResult(runnerID int64, data *runnerv1.ObservePodResult) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("observe pod result received",
@@ -181,9 +159,6 @@ func (cm *RunnerConnectionManager) HandleObservePodResult(runnerID int64, data *
 	}
 }
 
-// ==================== Token Usage Handler ====================
-
-// HandleTokenUsage handles token usage report from runner (Proto type)
 func (cm *RunnerConnectionManager) HandleTokenUsage(runnerID int64, data *runnerv1.TokenUsageReport) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("token usage report received",

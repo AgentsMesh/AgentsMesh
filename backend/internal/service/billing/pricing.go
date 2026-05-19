@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// PriceCalculation represents the result of a price calculation
 type PriceCalculation struct {
 	Amount       float64 `json:"amount"`        // Full price before proration
 	ActualAmount float64 `json:"actual_amount"` // Prorated/discounted price to charge
@@ -17,12 +16,10 @@ type PriceCalculation struct {
 	Seats        int     `json:"seats"`
 	BillingCycle string  `json:"billing_cycle"`
 	Description  string  `json:"description,omitempty"`
-	// Payment provider specific fields
 	StripePrice           string `json:"stripe_price_id,omitempty"`         // Stripe Price ID
 	LemonSqueezyVariantID string `json:"lemonsqueezy_variant_id,omitempty"` // LemonSqueezy Variant ID
 }
 
-// CalculateSubscriptionPriceWithCurrency calculates the price for a subscription in specific currency
 func (s *Service) CalculateSubscriptionPriceWithCurrency(ctx context.Context, planName string, currency string, billingCycle string, seats int) (*PriceCalculation, error) {
 	price, err := s.GetPlanPrice(ctx, planName, currency)
 	if err != nil {
@@ -71,13 +68,10 @@ func (s *Service) CalculateSubscriptionPriceWithCurrency(ctx context.Context, pl
 	}, nil
 }
 
-// CalculateSubscriptionPrice calculates the price for a new subscription
-// Uses USD by default. For multi-currency support, use CalculateSubscriptionPriceWithCurrency.
 func (s *Service) CalculateSubscriptionPrice(ctx context.Context, planName string, billingCycle string, seats int) (*PriceCalculation, error) {
 	return s.CalculateSubscriptionPriceWithCurrency(ctx, planName, billing.CurrencyUSD, billingCycle, seats)
 }
 
-// GetPricePreview returns a price preview without creating an order
 func (s *Service) GetPricePreview(ctx context.Context, orgID int64, orderType string, planName string, billingCycle string, seats int) (*PriceCalculation, error) {
 	switch orderType {
 	case billing.OrderTypeSubscription:
@@ -93,7 +87,6 @@ func (s *Service) GetPricePreview(ctx context.Context, orgID int64, orderType st
 	}
 }
 
-// calculateRemainingPeriodRatio calculates the ratio of remaining time in the billing period
 func calculateRemainingPeriodRatio(periodStart, periodEnd time.Time) float64 {
 	now := time.Now()
 	totalPeriod := periodEnd.Sub(periodStart).Hours()

@@ -6,17 +6,11 @@ import { useChannelPods } from "@/hooks/useChannelPods";
 import { getPodDisplayName, getMentionSafeName, getShortPodKey } from "@/lib/pod-display-name";
 
 export interface MentionItem {
-  /** Unique identifier: "user:id" or "pod:pod_key" */
   id: string;
-  /** Mention type */
   type: "user" | "pod";
-  /** Text inserted into message (e.g. username or pod_key short) */
   mentionText: string;
-  /** Display name shown in dropdown */
   displayName: string;
-  /** Secondary description in dropdown */
   description?: string;
-  /** Avatar URL for users */
   avatarUrl?: string;
 }
 
@@ -31,10 +25,6 @@ interface UseMentionCandidatesOptions {
   enabled?: boolean;
 }
 
-/**
- * Hook to fetch and merge mention candidates from organization members
- * and running channel pods.
- */
 export function useMentionCandidates({
   channelId,
   enabled = true,
@@ -56,8 +46,6 @@ export function useMentionCandidates({
     [sharedChannelPods],
   );
 
-  // Fetch organization members (channel pod fetching is delegated to
-  // `useChannelPods` so multiple subscribers share one network call).
   const orgSlug = currentOrg?.slug;
   useEffect(() => {
     if (!enabled || !orgSlug) return;
@@ -93,9 +81,6 @@ export function useMentionCandidates({
     };
   }, [orgSlug, enabled, user?.id]);
 
-  // Fetch channel pods is handled by `useChannelPods` above (cached, deduped).
-
-  // Derive pod mention items from raw data + pod store (reactive to alias changes)
   const pods: MentionItem[] = useMemo(
     () =>
       rawChannelPods.map((p) => {

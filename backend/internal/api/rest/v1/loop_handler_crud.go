@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateLoop creates a new loop
-// POST /api/v1/orgs/:slug/loops
 func (h *LoopHandler) CreateLoop(c *gin.Context) {
 	var req createLoopRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -24,7 +22,6 @@ func (h *LoopHandler) CreateLoop(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Marshal JSON fields
 	autopilotConfig, _ := json.Marshal(req.AutopilotConfig)
 	configOverrides, _ := json.Marshal(req.ConfigOverrides)
 	promptVariables, _ := json.Marshal(req.PromptVariables)
@@ -122,8 +119,6 @@ func (h *LoopHandler) CreateLoop(c *gin.Context) {
 	})
 }
 
-// UpdateLoop updates a loop
-// PUT /api/v1/orgs/:slug/loops/:loop_slug
 func (h *LoopHandler) UpdateLoop(c *gin.Context) {
 	var req updateLoopRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,7 +129,6 @@ func (h *LoopHandler) UpdateLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
 
-	// Validate numeric bounds
 	if req.MaxConcurrentRuns != nil && (*req.MaxConcurrentRuns < 1 || *req.MaxConcurrentRuns > 10) {
 		apierr.ValidationError(c, "max_concurrent_runs must be between 1 and 10")
 		return

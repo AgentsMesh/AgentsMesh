@@ -1,10 +1,5 @@
 import type { Block, MentionRefInput, MessageContent } from "@/lib/api/channel-message-types";
 
-/**
- * Walk a structured MessageContent AST and recover the display→ref mention map.
- * Used at edit time so plaintext edits preserve the original message's typed
- * mentions when the user keeps the `@key` substring intact.
- */
 export function extractMentionMap(content?: MessageContent): Record<string, MentionRefInput> {
   const out: Record<string, MentionRefInput> = {};
   if (!content?.blocks) return out;

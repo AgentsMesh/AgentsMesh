@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// Provider type constants
 const (
 	ProviderTypeGitLab = "gitlab"
 	ProviderTypeGitHub = "github"
@@ -20,7 +19,6 @@ var (
 	ErrRateLimited          = errors.New("rate limited")
 )
 
-// User represents a Git user
 type User struct {
 	ID        string `json:"id"`
 	Username  string `json:"username"`
@@ -29,7 +27,6 @@ type User struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
-// Project represents a Git project/repository
 type Project struct {
 	ID            string    `json:"id"`
 	Name          string    `json:"name"`
@@ -44,7 +41,6 @@ type Project struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
-// Branch represents a Git branch
 type Branch struct {
 	Name      string `json:"name"`
 	CommitSHA string `json:"commit_sha"`
@@ -52,7 +48,6 @@ type Branch struct {
 	Default   bool   `json:"default"`
 }
 
-// MergeRequest represents a merge/pull request
 type MergeRequest struct {
 	ID           int       `json:"id"`
 	IID          int       `json:"iid"`
@@ -67,16 +62,13 @@ type MergeRequest struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 	MergedAt     *time.Time `json:"merged_at,omitempty"`
 
-	// Pipeline information
 	PipelineStatus string `json:"pipeline_status,omitempty"`
 	PipelineID     int    `json:"pipeline_id,omitempty"`
 	PipelineURL    string `json:"pipeline_url,omitempty"`
 
-	// Merge information
 	MergeCommitSHA string `json:"merge_commit_sha,omitempty"`
 }
 
-// CreateMRRequest represents a request to create a merge request
 type CreateMRRequest struct {
 	ProjectID    string `json:"project_id"`
 	Title        string `json:"title"`
@@ -85,7 +77,6 @@ type CreateMRRequest struct {
 	TargetBranch string `json:"target_branch"`
 }
 
-// Commit represents a Git commit
 type Commit struct {
 	SHA         string    `json:"sha"`
 	Message     string    `json:"message"`
@@ -94,7 +85,6 @@ type Commit struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-// Pipeline status constants
 const (
 	PipelineStatusPending  = "pending"
 	PipelineStatusRunning  = "running"
@@ -105,7 +95,6 @@ const (
 	PipelineStatusManual   = "manual"
 )
 
-// Job status constants
 const (
 	JobStatusCreated  = "created"
 	JobStatusPending  = "pending"
@@ -117,7 +106,6 @@ const (
 	JobStatusManual   = "manual"
 )
 
-// Pipeline represents a CI/CD pipeline
 type Pipeline struct {
 	ID        int       `json:"id"`
 	IID       int       `json:"iid"`
@@ -133,7 +121,6 @@ type Pipeline struct {
 	FinishedAt *time.Time `json:"finished_at,omitempty"`
 }
 
-// Job represents a CI/CD job
 type Job struct {
 	ID           int        `json:"id"`
 	Name         string     `json:"name"`
@@ -149,36 +136,29 @@ type Job struct {
 	FinishedAt   *time.Time `json:"finished_at,omitempty"`
 }
 
-// TriggerPipelineRequest represents a request to trigger a pipeline
 type TriggerPipelineRequest struct {
 	Ref       string            `json:"ref"`
 	Variables map[string]string `json:"variables,omitempty"`
 }
 
-// WebhookConfig represents webhook configuration
 type WebhookConfig struct {
 	URL    string   `json:"url"`
 	Secret string   `json:"secret"`
 	Events []string `json:"events"`
 }
 
-// Provider defines the interface for Git providers
 type Provider interface {
-	// User operations
 	GetCurrentUser(ctx context.Context) (*User, error)
 
-	// Project operations
 	GetProject(ctx context.Context, projectID string) (*Project, error)
 	ListProjects(ctx context.Context, page, perPage int) ([]*Project, error)
 	SearchProjects(ctx context.Context, query string, page, perPage int) ([]*Project, error)
 
-	// Branch operations
 	ListBranches(ctx context.Context, projectID string) ([]*Branch, error)
 	GetBranch(ctx context.Context, projectID, branchName string) (*Branch, error)
 	CreateBranch(ctx context.Context, projectID, branchName, ref string) (*Branch, error)
 	DeleteBranch(ctx context.Context, projectID, branchName string) error
 
-	// Merge Request operations
 	GetMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error)
 	ListMergeRequests(ctx context.Context, projectID string, state string, page, perPage int) ([]*MergeRequest, error)
 	ListMergeRequestsByBranch(ctx context.Context, projectID, sourceBranch, state string) ([]*MergeRequest, error)
@@ -187,25 +167,20 @@ type Provider interface {
 	MergeMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error)
 	CloseMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error)
 
-	// Commit operations
 	GetCommit(ctx context.Context, projectID, sha string) (*Commit, error)
 	ListCommits(ctx context.Context, projectID, branch string, page, perPage int) ([]*Commit, error)
 
-	// Webhook operations
 	RegisterWebhook(ctx context.Context, projectID string, config *WebhookConfig) (string, error)
 	DeleteWebhook(ctx context.Context, projectID, webhookID string) error
 
-	// File operations
 	GetFileContent(ctx context.Context, projectID, filePath, ref string) ([]byte, error)
 
-	// Pipeline operations
 	TriggerPipeline(ctx context.Context, projectID string, req *TriggerPipelineRequest) (*Pipeline, error)
 	GetPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error)
 	ListPipelines(ctx context.Context, projectID string, ref, status string, page, perPage int) ([]*Pipeline, error)
 	CancelPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error)
 	RetryPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error)
 
-	// Job operations
 	GetJob(ctx context.Context, projectID string, jobID int) (*Job, error)
 	ListPipelineJobs(ctx context.Context, projectID string, pipelineID int) ([]*Job, error)
 	RetryJob(ctx context.Context, projectID string, jobID int) (*Job, error)
@@ -215,7 +190,6 @@ type Provider interface {
 	DownloadJobArtifacts(ctx context.Context, projectID string, jobID int) ([]byte, error)
 }
 
-// NewProvider creates a new Git provider instance
 func NewProvider(providerType, baseURL, accessToken string) (Provider, error) {
 	switch providerType {
 	case ProviderTypeGitLab:

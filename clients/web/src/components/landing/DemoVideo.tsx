@@ -2,12 +2,6 @@
 
 import { useTranslations } from "next-intl";
 
-/**
- * DemoVideo - Product demo video section with YouTube embed
- *
- * Displays the AgentsMesh product demo video between HeroSection and AgentLogos.
- * Uses youtube-nocookie.com for privacy-enhanced mode with lazy loading.
- */
 export function DemoVideo() {
   const t = useTranslations();
 

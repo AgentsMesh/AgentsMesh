@@ -14,10 +14,6 @@ import { InteractionModeToggle } from "./InteractionModeToggle";
 import { AdvancedFormSection } from "./AdvancedFormSection";
 import { useCreatePodSubmitHandler } from "./useCreatePodSubmitHandler";
 
-/**
- * Shared Pod creation form component
- * Agent-first layout with advanced options collapsed
- */
 export function CreatePodForm({
   config,
   enabled = true,
@@ -28,15 +24,12 @@ export function CreatePodForm({
   const promptInitializedRef = useRef(false);
   const repoInitializedRef = useRef(false);
 
-  // Merge preset config with user config
   const mergedConfig = useMemo(() => mergeConfig(config), [config]);
 
   const { context, promptGenerator, onSuccess, onError, onCancel } = mergedConfig;
 
-  // Track selected agent at parent level so both hooks can consume it
   const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(null);
 
-  // Load base data (runners, agents, repositories)
   const {
     runners,
     repositories,
@@ -46,8 +39,6 @@ export function CreatePodForm({
     availableAgents,
   } = usePodCreationData(enabled);
 
-  // Config options management (loads from Backend ConfigSchema)
-  // Placed before useCreatePodForm so configValues is available
   const {
     fields: configFields,
     loading: loadingConfig,
@@ -59,7 +50,6 @@ export function CreatePodForm({
     selectedAgentSlug
   );
 
-  // Form state management (receives configValues for AgentFile Layer generation)
   const form = useCreatePodForm(
     availableAgents,
     repositories,
@@ -68,12 +58,10 @@ export function CreatePodForm({
     { repositoryId: context?.ticket?.repositoryId ?? null },
   );
 
-  // Sync selected agent from form to local state for useConfigOptions
   useEffect(() => {
     setSelectedAgentSlug(form.selectedAgent);
   }, [form.selectedAgent]);
 
-  // Reset form when enabled changes from true to false (e.g., modal closes)
   useEffect(() => {
     if (prevEnabledRef.current && !enabled) {
       form.reset();
@@ -86,7 +74,6 @@ export function CreatePodForm({
     prevEnabledRef.current = enabled;
   }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Calculate default prompt
   const defaultPrompt = useMemo(() => {
     if (promptGenerator && context) {
       return promptGenerator(context);
@@ -94,7 +81,6 @@ export function CreatePodForm({
     return "";
   }, [promptGenerator, context]);
 
-  // Initialize repository from ticket context when available
   useEffect(() => {
     if (
       enabled &&
@@ -109,7 +95,6 @@ export function CreatePodForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, context?.ticket?.repositoryId, form.selectedRepository, form.setSelectedRepository, repositories]);
 
-  // Initialize prompt once when default is available and form is empty
   useEffect(() => {
     if (enabled && defaultPrompt && !form.prompt && !promptInitializedRef.current) {
       form.setPrompt(defaultPrompt);
@@ -119,7 +104,6 @@ export function CreatePodForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, defaultPrompt, form.prompt, form.setPrompt]);
 
-  // Handle form submission
   const handleCreate = useCreatePodSubmitHandler(
     form, selectedRunner, configValues, context, onError,
   );
@@ -130,7 +114,6 @@ export function CreatePodForm({
         <CenteredSpinner className="py-8" />
       ) : (
         <div className="space-y-4">
-          {/* Agent Select (shown first) */}
           <AgentSelect
             agents={availableAgents}
             selectedAgentSlug={form.selectedAgent}
@@ -139,7 +122,6 @@ export function CreatePodForm({
             t={t}
           />
 
-          {/* Interaction Mode Toggle (only when agent supports multiple modes and source mode is off) */}
           {form.selectedAgent && !form.rawLayerMode && (
             <InteractionModeToggle
               supportedModes={form.supportedModes}
@@ -148,7 +130,6 @@ export function CreatePodForm({
             />
           )}
 
-          {/* Initial Prompt (visible at top level) */}
           {form.selectedAgent && (
             <PromptInput
               value={form.prompt}
@@ -158,7 +139,6 @@ export function CreatePodForm({
             />
           )}
 
-          {/* Advanced Options (collapsed by default) */}
           {form.selectedAgent && (
             <AdvancedFormSection
               form={form}
@@ -174,7 +154,6 @@ export function CreatePodForm({
             />
           )}
 
-          {/* Error Display */}
           {form.error && (
             <div
               role="alert"
@@ -187,7 +166,6 @@ export function CreatePodForm({
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6">
         {onCancel && (
           <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
@@ -208,6 +186,5 @@ export function CreatePodForm({
 
 export default CreatePodForm;
 
-// Re-export types
 export * from "./types";
 export * from "./presets";

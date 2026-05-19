@@ -7,7 +7,6 @@ import (
 	infraTasks "github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 )
 
-// Health represents the health status of the task manager
 type Health struct {
 	Healthy            bool  `json:"healthy"`
 	PollerHealthy      bool  `json:"poller_healthy"`
@@ -17,7 +16,6 @@ type Health struct {
 	RegisteredHandlers int   `json:"registered_handlers"`
 }
 
-// CheckHealth returns the health status of the task manager
 func (m *Manager) CheckHealth(ctx context.Context) (*Health, error) {
 	health := &Health{
 		QueueLength:        m.workers.QueueLength(),
@@ -42,37 +40,30 @@ func (m *Manager) CheckHealth(ctx context.Context) (*Health, error) {
 	return health, nil
 }
 
-// SubmitJob submits a job to the worker pool
 func (m *Manager) SubmitJob(job *infraTasks.Job) error {
 	return m.workers.Submit(job)
 }
 
-// RunTaskNow triggers a scheduled task to run immediately
 func (m *Manager) RunTaskNow(taskName string) error {
 	return m.scheduler.RunNow(taskName)
 }
 
-// GetScheduledTasks returns all scheduled task names
 func (m *Manager) GetScheduledTasks() []string {
 	return m.scheduler.GetTaskNames()
 }
 
-// GetJobHandlerTypes returns all registered job handler types
 func (m *Manager) GetJobHandlerTypes() []string {
 	return m.workers.GetHandlerTypes()
 }
 
-// GetQueueLength returns the current job queue length
 func (m *Manager) GetQueueLength() int {
 	return m.workers.QueueLength()
 }
 
-// GetPipelineWatcher returns the pipeline watcher for webhook handlers
 func (m *Manager) GetPipelineWatcher() *infraTasks.PipelineWatcher {
 	return infraTasks.NewPipelineWatcher(m.redis, m.logger)
 }
 
-// cleanupStalePods cleans up pods that are no longer active
 func (m *Manager) cleanupStalePods(ctx context.Context) error {
 	staleThreshold := time.Now().Add(-30 * time.Minute)
 
@@ -89,7 +80,6 @@ func (m *Manager) cleanupStalePods(ctx context.Context) error {
 	return nil
 }
 
-// cleanupDeadLetters removes dead letter entries older than the configured TTL.
 func (m *Manager) cleanupDeadLetters(ctx context.Context) error {
 	olderThan := time.Now().Add(-m.cfg.DLQRetentionTTL)
 

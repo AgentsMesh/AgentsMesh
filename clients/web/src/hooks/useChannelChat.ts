@@ -1,11 +1,5 @@
 "use client";
 
-/**
- * Shared hook for channel chat business logic.
- * Single source of truth for all channel message consumers:
- * ChannelChatPanel, MobileChannelChat, ChannelDetailView (BottomPanel).
- */
-
 import { useEffect, useCallback, useMemo, useRef } from "react";
 import { useCurrentUser, useAuthStore } from "@/stores/auth";
 import { useChannelStore, useChannelMessageStore, useCurrentChannel } from "@/stores/channel";
@@ -41,15 +35,13 @@ interface UseChannelChatReturn {
 export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannelChatReturn {
   const currentUserId = useCurrentUser()?.id;
 
-  // Prefer WASM-derived current channel so detail loads through fetchChannel
-  // immediately surface to the header. The JS-side `currentChannel` is only
-  // updated by setCurrentChannel() and stays null on the select→fetch path.
+  // WASM `useCurrentChannel` reflects fetchChannel writes; JS `currentChannel`
+  // only updates via setCurrentChannel and stays null on select→fetch.
   const currentChannel = useCurrentChannel();
   const channelLoading = useChannelStore((s) => s.channelLoading);
   const fetchChannel = useChannelStore((s) => s.fetchChannel);
   const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
 
-  // Per-channel UI state (loading/error) — Rust is SSOT for messages/hasMore.
   const channelCache = useChannelMessageStore(
     (s) => s.cache[channelId] ?? EMPTY_CACHE
   );
@@ -65,7 +57,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   const topology = useTopology();
   const fetchTopology = useMeshStore((s) => s.fetchTopology);
 
-  // Load channel and messages when channelId changes
   useEffect(() => {
     if (channelId) {
       fetchChannel(channelId);
@@ -76,7 +67,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     };
   }, [channelId, fetchChannel, fetchMessages, setCurrentChannel]);
 
-  // Auto mark-as-read: debounced to avoid excessive API calls when messages stream in
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
   const prevLastMsgIdRef = useRef<number | null>(null);
   const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,7 +86,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     };
   }, [lastMessageId, channelId, markRead]);
 
-  // Flush pending markRead on unmount to prevent debounce loss
   useEffect(() => {
     return () => {
       if (markReadTimerRef.current) {
@@ -109,7 +98,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelId]);
 
-  // Derive pod count and channel name from topology + currentChannel
   const channelInfo = topology?.channels.find((c: { id: number }) => c.id === channelId);
   const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
   const channelName = currentChannel?.name || channelInfo?.name || "Channel";
@@ -145,7 +133,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   );
 
   const handleLoadMore = useCallback(() => {
-    // Guard: prevent concurrent requests and unnecessary calls
     if (loadingMore || !hasMore || messages.length === 0) return;
     fetchMessages(channelId, LOAD_MORE_MESSAGE_LIMIT, messages[0].id);
   }, [channelId, messages, fetchMessages, loadingMore, hasMore]);
@@ -154,7 +141,6 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     fetchMessages(channelId);
   }, [channelId, fetchMessages]);
 
-  // Transform raw store messages into rendering-ready format (single implementation)
   const transformedMessages: TransformedMessage[] = useMemo(
     () => messages.map(transformMessage),
     [messages]

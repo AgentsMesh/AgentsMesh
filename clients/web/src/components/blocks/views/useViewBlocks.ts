@@ -5,16 +5,9 @@ import { useMemo } from "react";
 import type { Block, ViewFilter, ViewSort, ViewSpec } from "@/lib/api/blockstoreTypes";
 import { useBlocks } from "@/stores/blockstore";
 
-/**
- * Resolves the concrete block list that a `view` block should project over.
- * All filtering, sorting and grouping happens client-side against the local
- * store — the server stays dumb about view semantics.
- */
 export function useViewBlocks(spec: ViewSpec, workspaceID: string): Block[] {
   const blocks = useBlocks();
   return useMemo(() => {
-    // Tier 3: cross-type views union multiple source types. The single
-    // source_type stays as the primary/default; source_types extends it.
     const typeSet = new Set<string>();
     if (spec.source_type) typeSet.add(spec.source_type);
     for (const t of spec.source_types ?? []) typeSet.add(t);
@@ -34,7 +27,6 @@ export function useViewBlocks(spec: ViewSpec, workspaceID: string): Block[] {
   }, [blocks, workspaceID, spec.source_type, spec.source_types, spec.filters, spec.sort]);
 }
 
-/** Groups pre-filtered blocks by the view's `group_by` key. Missing key falls into "". */
 export function groupBlocks(blocks: Block[], groupKey: string): Record<string, Block[]> {
   const groups: Record<string, Block[]> = {};
   for (const b of blocks) {

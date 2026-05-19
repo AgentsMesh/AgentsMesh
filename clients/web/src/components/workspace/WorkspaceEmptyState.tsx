@@ -62,7 +62,6 @@ export function WorkspaceEmptyState({ onCreatePod }: WorkspaceEmptyStateProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Top new-user hint banner — per design 'hint_banner' */}
       {showBanner && (
         <div className="flex items-center gap-2.5 bg-accent px-6 py-2.5 text-[13px]">
           <span className="text-sm leading-none">👋</span>
@@ -82,12 +81,10 @@ export function WorkspaceEmptyState({ onCreatePod }: WorkspaceEmptyStateProps) {
         </div>
       )}
 
-      {/* Centered empty state */}
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-10">
         <div className="flex w-[520px] max-w-full">
           <RegisterLocalRunnerCard />
         </div>
-        {/* Hero */}
         <div className="flex w-[520px] max-w-full flex-col items-center gap-4 text-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-primary/40 bg-accent">
             <span className="font-mono text-[32px] font-semibold leading-none text-primary">{">_"}</span>
@@ -110,7 +107,6 @@ export function WorkspaceEmptyState({ onCreatePod }: WorkspaceEmptyStateProps) {
           </div>
         </div>
 
-        {/* Recipes */}
         <div className="flex w-[720px] max-w-full flex-col gap-2.5">
           <div className="text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/80">
             {t("workspace.recipesHeading")}
@@ -144,7 +140,6 @@ export function WorkspaceEmptyState({ onCreatePod }: WorkspaceEmptyStateProps) {
         </div>
       </div>
 
-      {/* Bottom helper bar — per design 'bottom_help' */}
       <div className="flex items-center justify-between border-t border-border px-6 py-4">
         <div className="flex items-center gap-5 font-mono text-xs text-muted-foreground">
           <span>⌘K  {t("workspace.hints.search")}</span>

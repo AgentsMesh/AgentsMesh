@@ -21,7 +21,6 @@ interface DialogContentProps {
 export function Dialog({ open, onOpenChange, children }: DialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
@@ -32,7 +31,6 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onOpenChange]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";

@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// executeTask executes a single task with panic recovery
 func (s *Scheduler) executeTask(task *Task) {
 	start := time.Now()
 
@@ -16,7 +15,6 @@ func (s *Scheduler) executeTask(task *Task) {
 		StartTime: start,
 	}
 
-	// Panic recovery
 	defer func() {
 		if r := recover(); r != nil {
 			result.Error = fmt.Errorf("panic: %v\n%s", r, debug.Stack())
@@ -33,7 +31,6 @@ func (s *Scheduler) executeTask(task *Task) {
 		}
 	}()
 
-	// Create task context with timeout (2x interval as safety margin)
 	ctx, cancel := context.WithTimeout(s.ctx, task.Interval*2)
 	defer cancel()
 
@@ -58,7 +55,6 @@ func (s *Scheduler) executeTask(task *Task) {
 	s.sendResult(result)
 }
 
-// sendResult safely sends a result to the channel, checking stopped flag first.
 func (s *Scheduler) sendResult(r TaskResult) {
 	s.stoppedMu.RLock()
 	stopped := s.stopped
@@ -74,7 +70,6 @@ func (s *Scheduler) sendResult(r TaskResult) {
 	}
 }
 
-// processResults processes task results and notifies listeners
 func (s *Scheduler) processResults() {
 	defer s.wg.Done()
 
@@ -92,7 +87,6 @@ func (s *Scheduler) processResults() {
 	}
 }
 
-// drainResults processes any remaining buffered results after context cancellation.
 func (s *Scheduler) drainResults() {
 	for {
 		select {
@@ -107,7 +101,6 @@ func (s *Scheduler) drainResults() {
 	}
 }
 
-// notifyListeners sends a result to all registered listeners.
 func (s *Scheduler) notifyListeners(result TaskResult) {
 	s.mu.RLock()
 	listeners := s.listeners

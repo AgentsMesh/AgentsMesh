@@ -5,16 +5,12 @@ import { getPodService, getTicketService } from "@/lib/wasm-core";
 import { useRepositories, useRepositoryStore } from "@/stores/repository";
 import type { SearchResults, PodSearchResult, TicketSearchResult, RepositorySearchResult } from "./types";
 
-/**
- * Custom hook for managing command palette search
- */
 export function useCommandPaletteSearch(search: string): SearchResults {
   const [pods, setPods] = useState<PodSearchResult[]>([]);
   const [tickets, setTickets] = useState<TicketSearchResult[]>([]);
   const [repositories, setRepositories] = useState<RepositorySearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Repos come from the shared store; ensure it's populated on first open.
   const allRepos = useRepositories();
   const fetchRepositories = useRepositoryStore((s) => s.fetchRepositories);
   useEffect(() => { fetchRepositories(); }, [fetchRepositories]);
@@ -35,7 +31,6 @@ export function useCommandPaletteSearch(search: string): SearchResults {
           getTicketService().fetch_tickets(undefined, 500, undefined).then((j: string) => JSON.parse(j)).catch(() => ({ tickets: [] })),
         ]);
 
-        // Filter by search term
         const searchLower = search.toLowerCase();
         setPods(
           (podsRes.pods || [])

@@ -22,8 +22,6 @@ export {
 } from "./TicketIcons";
 export type { StatusInfo, PriorityInfo } from "./TicketIcons";
 
-// Shared components for TicketDetail/TicketDetailPane
 export { SubTicketsList, RelationsList, CommitsList, LabelsList } from "./shared";
 
-// Hooks
 export { useTicketExtraData, type TicketExtraData } from "./hooks";

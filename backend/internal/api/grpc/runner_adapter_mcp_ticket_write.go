@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
 )
 
-// mcpCreateTicket handles the "create_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		RepositoryID     *int64  `json:"repository_id"`
@@ -32,7 +31,6 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 		content = &params.Content
 	}
 
-	// Resolve parent ticket slug to ID
 	var parentTicketID *int64
 	if params.ParentTicketSlug != nil && *params.ParentTicketSlug != "" {
 		parentTicket, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, *params.ParentTicketSlug)
@@ -58,7 +56,6 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t, nil)}, nil
 }
 
-// mcpUpdateTicket handles the "update_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TicketSlug string  `json:"ticket_slug"`
@@ -102,7 +99,6 @@ func (a *GRPCRunnerAdapter) mcpUpdateTicket(ctx context.Context, tc *middleware.
 	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t, nil)}, nil
 }
 
-// mcpPostComment handles the "post_comment" MCP method.
 func (a *GRPCRunnerAdapter) mcpPostComment(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TicketSlug string `json:"ticket_slug"`
@@ -133,7 +129,6 @@ func (a *GRPCRunnerAdapter) mcpPostComment(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"comment": comment}, nil
 }
 
-// mcpDeleteTicket handles the "delete_ticket" MCP method.
 func (a *GRPCRunnerAdapter) mcpDeleteTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TicketSlug string `json:"ticket_slug"`

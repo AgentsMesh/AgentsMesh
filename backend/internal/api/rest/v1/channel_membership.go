@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// JoinChannel allows a user to self-join a public channel.
-// POST /api/v1/organizations/:slug/channels/:id/join
 func (h *ChannelHandler) JoinChannel(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -26,8 +24,6 @@ func (h *ChannelHandler) JoinChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "joined"})
 }
 
-// LeaveChannel allows a user to leave a channel.
-// POST /api/v1/organizations/:slug/channels/:id/leave
 func (h *ChannelHandler) LeaveChannel(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -70,8 +66,6 @@ func (h *ChannelHandler) InviteMembers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "invited"})
 }
 
-// RemoveMember removes a user from a channel.
-// DELETE /api/v1/organizations/:slug/channels/:id/members/:user_id
 func (h *ChannelHandler) RemoveMember(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

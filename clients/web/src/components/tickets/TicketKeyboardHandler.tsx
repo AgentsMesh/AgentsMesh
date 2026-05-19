@@ -13,17 +13,6 @@ interface TicketKeyboardHandlerProps {
   enabled?: boolean;
 }
 
-/**
- * Keyboard navigation handler for ticket list.
- *
- * Shortcuts:
- * - J / ArrowDown: Select next ticket
- * - K / ArrowUp: Select previous ticket
- * - Enter: Open detail panel
- * - Escape: Close detail panel
- * - C: Create new ticket
- * - /: Focus search (to be implemented)
- */
 export function TicketKeyboardHandler({
   tickets,
   selectedSlug,
@@ -36,20 +25,17 @@ export function TicketKeyboardHandler({
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!enabled) return;
 
-    // Skip if user is typing in an input field
     const target = e.target as HTMLElement;
     if (
       target.tagName === "INPUT" ||
       target.tagName === "TEXTAREA" ||
       target.isContentEditable
     ) {
-      // Allow Escape to work in inputs
       if (e.key !== "Escape") {
         return;
       }
     }
 
-    // Find current index
     const currentIndex = selectedSlug
       ? tickets.findIndex((t) => t.slug === selectedSlug)
       : -1;
@@ -61,10 +47,8 @@ export function TicketKeyboardHandler({
         if (tickets.length === 0) return;
 
         if (currentIndex === -1) {
-          // Select first ticket
           onSelectTicket(tickets[0].slug);
         } else if (currentIndex < tickets.length - 1) {
-          // Select next ticket
           onSelectTicket(tickets[currentIndex + 1].slug);
         }
         break;
@@ -76,10 +60,8 @@ export function TicketKeyboardHandler({
         if (tickets.length === 0) return;
 
         if (currentIndex === -1) {
-          // Select last ticket
           onSelectTicket(tickets[tickets.length - 1].slug);
         } else if (currentIndex > 0) {
-          // Select previous ticket
           onSelectTicket(tickets[currentIndex - 1].slug);
         }
         break;
@@ -100,7 +82,6 @@ export function TicketKeyboardHandler({
       }
 
       case "c": {
-        // Only trigger if not in an input and not with modifiers
         if (!e.metaKey && !e.ctrlKey && !e.altKey && onCreateNew) {
           e.preventDefault();
           onCreateNew();
@@ -131,7 +112,6 @@ export function TicketKeyboardHandler({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // This component doesn't render anything
   return null;
 }
 

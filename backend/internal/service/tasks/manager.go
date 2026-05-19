@@ -10,17 +10,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// StalePodCleaner marks initializing/running pods with stale activity as disconnected.
 type StalePodCleaner interface {
 	MarkStaleAsDisconnected(ctx context.Context, threshold time.Time) (int64, error)
 }
 
-// DeadLetterCleaner removes old dead letter entries past their TTL.
 type DeadLetterCleaner interface {
 	CleanupExpiredMessages(ctx context.Context, olderThan time.Time) (int64, error)
 }
 
-// DefaultConfig returns default task manager configuration
 func DefaultConfig() Config {
 	return Config{
 		PipelinePollerInterval: 10 * time.Second,
@@ -28,13 +25,12 @@ func DefaultConfig() Config {
 		MRSyncInterval:         5 * time.Minute,
 		PodCleanupInterval:     10 * time.Minute,
 		DLQCleanupInterval:     24 * time.Hour,
-		DLQRetentionTTL:        30 * 24 * time.Hour, // 30 days
+		DLQRetentionTTL:        30 * 24 * time.Hour,
 		WorkerCount:            4,
 		MaxQueueSize:           1000,
 	}
 }
 
-// Config holds task manager configuration
 type Config struct {
 	PipelinePollerInterval time.Duration
 	TaskProcessorInterval  time.Duration
@@ -46,7 +42,6 @@ type Config struct {
 	MaxQueueSize           int
 }
 
-// Manager coordinates all background tasks
 type Manager struct {
 	podCleaner StalePodCleaner
 	dlqCleaner DeadLetterCleaner
@@ -57,12 +52,10 @@ type Manager struct {
 	workers    *infraTasks.WorkerPool
 	wg         sync.WaitGroup
 
-	// Services
 	pipelinePoller *PipelinePollerService
 	taskProcessor  *TaskProcessorService
 }
 
-// NewManager creates a new task manager
 func NewManager(podCleaner StalePodCleaner, redisClient *redis.Client, logger *slog.Logger, cfg Config) *Manager {
 	m := &Manager{
 		podCleaner: podCleaner,
@@ -71,10 +64,8 @@ func NewManager(podCleaner StalePodCleaner, redisClient *redis.Client, logger *s
 		cfg:        cfg,
 	}
 
-	// Initialize scheduler
 	m.scheduler = infraTasks.NewScheduler(logger.With("component", "scheduler"))
 
-	// Initialize worker pool
 	m.workers = infraTasks.NewWorkerPool(
 		logger.With("component", "workers"),
 		infraTasks.WorkerPoolConfig{
@@ -83,43 +74,34 @@ func NewManager(podCleaner StalePodCleaner, redisClient *redis.Client, logger *s
 		},
 	)
 
-	// Initialize services
 	m.pipelinePoller = NewPipelinePollerService(redisClient, logger.With("component", "pipeline_poller"))
 	m.taskProcessor = NewTaskProcessorService(redisClient, logger.With("component", "task_processor"))
 
 	return m
 }
 
-// RegisterTaskHandler registers a handler for processing completed tasks
 func (m *Manager) RegisterTaskHandler(handler TaskHandler) {
 	m.taskProcessor.RegisterHandler(handler)
 }
 
-// SetDeadLetterCleaner sets the dead-letter cleanup dependency.
-// Must be called before Start if DLQ cleanup is desired.
+// SetDeadLetterCleaner must be called before Start for DLQ cleanup to register.
 func (m *Manager) SetDeadLetterCleaner(cleaner DeadLetterCleaner) {
 	m.dlqCleaner = cleaner
 }
 
-// RegisterJobHandler registers a handler for background jobs
 func (m *Manager) RegisterJobHandler(jobType string, handler infraTasks.JobHandler) {
 	m.workers.RegisterHandler(jobType, handler)
 }
 
-// Start begins all background tasks
 func (m *Manager) Start() error {
 	m.logger.Info("starting task manager")
 
-	// Register scheduled tasks
 	m.registerScheduledTasks()
 
-	// Start scheduler
 	m.scheduler.Start()
 
-	// Start worker pool
 	m.workers.Start()
 
-	// Monitor worker results
 	m.wg.Add(1)
 	go m.monitorWorkerResults()
 
@@ -127,7 +109,6 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-// Stop gracefully stops all background tasks
 func (m *Manager) Stop() {
 	m.logger.Info("stopping task manager")
 	m.scheduler.Stop()
@@ -136,9 +117,7 @@ func (m *Manager) Stop() {
 	m.logger.Info("task manager stopped")
 }
 
-// registerScheduledTasks registers all scheduled tasks
 func (m *Manager) registerScheduledTasks() {
-	// Pipeline Poller - polls GitLab for pipeline status updates
 	_ = m.scheduler.Register(&infraTasks.Task{
 		Name:       "pipeline_poller",
 		Interval:   m.cfg.PipelinePollerInterval,
@@ -148,7 +127,6 @@ func (m *Manager) registerScheduledTasks() {
 		},
 	})
 
-	// Task Processor - processes completed pipeline tasks
 	_ = m.scheduler.Register(&infraTasks.Task{
 		Name:       "task_processor",
 		Interval:   m.cfg.TaskProcessorInterval,
@@ -167,7 +145,6 @@ func (m *Manager) registerScheduledTasks() {
 		},
 	})
 
-	// Pod Cleanup - cleans up stale pods
 	_ = m.scheduler.Register(&infraTasks.Task{
 		Name:       "pod_cleanup",
 		Interval:   m.cfg.PodCleanupInterval,
@@ -177,7 +154,6 @@ func (m *Manager) registerScheduledTasks() {
 		},
 	})
 
-	// DLQ Cleanup - removes dead letter entries older than TTL
 	if m.dlqCleaner != nil {
 		_ = m.scheduler.Register(&infraTasks.Task{
 			Name:       "dlq_cleanup",
@@ -190,7 +166,6 @@ func (m *Manager) registerScheduledTasks() {
 	}
 }
 
-// monitorWorkerResults monitors worker results for logging/metrics
 func (m *Manager) monitorWorkerResults() {
 	defer m.wg.Done()
 

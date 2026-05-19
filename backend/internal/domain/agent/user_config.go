@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// UserAgentConfig represents user-level personal agent configuration
 type UserAgentConfig struct {
 	ID        int64  `gorm:"primaryKey" json:"id"`
 	UserID    int64  `gorm:"not null;index" json:"user_id"`
@@ -22,7 +21,6 @@ func (UserAgentConfig) TableName() string {
 	return "user_agent_configs"
 }
 
-// UserAgentConfigResponse is the API response for user agent config
 type UserAgentConfigResponse struct {
 	ID            int64                  `json:"id"`
 	UserID        int64                  `json:"user_id"`
@@ -33,7 +31,6 @@ type UserAgentConfigResponse struct {
 	UpdatedAt     string                 `json:"updated_at"`
 }
 
-// ToResponse converts UserAgentConfig to API response
 func (c *UserAgentConfig) ToResponse() *UserAgentConfigResponse {
 	resp := &UserAgentConfigResponse{
 		ID:           c.ID,

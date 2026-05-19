@@ -7,7 +7,6 @@ type AffinityHints struct {
 	Tags         []string
 }
 
-// AffinityWeights controls the relative importance of each affinity signal.
 type AffinityWeights struct {
 	Load    float64
 	Creator float64

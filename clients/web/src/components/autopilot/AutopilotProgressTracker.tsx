@@ -12,10 +12,6 @@ interface AutopilotProgressTrackerProps {
   compact?: boolean;
 }
 
-/**
- * AutopilotProgressTracker displays the task progress from Control Agent's thinking.
- * Shows completed steps, remaining steps, and overall progress percentage.
- */
 export function AutopilotProgressTracker({
   thinking,
   className,

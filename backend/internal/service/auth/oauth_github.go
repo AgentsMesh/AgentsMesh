@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// getGitHubAuthURL returns GitHub OAuth authorization URL
 func getGitHubAuthURL(cfg OAuthConfig, state string) string {
 	return "https://github.com/login/oauth/authorize" +
 		"?client_id=" + cfg.ClientID +
@@ -22,7 +21,6 @@ func getGitHubAuthURL(cfg OAuthConfig, state string) string {
 		"&state=" + state
 }
 
-// handleGitHubCallback exchanges code for token and fetches user info
 func handleGitHubCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
 	accessToken, err := exchangeGitHubCode(ctx, cfg, code)
 	if err != nil {
@@ -40,7 +38,6 @@ func handleGitHubCallback(ctx context.Context, cfg OAuthConfig, code string) (*O
 	return userInfo, nil
 }
 
-// exchangeGitHubCode exchanges authorization code for access token
 func exchangeGitHubCode(ctx context.Context, cfg OAuthConfig, code string) (string, error) {
 	client := &http.Client{Timeout: 30 * time.Second, Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	tokenResp, err := client.PostForm("https://github.com/login/oauth/access_token", url.Values{
@@ -73,7 +70,6 @@ func exchangeGitHubCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 	return accessToken, nil
 }
 
-// fetchGitHubUserInfo fetches user info from GitHub API
 func fetchGitHubUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error) {
 	client := &http.Client{Timeout: 30 * time.Second, Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
@@ -106,7 +102,6 @@ func fetchGitHubUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 
-	// If email is empty, fetch from emails endpoint (private emails)
 	email := ghUser.Email
 	if email == "" {
 		email, _ = getGitHubPrimaryEmail(ctx, accessToken)
@@ -122,7 +117,6 @@ func fetchGitHubUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 	}, nil
 }
 
-// getGitHubPrimaryEmail fetches primary email from GitHub emails endpoint
 func getGitHubPrimaryEmail(ctx context.Context, accessToken string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user/emails", nil)
 	if err != nil {

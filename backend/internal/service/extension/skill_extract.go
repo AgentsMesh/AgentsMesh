@@ -11,14 +11,11 @@ import (
 	"strings"
 )
 
-// findSkillDir finds the directory containing SKILL.md in extracted content
 func findSkillDir(extractDir string) (string, error) {
-	// Check root
 	if fileExists(filepath.Join(extractDir, "SKILL.md")) {
 		return extractDir, nil
 	}
 
-	// Check one level deep
 	entries, err := os.ReadDir(extractDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to read extracted dir: %w", err)
@@ -36,10 +33,8 @@ func findSkillDir(extractDir string) (string, error) {
 	return "", fmt.Errorf("SKILL.md not found in uploaded archive")
 }
 
-// maxTotalExtractSize is the maximum total decompressed size allowed for tar.gz extraction (zip bomb protection).
 const maxTotalExtractSize = 200 * 1024 * 1024 // 200MB
 
-// extractTarGz extracts a tar.gz archive to the target directory
 func extractTarGz(reader io.Reader, targetDir string) error {
 	gz, err := gzip.NewReader(reader)
 	if err != nil {
@@ -59,7 +54,6 @@ func extractTarGz(reader io.Reader, targetDir string) error {
 			return fmt.Errorf("failed to read tar entry: %w", err)
 		}
 
-		// Accumulate total decompressed size and enforce limit
 		if header.Size > 0 {
 			totalSize += header.Size
 			if totalSize > maxTotalExtractSize {
@@ -68,7 +62,6 @@ func extractTarGz(reader io.Reader, targetDir string) error {
 		}
 
 		targetPath := filepath.Join(targetDir, filepath.Clean(header.Name))
-		// Prevent directory traversal
 		if !strings.HasPrefix(targetPath, filepath.Clean(targetDir)+string(os.PathSeparator)) &&
 			targetPath != filepath.Clean(targetDir) {
 			slog.Warn("Skipping archive entry with path traversal", "entry", header.Name)
@@ -77,7 +70,6 @@ func extractTarGz(reader io.Reader, targetDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			// Restrict directory permissions to prevent world-writable dirs from tar
 			dirMode := os.FileMode(header.Mode) & 0755
 			if dirMode == 0 {
 				dirMode = 0755
@@ -101,12 +93,10 @@ func extractTarGz(reader io.Reader, targetDir string) error {
 	return nil
 }
 
-// extractTarRegularFile extracts a single regular file from a tar archive
 func extractTarRegularFile(tr *tar.Reader, targetPath string, header *tar.Header) error {
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
 		return fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err)
 	}
-	// Restrict file permissions: strip execute bits, cap at 0644
 	mode := os.FileMode(header.Mode) & 0644
 	if mode == 0 {
 		mode = 0644

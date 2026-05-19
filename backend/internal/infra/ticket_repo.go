@@ -10,17 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface compliance check.
 var _ ticket.TicketRepository = (*ticketRepository)(nil)
 
 type ticketRepository struct{ db *gorm.DB }
 
-// NewTicketRepository returns a TicketRepository backed by GORM.
 func NewTicketRepository(db *gorm.DB) ticket.TicketRepository {
 	return &ticketRepository{db: db}
 }
-
-// --- Ticket CRUD ---
 
 func (r *ticketRepository) GetByID(ctx context.Context, ticketID int64) (*ticket.Ticket, error) {
 	var t ticket.Ticket
@@ -174,8 +170,6 @@ func (r *ticketRepository) GetRepoTicketPrefix(ctx context.Context, repoID int64
 	}
 	return "", nil
 }
-
-// --- Assignees ---
 
 func (r *ticketRepository) ReplaceAssignees(ctx context.Context, ticketID int64, userIDs []int64) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

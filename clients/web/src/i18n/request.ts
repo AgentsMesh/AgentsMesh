@@ -9,7 +9,6 @@ import {
 } from "@/lib/i18n/config";
 
 export default getRequestConfig(async () => {
-  // Locale detection: cookie → Accept-Language → default
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get(LOCALE_COOKIE);
   let locale = defaultLocale;

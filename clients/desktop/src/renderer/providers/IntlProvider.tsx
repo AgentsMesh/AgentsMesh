@@ -23,8 +23,6 @@ function getSavedLocale(): Locale {
 }
 
 async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
-  // Namespace list lives in @/lib/i18n/config — web and desktop share the
-  // same source to prevent "raw key shows instead of translation" drift.
   const files = await Promise.all(
     MESSAGE_NAMESPACES.map((m) => import(`@/messages/${locale}/${m}.json`).catch(() => ({ default: {} })))
   );

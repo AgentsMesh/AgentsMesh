@@ -6,7 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/gitprovider"
 )
 
-// MergeRequestInfo represents merge request information returned by the service
 type MergeRequestInfo struct {
 	ID             int64
 	MRIID          int
@@ -22,9 +21,6 @@ type MergeRequestInfo struct {
 	PodID          *int64
 }
 
-// ListMergeRequests lists merge requests for a repository
-// branch: optional filter by source branch
-// state: filter by state (opened, merged, closed, all)
 func (s *Service) ListMergeRequests(ctx context.Context, repoID int64, branch, state string) ([]*MergeRequestInfo, error) {
 	rows, err := s.repo.ListMergeRequests(ctx, repoID, branch, state)
 	if err != nil {

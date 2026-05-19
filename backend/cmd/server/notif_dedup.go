@@ -5,9 +5,6 @@ import (
 	"time"
 )
 
-// oscNotifDedup tracks recent OSC notifications to deduplicate against task:completed.
-// When Claude Code sends OSC 777 "Task completed" right before the pod terminates,
-// we skip the redundant task:completed dispatch.
 var oscNotifDedup sync.Map // podKey → time.Time
 
 const oscNotifDedupWindow = 30 * time.Second

@@ -14,9 +14,6 @@ interface EditProviderDialogProps {
   onSuccess: () => void;
 }
 
-/**
- * EditProviderDialog - Dialog for editing an existing Git provider
- */
 export function EditProviderDialog({ provider, onClose, onSuccess }: EditProviderDialogProps) {
   const t = useTranslations();
   const [name, setName] = useState(provider.name);

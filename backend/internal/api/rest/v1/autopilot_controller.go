@@ -13,13 +13,10 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// AutopilotControllerCommandSender defines the interface for sending AutopilotController control commands to runners.
-// Note: CreateAutopilot is now handled by AutopilotControllerService.CreateAndStart.
 type AutopilotControllerCommandSender interface {
 	SendAutopilotControl(runnerID int64, cmd *runnerv1.AutopilotControlCommand) error
 }
 
-// AutopilotControllerServiceInterface defines the interface for AutopilotController service operations
 type AutopilotControllerServiceInterface interface {
 	GetAutopilotController(ctx context.Context, orgID int64, autopilotPodKey string) (*agentpod.AutopilotController, error)
 	ListAutopilotControllers(ctx context.Context, orgID int64) ([]*agentpod.AutopilotController, error)
@@ -28,38 +25,32 @@ type AutopilotControllerServiceInterface interface {
 	GetIterations(ctx context.Context, autopilotPodID int64) ([]*agentpod.AutopilotIteration, error)
 }
 
-// AutopilotControllerHandler handles AutopilotController-related HTTP requests
 type AutopilotControllerHandler struct {
 	service       AutopilotControllerServiceInterface
 	podService    PodServiceForHandler
 	commandSender AutopilotControllerCommandSender
 }
 
-// AutopilotControllerHandlerOption is a functional option for AutopilotControllerHandler
 type AutopilotControllerHandlerOption func(*AutopilotControllerHandler)
 
-// WithAutopilotControllerService sets the AutopilotController service
 func WithAutopilotControllerService(svc AutopilotControllerServiceInterface) AutopilotControllerHandlerOption {
 	return func(h *AutopilotControllerHandler) {
 		h.service = svc
 	}
 }
 
-// WithAutopilotCommandSender sets the command sender
 func WithAutopilotCommandSender(sender AutopilotControllerCommandSender) AutopilotControllerHandlerOption {
 	return func(h *AutopilotControllerHandler) {
 		h.commandSender = sender
 	}
 }
 
-// WithPodServiceForAutopilot sets the pod service for worker pod lookup
 func WithPodServiceForAutopilot(svc PodServiceForHandler) AutopilotControllerHandlerOption {
 	return func(h *AutopilotControllerHandler) {
 		h.podService = svc
 	}
 }
 
-// NewAutopilotControllerHandler creates a new AutopilotControllerHandler
 func NewAutopilotControllerHandler(opts ...AutopilotControllerHandlerOption) *AutopilotControllerHandler {
 	h := &AutopilotControllerHandler{}
 	for _, opt := range opts {
@@ -68,7 +59,6 @@ func NewAutopilotControllerHandler(opts ...AutopilotControllerHandlerOption) *Au
 	return h
 }
 
-// getOrgID extracts organization ID from context
 func getOrgID(c *gin.Context) int64 {
 	tenant := middleware.GetTenant(c)
 	if tenant == nil {
@@ -77,7 +67,6 @@ func getOrgID(c *gin.Context) int64 {
 	return tenant.OrganizationID
 }
 
-// GetAutopilotController handles GET /autopilot-controllers/:key
 func (h *AutopilotControllerHandler) GetAutopilotController(c *gin.Context) {
 	orgID := getOrgID(c)
 	if orgID == 0 {
@@ -105,7 +94,6 @@ func (h *AutopilotControllerHandler) GetAutopilotController(c *gin.Context) {
 	c.JSON(http.StatusOK, toAutopilotControllerResponse(autopilotPod))
 }
 
-// ListAutopilotControllers handles GET /autopilot-controllers
 func (h *AutopilotControllerHandler) ListAutopilotControllers(c *gin.Context) {
 	orgID := getOrgID(c)
 	if orgID == 0 {
@@ -132,7 +120,6 @@ func (h *AutopilotControllerHandler) ListAutopilotControllers(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GetIterations handles GET /autopilot-controllers/:key/iterations
 func (h *AutopilotControllerHandler) GetIterations(c *gin.Context) {
 	autopilotPod := h.getAutopilotControllerFromContext(c)
 	if autopilotPod == nil {
@@ -153,7 +140,6 @@ func (h *AutopilotControllerHandler) GetIterations(c *gin.Context) {
 	c.JSON(http.StatusOK, iterations)
 }
 
-// getAutopilotControllerFromContext is a helper to get AutopilotController from request context
 func (h *AutopilotControllerHandler) getAutopilotControllerFromContext(c *gin.Context) *agentpod.AutopilotController {
 	orgID := getOrgID(c)
 	if orgID == 0 {
@@ -181,7 +167,6 @@ func (h *AutopilotControllerHandler) getAutopilotControllerFromContext(c *gin.Co
 	return autopilotPod
 }
 
-// RegisterAutopilotControllerRoutes registers AutopilotController routes
 func RegisterAutopilotControllerRoutes(rg *gin.RouterGroup, handler *AutopilotControllerHandler) {
 	autopilotPods := rg.Group("/autopilot-controllers")
 	{

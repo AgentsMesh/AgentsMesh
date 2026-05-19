@@ -13,14 +13,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GRPCRunnerHandler handles gRPC/mTLS Runner registration and management.
 type GRPCRunnerHandler struct {
 	runnerService *runner.Service
 	pkiService    *pki.Service
 	config        *config.Config
 }
 
-// NewGRPCRunnerHandler creates a new gRPC runner handler.
 func NewGRPCRunnerHandler(runnerService *runner.Service, pkiService *pki.Service, cfg *config.Config) *GRPCRunnerHandler {
 	return &GRPCRunnerHandler{
 		runnerService: runnerService,
@@ -29,18 +27,13 @@ func NewGRPCRunnerHandler(runnerService *runner.Service, pkiService *pki.Service
 	}
 }
 
-// ==================== Certificate Renewal ====================
-
-// RenewCertificate renews a runner's certificate.
-// POST /api/v1/runners/grpc/renew-certificate
-// Authenticated via mTLS - Nginx verifies client certificate and passes CN.
+// POST /api/v1/runners/grpc/renew-certificate — authenticated via mTLS (Nginx passes CN).
 func (h *GRPCRunnerHandler) RenewCertificate(c *gin.Context) {
 	if h.pkiService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "PKI service not configured")
 		return
 	}
 
-	// Get identity from Nginx-passed headers
 	nodeID := c.GetHeader("X-Client-Cert-CN")
 	oldSerial := c.GetHeader("X-Client-Cert-Serial")
 
@@ -69,11 +62,6 @@ func (h *GRPCRunnerHandler) RenewCertificate(c *gin.Context) {
 	})
 }
 
-// ==================== Reactivation (Expired Certificate Recovery) ====================
-
-// GenerateReactivationToken generates a one-time token for reactivating a runner.
-// POST /api/v1/organizations/:slug/runners/:id/reactivate
-// Requires JWT authentication (admin).
 func (h *GRPCRunnerHandler) GenerateReactivationToken(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -87,13 +75,11 @@ func (h *GRPCRunnerHandler) GenerateReactivationToken(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// Verify runner belongs to organization
 	r, err := h.runnerService.GetRunner(c.Request.Context(), runnerID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Runner not found")
@@ -118,9 +104,6 @@ func (h *GRPCRunnerHandler) GenerateReactivationToken(c *gin.Context) {
 	})
 }
 
-// Reactivate reactivates a runner using a one-time token.
-// POST /api/v1/runners/grpc/reactivate
-// No authentication required - token serves as authentication.
 func (h *GRPCRunnerHandler) Reactivate(c *gin.Context) {
 	if h.pkiService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "PKI service not configured")
@@ -156,11 +139,7 @@ func (h *GRPCRunnerHandler) Reactivate(c *gin.Context) {
 	})
 }
 
-// ==================== Route Registration ====================
-
-// GetDiscovery returns the current gRPC endpoint for runner auto-discovery.
-// GET /api/v1/runners/grpc/discovery
-// Authenticated via mTLS - requires X-Client-Cert-CN header (same as RenewCertificate).
+// GET /api/v1/runners/grpc/discovery — mTLS-authenticated via X-Client-Cert-CN.
 func (h *GRPCRunnerHandler) GetDiscovery(c *gin.Context) {
 	nodeID := c.GetHeader("X-Client-Cert-CN")
 	if nodeID == "" {
@@ -173,45 +152,31 @@ func (h *GRPCRunnerHandler) GetDiscovery(c *gin.Context) {
 	})
 }
 
-// RegisterGRPCRunnerRoutes registers gRPC runner routes.
 func RegisterGRPCRunnerRoutes(r *gin.RouterGroup, handler *GRPCRunnerHandler) {
-	// Public endpoints (no auth required)
-	// These are used by Runner CLI for registration
 	grpcPublic := r.Group("/runners/grpc")
 	{
-		// Tailscale-style interactive registration
 		grpcPublic.POST("/auth-url", handler.RequestAuthURL)
 		grpcPublic.GET("/auth-status", handler.GetAuthStatus)
 
-		// Pre-generated token registration
 		grpcPublic.POST("/register", handler.RegisterWithToken)
 
-		// Reactivation (for expired certificates)
 		grpcPublic.POST("/reactivate", handler.Reactivate)
 
-		// Certificate renewal (authenticated via mTLS, X-Client-Cert-* headers)
 		grpcPublic.POST("/renew-certificate", handler.RenewCertificate)
 
-		// Discovery - returns current gRPC endpoint (authenticated via mTLS, X-Client-Cert-* headers)
 		grpcPublic.GET("/discovery", handler.GetDiscovery)
 	}
 }
 
-// RegisterOrgGRPCRunnerRoutes registers organization-scoped gRPC runner routes.
-// These require JWT authentication.
 func RegisterOrgGRPCRunnerRoutes(rg *gin.RouterGroup, handler *GRPCRunnerHandler) {
-	// Organization-scoped endpoints (require JWT auth + tenant context)
 	grpc := rg.Group("/grpc")
 	{
-		// Authorize pending auth (Web UI action)
 		grpc.POST("/authorize", handler.AuthorizeRunner)
 
-		// Token management
 		grpc.GET("/tokens", handler.ListGRPCTokens)
 		grpc.POST("/tokens", handler.GenerateGRPCToken)
 		grpc.DELETE("/tokens/:id", handler.DeleteGRPCToken)
 	}
 
-	// Reactivation token generation (per-runner)
 	rg.POST("/:id/reactivate", handler.GenerateReactivationToken)
 }

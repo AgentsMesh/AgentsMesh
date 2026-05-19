@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
-// UpdatePodStatus updates pod status
 func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string) error {
 	updates := map[string]interface{}{"status": status}
 
@@ -38,18 +37,14 @@ func (s *PodService) UpdatePodStatus(ctx context.Context, podKey, status string)
 	return nil
 }
 
-// UpdatePodPTY updates pod PTY PID
 func (s *PodService) UpdatePodPTY(ctx context.Context, podKey string, ptyPID int) error {
 	return s.repo.UpdateField(ctx, podKey, "pty_pid", ptyPID)
 }
 
-// UpdatePodTitle updates pod title (from OSC 0/2 terminal escape sequences)
 func (s *PodService) UpdatePodTitle(ctx context.Context, podKey, title string) error {
 	return s.repo.UpdateField(ctx, podKey, "title", title)
 }
 
-// UpdateAlias updates the user-assigned alias for a pod.
-// Pass nil to clear the alias.
 func (s *PodService) UpdateAlias(ctx context.Context, podKey string, alias *string) error {
 	if alias != nil {
 		return s.repo.UpdateField(ctx, podKey, "alias", *alias)
@@ -57,12 +52,10 @@ func (s *PodService) UpdateAlias(ctx context.Context, podKey string, alias *stri
 	return s.repo.UpdateField(ctx, podKey, "alias", nil)
 }
 
-// UpdatePerpetual updates the perpetual flag for a pod.
 func (s *PodService) UpdatePerpetual(ctx context.Context, podKey string, perpetual bool) error {
 	return s.repo.UpdateField(ctx, podKey, "perpetual", perpetual)
 }
 
-// UpdateSandboxPath updates pod sandbox path and branch
 func (s *PodService) UpdateSandboxPath(ctx context.Context, podKey, sandboxPath, branchName string) error {
 	updates := map[string]interface{}{"sandbox_path": sandboxPath}
 	if branchName != "" {
@@ -72,10 +65,8 @@ func (s *PodService) UpdateSandboxPath(ctx context.Context, podKey, sandboxPath,
 	return err
 }
 
-// PodUpdateFunc is a callback for pod updates
 type PodUpdateFunc func(*agentpod.Pod)
 
-// Subscribe subscribes to pod updates and returns an unsubscribe function
 func (s *PodService) Subscribe(ctx context.Context, podKey string, callback PodUpdateFunc) (func(), error) {
 	return func() {}, nil
 }

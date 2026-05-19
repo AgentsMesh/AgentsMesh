@@ -9,7 +9,6 @@ import (
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
 
-// LoopService handles Loop CRUD operations.
 type LoopService struct {
 	repo loopDomain.LoopRepository
 }
@@ -18,7 +17,6 @@ func NewLoopService(repo loopDomain.LoopRepository) *LoopService {
 	return &LoopService{repo: repo}
 }
 
-// GetBySlug retrieves a Loop by organization ID and slug.
 func (s *LoopService) GetBySlug(ctx context.Context, orgID int64, slug string) (*loopDomain.Loop, error) {
 	loop, err := s.repo.GetBySlug(ctx, orgID, slug)
 	if err != nil {
@@ -53,7 +51,6 @@ func (s *LoopService) UpdateRunStats(ctx context.Context, loopID int64, status s
 	return nil
 }
 
-// UpdateStats sets the run statistics on a Loop to absolute values.
 func (s *LoopService) UpdateStats(ctx context.Context, loopID int64, total, successful, failed int) error {
 	return s.repo.Update(ctx, loopID, map[string]interface{}{
 		"total_runs":      total,
@@ -94,7 +91,6 @@ func (s *LoopService) UpdateNextRunAt(ctx context.Context, loopID int64, nextRun
 	})
 }
 
-// GetDueCronLoops returns enabled loops with cron scheduling that are due for execution.
 func (s *LoopService) GetDueCronLoops(ctx context.Context, orgIDs []int64) ([]*loopDomain.Loop, error) {
 	return s.repo.GetDueCronLoops(ctx, orgIDs)
 }
@@ -104,7 +100,6 @@ func (s *LoopService) ClaimCronLoop(ctx context.Context, loopID int64, nextRunAt
 	return s.repo.ClaimCronLoop(ctx, loopID, nextRunAt)
 }
 
-// FindLoopsNeedingNextRun returns enabled cron loops with next_run_at IS NULL.
 func (s *LoopService) FindLoopsNeedingNextRun(ctx context.Context, orgIDs []int64) ([]*loopDomain.Loop, error) {
 	return s.repo.FindLoopsNeedingNextRun(ctx, orgIDs)
 }

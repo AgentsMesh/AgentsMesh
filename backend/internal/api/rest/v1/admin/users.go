@@ -13,19 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserHandler handles user management requests
 type UserHandler struct {
 	adminService *adminservice.Service
 }
 
-// NewUserHandler creates a new user handler
 func NewUserHandler(adminSvc *adminservice.Service) *UserHandler {
 	return &UserHandler{
 		adminService: adminSvc,
 	}
 }
 
-// RegisterRoutes registers user management routes
 func (h *UserHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	usersGroup := rg.Group("/users")
 	{
@@ -41,12 +38,10 @@ func (h *UserHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// logAction is a helper method that delegates to the shared LogAdminAction function
 func (h *UserHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// ListUsers returns a list of users with pagination
 func (h *UserHandler) ListUsers(c *gin.Context) {
 	query := &adminservice.UserListQuery{
 		Search:   c.Query("search"),
@@ -75,7 +70,6 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	users := make([]gin.H, len(result.Data))
 	for i, u := range result.Data {
 		users[i] = adminUserResponse(&u)
@@ -90,7 +84,6 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	})
 }
 
-// GetUser returns a single user
 func (h *UserHandler) GetUser(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -108,20 +101,17 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	// Log view action
 	h.logAction(c, admin.AuditActionUserView, admin.TargetTypeUser, userID, nil, nil)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))
 }
 
-// UpdateUserRequest represents the request body for updating a user
 type UpdateUserRequest struct {
 	Name     *string `json:"name"`
 	Username *string `json:"username"`
 	Email    *string `json:"email"`
 }
 
-// UpdateUser updates a user's profile
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -135,10 +125,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldUser, _ := h.adminService.GetUser(c.Request.Context(), userID)
 
-	// Build updates map
 	updates := make(map[string]interface{})
 	if req.Name != nil {
 		updates["name"] = *req.Name
@@ -179,7 +167,6 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Log update action
 	h.logAction(c, admin.AuditActionUserUpdate, admin.TargetTypeUser, userID, oldUser, user)
 
 	c.JSON(http.StatusOK, adminUserResponse(user))

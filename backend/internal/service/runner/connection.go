@@ -10,21 +10,12 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// RunnerStream defines a type-safe interface for gRPC bidirectional stream
-// between Backend and Runner.
-//
-// Send: Backend → Runner (*runnerv1.ServerMessage)
-// Recv: Runner → Backend (*runnerv1.RunnerMessage)
 type RunnerStream interface {
-	// Send sends a ServerMessage to the Runner
 	Send(msg *runnerv1.ServerMessage) error
-	// Recv receives a RunnerMessage from the Runner
 	Recv() (*runnerv1.RunnerMessage, error)
-	// Context returns the stream context
 	Context() context.Context
 }
 
-// GRPCConnection represents an active gRPC connection to a runner.
 type GRPCConnection struct {
 	RunnerID   int64
 	Generation int64 // Unique monotonic ID for this connection instance
@@ -32,28 +23,19 @@ type GRPCConnection struct {
 	OrgSlug    string
 	Stream     RunnerStream
 
-	// Connection timestamps
 	ConnectedAt time.Time
 	LastPing    time.Time
 	lastPong    time.Time // Last downstream pong received time
 
-	// Initialization state
 	initialized     bool
 	availableAgents []string
 
-	// localRelayURL is the runner's optional local WS server URL (ws://127.0.0.1:<port>),
-	// advertised via heartbeat. Empty when the runner has no local relay (e.g. cloud runner).
-	// In-memory only — disappears with the connection.
 	localRelayURL string
 
-	// Online event deduplication: true after the first "runner online" event
-	// has been published for this connection, preventing repeated DB queries.
 	onlineEventSent atomic.Bool
 
-	// Send channel for outgoing messages (type-safe)
 	Send chan *runnerv1.ServerMessage
 
-	// Close handling
 	closeOnce sync.Once
 	closed    bool
 	closeChan chan struct{}
@@ -61,7 +43,6 @@ type GRPCConnection struct {
 	mu sync.RWMutex
 }
 
-// NewGRPCConnection creates a new gRPC connection wrapper.
 func NewGRPCConnection(runnerID int64, generation int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
 	return &GRPCConnection{
 		RunnerID:    runnerID,
@@ -76,14 +57,12 @@ func NewGRPCConnection(runnerID int64, generation int64, nodeID, orgSlug string,
 	}
 }
 
-// IsInitialized returns whether the connection has completed initialization.
 func (c *GRPCConnection) IsInitialized() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.initialized
 }
 
-// SetInitialized sets the initialization state and available agents.
 func (c *GRPCConnection) SetInitialized(initialized bool, availableAgents []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -91,70 +70,59 @@ func (c *GRPCConnection) SetInitialized(initialized bool, availableAgents []stri
 	c.availableAgents = availableAgents
 }
 
-// GetAvailableAgents returns a copy of the available agents list.
-// Returns a copy to prevent external modification of internal state.
 func (c *GRPCConnection) GetAvailableAgents() []string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if c.availableAgents == nil {
 		return nil
 	}
-	// Return a copy to prevent external modification
 	result := make([]string, len(c.availableAgents))
 	copy(result, c.availableAgents)
 	return result
 }
 
-// SetLocalRelayURL records the local relay URL advertised in the runner's heartbeat.
 func (c *GRPCConnection) SetLocalRelayURL(url string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.localRelayURL = url
 }
 
-// GetLocalRelayURL returns the runner's local relay URL ("" when not advertised).
 func (c *GRPCConnection) GetLocalRelayURL() string {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.localRelayURL
 }
 
-// UpdateLastPing updates the last ping time.
 func (c *GRPCConnection) UpdateLastPing() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.LastPing = time.Now()
 }
 
-// GetLastPing returns the last ping time.
 func (c *GRPCConnection) GetLastPing() time.Time {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.LastPing
 }
 
-// UpdateLastPong updates the last downstream pong time.
 func (c *GRPCConnection) UpdateLastPong() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.lastPong = time.Now()
 }
 
-// GetLastPong returns the last downstream pong time.
 func (c *GRPCConnection) GetLastPong() time.Time {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.lastPong
 }
 
-// IsClosed returns whether the connection is closed.
 func (c *GRPCConnection) IsClosed() bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.closed
 }
 
-// Close closes the connection.
 func (c *GRPCConnection) Close() {
 	c.closeOnce.Do(func() {
 		c.mu.Lock()
@@ -170,15 +138,10 @@ func (c *GRPCConnection) Close() {
 	})
 }
 
-// CloseChan returns the close channel for select.
 func (c *GRPCConnection) CloseChan() <-chan struct{} {
 	return c.closeChan
 }
 
-// SendMessage sends a message through the gRPC stream.
-// This is non-blocking; message is queued to the Send channel.
-// Holds RLock during the entire check-and-send to prevent Close() from
-// closing the Send channel between the IsClosed check and the channel write.
 func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -202,15 +165,10 @@ func (c *GRPCConnection) SendMessage(msg *runnerv1.ServerMessage) error {
 	}
 }
 
-// Note: All connection errors are now defined in errors.go for consistency.
-// Use ErrConnectionClosed, ErrSendBufferFull, ErrRunnerNotConnected, ErrCommandSenderNotSet from there.
-
-// IsOnlineEventSent returns whether the "runner online" event has been sent for this connection.
 func (c *GRPCConnection) IsOnlineEventSent() bool {
 	return c.onlineEventSent.Load()
 }
 
-// MarkOnlineEventSent marks the "runner online" event as sent for this connection.
 func (c *GRPCConnection) MarkOnlineEventSent() {
 	c.onlineEventSent.Store(true)
 }

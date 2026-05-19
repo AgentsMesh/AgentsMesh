@@ -1,6 +1,3 @@
-/**
- * Type definitions for Hero Section Kanban + Terminal demonstration
- */
 
 export interface KanbanTicket {
   id: string;
@@ -8,7 +5,6 @@ export interface KanbanTicket {
   agent: string;
   status: "backlog" | "in_progress" | "done";
   color: string;
-  /** When true, the Execute button shows a "clicking" highlight */
   executing?: boolean;
 }
 

@@ -8,13 +8,8 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, Env
 use crate::config::{FileSink, LogConfig};
 use crate::init::LogError;
 
-// Builds the subscriber stack for native targets and installs it as the
-// global default. Returns the writer guard when a file sink is configured —
-// the caller stashes it in a static to keep the background worker alive.
-//
-// We use `try_init` rather than `init` so an already-installed subscriber
-// (test harness, second host bootstrap path) doesn't panic — the second
-// install becomes a no-op, matching `crate::init`'s OnceLock guard.
+// `try_init` instead of `init`: a second install becomes a no-op (test harness,
+// second host bootstrap), matching `crate::init`'s OnceLock guard.
 pub fn install(config: &LogConfig, filter: EnvFilter) -> Result<Option<WorkerGuard>, LogError> {
     let stderr_layer = fmt::layer().with_writer(std::io::stderr).with_ansi(false);
 

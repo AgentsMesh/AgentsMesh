@@ -10,14 +10,12 @@ import (
 	"github.com/go-acme/lego/v4/certificate"
 )
 
-// GetCertificate returns the current certificate
 func (m *Manager) GetCertificate() *Certificate {
 	m.certMu.RLock()
 	defer m.certMu.RUnlock()
 	return m.cert
 }
 
-// GetCertificatePEM returns certificate and key as PEM strings
 func (m *Manager) GetCertificatePEM() (cert string, key string, expiry time.Time, err error) {
 	m.certMu.RLock()
 	defer m.certMu.RUnlock()
@@ -29,7 +27,6 @@ func (m *Manager) GetCertificatePEM() (cert string, key string, expiry time.Time
 	return string(m.cert.Certificate), string(m.cert.PrivateKey), m.cert.NotAfter, nil
 }
 
-// NeedsRenewal checks if the certificate needs renewal
 func (m *Manager) NeedsRenewal() bool {
 	m.certMu.RLock()
 	defer m.certMu.RUnlock()
@@ -42,7 +39,6 @@ func (m *Manager) NeedsRenewal() bool {
 	return time.Now().After(renewalTime)
 }
 
-// ObtainCertificate obtains a new wildcard certificate
 func (m *Manager) ObtainCertificate(ctx context.Context) error {
 	wildcardDomain := "*." + m.cfg.Domain
 
@@ -58,7 +54,6 @@ func (m *Manager) ObtainCertificate(ctx context.Context) error {
 		return fmt.Errorf("failed to obtain certificate: %w", err)
 	}
 
-	// Parse certificate to get validity dates
 	block, _ := pem.Decode(certificates.Certificate)
 	if block == nil {
 		return fmt.Errorf("failed to decode certificate PEM")
@@ -82,7 +77,6 @@ func (m *Manager) ObtainCertificate(ctx context.Context) error {
 	m.cert = cert
 	m.certMu.Unlock()
 
-	// Save certificate to disk
 	if err := m.saveCertificate(); err != nil {
 		return fmt.Errorf("failed to save certificate: %w", err)
 	}
@@ -95,7 +89,6 @@ func (m *Manager) ObtainCertificate(ctx context.Context) error {
 	return nil
 }
 
-// RenewCertificate renews the current certificate
 func (m *Manager) RenewCertificate(ctx context.Context) error {
 	m.certMu.RLock()
 	currentCert := m.cert
@@ -107,14 +100,11 @@ func (m *Manager) RenewCertificate(ctx context.Context) error {
 
 	m.logger.Info("Renewing certificate", "domain", currentCert.Domain)
 
-	// For renewal, we need to obtain a new certificate
 	return m.ObtainCertificate(ctx)
 }
 
-// StartAutoRenewal starts background certificate renewal
 func (m *Manager) StartAutoRenewal(ctx context.Context) {
 	go func() {
-		// Check immediately on startup
 		if m.NeedsRenewal() {
 			m.logger.Info("Certificate needs renewal, obtaining new certificate...")
 			if err := m.ObtainCertificate(ctx); err != nil {
@@ -122,7 +112,6 @@ func (m *Manager) StartAutoRenewal(ctx context.Context) {
 			}
 		}
 
-		// Check daily
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 

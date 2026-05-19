@@ -23,7 +23,6 @@ export function SkillCard({ skill, canManage, onToggle, onDelete }: SkillCardPro
     upload: t("extensions.sourceUpload"),
   }[skill.install_source] || skill.install_source;
 
-  // Determine the best source URL for linking
   const sourceUrl = skill.source_url || skill.market_item?.registry?.repository_url || null;
 
   return (

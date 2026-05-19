@@ -13,8 +13,6 @@ import (
 	otelinit "github.com/anthropics/agentsmesh/backend/internal/infra/otel"
 )
 
-// CreatePod orchestrates the full Pod creation flow:
-// resume handling -> validation -> quota -> DB record -> config build -> dispatch to Runner.
 func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreatePodRequest) (*OrchestrateCreatePodResult, error) {
 	createStart := time.Now()
 	defer func() {
@@ -56,7 +54,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		sessionID = uuid.New().String()
 	}
 
-	// Resolve agent definition once — reused for AgentFile merge and mode validation.
 	var agentDef *agentDomain.Agent
 	if req.AgentSlug != "" && o.agentResolver != nil {
 		var err error
@@ -66,13 +63,12 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// --- AgentFile Layer resolution ---
 	resolved := &agentfileResolved{}
 
 	resumeAgentSession := req.ResumeAgentSession == nil || *req.ResumeAgentSession
 	systemOverrides := newSystemOverrides(sessionID, isResumeMode, resumeAgentSession)
 
-	// AgentFile SSOT: resolve CONFIG values from base AgentFile + optional user Layer.
+	// AgentFile SSOT — base AgentFile ⊕ user Layer → CONFIG values.
 	if agentDef != nil && agentDef.AgentfileSource != nil {
 		var userPrefs map[string]interface{}
 		if o.userConfigQuery != nil {
@@ -114,21 +110,16 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// Effective Model / PermissionMode come from resolved.ConfigValues — the
-	// single source of truth post-resolve. mergeSourcePodConfigPrefs already
-	// projects legacy Claude columns into userPrefs so they re-emerge here.
 	effectiveInteractionMode := firstNonEmpty(resolved.InteractionMode, podDomain.InteractionModePTY)
 	effectiveModel := resolved.ConfigValues.GetString(agentDomain.ConfigKeyModel)
 	effectivePermissionMode := resolved.ConfigValues.GetString(agentDomain.ConfigKeyPermissionMode)
-	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName) // req.BranchName only from resume
+	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
-	// Validate interaction mode against agent capabilities
 	if agentDef != nil && !agentDef.SupportsMode(effectiveInteractionMode) {
 		return nil, ErrUnsupportedInteractionMode
 	}
 
-	// Quota check
 	if o.billingService != nil {
 		if err := o.billingService.CheckQuota(ctx, req.OrganizationID, "concurrent_pods", 1); err != nil {
 			slog.WarnContext(ctx, "pod quota check failed", "org_id", req.OrganizationID, "error", err)
@@ -136,7 +127,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// Resolve TicketSlug -> TicketID
 	if req.TicketID == nil && req.TicketSlug != nil && *req.TicketSlug != "" && o.ticketService != nil {
 		t, err := o.ticketService.GetTicketBySlug(ctx, req.OrganizationID, *req.TicketSlug)
 		if err == nil && t != nil {
@@ -146,7 +136,6 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		}
 	}
 
-	// Convert credential_profile_id: 0 (explicit RunnerHost) -> nil (FK constraint)
 	var dbCredProfileID *int64
 	if req.CredentialProfileID != nil && *req.CredentialProfileID > 0 {
 		dbCredProfileID = req.CredentialProfileID

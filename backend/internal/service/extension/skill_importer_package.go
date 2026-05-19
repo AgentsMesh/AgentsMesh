@@ -12,9 +12,6 @@ import (
 	"sort"
 )
 
-// --- Packaging ---
-
-// packageSkillDir creates a tar.gz archive of a skill directory
 func packageSkillDir(dirPath string) ([]byte, error) {
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
@@ -26,23 +23,19 @@ func packageSkillDir(dirPath string) ([]byte, error) {
 			return err
 		}
 
-		// Get relative path
 		relPath, err := filepath.Rel(baseDir, path)
 		if err != nil {
 			return err
 		}
 
-		// Skip root directory itself
 		if relPath == "." {
 			return nil
 		}
 
-		// Skip .git and other ignored directories
 		if info.IsDir() && shouldIgnoreDir(info.Name()) {
 			return filepath.SkipDir
 		}
 
-		// Skip macOS resource fork files (._*)
 		if !info.IsDir() && shouldIgnoreFile(info.Name()) {
 			return nil
 		}
@@ -86,13 +79,9 @@ func packageSkillDir(dirPath string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// --- SHA computation ---
-
-// computeDirSHA computes a deterministic SHA256 of a directory's contents
 func computeDirSHA(dirPath string) (string, error) {
 	h := sha256.New()
 
-	// Collect all file paths
 	var files []string
 	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -104,7 +93,6 @@ func computeDirSHA(dirPath string) (string, error) {
 			}
 			return nil
 		}
-		// Skip macOS resource fork files (._*)
 		if shouldIgnoreFile(info.Name()) {
 			return nil
 		}
@@ -119,17 +107,14 @@ func computeDirSHA(dirPath string) (string, error) {
 		return "", err
 	}
 
-	// Sort for deterministic ordering
 	sort.Strings(files)
 
-	// Hash each file's path + content
 	for _, relPath := range files {
 		absPath := filepath.Join(dirPath, relPath)
 		content, err := os.ReadFile(absPath)
 		if err != nil {
 			return "", err
 		}
-		// Write path and content to hasher
 		h.Write([]byte(relPath))
 		h.Write([]byte{0}) // separator
 		h.Write(content)

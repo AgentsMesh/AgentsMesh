@@ -24,7 +24,6 @@ interface PaneLoadingStateProps {
   onClose?: () => void;
 }
 
-/** Threshold in seconds after which we show a "taking longer than expected" warning */
 const SLOW_INIT_THRESHOLD_SEC = 120;
 
 function useElapsedSeconds() {
@@ -47,9 +46,6 @@ function formatElapsed(totalSeconds: number): string {
   return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
-/**
- * Loading/Waiting state view for workspace panes
- */
 export function PaneLoadingState({
   podStatus,
   initProgress,
@@ -88,14 +84,12 @@ export function PaneLoadingState({
             )}
           </p>
         )}
-        {/* Elapsed time indicator for non-completed states */}
         {!isCompleted && (
           <p className="text-xs text-terminal-text-muted mt-2 flex items-center justify-center gap-1">
             <Clock className="w-3 h-3" />
             {formatElapsed(elapsed)}
           </p>
         )}
-        {/* Slow initialization warning */}
         {isSlowInit && (
           <div className="mt-3 p-2 rounded bg-yellow-500/10 border border-yellow-500/30">
             <p className="text-xs text-yellow-500 dark:text-yellow-400">
@@ -103,7 +97,6 @@ export function PaneLoadingState({
             </p>
           </div>
         )}
-        {/* Show close button when status is unknown, completed, or init is slow */}
         {(podStatus === "unknown" || isCompleted || isSlowInit) && onClose && (
           <Button
             variant="outline"
@@ -124,10 +117,6 @@ interface PaneReconnectingStateProps {
   onClose?: () => void;
 }
 
-/**
- * Reconnecting state view for workspace panes - shown when pod is orphaned
- * (Runner is restarting and the session will resume automatically)
- */
 export function PaneReconnectingState({
   onClose,
 }: PaneReconnectingStateProps) {
@@ -162,9 +151,6 @@ interface PaneErrorStateProps {
   onClose?: () => void;
 }
 
-/**
- * Error state view for workspace panes
- */
 export function PaneErrorState({
   error,
   onClose,
@@ -192,5 +178,3 @@ export function PaneErrorState({
     </div>
   );
 }
-
-// Named exports only - no default export needed

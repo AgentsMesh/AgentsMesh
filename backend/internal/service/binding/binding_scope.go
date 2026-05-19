@@ -8,7 +8,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// RequestScopes requests additional scopes on an existing binding
 func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterPod string, scopes []string) (*channel.PodBinding, error) {
 	if err := s.validateScopes(scopes); err != nil {
 		return nil, err
@@ -27,7 +26,6 @@ func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterP
 		return nil, ErrBindingNotActive
 	}
 
-	// Filter out already granted or pending scopes
 	var newScopes []string
 	for _, scope := range scopes {
 		if !binding.HasScope(scope) && !binding.HasPendingScope(scope) {
@@ -39,7 +37,6 @@ func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterP
 		return binding, nil // No new scopes to request
 	}
 
-	// Check if we can auto-approve
 	autoApprove, _ := s.evaluatePolicy(ctx, binding.InitiatorPod, binding.TargetPod, "")
 
 	if autoApprove {
@@ -57,7 +54,6 @@ func (s *Service) RequestScopes(ctx context.Context, bindingID int64, requesterP
 	return binding, nil
 }
 
-// ApproveScopes approves pending scope requests
 func (s *Service) ApproveScopes(ctx context.Context, bindingID int64, approverPod string, scopes []string) (*channel.PodBinding, error) {
 	binding, err := s.GetBinding(ctx, bindingID)
 	if err != nil {
@@ -68,7 +64,6 @@ func (s *Service) ApproveScopes(ctx context.Context, bindingID int64, approverPo
 		return nil, ErrNotAuthorized
 	}
 
-	// Only approve scopes that are actually pending
 	var approved []string
 	for _, scope := range scopes {
 		if binding.HasPendingScope(scope) {
@@ -80,7 +75,6 @@ func (s *Service) ApproveScopes(ctx context.Context, bindingID int64, approverPo
 		return nil, ErrNoValidPendingScopes
 	}
 
-	// Move from pending to granted
 	newGranted := append([]string{}, binding.GrantedScopes...)
 	var newPending []string
 	for _, scopeItem := range binding.PendingScopes {

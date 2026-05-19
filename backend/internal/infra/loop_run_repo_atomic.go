@@ -18,7 +18,6 @@ func (r *loopRunRepo) TriggerRunAtomic(ctx context.Context, params *loop.Trigger
 	var result *loop.TriggerRunAtomicResult
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Lock the loop row with FOR UPDATE to serialize concurrent triggers
 		var l loop.Loop
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			First(&l, params.LoopID).Error; err != nil {
@@ -61,7 +60,6 @@ func (r *loopRunRepo) TriggerRunAtomic(ctx context.Context, params *loop.Trigger
 		}
 		runNumber := maxNumber + 1
 
-		// 4. Create the run record (status=pending, no pod_key yet)
 		resolvedPrompt := l.PromptTemplate
 		now := time.Now()
 
@@ -92,7 +90,6 @@ func (r *loopRunRepo) TriggerRunAtomic(ctx context.Context, params *loop.Trigger
 	return result, nil
 }
 
-// handleConcurrencyPolicy handles concurrency policy when max concurrent runs is reached.
 func (r *loopRunRepo) handleConcurrencyPolicy(tx *gorm.DB, l *loop.Loop, params *loop.TriggerRunAtomicParams, result **loop.TriggerRunAtomicResult) error {
 	var maxNumber int
 	tx.Model(&loop.LoopRun{}).

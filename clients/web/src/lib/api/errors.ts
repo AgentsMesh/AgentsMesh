@@ -20,12 +20,6 @@ export function getApiErrorCode(error: unknown): string | undefined {
   return getServiceErrorCode(error);
 }
 
-/**
- * Extract a server-supplied suggestion string from an ApiError payload, if any.
- * Backend slug-governance errors attach `data.suggestion` (e.g. "did you mean
- * 'foo-bar'?") which forms get to display as inline help. Returns undefined
- * when the error isn't an ApiError, has no `data`, or has no string suggestion.
- */
 export function getErrorSuggestion(error: unknown): string | undefined {
   if (!(error instanceof ApiError)) return undefined;
   const data = error.data as { suggestion?: unknown } | null | undefined;
@@ -62,7 +56,6 @@ export function getLocalizedErrorMessage(
         return translated;
       }
     } catch {
-      // fall through
     }
   }
   if (error instanceof ApiError) {

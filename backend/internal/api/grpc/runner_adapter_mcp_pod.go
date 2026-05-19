@@ -8,12 +8,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 )
 
-// ==================== Pod MCP Methods ====================
-
-// mcpCreatePod handles the "create_pod" MCP method.
-// Delegates to PodOrchestrator for the full creation flow (DB + config + Runner command).
-// When agentfile_layer is provided, it is the SSOT for pod configuration (MODE, CONFIG, REPO, etc.).
-// repository_id and credential_profile_id remain as separate fields (platform-level ID references).
+// AgentFile SSOT: agentfile_layer carries MODE/CONFIG/REPO/etc.
+// repository_id + credential_profile_id remain platform-level ID refs (see backend/internal/service/agentpod/agentfile_extract.go).
 func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		AgentSlug           string  `json:"agent_slug"`
@@ -25,7 +21,6 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		Rows                int32   `json:"rows"`
 		SourcePodKey        string  `json:"source_pod_key"`
 		ResumeAgentSession  *bool   `json:"resume_agent_session"`
-		// Platform-level ID references (cannot be expressed as AgentFile declarations on Runner side)
 		RepositoryID        *int64  `json:"repository_id"`
 		CredentialProfileID *int64  `json:"credential_profile_id"`
 	}
@@ -33,7 +28,6 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 		return nil, err
 	}
 
-	// Delegate to PodOrchestrator for the complete creation flow
 	result, err := a.podOrchestrator.CreatePod(ctx, &agentpod.OrchestrateCreatePodRequest{
 		OrganizationID:      tc.OrganizationID,
 		UserID:              tc.UserID,
@@ -66,7 +60,6 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 	return resp, nil
 }
 
-// mapOrchestratorErrorToMCP maps PodOrchestrator errors to MCP error responses.
 func mapOrchestratorErrorToMCP(err error) *mcpError {
 	switch {
 	case errors.Is(err, agentpod.ErrMissingRunnerID):

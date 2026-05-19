@@ -20,8 +20,6 @@ export function SelectionActionBar({ workspaceID }: { workspaceID: string }) {
   if (selection.length === 0) return null;
 
   const handleDelete = async () => {
-    // Capture before clearing — clearSelection triggers a re-render that
-    // unmounts this bar and cancels the in-flight op chain otherwise.
     const ids = [...selection];
     clear();
     for (const id of ids) {

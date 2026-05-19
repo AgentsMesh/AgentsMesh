@@ -15,30 +15,23 @@ var (
 	ErrAutopilotControllerNotFound = errors.New("autopilot pod not found")
 )
 
-// AutopilotCommandSender defines the interface for sending autopilot commands to runners.
 type AutopilotCommandSender interface {
 	SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error
 }
 
-// AutopilotControllerService handles AutopilotController operations.
 type AutopilotControllerService struct {
 	repo          agentpod.AutopilotRepository
 	commandSender AutopilotCommandSender
 }
 
-// NewAutopilotControllerService creates a new AutopilotController service
 func NewAutopilotControllerService(repo agentpod.AutopilotRepository) *AutopilotControllerService {
 	return &AutopilotControllerService{repo: repo}
 }
 
-// SetCommandSender injects the command sender for gRPC communication with Runners.
 func (s *AutopilotControllerService) SetCommandSender(sender AutopilotCommandSender) {
 	s.commandSender = sender
 }
 
-// ========== CreateAndStart (encapsulated Autopilot creation) ==========
-
-// CreateAndStartRequest contains all parameters for creating and starting an AutopilotController.
 type CreateAndStartRequest struct {
 	OrganizationID int64
 	Pod            *agentpod.Pod
@@ -55,8 +48,6 @@ type CreateAndStartRequest struct {
 	KeyPrefix             string
 }
 
-// CreateAndStart creates an AutopilotController record, applies domain defaults,
-// and sends the creation command to the Runner via gRPC.
 func (s *AutopilotControllerService) CreateAndStart(ctx context.Context, req *CreateAndStartRequest) (*agentpod.AutopilotController, error) {
 	if req.Pod == nil {
 		return nil, fmt.Errorf("target pod is required")

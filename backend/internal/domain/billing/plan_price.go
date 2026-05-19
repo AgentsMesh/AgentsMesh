@@ -2,7 +2,6 @@ package billing
 
 import "time"
 
-// PlanPrice represents pricing for a plan in a specific currency
 type PlanPrice struct {
 	ID       int64  `gorm:"primaryKey" json:"id"`
 	PlanID   int64  `gorm:"not null" json:"plan_id"`
@@ -14,7 +13,6 @@ type PlanPrice struct {
 	StripePriceIDMonthly *string `gorm:"size:255" json:"stripe_price_id_monthly,omitempty"`
 	StripePriceIDYearly  *string `gorm:"size:255" json:"stripe_price_id_yearly,omitempty"`
 
-	// LemonSqueezy Variant IDs (a Variant is a specific price for a product)
 	LemonSqueezyVariantIDMonthly *string `gorm:"column:lemonsqueezy_variant_id_monthly;size:255" json:"lemonsqueezy_variant_id_monthly,omitempty"`
 	LemonSqueezyVariantIDYearly  *string `gorm:"column:lemonsqueezy_variant_id_yearly;size:255" json:"lemonsqueezy_variant_id_yearly,omitempty"`
 
@@ -28,7 +26,6 @@ func (PlanPrice) TableName() string {
 	return "plan_prices"
 }
 
-// GetPrice returns price for billing cycle
 func (p *PlanPrice) GetPrice(billingCycle string) float64 {
 	if billingCycle == BillingCycleYearly {
 		return p.PriceYearly

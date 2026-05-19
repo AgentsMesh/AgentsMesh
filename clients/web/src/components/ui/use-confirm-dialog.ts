@@ -12,17 +12,6 @@ export interface UseConfirmDialogOptions {
   variant?: ConfirmDialogVariant;
 }
 
-/**
- * Hook for managing confirm dialog state.
- *
- * Usage:
- *   const { dialogProps, confirm } = useConfirmDialog({ title: "Delete?", variant: "destructive" });
- *   const confirmed = await confirm();   // opens dialog, resolves true/false
- *   <ConfirmDialog {...dialogProps} />
- *
- * You can also pass dynamic options:
- *   await confirm({ title: `Delete "${name}"?`, variant: "destructive" });
- */
 export function useConfirmDialog(defaultOptions?: UseConfirmDialogOptions) {
   const [open, setOpen] = useState(false);
   const [currentOptions, setCurrentOptions] = useState<UseConfirmDialogOptions>(

@@ -159,7 +159,6 @@ export function TicketCreateDialog({
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
           <ResponsiveDialogBody className="space-y-4">
-            {/* Title */}
             <FormField
               label={t("tickets.createDialog.titleLabel")}
               htmlFor="ticket-title"
@@ -174,7 +173,6 @@ export function TicketCreateDialog({
               />
             </FormField>
 
-            {/* Repository */}
             <FormField
               label={t("tickets.createDialog.repository")}
               htmlFor="ticket-repo"
@@ -187,7 +185,6 @@ export function TicketCreateDialog({
               />
             </FormField>
 
-            {/* Assignees */}
             <FormField label={t("tickets.detail.assignees")}>
               <div ref={assigneeDropdownRef} className="relative">
                 <button
@@ -244,7 +241,6 @@ export function TicketCreateDialog({
               </div>
             </FormField>
 
-            {/* Content */}
             <FormField label={t("tickets.createDialog.content")}>
               <div className={cn(
                 "border border-input rounded-md overflow-hidden bg-card",
@@ -260,7 +256,6 @@ export function TicketCreateDialog({
               </div>
             </FormField>
 
-            {/* Error Message */}
             {error && (
               <div className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">
                 {error}

@@ -22,7 +22,6 @@ export interface RecordEditorProps {
 // that is, any Agent- or user-defined indicator. Layout is a simple two-
 // column label/field grid; a richer layout (inline columns, grouped
 // sections) can wrap this component without changing the field logic.
-//
 // Tier 2 hooks:
 //   - deprecated columns are skipped so schema evolution keeps working
 //     records visible without clutter

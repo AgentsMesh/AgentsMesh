@@ -26,9 +26,8 @@ interface AcpSessionStore {
 
 const mgr = () => getAcpManager();
 
-// WASM reads happen only inside mutators (same sync call stack as the
-// preceding &mut self write). Reads from React render only see this cache, so
-// wasm-bindgen's per-instance borrow flag never sees concurrent borrowers.
+// WASM reads must stay inside mutators (same sync stack as &mut self write).
+// React render reads cache only — wasm-bindgen borrow flag never sees concurrent borrowers.
 function readSessionFromWasm(podKey: string): AcpSessionState | null {
   try {
     const raw = mgr().get_session_json(podKey);

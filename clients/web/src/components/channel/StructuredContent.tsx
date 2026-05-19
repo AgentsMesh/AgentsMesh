@@ -123,7 +123,6 @@ function RenderInline({ element }: { element: InlineElement }) {
 }
 
 function TextSpan({ element }: { element: InlineElement }) {
-  // Support both new Style object and old flat booleans (backward compat)
   const s = element.style;
   const bold = s?.bold ?? element.bold;
   const italic = s?.italic ?? element.italic;

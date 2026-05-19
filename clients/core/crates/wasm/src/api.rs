@@ -11,10 +11,6 @@ pub struct WasmApiClient {
 
 #[wasm_bindgen]
 impl WasmApiClient {
-    /// SSOT-aware constructor: ApiClient is wired to AuthManager's token
-    /// store so token writes (login / refresh / bootstrap) reach API calls
-    /// without TS-side `set_token()` glue. There is no other constructor —
-    /// every WasmApiClient is paired with an AuthManager.
     #[wasm_bindgen(constructor)]
     pub fn new(base_url: String, auth: &crate::auth::WasmAuthManager) -> Self {
         let store: Arc<dyn AuthTokenStore> = auth.token_store_arc();
@@ -99,7 +95,6 @@ impl WasmApiClient {
             .map_err(agentsmesh_services::wire)
     }
 
-    /// Create a WasmPodService that shares this client's ApiClient and auth.
     pub fn create_pod_service(&self) -> crate::service_pod::WasmPodService {
         let state = agentsmesh_state::pod_state::PodState::with_storage(crate::new_memory_backend());
         crate::service_pod::WasmPodService::new(self.client.clone(), state)

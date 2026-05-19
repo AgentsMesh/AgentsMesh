@@ -7,7 +7,6 @@ import (
 	"net/url"
 )
 
-// GetFileContent returns file content
 func (p *GitLabProvider) GetFileContent(ctx context.Context, projectID, filePath, ref string) ([]byte, error) {
 	encodedID := url.PathEscape(projectID)
 	encodedPath := url.PathEscape(filePath)

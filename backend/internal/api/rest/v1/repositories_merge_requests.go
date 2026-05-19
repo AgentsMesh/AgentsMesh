@@ -10,11 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListRepositoryMergeRequests lists merge requests for a repository
-// GET /api/v1/organizations/:slug/repositories/:id/merge-requests
-// Query params:
-//   - branch: filter by source branch (optional)
-//   - state: filter by state (opened, merged, closed, all) (optional, default: all)
 func (h *RepositoryHandler) ListRepositoryMergeRequests(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)

@@ -10,10 +10,6 @@ export interface ConfigOptionsState {
   resetConfig: () => void;
 }
 
-/**
- * Derives a `model` select field from a `models` list field.
- * Returns null if no models list exists.
- */
 function deriveModelField(models: unknown): ConfigField | null {
   const modelList = Array.isArray(models) ? models.filter((m): m is string => typeof m === "string") : [];
   if (modelList.length === 0) {
@@ -47,11 +43,8 @@ export function useConfigOptions(
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<Record<string, unknown>>({});
 
-  // Load config schema when agent changes
   useEffect(() => {
     let cancelled = false;
-
-    
 
     const loadOptions = async () => {
       if (!agentSlug) {
@@ -62,7 +55,6 @@ export function useConfigOptions(
 
       setLoading(true);
       try {
-        // Load config schema from Backend
         const schemaResponse = JSON.parse(await getAgentService().get_config_schema(agentSlug));
 
         if (cancelled) return;
@@ -70,7 +62,6 @@ export function useConfigOptions(
         const schema = schemaResponse || { fields: [] };
         const baseFields = schema.fields || [];
 
-        // Step 1: Initialize config with ConfigSchema defaults
         const mergedConfig: Record<string, unknown> = {};
         for (const field of baseFields) {
           if (field.default !== undefined) {
@@ -78,13 +69,11 @@ export function useConfigOptions(
           }
         }
 
-        // Step 2: Load user personal config and merge (higher priority)
         try {
           const userConfigResponse = JSON.parse(await getAgentService().get_user_config(agentSlug));
           if (!cancelled && userConfigResponse.config?.config_values) {
             const userConfig = userConfigResponse.config.config_values;
 
-            // Merge user config into mergedConfig
             for (const field of baseFields) {
               if (userConfig[field.name] !== undefined) {
                 mergedConfig[field.name] = userConfig[field.name];
@@ -92,15 +81,12 @@ export function useConfigOptions(
             }
           }
         } catch {
-          // User config not found or error - use ConfigSchema defaults only
         }
 
         if (!cancelled) {
-          // Step 3: Derive `model` field from `models` list if present
           const modelsField = baseFields.find((f: ConfigField) => f.type === "model_list");
           const modelField = modelsField ? deriveModelField(mergedConfig[modelsField.name]) : null;
 
-          // Combine base fields with derived model field
           const allFields = modelField ? [...baseFields, modelField] : baseFields;
 
           setFields(allFields);
@@ -124,25 +110,21 @@ export function useConfigOptions(
     };
   }, [agentSlug]);
 
-  // Update a single config field
   const updateConfig = useCallback(
     (fieldName: string, value: unknown) => {
       setConfig((prev) => {
         const updated = { ...prev, [fieldName]: value };
 
-        // If models list changed, regenerate model field options
         if (fieldName === "models") {
           const modelsField = fields.find((f) => f.type === "model_list");
           if (modelsField) {
             const modelField = deriveModelField(value);
             if (modelField) {
-              // Remove old model from config if it's not in the new models list
               const modelList = Array.isArray(value) ? value.filter((m): m is string => typeof m === "string") : [];
               const currentModel = prev["model"] as string;
               if (currentModel && !modelList.includes(currentModel)) {
                 updated["model"] = "";
               }
-              // Update fields to include new model options
               setFields((currentFields) => {
                 const baseFields = currentFields.filter((f) => f.name !== "model");
                 return [...baseFields, modelField];
@@ -157,7 +139,6 @@ export function useConfigOptions(
     [fields]
   );
 
-  // Reset config to empty
   const resetConfig = useCallback(() => {
     setConfig({});
     setFields([]);

@@ -15,8 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// EnableLoop enables a loop.
-// POST /api/v1/orgs/:slug/loops/:loop_slug/enable
 func (h *LoopHandler) EnableLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
@@ -34,8 +32,6 @@ func (h *LoopHandler) EnableLoop(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"loop": loop})
 }
 
-// DisableLoop disables a loop.
-// POST /api/v1/orgs/:slug/loops/:loop_slug/disable
 func (h *LoopHandler) DisableLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
@@ -53,8 +49,6 @@ func (h *LoopHandler) DisableLoop(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"loop": loop})
 }
 
-// TriggerLoop manually triggers a loop run.
-// POST /api/v1/orgs/:slug/loops/:loop_slug/trigger
 func (h *LoopHandler) TriggerLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
@@ -98,8 +92,6 @@ func (h *LoopHandler) TriggerLoop(c *gin.Context) {
 		return
 	}
 
-	// Start run asynchronously — orchestrator handles Pod creation + Autopilot setup.
-	// Timeout prevents goroutine leak if Pod creation hangs indefinitely.
 	startCtx, startCancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	go func() {
 		defer startCancel()

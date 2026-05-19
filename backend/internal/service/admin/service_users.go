@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// UserListQuery represents query parameters for user listing
 type UserListQuery struct {
 	Search   string
 	IsActive *bool
@@ -17,7 +16,6 @@ type UserListQuery struct {
 	PageSize int
 }
 
-// UserListResponse represents paginated user list response
 type UserListResponse struct {
 	Data       []user.User `json:"data"`
 	Total      int64       `json:"total"`
@@ -26,11 +24,9 @@ type UserListResponse struct {
 	TotalPages int         `json:"total_pages"`
 }
 
-// ListUsers retrieves users with filtering and pagination
 func (s *Service) ListUsers(ctx context.Context, query *UserListQuery) (*UserListResponse, error) {
 	db := s.db.Model(&user.User{})
 
-	// Apply filters
 	if query.Search != "" {
 		searchPattern := "%" + query.Search + "%"
 		db = db.Where("email ILIKE ? OR username ILIKE ? OR name ILIKE ?", searchPattern, searchPattern, searchPattern)
@@ -42,13 +38,11 @@ func (s *Service) ListUsers(ctx context.Context, query *UserListQuery) (*UserLis
 		db = db.Where("is_system_admin = ?", *query.IsAdmin)
 	}
 
-	// Count total
 	var total int64
 	if err := db.Count(&total); err != nil {
 		return nil, err
 	}
 
-	// Apply pagination using helper
 	p := normalizePagination(query.Page, query.PageSize, total)
 
 	var users []user.User
@@ -69,7 +63,6 @@ func (s *Service) ListUsers(ctx context.Context, query *UserListQuery) (*UserLis
 	}, nil
 }
 
-// GetUser retrieves a user by ID
 func (s *Service) GetUser(ctx context.Context, userID int64) (*user.User, error) {
 	var u user.User
 	if err := s.db.First(&u, userID); err != nil {
@@ -78,8 +71,6 @@ func (s *Service) GetUser(ctx context.Context, userID int64) (*user.User, error)
 	return &u, nil
 }
 
-// UpdateUser maps unique-constraint violations to ErrUsernameAlreadyExists /
-// ErrEmailAlreadyExists so the handler can return 409 instead of 500.
 func (s *Service) UpdateUser(ctx context.Context, userID int64, updates map[string]interface{}) (*user.User, error) {
 	var u user.User
 	if err := s.db.First(&u, userID); err != nil {
@@ -117,22 +108,18 @@ func isUniqueViolation(err error) bool {
 		strings.Contains(msg, "UNIQUE constraint failed")
 }
 
-// DisableUser disables a user account
 func (s *Service) DisableUser(ctx context.Context, userID int64) (*user.User, error) {
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_active": false})
 }
 
-// EnableUser enables a user account
 func (s *Service) EnableUser(ctx context.Context, userID int64) (*user.User, error) {
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_active": true})
 }
 
-// GrantAdmin grants system admin privileges to a user
 func (s *Service) GrantAdmin(ctx context.Context, userID int64) (*user.User, error) {
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_system_admin": true})
 }
 
-// RevokeAdmin revokes system admin privileges from a user
 func (s *Service) RevokeAdmin(ctx context.Context, userID int64, currentAdminID int64) (*user.User, error) {
 	if userID == currentAdminID {
 		return nil, ErrCannotRevokeOwnAdmin
@@ -140,12 +127,10 @@ func (s *Service) RevokeAdmin(ctx context.Context, userID int64, currentAdminID 
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_system_admin": false})
 }
 
-// VerifyUserEmail marks a user's email as verified
 func (s *Service) VerifyUserEmail(ctx context.Context, userID int64) (*user.User, error) {
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_email_verified": true})
 }
 
-// UnverifyUserEmail marks a user's email as unverified
 func (s *Service) UnverifyUserEmail(ctx context.Context, userID int64) (*user.User, error) {
 	return s.UpdateUser(ctx, userID, map[string]interface{}{"is_email_verified": false})
 }

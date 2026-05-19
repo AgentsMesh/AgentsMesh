@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-// MarkRead advances the read cursor for a user in a channel.
-// The cursor only moves forward — if messageID <= current cursor, this is a no-op.
 func (r *channelRepository) MarkRead(ctx context.Context, channelID, userID int64, messageID int64) error {
 	return r.db.WithContext(ctx).Exec(`
 		INSERT INTO channel_read_states (channel_id, user_id, last_read_message_id, last_read_at)

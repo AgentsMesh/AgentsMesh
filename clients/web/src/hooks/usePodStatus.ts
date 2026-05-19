@@ -12,10 +12,6 @@ interface UsePodStatusResult {
 
 const MAX_FETCH_RETRIES = 3;
 
-/**
- * Hook for tracking pod readiness status
- * Uses realtime events via store - only fetches once on mount for initial state
- */
 export function usePodStatus(podKey: string): UsePodStatusResult {
   const initialFetchDone = useRef(false);
   const retryCount = useRef(0);
@@ -24,10 +20,6 @@ export function usePodStatus(podKey: string): UsePodStatusResult {
   const storePod = usePod(podKey);
   const fetchPod = usePodStore((state) => state.fetchPod);
 
-  // Derive status from store.
-  // Live store data (from WS events) always takes priority: when storeStatus exists,
-  // fetchError is ignored. This prevents a transient fetch error from permanently
-  // shadowing a pod that becomes available via realtime updates.
   const { podStatus, isPodReady, podError } = useMemo(() => {
     const storeStatus = storePod?.status;
     if (!storeStatus && fetchError) {
@@ -45,13 +37,11 @@ export function usePodStatus(podKey: string): UsePodStatusResult {
     } else if (status === "error") {
       error = storePod?.error_message || "Pod error";
     }
-    // Note: "orphaned" is NOT an error — it means the Runner is restarting
-    // and the pod will automatically recover. Treated as a loading/reconnecting state.
+    // "orphaned" is loading/reconnecting (Runner restart auto-recovers), not error.
 
     return { podStatus: status, isPodReady: isReady, podError: error };
   }, [storePod?.status, storePod?.error_message, fetchError]);
 
-  // Initial status fetch — only runs once on mount (or retries on transient failure).
   useEffect(() => {
     if (initialFetchDone.current || storePod) return;
     if (retryCount.current >= MAX_FETCH_RETRIES) return;

@@ -12,7 +12,6 @@ interface RelayStatusOverlayProps {
   className?: string;
 }
 
-/** Derive segment statuses from connection props. */
 function deriveSegments(
   connectionStatus: ConnectionStatus,
   isRunnerDisconnected: boolean,
@@ -30,7 +29,6 @@ function deriveSegments(
   return { webRelay, relayRunner };
 }
 
-/** Worst-case status for overall badge background. */
 function worstStatus(a: SegmentStatus, b: SegmentStatus): SegmentStatus {
   const priority: Record<SegmentStatus, number> = { warning: 3, connecting: 2, unknown: 1, ok: 0 };
   return priority[a] >= priority[b] ? a : b;
@@ -64,7 +62,6 @@ const labelColor: Record<SegmentStatus, string> = {
   unknown: "text-gray-400",
 };
 
-/** Derive tooltip i18n key directly from raw props (avoids SegmentStatus lossy mapping). */
 function webRelayTooltipKey(connectionStatus: ConnectionStatus): string {
   switch (connectionStatus) {
     case "connected": return "connected";
@@ -79,10 +76,6 @@ function relayRunnerTooltipKey(connectionStatus: ConnectionStatus, disconnected:
   return disconnected ? "disconnected" : "connected";
 }
 
-/**
- * Floating overlay showing the Web → Relay → Runner connection chain
- * at the top of the terminal / ACP panel.
- */
 export function RelayStatusOverlay({
   connectionStatus,
   isRunnerDisconnected,
@@ -120,7 +113,6 @@ export function RelayStatusOverlay({
   );
 }
 
-/** Small colored dot representing a segment's status. */
 function SegmentDot({ status, title }: { status: SegmentStatus; title: string }) {
   return (
     <span

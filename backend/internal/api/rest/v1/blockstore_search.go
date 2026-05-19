@@ -10,12 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// SemanticSearch POST /blocks/workspaces/:ws_id/search
-// Body: { "query": string, "top_k"?: int, "min_score"?: float, "type"?: string }
-//
-// Returns ranked block hits. Ranking uses cosine similarity over stored
-// embeddings; snippets are drawn from block text for result previews. ACL
-// filtering applies so private blocks never appear in another user's results.
 func (h *BlockstoreHandler) SemanticSearch(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -49,13 +43,6 @@ func (h *BlockstoreHandler) SemanticSearch(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"hits": hits})
 }
 
-// MemoryRetrieve POST /blocks/workspaces/:ws_id/memory/retrieve
-// Body: { "query": string, "k"?: int }
-//
-// Thin alias of SemanticSearch tailored to the Agent long-term-memory use
-// case: limited to text/task/paragraph/comment types and defaults to top-5.
-// Separate route lets Agents discover memory capability without parsing a
-// generic search filter language.
 func (h *BlockstoreHandler) MemoryRetrieve(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {

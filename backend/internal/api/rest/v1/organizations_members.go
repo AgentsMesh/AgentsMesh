@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListMembers lists organization members
-// GET /api/v1/organizations/:slug/members
 func (h *OrganizationHandler) ListMembers(c *gin.Context) {
 	slug := c.Param("slug")
 
@@ -22,7 +20,6 @@ func (h *OrganizationHandler) ListMembers(c *gin.Context) {
 		return
 	}
 
-	// Check membership
 	userID := middleware.GetUserID(c)
 	isMember, _ := h.orgService.IsMember(c.Request.Context(), org.ID, userID)
 	if !isMember {
@@ -39,9 +36,6 @@ func (h *OrganizationHandler) ListMembers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"members": members})
 }
 
-// InviteMember invites a member to organization
-// POST /api/v1/organizations/:slug/members
-// Supports both email-based invitation and direct user_id addition
 func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 	slug := c.Param("slug")
 
@@ -51,7 +45,6 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 		return
 	}
 
-	// Resolve target user ID: either from email or direct user_id
 	targetUserID := req.UserID
 	if req.Email != "" {
 		u, err := h.userService.GetByEmail(c.Request.Context(), req.Email)
@@ -73,7 +66,6 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	userID := middleware.GetUserID(c)
 	isAdmin, _ := h.orgService.IsAdmin(c.Request.Context(), org.ID, userID)
 	if !isAdmin {
@@ -81,7 +73,6 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 		return
 	}
 
-	// Check if already a member
 	isMember, _ := h.orgService.IsMember(c.Request.Context(), org.ID, targetUserID)
 	if isMember {
 		apierr.Conflict(c, apierr.ALREADY_EXISTS, "User is already a member of this organization")
@@ -96,8 +87,6 @@ func (h *OrganizationHandler) InviteMember(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Member added"})
 }
 
-// RemoveMember removes a member from organization
-// DELETE /api/v1/organizations/:slug/members/:user_id
 func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 	slug := c.Param("slug")
 	targetUserID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
@@ -112,7 +101,6 @@ func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	userID := middleware.GetUserID(c)
 	isAdmin, _ := h.orgService.IsAdmin(c.Request.Context(), org.ID, userID)
 	if !isAdmin {
@@ -132,8 +120,6 @@ func (h *OrganizationHandler) RemoveMember(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Member removed"})
 }
 
-// UpdateMemberRole updates a member's role
-// PUT /api/v1/organizations/:slug/members/:user_id
 func (h *OrganizationHandler) UpdateMemberRole(c *gin.Context) {
 	slug := c.Param("slug")
 	targetUserID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)
@@ -154,7 +140,6 @@ func (h *OrganizationHandler) UpdateMemberRole(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	userID := middleware.GetUserID(c)
 	isAdmin, _ := h.orgService.IsAdmin(c.Request.Context(), org.ID, userID)
 	if !isAdmin {

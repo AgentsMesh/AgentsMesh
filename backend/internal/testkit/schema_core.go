@@ -1,6 +1,5 @@
 package testkit
 
-// coreTableDDLs returns DDLs for users, organizations, agents, repositories.
 func coreTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS users (

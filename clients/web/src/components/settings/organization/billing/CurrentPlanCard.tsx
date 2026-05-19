@@ -15,9 +15,6 @@ interface CurrentPlanCardProps {
   t: TranslationFn;
 }
 
-/**
- * CurrentPlanCard - Displays current subscription plan details
- */
 export function CurrentPlanCard({
   plan,
   status,

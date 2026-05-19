@@ -9,7 +9,6 @@ import { logger } from "@/lib/logger";
 // second — typically the signature of a render-effect-store update cycle
 // (React #185). Each detector is a passive subscribe; zero runtime cost
 // beyond a counter increment per setState.
-//
 // Output goes through `logger` so the warning lands in the Rust subscriber's
 // rolling file on Desktop (and stays in console on Web). The trace string
 // is captured here rather than at console.trace time because IPC strips the
@@ -41,7 +40,6 @@ function attach(name: string, store: SubscribableStore, threshold: number): () =
   });
 }
 
-// Returns a disposer that detaches all detectors.
 export function installStoreBurstDetector(threshold = 30): () => void {
   const disposers = [
     attach("auth", useAuthStore, threshold),

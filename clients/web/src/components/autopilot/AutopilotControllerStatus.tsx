@@ -25,7 +25,6 @@ interface AutopilotControllerStatusProps {
   compact?: boolean;
 }
 
-// Phase display configuration
 const phaseConfig: Record<
   AutopilotController["phase"],
   { label: string; color: string; icon: React.ReactNode }
@@ -77,7 +76,6 @@ const phaseConfig: Record<
   },
 };
 
-// Circuit breaker state display
 const circuitBreakerConfig: Record<
   AutopilotController["circuit_breaker"]["state"],
   { label: string; color: string }

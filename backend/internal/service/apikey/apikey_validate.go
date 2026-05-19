@@ -18,8 +18,6 @@ const (
 	cacheTTL    = 5 * time.Minute
 )
 
-// cachedKeyData stores the full validation data needed for cache re-checks.
-// Includes mutable fields (IsEnabled, ExpiresAt) to detect stale cache entries.
 type cachedKeyData struct {
 	APIKeyID       int64      `json:"api_key_id"`
 	OrganizationID int64      `json:"organization_id"`
@@ -30,21 +28,15 @@ type cachedKeyData struct {
 	ExpiresAt      *time.Time `json:"expires_at,omitempty"`
 }
 
-// ValidateKey validates an API key and returns associated information.
-// Uses Redis cache to reduce DB queries on high-frequency calls.
 func (s *Service) ValidateKey(ctx context.Context, rawKey string) (*ValidateResult, error) {
-	// Hash the raw key
 	hashBytes := sha256.Sum256([]byte(rawKey))
 	keyHash := hex.EncodeToString(hashBytes[:])
 
-	// Try Redis cache first
 	if cached, err := s.getFromCache(ctx, keyHash); err == nil && cached != nil {
-		// Re-validate mutable state from cached data
 		if !cached.IsEnabled {
 			return nil, ErrAPIKeyDisabled
 		}
 		if cached.ExpiresAt != nil && time.Now().After(*cached.ExpiresAt) {
-			// Key expired since caching — invalidate and return error
 			s.invalidateCache(ctx, keyHash)
 			return nil, ErrAPIKeyExpired
 		}
@@ -57,7 +49,6 @@ func (s *Service) ValidateKey(ctx context.Context, rawKey string) (*ValidateResu
 		}, nil
 	}
 
-	// Cache miss: query DB
 	key, err := s.repo.GetByKeyHash(ctx, keyHash)
 	if err != nil {
 		if errors.Is(err, apikeyDomain.ErrNotFound) {
@@ -95,7 +86,6 @@ func (s *Service) ValidateKey(ctx context.Context, rawKey string) (*ValidateResu
 	}, nil
 }
 
-// getFromCache retrieves cached key data from Redis
 func (s *Service) getFromCache(ctx context.Context, keyHash string) (*cachedKeyData, error) {
 	if s.redisClient == nil {
 		return nil, fmt.Errorf("redis not available")
@@ -114,7 +104,6 @@ func (s *Service) getFromCache(ctx context.Context, keyHash string) (*cachedKeyD
 	return &cached, nil
 }
 
-// setCache stores key data in Redis
 func (s *Service) setCache(ctx context.Context, keyHash string, cached *cachedKeyData) {
 	if s.redisClient == nil {
 		return
@@ -131,7 +120,6 @@ func (s *Service) setCache(ctx context.Context, keyHash string, cached *cachedKe
 	}
 }
 
-// invalidateCache removes cached key data from Redis
 func (s *Service) invalidateCache(ctx context.Context, keyHash string) {
 	if s.redisClient == nil {
 		return

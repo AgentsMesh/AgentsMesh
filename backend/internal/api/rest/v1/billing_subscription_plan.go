@@ -10,17 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Subscription Plan Changes (Upgrade, Downgrade, Billing Cycle)
-// ===========================================
-
-// UpgradeSubscriptionRequest represents an upgrade request
 type UpgradeSubscriptionRequest struct {
 	PlanName string `json:"plan_name" binding:"required"`
 }
 
-// UpgradeSubscription upgrades the subscription plan via the payment provider.
-// LemonSqueezy automatically handles proration for the billing difference.
 func (h *BillingHandler) UpgradeSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -58,12 +51,10 @@ func (h *BillingHandler) UpgradeSubscription(c *gin.Context) {
 	})
 }
 
-// DowngradeSubscriptionRequest represents a downgrade request
 type DowngradeSubscriptionRequest struct {
 	PlanName string `json:"plan_name" binding:"required"`
 }
 
-// DowngradeSubscription schedules a downgrade to a lower plan at period end
 func (h *BillingHandler) DowngradeSubscription(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -80,33 +71,28 @@ func (h *BillingHandler) DowngradeSubscription(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Get current subscription
 	sub, err := h.billingService.GetSubscription(ctx, tenant.OrganizationID)
 	if err != nil {
 		apierr.ResourceNotFound(c, "no active subscription")
 		return
 	}
 
-	// Get target plan
 	targetPlan, err := h.billingService.GetPlan(ctx, req.PlanName)
 	if err != nil {
 		apierr.InvalidInput(c, "invalid plan")
 		return
 	}
 
-	// Get current plan
 	currentPlan := sub.Plan
 	if currentPlan == nil {
 		currentPlan, _ = h.billingService.GetPlanByID(ctx, sub.PlanID)
 	}
 
-	// Verify this is actually a downgrade
 	if targetPlan.PricePerSeatMonthly >= currentPlan.PricePerSeatMonthly {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "use upgrade endpoint for higher tier plans")
 		return
 	}
 
-	// Check if current seat count exceeds target plan limit
 	if targetPlan.MaxUsers > 0 && sub.SeatCount > targetPlan.MaxUsers {
 		apierr.RespondWithExtra(c, http.StatusBadRequest, apierr.VALIDATION_FAILED, "current seat count exceeds target plan limit", gin.H{
 			"current_seats":     sub.SeatCount,
@@ -116,7 +102,6 @@ func (h *BillingHandler) DowngradeSubscription(c *gin.Context) {
 		return
 	}
 
-	// Schedule downgrade via UpdateSubscription (handles downgrade logic)
 	_, err = h.billingService.UpdateSubscription(ctx, tenant.OrganizationID, req.PlanName)
 	if err != nil {
 		if errors.Is(err, billingsvc.ErrSeatCountExceedsLimit) {
@@ -136,12 +121,10 @@ func (h *BillingHandler) DowngradeSubscription(c *gin.Context) {
 	})
 }
 
-// ChangeBillingCycleRequest represents a billing cycle change request
 type ChangeBillingCycleRequest struct {
 	BillingCycle string `json:"billing_cycle" binding:"required,oneof=monthly yearly"`
 }
 
-// ChangeBillingCycle changes the billing cycle for next renewal
 func (h *BillingHandler) ChangeBillingCycle(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -167,7 +150,6 @@ func (h *BillingHandler) ChangeBillingCycle(c *gin.Context) {
 		return
 	}
 
-	// Set next billing cycle (takes effect on renewal)
 	if err := h.billingService.SetNextBillingCycle(c.Request.Context(), tenant.OrganizationID, req.BillingCycle); err != nil {
 		apierr.InternalError(c, err.Error())
 		return

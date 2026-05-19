@@ -1,10 +1,5 @@
-// Package grpc provides the gRPC server for Runner communication.
-// This server handles Runner connections using gRPC bidirectional streaming.
-//
-// Architecture:
-// - Server handles mTLS directly (TLS passthrough from reverse proxy)
-// - Client identity extracted from TLS peer certificate
-// - Supports both modes: direct mTLS or metadata-based (when behind TLS-terminating proxy)
+// Package grpc serves Runner connections via gRPC bidi streaming. Handles mTLS directly
+// (TLS passthrough) and falls back to metadata for TLS-terminating proxies.
 package grpc
 
 import (
@@ -22,7 +17,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
-// Server wraps the gRPC server with Runner-specific configuration.
 type Server struct {
 	grpcServer    *grpc.Server
 	listener      net.Listener
@@ -32,42 +26,33 @@ type Server struct {
 	runnerAdapter *GRPCRunnerAdapter
 }
 
-// ServerDependencies holds dependencies for creating the gRPC server.
 type ServerDependencies struct {
 	Logger             *slog.Logger
 	Config             *config.GRPCConfig
-	DB                 *gorm.DB // Database connection for audit logging
+	DB                 *gorm.DB
 	PKIService         *pki.Service
 	RunnerService      RunnerServiceInterface
 	OrgService         OrganizationServiceInterface
 	AgentsProvider interfaces.AgentsProvider
-	ConnManager        *runner.RunnerConnectionManager // Connection manager with 256-shard locks
-	MCPDeps            *MCPDependencies                // Optional MCP service dependencies
+	ConnManager        *runner.RunnerConnectionManager // 256-shard locks
+	MCPDeps            *MCPDependencies                // optional
 }
 
-// RunnerServiceInterface defines the runner service methods needed by gRPC server.
 type RunnerServiceInterface interface {
 	GetByNodeID(ctx context.Context, nodeID string) (RunnerInfo, error)
 	GetByNodeIDAndOrgID(ctx context.Context, nodeID string, orgID int64) (RunnerInfo, error)
 	UpdateLastSeen(ctx context.Context, runnerID int64) error
 	UpdateAvailableAgents(ctx context.Context, runnerID int64, agents []string) error
 	UpdateAgentVersions(ctx context.Context, runnerID int64, versions []runnerDomain.AgentVersion) error
-	// IsCertificateRevoked checks if a certificate has been revoked.
-	// This is called at connection time to enforce certificate revocation.
 	IsCertificateRevoked(ctx context.Context, serialNumber string) (bool, error)
-	// UpdateRunnerVersionAndHostInfo persists runner version and host info from the gRPC handshake.
 	UpdateRunnerVersionAndHostInfo(ctx context.Context, runnerID int64, version string, hostInfo map[string]interface{}) error
-	// MergeAgentVersions merges delta agent version updates into existing versions.
-	// Entries where both Version and Path are empty are treated as removals.
 	MergeAgentVersions(ctx context.Context, runnerID int64, changes map[string]runnerDomain.AgentVersion) error
 }
 
-// OrganizationServiceInterface defines the organization service methods needed.
 type OrganizationServiceInterface interface {
 	GetBySlug(ctx context.Context, slug string) (OrganizationInfo, error)
 }
 
-// RunnerInfo contains Runner information returned by the service.
 type RunnerInfo struct {
 	ID               int64
 	NodeID           string
@@ -76,25 +61,20 @@ type RunnerInfo struct {
 	CertSerialNumber string
 }
 
-// OrganizationInfo contains Organization information.
 type OrganizationInfo struct {
 	ID   int64
 	Slug string
 }
 
-// Stop gracefully stops the gRPC server.
 func (s *Server) Stop() {
 	s.logger.Info("stopping gRPC server")
-	// Note: Init timeout checker is managed by RunnerConnectionManager
 	s.grpcServer.GracefulStop()
 }
 
-// GRPCServer returns the underlying gRPC server for registration.
 func (s *Server) GRPCServer() *grpc.Server {
 	return s.grpcServer
 }
 
-// RunnerAdapter returns the gRPC Runner adapter.
 func (s *Server) RunnerAdapter() *GRPCRunnerAdapter {
 	return s.runnerAdapter
 }

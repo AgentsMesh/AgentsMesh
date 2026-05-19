@@ -10,13 +10,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// oauthStateKeyPrefix is the Redis key prefix for OAuth states
 const oauthStateKeyPrefix = "oauth:state:"
 
 // oauthStateTTL is the expiration time for OAuth states (10 minutes)
 const oauthStateTTL = 10 * time.Minute
 
-// GetOAuthURL returns the OAuth authorization URL
 func (s *Service) GetOAuthURL(provider, state string) (string, error) {
 	cfg, ok := s.config.OAuthProviders[provider]
 	if !ok {
@@ -37,7 +35,6 @@ func (s *Service) GetOAuthURL(provider, state string) (string, error) {
 	}
 }
 
-// HandleOAuthCallback handles OAuth callback
 func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state string) (*user.User, *TokenPair, bool, error) {
 	cfg, ok := s.config.OAuthProviders[provider]
 	if !ok {
@@ -64,13 +61,11 @@ func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state
 		return nil, nil, false, err
 	}
 
-	// Get or create user
 	u, isNew, err := s.userService.GetOrCreateByOAuth(ctx, provider, userInfo.ID, userInfo.Username, userInfo.Email, userInfo.Name, userInfo.AvatarURL)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	// Save OAuth access token to identity for later API calls
 	if userInfo.AccessToken != "" {
 		if err := s.userService.UpdateIdentityTokens(ctx, u.ID, provider, userInfo.AccessToken, "", nil); err != nil {
 			slog.WarnContext(ctx, "failed to save OAuth token",
@@ -81,7 +76,6 @@ func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state
 		}
 	}
 
-	// For Git providers, ensure a RepositoryProvider exists
 	if provider == "github" || provider == "gitlab" || provider == "gitee" {
 		if err := s.userService.EnsureRepositoryProviderForIdentity(ctx, u.ID, provider); err != nil {
 			slog.WarnContext(ctx, "failed to create repository provider",
@@ -92,10 +86,8 @@ func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state
 		}
 	}
 
-	// Update last login time
 	s.userService.RecordLogin(ctx, u.ID)
 
-	// Generate tokens
 	tokens, err := s.GenerateTokenPair(u, 0, "")
 	if err != nil {
 		return nil, nil, false, err
@@ -104,7 +96,6 @@ func (s *Service) HandleOAuthCallback(ctx context.Context, provider, code, state
 	return u, tokens, isNew, nil
 }
 
-// GenerateOAuthState generates and stores OAuth state in Redis
 func (s *Service) GenerateOAuthState(ctx context.Context, provider, redirectURL string) (string, error) {
 	state, err := GenerateState()
 	if err != nil {
@@ -119,7 +110,6 @@ func (s *Service) GenerateOAuthState(ctx context.Context, provider, redirectURL 
 	return state, nil
 }
 
-// ValidateOAuthState validates OAuth state and returns redirect URL
 func (s *Service) ValidateOAuthState(ctx context.Context, state string) (string, error) {
 	key := oauthStateKeyPrefix + state
 
@@ -134,7 +124,6 @@ func (s *Service) ValidateOAuthState(ctx context.Context, state string) (string,
 	return redirectURL, nil
 }
 
-// OAuthLogin handles OAuth login
 func (s *Service) OAuthLogin(ctx context.Context, req *OAuthLoginRequest) (*LoginResult, error) {
 	u, _, err := s.userService.GetOrCreateByOAuth(ctx, req.Provider, req.ProviderUserID, req.Username, req.Email, req.Name, req.AvatarURL)
 	if err != nil {
@@ -145,7 +134,6 @@ func (s *Service) OAuthLogin(ctx context.Context, req *OAuthLoginRequest) (*Logi
 		s.userService.UpdateIdentityTokens(ctx, u.ID, req.Provider, req.AccessToken, req.RefreshToken, req.ExpiresAt)
 	}
 
-	// Update last login time
 	s.userService.RecordLogin(ctx, u.ID)
 
 	tokens, err := s.GenerateTokenPair(u, 0, "")

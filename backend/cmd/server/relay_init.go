@@ -11,9 +11,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
 )
 
-// initializeGeoResolver creates a GeoIP resolver.
-// Tries GEO_MMDB_PATH env, then default Docker path /app/data/geoip.mmdb.
-// Falls back to NoOpResolver if no MMDB file is available.
 func initializeGeoResolver() geo.Resolver {
 	mmdbPath := os.Getenv("GEO_MMDB_PATH")
 	if mmdbPath == "" {
@@ -34,7 +31,6 @@ func initializeGeoResolver() geo.Resolver {
 	return geo.NewNoOpResolver()
 }
 
-// initializeRelayServices initializes Relay DNS and ACME services
 func initializeRelayServices(cfg *config.Config) (*relay.DNSService, *acme.Manager) {
 	var relayDNSService *relay.DNSService
 	var relayACMEManager *acme.Manager
@@ -54,7 +50,6 @@ func initializeRelayServices(cfg *config.Config) (*relay.DNSService, *acme.Manag
 		"base_domain", cfg.Relay.BaseDomain,
 		"provider", cfg.Relay.DNS.Provider)
 
-	// Initialize ACME Manager if enabled
 	if cfg.Relay.ACME.Enabled {
 		dnsProvider := createDNSProvider(cfg.Relay)
 		if dnsProvider != nil {

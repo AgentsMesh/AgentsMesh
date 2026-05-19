@@ -9,7 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// LicenseData represents the decoded license file structure
 type LicenseData struct {
 	LicenseKey       string        `json:"license_key"`
 	OrganizationName string        `json:"organization_name"`
@@ -22,7 +21,6 @@ type LicenseData struct {
 	Signature        string        `json:"signature"`
 }
 
-// LicenseLimits defines the resource limits for the license
 type LicenseLimits struct {
 	MaxUsers        int `json:"max_users"`
 	MaxRunners      int `json:"max_runners"`
@@ -30,14 +28,12 @@ type LicenseLimits struct {
 	MaxPodMinutes   int `json:"max_pod_minutes"` // -1 for unlimited
 }
 
-// Service handles license verification and management
 type Service struct {
 	repo      billing.LicenseRepository
 	cfg       *config.LicenseConfig
 	logger    *slog.Logger
 	publicKey interface{} // *rsa.PublicKey, but stored as interface to avoid import in types file
 
-	// Cache for current license
 	mu             sync.RWMutex
 	currentLicense *LicenseData
 	lastCheck      time.Time

@@ -157,13 +157,11 @@ mod tests {
         for i in 1..=10 {
             repo.save_message(&make_msg(i, 1, &format!("msg{i}"))).unwrap();
         }
-        // Get messages before id 6 (should return 5, 4, 3, 2, 1)
         let msgs = repo.get_by_channel(1, 50, Some(6)).unwrap();
         assert_eq!(msgs.len(), 5);
         assert_eq!(msgs[0].id, 5); // newest first among those < 6
         assert_eq!(msgs[4].id, 1);
 
-        // With limit
         let msgs = repo.get_by_channel(1, 2, Some(6)).unwrap();
         assert_eq!(msgs.len(), 2);
         assert_eq!(msgs[0].id, 5);

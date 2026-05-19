@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListMembers returns members of a channel with pagination
-// GET /api/v1/organizations/:slug/channels/:id/members
 func (h *ChannelHandler) ListMembers(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

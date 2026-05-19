@@ -26,7 +26,6 @@ function VerifyEmailCallbackContent() {
       try {
         const response = await authApi.verifyEmail(token);
 
-        // Store auth tokens
         await setAuth(response.token, {
           id: response.user.id,
           email: response.user.email,
@@ -36,7 +35,6 @@ function VerifyEmailCallbackContent() {
 
         setStatus("success");
 
-        // Redirect to onboarding after a brief delay
         setTimeout(() => {
           router.push("/onboarding");
         }, 2000);
@@ -56,7 +54,6 @@ function VerifyEmailCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6 text-center">
-        {/* Logo */}
         <div>
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -66,7 +63,6 @@ function VerifyEmailCallbackContent() {
           </Link>
         </div>
 
-        {/* Loading State */}
         {status === "loading" && (
           <>
             <div className="flex justify-center">
@@ -103,7 +99,6 @@ function VerifyEmailCallbackContent() {
           </>
         )}
 
-        {/* Success State */}
         {status === "success" && (
           <>
             <div className="flex justify-center">
@@ -136,7 +131,6 @@ function VerifyEmailCallbackContent() {
           </>
         )}
 
-        {/* Error State */}
         {status === "error" && (
           <>
             <div className="flex justify-center">

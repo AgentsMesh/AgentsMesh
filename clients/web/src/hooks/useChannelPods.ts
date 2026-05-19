@@ -36,8 +36,6 @@ async function fetchPods(channelId: number): Promise<ChannelPodSummary[]> {
   const p = channelApi
     .getPods(channelId)
     .then((res) => {
-      // Rust ChannelService is SSOT: getPods() now goes through WASM and caches
-      // server response into `pods_by_channel`. Just trigger subscriber reread.
       inflight.delete(channelId);
       notify(channelId);
       return (res.pods ?? []) as ChannelPodSummary[];
@@ -66,12 +64,6 @@ export interface UseChannelPodsResult {
   refresh: () => Promise<ChannelPodSummary[]>;
 }
 
-/**
- * Per-channel pods hook. Rust ChannelService is the SSOT — it caches the
- * server-returned pods list in `pods_by_channel`. The hook reads through
- * `channel_pods_json` on every fetch + cross-subscriber notification. Multiple
- * components subscribing to the same channel share one in-flight request.
- */
 export function useChannelPods(channelId: number | null): UseChannelPodsResult {
   const [, force] = useReducer((n) => n + 1, 0);
 
@@ -92,13 +84,11 @@ export function useChannelPods(channelId: number | null): UseChannelPodsResult {
   };
 }
 
-/** Test utility — clears in-flight promises and listeners. */
 export function __resetChannelPodsCacheForTests(): void {
   inflight.clear();
   listeners.clear();
 }
 
-/** Invalidate — kept for API compatibility; forces a re-fetch on next subscriber. */
 export function invalidateChannelPods(channelId: number): void {
   inflight.delete(channelId);
   notify(channelId);

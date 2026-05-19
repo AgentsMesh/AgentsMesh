@@ -1,6 +1,5 @@
 package agent
 
-// CreateCredentialProfileParams contains parameters for creating a credential profile
 type CreateCredentialProfileParams struct {
 	AgentSlug  string
 	Name         string
@@ -10,7 +9,6 @@ type CreateCredentialProfileParams struct {
 	IsDefault    bool
 }
 
-// UpdateCredentialProfileParams contains parameters for updating a credential profile
 type UpdateCredentialProfileParams struct {
 	Name         *string
 	Description  *string

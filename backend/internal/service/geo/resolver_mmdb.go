@@ -6,7 +6,6 @@ import (
 	"github.com/oschwald/maxminddb-golang"
 )
 
-// mmdbRecord is the subset of fields we read from DB-IP / MaxMind MMDB.
 type mmdbRecord struct {
 	Location struct {
 		Latitude  float64 `maxminddb:"latitude"`
@@ -17,13 +16,10 @@ type mmdbRecord struct {
 	} `maxminddb:"country"`
 }
 
-// MMDBResolver resolves IP addresses using an MMDB file.
-// Compatible with both DB-IP City Lite and MaxMind GeoLite2-City.
 type MMDBResolver struct {
 	db *maxminddb.Reader
 }
 
-// NewMMDBResolver opens the MMDB file at the given path.
 func NewMMDBResolver(path string) (*MMDBResolver, error) {
 	db, err := maxminddb.Open(path)
 	if err != nil {
@@ -45,9 +41,6 @@ func (r *MMDBResolver) Resolve(ip string) *Location {
 		return nil
 	}
 
-	// Treat as unknown if both coordinates are exactly zero AND no country.
-	// (0, 0) with a valid country is theoretically possible (Gulf of Guinea)
-	// but extremely rare in GeoIP databases.
 	if rec.Location.Latitude == 0 && rec.Location.Longitude == 0 && rec.Country.ISOCode == "" {
 		return nil
 	}
@@ -59,7 +52,6 @@ func (r *MMDBResolver) Resolve(ip string) *Location {
 	}
 }
 
-// Close releases the MMDB reader resources.
 func (r *MMDBResolver) Close() error {
 	return r.db.Close()
 }

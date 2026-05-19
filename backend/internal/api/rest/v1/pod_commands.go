@@ -9,9 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SendPodPrompt sends a prompt to a pod (mode-transparent).
-// PTY: writes prompt text to stdin. ACP: sends prompt via ACP protocol.
-// POST /api/v1/orgs/:slug/pods/:key/prompt
 func (h *PodHandler) SendPodPrompt(c *gin.Context) {
 	podKey := c.Param("key")
 

@@ -1,9 +1,3 @@
-// ValidateUsername is intentionally NOT applied on the OAuth/SSO path —
-// external IdPs (GitHub, GitLab, Google, OIDC, SAML, LDAP) emit usernames
-// containing Unicode/dots that we cannot reject without breaking SSO. The DB
-// schema VARCHAR(255) accommodates them; the slug-derivation layer
-// (service/organization/service_personal.go) sanitizes Unicode usernames into
-// `user-<id>-workspace` fallback.
 package user
 
 import (

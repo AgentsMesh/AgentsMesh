@@ -18,10 +18,6 @@ function buildEventsWsUrl(orgSlug: string, token: string): string {
   return `${getWsBaseUrl()}/api/v1/orgs/${orgSlug}/ws/events?token=${token}`;
 }
 
-/**
- * Manages the realtime events WebSocket connection.
- * Should be used once at the app root level (in RealtimeProvider).
- */
 export function useRealtimeConnection() {
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("disconnected");
@@ -29,25 +25,14 @@ export function useRealtimeConnection() {
   const user = useCurrentUser();
   const managerRef = useRef(getEventSubscriptionManager());
 
-  // Connect and subscribe to state changes when org/user are available.
-  //
-  // deps use `user?.id` (not `user`) on purpose: useCurrentUser() returns a
-  // fresh object reference on every store tick (useMemo([_tick])), so the
-  // login flow ticks several times in quick succession (token set → user
-  // populated → org list fetched → user-me roundtrip), each tick re-running
-  // this effect. Without an id-based dep, every tick triggers a
-  // disconnect/reconnect; the first WS lands in CONNECTING and gets close()'d
-  // before the handshake completes — Chrome logs "WebSocket is closed before
-  // the connection is established". Comparing primitives keeps the effect
-  // pinned to actual identity changes (user switch, org switch).
+  // deps use `user?.id` (not `user`) — useCurrentUser returns a fresh object on every
+  // store tick, so reference-deps would close()'d the WS mid-handshake on login.
   useEffect(() => {
     if (!currentOrg || !user) {
-      // disconnect() will trigger onConnectionStateChange callback
       managerRef.current.disconnect();
       return;
     }
 
-    // Reset and reconnect when org or user changes
     resetEventSubscriptionManager();
     const manager = getEventSubscriptionManager();
     managerRef.current = manager;
@@ -91,9 +76,6 @@ export function useRealtimeConnection() {
   };
 }
 
-/**
- * Subscribe to a specific event type.
- */
 export function useEventSubscription<T = unknown>(
   eventType: EventType,
   handler: EventHandler<T>,
@@ -125,9 +107,6 @@ export function useEventSubscription<T = unknown>(
   }, [eventType]);
 }
 
-/**
- * Subscribe to all events.
- */
 export function useAllEventsSubscription(
   handler: EventHandler,
   deps: React.DependencyList = []
@@ -158,9 +137,6 @@ export function useAllEventsSubscription(
   }, []);
 }
 
-/**
- * Get the latest event of a specific type as React state.
- */
 export function useLatestEvent<T = unknown>(
   eventType: EventType
 ): RealtimeEvent<T> | null {

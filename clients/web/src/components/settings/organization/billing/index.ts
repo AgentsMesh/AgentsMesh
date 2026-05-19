@@ -1,7 +1,3 @@
-/**
- * Billing Settings Components
- * Extracted components for the billing settings page.
- */
 
 export { BillingLoadingSkeleton } from "./BillingLoadingSkeleton";
 export { CurrentPlanCard } from "./CurrentPlanCard";

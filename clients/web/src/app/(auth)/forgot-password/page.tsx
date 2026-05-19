@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAuthApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import { lightForgotPassword } from "@/lib/light-auth";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations();
+  useRedirectIfAuthenticated();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -18,12 +19,11 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await initWasmCore();
     setLoading(true);
     setError("");
 
     try {
-      await getAuthApiService().forgot_password(email);
+      await lightForgotPassword(email);
       setSubmitted(true);
     } catch {
       setError(t("auth.forgotPasswordPage.sendFailed"));

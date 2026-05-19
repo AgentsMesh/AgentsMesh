@@ -2,13 +2,11 @@
 
 import React from "react";
 import {
-  // Status icons
   CircleDashed,
   Circle,
   CircleDot,
   Timer,
   CheckCircle2,
-  // Priority icons
   Minus,
   ChevronDown,
   ChevronUp,
@@ -17,7 +15,6 @@ import {
 import type { TicketStatus, TicketPriority } from "@/lib/api/ticketTypes";
 import { cn } from "@/lib/utils";
 
-// Icon size presets
 type IconSize = "xs" | "sm" | "md" | "lg";
 
 const sizeClasses: Record<IconSize, string> = {
@@ -26,10 +23,6 @@ const sizeClasses: Record<IconSize, string> = {
   md: "h-4 w-4",
   lg: "h-5 w-5",
 };
-
-// ============================================================================
-// Status Icons
-// ============================================================================
 
 interface StatusIconProps {
   status: TicketStatus;
@@ -68,10 +61,6 @@ export function StatusIcon({ status, size = "sm", className }: StatusIconProps) 
   );
 }
 
-// ============================================================================
-// Priority Icons
-// ============================================================================
-
 interface PriorityIconProps {
   priority: TicketPriority;
   size?: IconSize;
@@ -104,10 +93,6 @@ export function PriorityIcon({ priority, size = "sm", className }: PriorityIconP
     />
   );
 }
-
-// ============================================================================
-// Helper functions for getting display info with React nodes
-// ============================================================================
 
 export interface StatusInfo {
   label: string;
@@ -189,5 +174,4 @@ export function getPriorityDisplayInfo(priority: TicketPriority, sizeOrT?: IconS
   };
 }
 
-// Export color maps for external use
 export { statusColorMap, priorityColorMap };

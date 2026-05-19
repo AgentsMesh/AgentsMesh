@@ -2,22 +2,10 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { HeroPanel } from "./HeroPanel";
 import { ServerSettingsModal } from "./ServerSettingsModal";
-// Relative path: `@/` resolves to clients/web/src (electron-vite alias),
+// Relative path required: `@/` resolves to clients/web/src via electron-vite alias,
 // not the desktop renderer. server-config is desktop-only state.
 import { getConfig, getActiveLabel } from "../../../lib/server-config";
 
-/**
- * Two-pane shell for auth screens. Hero panel sits on the left at >=
- * lg viewport; below that breakpoint it collapses and the form takes
- * the full width (Electron's `minWidth: 900` from main/index.ts means
- * we'll always have lg breakpoint in production, but the responsive
- * fallback keeps the dev DevTools-docked inspector usable).
- *
- * The form itself (children) is whatever LoginPage / RegisterPage
- * render — this shell never reaches in. The footer entry to the
- * Server Settings dialog lives at the bottom-left of the hero side
- * so it stays out of the form's tab order.
- */
 export function AuthShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);

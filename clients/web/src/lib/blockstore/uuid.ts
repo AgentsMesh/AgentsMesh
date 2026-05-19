@@ -1,5 +1,3 @@
-// randomUUID polyfills crypto.randomUUID() for environments that pre-date it
-// (older Safari + Node). Falls back to RFC4122 v4 via crypto.getRandomValues.
 
 export function randomUUID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {

@@ -11,14 +11,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// GiteeProvider implements Provider interface for Gitee
 type GiteeProvider struct {
 	baseURL     string
 	accessToken string
 	httpClient  *http.Client
 }
 
-// NewGiteeProvider creates a new Gitee provider
 func NewGiteeProvider(baseURL, accessToken string) (*GiteeProvider, error) {
 	if baseURL == "" {
 		baseURL = "https://gitee.com/api/v5"
@@ -38,7 +36,6 @@ func NewGiteeProvider(baseURL, accessToken string) (*GiteeProvider, error) {
 func (p *GiteeProvider) doRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
 	reqURL := p.baseURL + path
 
-	// Add access_token to URL for Gitee
 	if strings.Contains(reqURL, "?") {
 		reqURL += "&access_token=" + p.accessToken
 	} else {
@@ -72,7 +69,6 @@ func (p *GiteeProvider) doRequest(ctx context.Context, method, path string, body
 		return nil, ErrRateLimited
 	}
 
-	// Handle other 4xx/5xx errors
 	if resp.StatusCode >= 400 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()

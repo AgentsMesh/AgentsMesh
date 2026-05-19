@@ -11,13 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// APIKeyValidator interface for validating API keys (decoupled from service)
 type APIKeyValidator interface {
 	ValidateKey(ctx context.Context, rawKey string) (*APIKeyValidateResult, error)
 	UpdateLastUsed(ctx context.Context, id int64) error
 }
 
-// APIKeyValidateResult holds the validation result
 type APIKeyValidateResult struct {
 	APIKeyID       int64
 	OrganizationID int64
@@ -26,7 +24,6 @@ type APIKeyValidateResult struct {
 	KeyName        string
 }
 
-// APIKeyContext stores API key authentication context
 type APIKeyContext struct {
 	APIKeyID int64
 	KeyName  string
@@ -41,10 +38,6 @@ var (
 	ErrAPIKeyExpired  = errors.New("api key has expired")
 )
 
-// APIKeyAuthMiddleware validates API key and sets TenantContext for downstream handlers.
-// Supports two header formats:
-//   - X-API-Key: amk_...
-//   - Authorization: Bearer amk_...
 func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService OrganizationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rawKey := extractAPIKey(c)
@@ -53,7 +46,6 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 			return
 		}
 
-		// Validate key
 		result, err := apiKeyValidator.ValidateKey(c.Request.Context(), rawKey)
 		if err != nil {
 			handleAPIKeyError(c, err)
@@ -61,7 +53,6 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 			return
 		}
 
-		// Resolve organization from :slug path parameter
 		orgSlug := c.Param("slug")
 		if orgSlug == "" {
 			apierr.AbortBadRequest(c, apierr.VALIDATION_FAILED, "Organization slug is required")
@@ -74,14 +65,11 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 			return
 		}
 
-		// Verify key belongs to the requested organization
 		if org.GetID() != result.OrganizationID {
 			apierr.AbortForbidden(c, apierr.API_KEY_ORG_MISMATCH, "API key does not belong to this organization")
 			return
 		}
 
-		// Construct TenantContext compatible with existing handlers.
-		// UserID = API key creator, UserRole = "apikey" (passes existing role checks)
 		tc := &TenantContext{
 			OrganizationID:   result.OrganizationID,
 			OrganizationSlug: org.GetSlug(),
@@ -92,7 +80,6 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 		ctx := SetTenant(c.Request.Context(), tc)
 		c.Request = c.Request.WithContext(ctx)
 
-		// Set API key context for scope checking
 		akCtx := &APIKeyContext{
 			APIKeyID: result.APIKeyID,
 			KeyName:  result.KeyName,
@@ -101,7 +88,6 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 		c.Set("apikey_context", akCtx)
 		c.Set("auth_type", "apikey")
 
-		// Update last_used_at asynchronously (fire-and-forget with timeout)
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -114,13 +100,10 @@ func APIKeyAuthMiddleware(apiKeyValidator APIKeyValidator, orgService Organizati
 	}
 }
 
-// RequireScope checks that the API key has at least one of the required scopes.
-// If no APIKeyContext is present (user auth), it passes through.
 func RequireScope(scopes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		akCtxRaw, exists := c.Get("apikey_context")
 		if !exists {
-			// Not API key auth (user auth), pass through
 			c.Next()
 			return
 		}
@@ -151,7 +134,6 @@ func RequireScope(scopes ...string) gin.HandlerFunc {
 	}
 }
 
-// GetAPIKeyContext retrieves the API key context from gin.Context
 func GetAPIKeyContext(c *gin.Context) *APIKeyContext {
 	if akCtx, exists := c.Get("apikey_context"); exists {
 		if ctx, ok := akCtx.(*APIKeyContext); ok {
@@ -161,14 +143,11 @@ func GetAPIKeyContext(c *gin.Context) *APIKeyContext {
 	return nil
 }
 
-// extractAPIKey extracts the API key from request headers
 func extractAPIKey(c *gin.Context) string {
-	// Priority 1: X-API-Key header (must start with "amk_" prefix)
 	if key := c.GetHeader("X-API-Key"); key != "" && strings.HasPrefix(key, "amk_") {
 		return key
 	}
 
-	// Priority 2: Authorization: Bearer amk_...
 	authHeader := c.GetHeader("Authorization")
 	if authHeader != "" {
 		parts := strings.SplitN(authHeader, " ", 2)
@@ -180,7 +159,6 @@ func extractAPIKey(c *gin.Context) string {
 	return ""
 }
 
-// handleAPIKeyError maps service errors to HTTP responses using errors.Is()
 func handleAPIKeyError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, ErrAPIKeyNotFound):

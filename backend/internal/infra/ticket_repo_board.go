@@ -6,8 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// --- Board / Statistics methods for ticketRepository ---
-
 func (r *ticketRepository) GetActiveTickets(ctx context.Context, orgID int64, repoID *int64, limit int) ([]*ticket.Ticket, error) {
 	query := r.db.WithContext(ctx).
 		Where("organization_id = ?", orgID).

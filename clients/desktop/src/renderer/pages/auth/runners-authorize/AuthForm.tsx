@@ -25,7 +25,6 @@ export function AuthForm({
 }: AuthFormProps) {
   return (
     <div className="p-6 border border-border rounded-lg space-y-4">
-      {/* Runner Icon */}
       <div className="flex justify-center">
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
           <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

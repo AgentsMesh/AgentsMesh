@@ -14,13 +14,11 @@ var (
 	ErrInvalidCredentials  = errors.New("invalid credentials format")
 )
 
-// AIProviderService handles AI provider credential operations
 type AIProviderService struct {
 	repo      agentpod.AIProviderRepository
 	encryptor *crypto.Encryptor
 }
 
-// NewAIProviderService creates a new AI provider service
 func NewAIProviderService(repo agentpod.AIProviderRepository, encryptor *crypto.Encryptor) *AIProviderService {
 	return &AIProviderService{
 		repo:      repo,

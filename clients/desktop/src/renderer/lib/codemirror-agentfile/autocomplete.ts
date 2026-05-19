@@ -1,12 +1,3 @@
-/**
- * AgentFile autocomplete extension for CodeMirror.
- *
- * Provides context-aware completions:
- * 1. Declaration keywords at line start (CONFIG, ENV, MODE, REPO, etc.)
- * 2. CONFIG field names from agent schema
- * 3. CONFIG field values from schema options/defaults
- * 4. Keyword-specific data completions (AGENT → slug, REPO → URL, etc.)
- */
 import type { CompletionContext, CompletionResult, Completion } from "@codemirror/autocomplete";
 import type { ConfigField } from "@/lib/api/agent";
 import {
@@ -16,20 +7,12 @@ import {
   buildBranchCompletions, buildCredentialCompletions,
 } from "./completionBuilders";
 
-/**
- * Context data for AgentFile autocomplete.
- * Provides domain-specific candidates for each keyword.
- */
 export interface AgentfileCompletionContext {
   configFields: ConfigField[];
   agents?: { slug: string; name: string }[];
   repositories?: { slug: string; name: string; default_branch: string }[];
   credentialProfiles?: { name: string; description?: string }[];
 }
-
-// ---------------------------------------------------------------------------
-// Static keyword completions
-// ---------------------------------------------------------------------------
 
 const DECLARATION_COMPLETIONS: Completion[] = [
   { label: "AGENT", type: "keyword", detail: "Agent identifier" },
@@ -57,16 +40,11 @@ const BUILD_COMPLETIONS: Completion[] = [
   { label: "for", type: "keyword", detail: "Loop" },
 ];
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function findConfigFieldOnLine(text: string): string | null {
   const m = text.match(/^\s*CONFIG\s+(\w+)\s*=\s*/);
   return m ? m[1] : null;
 }
 
-/** Match "KEYWORD partial" for value completion. Returns [keyword, partialValue]. */
 function matchKeywordValue(text: string): [string, string] | null {
   const m = text.match(
     /^\s*(AGENT|REPO|BRANCH|CREDENTIAL|GIT_CREDENTIAL|MODE|MCP|EXECUTABLE|PROMPT_POSITION)\s+"?([^"]*)$/
@@ -90,10 +68,6 @@ function keywordValueOptions(kw: string, ctx: AgentfileCompletionContext): Compl
   }
 }
 
-// ---------------------------------------------------------------------------
-// Main completion source
-// ---------------------------------------------------------------------------
-
 export function agentfileCompletion(
   context: AgentfileCompletionContext
 ): (ctx: CompletionContext) => CompletionResult | null {
@@ -101,18 +75,15 @@ export function agentfileCompletion(
     const line = ctx.state.doc.lineAt(ctx.pos);
     const textBefore = line.text.slice(0, ctx.pos - line.from);
 
-    // 1. Empty line → all keywords
     if (/^\s*$/.test(textBefore)) {
       return { from: ctx.pos, options: [...DECLARATION_COMPLETIONS, ...BUILD_COMPLETIONS] };
     }
 
-    // 2. CONFIG field name
     const cfgPrefix = textBefore.match(/^\s*CONFIG\s+(\w*)$/);
     if (cfgPrefix) {
       return { from: ctx.pos - cfgPrefix[1].length, options: buildFieldCompletions(context.configFields) };
     }
 
-    // 3. CONFIG field value
     const fieldName = findConfigFieldOnLine(textBefore);
     if (fieldName) {
       const field = context.configFields.find((f) => f.name === fieldName);
@@ -123,7 +94,6 @@ export function agentfileCompletion(
       }
     }
 
-    // 4. Keyword-specific value completions
     const kwMatch = matchKeywordValue(textBefore);
     if (kwMatch) {
       const [kw, partial] = kwMatch;
@@ -131,7 +101,6 @@ export function agentfileCompletion(
       if (options.length > 0) return { from: ctx.pos - partial.length, options };
     }
 
-    // 5. Partial keyword at line start
     const partialKw = textBefore.match(/^\s*([A-Za-z_]\w*)$/);
     if (partialKw) {
       const word = partialKw[1];

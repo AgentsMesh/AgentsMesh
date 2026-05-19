@@ -12,11 +12,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// ===========================================
-// Stripe Subscription Webhook Handlers
-// ===========================================
-
-// HandleSubscriptionUpdated handles subscription update webhook event
 func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -24,27 +19,23 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		return nil
 	}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			return nil
 		}
 		return err
 	}
-	// Roll back the idempotency mark if the handler fails, so the event
-	// can be retried on the next delivery.
+	// Roll back idempotency mark on handler failure so the event can be retried on next delivery.
 	defer func() {
 		if retErr != nil {
 			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
 		}
 	}()
 
-	// Find subscription by provider subscription ID
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
-		// P0 #2: Race condition fallback — if subscription_created webhook was processed
-		// before order_created, the LemonSqueezySubscriptionID may not have been set.
-		// Try to find by customer_id and set the subscription ID as a safety net.
+		// P0 #2: Race condition fallback — subscription_created may arrive before order_created,
+		// leaving LemonSqueezySubscriptionID unset. Recover via customer_id lookup.
 		if event.Provider == billing.PaymentProviderLemonSqueezy && event.CustomerID != "" {
 			sub, err = s.findAndLinkLSSubscription(ctx, event)
 			if err != nil {
@@ -53,11 +44,10 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 				return nil
 			}
 		} else {
-			return nil // Subscription not found
+			return nil
 		}
 	}
 
-	// Map status to our status using provider-specific mapping
 	if event.Provider == billing.PaymentProviderLemonSqueezy {
 		mappedStatus := billing.MapLSStatusToInternal(event.Status)
 		switch mappedStatus {
@@ -71,7 +61,6 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 				"status", event.Status, "subscription_id", event.SubscriptionID)
 		}
 	} else {
-		// Generic status mapping for Stripe and others
 		switch event.Status {
 		case "active":
 			sub.Status = billing.SubscriptionStatusActive
@@ -92,28 +81,24 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		}
 	}
 
-	// Clear frozen timestamp if reactivated
 	if sub.Status == billing.SubscriptionStatusActive {
 		sub.FrozenAt = nil
 	}
 
-	// Set frozen timestamp when transitioning to frozen state (e.g., LS "unpaid" → frozen)
 	if sub.Status == billing.SubscriptionStatusFrozen && sub.FrozenAt == nil {
 		now := time.Now()
 		sub.FrozenAt = &now
 	}
 
-	// Sync seat count from provider
 	if event.Seats > 0 && event.Seats != sub.SeatCount {
 		sub.SeatCount = event.Seats
 	}
 
-	// Sync plan via variant_id reverse lookup (LemonSqueezy only)
 	var planName *string
 	if event.VariantID != "" {
 		if plan, err := s.findPlanByVariantID(ctx, event.VariantID); err == nil && plan != nil && plan.ID != sub.PlanID {
 			sub.PlanID = plan.ID
-			sub.DowngradeToPlan = nil // Clear pending downgrade since plan changed externally
+			sub.DowngradeToPlan = nil
 			planName = &plan.Name
 		}
 	}
@@ -122,14 +107,12 @@ func (s *Service) HandleSubscriptionUpdated(c *gin.Context, event *payment.Webho
 		return err
 	}
 
-	// Sync organization table: always sync status, and plan if it changed
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, planName, &sub.Status)
 	return nil
 }
 
-// findAndLinkLSSubscription finds a subscription by LemonSqueezy customer_id
-// and links the subscription_id. This serves as a fallback when the normal
-// subscription_created → subscription_updated ordering is disrupted by race conditions.
+// findAndLinkLSSubscription is the race-recovery path for P0 #2 when
+// subscription_created arrived before order_created.
 func (s *Service) findAndLinkLSSubscription(ctx context.Context, event *payment.WebhookEvent) (*billing.Subscription, error) {
 	sub, err := s.repo.FindSubscriptionByLSCustomerID(ctx, event.CustomerID)
 	if err != nil {
@@ -139,7 +122,6 @@ func (s *Service) findAndLinkLSSubscription(ctx context.Context, event *payment.
 		return nil, ErrSubscriptionNotFound
 	}
 
-	// Link the subscription_id if not set
 	if sub.LemonSqueezySubscriptionID == nil {
 		sub.LemonSqueezySubscriptionID = &event.SubscriptionID
 		slog.InfoContext(ctx, "linked LS subscription via customer ID (race condition recovery)",

@@ -13,8 +13,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RequestLogUpload triggers a log upload on a runner.
-// POST /api/v1/organizations/:slug/runners/:id/logs/upload
 func (h *RunnerHandler) RequestLogUpload(c *gin.Context) {
 	if h.logUploadSender == nil || h.logUploadService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Log upload service not configured")
@@ -79,8 +77,6 @@ func (h *RunnerHandler) RequestLogUpload(c *gin.Context) {
 	})
 }
 
-// ListRunnerLogs returns diagnostic log records for a runner.
-// GET /api/v1/organizations/:slug/runners/:id/logs
 func (h *RunnerHandler) ListRunnerLogs(c *gin.Context) {
 	if h.logUploadService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Log upload service not configured")

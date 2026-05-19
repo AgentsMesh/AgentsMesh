@@ -5,9 +5,8 @@ import { RealtimeProvider } from "@/providers/RealtimeProvider";
 import { TerminalPane } from "@/components/workspace/TerminalPane";
 import { getShortPodKey } from "@/lib/pod-display-name";
 
-// Auth gating happens via <RequireAuth> in router.tsx so this component
-// is only mounted when a user exists. New BrowserWindows opened via
-// window.open share the renderer's bootstrapAuth() flow (PlatformGate).
+// router.tsx <RequireAuth> gates mount. window.open()-spawned BrowserWindow
+// shares renderer's bootstrapAuth (PlatformGate) so session is rehydrated.
 export function PopoutTerminalPage() {
   const { podKey } = useParams<{ podKey: string }>();
   const user = useCurrentUser();

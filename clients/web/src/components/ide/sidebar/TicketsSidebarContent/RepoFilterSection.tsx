@@ -7,10 +7,8 @@ import { useRepositories, useRepositoryStore } from "@/stores/repository";
 import type { Ticket } from "@/stores/ticket";
 import { FilterSection } from "./FilterSection";
 
-/** Max repos shown before "show more" */
 const INITIAL_VISIBLE_COUNT = 5;
 
-/** Sentinel value representing tickets with no repository */
 export const NO_REPOSITORY_ID = 0;
 
 interface RepoFilterSectionProps {
@@ -22,10 +20,6 @@ interface RepoFilterSectionProps {
   t: (key: string) => string;
 }
 
-/**
- * RepoFilterSection - Repository checkbox filter with show more/less.
- * Reads repository list from the shared store; counts come from allTickets.
- */
 export function RepoFilterSection({
   expanded,
   onExpandedChange,
@@ -43,7 +37,6 @@ export function RepoFilterSection({
 
   const repositories = useMemo(() => allRepos.filter((r) => r.is_active), [allRepos]);
 
-  // Count tickets per repository (0 = no repository)
   const repoCounts = useMemo(() => {
     if (!allTickets) return {};
     const counts: Record<number, number> = {};
@@ -54,7 +47,6 @@ export function RepoFilterSection({
     return counts;
   }, [allTickets]);
 
-  // Sort repos: those with tickets first (descending count), then alphabetical
   const sortedRepos = useMemo(() => {
     return [...repositories].sort((a, b) => {
       const countDiff = (repoCounts[b.id] || 0) - (repoCounts[a.id] || 0);

@@ -10,15 +10,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/audit"
 )
 
-// validateRunner validates the Runner exists and belongs to the organization.
 func (a *GRPCRunnerAdapter) validateRunner(ctx context.Context, identity *ClientIdentity) (*RunnerInfo, error) {
-	// Look up org first to get orgID
 	org, err := a.orgService.GetBySlug(ctx, identity.OrgSlug)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "organization not found")
 	}
 
-	// Use precise (node_id, org_id) lookup to avoid cross-org mismatch
 	runner, err := a.runnerService.GetByNodeIDAndOrgID(ctx, identity.NodeID, org.ID)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "runner not found for this organization")
@@ -31,8 +28,6 @@ func (a *GRPCRunnerAdapter) validateRunner(ctx context.Context, identity *Client
 	return &runner, nil
 }
 
-// startRevocationChecker starts a periodic certificate revocation checker.
-// It disconnects the runner if the certificate is revoked during an active connection.
 func (a *GRPCRunnerAdapter) startRevocationChecker(
 	ctx context.Context,
 	runnerID int64,
@@ -62,16 +57,14 @@ func (a *GRPCRunnerAdapter) startRevocationChecker(
 					"runner_id", runnerID,
 					"serial", serialNumber,
 				)
-				// Log audit event
 				a.logAuditEvent(runnerID, orgID, audit.ActionRunnerCertRevoked, serialNumber)
-				cancel() // Disconnect the runner
+				cancel()
 				return
 			}
 		}
 	}
 }
 
-// logAuditEvent logs a security audit event asynchronously.
 func (a *GRPCRunnerAdapter) logAuditEvent(runnerID, orgID int64, action, detail string) {
 	if a.db == nil {
 		return
@@ -84,7 +77,6 @@ func (a *GRPCRunnerAdapter) logAuditEvent(runnerID, orgID int64, action, detail 
 		Details(audit.Details{"serial_number": detail}).
 		Build()
 
-	// Async save to avoid blocking the connection flow
 	go func() {
 		if err := a.db.Create(log).Error; err != nil {
 			a.logger.Error("failed to save audit log",

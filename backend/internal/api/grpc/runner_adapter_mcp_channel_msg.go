@@ -12,12 +12,6 @@ import (
 	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
 )
 
-// mcpSendMessage handles the "send_message" MCP method.
-// Agents may send any of:
-//   - structured_content: pre-built MessageContent AST (advanced)
-//   - source: markdown string (server parses to AST via goldmark)
-//   - content: plain text (legacy; server only does mention substitution, no
-//     markdown parsing — preserves existing behavior for older agents)
 func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		ChannelID         int64                         `json:"channel_id"`
@@ -77,9 +71,6 @@ func (a *GRPCRunnerAdapter) mcpSendMessage(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"message": messageToMCP(msg)}, nil
 }
 
-// messageToMCP transforms a backend Message into the format expected by runner/agent.
-// Runner expects: content (string), mentions ([]string in "type:key" format).
-// Backend has:    body (string), content (*MessageContent JSONB), mentions (MessageMentions).
 func messageToMCP(msg *channelDomain.Message) map[string]interface{} {
 	result := map[string]interface{}{
 		"id":           msg.ID,
@@ -101,7 +92,6 @@ func messageToMCP(msg *channelDomain.Message) map[string]interface{} {
 		result["edited_at"] = msg.EditedAt.Format(time.RFC3339)
 	}
 
-	// Convert MessageMentions → []string in "type:key" format for agent compatibility
 	var mentions []string
 	for _, pk := range msg.Mentions.Pods {
 		mentions = append(mentions, "pod:"+pk)
@@ -123,7 +113,6 @@ func messagesToMCP(msgs []*channelDomain.Message) []map[string]interface{} {
 	return result
 }
 
-// buildTextContent converts plain text into structured MessageContent.
 func buildTextContent(text string, mentions map[string]struct{ typ, key string }) channelDomain.MessageContent {
 	lines := strings.Split(text, "\n")
 	blocks := make([]channelDomain.Block, 0, len(lines))
@@ -138,7 +127,6 @@ func parseMCPLine(line string, mentions map[string]struct{ typ, key string }) []
 	if len(mentions) == 0 {
 		return []channelDomain.InlineElement{{Type: channelDomain.InlineText, Text: line}}
 	}
-	// Sort keys longest-first to avoid prefix ambiguity (e.g., "alice" vs "alice-admin")
 	keys := make([]string, 0, len(mentions))
 	for k := range mentions {
 		keys = append(keys, k)
@@ -179,7 +167,6 @@ func parseMCPLine(line string, mentions map[string]struct{ typ, key string }) []
 	return elements
 }
 
-// mcpGetMessages handles the "get_messages" MCP method.
 func (a *GRPCRunnerAdapter) mcpGetMessages(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		ChannelID    int64   `json:"channel_id"`
@@ -236,7 +223,6 @@ func (a *GRPCRunnerAdapter) mcpGetMessages(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"messages": messagesToMCP(messages), "has_more": hasMore}, nil
 }
 
-// mcpGetDocument handles the "get_document" MCP method.
 func (a *GRPCRunnerAdapter) mcpGetDocument(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		ChannelID int64 `json:"channel_id"`
@@ -259,7 +245,6 @@ func (a *GRPCRunnerAdapter) mcpGetDocument(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"document": document}, nil
 }
 
-// mcpUpdateDocument handles the "update_document" MCP method.
 func (a *GRPCRunnerAdapter) mcpUpdateDocument(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		ChannelID int64  `json:"channel_id"`

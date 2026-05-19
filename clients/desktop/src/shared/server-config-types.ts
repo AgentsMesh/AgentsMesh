@@ -1,8 +1,5 @@
-// Shared between main / preload / renderer. Pure data + pure helpers,
-// NO i/o, NO process-specific imports — so it compiles cleanly in all
-// three Electron contexts (node main, sandboxed preload, browser
-// renderer). Edit a preset URL or the validation rule here and all
-// three boundaries update together.
+// Shared by main / preload / renderer. Pure data + helpers, NO i/o, NO process-specific imports.
+// Edit a preset URL or the validation rule here — all 3 boundaries update together.
 
 export type ServerKind = "global" | "cn" | "custom";
 
@@ -23,11 +20,8 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   customUrl: "",
 };
 
-// HTTP/HTTPS URL validator. Lives here because every trust boundary that
-// accepts a server URL — env override (main), persisted custom URL
-// (main), dialog input (renderer) — must agree on what counts as valid.
-// Splitting the rule across processes was how `app.agentsmesh.ai` slipped
-// through pre-PR-#336.
+// Cross-boundary rule: env override (main), persisted custom URL (main), dialog input (renderer)
+// must agree on what counts as valid. PR #336 fixed `app.agentsmesh.ai` slipping through a split rule.
 export function isValidServerUrl(value: string): boolean {
   try {
     const u = new URL(value);

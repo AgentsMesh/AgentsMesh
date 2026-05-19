@@ -8,11 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// ===========================================
-// Payment Order Operations
-// ===========================================
-
-// CreatePaymentOrder creates a new payment order
 func (s *Service) CreatePaymentOrder(ctx context.Context, order *billing.PaymentOrder) error {
 	if err := s.repo.CreatePaymentOrder(ctx, order); err != nil {
 		slog.ErrorContext(ctx, "failed to create payment order", "order_no", order.OrderNo, "org_id", order.OrganizationID, "error", err)
@@ -22,7 +17,6 @@ func (s *Service) CreatePaymentOrder(ctx context.Context, order *billing.Payment
 	return nil
 }
 
-// GetPaymentOrderByNo returns a payment order by order number
 func (s *Service) GetPaymentOrderByNo(ctx context.Context, orderNo string) (*billing.PaymentOrder, error) {
 	order, err := s.repo.GetPaymentOrderByNo(ctx, orderNo)
 	if err != nil {
@@ -34,7 +28,6 @@ func (s *Service) GetPaymentOrderByNo(ctx context.Context, orderNo string) (*bil
 	return order, nil
 }
 
-// GetPaymentOrderByExternalNo returns a payment order by external order number
 func (s *Service) GetPaymentOrderByExternalNo(ctx context.Context, externalNo string) (*billing.PaymentOrder, error) {
 	order, err := s.repo.GetPaymentOrderByExternalNo(ctx, externalNo)
 	if err != nil {
@@ -46,7 +39,6 @@ func (s *Service) GetPaymentOrderByExternalNo(ctx context.Context, externalNo st
 	return order, nil
 }
 
-// UpdatePaymentOrderStatus updates the status of a payment order
 func (s *Service) UpdatePaymentOrderStatus(ctx context.Context, orderNo string, status string, failureReason *string) error {
 	updates := map[string]interface{}{
 		"status":     status,
@@ -68,11 +60,6 @@ func (s *Service) UpdatePaymentOrderStatus(ctx context.Context, orderNo string, 
 	return nil
 }
 
-// ===========================================
-// Payment Transaction Operations
-// ===========================================
-
-// CreatePaymentTransaction creates a new payment transaction
 func (s *Service) CreatePaymentTransaction(ctx context.Context, tx *billing.PaymentTransaction) error {
 	if err := s.repo.CreatePaymentTransaction(ctx, tx); err != nil {
 		slog.ErrorContext(ctx, "failed to create payment transaction", "payment_order_id", tx.PaymentOrderID, "type", tx.TransactionType, "error", err)
@@ -82,11 +69,6 @@ func (s *Service) CreatePaymentTransaction(ctx context.Context, tx *billing.Paym
 	return nil
 }
 
-// ===========================================
-// Invoice Operations
-// ===========================================
-
-// CreateInvoice creates a new invoice
 func (s *Service) CreateInvoice(ctx context.Context, invoice *billing.Invoice) error {
 	if err := s.repo.CreateInvoice(ctx, invoice); err != nil {
 		slog.ErrorContext(ctx, "failed to create invoice", "org_id", invoice.OrganizationID, "error", err)
@@ -96,7 +78,6 @@ func (s *Service) CreateInvoice(ctx context.Context, invoice *billing.Invoice) e
 	return nil
 }
 
-// GetInvoicesByOrg returns all invoices for an organization
 func (s *Service) GetInvoicesByOrg(ctx context.Context, orgID int64, limit, offset int) ([]*billing.Invoice, error) {
 	return s.repo.ListInvoicesByOrg(ctx, orgID, limit, offset)
 }

@@ -12,11 +12,6 @@ interface BlocksDocHeaderProps {
   onAddBlock: () => void;
 }
 
-/**
- * Doc header shown above the DocumentView:
- *   breadcrumb (Pages › rootTitle [› currentTitle]) + title row + +Block CTA.
- * No workspace chip — org is the workspace boundary.
- */
 export function BlocksDocHeader({
   rootTitle,
   rootIcon,

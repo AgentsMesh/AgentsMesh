@@ -10,9 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/supportticket"
 )
 
-// --- Admin-side methods ---
-
-// AdminList returns paginated tickets for admin (all users)
 func (s *Service) AdminList(ctx context.Context, query *AdminListQuery) (*ListResponse, error) {
 	page, pageSize := normalizePagination(query.Page, query.PageSize)
 	offset := (page - 1) * pageSize
@@ -31,7 +28,6 @@ func (s *Service) AdminList(ctx context.Context, query *AdminListQuery) (*ListRe
 	}, nil
 }
 
-// AdminGetByID returns a ticket by ID (no ownership check)
 func (s *Service) AdminGetByID(ctx context.Context, id int64) (*supportticket.SupportTicket, error) {
 	ticket, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -43,12 +39,10 @@ func (s *Service) AdminGetByID(ctx context.Context, id int64) (*supportticket.Su
 	return ticket, nil
 }
 
-// AdminListMessages returns all messages for a ticket (admin, no ownership check)
 func (s *Service) AdminListMessages(ctx context.Context, ticketID int64) ([]supportticket.SupportTicketMessage, error) {
 	return s.repo.ListMessagesByTicketID(ctx, ticketID)
 }
 
-// AdminAddReply adds an admin reply to a ticket
 func (s *Service) AdminAddReply(ctx context.Context, ticketID, adminUserID int64, req *AddMessageRequest) (*supportticket.SupportTicketMessage, error) {
 	if _, err := s.AdminGetByID(ctx, ticketID); err != nil {
 		return nil, err
@@ -69,7 +63,6 @@ func (s *Service) AdminAddReply(ctx context.Context, ticketID, adminUserID int64
 	return msg, nil
 }
 
-// AdminUpdateStatus updates the status of a ticket with transition validation
 func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status string) error {
 	if !supportticket.ValidStatuses[status] {
 		return ErrInvalidStatus
@@ -112,7 +105,6 @@ func (s *Service) AdminUpdateStatus(ctx context.Context, ticketID int64, status 
 	return nil
 }
 
-// AdminAssign assigns a ticket to an admin
 func (s *Service) AdminAssign(ctx context.Context, ticketID, adminUserID int64) error {
 	rowsAffected, err := s.repo.AssignAdmin(ctx, ticketID, adminUserID)
 	if err != nil {
@@ -126,7 +118,6 @@ func (s *Service) AdminAssign(ctx context.Context, ticketID, adminUserID int64) 
 	return nil
 }
 
-// AdminGetStats returns ticket statistics
 func (s *Service) AdminGetStats(ctx context.Context) (*Stats, error) {
 	stats := &Stats{}
 
@@ -150,7 +141,6 @@ func (s *Service) AdminGetStats(ctx context.Context) (*Stats, error) {
 	return stats, nil
 }
 
-// AdminGetAttachmentURL returns a presigned URL for downloading an attachment (admin, no ownership check)
 func (s *Service) AdminGetAttachmentURL(ctx context.Context, attachmentID int64) (string, error) {
 	if s.storage == nil {
 		return "", ErrStorageError

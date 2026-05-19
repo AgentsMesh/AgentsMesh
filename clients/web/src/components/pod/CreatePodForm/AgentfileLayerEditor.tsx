@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * AgentFile Layer editor with form/source mode toggle.
- * Form mode: read-only preview of generated Layer.
- * Source mode: CodeMirror 6 editor with syntax highlighting + autocomplete.
- */
 import React, { useMemo } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -19,13 +14,9 @@ interface AgentfileLayerEditorProps {
   rawText: string;
   onRawModeChange: (enabled: boolean) => void;
   onRawTextChange: (text: string) => void;
-  /** Agent config schema for CONFIG field/value completions */
   configFields?: ConfigField[];
-  /** Available agents for AGENT keyword completions */
   agents?: AgentData[];
-  /** Available repositories for REPO/BRANCH completions */
   repositories?: RepositoryData[];
-  /** Credential profiles for CREDENTIAL completions */
   credentialProfiles?: CredentialProfileData[];
   t: (key: string) => string;
 }
@@ -42,7 +33,6 @@ export function AgentfileLayerEditor({
   credentialProfiles,
   t,
 }: AgentfileLayerEditorProps) {
-  // Build completion context from all available data sources
   const completionContext = useMemo<AgentfileCompletionContext>(() => ({
     configFields,
     agents: agents?.map((a) => ({ slug: a.slug, name: a.name })),
@@ -59,7 +49,6 @@ export function AgentfileLayerEditor({
 
   return (
     <div className="space-y-2 border-t pt-3">
-      {/* Toggle: Form Mode / Source Mode */}
       <div className="flex items-center justify-between">
         <Label className="text-sm">{t("ide.createPod.agentfileLayer")}</Label>
         <div className="flex items-center gap-2">
@@ -70,7 +59,6 @@ export function AgentfileLayerEditor({
         </div>
       </div>
 
-      {/* Layer preview or CodeMirror editor */}
       {rawMode ? (
         <AgentfileCodeEditor
           value={rawText}

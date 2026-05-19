@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UpdatePromoCodeRequest represents update promo code request body
 type UpdatePromoCodeRequest struct {
 	Name          *string `json:"name"`
 	Description   *string `json:"description"`
@@ -20,8 +19,6 @@ type UpdatePromoCodeRequest struct {
 	ExpiresAt     *string `json:"expires_at"`
 }
 
-// Update updates a promo code
-// PUT /api/v1/admin/promo-codes/:id
 func (h *PromoCodeHandler) Update(c *gin.Context) {
 	adminUserID := c.MustGet("user_id").(int64)
 
@@ -46,7 +43,6 @@ func (h *PromoCodeHandler) Update(c *gin.Context) {
 
 	if req.ExpiresAt != nil {
 		if *req.ExpiresAt == "" {
-			// Clear expiration
 			updates.ExpiresAt = nil
 			updates.ClearExpiresAt = true
 		} else {
@@ -72,8 +68,6 @@ func (h *PromoCodeHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, promoCode)
 }
 
-// Activate activates a promo code
-// POST /api/v1/admin/promo-codes/:id/activate
 func (h *PromoCodeHandler) Activate(c *gin.Context) {
 	adminUserID := c.MustGet("user_id").(int64)
 
@@ -95,8 +89,6 @@ func (h *PromoCodeHandler) Activate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "promo code activated"})
 }
 
-// Deactivate deactivates a promo code
-// POST /api/v1/admin/promo-codes/:id/deactivate
 func (h *PromoCodeHandler) Deactivate(c *gin.Context) {
 	adminUserID := c.MustGet("user_id").(int64)
 
@@ -118,8 +110,6 @@ func (h *PromoCodeHandler) Deactivate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "promo code deactivated"})
 }
 
-// Delete deletes a promo code
-// DELETE /api/v1/admin/promo-codes/:id
 func (h *PromoCodeHandler) Delete(c *gin.Context) {
 	adminUserID := c.MustGet("user_id").(int64)
 
@@ -145,8 +135,6 @@ func (h *PromoCodeHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "promo code deleted"})
 }
 
-// ListRedemptions lists redemptions for a promo code
-// GET /api/v1/admin/promo-codes/:id/redemptions
 func (h *PromoCodeHandler) ListRedemptions(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

@@ -4,45 +4,21 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/geo"
 )
 
-// GeoSelectOptions holds options for geo-aware relay selection.
 type GeoSelectOptions struct {
 	OrgSlug         string
 	Latitude        float64
 	Longitude       float64
-	HasUserLocation bool // true if user's geo coordinates are available
+	HasUserLocation bool
 }
 
-// Geo-aware relay selection constants.
 const (
-	// maxNearbyGap is the maximum distance gap (km) allowed between the nearest relay
-	// and other relays to consider them "nearby". Prevents relays on opposite sides
-	// of the globe from being grouped together when all relays are far away.
 	maxNearbyGap = 2000
 
-	// minNearbyThresholdKm is the minimum nearby threshold (km).
-	// Ensures relays in the same region (~500km) are always grouped together.
 	minNearbyThresholdKm = 500
 
-	// earthCircumferenceKm is the approximate circumference of the Earth in km.
-	// Used as a sentinel distance for relays without geo data (treated as farthest).
 	earthCircumferenceKm = 40075
 )
 
-// SelectRelayForPodGeo selects a relay using geo-proximity + org-affinity.
-//
-// Algorithm:
-//  1. If HasUserLocation is false, fall back to pure org-affinity.
-//  2. Compute distance from user to each available relay.
-//  3. Group relays within "nearby" threshold.
-//  4. Within the nearby group, apply org-affinity for stable selection.
-//
-// Nearby threshold = max(minDist * 1.5, minNearbyThresholdKm), capped at minDist + maxNearbyGap.
-// This ensures:
-//   - Close relays cluster naturally (minNearbyThresholdKm tolerance for same-region)
-//   - Far relays don't get mixed with each other (maxNearbyGap cap)
-//
-// When all relays fail strict availability checks (CPU/mem > strictCPUThreshold/strictMemThreshold),
-// falls back to lenient checks (healthy + not at hard capacity) to avoid returning nil.
 func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 	if !opts.HasUserLocation {
 		return m.SelectRelayWithAffinity(opts.OrgSlug)
@@ -55,7 +31,6 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 		return nil
 	}
 
-	// Single-pass: collect strict and lenient candidates with distances simultaneously
 	strictCandidates, lenientCandidates := m.collectCandidatesByTierLocked(opts)
 
 	candidates := strictCandidates
@@ -72,7 +47,6 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 		return nil
 	}
 
-	// Find minimum distance
 	minDist := candidates[0].distance
 	for _, c := range candidates[1:] {
 		if c.distance < minDist {
@@ -80,7 +54,6 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 		}
 	}
 
-	// Nearby threshold: min distance * 1.5, at least minNearbyThresholdKm, capped at minDist + maxNearbyGap
 	threshold := minDist * 1.5
 	if threshold < minNearbyThresholdKm {
 		threshold = minNearbyThresholdKm
@@ -89,7 +62,6 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 		threshold = cap
 	}
 
-	// Filter to nearby relays
 	nearbyIDs := make([]string, 0, len(candidates))
 	for _, c := range candidates {
 		if c.distance <= threshold {
@@ -97,10 +69,9 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 		}
 	}
 
-	// Apply org-affinity within the nearby group
 	selected := m.selectFromCandidatesLocked(opts.OrgSlug, nearbyIDs)
 	if selected != nil {
-		distKm := float64(-1) // -1 indicates relay has no geo data
+		distKm := float64(-1)
 		if selected.HasGeoCoords() {
 			distKm = geo.HaversineDistance(
 				opts.Latitude, opts.Longitude,
@@ -122,21 +93,18 @@ func (m *Manager) SelectRelayForPodGeo(opts GeoSelectOptions) *RelayInfo {
 	return nil
 }
 
-// relayDist pairs a relay ID with its distance from the user.
 type relayDist struct {
 	id       string
-	distance float64 // km from user
+	distance float64
 }
 
-// collectCandidatesByTierLocked performs a single pass over relays, collecting
-// strict (CPU/mem within thresholds) and lenient (healthy + not at hard capacity) candidates
-// with their Haversine distances. Caller must hold m.mu.RLock.
+// collectCandidatesByTierLocked walks m.relays once collecting strict (within CPU/mem thresholds)
+// and lenient (reachable, not at hard cap) tiers with their Haversine distances. Caller holds m.mu.RLock.
 func (m *Manager) collectCandidatesByTierLocked(opts GeoSelectOptions) (strict, lenient []relayDist) {
 	strict = make([]relayDist, 0, len(m.relays))
 	lenient = make([]relayDist, 0, len(m.relays))
 
 	for id, r := range m.relays {
-		// Relays without geo data get max distance (treated as farthest)
 		dist := float64(earthCircumferenceKm)
 		if r.HasGeoCoords() {
 			dist = geo.HaversineDistance(opts.Latitude, opts.Longitude, r.Latitude, r.Longitude)

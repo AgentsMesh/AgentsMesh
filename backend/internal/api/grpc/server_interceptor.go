@@ -7,9 +7,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ==================== Interceptors ====================
-
-// loggingUnaryInterceptor logs unary RPC calls.
 func loggingUnaryInterceptor(logger *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -22,7 +19,6 @@ func loggingUnaryInterceptor(logger *slog.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-// loggingStreamInterceptor logs stream RPC calls.
 func loggingStreamInterceptor(logger *slog.Logger) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},

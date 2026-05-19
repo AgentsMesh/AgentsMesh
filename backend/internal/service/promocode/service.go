@@ -20,13 +20,11 @@ var (
 	ErrPromoCodeAlreadyExists = errors.New("promo code already exists")
 )
 
-// Service handles promo code operations
 type Service struct {
 	repo     promocode.Repository
 	billing  BillingProvider
 }
 
-// NewService creates a new promo code service
 func NewService(repo promocode.Repository, billing BillingProvider) *Service {
 	return &Service{
 		repo:     repo,
@@ -34,13 +32,11 @@ func NewService(repo promocode.Repository, billing BillingProvider) *Service {
 	}
 }
 
-// ValidateRequest represents a validate promo code request
 type ValidateRequest struct {
 	Code           string
 	OrganizationID int64
 }
 
-// Error codes for promo code validation
 const (
 	ErrCodeNotFound      = "promo_code_not_found"
 	ErrCodeExpired       = "promo_code_expired"
@@ -52,7 +48,6 @@ const (
 	ErrCodeRedeemSuccess = "promo_code_redeem_success"
 )
 
-// ValidateResponse represents a validate promo code response
 type ValidateResponse struct {
 	Valid           bool       `json:"valid"`
 	Code            string     `json:"code"`
@@ -63,7 +58,6 @@ type ValidateResponse struct {
 	MessageCode     string     `json:"message_code,omitempty"`
 }
 
-// Validate validates a promo code
 func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*ValidateResponse, error) {
 	code := strings.ToUpper(strings.TrimSpace(req.Code))
 
@@ -75,7 +69,6 @@ func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*Validate
 		return &ValidateResponse{Valid: false, Code: code, MessageCode: ErrCodeNotFound}, nil
 	}
 
-	// Check basic validity
 	if !promoCode.IsValid() {
 		messageCode := ErrCodeInvalid
 		if promoCode.ExpiresAt != nil && time.Now().After(*promoCode.ExpiresAt) {
@@ -90,7 +83,6 @@ func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*Validate
 		return &ValidateResponse{Valid: false, Code: code, MessageCode: messageCode}, nil
 	}
 
-	// Check if organization already used this code
 	count, err := s.repo.CountOrgRedemptionsForCode(ctx, req.OrganizationID, promoCode.ID)
 	if err != nil {
 		return nil, err
@@ -99,7 +91,6 @@ func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*Validate
 		return &ValidateResponse{Valid: false, Code: code, MessageCode: ErrCodeAlreadyUsed}, nil
 	}
 
-	// Get plan display name via billing provider
 	plan, err := s.billing.GetPlanByName(ctx, promoCode.PlanName)
 	if err != nil {
 		return nil, ErrInvalidPlan
@@ -115,7 +106,6 @@ func (s *Service) Validate(ctx context.Context, req *ValidateRequest) (*Validate
 	}, nil
 }
 
-// RedeemRequest represents a redeem promo code request
 type RedeemRequest struct {
 	Code           string
 	OrganizationID int64
@@ -125,7 +115,6 @@ type RedeemRequest struct {
 	UserAgent      string
 }
 
-// RedeemResponse represents a redeem promo code response
 type RedeemResponse struct {
 	Success        bool      `json:"success"`
 	PlanName       string    `json:"plan_name,omitempty"`
@@ -134,14 +123,11 @@ type RedeemResponse struct {
 	MessageCode    string    `json:"message_code,omitempty"`
 }
 
-// Redeem redeems a promo code
 func (s *Service) Redeem(ctx context.Context, req *RedeemRequest) (*RedeemResponse, error) {
-	// Check if user is owner
 	if req.UserRole != "owner" {
 		return &RedeemResponse{Success: false, MessageCode: ErrCodeNotOwner}, nil
 	}
 
-	// Validate first
 	validateResp, err := s.Validate(ctx, &ValidateRequest{
 		Code:           req.Code,
 		OrganizationID: req.OrganizationID,
@@ -156,13 +142,11 @@ func (s *Service) Redeem(ctx context.Context, req *RedeemRequest) (*RedeemRespon
 	code := strings.ToUpper(strings.TrimSpace(req.Code))
 	promoCode, _ := s.repo.GetByCode(ctx, code)
 
-	// Get target plan via billing provider
 	targetPlan, err := s.billing.GetActivePlanByName(ctx, promoCode.PlanName)
 	if err != nil {
 		return nil, ErrInvalidPlan
 	}
 
-	// Execute atomic redeem via repository
 	var newPeriodEnd time.Time
 
 	redemption := &promocode.Redemption{
@@ -187,7 +171,6 @@ func (s *Service) Redeem(ctx context.Context, req *RedeemRequest) (*RedeemRespon
 			if err != nil {
 				return err
 			}
-			// Backfill redemption fields from billing result (pointer, updated before repo.Create)
 			newPeriodEnd = result.NewPeriodEnd
 			redemption.PreviousPlanName = result.PreviousPlanName
 			redemption.PreviousPeriodEnd = result.PreviousPeriodEnd
@@ -211,7 +194,6 @@ func (s *Service) Redeem(ctx context.Context, req *RedeemRequest) (*RedeemRespon
 	}, nil
 }
 
-// GetRedemptionHistory gets redemption history for an organization
 func (s *Service) GetRedemptionHistory(ctx context.Context, orgID int64) ([]*promocode.Redemption, error) {
 	return s.repo.GetRedemptionsByOrg(ctx, orgID)
 }

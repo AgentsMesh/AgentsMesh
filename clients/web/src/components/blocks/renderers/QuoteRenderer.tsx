@@ -13,8 +13,6 @@ import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 import { readBlockText } from "./readBlockText";
 
-// QuoteRenderer is a block-quote with a left border. Nested paragraphs and
-// list items are allowed so users can write multi-line citations.
 export function QuoteRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);

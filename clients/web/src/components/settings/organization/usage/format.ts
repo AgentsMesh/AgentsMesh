@@ -1,7 +1,3 @@
-/**
- * Format large numbers into human-readable strings.
- * Examples: 1234567 -> "1.23M", 12345 -> "12.3K", 999 -> "999"
- */
 export function formatTokenCount(value: number): string {
   if (!Number.isFinite(value)) return "0";
   if (value >= 1_000_000_000_000) {
@@ -24,9 +20,6 @@ export function formatTokenCount(value: number): string {
   return String(value);
 }
 
-/**
- * Format a number with locale-aware thousand separators.
- */
 export function formatNumber(value: number): string {
   if (!Number.isFinite(value)) return "0";
   return value.toLocaleString();

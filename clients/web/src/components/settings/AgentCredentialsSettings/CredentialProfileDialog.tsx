@@ -16,10 +16,6 @@ import {
 import { CredentialFormFields } from "../CredentialFormFields";
 import type { CredentialProfileDialogProps } from "./types";
 
-/**
- * CredentialProfileDialog - Dialog for adding or editing credential profiles.
- * Renders dynamic form fields from AgentFile ENV SECRET/TEXT declarations.
- */
 export function CredentialProfileDialog({
   open,
   onOpenChange,

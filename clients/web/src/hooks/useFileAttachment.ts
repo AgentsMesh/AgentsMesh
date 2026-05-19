@@ -17,10 +17,6 @@ export interface UseFileAttachmentResult extends AttachmentState {
   handleChange: React.ChangeEventHandler<HTMLInputElement>;
 }
 
-/**
- * Wraps a hidden `<input type="file">` plus upload state. The consumer embeds
- * the ref'd input into the DOM and calls `pick()` from a button.
- */
 export function useFileAttachment(): UseFileAttachmentResult {
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<AttachmentState>({

@@ -11,14 +11,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// RenewalReminderJob sends renewal reminder emails
 type RenewalReminderJob struct {
 	db       *gorm.DB
 	emailSvc email.Service
 	logger   *slog.Logger
 }
 
-// NewRenewalReminderJob creates a new renewal reminder job
 func NewRenewalReminderJob(db *gorm.DB, emailSvc email.Service, logger *slog.Logger) *RenewalReminderJob {
 	return &RenewalReminderJob{
 		db:       db,
@@ -27,7 +25,6 @@ func NewRenewalReminderJob(db *gorm.DB, emailSvc email.Service, logger *slog.Log
 	}
 }
 
-// SubscriptionWithOrg combines subscription with org info for email
 type SubscriptionWithOrg struct {
 	billing.Subscription
 	OrgName    string `gorm:"column:org_name"`
@@ -62,17 +59,11 @@ func (j *RenewalReminderJob) Run(ctx context.Context) error {
 	return nil
 }
 
-// sendRemindersForDay sends reminders for subscriptions expiring in N days
 func (j *RenewalReminderJob) sendRemindersForDay(ctx context.Context, days int) (int, error) {
 	targetDate := time.Now().UTC().AddDate(0, 0, days)
 	startOfDay := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, time.UTC)
 	endOfDay := startOfDay.AddDate(0, 0, 1)
 
-	// Find subscriptions expiring on this day
-	// Includes both active and trialing subscriptions
-	// - active/trialing status
-	// - not set to auto-renew (manual renewal needed)
-	// - not set to cancel at period end
 	var subscriptions []SubscriptionWithOrg
 	err := j.db.WithContext(ctx).
 		Table("subscriptions s").
@@ -112,7 +103,6 @@ func (j *RenewalReminderJob) sendRemindersForDay(ctx context.Context, days int) 
 	return sent, nil
 }
 
-// sendReminderEmail sends a renewal reminder email
 func (j *RenewalReminderJob) sendReminderEmail(ctx context.Context, sub *SubscriptionWithOrg, days int) error {
 	// Use SendRenewalReminder if available, otherwise log and skip
 	reminderSvc, ok := j.emailSvc.(email.RenewalReminderSender)

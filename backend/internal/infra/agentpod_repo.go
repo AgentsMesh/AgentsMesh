@@ -13,7 +13,6 @@ var _ agentpod.PodRepository = (*podRepo)(nil)
 
 type podRepo struct{ db *gorm.DB }
 
-// NewPodRepository creates a new PodRepository backed by GORM.
 func NewPodRepository(db *gorm.DB) agentpod.PodRepository {
 	return &podRepo{db: db}
 }

@@ -13,14 +13,9 @@ import (
 
 const rateLimitKeyPrefix = "ratelimit:"
 
-// RateLimitConfig defines rate limiting parameters.
 type RateLimitConfig struct {
-	// MaxAttempts is the maximum number of requests allowed within the Window.
 	MaxAttempts int
-	// Window is the time period for the rate limit counter.
 	Window time.Duration
-	// KeyFunc extracts the rate limit key from the request.
-	// If it returns an empty string, rate limiting is skipped.
 	KeyFunc func(c *gin.Context) string
 }
 
@@ -55,7 +50,6 @@ func RateLimiter(redisClient *redis.Client, cfg RateLimitConfig) gin.HandlerFunc
 
 		count, err := increment(ctx, redisClient, fullKey, cfg.Window)
 		if err != nil {
-			// If Redis is unavailable, allow the request (fail-open).
 			c.Next()
 			return
 		}
@@ -76,14 +70,12 @@ func increment(ctx context.Context, client *redis.Client, key string, window tim
 	if err != nil {
 		return 0, err
 	}
-	// Set TTL on first increment only.
 	if count == 1 {
 		client.Expire(ctx, key, window)
 	}
 	return count, nil
 }
 
-// IPRateLimiter creates a rate limiter keyed by client IP + a scope prefix.
 func IPRateLimiter(redisClient *redis.Client, scope string, maxAttempts int, window time.Duration) gin.HandlerFunc {
 	return RateLimiter(redisClient, RateLimitConfig{
 		MaxAttempts: maxAttempts,

@@ -15,7 +15,6 @@ export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHea
 
   return (
     <>
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-start gap-4">
           <div className="mt-1 text-muted-foreground">
@@ -48,7 +47,6 @@ export function RepositoryHeader({ repository, onEdit, onDelete }: RepositoryHea
         </div>
       </div>
 
-      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
         <Link href="../repositories" className="hover:text-foreground">
           {t("repositories.title")}

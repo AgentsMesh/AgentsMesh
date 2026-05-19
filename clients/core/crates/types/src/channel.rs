@@ -56,16 +56,12 @@ pub struct SenderAgentInfo {
 pub struct ChannelMessage {
     pub id: i64,
     pub channel_id: i64,
-    /// Plain-text projection of `content`, derived server-side. Always present.
     #[serde(default)]
     pub body: String,
-    /// Structured message content (AST blocks + inline elements). JSON, opaque to Rust.
     #[serde(default)]
     pub content: Option<serde_json::Value>,
-    /// Structured mentions (pods / users / channel). JSON, opaque to Rust.
     #[serde(default)]
     pub mentions: Option<serde_json::Value>,
-    /// ID of the message being replied to, if any.
     #[serde(default)]
     pub reply_to: Option<i64>,
     #[serde(default)]
@@ -78,10 +74,8 @@ pub struct ChannelMessage {
     pub sender_pod_info: Option<SenderPodInfo>,
     #[serde(default)]
     pub message_type: Option<String>,
-    /// Deprecated: kept to tolerate legacy payloads. Prefer `sender_pod`.
     #[serde(default)]
     pub pod_key: Option<String>,
-    /// Deprecated: moved into `content`. Kept to tolerate legacy payloads.
     #[serde(default)]
     pub metadata: Option<serde_json::Value>,
     #[serde(default)]
@@ -92,7 +86,6 @@ pub struct ChannelMessage {
     pub created_at: Option<String>,
 }
 
-/// Preview of the last message in a channel, used for channel list display.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessagePreview {
     pub sender_name: String,
@@ -117,10 +110,6 @@ pub struct UpdateChannelRequest {
     pub description: Option<String>,
 }
 
-/// Request body for POST /channels/{id}/messages. Either `source` (markdown
-/// string the backend will parse via goldmark) or `content` (pre-built AST)
-/// is required, but not both. `mentions` is the wire-format display→ref map
-/// used by the backend parser when expanding `@key` substrings.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SendChannelMessageRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,8 +126,6 @@ pub struct SendChannelMessageRequest {
     pub reply_to: Option<i64>,
 }
 
-/// Request body for PUT /channels/{id}/messages/{msgId}. Same shape as
-/// SendChannelMessageRequest minus addressing fields.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EditChannelMessageRequest {
     #[serde(skip_serializing_if = "Option::is_none")]

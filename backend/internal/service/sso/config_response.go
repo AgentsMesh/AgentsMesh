@@ -2,9 +2,6 @@ package sso
 
 import "github.com/anthropics/agentsmesh/backend/internal/domain/sso"
 
-// ToConfigResponse converts a domain Config to a response DTO (strips secrets).
-// Only includes fields relevant to the config's protocol to avoid leaking
-// cross-protocol GORM default values (e.g., ldap_port=389 on an OIDC config).
 func (s *Service) ToConfigResponse(cfg *sso.Config) *ConfigResponse {
 	resp := &ConfigResponse{
 		ID:         cfg.ID,
@@ -18,7 +15,6 @@ func (s *Service) ToConfigResponse(cfg *sso.Config) *ConfigResponse {
 		UpdatedAt:  cfg.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 
-	// Include non-sensitive fields filtered by protocol
 	switch cfg.Protocol {
 	case sso.ProtocolOIDC:
 		if cfg.OIDCIssuerURL != nil {
@@ -78,7 +74,6 @@ func (s *Service) ToConfigResponse(cfg *sso.Config) *ConfigResponse {
 	return resp
 }
 
-// ToDiscoverResponse creates a sanitized discover response
 func (s *Service) ToDiscoverResponse(cfg *sso.Config) *DiscoverResponse {
 	return &DiscoverResponse{
 		Domain:     cfg.Domain,

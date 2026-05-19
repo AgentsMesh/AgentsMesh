@@ -40,8 +40,7 @@ func (s *Service) applyUpdateBlock(
 	if p.ExpectedUpdatedAt != nil && !existing.UpdatedAt.Equal(*p.ExpectedUpdatedAt) {
 		return nil, blockstore.ErrStaleUpdate
 	}
-	// Trigger-def specific SSRF guard — mirrors the check in applyCreateBlock
-	// so an update that swaps in a private webhook URL is rejected too.
+	// SSRF guard runs on update too — an edit that swaps in a private webhook URL must reject.
 	if existing.Type == blockstore.BlockTypeTriggerDef && p.Data != nil {
 		if err := validateTriggerDefData(p.Data); err != nil {
 			return nil, err

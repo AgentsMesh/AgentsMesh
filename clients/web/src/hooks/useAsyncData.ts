@@ -1,81 +1,25 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-/**
- * State for async data operations
- */
 export interface AsyncDataState<T> {
-  /** The fetched data, null if not yet loaded or on error */
   data: T | null;
-  /** True while the initial fetch or a refetch is in progress */
   loading: boolean;
-  /** Error object if the fetch failed, null otherwise */
   error: Error | null;
 }
 
-/**
- * Return type for useAsyncData hook
- */
 export interface UseAsyncDataResult<T> extends AsyncDataState<T> {
-  /** Manually trigger a refetch of the data */
   refetch: () => Promise<void>;
-  /** Update the data state directly (useful for optimistic updates) */
   setData: (data: T | null | ((prev: T | null) => T | null)) => void;
-  /** Clear the error state */
   clearError: () => void;
-  /** True if data has been successfully loaded at least once */
   isLoaded: boolean;
 }
 
-/**
- * Options for useAsyncData hook
- */
 export interface UseAsyncDataOptions {
-  /** If false, the fetch will not run automatically on mount. Default: true */
   enabled?: boolean;
-  /** Callback when fetch succeeds */
   onSuccess?: () => void;
-  /** Callback when fetch fails */
   onError?: (error: Error) => void;
-  /** Keep previous data while refetching. Default: false */
   keepPreviousData?: boolean;
 }
 
-/**
- * Generic hook for fetching async data with loading, error, and refetch support.
- *
- * @example Basic usage
- * ```tsx
- * const { data, loading, error, refetch } = useAsyncData(
- *   () => api.getUsers(),
- *   []
- * );
- *
- * if (loading) return <Spinner />;
- * if (error) return <ErrorMessage error={error} />;
- * return <UserList users={data} />;
- * ```
- *
- * @example With dependencies
- * ```tsx
- * const { data } = useAsyncData(
- *   () => api.getUser(userId),
- *   [userId]
- * );
- * ```
- *
- * @example Disabled until ready
- * ```tsx
- * const { data } = useAsyncData(
- *   () => api.getDetails(id),
- *   [id],
- *   { enabled: !!id }
- * );
- * ```
- *
- * @param fetcher - Async function that returns the data
- * @param deps - Dependency array that triggers refetch when changed
- * @param options - Optional configuration
- */
 export function useAsyncData<T>(
   fetcher: () => Promise<T>,
   deps: React.DependencyList = [],
@@ -95,9 +39,7 @@ export function useAsyncData<T>(
   });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Track if component is mounted to avoid state updates after unmount
   const isMountedRef = useRef(true);
-  // Track the current fetch to handle race conditions
   const fetchIdRef = useRef(0);
 
   const fetchData = useCallback(async () => {
@@ -109,14 +51,12 @@ export function useAsyncData<T>(
       ...prev,
       loading: true,
       error: null,
-      // Optionally keep previous data while loading
       data: keepPreviousData ? prev.data : null,
     }));
 
     try {
       const result = await fetcher();
 
-      // Only update state if this is still the latest fetch and component is mounted
       if (isMountedRef.current && fetchId === fetchIdRef.current) {
         setState({
           data: result,
@@ -127,7 +67,6 @@ export function useAsyncData<T>(
         onSuccess?.();
       }
     } catch (err) {
-      // Only update state if this is still the latest fetch and component is mounted
       if (isMountedRef.current && fetchId === fetchIdRef.current) {
         const error = err instanceof Error ? err : new Error(String(err));
         setState((prev) => ({
@@ -141,12 +80,10 @@ export function useAsyncData<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, keepPreviousData, ...deps]);
 
-  // Initial fetch and refetch on dependency change
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Cleanup on unmount
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -180,20 +117,6 @@ export function useAsyncData<T>(
   };
 }
 
-/**
- * Hook for fetching multiple async data sources in parallel.
- *
- * @example
- * ```tsx
- * const { data, loading, error } = useAsyncDataAll({
- *   users: () => api.getUsers(),
- *   posts: () => api.getPosts(),
- * }, []);
- *
- * if (loading) return <Spinner />;
- * // data.users and data.posts are now available
- * ```
- */
 export function useAsyncDataAll<T extends Record<string, () => Promise<unknown>>>(
   fetchers: T,
   deps: React.DependencyList = [],

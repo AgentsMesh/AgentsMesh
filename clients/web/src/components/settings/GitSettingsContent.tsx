@@ -19,19 +19,9 @@ import {
   getAllSelectableCredentials,
 } from "./git";
 
-/**
- * GitSettingsContent - Shared Git settings component
- * Used by both user settings page and organization settings page.
- *
- * Refactored to use:
- * - useGitSettings hook for data management
- * - Reusable card components for providers and credentials
- * - ConfirmDialog for delete confirmations
- */
 export function GitSettingsContent() {
   const t = useTranslations();
 
-  // Data and actions from hook
   const {
     data,
     loading,
@@ -46,12 +36,10 @@ export function GitSettingsContent() {
     handleTestConnection,
   } = useGitSettings(t);
 
-  // Dialog states
   const [showAddProviderDialog, setShowAddProviderDialog] = useState(false);
   const [showAddCredentialDialog, setShowAddCredentialDialog] = useState(false);
   const [editingProvider, setEditingProvider] = useState<RepositoryProviderData | null>(null);
 
-  // Delete confirmation dialogs
   const deleteProviderDialog = useConfirmDialog({
     title: t("settings.gitSettings.providers.deleteDialog.title"),
     description: t("settings.gitSettings.providers.deleteDialog.description"),
@@ -66,7 +54,6 @@ export function GitSettingsContent() {
     variant: "destructive",
   });
 
-  // Handle provider delete with confirmation
   const onDeleteProvider = async (id: number) => {
     const confirmed = await deleteProviderDialog.confirm();
     if (confirmed) {
@@ -74,7 +61,6 @@ export function GitSettingsContent() {
     }
   };
 
-  // Handle credential delete with confirmation
   const onDeleteCredential = async (id: number) => {
     const confirmed = await deleteCredentialDialog.confirm();
     if (confirmed) {
@@ -101,7 +87,6 @@ export function GitSettingsContent() {
 
   return (
     <div className="space-y-6">
-      {/* Error/Success messages */}
       {errorMessage && (
         <AlertMessage
           type="error"
@@ -119,14 +104,12 @@ export function GitSettingsContent() {
         />
       )}
 
-      {/* Section 1: Default Git Credential */}
       <DefaultCredentialSection
         credentials={selectableCredentials}
         onSetDefault={handleSetDefault}
         t={t}
       />
 
-      {/* Section 2: Repository Providers */}
       <div className="border border-border rounded-lg p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -163,7 +146,6 @@ export function GitSettingsContent() {
         )}
       </div>
 
-      {/* Section 3: Git Credentials */}
       <div className="border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -198,7 +180,6 @@ export function GitSettingsContent() {
         )}
       </div>
 
-      {/* Dialogs */}
       {showAddProviderDialog && (
         <AddProviderDialog
           onClose={() => setShowAddProviderDialog(false)}
@@ -229,7 +210,6 @@ export function GitSettingsContent() {
         }}
       />
 
-      {/* Delete confirmation dialogs */}
       <ConfirmDialog {...deleteProviderDialog.dialogProps} />
       <ConfirmDialog {...deleteCredentialDialog.dialogProps} />
     </div>

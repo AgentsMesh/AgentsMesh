@@ -49,7 +49,6 @@ impl RunnerState {
             *r = runner.clone();
             if let Some(repo) = &self.repo { let _ = repo.save(r); }
         }
-        // Also update in available_runners if present
         if let Some(r) = self.available_runners.iter_mut().find(|r| r.id == id) {
             *r = runner.clone();
         }

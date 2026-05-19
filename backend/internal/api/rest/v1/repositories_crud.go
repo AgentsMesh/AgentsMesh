@@ -14,8 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListRepositories lists configured repositories visible to the requesting user
-// GET /api/v1/organizations/:slug/repositories
 func (h *RepositoryHandler) ListRepositories(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -30,8 +28,6 @@ func (h *RepositoryHandler) ListRepositories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"repositories": repos})
 }
 
-// CreateRepository creates a new repository configuration
-// POST /api/v1/organizations/:slug/repositories
 func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 	var req CreateRepositoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -48,7 +44,7 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 		return
 	}
 
-	// Check repository quota before creation (skip for re-imports of existing repos)
+	// Skip quota check for re-imports.
 	if h.billingService != nil {
 		_, existsErr := h.repositoryService.GetBySlug(
 			c.Request.Context(), tenant.OrganizationID,
@@ -108,8 +104,6 @@ func (h *RepositoryHandler) CreateRepository(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"repository": repo})
 }
 
-// GetRepository returns repository by ID
-// GET /api/v1/organizations/:slug/repositories/:id
 func (h *RepositoryHandler) GetRepository(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -135,8 +129,6 @@ func (h *RepositoryHandler) GetRepository(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"repository": repo})
 }
 
-// UpdateRepository updates a repository configuration
-// PUT /api/v1/organizations/:slug/repositories/:id
 func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -200,8 +192,6 @@ func (h *RepositoryHandler) UpdateRepository(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"repository": repo})
 }
 
-// DeleteRepository deletes a repository configuration
-// DELETE /api/v1/organizations/:slug/repositories/:id
 func (h *RepositoryHandler) DeleteRepository(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

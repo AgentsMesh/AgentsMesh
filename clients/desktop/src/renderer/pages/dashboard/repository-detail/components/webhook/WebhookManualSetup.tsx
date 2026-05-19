@@ -3,9 +3,6 @@ import { Copy, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
 import type { WebhookManualSetupProps } from "./types";
 import type { RepositoryData } from "@/lib/api";
 
-/**
- * Helper function to generate provider webhook settings URL
- */
 function getProviderWebhookSettingsUrl(repository: RepositoryData): string {
   const baseUrl = repository.provider_base_url || "https://github.com";
   const slug = repository.slug;
@@ -22,9 +19,6 @@ function getProviderWebhookSettingsUrl(repository: RepositoryData): string {
   }
 }
 
-/**
- * Displays manual setup instructions for webhook
- */
 export function WebhookManualSetup({
   repository,
   secretInfo,
@@ -43,7 +37,6 @@ export function WebhookManualSetup({
 
       {showSecret && secretInfo ? (
         <div className="space-y-3">
-          {/* Webhook URL */}
           <div>
             <label className="text-xs text-muted-foreground block mb-1">
               Webhook URL
@@ -66,7 +59,6 @@ export function WebhookManualSetup({
             </div>
           </div>
 
-          {/* Secret */}
           <div>
             <label className="text-xs text-muted-foreground block mb-1">
               Secret
@@ -89,7 +81,6 @@ export function WebhookManualSetup({
             </div>
           </div>
 
-          {/* Events */}
           <div>
             <label className="text-xs text-muted-foreground block mb-1">
               {t("repositories.webhook.events")}
@@ -106,7 +97,6 @@ export function WebhookManualSetup({
             </div>
           </div>
 
-          {/* Provider settings link */}
           <div className="pt-2">
             <a
               href={getProviderWebhookSettingsUrl(repository)}

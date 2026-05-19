@@ -9,9 +9,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// ==================== Pod Commands ====================
-
-// SendCreatePod sends a create pod command to a Runner.
 func (a *GRPCRunnerAdapter) SendCreatePod(runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -27,7 +24,6 @@ func (a *GRPCRunnerAdapter) SendCreatePod(runnerID int64, cmd *runnerv1.CreatePo
 	return conn.SendMessage(msg)
 }
 
-// SendTerminatePod sends a terminate pod command to a Runner.
 func (a *GRPCRunnerAdapter) SendTerminatePod(runnerID int64, podKey string, force bool) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -46,7 +42,6 @@ func (a *GRPCRunnerAdapter) SendTerminatePod(runnerID int64, podKey string, forc
 	return conn.SendMessage(msg)
 }
 
-// SendPodInput sends pod input to a pod.
 func (a *GRPCRunnerAdapter) SendPodInput(runnerID int64, podKey string, data []byte) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -65,7 +60,6 @@ func (a *GRPCRunnerAdapter) SendPodInput(runnerID int64, podKey string, data []b
 	return conn.SendMessage(msg)
 }
 
-// SendPrompt sends a prompt to a pod.
 func (a *GRPCRunnerAdapter) SendPrompt(runnerID int64, podKey, prompt string) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -84,8 +78,6 @@ func (a *GRPCRunnerAdapter) SendPrompt(runnerID int64, podKey, prompt string) er
 	return conn.SendMessage(msg)
 }
 
-// SendSubscribePod sends a subscribe pod command to a pod.
-// This notifies the runner that a browser wants to observe the pod via Relay.
 func (a *GRPCRunnerAdapter) SendSubscribePod(runnerID int64, podKey, relayURL, runnerToken, localToken string, includeSnapshot bool, snapshotHistory int32) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -108,8 +100,6 @@ func (a *GRPCRunnerAdapter) SendSubscribePod(runnerID int64, podKey, relayURL, r
 	return conn.SendMessage(msg)
 }
 
-// SendUnsubscribePod sends an unsubscribe pod command to a pod.
-// This notifies the runner that all browsers have disconnected and it should disconnect from Relay.
 func (a *GRPCRunnerAdapter) SendUnsubscribePod(runnerID int64, podKey string) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {
@@ -127,8 +117,6 @@ func (a *GRPCRunnerAdapter) SendUnsubscribePod(runnerID int64, podKey string) er
 	return conn.SendMessage(msg)
 }
 
-// SendQuerySandboxes sends a query sandboxes command to a Runner.
-// Returns sandbox status for specified pod keys via callback registered in RunnerConnectionManager.
 func (a *GRPCRunnerAdapter) SendQuerySandboxes(runnerID int64, requestID string, podKeys []string) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {

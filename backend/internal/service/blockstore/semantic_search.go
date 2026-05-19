@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// SearchHit is one ranked result from semantic search. Score is cosine
-// similarity in [-1, 1]; higher is more relevant.
 type SearchHit struct {
 	BlockID uuid.UUID `json:"block_id"`
 	Type    string    `json:"type"`
@@ -20,8 +18,6 @@ type SearchHit struct {
 	Score   float32   `json:"score"`
 }
 
-// SearchInput narrows a semantic search to one workspace. TopK defaults to 10
-// when unset; MinScore filters out weak matches (0 keeps everything).
 type SearchInput struct {
 	WorkspaceID uuid.UUID
 	Query       string
@@ -30,10 +26,6 @@ type SearchInput struct {
 	TypeFilter  string
 }
 
-// SemanticSearch embeds the query and delegates ranking to the repository.
-// On Postgres with pgvector the repo returns already-ranked rows from HNSW;
-// on SQLite / plain Postgres we rank in memory. ACL filtering happens here
-// so private blocks never leak into results regardless of the backend.
 func (s *Service) SemanticSearch(
 	ctx context.Context,
 	actor ActorContext,
@@ -61,9 +53,6 @@ func (s *Service) SemanticSearch(
 	if err != nil {
 		return nil, err
 	}
-	// Over-fetch so in-memory ACL + type filters can't underflow the final
-	// topK. The pgvector path uses the fetchK as its LIMIT; the JSONB fallback
-	// ignores it and returns the full set for service-level ranking.
 	fetchK := topK * 3
 	if fetchK < 30 {
 		fetchK = 30
@@ -72,11 +61,6 @@ func (s *Service) SemanticSearch(
 	if err != nil {
 		return nil, err
 	}
-	// pgvector path returns rows pre-sorted ASC by cosine distance; we map
-	// that to Score DESC. When every row already carries a non-zero Score the
-	// ordering is correct — skip the re-sort to save O(k log k) on the hot
-	// path. The JSONB fallback leaves Score zero until filterAndScore fills
-	// it in and then we do need to sort.
 	preRanked := len(rows) > 0
 	for _, r := range rows {
 		if r.Score == 0 {
@@ -94,9 +78,6 @@ func (s *Service) SemanticSearch(
 	return hits, nil
 }
 
-// filterAndScore walks each candidate, applies type + ACL filters, and fills
-// in a snippet. Rows from a pgvector-backed repo already carry Score; others
-// get scored here. Kept pure so tests can exercise ranking independently.
 func filterAndScore(
 	rows []blockstore.EmbeddingRow,
 	qvec []float32,
@@ -128,9 +109,6 @@ func filterAndScore(
 	return out
 }
 
-// snippet truncates on a word boundary near the max length and appends an
-// ellipsis when the original was longer. Used for result previews; callers
-// that need full text can re-fetch the block by id.
 func snippet(text *string, max int) string {
 	if text == nil {
 		return ""

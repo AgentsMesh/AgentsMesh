@@ -12,18 +12,13 @@ import { getLocalizedErrorMessage } from "@/lib/api/errors";
 import { toast } from "sonner";
 import type { AgentConfigState, AgentConfigActions, CredentialFormData } from "./types";
 
-/**
- * Custom hook for managing agent configuration state and actions
- */
 export function useAgentConfig(
   agentSlug: string,
   t: (key: string) => string
 ): AgentConfigState & AgentConfigActions {
-  // Loading states
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
 
-  // Data states
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [configFields, setConfigFields] = useState<ConfigField[]>([]);
   const [configValues, setConfigValues] = useState<Record<string, unknown>>({});
@@ -31,11 +26,9 @@ export function useAgentConfig(
   const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
   const [isRunnerHostDefault, setIsRunnerHostDefault] = useState(true);
 
-  // UI states
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load all data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -56,20 +49,16 @@ export function useAgentConfig(
 
       setAgent(foundAgent);
 
-      // Load data in parallel
       const [schemaRes, credentialsRes] = await Promise.all([
         getAgentService().get_config_schema(foundAgent.slug).then((j: string) => JSON.parse(j)).catch(() => ({ fields: [], credential_fields: [] })),
         getUserCredentialService().list_agent_credentials().then((j: string) => JSON.parse(j)).catch(() => ({ items: [] })),
       ]);
 
-      // Set config schema fields
       const fields = schemaRes.fields || [];
       setConfigFields(fields);
 
-      // Set credential fields from AgentFile ENV SECRET/TEXT declarations
       setCredentialFields(schemaRes.credential_fields || []);
 
-      // Initialize config values with defaults from schema
       const defaultValues: Record<string, unknown> = {};
       for (const field of fields) {
         if (field.default !== undefined) {
@@ -77,28 +66,23 @@ export function useAgentConfig(
         }
       }
 
-      // Try to load user's saved config
       try {
         const userConfigRes = JSON.parse(await getAgentService().get_user_config(foundAgent.slug));
         if (userConfigRes.config?.config_values) {
-          // Merge user config over defaults
           setConfigValues({ ...defaultValues, ...userConfigRes.config.config_values });
         } else {
           setConfigValues(defaultValues);
         }
       } catch {
-        // No saved config, use defaults
         setConfigValues(defaultValues);
       }
 
-      // Extract credential profiles for this agent
       const agentCredentials = credentialsRes.items?.find(
         (item: { agent_slug: string }) => item.agent_slug === foundAgent.slug
       );
       const profiles = agentCredentials?.profiles || [];
       setCredentialProfiles(profiles);
 
-      // Check if RunnerHost is default (no custom profile is default)
       const hasCustomDefault = profiles.some((p: CredentialProfileData) => p.is_default);
       setIsRunnerHostDefault(!hasCustomDefault);
     } catch (err) {
@@ -113,7 +97,6 @@ export function useAgentConfig(
     loadData();
   }, [loadData]);
 
-  // Handle config field change
   const handleConfigChange = useCallback((fieldName: string, value: unknown) => {
     setConfigValues((prev) => ({
       ...prev,
@@ -121,7 +104,6 @@ export function useAgentConfig(
     }));
   }, []);
 
-  // Save runtime config
   const handleSaveConfig = useCallback(async () => {
     if (!agent) return;
 
@@ -129,8 +111,6 @@ export function useAgentConfig(
       setSavingConfig(true);
       setError(null);
 
-      // Filter out undefined values, but keep empty strings (e.g., "Follow Runner" model option)
-      // and false for booleans
       const cleanedConfig: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(configValues)) {
         if (value !== undefined) {
@@ -151,7 +131,6 @@ export function useAgentConfig(
     }
   }, [agent, configValues, t]);
 
-  // Set RunnerHost as default
   const handleSetRunnerHostDefault = useCallback(async () => {
     try {
       setError(null);
@@ -170,7 +149,6 @@ export function useAgentConfig(
     }
   }, [credentialProfiles, loadData, t]);
 
-  // Set custom profile as default
   const handleSetDefault = useCallback(async (profileId: number) => {
     try {
       setError(null);
@@ -186,7 +164,6 @@ export function useAgentConfig(
     }
   }, [loadData, t]);
 
-  // Delete credential profile (no confirmation - caller should handle confirmation dialog)
   const handleDeleteProfile = useCallback(async (profileId: number) => {
     try {
       setError(null);
@@ -202,8 +179,6 @@ export function useAgentConfig(
     }
   }, [loadData, t]);
 
-  // Save credential profile (create or update)
-  // credentials keys are full ENV names from AgentFile declarations.
   const handleSaveProfile = useCallback(async (
     data: CredentialFormData,
     editingProfile: CredentialProfileData | null
@@ -235,7 +210,6 @@ export function useAgentConfig(
   }, [agent, loadData, t]);
 
   return {
-    // State
     loading,
     savingConfig,
     agent,
@@ -247,7 +221,6 @@ export function useAgentConfig(
     error,
     success,
 
-    // Actions
     handleConfigChange,
     handleSaveConfig,
     handleSetRunnerHostDefault,

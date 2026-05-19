@@ -7,7 +7,6 @@ import { getPromoCodeService } from "@/lib/wasm-core";
 import type { ValidatePromoCodeResponse, RedeemPromoCodeResponse } from "@/lib/api";
 import { CheckCircle, XCircle, Loader2, Gift } from "lucide-react";
 
-// Translation function type
 type TranslateFunction = (key: string) => string;
 
 interface PromoCodeInputProps {
@@ -67,7 +66,6 @@ export function PromoCodeInput({
     try {
       await getPromoCodeService().redeem(JSON.stringify({ code }));
       onRedeemSuccess?.({ success: true } as RedeemPromoCodeResponse);
-      // Reset state
       setCode("");
       setValidated(null);
     } catch {

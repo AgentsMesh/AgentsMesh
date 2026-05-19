@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// SendMessage creates and sends a message from one agent to another
 func (s *MessageService) SendMessage(ctx context.Context, senderPod, receiverPod, messageType string, content agent.MessageContent, correlationID *string, parentMessageID *int64) (*agent.AgentMessage, error) {
 	message := &agent.AgentMessage{
 		SenderPod:       senderPod,
@@ -30,7 +29,6 @@ func (s *MessageService) SendMessage(ctx context.Context, senderPod, receiverPod
 	return message, nil
 }
 
-// GetMessage returns a message by ID
 func (s *MessageService) GetMessage(ctx context.Context, messageID int64) (*agent.AgentMessage, error) {
 	message, err := s.repo.GetByID(ctx, messageID)
 	if err != nil {
@@ -42,7 +40,6 @@ func (s *MessageService) GetMessage(ctx context.Context, messageID int64) (*agen
 	return message, nil
 }
 
-// MarkRead marks a message as read
 func (s *MessageService) MarkRead(ctx context.Context, messageID int64, podKey string) error {
 	message, err := s.GetMessage(ctx, messageID)
 	if err != nil {
@@ -60,7 +57,6 @@ func (s *MessageService) MarkRead(ctx context.Context, messageID int64, podKey s
 	})
 }
 
-// MarkDelivered marks a message as delivered
 func (s *MessageService) MarkDelivered(ctx context.Context, messageID int64) error {
 	now := time.Now()
 	return s.repo.UpdateStatus(ctx, messageID, map[string]interface{}{
@@ -69,12 +65,10 @@ func (s *MessageService) MarkDelivered(ctx context.Context, messageID int64) err
 	})
 }
 
-// MarkAllRead marks all messages for a pod as read
 func (s *MessageService) MarkAllRead(ctx context.Context, podKey string) (int64, error) {
 	return s.repo.MarkAllRead(ctx, podKey)
 }
 
-// DeleteMessage soft deletes a message (only sender can delete)
 func (s *MessageService) DeleteMessage(ctx context.Context, messageID int64, podKey string) error {
 	message, err := s.GetMessage(ctx, messageID)
 	if err != nil {

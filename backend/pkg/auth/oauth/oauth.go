@@ -11,7 +11,6 @@ import (
 	"time"
 )
 
-// Token represents OAuth tokens
 type Token struct {
 	AccessToken  string
 	RefreshToken string
@@ -19,7 +18,6 @@ type Token struct {
 	ExpiresAt    time.Time
 }
 
-// UserInfo represents user info from OAuth provider
 type UserInfo struct {
 	ID        string
 	Username  string
@@ -28,10 +26,8 @@ type UserInfo struct {
 	AvatarURL string
 }
 
-// httpClient is a shared HTTP client with a reasonable timeout for OAuth calls.
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
-// Config represents OAuth provider configuration
 type Config struct {
 	Provider        string
 	ClientID        string
@@ -41,10 +37,9 @@ type Config struct {
 	TokenEndpoint   string
 	UserInfoURL     string
 	Scopes          []string
-	BaseURL         string // For self-hosted providers
+	BaseURL         string
 }
 
-// AuthURL generates the authorization URL
 func (c *Config) AuthURL(state string) string {
 	params := url.Values{}
 	params.Set("client_id", c.ClientID)
@@ -57,7 +52,6 @@ func (c *Config) AuthURL(state string) string {
 	return c.AuthEndpoint + "?" + params.Encode()
 }
 
-// Exchange exchanges the authorization code for tokens
 func (c *Config) Exchange(ctx context.Context, code string) (*Token, error) {
 	data := url.Values{}
 	data.Set("client_id", c.ClientID)
@@ -111,7 +105,6 @@ func (c *Config) Exchange(ctx context.Context, code string) (*Token, error) {
 	return token, nil
 }
 
-// GetUserInfo fetches user information from the OAuth provider
 func (c *Config) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", c.UserInfoURL, nil)
 	if err != nil {
@@ -140,7 +133,6 @@ func (c *Config) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo
 		return nil, err
 	}
 
-	// GitHub users may have a private email; fall back to /user/emails API
 	if c.Provider == "github" && userInfo.Email == "" {
 		userInfo.Email, _ = fetchGitHubPrimaryEmail(ctx, accessToken)
 	}
@@ -148,7 +140,6 @@ func (c *Config) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo
 	return userInfo, nil
 }
 
-// parseUserInfo parses user info response based on provider
 func (c *Config) parseUserInfo(body []byte) (*UserInfo, error) {
 	switch c.Provider {
 	case "github":
@@ -164,8 +155,6 @@ func (c *Config) parseUserInfo(body []byte) (*UserInfo, error) {
 	}
 }
 
-// NewGitHubConfig creates a GitHub OAuth configuration
-// Includes "repo" scope for repository access (browsing and cloning)
 func NewGitHubConfig(clientID, clientSecret, redirectURL string) *Config {
 	return &Config{
 		Provider:      "github",
@@ -179,7 +168,6 @@ func NewGitHubConfig(clientID, clientSecret, redirectURL string) *Config {
 	}
 }
 
-// NewGoogleConfig creates a Google OAuth configuration
 func NewGoogleConfig(clientID, clientSecret, redirectURL string) *Config {
 	return &Config{
 		Provider:      "google",
@@ -193,8 +181,6 @@ func NewGoogleConfig(clientID, clientSecret, redirectURL string) *Config {
 	}
 }
 
-// NewGitLabConfig creates a GitLab OAuth configuration
-// Includes repository scopes for browsing and cloning
 func NewGitLabConfig(clientID, clientSecret, redirectURL, baseURL string) *Config {
 	if baseURL == "" {
 		baseURL = "https://gitlab.com"
@@ -212,8 +198,6 @@ func NewGitLabConfig(clientID, clientSecret, redirectURL, baseURL string) *Confi
 	}
 }
 
-// NewGiteeConfig creates a Gitee OAuth configuration
-// Includes "projects" scope for repository access
 func NewGiteeConfig(clientID, clientSecret, redirectURL string) *Config {
 	return &Config{
 		Provider:      "gitee",
@@ -226,4 +210,3 @@ func NewGiteeConfig(clientID, clientSecret, redirectURL string) *Config {
 		Scopes:        []string{"user_info", "emails", "projects"},
 	}
 }
-

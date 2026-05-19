@@ -7,9 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// refreshEmbeddings walks the just-committed op batch and upserts / deletes
-// embedding rows to match the new state. Called from a background goroutine
-// so a slow embedding provider (OpenAI API) cannot stall the write path.
 func (s *Service) refreshEmbeddings(ctx context.Context, ops []*blockstore.BlockOp) {
 	for _, op := range ops {
 		switch op.Op {
@@ -30,11 +27,6 @@ func (s *Service) refreshEmbeddings(ctx context.Context, ops []*blockstore.Block
 	}
 }
 
-// embedBlock regenerates the embedding for a single block. Skips blocks with
-// empty text (no semantic signal) and blocks whose text hashes identically to
-// the stored source_hash (already up-to-date — common when updateBlock
-// touched only non-text fields). Errors log and move on — embeddings are an
-// auxiliary index, not a source of truth.
 func (s *Service) embedBlock(ctx context.Context, blockID uuid.UUID) {
 	b, err := s.repo.GetBlock(ctx, blockID)
 	if err != nil {
@@ -56,8 +48,6 @@ func (s *Service) embedBlock(ctx context.Context, blockID uuid.UUID) {
 	newHash := HashTextForEmbedding(text)
 	existingHash, err := s.repo.GetEmbeddingHash(ctx, blockID)
 	if err == nil && existingHash == newHash {
-		// Source text unchanged — no re-embed needed. This is the hot path
-		// when Agents touch meta / data but leave text alone.
 		return
 	}
 	vec, err := s.embedder.Embed(ctx, text)

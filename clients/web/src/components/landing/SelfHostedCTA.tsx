@@ -11,13 +11,10 @@ export function SelfHostedCTA() {
     <section className="py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative max-w-4xl mx-auto">
-          {/* Glow effect */}
           <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full opacity-30" />
 
-          {/* Content box */}
           <div className="relative bg-card rounded-2xl border-2 border-primary/30 p-8 sm:p-12">
             <div className="flex flex-col lg:flex-row items-center gap-8">
-              {/* Icon */}
               <div className="flex-shrink-0">
                 <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <svg
@@ -36,7 +33,6 @@ export function SelfHostedCTA() {
                 </div>
               </div>
 
-              {/* Text */}
               <div className="flex-grow text-center lg:text-left">
                 <h3 className="text-2xl sm:text-3xl font-bold mb-4">
                   {t("landing.selfHosted.title")} <span className="text-primary">{t("landing.selfHosted.titleHighlight")}</span> {t("landing.selfHosted.titleEnd")}
@@ -45,7 +41,6 @@ export function SelfHostedCTA() {
                   {t("landing.selfHosted.description")}
                 </p>
 
-                {/* Features */}
                 <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-6">
                   <div className="flex items-center gap-2 text-sm">
                     <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,7 +62,6 @@ export function SelfHostedCTA() {
                   </div>
                 </div>
 
-                {/* CTAs */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                   <Link href="/demo">
                     <Button className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">

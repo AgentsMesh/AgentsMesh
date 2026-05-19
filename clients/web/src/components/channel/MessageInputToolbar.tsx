@@ -13,8 +13,6 @@ interface MessageInputToolbarProps {
   onSend: () => void;
   disabled?: boolean;
   attachment: UseFileAttachmentResult;
-  /** Optional override for the @ button — lets MessageInput also open the
-   *  mention dropdown instead of just inserting the character. */
   onMention?: () => void;
 }
 
@@ -28,9 +26,6 @@ export function MessageInputToolbar({
   onMention,
 }: MessageInputToolbarProps) {
   const t = useTranslations("channels.composer");
-  // Destructure to unblock React Compiler's ref-during-render analysis.
-  // Reading `attachment.inputRef` via member access trips the static
-  // analyzer; a top-level destructure treats the ref as a local binding.
   const { inputRef, handleChange, pick, pending, key, name } = attachment;
 
   const insertAt = () => {

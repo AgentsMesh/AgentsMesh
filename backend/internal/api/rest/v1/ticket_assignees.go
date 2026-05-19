@@ -9,15 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Assignee Management Endpoints ==========
-
-// AddAssigneeRequest represents assignee addition request
 type AddAssigneeRequest struct {
 	UserID int64 `json:"user_id" binding:"required"`
 }
 
-// AddAssignee adds an assignee to a ticket
-// POST /api/v1/organizations/:slug/tickets/:ticket_slug/assignees
 func (h *TicketHandler) AddAssignee(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -43,8 +38,6 @@ func (h *TicketHandler) AddAssignee(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Assignee added"})
 }
 
-// RemoveAssignee removes an assignee from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/assignees/:user_id
 func (h *TicketHandler) RemoveAssignee(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	userID, err := strconv.ParseInt(c.Param("user_id"), 10, 64)

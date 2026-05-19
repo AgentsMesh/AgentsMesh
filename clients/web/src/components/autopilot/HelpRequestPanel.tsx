@@ -21,16 +21,6 @@ interface HelpRequestPanelProps {
   onCustomResponse?: () => void;
 }
 
-/**
- * HelpRequestPanel displays detailed help request information from the Control Agent
- * when it encounters a situation requiring human intervention.
- *
- * Features:
- * - Clear reason for help request
- * - Context about what was being attempted
- * - Terminal excerpt showing the relevant output
- * - Suggested actions as clickable buttons
- */
 export function HelpRequestPanel({
   autopilotControllerKey,
   className,
@@ -38,10 +28,8 @@ export function HelpRequestPanel({
   onCustomResponse,
 }: HelpRequestPanelProps) {
   const approveAutopilotController = useAutopilotStore((s) => s.approveAutopilotController);
-  // Reactive thinking selector — re-renders when this controller's thinking changes
   const thinking = useAutopilotThinking(autopilotControllerKey);
 
-  // Only show when there's a help request
   if (!thinking?.help_request) {
     return null;
   }
@@ -51,7 +39,6 @@ export function HelpRequestPanel({
   const handleSuggestionClick = (suggestion: { action: string; label: string }) => {
     switch (suggestion.action) {
       case "approve":
-        // Approve and continue execution
         if (onApprove) {
           onApprove(true);
         } else {
@@ -59,7 +46,6 @@ export function HelpRequestPanel({
         }
         break;
       case "skip":
-        // Approve but skip the current operation
         if (onApprove) {
           onApprove(true, 5); // Add extra iterations for recovery
         } else {
@@ -70,7 +56,6 @@ export function HelpRequestPanel({
         }
         break;
       case "stop":
-        // Stop execution
         if (onApprove) {
           onApprove(false);
         } else {
@@ -78,11 +63,9 @@ export function HelpRequestPanel({
         }
         break;
       case "custom":
-        // Open custom response dialog
         onCustomResponse?.();
         break;
       default:
-        // Default to approve and continue
         if (onApprove) {
           onApprove(true);
         }

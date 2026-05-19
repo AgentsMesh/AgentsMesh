@@ -41,7 +41,6 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
     try {
       await getOrgApiService().update(org!.slug, JSON.stringify({ name }));
 
-      // Sync Zustand store cache
       if (currentOrg && currentOrg.slug === org!.slug) {
         setCurrentOrg({ ...currentOrg, name });
       }
@@ -68,7 +67,6 @@ export function GeneralSettings({ org, t }: GeneralSettingsProps) {
     try {
       await getOrgApiService().delete(org!.slug);
 
-      // Remove from store and redirect
       const remaining = organizations.filter((o) => o.slug !== org!.slug);
       setOrganizations(remaining);
       if (remaining.length > 0) {

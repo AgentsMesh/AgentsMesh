@@ -11,9 +11,6 @@ export interface GitCredentialCardProps {
   t: (key: string) => string;
 }
 
-/**
- * GitCredentialCard - Displays a single Git credential with actions
- */
 export function GitCredentialCard({
   credential,
   onDelete,

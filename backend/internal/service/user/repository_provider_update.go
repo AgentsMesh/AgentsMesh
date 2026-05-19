@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// UpdateRepositoryProviderRequest represents a request to update a repository provider
 type UpdateRepositoryProviderRequest struct {
 	Name         *string
 	BaseURL      *string
@@ -18,9 +17,7 @@ type UpdateRepositoryProviderRequest struct {
 	IsActive     *bool
 }
 
-// UpdateRepositoryProvider updates a repository provider
 func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, providerID int64, req *UpdateRepositoryProviderRequest) (*domainUser.RepositoryProvider, error) {
-	// Verify ownership
 	provider, err := s.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
 		return nil, err
@@ -29,7 +26,6 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 	updates := make(map[string]interface{})
 
 	if req.Name != nil && *req.Name != "" {
-		// Check if new name conflicts with existing provider
 		exists, err := s.repo.RepositoryProviderNameExists(ctx, userID, *req.Name, &providerID)
 		if err != nil {
 			return nil, err
@@ -52,7 +48,6 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 		}
 	}
 
-	// Handle secret encryption
 	if req.ClientSecret != nil {
 		if *req.ClientSecret == "" {
 			updates["client_secret_encrypted"] = nil
@@ -101,9 +96,7 @@ func (s *Service) UpdateRepositoryProvider(ctx context.Context, userID, provider
 	return s.GetRepositoryProvider(ctx, userID, providerID)
 }
 
-// SetDefaultRepositoryProvider sets a repository provider as default
 func (s *Service) SetDefaultRepositoryProvider(ctx context.Context, userID, providerID int64) error {
-	// Verify ownership
 	_, err := s.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
 		return err

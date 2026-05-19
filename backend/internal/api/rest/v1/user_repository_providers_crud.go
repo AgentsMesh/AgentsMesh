@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListProviders lists all repository providers for the current user
-// GET /api/v1/user/repository-providers
 func (h *UserRepositoryProviderHandler) ListProviders(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -23,7 +21,6 @@ func (h *UserRepositoryProviderHandler) ListProviders(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	responses := make([]*domainUser.RepositoryProviderResponse, len(providers))
 	for i, p := range providers {
 		responses[i] = p.ToResponse()
@@ -32,8 +29,6 @@ func (h *UserRepositoryProviderHandler) ListProviders(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"providers": responses})
 }
 
-// CreateProvider creates a new repository provider
-// POST /api/v1/user/repository-providers
 func (h *UserRepositoryProviderHandler) CreateProvider(c *gin.Context) {
 	var req CreateRepositoryProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -66,8 +61,6 @@ func (h *UserRepositoryProviderHandler) CreateProvider(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"provider": provider.ToResponse()})
 }
 
-// GetProvider returns a single repository provider
-// GET /api/v1/user/repository-providers/:id
 func (h *UserRepositoryProviderHandler) GetProvider(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -90,8 +83,6 @@ func (h *UserRepositoryProviderHandler) GetProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"provider": provider.ToResponse()})
 }
 
-// UpdateProvider updates a repository provider
-// PUT /api/v1/user/repository-providers/:id
 func (h *UserRepositoryProviderHandler) UpdateProvider(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -130,8 +121,6 @@ func (h *UserRepositoryProviderHandler) UpdateProvider(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"provider": provider.ToResponse()})
 }
 
-// DeleteProvider deletes a repository provider
-// DELETE /api/v1/user/repository-providers/:id
 func (h *UserRepositoryProviderHandler) DeleteProvider(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

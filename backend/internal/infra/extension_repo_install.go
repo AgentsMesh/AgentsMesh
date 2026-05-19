@@ -9,8 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// --- Installed MCP Servers ---
-
 func (r *extensionRepo) ListInstalledMcpServers(ctx context.Context, orgID, repoID, userID int64, scope string) ([]*extension.InstalledMcpServer, error) {
 	var servers []*extension.InstalledMcpServer
 	query := r.db.WithContext(ctx).
@@ -94,8 +92,6 @@ func deduplicateMcpServers(servers []*extension.InstalledMcpServer) []*extension
 	})
 	return result
 }
-
-// --- Installed Skills ---
 
 func (r *extensionRepo) ListInstalledSkills(ctx context.Context, orgID, repoID, userID int64, scope string) ([]*extension.InstalledSkill, error) {
 	var skills []*extension.InstalledSkill
@@ -183,8 +179,6 @@ func deduplicateSkills(skills []*extension.InstalledSkill) []*extension.Installe
 	return result
 }
 
-// --- Skill Registry Overrides ---
-
 func (r *extensionRepo) SetSkillRegistryOverride(ctx context.Context, orgID int64, registryID int64, isDisabled bool) error {
 	override := &extension.SkillRegistryOverride{
 		OrganizationID: orgID,
@@ -203,5 +197,4 @@ func (r *extensionRepo) ListSkillRegistryOverrides(ctx context.Context, orgID in
 	return overrides, err
 }
 
-// Compile-time interface compliance check.
 var _ extension.Repository = (*extensionRepo)(nil)

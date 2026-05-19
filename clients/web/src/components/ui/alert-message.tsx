@@ -31,13 +31,6 @@ const alertStyles: Record<AlertType, { container: string; text: string }> = {
   },
 };
 
-/**
- * Reusable alert message component for displaying error, success, warning, or info messages
- *
- * @example
- * <AlertMessage type="error" message={error} onDismiss={() => setError(null)} />
- * <AlertMessage type="success" message="Operation completed successfully" />
- */
 export function AlertMessage({ type, message, onDismiss, className }: AlertMessageProps) {
   const styles = alertStyles[type];
 

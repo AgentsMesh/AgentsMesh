@@ -11,15 +11,11 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// Sandbox path placeholders — Runner replaces with real paths after sandbox setup.
 const (
 	PlaceholderSandboxRoot = "{{sandbox_root}}"
 	PlaceholderWorkDir     = "{{work_dir}}"
 )
 
-// buildFromAgentfile evaluates the agent's AgentFile with placeholder sandbox paths
-// and produces a complete CreatePodCommand. Runner only needs to substitute
-// placeholders with real paths — no AgentFile parsing needed on Runner side.
 func (b *ConfigBuilder) buildFromAgentfile(
 	ctx context.Context,
 	req *ConfigBuildRequest,
@@ -30,7 +26,6 @@ func (b *ConfigBuilder) buildFromAgentfile(
 		return nil, fmt.Errorf("agent %s: MergedAgentfileSource is empty (AgentFile resolve should always produce it)", req.AgentSlug)
 	}
 
-	// Get credentials
 	var creds agent.EncryptedCredentials
 	var isRunnerHost bool
 	var err error
@@ -43,10 +38,8 @@ func (b *ConfigBuilder) buildFromAgentfile(
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// Build MCP context
 	builtinMCP, installedMCP := b.buildMCPContext(ctx, req, agentDef.Slug)
 
-	// Parse and eval AgentFile with placeholder context
 	prog, errs := parser.Parse(mergedSource)
 	if len(errs) > 0 {
 		return nil, fmt.Errorf("agentfile parse error: %v", errs[0])
@@ -59,8 +52,6 @@ func (b *ConfigBuilder) buildFromAgentfile(
 	eval.ApplyModeArgs(evalCtx.Result)
 	eval.ApplyRemoves(evalCtx.Result)
 
-	// AgentFile SETUP is the most specific source for preparation scripts.
-	// Preserve repository-level preparation as a fallback when SETUP is absent.
 	effectiveReq := *req
 	if evalCtx.Result.Setup.Script != "" {
 		effectiveReq.PreparationScript = evalCtx.Result.Setup.Script

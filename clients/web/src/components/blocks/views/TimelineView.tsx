@@ -8,9 +8,6 @@ import { ViewHeader } from "./ViewListFallback";
 import { SummaryBar } from "./SummaryBar";
 import { useViewBlocks } from "./useViewBlocks";
 
-// TimelineView lays out source blocks horizontally by their `start_date` /
-// `end_date` fields (ISO date strings). Each row is one block. Phase 2 keeps
-// the math simple — grid scale is derived from total span, no zoom UI.
 export function TimelineView({ viewBlock, spec }: { viewBlock: Block; spec: ViewSpec }) {
   const items = useViewBlocks(spec, viewBlock.workspace_id);
   const dated = useMemo(() => normalize(items), [items]);

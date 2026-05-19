@@ -9,14 +9,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// CreateGitCredential creates a new Git credential for a user
 func (s *Service) CreateGitCredential(ctx context.Context, userID int64, req *CreateGitCredentialRequest) (*user.GitCredential, error) {
-	// Validate credential type
 	if !user.IsValidCredentialType(req.CredentialType) {
 		return nil, ErrInvalidCredentialType
 	}
 
-	// Check if credential with same name already exists
 	exists, err := s.repo.GitCredentialNameExists(ctx, userID, req.Name, nil)
 	if err != nil {
 		return nil, err
@@ -32,12 +29,10 @@ func (s *Service) CreateGitCredential(ctx context.Context, userID int64, req *Cr
 		IsDefault:      false,
 	}
 
-	// Type-specific validation and processing
 	if err := s.processCredentialType(ctx, userID, credential, req); err != nil {
 		return nil, err
 	}
 
-	// Set optional host pattern
 	if req.HostPattern != "" {
 		credential.HostPattern = &req.HostPattern
 	}
@@ -53,18 +48,15 @@ func (s *Service) CreateGitCredential(ctx context.Context, userID int64, req *Cr
 	return credential, nil
 }
 
-// processCredentialType handles type-specific validation and field setting
 func (s *Service) processCredentialType(ctx context.Context, userID int64, credential *user.GitCredential, req *CreateGitCredentialRequest) error {
 	switch req.CredentialType {
 	case user.CredentialTypeRunnerLocal:
-		// No additional fields needed for runner_local
 		return nil
 
 	case user.CredentialTypeOAuth:
 		if req.RepositoryProviderID == nil {
 			return ErrProviderIDRequired
 		}
-		// Verify the provider exists and belongs to the user
 		_, err := s.GetRepositoryProvider(ctx, userID, *req.RepositoryProviderID)
 		if err != nil {
 			return err
@@ -75,7 +67,6 @@ func (s *Service) processCredentialType(ctx context.Context, userID int64, crede
 		if req.PAT == "" {
 			return errors.New("PAT is required for pat type")
 		}
-		// Encrypt PAT
 		if s.encryptionKey != "" {
 			encrypted, err := crypto.EncryptWithKey(req.PAT, s.encryptionKey)
 			if err != nil {
@@ -91,7 +82,6 @@ func (s *Service) processCredentialType(ctx context.Context, userID int64, crede
 			return errors.New("private key is required for ssh_key type")
 		}
 
-		// Parse and validate SSH key
 		privateKey, publicKey, fingerprint, err := parseSSHKey(req.PrivateKey, req.PublicKey)
 		if err != nil {
 			return err
@@ -100,7 +90,6 @@ func (s *Service) processCredentialType(ctx context.Context, userID int64, crede
 		credential.PublicKey = &publicKey
 		credential.Fingerprint = &fingerprint
 
-		// Encrypt private key
 		if s.encryptionKey != "" {
 			encrypted, err := crypto.EncryptWithKey(privateKey, s.encryptionKey)
 			if err != nil {
@@ -115,7 +104,6 @@ func (s *Service) processCredentialType(ctx context.Context, userID int64, crede
 	return nil
 }
 
-// GetGitCredential returns a Git credential by ID
 func (s *Service) GetGitCredential(ctx context.Context, userID, credentialID int64) (*user.GitCredential, error) {
 	credential, err := s.repo.GetGitCredentialWithProvider(ctx, userID, credentialID)
 	if err != nil {
@@ -127,14 +115,11 @@ func (s *Service) GetGitCredential(ctx context.Context, userID, credentialID int
 	return credential, nil
 }
 
-// ListGitCredentials returns all Git credentials for a user
 func (s *Service) ListGitCredentials(ctx context.Context, userID int64) ([]*user.GitCredential, error) {
 	return s.repo.ListGitCredentialsWithProvider(ctx, userID)
 }
 
-// UpdateGitCredential updates a Git credential
 func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID int64, req *UpdateGitCredentialRequest) (*user.GitCredential, error) {
-	// Verify ownership
 	credential, err := s.GetGitCredential(ctx, userID, credentialID)
 	if err != nil {
 		return nil, err
@@ -143,7 +128,6 @@ func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID 
 	updates := make(map[string]interface{})
 
 	if req.Name != nil && *req.Name != "" {
-		// Check if new name conflicts
 		exists, err := s.repo.GitCredentialNameExists(ctx, userID, *req.Name, &credentialID)
 		if err != nil {
 			return nil, err
@@ -162,7 +146,6 @@ func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID 
 		}
 	}
 
-	// Type-specific updates
 	if err := s.applyCredentialTypeUpdates(credential, req, updates); err != nil {
 		return nil, err
 	}
@@ -181,7 +164,6 @@ func (s *Service) UpdateGitCredential(ctx context.Context, userID, credentialID 
 	return s.GetGitCredential(ctx, userID, credentialID)
 }
 
-// applyCredentialTypeUpdates applies type-specific updates to the updates map
 func (s *Service) applyCredentialTypeUpdates(credential *user.GitCredential, req *UpdateGitCredentialRequest, updates map[string]interface{}) error {
 	if req.PAT != nil && credential.CredentialType == user.CredentialTypePAT {
 		if *req.PAT == "" {
@@ -226,9 +208,7 @@ func (s *Service) applyCredentialTypeUpdates(credential *user.GitCredential, req
 	return nil
 }
 
-// DeleteGitCredential deletes a Git credential
 func (s *Service) DeleteGitCredential(ctx context.Context, userID, credentialID int64) error {
-	// First check if this is the default credential
 	credential, err := s.repo.GetGitCredentialWithProvider(ctx, userID, credentialID)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
@@ -237,7 +217,6 @@ func (s *Service) DeleteGitCredential(ctx context.Context, userID, credentialID 
 		return err
 	}
 
-	// If this is the default, clear user's default credential reference
 	if credential.IsDefault {
 		if err := s.repo.ClearUserDefaultCredential(ctx, userID, credentialID); err != nil {
 			return err

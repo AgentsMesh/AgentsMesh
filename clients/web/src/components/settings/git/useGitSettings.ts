@@ -18,35 +18,26 @@ export interface GitSettingsData {
 }
 
 export interface UseGitSettingsResult {
-  // Data
   data: GitSettingsData | null;
   loading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
 
-  // Messages
   successMessage: string | null;
   errorMessage: string | null;
   setSuccessMessage: (msg: string | null) => void;
   setErrorMessage: (msg: string | null) => void;
 
-  // Actions
   handleSetDefault: (credentialId: number | null) => Promise<void>;
   handleDeleteProvider: (id: number) => Promise<boolean>;
   handleDeleteCredential: (id: number) => Promise<boolean>;
   handleTestConnection: (id: number) => Promise<void>;
 }
 
-/**
- * Custom hook for Git settings data and operations
- *
- * Extracts all data fetching and mutation logic from GitSettingsContent
- */
 export function useGitSettings(t: (key: string) => string): UseGitSettingsResult {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch data
   const fetcher = useCallback(async (): Promise<GitSettingsData> => {
     const [providersRes, credentialsRes] = await Promise.all([
       getUserCredentialService().list_repo_providers().then((j: string) => JSON.parse(j)),
@@ -57,7 +48,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     const credentials = credentialsRes.credentials || [];
     const runnerLocal = credentialsRes.runner_local;
 
-    // Determine default credential
     let defaultCredentialId: number | null | "runner_local";
     if (runnerLocal.is_default) {
       defaultCredentialId = "runner_local";
@@ -86,7 +76,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     },
   });
 
-  // Set default credential
   const handleSetDefault = useCallback(
     async (credentialId: number | null) => {
       try {
@@ -95,7 +84,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
           JSON.stringify({ credential_id: credentialId })
         );
 
-        // Update local state
         setData((prev) =>
           prev
             ? {
@@ -115,7 +103,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     [t, setData]
   );
 
-  // Delete provider
   const handleDeleteProvider = useCallback(
     async (id: number): Promise<boolean> => {
       try {
@@ -131,7 +118,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     [t, refetch]
   );
 
-  // Delete credential
   const handleDeleteCredential = useCallback(
     async (id: number): Promise<boolean> => {
       try {
@@ -147,7 +133,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
     [t, refetch]
   );
 
-  // Test provider connection
   const handleTestConnection = useCallback(
     async (id: number) => {
       try {
@@ -182,9 +167,6 @@ export function useGitSettings(t: (key: string) => string): UseGitSettingsResult
   };
 }
 
-/**
- * Get all selectable credentials for default picker
- */
 export function getAllSelectableCredentials(data: GitSettingsData) {
   const items: Array<{
     id: number | "runner_local";
@@ -193,7 +175,6 @@ export function getAllSelectableCredentials(data: GitSettingsData) {
     isDefault: boolean;
   }> = [];
 
-  // Add runner local first
   if (data.runnerLocal) {
     items.push({
       id: "runner_local",
@@ -203,7 +184,6 @@ export function getAllSelectableCredentials(data: GitSettingsData) {
     });
   }
 
-  // Add OAuth credentials from providers
   data.credentials
     .filter((c) => c.credential_type === CredentialType.OAUTH)
     .forEach((c) => {
@@ -215,7 +195,6 @@ export function getAllSelectableCredentials(data: GitSettingsData) {
       });
     });
 
-  // Add PAT and SSH credentials
   data.credentials
     .filter(
       (c) =>

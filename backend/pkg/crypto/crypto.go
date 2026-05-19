@@ -18,19 +18,15 @@ var (
 	ErrDecryptionFailed  = errors.New("decryption failed")
 )
 
-// Encryptor handles encryption and decryption
 type Encryptor struct {
 	key []byte
 }
 
-// NewEncryptor creates a new encryptor with the given key
 func NewEncryptor(key string) *Encryptor {
-	// Derive a 32-byte key from the input using SHA-256
 	hash := sha256.Sum256([]byte(key))
 	return &Encryptor{key: hash[:]}
 }
 
-// Encrypt encrypts plaintext using AES-GCM
 func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	block, err := aes.NewCipher(e.key)
 	if err != nil {
@@ -51,7 +47,6 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// Decrypt decrypts ciphertext using AES-GCM
 func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
 	data, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
@@ -82,7 +77,6 @@ func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
 	return string(plaintext), nil
 }
 
-// HashPassword hashes a password using bcrypt
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -91,13 +85,11 @@ func HashPassword(password string) (string, error) {
 	return string(hash), nil
 }
 
-// VerifyPassword verifies a password against a hash
 func VerifyPassword(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
 
-// GenerateRandomString generates a random hex string of given length
 func GenerateRandomString(length int) (string, error) {
 	bytes := make([]byte, length/2)
 	if _, err := rand.Read(bytes); err != nil {
@@ -106,7 +98,6 @@ func GenerateRandomString(length int) (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-// GenerateRandomBytes generates random bytes
 func GenerateRandomBytes(length int) ([]byte, error) {
 	bytes := make([]byte, length)
 	if _, err := rand.Read(bytes); err != nil {
@@ -115,23 +106,19 @@ func GenerateRandomBytes(length int) ([]byte, error) {
 	return bytes, nil
 }
 
-// GenerateToken generates a secure random token
 func GenerateToken() (string, error) {
 	return GenerateRandomString(64)
 }
 
-// GenerateAPIKey generates an API key
 func GenerateAPIKey() (string, error) {
 	return GenerateRandomString(32)
 }
 
-// SHA256Hash returns SHA-256 hash of the input
 func SHA256Hash(input string) string {
 	hash := sha256.Sum256([]byte(input))
 	return hex.EncodeToString(hash[:])
 }
 
-// CompareHashes compares two strings in constant time to prevent timing attacks
 func CompareHashes(a, b string) bool {
 	if len(a) != len(b) {
 		return false
@@ -144,7 +131,6 @@ func CompareHashes(a, b string) bool {
 	return result == 0
 }
 
-// MaskString masks a string showing only first and last n characters
 func MaskString(s string, n int) string {
 	if len(s) <= n*2 {
 		return "****"
@@ -152,7 +138,6 @@ func MaskString(s string, n int) string {
 	return s[:n] + "****" + s[len(s)-n:]
 }
 
-// MaskEmail masks an email address
 func MaskEmail(email string) string {
 	at := -1
 	for i, c := range email {
@@ -170,8 +155,6 @@ func MaskEmail(email string) string {
 	return masked
 }
 
-// EncryptWithKey encrypts plaintext using the provided key (convenience function)
-// Uses JWT_SECRET or similar secret key for token encryption
 func EncryptWithKey(plaintext, key string) (string, error) {
 	if plaintext == "" {
 		return "", nil
@@ -180,7 +163,6 @@ func EncryptWithKey(plaintext, key string) (string, error) {
 	return enc.Encrypt(plaintext)
 }
 
-// DecryptWithKey decrypts ciphertext using the provided key (convenience function)
 func DecryptWithKey(ciphertext, key string) (string, error) {
 	if ciphertext == "" {
 		return "", nil

@@ -9,10 +9,6 @@ import type { ProviderRepositoryData } from "@/lib/api/userRepositoryProviderTyp
 import { getRepositoryService, getUserCredentialService } from "@/lib/wasm-core";
 import type { ImportWizardState, ImportWizardActions, ImportWizardStep } from "./types";
 
-/**
- * Creates the initial state for the import wizard.
- * Call this function to get a fresh state object.
- */
 function createInitialState(): ImportWizardState {
   return {
     step: "source",
@@ -42,23 +38,9 @@ interface UseImportWizardOptions {
   onImported?: () => void;
   existingRepositories?: RepositoryData[];
   t: (key: string) => string;
-  /**
-   * Callback invoked once when the hook is first used.
-   * The parent component should call this to trigger initial data loading.
-   */
   onInit?: (actions: Pick<ImportWizardActions, "loadProviders">) => void;
 }
 
-/**
- * Hook for managing import repository wizard state and actions.
- *
- * This hook follows React best practices by avoiding useEffect for data fetching.
- * Instead, data loading is triggered explicitly via:
- * 1. Parent component calling actions.loadProviders() on mount
- * 2. selectProvider action triggering repository loading
- *
- * State reset is handled by the parent component using the key pattern.
- */
 export function useImportWizard({
   onClose,
   onImported,
@@ -69,7 +51,6 @@ export function useImportWizard({
   void _existingRepositories;
   const [state, setState] = useState<ImportWizardState>(createInitialState);
 
-  // Load providers - call this explicitly, not via useEffect
   const loadProviders = useCallback(async () => {
     try {
       setState(s => ({ ...s, loadingProviders: true }));
@@ -88,7 +69,6 @@ export function useImportWizard({
     }
   }, [t]);
 
-  // Load repositories for selected provider
   const loadRepositories = useCallback(async () => {
     if (!state.selectedProvider) return;
     try {
@@ -116,11 +96,9 @@ export function useImportWizard({
     }
   }, [state.selectedProvider, state.page, state.search, t]);
 
-  // Select provider and immediately load repositories (event-driven, not effect-driven)
   const selectProvider = useCallback((provider: RepositoryProviderData) => {
     setState(s => ({ ...s, selectedProvider: provider, step: "browse", loadingRepos: true }));
 
-    // Directly trigger repository loading (not via useEffect)
     getUserCredentialService().list_provider_repositories(
       BigInt(provider.id), 1, 20, undefined,
     ).then((response: string) => {
@@ -219,7 +197,6 @@ export function useImportWizard({
     handleImport: async () => {
       setState(s => ({ ...s, importing: true, error: null }));
       try {
-        // When importing from a provider, pass both HTTP and SSH clone URLs if available
         const httpCloneUrl = state.selectedRepo?.http_clone_url || state.manualCloneURL || undefined;
         const sshCloneUrl = state.selectedRepo?.ssh_clone_url || undefined;
 

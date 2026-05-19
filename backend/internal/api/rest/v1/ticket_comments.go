@@ -12,9 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Comment Management Endpoints ==========
-
-// CreateCommentRequest represents a comment creation request
 type CreateCommentRequest struct {
 	Content  string `json:"content" binding:"required,min=1"`
 	ParentID *int64 `json:"parent_id"`
@@ -24,7 +21,6 @@ type CreateCommentRequest struct {
 	} `json:"mentions"`
 }
 
-// UpdateCommentRequest represents a comment update request
 type UpdateCommentRequest struct {
 	Content  string `json:"content" binding:"required,min=1"`
 	Mentions []struct {
@@ -33,8 +29,6 @@ type UpdateCommentRequest struct {
 	} `json:"mentions"`
 }
 
-// ListComments lists comments for a ticket
-// GET /api/v1/orgs/:slug/tickets/:ticket_slug/comments
 func (h *TicketHandler) ListComments(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -62,8 +56,6 @@ func (h *TicketHandler) ListComments(c *gin.Context) {
 	})
 }
 
-// CreateComment creates a new comment on a ticket
-// POST /api/v1/orgs/:slug/tickets/:ticket_slug/comments
 func (h *TicketHandler) CreateComment(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -81,7 +73,6 @@ func (h *TicketHandler) CreateComment(c *gin.Context) {
 		return
 	}
 
-	// Convert mentions
 	var mentions []ticket.CommentMention
 	for _, m := range req.Mentions {
 		mentions = append(mentions, ticket.CommentMention{
@@ -110,8 +101,6 @@ func (h *TicketHandler) CreateComment(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"comment": comment})
 }
 
-// UpdateComment updates a comment
-// PUT /api/v1/orgs/:slug/tickets/:ticket_slug/comments/:id
 func (h *TicketHandler) UpdateComment(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	commentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -128,14 +117,12 @@ func (h *TicketHandler) UpdateComment(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Verify ticket exists and belongs to org
 	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
 	}
 
-	// Convert mentions
 	var mentions []ticket.CommentMention
 	for _, m := range req.Mentions {
 		mentions = append(mentions, ticket.CommentMention{
@@ -168,8 +155,6 @@ func (h *TicketHandler) UpdateComment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"comment": comment})
 }
 
-// DeleteComment deletes a comment
-// DELETE /api/v1/orgs/:slug/tickets/:ticket_slug/comments/:id
 func (h *TicketHandler) DeleteComment(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	commentID, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -180,7 +165,6 @@ func (h *TicketHandler) DeleteComment(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Verify ticket exists and belongs to org
 	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")

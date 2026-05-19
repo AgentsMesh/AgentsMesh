@@ -10,11 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ==================== Interactive Registration (Tailscale-style) ====================
-
-// RequestAuthURL creates a pending auth request and returns an authorization URL.
-// POST /api/v1/runners/grpc/auth-url
-// No authentication required - Runner initiates registration.
 func (h *GRPCRunnerHandler) RequestAuthURL(c *gin.Context) {
 	var req RequestAuthURLRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -22,7 +17,6 @@ func (h *GRPCRunnerHandler) RequestAuthURL(c *gin.Context) {
 		return
 	}
 
-	// FrontendURL is derived from PrimaryDomain
 	frontendURL := h.config.FrontendURL()
 
 	resp, err := h.runnerService.RequestAuthURL(c.Request.Context(), &runner.RequestAuthURLRequest{
@@ -42,9 +36,6 @@ func (h *GRPCRunnerHandler) RequestAuthURL(c *gin.Context) {
 	})
 }
 
-// GetAuthStatus returns the current status of a pending authorization.
-// GET /api/v1/runners/grpc/auth-status?key=xxx
-// No authentication required - Runner polls for completion.
 func (h *GRPCRunnerHandler) GetAuthStatus(c *gin.Context) {
 	if h.pkiService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "PKI service not configured")
@@ -67,7 +58,6 @@ func (h *GRPCRunnerHandler) GetAuthStatus(c *gin.Context) {
 		return
 	}
 
-	// Inject gRPC endpoint for authorized responses
 	if resp.Status == "authorized" {
 		resp.GRPCEndpoint = h.config.GRPC.Endpoint
 	}
@@ -75,9 +65,6 @@ func (h *GRPCRunnerHandler) GetAuthStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// AuthorizeRunner authorizes a pending auth request.
-// POST /api/v1/organizations/:slug/runners/grpc/authorize
-// Requires JWT authentication.
 func (h *GRPCRunnerHandler) AuthorizeRunner(c *gin.Context) {
 	var req AuthorizeRunnerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -91,7 +78,6 @@ func (h *GRPCRunnerHandler) AuthorizeRunner(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return

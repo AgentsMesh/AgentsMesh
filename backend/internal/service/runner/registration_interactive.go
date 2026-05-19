@@ -12,26 +12,19 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 )
 
-// ==================== Tailscale-Style Interactive Registration ====================
-
-// RequestAuthURL creates a pending auth request and returns an authorization URL.
-// This is step 1 of Tailscale-style interactive registration.
 func (s *Service) RequestAuthURL(ctx context.Context, req *RequestAuthURLRequest, frontendURL string) (*RequestAuthURLResponse, error) {
 	if req.MachineKey == "" {
 		return nil, fmt.Errorf("machine_key is required")
 	}
 
-	// Generate unique auth key
 	authKeyBytes := make([]byte, 32)
 	if _, err := rand.Read(authKeyBytes); err != nil {
 		return nil, fmt.Errorf("failed to generate auth key: %w", err)
 	}
 	authKey := hex.EncodeToString(authKeyBytes)
 
-	// Set expiration (15 minutes)
 	expiresAt := time.Now().Add(15 * time.Minute)
 
-	// Create pending auth record
 	pendingAuth := &runner.PendingAuth{
 		AuthKey:    authKey,
 		MachineKey: req.MachineKey,
@@ -56,8 +49,6 @@ func (s *Service) RequestAuthURL(ctx context.Context, req *RequestAuthURLRequest
 	}, nil
 }
 
-// GetAuthStatus returns the current status of a pending authorization.
-// This is called by Runner polling for authorization completion.
 func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService interfaces.PKICertificateIssuer) (*AuthStatusResponse, error) {
 	pendingAuth, err := s.repo.GetPendingAuthByKey(ctx, authKey)
 	if err != nil {
@@ -67,12 +58,10 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return nil, ErrAuthRequestNotFound
 	}
 
-	// Check expiration
 	if pendingAuth.IsExpired() {
 		return &AuthStatusResponse{Status: "expired"}, nil
 	}
 
-	// Check if authorized
 	if !pendingAuth.Authorized {
 		resp := &AuthStatusResponse{
 			Status:    "pending",
@@ -84,7 +73,6 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return resp, nil
 	}
 
-	// Get the created runner
 	if pendingAuth.RunnerID == nil {
 		return nil, fmt.Errorf("runner not created yet")
 	}
@@ -97,15 +85,10 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return nil, fmt.Errorf("runner not found")
 	}
 
-	// Handle lost HTTP response: if the runner already has a certificate from
-	// a prior successful poll whose response was lost, revoke the orphaned cert
-	// and re-issue.
 	if r.CertSerialNumber != nil && *r.CertSerialNumber != "" {
 		_ = s.repo.RevokeCertificate(ctx, *r.CertSerialNumber, "re-issued: prior poll response lost")
 	}
 
-	// Atomic claim: delete pendingAuth before cert issuance to prevent concurrent
-	// polls from each issuing a certificate. Only one request can succeed.
 	rowsAffected, err := s.repo.DeleteClaimedPendingAuth(ctx, pendingAuth.ID)
 	if err != nil {
 		return nil, err
@@ -114,20 +97,17 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return &AuthStatusResponse{Status: "pending"}, nil
 	}
 
-	// Get org slug
 	var orgSlug string
 	if pendingAuth.OrganizationID != nil {
 		orgSlug, _ = s.repo.GetOrgSlug(ctx, *pendingAuth.OrganizationID)
 	}
 
-	// Issue certificate
 	nodeID := r.NodeID
 	certInfo, err := pkiService.IssueRunnerCertificate(nodeID, orgSlug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to issue certificate: %w", err)
 	}
 
-	// Save certificate to database
 	cert := &runner.Certificate{
 		RunnerID:     r.ID,
 		SerialNumber: certInfo.SerialNumber,
@@ -139,7 +119,6 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 		return nil, fmt.Errorf("failed to save certificate: %w", err)
 	}
 
-	// Update runner with certificate info
 	if err := s.repo.UpdateFields(ctx, r.ID, map[string]interface{}{
 		"cert_serial_number": certInfo.SerialNumber,
 		"cert_expires_at":    certInfo.ExpiresAt,
@@ -157,9 +136,6 @@ func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService 
 	}, nil
 }
 
-// AuthorizeRunner authorizes a pending auth request (called from Web UI).
-// This is step 2 of Tailscale-style interactive registration.
-// userID is the ID of the user performing the authorization, recorded as RegisteredByUserID.
 func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int64, userID int64, nodeID string) (*runner.Runner, error) {
 	pendingAuth, err := s.repo.GetPendingAuthByKey(ctx, authKey)
 	if err != nil {
@@ -169,12 +145,10 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, ErrAuthRequestNotFound
 	}
 
-	// Check expiration (informational — the atomic claim below also checks)
 	if pendingAuth.IsExpired() {
 		return nil, ErrAuthRequestExpired
 	}
 
-	// Atomic claim: set authorized=true only if currently false and not expired.
 	rowsAffected, err := s.repo.ClaimPendingAuth(ctx, pendingAuth.ID, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to claim auth request: %w", err)
@@ -183,7 +157,6 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, ErrAuthRequestAlreadyAuthorized
 	}
 
-	// Use provided nodeID or generate one
 	finalNodeID := nodeID
 	if finalNodeID == "" && pendingAuth.NodeID != nil {
 		finalNodeID = *pendingAuth.NodeID
@@ -196,14 +169,12 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		finalNodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
 	}
 
-	// Check runner quota
 	if s.billingService != nil {
 		if err := s.billingService.CheckQuota(ctx, orgID, "runners", 1); err != nil {
 			return nil, ErrRunnerQuotaExceeded
 		}
 	}
 
-	// Check if runner already exists
 	exists, err := s.repo.ExistsByNodeIDAndOrg(ctx, orgID, finalNodeID)
 	if err != nil {
 		return nil, err
@@ -212,7 +183,6 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, ErrRunnerAlreadyExists
 	}
 
-	// Create the runner
 	r := &runner.Runner{
 		OrganizationID:     orgID,
 		NodeID:             finalNodeID,
@@ -226,7 +196,6 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, fmt.Errorf("failed to create runner: %w", err)
 	}
 
-	// Update pending auth with runner ID
 	if err := s.repo.UpdatePendingAuthRunnerID(ctx, pendingAuth.ID, r.ID); err != nil {
 		slog.WarnContext(ctx, "Failed to update pending auth runner ID", "error", err)
 	}

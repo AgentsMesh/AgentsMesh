@@ -51,11 +51,9 @@ export function SeatManagement({
         JSON.stringify({ seats: seatsToAdd })
       ));
 
-      // Update local state with new seat data
       if (result.seats) {
         setSeatUsage(result.seats);
       } else {
-        // Reload seat usage if not returned inline
         await loadSeatUsage();
       }
 

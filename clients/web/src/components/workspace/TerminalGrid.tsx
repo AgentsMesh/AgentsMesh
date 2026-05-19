@@ -17,7 +17,6 @@ export function TerminalGrid({ onPopout, onAddNew, className }: TerminalGridProp
   const panes = useWorkspaceStore((s) => s.panes);
   const splitTree = useWorkspaceStore((s) => s.splitTree);
 
-  // Empty state
   if (panes.length === 0 || !splitTree) {
     return (
       <div className={cn("flex-1 flex items-center justify-center bg-terminal-bg", className)}>

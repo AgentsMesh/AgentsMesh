@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// SkillMarketItem represents a Skill available in the marketplace
 type SkillMarketItem struct {
 	ID              int64           `gorm:"primaryKey" json:"id"`
 	RegistryID      int64           `gorm:"column:registry_id;not null" json:"registry_id"`
@@ -26,7 +25,6 @@ type SkillMarketItem struct {
 	CreatedAt       time.Time       `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt       time.Time       `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Relations
 	Registry *SkillRegistry `gorm:"foreignKey:RegistryID" json:"registry,omitempty"`
 }
 

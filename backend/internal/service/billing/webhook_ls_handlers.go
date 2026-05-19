@@ -10,11 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// ===========================================
-// LemonSqueezy Subscription Webhook Handlers
-// ===========================================
-
-// HandleSubscriptionCreated handles subscription creation webhook event (mainly for LemonSqueezy)
 func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -22,7 +17,6 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 		return nil
 	}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			slog.InfoContext(c.Request.Context(), "webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
@@ -31,27 +25,21 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 		slog.ErrorContext(c.Request.Context(), "failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
-	// Roll back the idempotency mark if the handler fails, so the event
-	// can be retried on the next delivery.
+	// Roll back idempotency mark on handler failure so the event can be retried on next delivery.
 	defer func() {
 		if retErr != nil {
 			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
 		}
 	}()
 
-	// Find subscription by organization (the order_created event should have already created it)
-	// We need to update it with the LemonSqueezy subscription ID
 	if event.Provider == billing.PaymentProviderLemonSqueezy {
 		var sub *billing.Subscription
 		var err error
 
-		// Try to find by customer ID first (set during order_created)
 		if event.CustomerID != "" {
 			sub, err = s.repo.FindSubscriptionByLSCustomerID(ctx, event.CustomerID)
 		}
 
-		// Fallback: try to find by order_no if customer_id lookup failed
-		// The order_no is passed in custom_data and stored in payment_orders
 		if (err != nil || sub == nil) && event.OrderNo != "" {
 			order, orderErr := s.repo.GetPaymentOrderByNo(ctx, event.OrderNo)
 			if orderErr == nil && order != nil {
@@ -59,10 +47,8 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 			}
 		}
 
-		// Update subscription with LemonSqueezy IDs if found and not already set
 		if err == nil && sub != nil && sub.LemonSqueezySubscriptionID == nil {
 			sub.LemonSqueezySubscriptionID = &event.SubscriptionID
-			// Also set customer_id if not already set
 			if sub.LemonSqueezyCustomerID == nil && event.CustomerID != "" {
 				sub.LemonSqueezyCustomerID = &event.CustomerID
 			}
@@ -78,7 +64,6 @@ func (s *Service) HandleSubscriptionCreated(c *gin.Context, event *payment.Webho
 	return nil
 }
 
-// HandleSubscriptionPaused handles subscription pause webhook event
 func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -86,7 +71,6 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 		return nil
 	}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			slog.InfoContext(c.Request.Context(), "webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
@@ -95,8 +79,6 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 		slog.ErrorContext(c.Request.Context(), "failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
-	// Roll back the idempotency mark if the handler fails, so the event
-	// can be retried on the next delivery.
 	defer func() {
 		if retErr != nil {
 			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
@@ -106,12 +88,9 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		slog.WarnContext(c.Request.Context(), "subscription not found for pause webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
-		return nil // Subscription not found
+		return nil
 	}
 
-	// Pause the subscription
-	// NOTE: Paused is user-initiated, different from Frozen (payment failure).
-	// Do NOT set FrozenAt here — FrozenAt is reserved for payment failure freezes.
 	sub.Status = billing.SubscriptionStatusPaused
 
 	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
@@ -119,14 +98,12 @@ func (s *Service) HandleSubscriptionPaused(c *gin.Context, event *payment.Webhoo
 		return err
 	}
 
-	// Sync organization table
 	status := billing.SubscriptionStatusPaused
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
 	slog.InfoContext(c.Request.Context(), "subscription paused via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)
 	return nil
 }
 
-// HandleSubscriptionResumed handles subscription resume webhook event
 func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -134,7 +111,6 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 		return nil
 	}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			slog.InfoContext(c.Request.Context(), "webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
@@ -143,8 +119,6 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 		slog.ErrorContext(c.Request.Context(), "failed to check webhook idempotency", "event_id", event.EventID, "provider", event.Provider, "error", err)
 		return err
 	}
-	// Roll back the idempotency mark if the handler fails, so the event
-	// can be retried on the next delivery.
 	defer func() {
 		if retErr != nil {
 			s.DeleteWebhookProcessedMark(ctx, event.EventID, event.Provider)
@@ -154,10 +128,9 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		slog.WarnContext(c.Request.Context(), "subscription not found for resume webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
-		return nil // Subscription not found
+		return nil
 	}
 
-	// Resume the subscription
 	sub.Status = billing.SubscriptionStatusActive
 	sub.FrozenAt = nil
 
@@ -166,14 +139,12 @@ func (s *Service) HandleSubscriptionResumed(c *gin.Context, event *payment.Webho
 		return err
 	}
 
-	// Sync organization table
 	status := billing.SubscriptionStatusActive
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
 	slog.InfoContext(c.Request.Context(), "subscription resumed via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)
 	return nil
 }
 
-// HandleSubscriptionExpired handles subscription expiration webhook event
 func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.WebhookEvent) (retErr error) {
 	ctx := c.Request.Context()
 
@@ -181,7 +152,6 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 		return nil
 	}
 
-	// Idempotency check
 	if err := s.CheckAndMarkWebhookProcessed(ctx, event.EventID, event.Provider, event.EventType); err != nil {
 		if errors.Is(err, ErrWebhookAlreadyProcessed) {
 			slog.InfoContext(c.Request.Context(), "webhook already processed, skipping", "event_id", event.EventID, "provider", event.Provider)
@@ -201,12 +171,10 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		slog.WarnContext(c.Request.Context(), "subscription not found for expiration webhook", "provider", event.Provider, "subscription_id", event.SubscriptionID)
-		return nil // Subscription not found
+		return nil
 	}
 
-	// Mark subscription as expired
-	// NOTE: Expired is distinct from Canceled. We do NOT set CanceledAt here
-	// because this is a natural expiration, not a user-initiated cancellation.
+	// Expired ≠ Canceled — natural expiration, do NOT set CanceledAt.
 	sub.Status = billing.SubscriptionStatusExpired
 
 	if err := s.repo.SaveSubscription(ctx, sub); err != nil {
@@ -214,7 +182,6 @@ func (s *Service) HandleSubscriptionExpired(c *gin.Context, event *payment.Webho
 		return err
 	}
 
-	// Sync organization table
 	status := billing.SubscriptionStatusExpired
 	s.syncOrganizationSubscription(ctx, sub.OrganizationID, nil, &status)
 	slog.InfoContext(c.Request.Context(), "subscription expired via webhook", "org_id", sub.OrganizationID, "provider", event.Provider)

@@ -8,10 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// resolveTypeSpecInTx reads block_type_def rows through the active TxWriter so
-// definitions inserted earlier in the same ApplyOps batch are visible to
-// subsequent ops. For lookups *outside* a transaction, use
-// Service.listAllTypes or the domain-layer blockstore.LookupTypeSpec directly.
 func (s *Service) resolveTypeSpecInTx(
 	ctx context.Context,
 	tx blockstore.TxWriter,
@@ -77,9 +73,6 @@ func decodeTypeDef(data blockstore.JSONMap) (blockstore.BlockTypeSpec, bool) {
 	}, true
 }
 
-// listAllTypes returns every type registered for a workspace: bootstrap types
-// unioned with the latest dynamic block_type_def entries.
-// Used by the MCP tools endpoint (tx-external) to expose the live capability set.
 func (s *Service) listAllTypes(
 	ctx context.Context,
 	workspaceID uuid.UUID,

@@ -13,10 +13,6 @@ interface AdvancedOptionsProps {
   t: (key: string) => string;
 }
 
-/**
- * Collapsible section wrapping advanced pod creation options
- * (Runner, Credential, Repository, Branch, Config)
- */
 export function AdvancedOptions({ children, t }: AdvancedOptionsProps) {
   const [open, setOpen] = useState(false);
 

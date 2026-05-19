@@ -2,7 +2,6 @@
 // system endpoints. MUST stay in sync with backend/pkg/slug/reserved.go.
 // See backend/pkg/slug/reserved.go for category breakdown.
 export const RESERVED_SLUGS = new Set<string>([
-  // Auth flows
   "auth",
   "forgot-password",
   "invite",
@@ -12,13 +11,11 @@ export const RESERVED_SLUGS = new Set<string>([
   "register",
   "reset-password",
   "verify-email",
-  // Dashboard chrome
   "admin",
   "billing",
   "dashboard",
   "settings",
   "support",
-  // Marketing / static pages
   "about",
   "blog",
   "careers",
@@ -31,17 +28,14 @@ export const RESERVED_SLUGS = new Set<string>([
   "popout",
   "privacy",
   "terms",
-  // API / system
   "api",
   "app",
   "www",
-  // Special endpoints / collection-level paths
   "organizations",
   "orgs",
   "personal",
   "runners",
   "agents",
-  // Literal-looking traps
   "me",
   "new",
   "null",

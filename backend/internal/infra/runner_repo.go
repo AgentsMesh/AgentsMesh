@@ -9,17 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check.
 var _ runner.RunnerRepository = (*runnerRepository)(nil)
 
 type runnerRepository struct{ db *gorm.DB }
 
-// NewRunnerRepository creates a new RunnerRepository backed by GORM.
 func NewRunnerRepository(db *gorm.DB) runner.RunnerRepository {
 	return &runnerRepository{db: db}
 }
-
-// --- Runner CRUD ---
 
 func (r *runnerRepository) GetByID(ctx context.Context, id int64) (*runner.Runner, error) {
 	var out runner.Runner
@@ -87,10 +83,6 @@ func (r *runnerRepository) Delete(ctx context.Context, runnerID int64) error {
 	return r.db.WithContext(ctx).Delete(&runner.Runner{}, runnerID).Error
 }
 
-// --- Runner Queries ---
-
-// visibilityWithGrantsFilter is a SQL fragment for visibility + grant access.
-// Bind params: (userID, grantResourceType, userID, orgID).
 const visibilityWithGrantsFilter = "(visibility = 'organization' OR (visibility = 'private' AND registered_by_user_id = ?) OR CAST(id AS TEXT) IN (SELECT resource_id FROM resource_grants WHERE resource_type = ? AND user_id = ? AND organization_id = ?))"
 
 func (r *runnerRepository) ListByOrg(ctx context.Context, orgID, userID int64) ([]*runner.Runner, error) {
@@ -137,8 +129,6 @@ func (r *runnerRepository) ListAvailableForAgent(ctx context.Context, orgID, use
 	}
 	return runners, nil
 }
-
-// --- Pod Count ---
 
 func (r *runnerRepository) IncrementPods(ctx context.Context, runnerID int64) error {
 	return r.db.WithContext(ctx).Exec(
@@ -188,8 +178,6 @@ func (r *runnerRepository) BatchUpdateHeartbeats(ctx context.Context, items []ru
 	}
 	return updated, nil
 }
-
-// --- Cross-domain Helpers ---
 
 func (r *runnerRepository) GetOrgSlug(ctx context.Context, orgID int64) (string, error) {
 	var org struct{ Slug string }

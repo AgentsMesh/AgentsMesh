@@ -18,8 +18,6 @@ func statusSlice(s string) []string {
 	return []string{s}
 }
 
-// ListAvailableRunners lists available runners for pods
-// GET /api/v1/organizations/:slug/runners/available
 func (h *RunnerHandler) ListAvailableRunners(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -34,8 +32,6 @@ func (h *RunnerHandler) ListAvailableRunners(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"runners": runners})
 }
 
-// ListRunnerPods lists pods for a specific runner
-// GET /api/v1/organizations/:slug/runners/:id/pods
 func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 	if h.podService == nil {
 		apierr.InternalError(c, "Pod service not configured")
@@ -70,7 +66,6 @@ func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 		return
 	}
 
-	// Default limit
 	limit := req.Limit
 	if limit == 0 {
 		limit = 50
@@ -97,8 +92,6 @@ func (h *RunnerHandler) ListRunnerPods(c *gin.Context) {
 	})
 }
 
-// QuerySandboxes queries sandbox status for specified pod keys on a runner
-// POST /api/v1/organizations/:slug/runners/:id/sandboxes/query
 func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
 	if h.sandboxQueryService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Sandbox query service not configured")
@@ -133,13 +126,11 @@ func (h *RunnerHandler) QuerySandboxes(c *gin.Context) {
 		return
 	}
 
-	// Check if runner is connected
 	if !h.sandboxQueryService.IsConnected(runnerID) {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Runner is not connected")
 		return
 	}
 
-	// Query sandboxes
 	result, err := h.sandboxQueryService.QuerySandboxes(
 		c.Request.Context(),
 		runnerID,

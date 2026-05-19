@@ -24,13 +24,10 @@ export default function TicketsPage() {
 
   const tickets = useFilteredTickets();
 
-  // Keyboard-selected ticket for J/K navigation highlighting
   const [keyboardSelectedSlug, setKeyboardSelectedSlug] = useState<string | null>(null);
 
-  // Local loading state — store's shared `loading` is no longer set by async actions
   const [loading, setLoading] = useState(true);
 
-  // State for auto-triggered create pod modal (when dragging ticket to in_progress)
   const [createPodTicket, setCreatePodTicket] = useState<Ticket | null>(null);
 
   useEffect(() => {
@@ -47,7 +44,6 @@ export default function TicketsPage() {
   }, [updateTicketStatus]);
 
   const handleTicketClick = useCallback((ticket: Ticket) => {
-    // Navigate directly to ticket detail page (Linear-style)
     router.push(`/${currentOrg?.slug}/tickets/${ticket.slug}`);
   }, [router, currentOrg]);
 
@@ -59,7 +55,6 @@ export default function TicketsPage() {
     setCreatePodTicket(null);
   }, []);
 
-  // J/K only highlights, does not navigate
   const handleSelectTicket = useCallback((slug: string | null) => {
     setKeyboardSelectedSlug(slug);
   }, []);
@@ -68,7 +63,6 @@ export default function TicketsPage() {
     return <CenteredSpinner className="h-full" />;
   }
 
-  // Keyboard handler props
   const keyboardHandlerProps = {
     tickets,
     selectedSlug: keyboardSelectedSlug,
@@ -78,7 +72,6 @@ export default function TicketsPage() {
     enabled: true,
   };
 
-  // Render content based on view mode
   if (viewMode === "list") {
     return (
       <>
@@ -93,7 +86,6 @@ export default function TicketsPage() {
     );
   }
 
-  // Board view
   return (
     <>
       <TicketKeyboardHandler {...keyboardHandlerProps} />

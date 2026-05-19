@@ -20,6 +20,10 @@ setup("authenticate as admin user", async ({ browser }) => {
   const attempt = async (timeoutMs: number) => {
     await page.goto(`${getWebBaseUrl()}/login`, { waitUntil: "domcontentloaded" });
     await page.locator("#email").waitFor({ state: "visible", timeout: timeoutMs });
+    // Webpack dev's large main-app.js takes time; if we interact before
+    // React hydrates, onSubmit doesn't attach and the form falls back to
+    // a native GET. Wait for the network to quiesce so client chunks load.
+    await page.waitForLoadState("networkidle", { timeout: timeoutMs });
     await page.locator("#email").fill(ADMIN_USER.email);
     await page.locator("#password").fill(ADMIN_USER.password);
     await page.locator('button[type="submit"]').click();

@@ -10,23 +10,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TicketHandler handles ticket-related requests
-// Note: Event publishing has been moved to the Service layer (ticket.Service)
-// following the Information Expert principle - the Service owns the business logic
 type TicketHandler struct {
 	ticketService *ticket.Service
 }
 
-// NewTicketHandler creates a new ticket handler
 func NewTicketHandler(ticketService *ticket.Service) *TicketHandler {
 	return &TicketHandler{
 		ticketService: ticketService,
 	}
 }
 
-// ========== Request Types ==========
-
-// ListTicketsRequest represents ticket list request
 type ListTicketsRequest struct {
 	RepositoryID *int64   `form:"repository_id"`
 	Status       string   `form:"status"`
@@ -38,7 +31,6 @@ type ListTicketsRequest struct {
 	Offset       int      `form:"offset"`
 }
 
-// CreateTicketRequest represents ticket creation request
 type CreateTicketRequest struct {
 	RepositoryID     *int64   `json:"repository_id"`
 	Title            string   `json:"title" binding:"required,min=1,max=500"`
@@ -51,7 +43,6 @@ type CreateTicketRequest struct {
 	DueDate          *string  `json:"due_date"`
 }
 
-// UpdateTicketRequest represents ticket update request
 type UpdateTicketRequest struct {
 	Title        string   `json:"title"`
 	Content      *string  `json:"content"`
@@ -63,15 +54,10 @@ type UpdateTicketRequest struct {
 	DueDate      *string  `json:"due_date"`
 }
 
-// UpdateTicketStatusRequest represents status update request
 type UpdateTicketStatusRequest struct {
 	Status string `json:"status" binding:"required"`
 }
 
-// ========== Core Ticket CRUD Endpoints ==========
-
-// ListTickets lists tickets
-// GET /api/v1/organizations/:slug/tickets
 func (h *TicketHandler) ListTickets(c *gin.Context) {
 	var req ListTicketsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -110,8 +96,6 @@ func (h *TicketHandler) ListTickets(c *gin.Context) {
 	})
 }
 
-// CreateTicket creates a new ticket
-// POST /api/v1/organizations/:slug/tickets
 func (h *TicketHandler) CreateTicket(c *gin.Context) {
 	var req CreateTicketRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -126,7 +110,6 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 		content = &req.Content
 	}
 
-	// Resolve parent ticket slug to ID
 	var parentTicketID *int64
 	if req.ParentTicketSlug != nil && *req.ParentTicketSlug != "" {
 		parent, err := h.ticketService.GetTicketByIDOrSlug(c.Request.Context(), tenant.OrganizationID, *req.ParentTicketSlug)
@@ -154,13 +137,9 @@ func (h *TicketHandler) CreateTicket(c *gin.Context) {
 		return
 	}
 
-	// Note: Event publishing is now handled in ticket.Service.CreateTicket()
-
 	c.JSON(http.StatusCreated, gin.H{"ticket": t})
 }
 
-// GetTicket returns ticket by slug
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) GetTicket(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -174,8 +153,6 @@ func (h *TicketHandler) GetTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ticket": t})
 }
 
-// UpdateTicket updates a ticket
-// PUT /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -207,7 +184,6 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 	}
 	if req.RepositoryID != nil {
 		if *req.RepositoryID == 0 {
-			// Explicitly clear the repository association
 			updates["repository_id"] = nil
 		} else {
 			updates["repository_id"] = *req.RepositoryID
@@ -227,7 +203,6 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 		return
 	}
 
-	// Update assignees if provided
 	if req.AssigneeIDs != nil {
 		if err := h.ticketService.UpdateAssignees(c.Request.Context(), t.ID, req.AssigneeIDs); err != nil {
 			apierr.InternalError(c, "Failed to update assignees")
@@ -235,13 +210,9 @@ func (h *TicketHandler) UpdateTicket(c *gin.Context) {
 		}
 	}
 
-	// Note: Event publishing is now handled in ticket.Service.UpdateTicket()
-
 	c.JSON(http.StatusOK, gin.H{"ticket": t})
 }
 
-// DeleteTicket deletes a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug
 func (h *TicketHandler) DeleteTicket(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -257,13 +228,9 @@ func (h *TicketHandler) DeleteTicket(c *gin.Context) {
 		return
 	}
 
-	// Note: Event publishing is now handled in ticket.Service.DeleteTicket()
-
 	c.JSON(http.StatusOK, gin.H{"message": "Ticket deleted"})
 }
 
-// UpdateTicketStatus updates ticket status (convenience endpoint)
-// PATCH /api/v1/organizations/:slug/tickets/:ticket_slug/status
 func (h *TicketHandler) UpdateTicketStatus(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -285,8 +252,6 @@ func (h *TicketHandler) UpdateTicketStatus(c *gin.Context) {
 		apierr.InternalError(c, "Failed to update status")
 		return
 	}
-
-	// Note: Event publishing is now handled in ticket.Service.UpdateStatus()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Status updated"})
 }

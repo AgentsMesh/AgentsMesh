@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Certificate ---
-
 func (r *runnerRepository) CreateCertificate(ctx context.Context, cert *runner.Certificate) error {
 	return r.db.WithContext(ctx).Create(cert).Error
 }
@@ -34,8 +32,6 @@ func (r *runnerRepository) RevokeCertificate(ctx context.Context, serial string,
 			"revocation_reason": reason,
 		}).Error
 }
-
-// --- PendingAuth ---
 
 func (r *runnerRepository) CreatePendingAuth(ctx context.Context, pa *runner.PendingAuth) error {
 	return r.db.WithContext(ctx).Create(pa).Error
@@ -81,8 +77,6 @@ func (r *runnerRepository) CleanupExpiredPendingAuths(ctx context.Context) error
 		Delete(&runner.PendingAuth{}).Error
 }
 
-// --- Registration Token ---
-
 func (r *runnerRepository) CreateRegistrationToken(ctx context.Context, token *runner.GRPCRegistrationToken) error {
 	return r.db.WithContext(ctx).Create(token).Error
 }
@@ -118,7 +112,6 @@ func (r *runnerRepository) DeleteRegistrationToken(ctx context.Context, tokenID,
 
 func (r *runnerRepository) RegisterWithTokenAtomic(ctx context.Context, tokenID int64, rn *runner.Runner, cert *runner.Certificate, issueCert func() error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Atomic token usage update
 		updateResult := tx.Model(&runner.GRPCRegistrationToken{}).
 			Where("id = ? AND used_count < max_uses", tokenID).
 			Where("expires_at > ?", time.Now()).
@@ -130,23 +123,19 @@ func (r *runnerRepository) RegisterWithTokenAtomic(ctx context.Context, tokenID 
 			return runner.ErrTokenExhausted
 		}
 
-		// Issue certificate via callback (only reached if token claim succeeded)
 		if err := issueCert(); err != nil {
 			return err
 		}
 
-		// Create runner
 		if err := tx.Create(rn).Error; err != nil {
 			return err
 		}
 
-		// Save certificate (runner ID now set by Create)
 		cert.RunnerID = rn.ID
 		if err := tx.Create(cert).Error; err != nil {
 			return err
 		}
 
-		// Update runner with certificate info
 		return tx.Model(&runner.Runner{}).
 			Where("id = ?", rn.ID).
 			Updates(map[string]interface{}{
@@ -155,8 +144,6 @@ func (r *runnerRepository) RegisterWithTokenAtomic(ctx context.Context, tokenID 
 			}).Error
 	})
 }
-
-// --- Reactivation Token ---
 
 func (r *runnerRepository) CreateReactivationToken(ctx context.Context, token *runner.ReactivationToken) error {
 	return r.db.WithContext(ctx).Create(token).Error

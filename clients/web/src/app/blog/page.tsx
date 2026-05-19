@@ -4,7 +4,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { PageHeader, PageFooter } from "@/components/common";
 import { getAllPosts } from "@/lib/blog";
 
-/** Locale → Intl date locale mapping */
 const dateLocaleMap: Record<string, string> = {
   en: "en-US",
   zh: "zh-CN",

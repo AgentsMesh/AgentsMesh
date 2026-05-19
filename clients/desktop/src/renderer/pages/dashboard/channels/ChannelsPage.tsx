@@ -15,9 +15,6 @@ export function ChannelsPage() {
   const selectedChannelId = useChannelStore((s) => s.selectedChannelId);
   const setSelectedChannelId = useChannelStore((s) => s.setSelectedChannelId);
 
-  // URL → store sync. `/channels/:id` should auto-select the channel so deep
-  // links (e.g. notification clicks, e2e navigation) land on the chat panel
-  // instead of the empty state.
   useEffect(() => {
     if (!idParam) return;
     const parsed = Number(idParam);
@@ -30,7 +27,6 @@ export function ChannelsPage() {
     setSelectedChannelId(null);
   }, [setSelectedChannelId]);
 
-  // Mobile: show channel list when none selected, full-screen chat when selected
   if (isMobile) {
     if (!selectedChannelId) {
       return <ChannelsSidebarContent className="h-full" />;
@@ -43,7 +39,6 @@ export function ChannelsPage() {
     );
   }
 
-  // Desktop: empty state when no channel selected
   if (!selectedChannelId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
@@ -58,7 +53,6 @@ export function ChannelsPage() {
     );
   }
 
-  // Desktop: chat panel
   return (
     <div className="h-full w-full">
       <ChannelChatPanel

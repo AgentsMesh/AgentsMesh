@@ -11,9 +11,6 @@ interface ThinkingTabProps {
   thinking: AutopilotThinking | null;
 }
 
-/**
- * ThinkingTab - Displays the current autopilot thinking/reasoning
- */
 export function ThinkingTab({ thinking }: ThinkingTabProps) {
   if (!thinking) {
     return (

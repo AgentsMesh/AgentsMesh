@@ -10,22 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// NotificationHandler handles notification preference requests
 type NotificationHandler struct {
 	prefStore *notifService.PreferenceStore
 }
 
-// NewNotificationHandler creates a new notification handler
 func NewNotificationHandler(prefStore *notifService.PreferenceStore) *NotificationHandler {
 	return &NotificationHandler{prefStore: prefStore}
 }
 
-// GetPreferencesResponse represents the response for listing preferences
 type GetPreferencesResponse struct {
 	Preferences []PreferenceItem `json:"preferences"`
 }
 
-// PreferenceItem represents a single preference in the API response
 type PreferenceItem struct {
 	Source   string          `json:"source"`
 	EntityID *string         `json:"entity_id,omitempty"`
@@ -33,7 +29,6 @@ type PreferenceItem struct {
 	Channels map[string]bool `json:"channels"`
 }
 
-// SetPreferenceRequest represents a preference update request
 type SetPreferenceRequest struct {
 	Source   string          `json:"source" binding:"required"`
 	EntityID *string         `json:"entity_id"`
@@ -41,8 +36,6 @@ type SetPreferenceRequest struct {
 	Channels map[string]bool `json:"channels"`
 }
 
-// GetPreferences returns the current user's notification preferences
-// GET /api/v1/notifications/preferences
 func (h *NotificationHandler) GetPreferences(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -69,8 +62,6 @@ func (h *NotificationHandler) GetPreferences(c *gin.Context) {
 	c.JSON(http.StatusOK, GetPreferencesResponse{Preferences: items})
 }
 
-// SetPreference creates or updates a notification preference
-// PUT /api/v1/notifications/preferences
 func (h *NotificationHandler) SetPreference(c *gin.Context) {
 	var req SetPreferenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,7 +76,6 @@ func (h *NotificationHandler) SetPreference(c *gin.Context) {
 		entityID = *req.EntityID
 	}
 
-	// Use provided channels or default
 	channels := req.Channels
 	if channels == nil {
 		channels = map[string]bool{notifDomain.ChannelToast: true, notifDomain.ChannelBrowser: true}

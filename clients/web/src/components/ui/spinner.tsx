@@ -11,9 +11,6 @@ const sizeClasses = {
   lg: "h-12 w-12",
 };
 
-/**
- * Spinner - Unified loading spinner component
- */
 export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <div
@@ -26,9 +23,6 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   );
 }
 
-/**
- * CenteredSpinner - Spinner centered in its container
- */
 export function CenteredSpinner({ size = "md", className }: SpinnerProps) {
   return (
     <div className={cn("flex items-center justify-center h-full", className)}>

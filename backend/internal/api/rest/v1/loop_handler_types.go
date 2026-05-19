@@ -12,10 +12,6 @@ type createLoopRequest struct {
 	RunnerID          *int64                 `json:"runner_id"`
 	BranchName        *string                `json:"branch_name"`
 	TicketID          *int64                 `json:"ticket_id"`
-	// CredentialProfileID specifies which credential profile to use
-	// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
-	// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
-	// - >0: use specified credential profile ID
 	CredentialProfileID *int64               `json:"credential_profile_id"`
 	ConfigOverrides   map[string]interface{} `json:"config_overrides"`
 	ExecutionMode     string                 `json:"execution_mode"`
@@ -42,10 +38,6 @@ type updateLoopRequest struct {
 	RunnerID          *int64                 `json:"runner_id"`
 	BranchName        *string                `json:"branch_name"`
 	TicketID          *int64                 `json:"ticket_id"`
-	// CredentialProfileID specifies which credential profile to use
-	// - nil (field absent): use user's default profile, fallback to RunnerHost if no default
-	// - 0: explicit RunnerHost mode (use Runner's local environment, no credentials injected)
-	// - >0: use specified credential profile ID
 	CredentialProfileID *int64               `json:"credential_profile_id"`
 	ConfigOverrides   map[string]interface{} `json:"config_overrides"`
 	ExecutionMode     *string                `json:"execution_mode"`

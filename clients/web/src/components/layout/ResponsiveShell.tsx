@@ -13,13 +13,6 @@ interface ResponsiveShellProps {
   hideMobileTabBar?: boolean;
 }
 
-/**
- * ResponsiveShell - Automatically switches between IDE and Mobile layouts
- *
- * - Desktop (≥1024px): IDE-style layout with activity bar, sidebar, bottom panel
- * - Tablet (768-1024px): Compact IDE layout
- * - Mobile (<768px): Mobile layout with header, bottom tab bar, drawers
- */
 export function ResponsiveShell({
   children,
   sidebarContent,
@@ -29,7 +22,6 @@ export function ResponsiveShell({
 }: ResponsiveShellProps) {
   const { isMobile } = useBreakpoint();
 
-  // Mobile layout
   if (isMobile) {
     return (
       <MobileShell
@@ -42,7 +34,6 @@ export function ResponsiveShell({
     );
   }
 
-  // Desktop and Tablet use IDE layout
   return (
     <IDEShell sidebarContent={sidebarContent}>
       {children}

@@ -2,7 +2,6 @@ package channel
 
 import "time"
 
-// Member represents a user's membership in a channel
 type Member struct {
 	ChannelID int64     `gorm:"primaryKey" json:"channel_id"`
 	UserID    int64     `gorm:"primaryKey" json:"user_id"`

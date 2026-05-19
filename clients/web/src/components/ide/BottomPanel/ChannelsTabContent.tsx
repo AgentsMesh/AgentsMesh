@@ -5,9 +5,6 @@ import { ChannelDetailView } from "./ChannelDetailView";
 import type { ChannelsTabContentProps } from "./types";
 import type { ChannelInfo } from "@/stores/mesh";
 
-/**
- * Channels tab content - shows channel list or channel detail
- */
 export function ChannelsTabContent({
   selectedPodKey,
   podChannels,
@@ -17,7 +14,6 @@ export function ChannelsTabContent({
   onPodsChanged,
   t,
 }: ChannelsTabContentProps) {
-  // If a channel is selected, show channel detail
   if (selectedChannelId) {
     return (
       <ChannelDetailView
@@ -29,7 +25,6 @@ export function ChannelsTabContent({
     );
   }
 
-  // No pod selected
   if (!selectedPodKey) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -39,7 +34,6 @@ export function ChannelsTabContent({
     );
   }
 
-  // No channels for pod
   if (podChannels.length === 0) {
     return (
       <div className="text-xs text-muted-foreground">
@@ -48,7 +42,6 @@ export function ChannelsTabContent({
     );
   }
 
-  // Channel list
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground mb-2">

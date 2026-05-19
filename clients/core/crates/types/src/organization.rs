@@ -27,7 +27,6 @@ pub struct OrgMember {
     pub joined_at: Option<String>,
 }
 
-/// Flat view of an organization member, matching the web frontend's data shape.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrgMemberView {
     pub id: i64,

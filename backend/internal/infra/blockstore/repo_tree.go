@@ -7,9 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ListWorkspaceSubtree returns the full nest tree rooted at rootID (inclusive),
-// limited to maxDepth levels (0 = unlimited, clamped to 64).
-// Implementation uses a recursive CTE over block_refs (rel='nest').
 func (r *Repository) ListWorkspaceSubtree(
 	ctx context.Context,
 	workspaceID, rootID uuid.UUID,

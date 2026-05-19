@@ -69,7 +69,6 @@ export function LoopsSidebarContent({ className }: { className?: string }) {
       )
     : loops;
 
-  // Determine which loop is currently active from URL
   const activeSlug = pathname?.match(/\/loops\/([^/]+)/)?.[1] || null;
 
   return (

@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// VerifyEmail handles email verification
 func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	var req struct {
 		Token string `json:"token" binding:"required"`
@@ -34,7 +33,6 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	// Generate new tokens for the verified user
 	result, err := h.authService.GenerateTokens(c.Request.Context(), verifiedUser)
 	if err != nil {
 		apierr.InternalError(c, "Failed to generate tokens")
@@ -56,7 +54,6 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	})
 }
 
-// ResendVerification resends the verification email
 func (h *AuthHandler) ResendVerification(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -67,28 +64,23 @@ func (h *AuthHandler) ResendVerification(c *gin.Context) {
 		return
 	}
 
-	// Get user by email
 	u, err := h.userService.GetByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		// Don't reveal if email exists
 		c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a verification link will be sent"})
 		return
 	}
 
-	// Check if already verified
 	if u.IsEmailVerified {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Email already verified")
 		return
 	}
 
-	// Generate new verification token
 	token, err := h.userService.SetEmailVerificationToken(c.Request.Context(), u.ID)
 	if err != nil {
 		apierr.InternalError(c, "Failed to generate verification token")
 		return
 	}
 
-	// Send verification email
 	if err := h.emailService.SendVerificationEmail(c.Request.Context(), u.Email, token); err != nil {
 		apierr.InternalError(c, "Failed to send verification email")
 		return
@@ -97,7 +89,6 @@ func (h *AuthHandler) ResendVerification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Verification email sent"})
 }
 
-// ForgotPassword initiates the password reset process
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req struct {
 		Email string `json:"email" binding:"required,email"`
@@ -108,15 +99,12 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// Generate password reset token (don't reveal if email exists)
 	token, u, err := h.userService.SetPasswordResetToken(c.Request.Context(), req.Email)
 	if err != nil {
-		// Don't reveal if email exists
 		c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a password reset link will be sent"})
 		return
 	}
 
-	// Send password reset email
 	if err := h.emailService.SendPasswordResetEmail(c.Request.Context(), u.Email, token); err != nil {
 		apierr.InternalError(c, "Failed to send password reset email")
 		return
@@ -125,7 +113,6 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "If the email exists, a password reset link will be sent"})
 }
 
-// ResetPassword completes the password reset process
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req struct {
 		Token       string `json:"token" binding:"required"`

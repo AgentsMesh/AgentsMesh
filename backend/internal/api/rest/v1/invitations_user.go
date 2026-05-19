@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetInvitationByToken gets invitation info by token (public)
-// GET /api/v1/invitations/:token
 func (h *InvitationHandler) GetInvitationByToken(c *gin.Context) {
 	token := c.Param("token")
 
@@ -24,8 +22,6 @@ func (h *InvitationHandler) GetInvitationByToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"invitation": info})
 }
 
-// AcceptInvitation accepts an invitation
-// POST /api/v1/invitations/:token/accept
 func (h *InvitationHandler) AcceptInvitation(c *gin.Context) {
 	token := c.Param("token")
 	userID := middleware.GetUserID(c)
@@ -53,8 +49,6 @@ func (h *InvitationHandler) AcceptInvitation(c *gin.Context) {
 	})
 }
 
-// ListPendingInvitations lists pending invitations for the current user
-// GET /api/v1/invitations/pending
 func (h *InvitationHandler) ListPendingInvitations(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -70,7 +64,6 @@ func (h *InvitationHandler) ListPendingInvitations(c *gin.Context) {
 		return
 	}
 
-	// Enrich with org info
 	var enriched []map[string]interface{}
 	for _, inv := range invitations {
 		org, err := h.orgService.GetByID(c.Request.Context(), inv.OrganizationID)

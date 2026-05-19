@@ -1,10 +1,5 @@
 use std::path::{Path, PathBuf};
 
-/// Filesystem layout used by the local runner manager.
-///
-/// `~/.agentsmesh/` is the runner's canonical config home; we install the
-/// binary into `~/.agentsmesh/bin/` and consume the config files the runner
-/// itself writes there during `register`.
 #[derive(Debug, Clone)]
 pub struct InstallPaths {
     config_dir: PathBuf,
@@ -37,7 +32,6 @@ impl InstallPaths {
     }
 }
 
-/// OS-specific runner binary name.
 #[cfg(windows)]
 fn binary_name() -> &'static str {
     "agentsmesh-runner.exe"

@@ -57,19 +57,10 @@ async function buildArchiveSpec(
 }
 
 export interface UseLocalRunnerOnboarding {
-  /** Service is unavailable (web bundle without electron-adapter). */
   unsupported: boolean;
-  /** Cached node_id of the locally registered runner; null when not registered. */
   localNodeId: string | null;
-  /**
-   * SSOT for "is this Mac registered as a runner?". True iff the local
-   * `~/.agentsmesh/config.yaml` exists and parses out a `node_id`. Independent
-   * of OS-service status — a registered runner with the service stopped is
-   * still registered. Components must derive their "registered" UI from this,
-   * NOT from `phase.status === "running"` (which is what caused TICKET-145:
-   * a stale launchd job reported Running even after the user removed the
-   * config, and the workspace falsely claimed the Mac was registered).
-   */
+  // TICKET-145: derive from ~/.agentsmesh/config.yaml node_id, NOT phase.status —
+  // a stale launchd job can falsely report Running after user removed the config.
   isRegistered: boolean;
   phase: Phase;
   onRegister: () => Promise<void>;
@@ -83,12 +74,6 @@ export function useLocalRunnerOnboarding(): UseLocalRunnerOnboarding {
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
 
-  // Read current status + node_id and write phase = idle.
-  // The poll-vs-onboarding race is resolved at the *caller* layer (the
-  // setInterval below skips while installing), not here — onRegister calls
-  // this synchronously after each step completes and *needs* the phase to
-  // flip back to idle. A guard inside refresh would make the hook ignore
-  // its own caller and pin the UI in "Working…" forever.
   const refresh = useCallback(async () => {
     if (!svc) return;
     try {
@@ -99,21 +84,12 @@ export function useLocalRunnerOnboarding(): UseLocalRunnerOnboarding {
       setLocalNodeId(nodeId);
       setPhase({ kind: "idle", status });
     } catch (err) {
-      // service_status normally returns the not_installed enum even when the
-      // binary isn't on disk yet. The catch here is a defense-in-depth: if
-      // some IPC layer ever surfaces the error as a promise rejection,
-      // collapse it into the not_installed state so the UI doesn't get stuck
-      // in "loading" and DevTools doesn't show unhandled rejections on every
-      // refresh tick.
+      // Defense-in-depth against IPC layers that surface errors as rejections.
       console.warn("[LocalRunner] service_status failed; treating as not_installed", err);
       setPhase({ kind: "idle", status: "not_installed" });
     }
   }, [svc]);
 
-  // Poll service_status while idle so a runner crash (launchd KeepAlive
-  // exhausted, port collision, expired cert) is reflected in the UI without
-  // requiring the user to remount the page. Skip while onboarding is in
-  // flight so polling doesn't briefly flicker the "installing" badge.
   useEffect(() => {
     if (!svc) return;
     void refresh();

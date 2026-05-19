@@ -23,7 +23,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// startHTTPServer creates and starts the HTTP server
 func startHTTPServer(cfg *config.Config, handler http.Handler) *http.Server {
 	srv := &http.Server{
 		Addr:         cfg.Server.Address,
@@ -44,7 +43,6 @@ func startHTTPServer(cfg *config.Config, handler http.Handler) *http.Server {
 	return srv
 }
 
-// startSubscriptionJobs initializes and starts subscription-related scheduled jobs
 func startSubscriptionJobs(db *gorm.DB, appConfig *config.Config, emailSvc email.Service, logger *slog.Logger) *job.SubscriptionScheduler {
 	scheduler := job.NewSubscriptionScheduler(db, appConfig, emailSvc, logger)
 	scheduler.Start()
@@ -52,12 +50,10 @@ func startSubscriptionJobs(db *gorm.DB, appConfig *config.Config, emailSvc email
 	return scheduler
 }
 
-// LoopSchedulerStopper is an interface for stopping the loop scheduler
 type LoopSchedulerStopper interface {
 	Stop()
 }
 
-// waitForShutdown handles graceful shutdown
 func waitForShutdown(
 	srv *http.Server,
 	grpcServer *grpcserver.Server,
@@ -85,53 +81,42 @@ func waitForShutdown(
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
-	// Stop gRPC server
 	if grpcServer != nil {
 		grpcServer.Stop()
 	}
 
-	// Stop subscription scheduler
 	if subscriptionScheduler != nil {
 		subscriptionScheduler.Stop()
 	}
 
-	// Stop loop scheduler
 	if loopScheduler != nil {
 		loopScheduler.Stop()
 	}
 
-	// Stop org awareness service
 	if orgAwareness != nil {
 		orgAwareness.Stop()
 	}
 
-	// Stop heartbeat batcher (flush pending writes)
 	if heartbeatBatcher != nil {
 		heartbeatBatcher.Stop()
 	}
 
-	// Stop relay manager (terminates health check goroutine)
 	if relayManager != nil {
 		relayManager.Stop()
 	}
 
-	// Close service-owned background workers (e.g. blockstore embedding worker)
-	// before the EventBus so any last enqueued op-publish can still fan out.
 	if services != nil {
 		services.Close()
 	}
 
-	// Close EventBus
 	eventBus.Close()
 
-	// Close database connection
 	if db != nil {
 		if err := database.Close(db); err != nil {
 			slog.Error("Failed to close database connection", "error", err)
 		}
 	}
 
-	// Close Redis connection
 	if redisClient != nil {
 		redisClient.Close()
 	}

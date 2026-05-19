@@ -2,7 +2,6 @@ package tokenusage
 
 import "time"
 
-// TokenUsage represents a single model's token consumption within a pod session.
 type TokenUsage struct {
 	ID                  int64      `gorm:"primaryKey" json:"id"`
 	OrganizationID      int64      `gorm:"not null" json:"organization_id"`
@@ -23,7 +22,6 @@ type TokenUsage struct {
 
 func (TokenUsage) TableName() string { return "token_usages" }
 
-// AggregationFilter defines query parameters for token usage aggregation.
 type AggregationFilter struct {
 	StartTime     time.Time
 	EndTime       time.Time
@@ -34,7 +32,6 @@ type AggregationFilter struct {
 	Limit         int    // Max rows for grouped queries (0 = default 100)
 }
 
-// UsageSummary holds aggregated totals.
 type UsageSummary struct {
 	InputTokens         int64 `json:"input_tokens"`
 	OutputTokens        int64 `json:"output_tokens"`
@@ -43,7 +40,6 @@ type UsageSummary struct {
 	TotalTokens         int64 `json:"total_tokens"`
 }
 
-// TimeSeriesPoint holds aggregated totals for a single time period.
 type TimeSeriesPoint struct {
 	Period              time.Time `json:"period"`
 	InputTokens         int64     `json:"input_tokens"`
@@ -52,7 +48,6 @@ type TimeSeriesPoint struct {
 	CacheReadTokens     int64     `json:"cache_read_tokens"`
 }
 
-// AgentUsage holds aggregated totals for a single agent.
 type AgentUsage struct {
 	AgentSlug           string `json:"agent_slug"`
 	InputTokens         int64  `json:"input_tokens"`
@@ -62,7 +57,6 @@ type AgentUsage struct {
 	TotalTokens         int64  `json:"total_tokens"`
 }
 
-// UserUsage holds aggregated totals for a single user.
 type UserUsage struct {
 	UserID              int64  `json:"user_id"`
 	Username            string `json:"username"`
@@ -74,7 +68,6 @@ type UserUsage struct {
 	TotalTokens         int64  `json:"total_tokens"`
 }
 
-// ModelUsage holds aggregated totals for a single model.
 type ModelUsage struct {
 	Model               string `json:"model"`
 	InputTokens         int64  `json:"input_tokens"`

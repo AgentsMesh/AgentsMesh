@@ -35,14 +35,12 @@ export function RegisterPage() {
     setLoading(true);
     setError("");
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError(t("auth.registerPage.passwordsNotMatch"));
       setLoading(false);
       return;
     }
 
-    // Validate password strength
     if (formData.password.length < 8) {
       setError(t("auth.registerPage.passwordTooShort"));
       setLoading(false);
@@ -58,7 +56,6 @@ export function RegisterPage() {
       });
       await setAuth(response.token, response.user, response.refresh_token);
 
-      // Redirect to email verification page
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "data" in err) {
@@ -79,7 +76,6 @@ export function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm space-y-6">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -95,7 +91,6 @@ export function RegisterPage() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
@@ -194,7 +189,6 @@ export function RegisterPage() {
           </Button>
         </form>
 
-        {/* Terms */}
         <p className="text-center text-xs text-muted-foreground">
           {t("auth.registerPage.termsText")}{" "}
           <Link href="/terms" className="text-primary hover:underline">
@@ -206,7 +200,6 @@ export function RegisterPage() {
           </Link>
         </p>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
@@ -218,7 +211,6 @@ export function RegisterPage() {
           </div>
         </div>
 
-        {/* OAuth */}
         <div className="grid grid-cols-2 gap-3">
           <Button
             variant="outline"
@@ -272,7 +264,6 @@ export function RegisterPage() {
           </Button>
         </div>
 
-        {/* Login link */}
         <p className="text-center text-sm text-muted-foreground">
           {t("auth.registerPage.alreadyHaveAccount")}{" "}
           <Link href="/login" className="text-primary hover:underline">

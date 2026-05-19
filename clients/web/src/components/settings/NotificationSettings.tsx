@@ -61,7 +61,6 @@ export function NotificationSettings({ className }: NotificationSettingsProps) {
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Enable/Disable Section */}
       <div className="flex items-center justify-between p-4 rounded-lg border">
         <div className="flex items-center gap-3">
           {isEnabled ? (
@@ -101,7 +100,6 @@ export function NotificationSettings({ className }: NotificationSettingsProps) {
         <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
 
-      {/* Preferences Section */}
       {isEnabled && (
         <div className="space-y-4">
           <h4 className="font-medium text-sm text-muted-foreground">{t("settings.notifications.types")}</h4>

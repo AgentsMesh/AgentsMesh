@@ -1,8 +1,3 @@
-/**
- * Short relative-time formatter tuned for sidebar message previews.
- * Returns forms like "now", "2m", "8m", "1h", "3h", "4d", "1w". Callers that
- * need richer formats (e.g. activity feeds) should use a real i18n library.
- */
 export function formatRelativeShort(timestamp?: string | null, now = Date.now()): string {
   if (!timestamp) return "";
   const t = new Date(timestamp).getTime();

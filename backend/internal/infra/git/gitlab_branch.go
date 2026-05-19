@@ -7,7 +7,6 @@ import (
 	"net/url"
 )
 
-// ListBranches returns branches for a project
 func (p *GitLabProvider) ListBranches(ctx context.Context, projectID string) ([]*Branch, error) {
 	encodedID := url.PathEscape(projectID)
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/projects/%s/repository/branches", encodedID), nil)
@@ -42,7 +41,6 @@ func (p *GitLabProvider) ListBranches(ctx context.Context, projectID string) ([]
 	return branches, nil
 }
 
-// GetBranch returns a specific branch
 func (p *GitLabProvider) GetBranch(ctx context.Context, projectID, branchName string) (*Branch, error) {
 	encodedID := url.PathEscape(projectID)
 	encodedBranch := url.PathEscape(branchName)
@@ -73,7 +71,6 @@ func (p *GitLabProvider) GetBranch(ctx context.Context, projectID, branchName st
 	}, nil
 }
 
-// CreateBranch creates a new branch
 func (p *GitLabProvider) CreateBranch(ctx context.Context, projectID, branchName, ref string) (*Branch, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/repository/branches?branch=%s&ref=%s",
@@ -106,7 +103,6 @@ func (p *GitLabProvider) CreateBranch(ctx context.Context, projectID, branchName
 	}, nil
 }
 
-// DeleteBranch deletes a branch
 func (p *GitLabProvider) DeleteBranch(ctx context.Context, projectID, branchName string) error {
 	encodedID := url.PathEscape(projectID)
 	encodedBranch := url.PathEscape(branchName)

@@ -18,7 +18,6 @@ type McpRegistrySyncer struct {
 	repo   extension.Repository
 }
 
-// NewMcpRegistrySyncer creates a syncer that pulls from the MCP Registry.
 func NewMcpRegistrySyncer(client *McpRegistryClient, repo extension.Repository) *McpRegistrySyncer {
 	return &McpRegistrySyncer{
 		client: client,
@@ -26,11 +25,6 @@ func NewMcpRegistrySyncer(client *McpRegistryClient, repo extension.Repository) 
 	}
 }
 
-// Sync performs a full sync from the MCP Registry:
-//  1. Fetch all latest+active servers from the registry API.
-//  2. Convert entries to McpMarketItems in memory.
-//  3. Batch upsert all items in a single DB round-trip per batch.
-//  4. Deactivate local registry items that no longer exist upstream.
 func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 	entries, err := s.client.FetchAll(ctx)
 	if err != nil {
@@ -44,7 +38,6 @@ func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 	var synced []string
 	var skipped int
 
-	// Phase 1: Convert all entries in memory (no DB calls)
 	for _, entry := range entries {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -62,14 +55,12 @@ func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 		synced = append(synced, item.RegistryName)
 	}
 
-	// Phase 2: Batch upsert all items
 	if len(items) > 0 {
 		if err := s.repo.BatchUpsertMcpMarketItems(ctx, items); err != nil {
 			return fmt.Errorf("batch upsert: %w", err)
 		}
 	}
 
-	// Phase 3: Deactivate registry items no longer present upstream
 	deactivated, err := s.repo.DeactivateMcpMarketItemsNotIn(ctx, extension.McpSourceRegistry, synced)
 	if err != nil {
 		slog.WarnContext(ctx, "MCP Registry sync: deactivation failed", "error", err)
@@ -84,7 +75,6 @@ func (s *McpRegistrySyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
-// convertToMarketItem transforms a registry entry into a McpMarketItem.
 func (s *McpRegistrySyncer) convertToMarketItem(entry RegistryServerEntry, now time.Time) (*extension.McpMarketItem, error) {
 	srv := entry.Server
 
@@ -92,7 +82,6 @@ func (s *McpRegistrySyncer) convertToMarketItem(entry RegistryServerEntry, now t
 		return nil, fmt.Errorf("server has no name")
 	}
 
-	// Determine display name: prefer title, fallback to last part of name
 	displayName := srv.Title
 	if displayName == "" {
 		parts := strings.Split(srv.Name, "/")
@@ -102,7 +91,6 @@ func (s *McpRegistrySyncer) convertToMarketItem(entry RegistryServerEntry, now t
 		}
 	}
 
-	// Generate slug from registry name: replace non-alphanumeric with dashes
 	slug := registryNameToSlug(srv.Name)
 
 	item := &extension.McpMarketItem{
@@ -121,15 +109,12 @@ func (s *McpRegistrySyncer) convertToMarketItem(entry RegistryServerEntry, now t
 		item.RepositoryURL = srv.Repository.URL
 	}
 
-	// Determine transport, command, args from packages (prefer stdio/npm)
 	s.applyPackageConfig(item, srv.Packages)
 
-	// If no package config was applied, try remotes
 	if item.TransportType == "" {
 		s.applyRemoteConfig(item, srv.Remotes)
 	}
 
-	// If still no transport type, skip this entry
 	if item.TransportType == "" {
 		return nil, fmt.Errorf("no usable package or remote for %s", srv.Name)
 	}
@@ -137,10 +122,7 @@ func (s *McpRegistrySyncer) convertToMarketItem(entry RegistryServerEntry, now t
 	return item, nil
 }
 
-// applyPackageConfig extracts command/args/env from the first usable package.
-// Priority: npm > pypi > oci.
 func (s *McpRegistrySyncer) applyPackageConfig(item *extension.McpMarketItem, packages []RegistryPackage) {
-	// Sort by preference: npm first, then pypi, then oci
 	var best *RegistryPackage
 	for i := range packages {
 		pkg := &packages[i]
@@ -179,13 +161,11 @@ func (s *McpRegistrySyncer) applyPackageConfig(item *extension.McpMarketItem, pa
 		argsJSON, _ := json.Marshal(args)
 		item.DefaultArgs = argsJSON
 	default:
-		// Unknown registry type, skip command setup
 		return
 	}
 
 	item.Category = best.RegistryType
 
-	// Convert environment variables
 	if len(best.EnvironmentVariables) > 0 {
 		envSchema := make([]extension.EnvVarSchemaEntry, 0, len(best.EnvironmentVariables))
 		for _, ev := range best.EnvironmentVariables {
@@ -205,7 +185,6 @@ func (s *McpRegistrySyncer) applyPackageConfig(item *extension.McpMarketItem, pa
 	}
 }
 
-// applyRemoteConfig extracts HTTP URL and headers from the first usable remote.
 func (s *McpRegistrySyncer) applyRemoteConfig(item *extension.McpMarketItem, remotes []RegistryRemote) {
 	if len(remotes) == 0 {
 		return
@@ -223,7 +202,6 @@ func (s *McpRegistrySyncer) applyRemoteConfig(item *extension.McpMarketItem, rem
 
 	item.DefaultHttpURL = remote.URL
 
-	// Convert headers to schema
 	if len(remote.Headers) > 0 {
 		headers := make([]map[string]interface{}, 0, len(remote.Headers))
 		for _, h := range remote.Headers {
@@ -245,7 +223,6 @@ func (s *McpRegistrySyncer) applyRemoteConfig(item *extension.McpMarketItem, rem
 	}
 }
 
-// pkgPriority returns a sort priority (lower = preferred).
 func pkgPriority(registryType string) int {
 	switch registryType {
 	case "npm":
@@ -259,19 +236,14 @@ func pkgPriority(registryType string) int {
 	}
 }
 
-// registryNameToSlug converts a registry name like "io.github.user/server-name"
-// to a URL-safe slug like "io-github-user--server-name".
 func registryNameToSlug(name string) string {
-	// Replace / with -- to preserve structure readability
 	slug := strings.ReplaceAll(name, "/", "--")
-	// Replace any remaining non-slug characters
 	slug = strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
 			return r
 		}
 		return '-'
 	}, slug)
-	// Lowercase
 	slug = strings.ToLower(slug)
 	return slug
 }

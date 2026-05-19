@@ -1,8 +1,5 @@
 package relay
 
-// SelectRelayWithAffinity selects relay using rendezvous hashing (HRW) affinity.
-// Same organization will consistently select the same healthy relay.
-// Falls back to lenient checks when all relays fail strict availability thresholds.
 func (m *Manager) SelectRelayWithAffinity(orgSlug string) *RelayInfo {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -12,7 +9,6 @@ func (m *Manager) SelectRelayWithAffinity(orgSlug string) *RelayInfo {
 		return nil
 	}
 
-	// Single-pass: collect strict and lenient candidates simultaneously
 	strictIDs := make([]string, 0, len(m.relays))
 	lenientIDs := make([]string, 0, len(m.relays))
 	for id, r := range m.relays {
@@ -23,7 +19,6 @@ func (m *Manager) SelectRelayWithAffinity(orgSlug string) *RelayInfo {
 		}
 	}
 
-	// Prefer strict candidates; fall back to lenient if all relays are overloaded
 	ids := strictIDs
 	if len(ids) == 0 {
 		ids = lenientIDs

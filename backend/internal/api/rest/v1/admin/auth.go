@@ -13,19 +13,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// authServiceInterface defines the interface for auth service used by AuthHandler
-// This enables mocking in tests
 type authServiceInterface interface {
 	Login(ctx context.Context, email, password string) (*auth.LoginResult, error)
 }
 
-// AuthHandler handles admin authentication requests
 type AuthHandler struct {
 	authService authServiceInterface
 	config      *config.Config
 }
 
-// NewAuthHandler creates a new admin auth handler
 func NewAuthHandler(authSvc *auth.Service, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authSvc,
@@ -33,7 +29,6 @@ func NewAuthHandler(authSvc *auth.Service, cfg *config.Config) *AuthHandler {
 	}
 }
 
-// NewAuthHandlerWithInterface creates a new admin auth handler with custom auth service interface (for testing)
 func NewAuthHandlerWithInterface(authSvc authServiceInterface, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authSvc,
@@ -41,22 +36,18 @@ func NewAuthHandlerWithInterface(authSvc authServiceInterface, cfg *config.Confi
 	}
 }
 
-// RegisterRoutes registers admin authentication routes
 func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	authGroup := rg.Group("/auth")
 	{
-		// Username/password login
 		authGroup.POST("/login", h.Login)
 	}
 }
 
-// LoginRequest represents the admin login request
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-// Login handles admin login with email and password
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,26 +55,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Authenticate user
 	result, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "Invalid email or password")
 		return
 	}
 
-	// Verify user is a system admin
 	if !result.User.IsSystemAdmin {
 		apierr.Forbidden(c, apierr.SYSTEM_ADMIN_REQUIRED, "Your account does not have system administrator privileges")
 		return
 	}
 
-	// Verify user is active
 	if !result.User.IsActive {
 		apierr.ForbiddenDisabled(c)
 		return
 	}
 
-	// Return tokens and user info
 	c.JSON(http.StatusOK, gin.H{
 		"token":         result.Token,
 		"refresh_token": result.RefreshToken,
@@ -91,7 +78,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// GetMe returns the current admin user's information
 func (h *AuthHandler) GetMe(c *gin.Context) {
 	u := middleware.GetAdminUser(c)
 	if u == nil {
@@ -109,7 +95,6 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 	})
 }
 
-// adminUserResponse creates a sanitized user response for admin API
 func adminUserResponse(u *user.User) gin.H {
 	return gin.H{
 		"id":                u.ID,

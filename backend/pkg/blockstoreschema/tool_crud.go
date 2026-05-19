@@ -2,9 +2,6 @@ package blockstoreschema
 
 import "github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 
-// CRUD + ref ops — the 6 primitive writers. All other tools (memory.retrieve,
-// indicator.define, trigger.define) compose on top of createBlock / a read.
-
 func createBlockTool(typeKeys []string) Tool {
 	return Tool{
 		Name:        blockstore.OpCreateBlock,

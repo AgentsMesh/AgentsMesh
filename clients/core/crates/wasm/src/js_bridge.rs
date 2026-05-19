@@ -3,8 +3,8 @@ use std::sync::Arc;
 use js_sys::Uint8Array;
 use wasm_bindgen::JsValue;
 
-/// Wrapper around `js_sys::Function` that is `Send + Sync`.
-/// SAFETY: WASM is single-threaded, so these markers are trivially safe.
+/// SAFETY: WASM is single-threaded, so the `Send + Sync` markers are
+/// trivially safe.
 #[derive(Clone)]
 pub(crate) struct JsFunction(pub js_sys::Function);
 

@@ -24,15 +24,12 @@ export function McpServerCard({ mcpServer, canManage, onToggle, onDelete, onEdit
         ? "HTTP"
         : mcpServer.transport_type;
 
-  // Build a short preview of the command
   const commandPreview = mcpServer.command
     ? `${mcpServer.command}${mcpServer.args?.length ? " " + mcpServer.args.join(" ") : ""}`
     : mcpServer.http_url || "";
 
-  // Determine source URL for external link
   const sourceUrl = mcpServer.market_item?.repository_url || null;
 
-  // Check if there are env vars to edit (has schema or has existing env vars)
   const hasEnvVarsToEdit = (mcpServer.market_item?.env_var_schema?.length ?? 0) > 0 ||
     Object.keys(mcpServer.env_vars || {}).length > 0;
 

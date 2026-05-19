@@ -109,7 +109,6 @@ export function ActivityBar({ className }: ActivityBarProps) {
           className
         )}
       >
-        {/* Org switcher (replaces logo per design — design/desktop/pages/*.pastel activity_bar > org_switcher) */}
         <div className="flex h-12 items-center justify-start px-2 border-b border-border">
           <OrgSwitcher />
         </div>
@@ -120,7 +119,6 @@ export function ActivityBar({ className }: ActivityBarProps) {
             const isActive = activeActivity === activity.id;
             const showBadge = activity.id === "channels" && totalChannelUnread > 0;
 
-            // Divider between adjacent items in different groups.
             const prev = mainActivities[idx - 1];
             const showDivider = prev && prev.group !== activity.group;
 

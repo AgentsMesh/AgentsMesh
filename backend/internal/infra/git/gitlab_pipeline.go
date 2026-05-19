@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// TriggerPipeline triggers a new pipeline
 func (p *GitLabProvider) TriggerPipeline(ctx context.Context, projectID string, req *TriggerPipelineRequest) (*Pipeline, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipeline", encodedID)
@@ -40,7 +39,6 @@ func (p *GitLabProvider) TriggerPipeline(ctx context.Context, projectID string, 
 	return p.parseGitLabPipeline(resp.Body, projectID)
 }
 
-// GetPipeline returns a specific pipeline
 func (p *GitLabProvider) GetPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipelines/%d", encodedID, pipelineID)
@@ -54,7 +52,6 @@ func (p *GitLabProvider) GetPipeline(ctx context.Context, projectID string, pipe
 	return p.parseGitLabPipeline(resp.Body, projectID)
 }
 
-// ListPipelines returns pipelines for a project
 func (p *GitLabProvider) ListPipelines(ctx context.Context, projectID string, ref, status string, page, perPage int) ([]*Pipeline, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipelines?page=%d&per_page=%d", encodedID, page, perPage)
@@ -110,7 +107,6 @@ func (p *GitLabProvider) ListPipelines(ctx context.Context, projectID string, re
 	return pipelines, nil
 }
 
-// CancelPipeline cancels a pipeline
 func (p *GitLabProvider) CancelPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipelines/%d/cancel", encodedID, pipelineID)
@@ -124,7 +120,6 @@ func (p *GitLabProvider) CancelPipeline(ctx context.Context, projectID string, p
 	return p.parseGitLabPipeline(resp.Body, projectID)
 }
 
-// RetryPipeline retries a pipeline
 func (p *GitLabProvider) RetryPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipelines/%d/retry", encodedID, pipelineID)

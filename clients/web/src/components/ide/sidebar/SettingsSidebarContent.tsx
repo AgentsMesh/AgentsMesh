@@ -178,7 +178,6 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Scope Tabs — visible, replaces query-param-driven toggle */}
       <div role="tablist" className="flex items-center gap-1 p-2 border-b border-border">
         {(["personal", "organization"] as const).map((scope) => (
           <button
@@ -202,12 +201,10 @@ export function SettingsSidebarContent({ className }: SettingsSidebarContentProp
         ))}
       </div>
 
-      {/* Tab tree for the active scope */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {activeTabs.map((tab) => renderTabItem(currentScope, tab))}
       </div>
 
-      {/* Organization info at bottom (only meaningful when on org scope) */}
       {currentOrg && currentScope === "organization" && (
         <div className="border-t border-border px-3 py-3">
           <div className="text-xs text-muted-foreground mb-1">{t("ide.sidebar.settings.currentOrg")}</div>

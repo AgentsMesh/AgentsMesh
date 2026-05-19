@@ -6,7 +6,6 @@ import { Suspense, useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCurrentUser, useCurrentOrg } from "@/stores/auth";
 
-// Filter out unresolved entrypoint.mjs placeholders (e.g. "__POSTHOG_KEY__")
 function resolveEnv(val: string | undefined): string {
   if (!val || val.startsWith("__")) return "";
   return val;
@@ -21,8 +20,6 @@ if (typeof window !== "undefined" && POSTHOG_KEY) {
     capture_pageview: false, // We capture manually below
     capture_pageleave: true,
     persistence: "localStorage+cookie",
-    // Disable remote config / feature flags / surveys
-    // (self-hosted instance does not serve /flags or /config endpoints)
     advanced_disable_decide: true,
   });
 }

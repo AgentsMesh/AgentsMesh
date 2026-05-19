@@ -29,9 +29,6 @@ interface MeshNodesListProps {
   t: (key: string) => string;
 }
 
-/**
- * Collapsible nodes (pods) list in mesh sidebar
- */
 export function MeshNodesList({
   nodes,
   loading,

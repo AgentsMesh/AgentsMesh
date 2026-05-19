@@ -52,7 +52,6 @@ export function TicketDetailSidebar({
 
   return (
     <aside className="lg:w-80 shrink-0 space-y-4">
-      {/* Working Pods */}
       <RailSection title={t("tickets.rail.workingPods")} count={activePods.length}>
         {podsLoading ? (
           <RailEmpty icon={<Terminal className="h-4 w-4" />} text={t("common.loading")} />
@@ -88,7 +87,6 @@ export function TicketDetailSidebar({
         )}
       </RailSection>
 
-      {/* Sub-tickets */}
       <RailSection title={t("tickets.rail.subTickets")} count={subTickets.length}>
         {subTickets.length === 0 ? (
           <RailEmpty icon={<Circle className="h-4 w-4" />} text={t("tickets.rail.noSubTickets")} />
@@ -130,7 +128,6 @@ export function TicketDetailSidebar({
         )}
       </RailSection>
 
-      {/* PRs / Commits */}
       <RailSection title={t("tickets.rail.pullRequests")} count={commits.length}>
         {commits.length === 0 ? (
           <RailEmpty icon={<GitPullRequest className="h-4 w-4" />} text={t("tickets.rail.noPRs")} />
@@ -154,7 +151,6 @@ export function TicketDetailSidebar({
         )}
       </RailSection>
 
-      {/* Activity */}
       <RailSection title={t("tickets.rail.activity")}>
         <ul className="space-y-2">
           <ActivityRow time={ticket.updated_at} text={t("tickets.rail.activityUpdated")} />

@@ -10,19 +10,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// S3Config holds configuration for S3-compatible storage.
 type S3Config struct {
 	Endpoint       string // S3 endpoint (empty for AWS, set for MinIO/OSS)
 	PublicEndpoint string // Public endpoint for browser access (if different from Endpoint)
-	Region         string // AWS region or equivalent
-	Bucket         string // Bucket name
-	AccessKey      string // Access key ID
-	SecretKey      string // Secret access key
-	UseSSL         bool   // Use HTTPS
-	UsePathStyle   bool   // Use path-style URLs (required for MinIO)
+	Region         string
+	Bucket         string
+	AccessKey      string
+	SecretKey      string
+	UseSSL         bool
+	UsePathStyle   bool // Use path-style URLs (required for MinIO)
 }
 
-// S3Storage implements Storage interface for S3-compatible services.
 type S3Storage struct {
 	client             *s3.Client
 	presign            *s3.PresignClient
@@ -35,7 +33,6 @@ type S3Storage struct {
 	usePathStyle       bool
 }
 
-// NewS3Storage creates a new S3-compatible storage client.
 func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	endpointURL := buildEndpointURL(cfg.Endpoint, cfg.UseSSL)
 
@@ -67,7 +64,6 @@ func NewS3Storage(cfg S3Config) (*S3Storage, error) {
 	}, nil
 }
 
-// buildEndpointURL constructs the endpoint URL from host and SSL flag.
 func buildEndpointURL(endpoint string, useSSL bool) string {
 	if endpoint == "" {
 		return ""
@@ -79,7 +75,6 @@ func buildEndpointURL(endpoint string, useSSL bool) string {
 	return fmt.Sprintf("%s://%s", scheme, endpoint)
 }
 
-// loadAWSConfig creates an AWS SDK config with the given S3 configuration.
 func loadAWSConfig(cfg S3Config, endpointURL string) (aws.Config, error) {
 	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		if cfg.Endpoint != "" {
@@ -104,7 +99,6 @@ func loadAWSConfig(cfg S3Config, endpointURL string) (aws.Config, error) {
 	return awsCfg, nil
 }
 
-// buildPublicPresign creates a dedicated presign client for the public endpoint if needed.
 func buildPublicPresign(cfg S3Config, endpointURL string) (string, string, *s3.PresignClient, error) {
 	publicEndpointURL := endpointURL
 	publicEndpointHost := ""

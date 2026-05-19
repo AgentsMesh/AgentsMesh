@@ -32,7 +32,6 @@ export function SSOSection({ ssoConfigs, onLdapSubmit, ldapLoading }: SSOSection
         {t("auth.sso.orSignInWithSSO")}
       </p>
 
-      {/* OIDC / SAML redirect buttons */}
       {redirectConfigs.map((config) => (
         <Button
           key={`${config.domain}-${config.protocol}`}
@@ -45,7 +44,6 @@ export function SSOSection({ ssoConfigs, onLdapSubmit, ldapLoading }: SSOSection
         </Button>
       ))}
 
-      {/* LDAP form */}
       {ldapConfig && (
         <>
           {redirectConfigs.length > 0 && (

@@ -7,7 +7,6 @@ import (
 	invitationDomain "github.com/anthropics/agentsmesh/backend/internal/domain/invitation"
 )
 
-// GetByToken retrieves an invitation by its token
 func (s *Service) GetByToken(ctx context.Context, token string) (*invitationDomain.Invitation, error) {
 	inv, err := s.repo.GetByToken(ctx, token)
 	if err != nil {
@@ -16,7 +15,6 @@ func (s *Service) GetByToken(ctx context.Context, token string) (*invitationDoma
 	return inv, nil
 }
 
-// GetByID retrieves an invitation by ID
 func (s *Service) GetByID(ctx context.Context, id int64) (*invitationDomain.Invitation, error) {
 	inv, err := s.repo.GetByID(ctx, id)
 	if err != nil {
@@ -25,17 +23,14 @@ func (s *Service) GetByID(ctx context.Context, id int64) (*invitationDomain.Invi
 	return inv, nil
 }
 
-// ListByOrganization lists all invitations for an organization
 func (s *Service) ListByOrganization(ctx context.Context, orgID int64) ([]*invitationDomain.Invitation, error) {
 	return s.repo.ListByOrganization(ctx, orgID)
 }
 
-// ListPendingByEmail lists all pending invitations for an email
 func (s *Service) ListPendingByEmail(ctx context.Context, email string) ([]*invitationDomain.Invitation, error) {
 	return s.repo.ListPendingByEmail(ctx, email)
 }
 
-// GetInvitationInfo returns information about an invitation for display
 type InvitationInfo struct {
 	ID          int64     `json:"id"`
 	Email       string    `json:"email"`
@@ -48,7 +43,6 @@ type InvitationInfo struct {
 	IsExpired   bool      `json:"is_expired"`
 }
 
-// GetInvitationInfo retrieves detailed invitation info for display
 func (s *Service) GetInvitationInfo(ctx context.Context, token string) (*InvitationInfo, error) {
 	inv, err := s.repo.GetByToken(ctx, token)
 	if err != nil {

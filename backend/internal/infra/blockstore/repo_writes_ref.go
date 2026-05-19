@@ -75,9 +75,6 @@ func (w *txWriter) FindNestParent(ctx context.Context, childID uuid.UUID) (*bloc
 	return &r, nil
 }
 
-// FindAncestors walks up the nest chain up to maxDepth levels.
-// Returns block IDs ordered from nearest parent to furthest ancestor.
-// Used by cycle-detection when adding/updating a nest ref.
 func (w *txWriter) FindAncestors(ctx context.Context, blockID uuid.UUID, maxDepth int) ([]uuid.UUID, error) {
 	if maxDepth <= 0 {
 		maxDepth = 64

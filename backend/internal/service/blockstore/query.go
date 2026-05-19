@@ -7,8 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ListChildrenResult pairs blocks with the nest ref that carried them, so the
-// UI can display order_key / anchor in its renderer.
 type ListChildrenResult struct {
 	Blocks []*blockstore.Block     `json:"blocks"`
 	Refs   []*blockstore.BlockRef  `json:"refs"`
@@ -46,7 +44,6 @@ func (s *Service) ListChildren(ctx context.Context, actor ActorContext, parentID
 	if err != nil {
 		return nil, err
 	}
-	// Filter private children the caller cannot see.
 	visibleBlocks, visibleRefs := filterByACL(blocks, refs, actor.UserID)
 	return &ListChildrenResult{Blocks: visibleBlocks, Refs: visibleRefs}, nil
 }
@@ -65,9 +62,6 @@ func (s *Service) ListBacklinks(ctx context.Context, actor ActorContext, targetI
 	return s.repo.ListBacklinks(ctx, targetID, true)
 }
 
-// ListSubtree returns the nest tree rooted at rootID, flat-packed with its
-// connecting refs. Frontend uses this as the initial snapshot before the
-// streaming subscription takes over.
 func (s *Service) ListSubtree(ctx context.Context, actor ActorContext, wsID, rootID uuid.UUID, maxDepth int) (*ListChildrenResult, error) {
 	if err := s.assertSameOrg(ctx, actor, wsID); err != nil {
 		return nil, err
@@ -80,9 +74,6 @@ func (s *Service) ListSubtree(ctx context.Context, actor ActorContext, wsID, roo
 	return &ListChildrenResult{Blocks: visibleBlocks, Refs: visibleRefs}, nil
 }
 
-// filterByACL drops blocks whose meta.acl forbids the actor, plus any ref that
-// touches a dropped block. List views never reveal the existence of private
-// blocks the caller cannot read.
 func filterByACL(blocks []*blockstore.Block, refs []*blockstore.BlockRef, userID int64) ([]*blockstore.Block, []*blockstore.BlockRef) {
 	visible := make(map[uuid.UUID]bool, len(blocks))
 	keptBlocks := make([]*blockstore.Block, 0, len(blocks))
@@ -102,8 +93,6 @@ func filterByACL(blocks []*blockstore.Block, refs []*blockstore.BlockRef, userID
 	return keptBlocks, keptRefs
 }
 
-// StreamOps returns ops strictly after afterID, bounded to limit rows.
-// Used by clients reconnecting with a last_op_id checkpoint.
 func (s *Service) StreamOps(ctx context.Context, actor ActorContext, wsID uuid.UUID, afterID int64, limit int) ([]*blockstore.BlockOp, error) {
 	if err := s.assertSameOrg(ctx, actor, wsID); err != nil {
 		return nil, err
@@ -116,8 +105,6 @@ func (s *Service) StreamOps(ctx context.Context, actor ActorContext, wsID uuid.U
 	})
 }
 
-// ListRegisteredTypes returns every block type registered for the workspace,
-// bootstrap + dynamic union. Exposed for MCP tool enumeration.
 func (s *Service) ListRegisteredTypes(
 	ctx context.Context,
 	actor ActorContext,
@@ -140,12 +127,6 @@ func (s *Service) assertSameOrg(ctx context.Context, actor ActorContext, wsID uu
 	return nil
 }
 
-// ListTypeDefBlocks returns every block_type_def in the workspace as raw
-// Block rows. Used by the frontend's RecordEditor pipeline: type_def blocks
-// live outside the nest hierarchy, so subtree fetches don't surface them on
-// first load. The MCP ListRegisteredTypes endpoint returns hydrated specs;
-// this returns the underlying blocks so the store can index them and keep
-// the live `useBlockTypeSpecs` hook in sync with future op updates.
 func (s *Service) ListTypeDefBlocks(
 	ctx context.Context,
 	actor ActorContext,

@@ -25,14 +25,12 @@ var (
 	ErrAttachmentNotFound = errors.New("attachment not found")
 )
 
-// Service handles support ticket operations
 type Service struct {
 	repo    supportticket.Repository
 	storage storage.Storage
 	config  config.StorageConfig
 }
 
-// NewService creates a new support ticket service
 func NewService(repo supportticket.Repository, storage storage.Storage, cfg config.StorageConfig) *Service {
 	return &Service{
 		repo:    repo,
@@ -41,9 +39,6 @@ func NewService(repo supportticket.Repository, storage storage.Storage, cfg conf
 	}
 }
 
-// --- Request/Response types ---
-
-// CreateRequest represents a request to create a support ticket
 type CreateRequest struct {
 	Title    string `json:"title"`
 	Category string `json:"category"`
@@ -51,12 +46,10 @@ type CreateRequest struct {
 	Priority string `json:"priority"`
 }
 
-// AddMessageRequest represents a request to add a message to a ticket
 type AddMessageRequest struct {
 	Content string `json:"content"`
 }
 
-// UploadAttachmentRequest represents a file upload for a ticket attachment
 type UploadAttachmentRequest struct {
 	FileName    string
 	ContentType string
@@ -64,14 +57,12 @@ type UploadAttachmentRequest struct {
 	Reader      io.Reader
 }
 
-// ListQuery represents query parameters for listing user tickets
 type ListQuery struct {
 	Status   string
 	Page     int
 	PageSize int
 }
 
-// AdminListQuery represents query parameters for admin listing
 type AdminListQuery struct {
 	Search   string
 	Status   string
@@ -81,7 +72,6 @@ type AdminListQuery struct {
 	PageSize int
 }
 
-// ListResponse represents a paginated list response
 type ListResponse struct {
 	Data       []supportticket.SupportTicket `json:"data"`
 	Total      int64                         `json:"total"`
@@ -90,7 +80,6 @@ type ListResponse struct {
 	TotalPages int                           `json:"total_pages"`
 }
 
-// Stats represents support ticket statistics
 type Stats struct {
 	Total      int64 `json:"total"`
 	Open       int64 `json:"open"`
@@ -99,9 +88,6 @@ type Stats struct {
 	Closed     int64 `json:"closed"`
 }
 
-// --- User-side methods ---
-
-// Create creates a new support ticket with an initial message
 func (s *Service) Create(ctx context.Context, userID int64, req *CreateRequest) (*supportticket.SupportTicket, error) {
 	category := req.Category
 	if category == "" {
@@ -144,7 +130,6 @@ func (s *Service) Create(ctx context.Context, userID int64, req *CreateRequest) 
 	return &ticket, nil
 }
 
-// ListByUser returns paginated tickets for a specific user
 func (s *Service) ListByUser(ctx context.Context, userID int64, query *ListQuery) (*ListResponse, error) {
 	page, pageSize := normalizePagination(query.Page, query.PageSize)
 	offset := (page - 1) * pageSize
@@ -163,7 +148,6 @@ func (s *Service) ListByUser(ctx context.Context, userID int64, query *ListQuery
 	}, nil
 }
 
-// GetByID returns a ticket by ID, verifying user ownership
 func (s *Service) GetByID(ctx context.Context, id, userID int64) (*supportticket.SupportTicket, error) {
 	ticket, err := s.repo.GetByIDAndUser(ctx, id, userID)
 	if err != nil {
@@ -175,7 +159,6 @@ func (s *Service) GetByID(ctx context.Context, id, userID int64) (*supportticket
 	return ticket, nil
 }
 
-// AddMessage adds a user message to a ticket
 func (s *Service) AddMessage(ctx context.Context, ticketID, userID int64, req *AddMessageRequest) (*supportticket.SupportTicketMessage, error) {
 	if _, err := s.GetByID(ctx, ticketID, userID); err != nil {
 		return nil, err
@@ -196,15 +179,12 @@ func (s *Service) AddMessage(ctx context.Context, ticketID, userID int64, req *A
 	return msg, nil
 }
 
-// ListMessages returns all messages for a ticket (user-side, verifies ownership)
 func (s *Service) ListMessages(ctx context.Context, ticketID, userID int64) ([]supportticket.SupportTicketMessage, error) {
 	if _, err := s.GetByID(ctx, ticketID, userID); err != nil {
 		return nil, err
 	}
 	return s.repo.ListMessagesByTicketID(ctx, ticketID)
 }
-
-// --- Internal helpers ---
 
 func normalizePagination(page, pageSize int) (int, int) {
 	if page < 1 {

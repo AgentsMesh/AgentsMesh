@@ -2,7 +2,6 @@ import { Ticket } from "@/stores/ticket";
 import { VirtualizedTicketList } from "@/components/tickets/VirtualizedTicketList";
 import { TicketListView } from "./TicketListView";
 
-// Use virtualization when ticket count exceeds this threshold
 const VIRTUALIZATION_THRESHOLD = 50;
 
 interface ListViewLayoutProps {
@@ -12,17 +11,12 @@ interface ListViewLayoutProps {
   t: (key: string) => string;
 }
 
-/**
- * List view - full width ticket list.
- * Clicking a ticket navigates directly to the detail page.
- */
 export function ListViewLayout({
   tickets,
   selectedSlug,
   onTicketClick,
   t,
 }: ListViewLayoutProps) {
-  // Use virtualization for large datasets
   const useVirtualization = tickets.length > VIRTUALIZATION_THRESHOLD;
 
   const ListComponent = useVirtualization ? (

@@ -10,7 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// PromoCodeListFilter represents filter options for listing promo codes
 type PromoCodeListFilter struct {
 	Type     *promocode.PromoCodeType
 	PlanName *string
@@ -20,7 +19,6 @@ type PromoCodeListFilter struct {
 	PageSize int
 }
 
-// PromoCodeListResult represents the result of listing promo codes
 type PromoCodeListResult struct {
 	Data       []*promocode.PromoCode `json:"data"`
 	Total      int64                  `json:"total"`
@@ -29,7 +27,6 @@ type PromoCodeListResult struct {
 	TotalPages int                    `json:"total_pages"`
 }
 
-// PromoCodeUpdateInput represents the input for updating a promo code
 type PromoCodeUpdateInput struct {
 	Name           *string
 	Description    *string
@@ -39,7 +36,6 @@ type PromoCodeUpdateInput struct {
 	ClearExpiresAt bool
 }
 
-// RedemptionWithDetails represents a redemption with user and organization details
 type RedemptionWithDetails struct {
 	ID             int64                      `json:"id"`
 	PromoCodeID    int64                      `json:"promo_code_id"`
@@ -54,7 +50,6 @@ type RedemptionWithDetails struct {
 	Organization   *organization.Organization `json:"organization,omitempty"`
 }
 
-// RedemptionListResult represents the result of listing redemptions
 type RedemptionListResult struct {
 	Data       []*RedemptionWithDetails `json:"data"`
 	Total      int64                    `json:"total"`
@@ -63,8 +58,6 @@ type RedemptionListResult struct {
 	TotalPages int                      `json:"total_pages"`
 }
 
-// createPromoCodeAuditLog is a helper to create audit log entries for promo code operations
 func (s *Service) createPromoCodeAuditLog(ctx context.Context, adminUserID int64, action admin.AuditAction, targetID int64, oldData, newData interface{}) {
-	// Best effort - don't fail the main operation if audit logging fails
 	_ = s.LogActionFromContext(ctx, adminUserID, action, admin.AuditTargetPromoCode, targetID, oldData, newData, "", "")
 }

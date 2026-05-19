@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// GetCommit returns a specific commit
 func (p *GitLabProvider) GetCommit(ctx context.Context, projectID, sha string) (*Commit, error) {
 	encodedID := url.PathEscape(projectID)
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/projects/%s/repository/commits/%s", encodedID, sha), nil)
@@ -38,7 +37,6 @@ func (p *GitLabProvider) GetCommit(ctx context.Context, projectID, sha string) (
 	}, nil
 }
 
-// ListCommits returns commits for a branch
 func (p *GitLabProvider) ListCommits(ctx context.Context, projectID, branch string, page, perPage int) ([]*Commit, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/repository/commits?ref_name=%s&page=%d&per_page=%d",

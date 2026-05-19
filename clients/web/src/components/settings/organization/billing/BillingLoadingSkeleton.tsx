@@ -1,6 +1,3 @@
-/**
- * BillingLoadingSkeleton - Loading state for billing settings
- */
 export function BillingLoadingSkeleton() {
   return (
     <div className="space-y-6">

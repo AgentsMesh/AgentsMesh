@@ -8,10 +8,7 @@ import (
 	agentpodSvc "github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 )
 
-// StartRun creates a Pod and optionally an AutopilotController for the loop run.
-// Should be called asynchronously (in a goroutine) after TriggerRun returns successfully.
 func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, run *loopDomain.LoopRun, userID int64) {
-	// Panic recovery — this method is always called in a goroutine, so panics would crash the process
 	defer func() {
 		if r := recover(); r != nil {
 			o.logger.Error("panic in StartRun", "run_id", run.ID, "loop_id", loop.ID, "panic", r)
@@ -25,7 +22,6 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		return
 	}
 
-	// Check if the run was cancelled between TriggerRun and StartRun
 	currentRun, err := o.loopRunService.GetByID(ctx, run.ID)
 	if err != nil {
 		o.logger.Error("failed to check run status before start", "run_id", run.ID, "error", err)
@@ -37,13 +33,11 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		return
 	}
 
-	// Determine runner ID
 	var runnerID int64
 	if loop.RunnerID != nil {
 		runnerID = *loop.RunnerID
 	}
 
-	// Resolve prompt
 	resolvedPrompt := resolvePrompt(loop.PromptTemplate, loop.PromptVariables, run.TriggerParams)
 	if err := o.loopRunService.UpdateStatus(ctx, run.ID, map[string]interface{}{
 		"resolved_prompt": resolvedPrompt,
@@ -54,14 +48,12 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 	// Build AgentFile Layer from loop configuration (AgentFile SSOT)
 	agentfileLayer := o.buildLoopAgentfileLayer(ctx, loop, resolvedPrompt)
 
-	// Determine source pod key for resume (persistent sandbox strategy)
 	var sourcePodKey string
 	resumeSession := loop.SessionPersistence
 	if loop.IsPersistent() && loop.LastPodKey != nil {
 		sourcePodKey = *loop.LastPodKey
 	}
 
-	// Create Pod via PodOrchestrator
 	podResult, err := o.podOrchestrator.CreatePod(ctx, &agentpodSvc.OrchestrateCreatePodRequest{
 		OrganizationID:     loop.OrganizationID,
 		UserID:             userID,
@@ -75,7 +67,6 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		ResumeAgentSession: &resumeSession,
 	})
 	if err != nil {
-		// M3: If resume mode failed, retry without resume (degrade to fresh sandbox)
 		if sourcePodKey != "" {
 			o.logger.Warn("persistent sandbox resume failed, degrading to fresh",
 				"loop_id", loop.ID, "run_id", run.ID, "source_pod_key", sourcePodKey, "error", err)
@@ -108,7 +99,6 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 	pod := podResult.Pod
 	autopilotKey := ""
 
-	// If autopilot mode, create AutopilotController
 	if loop.IsAutopilot() && o.autopilotSvc != nil {
 		var err error
 		autopilotKey, err = o.startAutopilot(ctx, loop, run, pod, resolvedPrompt)
@@ -123,7 +113,6 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		}
 	}
 
-	// Associate Pod with run
 	if err := o.SetRunPodKey(ctx, run.ID, pod.PodKey, autopilotKey); err != nil {
 		o.logger.Error("failed to set run pod key", "run_id", run.ID, "error", err)
 	}
@@ -136,4 +125,3 @@ func (o *LoopOrchestrator) StartRun(ctx context.Context, loop *loopDomain.Loop, 
 		"execution_mode", loop.ExecutionMode,
 	)
 }
-

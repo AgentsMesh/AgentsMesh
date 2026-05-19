@@ -91,7 +91,6 @@ export function EnterpriseFeatures() {
   return (
     <section className="py-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             {t("landing.enterprise.title")} <span className="text-primary">{t("landing.enterprise.titleHighlight")}</span>
@@ -101,7 +100,6 @@ export function EnterpriseFeatures() {
           </p>
         </div>
 
-        {/* Features grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, index) => (
             <div

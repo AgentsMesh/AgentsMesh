@@ -18,10 +18,6 @@ func init() {
 	})
 }
 
-// OpPublisher pushes applied block_ops onto the EventBus so every subscriber
-// of the owning organization receives a stream of semantic diffs.
-// Publisher is invoked AFTER the transaction commits; a failure to publish is
-// logged but does not roll back the write.
 type OpPublisher struct {
 	bus *eventbus.EventBus
 }
@@ -47,9 +43,6 @@ type OpEnvelope struct {
 	AppliedAt      int64      `json:"applied_at"` // unix ms
 }
 
-// PublishBatch sends all ops produced by an ApplyOps call in a single fan-out.
-// Each op becomes one eventbus.Event so late-joining clients can replay them
-// by monotonic id.
 func (p *OpPublisher) PublishBatch(ctx context.Context, organizationID int64, ops []*blockstore.BlockOp) {
 	if p == nil || p.bus == nil || len(ops) == 0 {
 		return

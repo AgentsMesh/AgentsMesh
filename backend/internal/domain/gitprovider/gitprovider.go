@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// Provider types (used by both user-level repository providers and repositories)
 const (
 	ProviderTypeGitHub = "github"
 	ProviderTypeGitLab = "gitlab"
@@ -15,20 +14,10 @@ const (
 	ProviderTypeSSH    = "ssh" // SSH-based Git server (no API)
 )
 
-// NOTE: Organization-level GitProvider has been removed.
-// Git providers are now managed at the user level via:
-// - UserRepositoryProvider (for importing repositories)
-// - UserGitCredential (for Git operations)
-// See: /backend/internal/domain/user/repository_provider.go
-//      /backend/internal/domain/user/git_credential.go
-
-// Repository represents a Git repository configured in the system
-// Self-contained design: repository stores all necessary info, no git_provider_id dependency
 type Repository struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
 
-	// Provider info (self-contained, no foreign key to git_providers)
 	ProviderType    string `gorm:"size:50;not null" json:"provider_type"`      // github, gitlab, gitee, generic
 	ProviderBaseURL string `gorm:"size:255;not null" json:"provider_base_url"` // https://github.com, https://gitlab.company.com
 	HttpCloneURL    string `gorm:"size:500" json:"http_clone_url"`             // HTTPS clone URL
@@ -40,17 +29,14 @@ type Repository struct {
 	DefaultBranch string  `gorm:"size:100;default:'main'" json:"default_branch"`
 	TicketPrefix  *string `gorm:"size:10" json:"ticket_prefix,omitempty"`
 
-	// Visibility: "organization" (all members can see), "private" (only importer can see)
 	Visibility       string `gorm:"size:20;not null;default:'organization'" json:"visibility"`
 	ImportedByUserID *int64 `gorm:"index" json:"imported_by_user_id,omitempty"` // User who imported this repo
 
-	// Workspace preparation
 	PreparationScript  *string `gorm:"type:text" json:"preparation_script,omitempty"`    // Script to run after worktree creation
 	PreparationTimeout *int    `gorm:"default:300" json:"preparation_timeout,omitempty"` // Script timeout in seconds (default 300)
 
 	IsActive bool `gorm:"not null;default:true" json:"is_active"`
 
-	// Webhook configuration stored as JSONB
 	WebhookConfig *WebhookConfig `gorm:"type:jsonb" json:"webhook_config,omitempty"`
 
 	CreatedAt time.Time  `gorm:"not null;default:now()" json:"created_at"`
@@ -62,7 +48,6 @@ func (Repository) TableName() string {
 	return "repositories"
 }
 
-// WebhookConfig represents webhook configuration for a repository
 type WebhookConfig struct {
 	ID               string   `json:"id"`
 	URL              string   `json:"url"`
@@ -74,12 +59,10 @@ type WebhookConfig struct {
 	CreatedAt        string   `json:"created_at,omitempty"`
 }
 
-// Value implements driver.Valuer for GORM JSONB support
 func (wc WebhookConfig) Value() (driver.Value, error) {
 	return json.Marshal(wc)
 }
 
-// Scan implements sql.Scanner for GORM JSONB support
 func (wc *WebhookConfig) Scan(value interface{}) error {
 	if value == nil {
 		return nil
@@ -94,7 +77,6 @@ func (wc *WebhookConfig) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, wc)
 }
 
-// WebhookStatus represents the public-facing webhook status (without secret)
 type WebhookStatus struct {
 	Registered   bool     `json:"registered"`
 	WebhookID    string   `json:"webhook_id,omitempty"`
@@ -106,7 +88,6 @@ type WebhookStatus struct {
 	RegisteredAt string   `json:"registered_at,omitempty"`
 }
 
-// ToStatus converts WebhookConfig to WebhookStatus (hiding the secret)
 func (wc *WebhookConfig) ToStatus() *WebhookStatus {
 	if wc == nil {
 		return &WebhookStatus{Registered: false}

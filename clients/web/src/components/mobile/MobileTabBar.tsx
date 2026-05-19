@@ -43,7 +43,6 @@ export function MobileTabBar({ className }: MobileTabBarProps) {
 
   const mobileActivities = getMobileActivities();
 
-  // Map activity to route
   const getActivityRoute = (activity: ActivityType): string => {
     switch (activity) {
       case "workspace":

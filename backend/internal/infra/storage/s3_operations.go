@@ -11,10 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// Upload stores a file in S3.
 func (s *S3Storage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*FileInfo, error) {
-	// Read all content into memory to avoid chunked encoding
-	// This is required for Aliyun OSS compatibility as it doesn't support aws-chunked encoding
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file content: %w", err)
@@ -46,7 +43,6 @@ func (s *S3Storage) Upload(ctx context.Context, key string, reader io.Reader, si
 	}, nil
 }
 
-// Delete removes a file from S3.
 func (s *S3Storage) Delete(ctx context.Context, key string) error {
 	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -58,11 +54,6 @@ func (s *S3Storage) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// GetURL returns a pre-signed URL for accessing the file.
-// When a public endpoint is configured, signs through the public presign client
-// so browsers can reach MinIO/S3 via localhost while still carrying a valid
-// signature — falling back to an unsigned public URL only works for buckets
-// with anonymous read policy, which is unsafe outside of demo setups.
 func (s *S3Storage) GetURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	presigner := s.presign
 	if s.publicPresign != nil {
@@ -78,7 +69,6 @@ func (s *S3Storage) GetURL(ctx context.Context, key string, expiry time.Duration
 	return request.URL, nil
 }
 
-// presignGetURL generates a presigned GET URL using the internal presign client.
 func (s *S3Storage) presignGetURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	request, err := s.presign.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -90,13 +80,10 @@ func (s *S3Storage) presignGetURL(ctx context.Context, key string, expiry time.D
 	return request.URL, nil
 }
 
-// GetInternalURL returns a pre-signed URL using the internal endpoint.
 func (s *S3Storage) GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	return s.presignGetURL(ctx, key, expiry)
 }
 
-// PresignPutURL returns a pre-signed PUT URL for direct upload to S3.
-// When a public endpoint is configured, uses the public presign client.
 func (s *S3Storage) PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
 	presigner := s.presign
 	if s.publicPresign != nil {
@@ -105,7 +92,6 @@ func (s *S3Storage) PresignPutURL(ctx context.Context, key string, contentType s
 	return s.presignPutURL(ctx, presigner, key, contentType, expiry)
 }
 
-// InternalPresignPutURL returns a pre-signed PUT URL using the internal endpoint.
 func (s *S3Storage) InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
 	return s.presignPutURL(ctx, s.presign, key, contentType, expiry)
 }
@@ -122,7 +108,6 @@ func (s *S3Storage) presignPutURL(ctx context.Context, presigner *s3.PresignClie
 	return request.URL, nil
 }
 
-// Exists checks if a file exists in S3.
 func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 	_, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(s.bucket),
@@ -134,7 +119,6 @@ func (s *S3Storage) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-// EnsureBucket creates the bucket if it doesn't exist.
 func (s *S3Storage) EnsureBucket(ctx context.Context) error {
 	_, err := s.client.HeadBucket(ctx, &s3.HeadBucketInput{
 		Bucket: aws.String(s.bucket),

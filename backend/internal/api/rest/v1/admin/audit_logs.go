@@ -12,19 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuditLogHandler handles audit log requests
 type AuditLogHandler struct {
 	adminService *adminservice.Service
 }
 
-// NewAuditLogHandler creates a new audit log handler
 func NewAuditLogHandler(adminSvc *adminservice.Service) *AuditLogHandler {
 	return &AuditLogHandler{
 		adminService: adminSvc,
 	}
 }
 
-// RegisterRoutes registers audit log routes
 func (h *AuditLogHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	auditGroup := rg.Group("/audit-logs")
 	{
@@ -32,14 +29,12 @@ func (h *AuditLogHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListAuditLogs returns a list of audit logs with filtering and pagination
 func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 	query := &domainadmin.AuditLogQuery{
 		Page:     1,
 		PageSize: 20,
 	}
 
-	// Parse pagination
 	if page, err := strconv.Atoi(c.Query("page")); err == nil {
 		query.Page = page
 	}
@@ -47,7 +42,6 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 		query.PageSize = pageSize
 	}
 
-	// Parse filters
 	if adminUserIDStr := c.Query("admin_user_id"); adminUserIDStr != "" {
 		if id, err := strconv.ParseInt(adminUserIDStr, 10, 64); err == nil {
 			query.AdminUserID = &id
@@ -88,7 +82,6 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	logs := make([]gin.H, len(result.Data))
 	for i, log := range result.Data {
 		logs[i] = auditLogResponse(&log)
@@ -103,7 +96,6 @@ func (h *AuditLogHandler) ListAuditLogs(c *gin.Context) {
 	})
 }
 
-// auditLogResponse creates a sanitized audit log response
 func auditLogResponse(log *domainadmin.AuditLog) gin.H {
 	response := gin.H{
 		"id":            log.ID,

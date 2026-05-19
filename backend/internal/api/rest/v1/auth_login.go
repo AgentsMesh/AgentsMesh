@@ -11,13 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LoginRequest represents a login request
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-// Login handles email/password login
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -25,7 +23,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Authenticate user
 	result, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, auth.ErrInvalidCredentials) {
@@ -58,7 +55,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// RegisterRequest represents a registration request
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Username string `json:"username" binding:"required,min=3,max=50"`
@@ -66,7 +62,6 @@ type RegisterRequest struct {
 	Name     string `json:"name"`
 }
 
-// Register handles user registration
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -81,7 +76,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Register user
 	result, err := h.authService.Register(c.Request.Context(), &auth.RegisterRequest{
 		Email:    req.Email,
 		Username: req.Username,
@@ -101,10 +95,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// Generate email verification token and send verification email
 	verificationToken, err := h.userService.SetEmailVerificationToken(c.Request.Context(), result.User.ID)
 	if err != nil {
-		// Log error but don't fail registration
 		c.JSON(http.StatusCreated, gin.H{
 			"token":         result.Token,
 			"refresh_token": result.RefreshToken,
@@ -121,8 +113,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// 邮件失败不阻塞注册（用户可后续通过 ResendVerification 重发），
-	// 但必须落日志——否则"收不到激活邮件"投诉在 backend 日志里没有痕迹。
+	// 邮件失败不阻塞注册，但 MUST 落日志。
 	if err := h.emailService.SendVerificationEmail(c.Request.Context(), result.User.Email, verificationToken); err != nil {
 		slog.ErrorContext(c.Request.Context(), "failed to send verification email after registration",
 			"user_id", result.User.ID, "email", result.User.Email, "error", err)
@@ -143,7 +134,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// RefreshToken handles token refresh
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
@@ -171,13 +161,10 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
-// Logout handles user logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Get token from header
 	token := c.GetHeader("Authorization")
 	if token != "" && len(token) > 7 {
-		token = token[7:] // Remove "Bearer " prefix
-		// Optionally blacklist the token
+		token = token[7:]
 		h.authService.RevokeToken(c.Request.Context(), token)
 	}
 

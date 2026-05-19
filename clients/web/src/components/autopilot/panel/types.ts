@@ -1,11 +1,7 @@
 import * as React from "react";
 
-// Normalized decision types (lowercase only)
 export type NormalizedDecisionType = "continue" | "completed" | "need_help" | "give_up";
 
-// Map backend decision types to frontend keys
-// Backend uses: CONTINUE, TASK_COMPLETED, NEED_HUMAN_HELP, GIVE_UP
-// Frontend expects: continue, completed, need_help, give_up
 export function normalizeDecisionType(backendType: string): NormalizedDecisionType {
   const mapping: Record<string, NormalizedDecisionType> = {
     CONTINUE: "continue",
@@ -20,7 +16,6 @@ export function normalizeDecisionType(backendType: string): NormalizedDecisionTy
   return mapping[backendType] || "continue";
 }
 
-// Decision type display configuration
 export interface DecisionTypeConfig {
   label: string;
   bgColor: string;
@@ -28,13 +23,11 @@ export interface DecisionTypeConfig {
   icon: React.ReactNode;
 }
 
-// Action type display configuration
 export interface ActionTypeConfig {
   label: string;
   icon: React.ReactNode;
 }
 
-// Iteration phase display configuration
 export interface IterationPhaseConfig {
   label: string;
   color: string;

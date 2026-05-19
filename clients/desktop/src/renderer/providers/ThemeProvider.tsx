@@ -57,7 +57,7 @@ export function ThemeProvider({
   useEffect(() => {
     if (theme !== "system") return;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => setThemeState("system"); // triggers re-render
+    const handler = () => setThemeState("system");
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, [theme]);

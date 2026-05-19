@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RepositoryResponse represents a repository in API responses
 type RepositoryResponse struct {
 	ID            string `json:"id"`
 	Name          string `json:"name"`
@@ -18,21 +17,16 @@ type RepositoryResponse struct {
 	WebURL        string `json:"web_url"`
 }
 
-// UserRepositoryProviderHandler handles user repository provider requests
 type UserRepositoryProviderHandler struct {
 	userService *user.Service
 }
 
-// NewUserRepositoryProviderHandler creates a new user repository provider handler
 func NewUserRepositoryProviderHandler(userSvc *user.Service) *UserRepositoryProviderHandler {
 	return &UserRepositoryProviderHandler{
 		userService: userSvc,
 	}
 }
 
-// RegisterRoutes registers user repository provider routes
-// Note: rg is already prefixed with /users, so we use /repository-providers
-// Final path: /api/v1/users/repository-providers
 func (h *UserRepositoryProviderHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	providers := rg.Group("/repository-providers")
 	{
@@ -47,7 +41,6 @@ func (h *UserRepositoryProviderHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// CreateRepositoryProviderRequest represents a request to create a repository provider
 type CreateRepositoryProviderRequest struct {
 	ProviderType string `json:"provider_type" binding:"required"`
 	Name         string `json:"name" binding:"required"`
@@ -57,7 +50,6 @@ type CreateRepositoryProviderRequest struct {
 	BotToken     string `json:"bot_token"`
 }
 
-// UpdateRepositoryProviderRequest represents a request to update a repository provider
 type UpdateRepositoryProviderRequest struct {
 	Name         *string `json:"name"`
 	BaseURL      *string `json:"base_url"`

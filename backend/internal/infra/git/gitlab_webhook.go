@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-// RegisterWebhook registers a webhook
 func (p *GitLabProvider) RegisterWebhook(ctx context.Context, projectID string, config *WebhookConfig) (string, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/hooks", encodedID)
@@ -48,7 +47,6 @@ func (p *GitLabProvider) RegisterWebhook(ctx context.Context, projectID string, 
 	return strconv.Itoa(result.ID), nil
 }
 
-// DeleteWebhook deletes a webhook
 func (p *GitLabProvider) DeleteWebhook(ctx context.Context, projectID, webhookID string) error {
 	encodedID := url.PathEscape(projectID)
 	resp, err := p.doRequest(ctx, "DELETE", fmt.Sprintf("/projects/%s/hooks/%s", encodedID, webhookID), nil)

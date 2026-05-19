@@ -9,7 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/promocode"
 )
 
-// ActivatePromoCode activates a promo code
 func (s *Service) ActivatePromoCode(ctx context.Context, id int64, adminUserID int64) error {
 	var code promocode.PromoCode
 	if err := s.db.Model(&promocode.PromoCode{}).Where("id = ?", id).First(&code); err != nil {
@@ -24,13 +23,11 @@ func (s *Service) ActivatePromoCode(ctx context.Context, id int64, adminUserID i
 		return fmt.Errorf("failed to activate promo code: %w", err)
 	}
 
-	// Create audit log
 	s.createPromoCodeAuditLog(ctx, adminUserID, admin.AuditActionActivate, code.ID, &oldData, &code)
 
 	return nil
 }
 
-// DeactivatePromoCode deactivates a promo code
 func (s *Service) DeactivatePromoCode(ctx context.Context, id int64, adminUserID int64) error {
 	var code promocode.PromoCode
 	if err := s.db.Model(&promocode.PromoCode{}).Where("id = ?", id).First(&code); err != nil {
@@ -45,7 +42,6 @@ func (s *Service) DeactivatePromoCode(ctx context.Context, id int64, adminUserID
 		return fmt.Errorf("failed to deactivate promo code: %w", err)
 	}
 
-	// Create audit log
 	s.createPromoCodeAuditLog(ctx, adminUserID, admin.AuditActionDeactivate, code.ID, &oldData, &code)
 
 	return nil

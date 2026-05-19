@@ -31,7 +31,6 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     setMounted(true);
   }, []);
 
-  // Close dropdown when clicking outside
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -49,7 +48,6 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     const config = themeConfigs.find((c) => c.id === theme);
     if (config) return config.icon;
 
-    // Fallback based on resolved theme
     return resolvedTheme === "dark" || resolvedTheme === "solarized-dark" ? "moon" as const : "sun" as const;
   }, [mounted, theme, resolvedTheme]);
 

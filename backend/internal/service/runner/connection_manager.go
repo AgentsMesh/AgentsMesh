@@ -12,20 +12,10 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// numShards is the number of shards for connection partitioning.
-// 256 shards reduce lock contention by ~256x for 100K runners.
 const numShards = 256
 
-// DefaultInitTimeout is the default timeout for runner initialization.
 const DefaultInitTimeout = 30 * time.Second
 
-// RunnerConnectionManager manages runner connections using sharded locks.
-//
-// Architecture:
-// - 256 shards to reduce lock contention for high concurrency (100K+ runners)
-// - Connections are added when gRPC stream is established
-// - Messages are sent through the connection's Send channel
-// - Callbacks use Proto types directly (no JSON serialization overhead)
 type RunnerConnectionManager struct {
 	shards            [numShards]*grpcConnectionShard
 	logger            *slog.Logger
@@ -33,16 +23,13 @@ type RunnerConnectionManager struct {
 	generationCounter atomic.Int64 // Monotonic counter for connection generation IDs
 	pingInterval      time.Duration
 
-	// Initialization timeout
 	initTimeout     time.Duration
 	initTimeoutStop chan struct{}
 	initTimeoutOnce sync.Once
 
-	// Agent provider and server version for initialization handshake
 	agentsProvider interfaces.AgentsProvider
 	serverVersion      string
 
-	// Event callbacks - use Proto types directly for zero-copy efficiency
 	onHeartbeat          func(runnerID int64, data *runnerv1.HeartbeatData)
 	onPodCreated         func(runnerID int64, data *runnerv1.PodCreatedEvent)
 	onPodTerminated      func(runnerID int64, data *runnerv1.PodTerminatedEvent)
@@ -57,36 +44,28 @@ type RunnerConnectionManager struct {
 	onPodError           func(runnerID int64, data *runnerv1.ErrorEvent)
 	onOSCTitle           func(runnerID int64, data *runnerv1.OSCTitleEvent)
 
-	// Pod observation callback
 	onObservePodResult func(runnerID int64, data *runnerv1.ObservePodResult)
 
-	// Upgrade event callback
 	onUpgradeStatus func(runnerID int64, data *runnerv1.UpgradeStatusEvent)
 
-	// Log upload event callback
 	onLogUploadStatus func(runnerID int64, data *runnerv1.LogUploadStatusEvent)
 
-	// Perpetual pod restart callback
 	onPodRestarting func(runnerID int64, data *runnerv1.PodRestartingEvent)
 
-	// AutopilotController event callbacks
 	onAutopilotStatus     func(runnerID int64, data *runnerv1.AutopilotStatusEvent)
 	onAutopilotIteration  func(runnerID int64, data *runnerv1.AutopilotIterationEvent)
 	onAutopilotCreated    func(runnerID int64, data *runnerv1.AutopilotCreatedEvent)
 	onAutopilotTerminated func(runnerID int64, data *runnerv1.AutopilotTerminatedEvent)
 	onAutopilotThinking   func(runnerID int64, data *runnerv1.AutopilotThinkingEvent)
 
-	// Token usage callback
 	onTokenUsage func(runnerID int64, data *runnerv1.TokenUsageReport)
 }
 
-// grpcConnectionShard holds a subset of gRPC connections with its own lock.
 type grpcConnectionShard struct {
 	connections map[int64]*GRPCConnection
 	mu          sync.RWMutex
 }
 
-// NewRunnerConnectionManager creates a new runner connection manager.
 func NewRunnerConnectionManager(logger *slog.Logger) *RunnerConnectionManager {
 	cm := &RunnerConnectionManager{
 		logger:          logger,
@@ -95,7 +74,6 @@ func NewRunnerConnectionManager(logger *slog.Logger) *RunnerConnectionManager {
 		initTimeoutStop: make(chan struct{}),
 	}
 
-	// Initialize all shards
 	for i := 0; i < numShards; i++ {
 		cm.shards[i] = &grpcConnectionShard{
 			connections: make(map[int64]*GRPCConnection),
@@ -105,16 +83,11 @@ func NewRunnerConnectionManager(logger *slog.Logger) *RunnerConnectionManager {
 	return cm
 }
 
-// getShard returns the shard for a given runner ID.
 func (cm *RunnerConnectionManager) getShard(runnerID int64) *grpcConnectionShard {
 	idx := uint64(runnerID) % numShards
 	return cm.shards[idx]
 }
 
-// ==================== Connection Management ====================
-
-// AddConnection adds a gRPC connection.
-// Returns the new connection with a unique generation ID.
 func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug string, stream RunnerStream) *GRPCConnection {
 	shard := cm.getShard(runnerID)
 	gen := cm.generationCounter.Add(1)
@@ -122,7 +95,6 @@ func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 
-	// Close existing connection if any
 	if existing, ok := shard.connections[runnerID]; ok {
 		existing.Close()
 		cm.connCount.Add(-1)
@@ -144,17 +116,12 @@ func (cm *RunnerConnectionManager) AddConnection(runnerID int64, nodeID, orgSlug
 	return conn
 }
 
-// RemoveConnection removes a gRPC connection only if the generation matches.
-// If the current connection has a different generation (newer connection replaced it),
-// the removal is skipped to prevent stale defer calls from closing active connections.
 func (cm *RunnerConnectionManager) RemoveConnection(runnerID, generation int64) {
 	shard := cm.getShard(runnerID)
 
 	shard.mu.Lock()
 	conn, ok := shard.connections[runnerID]
 	if ok && conn.Generation != generation {
-		// Generation mismatch: a newer connection has replaced this one.
-		// Skip removal to avoid closing the active connection.
 		shard.mu.Unlock()
 		cm.logger.Debug("generation mismatch, skipping remove",
 			"runner_id", runnerID,
@@ -184,7 +151,6 @@ func (cm *RunnerConnectionManager) RemoveConnection(runnerID, generation int64) 
 	}
 }
 
-// GetConnection returns a gRPC connection.
 func (cm *RunnerConnectionManager) GetConnection(runnerID int64) *GRPCConnection {
 	shard := cm.getShard(runnerID)
 
@@ -193,19 +159,16 @@ func (cm *RunnerConnectionManager) GetConnection(runnerID int64) *GRPCConnection
 	return shard.connections[runnerID]
 }
 
-// IsConnected checks if a runner is connected.
 func (cm *RunnerConnectionManager) IsConnected(runnerID int64) bool {
 	return cm.GetConnection(runnerID) != nil
 }
 
-// UpdateHeartbeat updates the last ping time for a runner.
 func (cm *RunnerConnectionManager) UpdateHeartbeat(runnerID int64) {
 	if conn := cm.GetConnection(runnerID); conn != nil {
 		conn.UpdateLastPing()
 	}
 }
 
-// GetConnectedRunnerIDs returns IDs of all connected runners.
 func (cm *RunnerConnectionManager) GetConnectedRunnerIDs() []int64 {
 	ids := make([]int64, 0, cm.connCount.Load())
 
@@ -220,12 +183,10 @@ func (cm *RunnerConnectionManager) GetConnectedRunnerIDs() []int64 {
 	return ids
 }
 
-// ConnectionCount returns the total number of active connections.
 func (cm *RunnerConnectionManager) ConnectionCount() int64 {
 	return cm.connCount.Load()
 }
 
-// Close closes the connection manager and all connections.
 func (cm *RunnerConnectionManager) Close() {
 	cm.initTimeoutOnce.Do(func() {
 		close(cm.initTimeoutStop)
@@ -243,9 +204,6 @@ func (cm *RunnerConnectionManager) Close() {
 	cm.connCount.Store(0)
 }
 
-// ==================== Initialization Timeout ====================
-
-// StartInitTimeoutChecker starts the initialization timeout checker.
 func (cm *RunnerConnectionManager) StartInitTimeoutChecker() {
 	go cm.initTimeoutLoop()
 }

@@ -24,7 +24,6 @@ func (r *loopRunRepo) CountActiveRuns(ctx context.Context, loopID int64) (int64,
 	return count, err
 }
 
-// GetActiveRunByPodKey finds an unfinished run by its pod key.
 func (r *loopRunRepo) GetActiveRunByPodKey(ctx context.Context, podKey string) (*loop.LoopRun, error) {
 	var run loop.LoopRun
 	err := r.db.WithContext(ctx).
@@ -39,7 +38,6 @@ func (r *loopRunRepo) GetActiveRunByPodKey(ctx context.Context, podKey string) (
 	return &run, nil
 }
 
-// GetTimedOutRuns returns running runs that have exceeded their timeout.
 func (r *loopRunRepo) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*loop.LoopRun, error) {
 	var runs []*loop.LoopRun
 	timedOutEligible := []string{agentpod.StatusInitializing, agentpod.StatusRunning, agentpod.StatusPaused}
@@ -58,7 +56,6 @@ func (r *loopRunRepo) GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*l
 	return runs, err
 }
 
-// GetLatestPodKey returns the pod_key from the most recent run that has one.
 func (r *loopRunRepo) GetLatestPodKey(ctx context.Context, loopID int64) *string {
 	type result struct {
 		PodKey string `gorm:"column:pod_key"`
@@ -93,7 +90,6 @@ func (r *loopRunRepo) GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) 
 	return runs, err
 }
 
-// GetIdleLoopPods returns active loop runs whose Pods have been idle longer than idle_timeout_sec.
 func (r *loopRunRepo) GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*loop.LoopRun, error) {
 	var runs []*loop.LoopRun
 	query := r.db.WithContext(ctx).

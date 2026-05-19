@@ -11,12 +11,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// loopRepo implements loop.LoopRepository using GORM
 type loopRepo struct {
 	db *gorm.DB
 }
 
-// NewLoopRepository creates a new loop repository
 func NewLoopRepository(db *gorm.DB) loop.LoopRepository {
 	return &loopRepo{db: db}
 }
@@ -180,7 +178,6 @@ func (r *loopRepo) ClaimCronLoop(ctx context.Context, loopID int64, nextRunAt *t
 	return claimed, err
 }
 
-// FindLoopsNeedingNextRun returns enabled cron loops with next_run_at IS NULL.
 func (r *loopRepo) FindLoopsNeedingNextRun(ctx context.Context, orgIDs []int64) ([]*loop.Loop, error) {
 	var loops []*loop.Loop
 	query := r.db.WithContext(ctx).
@@ -214,5 +211,4 @@ func (r *loopRepo) IncrementRunStats(ctx context.Context, loopID int64, status s
 		Updates(updates).Error
 }
 
-// Compile-time interface compliance check
 var _ loop.LoopRepository = (*loopRepo)(nil)

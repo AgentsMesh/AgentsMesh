@@ -17,7 +17,6 @@ const (
 	RoleMember  = "member"
 )
 
-// Channel represents a communication channel for agent collaboration
 type Channel struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
@@ -38,11 +37,9 @@ type Channel struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Computed fields (populated by query, not persisted)
 	IsMember    bool  `gorm:"-" json:"is_member"`
 	MemberCount int64 `gorm:"-" json:"member_count"`
 
-	// Associations
 	Messages []Message `gorm:"foreignKey:ChannelID" json:"messages,omitempty"`
 }
 
@@ -54,14 +51,12 @@ func (Channel) TableName() string {
 	return "channels"
 }
 
-// Message type constants
 const (
 	MessageTypeText       = "text"
 	MessageTypeAttachment = "attachment"
 	MessageTypeSystem     = "system"
 )
 
-// Message represents a message in a channel
 type Message struct {
 	ID        int64 `gorm:"primaryKey" json:"id"`
 	ChannelID int64 `gorm:"not null;index" json:"channel_id"`
@@ -80,7 +75,6 @@ type Message struct {
 
 	CreatedAt time.Time `gorm:"not null;default:now();index" json:"created_at"`
 
-	// Associations
 	Channel       *Channel      `gorm:"foreignKey:ChannelID" json:"channel,omitempty"`
 	SenderUser    *user.User    `gorm:"foreignKey:SenderUserID" json:"sender_user,omitempty"`
 	SenderPodInfo *agentpod.Pod `gorm:"foreignKey:SenderPod;references:PodKey" json:"sender_pod_info,omitempty"`

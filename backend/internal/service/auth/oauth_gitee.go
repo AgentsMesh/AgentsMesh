@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// getGiteeAuthURL returns Gitee OAuth authorization URL
 func getGiteeAuthURL(cfg OAuthConfig, state string) string {
 	return "https://gitee.com/oauth/authorize" +
 		"?client_id=" + cfg.ClientID +
@@ -22,7 +21,6 @@ func getGiteeAuthURL(cfg OAuthConfig, state string) string {
 		"&state=" + state
 }
 
-// handleGiteeCallback exchanges code for token and fetches user info
 func handleGiteeCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
 	accessToken, err := exchangeGiteeCode(ctx, cfg, code)
 	if err != nil {
@@ -32,7 +30,6 @@ func handleGiteeCallback(ctx context.Context, cfg OAuthConfig, code string) (*OA
 	return fetchGiteeUserInfo(ctx, accessToken)
 }
 
-// exchangeGiteeCode exchanges authorization code for access token
 func exchangeGiteeCode(ctx context.Context, cfg OAuthConfig, code string) (string, error) {
 	client := &http.Client{Timeout: 30 * time.Second, Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	tokenResp, err := client.PostForm("https://gitee.com/oauth/token", url.Values{
@@ -65,7 +62,6 @@ func exchangeGiteeCode(ctx context.Context, cfg OAuthConfig, code string) (strin
 	return tokenData.AccessToken, nil
 }
 
-// fetchGiteeUserInfo fetches user info from Gitee API
 func fetchGiteeUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://gitee.com/api/v5/user?access_token="+accessToken, nil)
 	if err != nil {

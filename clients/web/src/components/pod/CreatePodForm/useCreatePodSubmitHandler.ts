@@ -2,10 +2,6 @@ import { useCallback } from "react";
 import { estimateWorkspaceTerminalSize } from "@/lib/terminal-size";
 import type { CreatePodFormState } from "../hooks";
 
-/**
- * Extracted submit handler for the CreatePodForm.
- * Builds terminal size estimation and delegates to form.submit().
- */
 export function useCreatePodSubmitHandler(
   form: CreatePodFormState,
   selectedRunner: { id: number } | null,

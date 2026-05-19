@@ -7,15 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MarkRead handles POST /messages/mark-read
-// @Summary Mark one or more messages as read
-// @Tags messages
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param request body MarkReadRequest true "Mark read request"
-// @Success 200 {object} map[string]interface{}
-// @Router /messages/mark-read [post]
 func (h *MessageHandler) MarkRead(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -39,14 +30,6 @@ func (h *MessageHandler) MarkRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"marked_count": markedCount})
 }
 
-// MarkAllRead handles POST /messages/mark-all-read
-// @Summary Mark all messages for this pod as read
-// @Tags messages
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Success 200 {object} map[string]interface{}
-// @Router /messages/mark-all-read [post]
 func (h *MessageHandler) MarkAllRead(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {

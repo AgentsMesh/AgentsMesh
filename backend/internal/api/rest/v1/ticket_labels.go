@@ -9,17 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Label Management Endpoints ==========
-
-// CreateLabelRequest represents label creation request
 type CreateLabelRequest struct {
 	Name         string `json:"name" binding:"required,min=1,max=100"`
 	Color        string `json:"color" binding:"required,hexcolor"`
 	RepositoryID *int64 `json:"repository_id"`
 }
 
-// ListLabels lists labels
-// GET /api/v1/organizations/:slug/labels
 func (h *TicketHandler) ListLabels(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -41,8 +36,6 @@ func (h *TicketHandler) ListLabels(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"labels": labels})
 }
 
-// CreateLabel creates a new label
-// POST /api/v1/organizations/:slug/labels
 func (h *TicketHandler) CreateLabel(c *gin.Context) {
 	var req CreateLabelRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,14 +54,11 @@ func (h *TicketHandler) CreateLabel(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"label": label})
 }
 
-// UpdateLabelRequest represents label update request
 type UpdateLabelRequest struct {
 	Name  string `json:"name"`
 	Color string `json:"color"`
 }
 
-// UpdateLabel updates a label
-// PUT /api/v1/organizations/:slug/labels/:id
 func (h *TicketHandler) UpdateLabel(c *gin.Context) {
 	labelID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -101,8 +91,6 @@ func (h *TicketHandler) UpdateLabel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"label": label})
 }
 
-// DeleteLabel deletes a label
-// DELETE /api/v1/organizations/:slug/labels/:id
 func (h *TicketHandler) DeleteLabel(c *gin.Context) {
 	labelID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -120,13 +108,10 @@ func (h *TicketHandler) DeleteLabel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Label deleted"})
 }
 
-// AddLabelRequest represents label addition request
 type AddLabelRequest struct {
 	LabelID int64 `json:"label_id" binding:"required"`
 }
 
-// AddLabel adds a label to a ticket
-// POST /api/v1/organizations/:slug/tickets/:ticket_slug/labels
 func (h *TicketHandler) AddLabel(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -152,8 +137,6 @@ func (h *TicketHandler) AddLabel(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Label added"})
 }
 
-// RemoveLabel removes a label from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/labels/:label_id
 func (h *TicketHandler) RemoveLabel(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	labelID, err := strconv.ParseInt(c.Param("label_id"), 10, 64)

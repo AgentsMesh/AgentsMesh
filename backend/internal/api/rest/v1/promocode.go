@@ -13,25 +13,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PromoCodeHandler handles promo code HTTP requests
 type PromoCodeHandler struct {
 	service *promocodeSvc.Service
 }
 
-// NewPromoCodeHandler creates a new promo code handler
 func NewPromoCodeHandler(service *promocodeSvc.Service) *PromoCodeHandler {
 	return &PromoCodeHandler{service: service}
 }
 
-// ============ User API ============
-
-// ValidatePromoCodeRequest represents validate request body
 type ValidatePromoCodeRequest struct {
 	Code string `json:"code" binding:"required"`
 }
 
-// Validate validates a promo code
-// POST /api/v1/orgs/:slug/billing/promo-codes/validate
 func (h *PromoCodeHandler) Validate(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -53,13 +46,10 @@ func (h *PromoCodeHandler) Validate(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// RedeemPromoCodeRequest represents redeem request body
 type RedeemPromoCodeRequest struct {
 	Code string `json:"code" binding:"required"`
 }
 
-// Redeem redeems a promo code
-// POST /api/v1/orgs/:slug/billing/promo-codes/redeem
 func (h *PromoCodeHandler) Redeem(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -90,8 +80,6 @@ func (h *PromoCodeHandler) Redeem(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GetRedemptionHistory gets redemption history
-// GET /api/v1/orgs/:slug/billing/promo-codes/history
 func (h *PromoCodeHandler) GetRedemptionHistory(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -104,9 +92,6 @@ func (h *PromoCodeHandler) GetRedemptionHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"redemptions": history})
 }
 
-// ============ Admin API ============
-
-// CreatePromoCodeRequest represents create promo code request body
 type CreatePromoCodeRequest struct {
 	Code           string `json:"code" binding:"required,min=4,max=50"`
 	Name           string `json:"name" binding:"required,min=1,max=100"`
@@ -120,8 +105,6 @@ type CreatePromoCodeRequest struct {
 	ExpiresAt      string `json:"expires_at"`
 }
 
-// AdminCreate creates a promo code (admin)
-// POST /api/v1/admin/promo-codes
 func (h *PromoCodeHandler) AdminCreate(c *gin.Context) {
 	userID := c.MustGet("user_id").(int64)
 
@@ -131,7 +114,6 @@ func (h *PromoCodeHandler) AdminCreate(c *gin.Context) {
 		return
 	}
 
-	// Parse times
 	var startsAt, expiresAt *time.Time
 	if req.StartsAt != "" {
 		t, err := time.Parse(time.RFC3339, req.StartsAt)
@@ -179,8 +161,6 @@ func (h *PromoCodeHandler) AdminCreate(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"promo_code": promoCode})
 }
 
-// AdminList lists promo codes (admin)
-// GET /api/v1/admin/promo-codes
 func (h *PromoCodeHandler) AdminList(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -219,8 +199,6 @@ func (h *PromoCodeHandler) AdminList(c *gin.Context) {
 	})
 }
 
-// AdminGet gets a promo code by ID (admin)
-// GET /api/v1/admin/promo-codes/:id
 func (h *PromoCodeHandler) AdminGet(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -237,8 +215,6 @@ func (h *PromoCodeHandler) AdminGet(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"promo_code": promoCode})
 }
 
-// AdminDeactivate deactivates a promo code (admin)
-// POST /api/v1/admin/promo-codes/:id/deactivate
 func (h *PromoCodeHandler) AdminDeactivate(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -258,8 +234,6 @@ func (h *PromoCodeHandler) AdminDeactivate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "promo code deactivated"})
 }
 
-// AdminActivate activates a promo code (admin)
-// POST /api/v1/admin/promo-codes/:id/activate
 func (h *PromoCodeHandler) AdminActivate(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -279,7 +253,6 @@ func (h *PromoCodeHandler) AdminActivate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "promo code activated"})
 }
 
-// RegisterPromoCodeRoutes registers promo code routes for org-scoped billing
 func RegisterPromoCodeRoutes(rg *gin.RouterGroup, service *promocodeSvc.Service) {
 	handler := NewPromoCodeHandler(service)
 
@@ -288,7 +261,6 @@ func RegisterPromoCodeRoutes(rg *gin.RouterGroup, service *promocodeSvc.Service)
 	rg.GET("/history", handler.GetRedemptionHistory)
 }
 
-// RegisterAdminPromoCodeRoutes registers admin promo code routes
 func RegisterAdminPromoCodeRoutes(rg *gin.RouterGroup, service *promocodeSvc.Service) {
 	handler := NewPromoCodeHandler(service)
 
