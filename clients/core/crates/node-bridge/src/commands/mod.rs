@@ -16,7 +16,6 @@ pub mod mesh;
 pub mod message;
 pub mod pod;
 pub mod promocode;
-pub mod repository;
 pub mod runner;
 pub mod runner_api;
 pub mod sso;

@@ -131,26 +131,7 @@ mod api_core_tests {
     // promocode_connect.rs and the wasm service tests.
 
     // ── repository ──────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_repositories() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/repositories"))
-            .respond_with(ok(json!({"repositories":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.list_repositories().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn list_repository_branches() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/repositories/5/branches"))
-            .respond_with(ok(json!({"branches":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.list_repository_branches(5).await.unwrap();
-    }
+    // REST surface dropped; covered by repository.rs Connect block.
 
     // ── ticket_relations ────────────────────────────────────────────────
     // REST mocks removed: REST surface eliminated; Connect handler tests in

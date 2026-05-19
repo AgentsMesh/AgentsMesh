@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { FolderGit2, Server, Plus } from "lucide-react";
-import { getRepositoryService } from "@/lib/wasm-core";
-import type { RepositoryData } from "@/lib/api/repositoryTypes";
+import { listRepositories } from "@/lib/api/repositoryConnect";
 import { useRunners, useRunnerStore } from "@/stores/runner";
 import { InfraRepositoryDetail } from "@/components/infra/InfraRepositoryDetail";
 import { InfraRunnerDetail } from "@/components/infra/InfraRunnerDetail";
@@ -57,14 +56,13 @@ function RepoSection({ orgSlug, selectedId, idMissing, onBack, t }: {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await getRepositoryService().list();
-        const parsed = JSON.parse(raw) as { repositories?: RepositoryData[] };
-        setFirstId(parsed.repositories?.[0]?.id ?? null);
+        const { items } = await listRepositories(orgSlug);
+        setFirstId(items[0]?.id ?? null);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [orgSlug]);
 
   useEffect(() => {
     if (!idMissing || loading || firstId == null) return;
