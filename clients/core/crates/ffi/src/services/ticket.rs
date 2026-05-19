@@ -295,10 +295,70 @@ impl AgentsMeshCore {
         slug: String,
         active_only: Option<bool>,
     ) -> Result<PodListResponseDto, CoreError> {
-        // proto.ticket.v1 does not own ticket→pod lookup — that's MeshService.
-        // Stay on REST until MeshService migrates.
-        let resp = self.api.get_ticket_pods(&slug, active_only).await?;
-        Ok(resp.into())
+        // proto.ticket.v1 doesn't own ticket→pod lookup — that's MeshService.
+        // The MeshNode projection carries the renderer-facing pod fields;
+        // the unset PodDto fields stay None on this lookup path.
+        use agentsmesh_services::parse_status;
+        use agentsmesh_types::PodStatus;
+        use agentsmesh_types::proto_mesh_v1 as mp;
+        use crate::dto::PodDto;
+        let req = mp::GetTicketPodsRequest {
+            org_slug: self.org_slug()?,
+            ticket_slug: slug,
+            active_only,
+        };
+        let resp = self.api.get_ticket_pods_connect(&req).await?;
+        let pods = resp
+            .pods
+            .into_iter()
+            .map(|n| PodDto {
+                key: n.pod_key,
+                id: None,
+                status: parse_status::<PodStatus>(&n.status).into(),
+                agent_status: if n.agent_status.is_empty() {
+                    None
+                } else {
+                    Some(n.agent_status)
+                },
+                alias: n.alias,
+                title: n.title,
+                agent_slug: n.agent_slug,
+                runner_id: if n.runner_id == 0 { None } else { Some(n.runner_id) },
+                runner_name: if n.runner_node_id.is_empty() {
+                    None
+                } else {
+                    Some(n.runner_node_id)
+                },
+                user_id: if n.created_by_id == 0 {
+                    None
+                } else {
+                    Some(n.created_by_id)
+                },
+                ticket_slug: n.ticket_slug,
+                channel_id: None,
+                runner: None,
+                agent: None,
+                repository: None,
+                ticket: None,
+                loop_info: None,
+                created_by: None,
+                prompt: None,
+                branch_name: None,
+                sandbox_path: None,
+                started_at: n.started_at,
+                finished_at: None,
+                last_activity: None,
+                created_at: None,
+                updated_at: None,
+                interaction_mode: None,
+                perpetual: None,
+                restart_count: None,
+                last_restart_at: None,
+                error_code: None,
+                error_message: None,
+            })
+            .collect();
+        Ok(PodListResponseDto { pods, total: None })
     }
 
     pub async fn add_ticket_label(&self, slug: String, label_id: i64) -> Result<(), CoreError> {

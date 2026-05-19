@@ -1,7 +1,6 @@
 use crate::ApiClient;
 use crate::connect_call::connect_call;
 use crate::error::ApiError;
-use agentsmesh_types::*;
 use agentsmesh_types::proto_ticket_v1 as ticket_proto;
 
 // =============================================================================
@@ -130,27 +129,5 @@ impl ApiClient {
         req: &ticket_proto::RemoveLabelRequest,
     ) -> Result<ticket_proto::RemoveLabelResponse, ApiError> {
         connect_call(self, "/proto.ticket.v1.TicketService/RemoveLabel", req).await
-    }
-}
-
-// =============================================================================
-// REST-only methods (no Connect-RPC equivalent).
-// =============================================================================
-//
-// `get_ticket_pods` stays on REST: proto.ticket.v1 doesn't own ticket→pod
-// lookup — that's MeshService (see backend/internal/api/rest/v1/mesh.go).
-// Stay on REST until MeshService migrates.
-
-impl ApiClient {
-    pub async fn get_ticket_pods(
-        &self,
-        slug: &str,
-        active_only: Option<bool>,
-    ) -> Result<PodListResponse, ApiError> {
-        let mut path = self.org_path(&format!("/tickets/{slug}/pods"));
-        if let Some(active) = active_only {
-            path = format!("{path}?active={active}");
-        }
-        self.get(&path).await
     }
 }

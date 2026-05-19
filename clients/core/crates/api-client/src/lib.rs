@@ -16,8 +16,6 @@ mod api_message_org_tests;
 #[cfg(test)]
 mod api_pod_runner_tests;
 #[cfg(test)]
-mod api_ticket_tests;
-#[cfg(test)]
 mod api_billing_extra_tests;
 
 pub use client::ApiClient;

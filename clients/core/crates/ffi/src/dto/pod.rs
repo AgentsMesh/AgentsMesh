@@ -299,28 +299,10 @@ impl From<CreatePodResponse> for CreatePodResponseDto {
 
 // ── Connect / prost mappings ──
 //
-// Proto Pod uses required strings (`status`, `agent_status`, `pod_key`,
-// `interaction_mode`) where REST Pod uses serde-`untagged` Option/enum
-// shapes. parse_proto_pod_status() rebuilds the PodStatusDto from the
-// proto string (Unknown on bad input — same fallback as serde `other`).
+// Proto Pod uses required `status: string`; map it through the wire enum
+// (PodStatus) so the conversion lives in one place — there's no separate
+// dto-level parser.
 
-fn parse_proto_pod_status(s: &str) -> PodStatusDto {
-    match s {
-        "pending" => PodStatusDto::Pending,
-        "creating" => PodStatusDto::Creating,
-        "initializing" => PodStatusDto::Initializing,
-        "running" => PodStatusDto::Running,
-        "paused" => PodStatusDto::Paused,
-        "stopping" => PodStatusDto::Stopping,
-        "disconnected" => PodStatusDto::Disconnected,
-        "orphaned" => PodStatusDto::Orphaned,
-        "completed" => PodStatusDto::Completed,
-        "terminated" => PodStatusDto::Terminated,
-        "error" => PodStatusDto::Error,
-        "failed" => PodStatusDto::Failed,
-        _ => PodStatusDto::Unknown,
-    }
-}
 
 fn opt_str(s: String) -> Option<String> {
     if s.is_empty() { None } else { Some(s) }
@@ -372,7 +354,7 @@ impl From<pod_proto::Pod> for PodDto {
         Self {
             key: p.pod_key,
             id: Some(p.id),
-            status: parse_proto_pod_status(&p.status),
+            status: agentsmesh_services::parse_status::<PodStatus>(&p.status).into(),
             agent_status: opt_str(p.agent_status),
             alias: p.alias,
             title: p.title,
