@@ -3,7 +3,7 @@ mod api_core_tests {
     use std::sync::{Arc, Mutex};
 
     use serde_json::json;
-    use wiremock::matchers::{body_json, method, path, query_param};
+    use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use crate::{ApiClient, AuthTokenStore};
@@ -244,33 +244,9 @@ mod api_core_tests {
     }
 
     // ── promocode ───────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn validate_promo_code() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/api/v1/orgs/acme/billing/promo-codes/validate"))
-            .and(body_json(json!({"code":"SAVE20"})))
-            .respond_with(ok(json!({"valid":true})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let data = agentsmesh_types::ValidatePromoRequest {
-            code: "SAVE20".into(),
-        };
-        let r = c.validate_promo_code(&data).await.unwrap();
-        assert!(r.valid);
-    }
-
-    #[tokio::test]
-    async fn get_promo_code_history() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v1/orgs/acme/billing/promo-codes/history"))
-            .respond_with(ok(json!({"history":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.get_promo_code_history().await.unwrap();
-    }
+    // REST surface dropped; validate / redeem / history all live on
+    // proto.promocode.v1.PromoCodeService — covered by
+    // promocode_connect.rs and the wasm service tests.
 
     // ── repository ──────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@ mod api_pod_runner_tests {
     use std::sync::{Arc, Mutex};
 
     use serde_json::json;
-    use wiremock::matchers::{body_json, method, path, query_param};
+    use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use crate::{ApiClient, AuthTokenStore};
@@ -33,17 +33,7 @@ mod api_pod_runner_tests {
     // list_runner_pods (no runner_id filter in proto.pod.v1.ListPods),
     // get_runner_auth_status + authorize_runner (registration bootstrap).
 
-    #[tokio::test]
-    async fn redeem_promo_code() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/api/v1/orgs/acme/billing/promo-codes/redeem"))
-            .and(body_json(json!({"code":"SAVE20"})))
-            .respond_with(ok(json!({}))).expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), Tok::org("acme"));
-        let data = agentsmesh_types::RedeemPromoRequest { code: "SAVE20".into() };
-        let _ = c.redeem_promo_code(&data).await.unwrap();
-    }
+    // redeem_promo_code dropped — REST surface gone, see promocode_connect.
 
     #[tokio::test]
     async fn list_runner_pods() {
