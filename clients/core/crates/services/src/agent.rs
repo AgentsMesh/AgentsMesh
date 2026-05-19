@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use agentsmesh_api_client::ApiClient;
-use agentsmesh_types::*;
 use agentsmesh_types::proto_agent_v1 as agent_proto;
 use agentsmesh_types::proto_pod_v1 as pod_proto;
 use prost::Message;
@@ -13,61 +12,6 @@ pub struct AgentService {
 impl AgentService {
     pub fn new(client: Arc<ApiClient>) -> Self {
         Self { client }
-    }
-
-    // -------- AgentPodSettings (legacy REST — still consumed by web stores) --------
-    // These are settings/providers RPCs (not the AgentService data plane); they
-    // remain on REST until AgentPodSettings migrates. AgentService /
-    // UserAgentConfig RPCs are Connect-only now (see below).
-
-    pub async fn get_agentpod_settings(&self) -> Result<String, String> {
-        let resp = self.client.get_agentpod_settings().await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn update_agentpod_settings(&self, json: &str) -> Result<String, String> {
-        let req: AgentPodSettings = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .update_agentpod_settings(&req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn list_providers(&self) -> Result<String, String> {
-        let resp = self.client
-            .list_agentpod_providers()
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn create_provider(&self, json: &str) -> Result<String, String> {
-        let req: CreateAIProviderRequest = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .create_agentpod_provider(&req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn update_provider(&self, id: i64, json: &str) -> Result<String, String> {
-        let req: UpdateAIProviderRequest = serde_json::from_str(json).map_err(crate::wire)?;
-        let resp = self.client
-            .update_agentpod_provider(id, &req)
-            .await.map_err(crate::wire)?;
-        serde_json::to_string(&resp).map_err(crate::wire)
-    }
-
-    pub async fn delete_provider(&self, id: i64) -> Result<(), String> {
-        self.client
-            .delete_agentpod_provider(id)
-            .await.map_err(crate::wire)?;
-        Ok(())
-    }
-
-    pub async fn set_default_provider(&self, id: i64) -> Result<(), String> {
-        self.client
-            .set_default_agentpod_provider(id)
-            .await.map_err(crate::wire)?;
-        Ok(())
     }
 
     // -------- Connect-RPC (binary wire) — AgentPodSettingsService --------

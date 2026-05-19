@@ -34,73 +34,7 @@ mod api_agent_billing_tests {
     }
 
     // ── agentpod ────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn update_agentpod_settings() {
-        let s = MockServer::start().await;
-        Mock::given(method("PUT")).and(path("/api/v1/users/me/agentpod/settings"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let data = agentsmesh_types::AgentPodSettings {
-            default_runner_id: Some(1),
-            default_agent_slug: None,
-            preferences: None,
-        };
-        let _ = c.update_agentpod_settings(&data).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn create_agentpod_provider() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST")).and(path("/api/v1/users/me/agentpod/providers"))
-            .respond_with(ok(json!({"id":1,"name":"openai","provider_type":"openai"})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let data = agentsmesh_types::CreateAIProviderRequest {
-            name: "openai".into(),
-            provider_type: "openai".into(),
-            base_url: None,
-            api_key: Some("sk-test".into()),
-        };
-        let _ = c.create_agentpod_provider(&data).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn update_agentpod_provider() {
-        let s = MockServer::start().await;
-        Mock::given(method("PUT")).and(path("/api/v1/users/me/agentpod/providers/5"))
-            .respond_with(ok(json!({"id":5,"name":"updated","provider_type":"openai"})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let data = agentsmesh_types::UpdateAIProviderRequest {
-            name: Some("updated".into()),
-            base_url: None,
-            api_key: None,
-        };
-        let _ = c.update_agentpod_provider(5, &data).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn delete_agentpod_provider() {
-        let s = MockServer::start().await;
-        Mock::given(method("DELETE")).and(path("/api/v1/users/me/agentpod/providers/5"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.delete_agentpod_provider(5).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn set_default_agentpod_provider() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/api/v1/users/me/agentpod/providers/3/default"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.set_default_agentpod_provider(3).await.unwrap();
-    }
+    // REST surface dropped; covered by agentpod.rs Connect block.
 
     // ── autopilot ───────────────────────────────────────────────────────
     // REST surface dropped; covered by autopilot_connect.rs.

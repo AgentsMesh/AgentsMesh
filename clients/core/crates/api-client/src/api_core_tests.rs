@@ -59,26 +59,7 @@ mod api_core_tests {
     // REST surface dropped; covered by loop_connect.rs.
 
     // ── agentpod ────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn get_agentpod_settings() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/agentpod/settings"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.get_agentpod_settings().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn list_agentpod_providers() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/me/agentpod/providers"))
-            .respond_with(ok(json!({"providers":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_agentpod_providers().await.unwrap();
-    }
+    // REST surface dropped; covered by agentpod.rs Connect block.
 
     // ── autopilot ───────────────────────────────────────────────────────
     // REST surface dropped; covered by autopilot_connect.rs.

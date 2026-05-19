@@ -1,4 +1,3 @@
-pub mod agent;
 pub mod apikey;
 pub mod auth_connect;
 pub mod autopilot;
