@@ -10,7 +10,6 @@ export interface RepositorySelectProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
-  /** Show only active repositories */
   activeOnly?: boolean;
 }
 

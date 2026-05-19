@@ -15,26 +15,20 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// validGranularities defines allowed granularity values.
 var validGranularities = map[string]bool{
 	"day":   true,
 	"week":  true,
 	"month": true,
 }
 
-// TokenUsageHandler handles token usage HTTP requests.
 type TokenUsageHandler struct {
 	svc *tokenusagesvc.Service
 }
 
-// NewTokenUsageHandler creates a new token usage handler.
 func NewTokenUsageHandler(svc *tokenusagesvc.Service) *TokenUsageHandler {
 	return &TokenUsageHandler{svc: svc}
 }
 
-// GetDashboard returns all token usage data in a single response.
-// The 5 queries run concurrently via errgroup for lower latency.
-// GET /token-usage/dashboard?start_time=&end_time=&agent_slug=&user_id=&model=&granularity=
 func (h *TokenUsageHandler) GetDashboard(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	if !isAdminOrOwner(tenant) {
@@ -101,7 +95,6 @@ func (h *TokenUsageHandler) GetDashboard(c *gin.Context) {
 	})
 }
 
-// RegisterTokenUsageRoutes registers token usage routes on the given group.
 func RegisterTokenUsageRoutes(rg *gin.RouterGroup, svc *tokenusagesvc.Service) {
 	handler := NewTokenUsageHandler(svc)
 	group := rg.Group("/token-usage")
@@ -110,16 +103,13 @@ func RegisterTokenUsageRoutes(rg *gin.RouterGroup, svc *tokenusagesvc.Service) {
 	}
 }
 
-// isAdminOrOwner checks if the tenant has owner or admin role.
 func isAdminOrOwner(tenant *middleware.TenantContext) bool {
 	return tenant.UserRole == "owner" || tenant.UserRole == "admin"
 }
 
-// parseFilter extracts AggregationFilter from query parameters.
 func parseFilter(c *gin.Context) (tokenusage.AggregationFilter, error) {
 	var filter tokenusage.AggregationFilter
 
-	// Default to last 30 days
 	filter.EndTime = time.Now()
 	filter.StartTime = filter.EndTime.AddDate(0, 0, -30)
 
@@ -142,7 +132,7 @@ func parseFilter(c *gin.Context) (tokenusage.AggregationFilter, error) {
 		return filter, fmt.Errorf("start_time must be before end_time")
 	}
 
-	// Cap date range to prevent expensive aggregation queries (max 1 year).
+	// Cap to prevent expensive aggregation queries.
 	const maxDateRange = 366 * 24 * time.Hour
 	if filter.EndTime.Sub(filter.StartTime) > maxDateRange {
 		return filter, fmt.Errorf("date range cannot exceed 366 days")

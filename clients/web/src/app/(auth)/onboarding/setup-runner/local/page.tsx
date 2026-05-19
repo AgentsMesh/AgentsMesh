@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useCurrentOrg, useAuthStore } from "@/stores/auth";
-import type { RunnerData, RunnerListResponse } from "@/lib/api/runnerTypes";
+import type { RunnerData } from "@/lib/api/runnerTypes";
 import { isApiErrorCode } from "@/lib/api/errors";
-import { getRunnerService } from "@/lib/wasm-core";
+import { lightCreateRunnerToken, lightListRunners } from "@/lib/light-auth";
+import { useLightSession } from "@/hooks/useLightSession";
+import { useRequireLightAuth } from "@/hooks/useRequireLightAuth";
 import { useServerUrl } from "@/hooks/useServerUrl";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
@@ -17,7 +18,9 @@ import { SetupSteps } from "./components/SetupSteps";
 export default function LocalRunnerSetupPage() {
   const router = useRouter();
   const t = useTranslations();
-  const currentOrg = useCurrentOrg();
+  useRequireLightAuth();
+  const { session } = useLightSession();
+  const orgSlug = session?.currentOrgSlug ?? null;
   const serverUrl = useServerUrl();
   const [token, setToken] = useState<string | null>(null);
   const [tokenCopied, setTokenCopied] = useState(false);
@@ -29,11 +32,12 @@ export default function LocalRunnerSetupPage() {
   const [waitTime, setWaitTime] = useState(0);
 
   useEffect(() => {
+    if (!orgSlug) return;
     const generateToken = async () => {
       try {
         setLoading(true);
-        const resp = JSON.parse(await getRunnerService().create_token(JSON.stringify({})));
-        setToken(resp.token);
+        const t = await lightCreateRunnerToken(orgSlug);
+        setToken(t);
       } catch (err) {
         if (isApiErrorCode(err, "ADMIN_REQUIRED") || isApiErrorCode(err, "INSUFFICIENT_PERMISSIONS")) {
           setError(t("apiErrors.INSUFFICIENT_PERMISSIONS"));
@@ -44,12 +48,13 @@ export default function LocalRunnerSetupPage() {
     };
     generateToken();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [orgSlug]);
 
   const checkRunnerConnection = useCallback(async () => {
+    if (!orgSlug) return false;
     try {
-      const resp: RunnerListResponse = JSON.parse(await getRunnerService().fetch_runners(null));
-      const onlineRunner = resp.runners.find((r) => r.status === "online");
+      const runners = await lightListRunners(orgSlug);
+      const onlineRunner = runners.find((r) => r.status === "online");
       if (onlineRunner) {
         setConnectionStatus("connected");
         setConnectedRunner(onlineRunner);
@@ -57,7 +62,7 @@ export default function LocalRunnerSetupPage() {
       }
     } catch { /* Ignore errors during polling */ }
     return false;
-  }, []);
+  }, [orgSlug]);
 
   useEffect(() => {
     if (!token || connectionStatus === "connected") return;
@@ -92,7 +97,7 @@ export default function LocalRunnerSetupPage() {
   };
 
   const handleComplete = () => {
-    if (currentOrg) { router.push(`/${currentOrg.slug}/workspace`); }
+    if (orgSlug) { router.push(`/${orgSlug}/workspace`); }
     else { router.push("/"); }
   };
 

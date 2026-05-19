@@ -9,14 +9,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// reconcilePods syncs pod status between runner heartbeat and database
 func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, reportedPods map[string]bool) {
 	now := time.Now()
 
-	// First, check reported pods against database status
-	// - Restore orphaned pods that runner reports as active
-	// - Recover initializing pods (PodCreated message loss / backend restart)
-	// - Terminate pods that should not be running (terminated/completed in DB)
 	for podKey := range reportedPods {
 		pod, err := pc.podStore.GetByKeyAndRunner(ctx, podKey, runnerID)
 		if err != nil {
@@ -26,7 +21,6 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 				continue
 			}
 
-			// Pod not in database — use evidence accumulation
 			missCount := pc.incrementMissCount(podKey, runnerID)
 			if missCount < orphanMissThreshold {
 				pc.logger.Debug("unknown pod, waiting for more evidence",
@@ -48,7 +42,6 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 			continue
 		}
 
-		// Terminate pods that are already completed/terminated in DB
 		if pod.Status == agentpod.StatusCompleted || pod.Status == agentpod.StatusTerminated {
 			if pc.isTerminateCooldown(podKey) {
 				continue
@@ -63,25 +56,12 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 			continue
 		}
 
-		// Ensure pod is registered with terminal router (preserves existing VT state)
 		pc.podRouter.EnsurePodRegistered(podKey, runnerID)
 
-		// Restore orphaned pod
 		if pod.Status == agentpod.StatusOrphaned {
 			pc.recoverPodStatus(ctx, podKey, runnerID, agentpod.StatusOrphaned, now)
 		}
 
-		// Recover initializing pod that runner reports as active.
-		// Uses evidence accumulation: only recover after the pod has been reported
-		// in N consecutive heartbeats. This prevents premature recovery of pods
-		// that are legitimately still initializing (slow git clone, large repo).
-		// The counter naturally starts at 0 after backend restart, so it also
-		// handles the "backend restarted, ackTracker lost" case correctly.
-		//
-		// Note: This is a best-effort recovery. Metadata set by handlePodCreated
-		// (pty_pid, sandbox_path, branch_name) will be missing. Terminal routing
-		// still works via EnsurePodRegistered above. Resume functionality (which
-		// depends on sandbox_path) may not work for heartbeat-recovered pods.
 		if pod.Status == agentpod.StatusInitializing {
 			count := pc.incrementInitReportCount(podKey)
 			if count >= initRecoverThreshold {
@@ -95,7 +75,6 @@ func (pc *PodCoordinator) reconcilePods(ctx context.Context, runnerID int64, rep
 	pc.syncPodCount(ctx, runnerID, reportedPods)
 }
 
-// recoverPodStatus transitions a pod from fromStatus to running.
 func (pc *PodCoordinator) recoverPodStatus(ctx context.Context, podKey string, runnerID int64, fromStatus string, now time.Time) {
 	updates := map[string]interface{}{
 		"status":        agentpod.StatusRunning,
@@ -126,7 +105,6 @@ func (pc *PodCoordinator) recoverPodStatus(ctx context.Context, podKey string, r
 	}
 }
 
-// reconcileMissingPods marks pods missing from heartbeat as orphaned.
 func (pc *PodCoordinator) reconcileMissingPods(ctx context.Context, runnerID int64, reportedPods map[string]bool, now time.Time) {
 	activePods, err := pc.podStore.ListActiveByRunner(ctx, runnerID)
 	if err != nil {
@@ -164,7 +142,6 @@ func (pc *PodCoordinator) reconcileMissingPods(ctx context.Context, runnerID int
 	}
 }
 
-// syncPodCount updates the runner's pod count to match reality.
 func (pc *PodCoordinator) syncPodCount(ctx context.Context, runnerID int64, reportedPods map[string]bool) {
 	reportedKeys := make([]string, 0, len(reportedPods))
 	for podKey := range reportedPods {

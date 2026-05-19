@@ -8,14 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ agent.MessageRepository = (*agentMessageRepo)(nil)
 
 type agentMessageRepo struct {
 	db *gorm.DB
 }
 
-// NewAgentMessageRepository creates a new GORM-based agent message repository
 func NewAgentMessageRepository(db *gorm.DB) agent.MessageRepository {
 	return &agentMessageRepo{db: db}
 }

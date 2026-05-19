@@ -6,7 +6,6 @@ import { PageHeader, PageFooter } from "@/components/common";
 import { Markdown } from "@/components/ui/markdown";
 import { getPost, getAllSlugs } from "@/lib/blog";
 
-/** Locale → Intl date locale mapping */
 const dateLocaleMap: Record<string, string> = {
   en: "en-US",
   zh: "zh-CN",

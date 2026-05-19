@@ -10,9 +10,6 @@ interface TokenDialogProps {
   t: TranslationFn;
 }
 
-/**
- * Dialog showing the generated runner registration token
- */
 export function TokenDialog({
   token,
   onClose,

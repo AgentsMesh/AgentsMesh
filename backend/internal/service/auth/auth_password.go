@@ -10,12 +10,8 @@ import (
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 )
 
-// Login authenticates user and returns tokens
 func (s *Service) Login(ctx context.Context, email, password string) (*LoginResult, error) {
-	// Check enforce_sso before attempting password authentication.
-	// We need to look up the user first to check is_system_admin.
 	if s.ssoChecker != nil && strings.Contains(email, "@") {
-		// Try to find the user to check admin status
 		isSystemAdmin := false
 		u, err := s.userService.GetByEmail(ctx, email)
 		if err == nil && u != nil {
@@ -57,13 +53,11 @@ func (s *Service) Login(ctx context.Context, email, password string) (*LoginResu
 	}, nil
 }
 
-// Register creates a new user and returns tokens
 func (s *Service) Register(ctx context.Context, req *RegisterRequest) (*LoginResult, error) {
 	if err := domainUser.ValidateUsername(req.Username); err != nil {
 		return nil, err
 	}
 
-	// Enforce SSO: reject password registration for domains with enforce_sso enabled
 	if s.ssoChecker != nil && strings.Contains(req.Email, "@") {
 		allowed, err := s.ssoChecker.IsPasswordLoginAllowed(ctx, req.Email, false)
 		if err == nil && !allowed {

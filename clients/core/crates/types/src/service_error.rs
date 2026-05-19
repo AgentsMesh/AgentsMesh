@@ -1,11 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Wire-format error returned across the FFI boundary (WASM / node-bridge → JS).
-///
-/// Shape is a tagged enum on the `kind` field so the front-end can discriminate
-/// without string matching. When `to_string()` on an `ApiError` loses structure,
-/// `to_wire()` preserves it as JSON; the front-end `parseServiceError` rebuilds
-/// a typed error object.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ServiceError {
@@ -70,7 +64,6 @@ impl From<serde_json::Error> for ServiceError {
 
 impl From<String> for ServiceError {
     fn from(s: String) -> Self {
-        // If the string already looks like a wire payload, try to parse it back.
         if s.starts_with('{') {
             if let Ok(parsed) = serde_json::from_str::<ServiceError>(&s) {
                 return parsed;

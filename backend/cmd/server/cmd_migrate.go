@@ -115,12 +115,6 @@ func runMigrate(args []string) {
 	slog.Info("migrate ok", "subcommand", sub)
 }
 
-// migrateURL converts the lib/pq KV-style DSN that the rest of the
-// server uses (`host=... user=... password=...`) into the
-// scheme-prefixed URL form `postgres://...` that golang-migrate's
-// source-instance constructor requires. Going through net/url ensures
-// passwords containing `@` / `:` / `/` are escaped correctly — naive
-// fmt.Sprintf concatenation breaks on those.
 func migrateURL(c config.DatabaseConfig) string {
 	u := &url.URL{
 		Scheme: "postgres",

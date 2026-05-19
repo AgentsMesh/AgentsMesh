@@ -12,15 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// updatePodAliasRequest represents the request body for updating a pod alias
 type updatePodAliasRequest struct {
-	// Alias is a pointer to distinguish between null (clear) and absent (no change).
-	// JSON: {"alias": "my-name"} sets the alias; {"alias": null} clears it.
 	Alias *string `json:"alias"`
 }
 
-// UpdatePodAlias updates the alias for a pod
-// PATCH /api/v1/organizations/:slug/pods/:key/alias
 func (h *PodHandler) UpdatePodAlias(c *gin.Context) {
 	podKey := c.Param("key")
 
@@ -43,12 +38,10 @@ func (h *PodHandler) UpdatePodAlias(c *gin.Context) {
 		return
 	}
 
-	// Treat empty string as null (clear alias)
 	if req.Alias != nil && strings.TrimSpace(*req.Alias) == "" {
 		req.Alias = nil
 	}
 
-	// Validate alias length when not clearing
 	if req.Alias != nil && len(*req.Alias) > 100 {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Alias must be 100 characters or less")
 		return
@@ -59,7 +52,6 @@ func (h *PodHandler) UpdatePodAlias(c *gin.Context) {
 		return
 	}
 
-	// Publish pod:alias_changed event for real-time sync
 	if h.eventBus != nil {
 		aliasData, _ := json.Marshal(eventbus.PodAliasChangedData{
 			PodKey: podKey,

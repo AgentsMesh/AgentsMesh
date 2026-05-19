@@ -1,4 +1,3 @@
-// AgentsMesh Backend Server - PKI/gRPC initialization wiring, log upload, and final startup.
 package main
 
 import (
@@ -25,7 +24,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// grpcWiringResult holds all outputs from initPKIAndGRPCWiring.
 type grpcWiringResult struct {
 	handler              *v1.GRPCRunnerHandler
 	server               *grpcserver.Server
@@ -33,7 +31,6 @@ type grpcWiringResult struct {
 	logUploadSender      runner.LogUploadCommandSender
 }
 
-// initPKIAndGRPCWiring initializes PKI/gRPC and wires command senders to coordinator and router.
 func initPKIAndGRPCWiring(
 	cfg *config.Config,
 	services *serviceContainer,
@@ -50,7 +47,6 @@ func initPKIAndGRPCWiring(
 ) *grpcWiringResult {
 	if cfg.PKI.CACertFile == "" || cfg.PKI.CAKeyFile == "" {
 		slog.Warn("PKI CA files not configured, gRPC/mTLS disabled")
-		// Create handler without PKI so token management routes still work
 		return &grpcWiringResult{
 			handler: v1.NewGRPCRunnerHandler(services.runner, nil, cfg),
 		}
@@ -88,7 +84,6 @@ func initPKIAndGRPCWiring(
 	return result
 }
 
-// initLogUploadService initializes the runner log upload service if S3 storage is configured.
 func initLogUploadService(
 	cfg *config.Config,
 	db *gorm.DB,
@@ -105,7 +100,6 @@ func initLogUploadService(
 	logUploadRepo := infra.NewRunnerLogRepository(db)
 	logUploadSvc := runnerlogservice.NewService(logUploadRepo, logUploadStorage)
 
-	// Register callback for log upload status events from Runner
 	runnerConnMgr.SetLogUploadStatusCallback(func(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
 		logUploadSvc.HandleUploadStatus(runnerID, data.RequestId, data.Phase, data.Progress, data.Message, data.Error, data.SizeBytes)
 	})
@@ -113,7 +107,6 @@ func initLogUploadService(
 	return logUploadSvc
 }
 
-// createPodOrchestrator creates the unified PodOrchestrator for REST + MCP paths.
 func createPodOrchestrator(services *serviceContainer, podCoordinator *runner.PodCoordinator) *agentpod.PodOrchestrator {
 	compositeProvider := agent.NewCompositeProvider(services.agentSvc, services.credentialProfile, services.userConfig)
 	configBuilder := agent.NewConfigBuilder(compositeProvider)
@@ -139,7 +132,6 @@ func createPodOrchestrator(services *serviceContainer, podCoordinator *runner.Po
 	return orch
 }
 
-// buildServicesContainer constructs the v1.Services container from all initialized components.
 func buildServicesContainer(
 	services *serviceContainer,
 	runnerConnMgr *runner.RunnerConnectionManager,
@@ -218,7 +210,6 @@ func buildServicesContainer(
 	}
 }
 
-// startMarketplaceWorker starts the marketplace worker and returns a cleanup func.
 func startMarketplaceWorker(services *serviceContainer) func() {
 	if services.marketplaceWorker != nil {
 		services.marketplaceWorker.Start(context.Background())

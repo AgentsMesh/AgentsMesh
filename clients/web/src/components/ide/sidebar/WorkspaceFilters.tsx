@@ -11,9 +11,6 @@ interface WorkspaceFiltersProps {
   isAdmin?: boolean;
 }
 
-/**
- * Filter tabs for pod list
- */
 export function WorkspaceFilters({ filter, onFilterChange, t, isAdmin }: WorkspaceFiltersProps) {
   const filters: FilterType[] = isAdmin ? ["mine", "org", "completed"] : ["mine", "completed"];
 

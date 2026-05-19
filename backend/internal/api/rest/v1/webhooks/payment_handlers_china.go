@@ -9,27 +9,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Payment Webhook Handlers - China (Alipay, WeChat)
-// ===========================================
-
-// handleAlipayWebhook handles Alipay webhook events (异步通知)
 func (r *WebhookRouter) handleAlipayWebhook(c *gin.Context) {
-	// Check if Alipay is configured
 	if r.paymentFactory == nil || !r.paymentFactory.IsProviderAvailable(billingdomain.PaymentProviderAlipay) {
 		r.logger.Warn("Alipay webhook received but Alipay is not configured")
 		c.String(http.StatusServiceUnavailable, "fail")
 		return
 	}
 
-	// Read the form data (Alipay uses application/x-www-form-urlencoded)
 	if err := c.Request.ParseForm(); err != nil {
 		r.logger.Error("failed to parse Alipay webhook form", "error", err)
 		c.String(http.StatusBadRequest, "fail")
 		return
 	}
 
-	// Convert form values to JSON for our provider
 	formData := make(map[string]string)
 	for key, values := range c.Request.Form {
 		if len(values) > 0 {
@@ -38,7 +30,6 @@ func (r *WebhookRouter) handleAlipayWebhook(c *gin.Context) {
 	}
 	payload, _ := json.Marshal(formData)
 
-	// Get the Alipay provider
 	provider, err := r.paymentFactory.GetProvider(billingdomain.PaymentProviderAlipay)
 	if err != nil {
 		r.logger.Error("failed to get Alipay provider", "error", err)
@@ -46,7 +37,6 @@ func (r *WebhookRouter) handleAlipayWebhook(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the webhook (signature is verified inside)
 	event, err := provider.HandleWebhook(c.Request.Context(), payload, "")
 	if err != nil {
 		r.logger.Error("failed to validate Alipay webhook", "error", err)
@@ -61,7 +51,6 @@ func (r *WebhookRouter) handleAlipayWebhook(c *gin.Context) {
 		"status", event.Status,
 	)
 
-	// Process the event based on status
 	var processErr error
 	switch event.Status {
 	case billingdomain.OrderStatusSucceeded:
@@ -87,13 +76,10 @@ func (r *WebhookRouter) handleAlipayWebhook(c *gin.Context) {
 		return
 	}
 
-	// Alipay expects "success" string response (not JSON)
 	c.String(http.StatusOK, "success")
 }
 
-// handleWeChatWebhook handles WeChat Pay webhook events (支付回调)
 func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
-	// Check if WeChat is configured
 	if r.paymentFactory == nil || !r.paymentFactory.IsProviderAvailable(billingdomain.PaymentProviderWeChat) {
 		r.logger.Warn("WeChat webhook received but WeChat is not configured")
 		c.JSON(http.StatusServiceUnavailable, gin.H{
@@ -103,7 +89,6 @@ func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
 		return
 	}
 
-	// Read the request body
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		r.logger.Error("failed to read WeChat webhook body", "error", err)
@@ -114,15 +99,12 @@ func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
 		return
 	}
 
-	// Get signature headers for verification
 	signature := c.GetHeader("Wechatpay-Signature")
 	timestamp := c.GetHeader("Wechatpay-Timestamp")
 	nonce := c.GetHeader("Wechatpay-Nonce")
 
-	// Build verification string for provider
 	verifyStr := timestamp + "|" + nonce + "|" + signature
 
-	// Get the WeChat provider
 	provider, err := r.paymentFactory.GetProvider(billingdomain.PaymentProviderWeChat)
 	if err != nil {
 		r.logger.Error("failed to get WeChat provider", "error", err)
@@ -133,7 +115,6 @@ func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the webhook
 	event, err := provider.HandleWebhook(c.Request.Context(), payload, verifyStr)
 	if err != nil {
 		r.logger.Error("failed to validate WeChat webhook", "error", err)
@@ -151,7 +132,6 @@ func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
 		"status", event.Status,
 	)
 
-	// Process the event based on status
 	var processErr error
 	switch event.Status {
 	case billingdomain.OrderStatusSucceeded:
@@ -180,7 +160,6 @@ func (r *WebhookRouter) handleWeChatWebhook(c *gin.Context) {
 		return
 	}
 
-	// WeChat expects specific JSON response format
 	c.JSON(http.StatusOK, gin.H{
 		"code":    "SUCCESS",
 		"message": "",

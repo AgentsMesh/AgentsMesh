@@ -10,14 +10,7 @@ export interface TerminalConnection {
   unsubscribe: () => void;
 }
 
-/**
- * Subscribes to the terminal pool WebSocket, wiring incoming data
- * through the scheduler. Returns an AbortController for cleanup.
- *
- * Self-healing: if the server confirms the pod is gone (404), we drop
- * the dead pane from the workspace so a stale localStorage snapshot
- * doesn't keep spamming connect attempts every reload.
- */
+// Self-healing: 404 → drop pane to stop stale-snapshot reconnect loops.
 export function setupConnection(
   podKey: string,
   scheduler: TerminalWriteScheduler,
@@ -62,9 +55,6 @@ export function setupConnection(
   return { abort, unsubscribeStatus };
 }
 
-/**
- * Wires onData (user input) and onResize handlers on the xterm instance.
- */
 export function setupDataHandlers(
   term: XTerm,
   podKey: string,

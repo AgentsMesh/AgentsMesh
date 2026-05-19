@@ -7,22 +7,16 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 )
 
-// Provider is the interface for DNS management
 type Provider interface {
-	// CreateRecord creates an A record for the given subdomain
 	CreateRecord(ctx context.Context, subdomain, ip string) error
 
-	// DeleteRecord deletes the A record for the given subdomain
 	DeleteRecord(ctx context.Context, subdomain string) error
 
-	// GetRecord returns the IP address for the given subdomain, or empty if not found
 	GetRecord(ctx context.Context, subdomain string) (string, error)
 
-	// UpdateRecord updates the A record for the given subdomain
 	UpdateRecord(ctx context.Context, subdomain, ip string) error
 }
 
-// NewProvider creates a DNS provider based on configuration
 func NewProvider(cfg config.DNSConfig) (Provider, error) {
 	switch cfg.Provider {
 	case string(config.DNSProviderCloudflare):

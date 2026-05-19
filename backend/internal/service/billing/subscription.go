@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// GetSubscription returns subscription for an organization
 func (s *Service) GetSubscription(ctx context.Context, orgID int64) (*billing.Subscription, error) {
 	sub, err := s.repo.GetSubscriptionByOrgID(ctx, orgID)
 	if err != nil {
@@ -20,7 +19,6 @@ func (s *Service) GetSubscription(ctx context.Context, orgID int64) (*billing.Su
 	return sub, nil
 }
 
-// CreateSubscription creates a new subscription
 func (s *Service) CreateSubscription(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	plan, err := s.GetPlan(ctx, planName)
 	if err != nil {
@@ -47,16 +45,10 @@ func (s *Service) CreateSubscription(ctx context.Context, orgID int64, planName 
 	return sub, nil
 }
 
-// CreateTrialSubscription creates a trial subscription for a new organization.
-// NOTE: This uses the service's own repo. If the org was created in a
-// transaction that hasn't committed yet, use CreateTrialSubscriptionTx instead.
 func (s *Service) CreateTrialSubscription(ctx context.Context, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
 	return s.createTrialSubscription(ctx, s.repo, orgID, planName, trialDays)
 }
 
-// CreateTrialSubscriptionTx creates a trial subscription using the provided transaction handle.
-// This ensures the subscription insert can see the org record created in the same transaction.
-// The rawTx parameter must be the underlying DB transaction type (e.g. *gorm.DB).
 func (s *Service) CreateTrialSubscriptionTx(ctx context.Context, rawTx interface{}, orgID int64, planName string, trialDays int) (*billing.Subscription, error) {
 	txRepo := s.repo.Scoped(rawTx)
 	return s.createTrialSubscription(ctx, txRepo, orgID, planName, trialDays)
@@ -93,7 +85,6 @@ func (s *Service) createTrialSubscription(ctx context.Context, repo billing.Bill
 	return sub, nil
 }
 
-// AdminCreateSubscription creates a new active subscription for an organization that doesn't have one.
 func (s *Service) AdminCreateSubscription(ctx context.Context, orgID int64, planName string, months int) (*billing.Subscription, error) {
 	_, err := s.GetSubscription(ctx, orgID)
 	if err == nil {
@@ -126,14 +117,12 @@ func (s *Service) AdminCreateSubscription(ctx context.Context, orgID int64, plan
 		return nil, err
 	}
 
-	// Sync organization table redundant fields
 	s.syncOrganizationSubscription(ctx, orgID, &plan.Name, strPtr(billing.SubscriptionStatusActive))
 
 	sub.Plan = plan
 	return sub, nil
 }
 
-// AdminUpdatePlan directly changes the subscription plan without payment checks or downgrade delays.
 func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName string) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -156,7 +145,6 @@ func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName str
 		return nil, err
 	}
 
-	// Sync organization table redundant fields
 	s.syncOrganizationSubscription(ctx, orgID, &newPlan.Name, nil)
 
 	sub.PlanID = newPlan.ID
@@ -165,7 +153,6 @@ func (s *Service) AdminUpdatePlan(ctx context.Context, orgID int64, planName str
 	return sub, nil
 }
 
-// AdminRenew extends a subscription by the specified number of months.
 func (s *Service) AdminRenew(ctx context.Context, orgID int64, months int) (*billing.Subscription, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -190,14 +177,11 @@ func (s *Service) AdminRenew(ctx context.Context, orgID int64, months int) (*bil
 		return nil, err
 	}
 
-	// Sync organization table
 	s.syncOrganizationSubscription(ctx, orgID, nil, strPtr(billing.SubscriptionStatusActive))
 
-	// Reload to get fresh data
 	return s.GetSubscription(ctx, orgID)
 }
 
-// AdminCancelSubscription cancels a subscription without calling external payment APIs.
 func (s *Service) AdminCancelSubscription(ctx context.Context, orgID int64) error {
 	now := time.Now()
 
@@ -208,8 +192,6 @@ func (s *Service) AdminCancelSubscription(ctx context.Context, orgID int64) erro
 		return err
 	}
 
-	// Sync organization table
 	s.syncOrganizationSubscription(ctx, orgID, nil, strPtr(billing.SubscriptionStatusCanceled))
 	return nil
 }
-

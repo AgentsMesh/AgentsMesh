@@ -9,14 +9,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// GetSeatUsage returns seat usage information for an organization
 func (s *Service) GetSeatUsage(ctx context.Context, orgID int64) (*SeatUsage, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Count current members
 	memberCount, err := s.repo.CountOrgMembers(ctx, orgID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count organization members: %w", err)
@@ -39,15 +37,12 @@ func (s *Service) GetSeatUsage(ctx context.Context, orgID int64) (*SeatUsage, er
 	}, nil
 }
 
-// UpdateSeats updates the seat count for a subscription via the payment provider.
-// It validates the request, calls the provider API to update quantity, then syncs local DB.
 func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats int) error {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return ErrSubscriptionNotFound
 	}
 
-	// Only active or trialing subscriptions can add seats
 	if !sub.IsActive() && !sub.IsTrialing() {
 		if sub.IsFrozen() {
 			return ErrSubscriptionFrozen
@@ -63,19 +58,16 @@ func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats 
 		}
 	}
 
-	// Based plan cannot add seats
 	if plan.Name == billingdomain.PlanBased {
 		return ErrInvalidPlan
 	}
 
 	newTotalSeats := sub.SeatCount + additionalSeats
 
-	// Validate against plan max_users limit
 	if plan.MaxUsers > 0 && newTotalSeats > plan.MaxUsers {
 		return ErrQuotaExceeded
 	}
 
-	// Get subscription provider and update via API
 	if sub.LemonSqueezySubscriptionID != nil && *sub.LemonSqueezySubscriptionID != "" {
 		provider, err := s.getSubscriptionProvider()
 		if err != nil {
@@ -85,13 +77,8 @@ func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats 
 			return fmt.Errorf("failed to update seats with provider: %w", err)
 		}
 	} else if sub.StripeSubscriptionID != nil && *sub.StripeSubscriptionID != "" {
-		// Stripe seat update would go here in the future
-		// For now, just update locally
 	}
 
-	// Sync local DB
-	// NOTE: If this fails after provider API succeeded, the webhook sync (Phase 1)
-	// will reconcile the data on the next subscription_updated event.
 	if err := s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"seat_count": newTotalSeats,
 	}); err != nil {
@@ -102,7 +89,6 @@ func (s *Service) UpdateSeats(ctx context.Context, orgID int64, additionalSeats 
 	return nil
 }
 
-// getSubscriptionProvider returns the SubscriptionProvider from the payment factory
 func (s *Service) getSubscriptionProvider() (payment.SubscriptionProvider, error) {
 	if s.paymentFactory == nil {
 		return nil, fmt.Errorf("payment factory not configured")
@@ -118,14 +104,12 @@ func (s *Service) getSubscriptionProvider() (payment.SubscriptionProvider, error
 	return subProvider, nil
 }
 
-// AdminSetSeatCount directly sets the seat count for a subscription without payment validation.
 func (s *Service) AdminSetSeatCount(ctx context.Context, orgID int64, seatCount int) error {
 	return s.repo.UpdateSubscriptionFieldsByOrg(ctx, orgID, map[string]interface{}{
 		"seat_count": seatCount,
 	})
 }
 
-// SeatUsage represents seat usage information
 type SeatUsage struct {
 	TotalSeats     int  `json:"total_seats"`
 	UsedSeats      int  `json:"used_seats"`

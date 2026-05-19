@@ -5,8 +5,6 @@ import (
 	"github.com/anthropics/agentsmesh/agentfile/parser"
 )
 
-// peekRepoSlug extracts the REPO slug from an AgentFile source without full merge/resolve.
-// Returns empty string if no REPO is declared or if parsing fails.
 func peekRepoSlug(agentfileSrc string) string {
 	if agentfileSrc == "" {
 		return ""

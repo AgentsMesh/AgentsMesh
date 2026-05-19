@@ -44,7 +44,6 @@ export function BottomPanel({ className }: { className?: string }) {
 
   useEffect(() => { if (!topology) fetchTopology(); }, [topology, fetchTopology]);
 
-  // Resize handler
   useEffect(() => {
     if (!isResizing) return;
     const onMove = (e: MouseEvent) => {

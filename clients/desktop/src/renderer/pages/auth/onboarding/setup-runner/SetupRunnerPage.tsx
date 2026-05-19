@@ -21,7 +21,6 @@ export function SetupRunnerPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -37,9 +36,7 @@ export function SetupRunnerPage() {
           </p>
         </div>
 
-        {/* Options */}
         <div className="space-y-4">
-          {/* Local Runner */}
           <div className="p-6 border border-border rounded-lg hover:border-primary/50 transition-colors">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -71,7 +68,6 @@ export function SetupRunnerPage() {
             </div>
           </div>
 
-          {/* Cloud Runner */}
           <div className="p-6 border border-border rounded-lg opacity-60">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
@@ -107,7 +103,6 @@ export function SetupRunnerPage() {
           </div>
         </div>
 
-        {/* Skip */}
         <div className="pt-4 border-t border-border text-center">
           <Button variant="ghost" onClick={handleSkip}>
             {t("auth.onboarding.setupRunner.skipForNow")}

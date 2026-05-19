@@ -42,7 +42,6 @@ function ResetPasswordContent() {
       await authApi.resetPassword(token, password);
       setSuccess(true);
 
-      // Redirect to login after a brief delay
       setTimeout(() => {
         router.push("/login");
       }, 2000);
@@ -57,7 +56,6 @@ function ResetPasswordContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
-          {/* Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -67,7 +65,6 @@ function ResetPasswordContent() {
             </Link>
           </div>
 
-          {/* Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <svg
@@ -86,7 +83,6 @@ function ResetPasswordContent() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
               Password reset successful!
@@ -104,7 +100,6 @@ function ResetPasswordContent() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
-          {/* Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -114,7 +109,6 @@ function ResetPasswordContent() {
             </Link>
           </div>
 
-          {/* Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <svg
@@ -133,7 +127,6 @@ function ResetPasswordContent() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
               Invalid reset link
@@ -156,7 +149,6 @@ function ResetPasswordContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -172,7 +164,6 @@ function ResetPasswordContent() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
@@ -214,7 +205,6 @@ function ResetPasswordContent() {
           </Button>
         </form>
 
-        {/* Back link */}
         <p className="text-center text-sm text-muted-foreground">
           Remember your password?{" "}
           <Link href="/login" className="text-primary hover:underline">

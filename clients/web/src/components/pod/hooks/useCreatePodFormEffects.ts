@@ -48,10 +48,6 @@ export function usePrefsAutoFill(
   return prefsInitializedRef;
 }
 
-/**
- * Hook that loads credential profiles when the selected agent changes.
- * Auto-selects the saved preference, default, or RunnerHost profile.
- */
 export function useCredentialProfiles(selectedAgent: string | null) {
   const { lastCredentialProfileId } = usePodCreationStore();
   const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
@@ -74,7 +70,6 @@ export function useCredentialProfiles(selectedAgent: string | null) {
         const profiles = res.profiles || [];
         setCredentialProfiles(profiles);
 
-        // Auto-select: prefer saved preference, then default profile, then RunnerHost
         const savedProfile = lastCredentialProfileId && profiles.find((p: CredentialProfileData) => p.id === lastCredentialProfileId);
         const defaultProfile = profiles.find((p: CredentialProfileData) => p.is_default);
         if (savedProfile) {

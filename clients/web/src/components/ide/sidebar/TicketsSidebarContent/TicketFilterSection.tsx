@@ -22,9 +22,6 @@ interface TicketFilterSectionProps {
   t: (key: string) => string;
 }
 
-/**
- * TicketFilterSection - Renders status and priority filter collapsibles
- */
 export function TicketFilterSection({
   statusExpanded,
   priorityExpanded,

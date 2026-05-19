@@ -1,6 +1,3 @@
-/**
- * AutopilotController status changed event payload
- */
 export interface AutopilotStatusChangedData {
   autopilot_controller_key: string;
   pod_key: string;
@@ -11,9 +8,6 @@ export interface AutopilotStatusChangedData {
   circuit_breaker_reason?: string;
 }
 
-/**
- * AutopilotController iteration event payload
- */
 export interface AutopilotIterationData {
   autopilot_controller_key: string;
   iteration: number;
@@ -23,31 +17,19 @@ export interface AutopilotIterationData {
   duration_ms?: number;
 }
 
-/**
- * AutopilotController created event payload
- */
 export interface AutopilotCreatedData {
   autopilot_controller_key: string;
   pod_key: string;
 }
 
-/**
- * AutopilotController terminated event payload
- */
 export interface AutopilotTerminatedData {
   autopilot_controller_key: string;
   reason: string;
 }
 
-/**
- * AutopilotController thinking event payload
- * Exposes the Control Agent's decision-making process
- */
 export interface AutopilotThinkingData {
   autopilot_controller_key: string;
   iteration: number;
-  // Backend sends uppercase: CONTINUE, TASK_COMPLETED, NEED_HUMAN_HELP, GIVE_UP
-  // Frontend prefers lowercase: continue, completed, need_help, give_up
   decision_type:
     | "continue" | "completed" | "need_help" | "give_up"
     | "CONTINUE" | "TASK_COMPLETED" | "NEED_HUMAN_HELP" | "GIVE_UP";
@@ -75,9 +57,6 @@ export interface AutopilotThinkingData {
   };
 }
 
-/**
- * MergeRequest event payload
- */
 export interface MREventData {
   mr_id: number;
   mr_iid: number;
@@ -94,9 +73,6 @@ export interface MREventData {
   pipeline_status?: string;
 }
 
-/**
- * Pipeline event payload
- */
 export interface PipelineEventData {
   mr_id?: number;
   pipeline_id: number;
@@ -109,9 +85,6 @@ export interface PipelineEventData {
   repository_id: number;
 }
 
-/**
- * Loop run event payload
- */
 export interface LoopRunEventData {
   loop_id: number;
   run_id: number;
@@ -120,9 +93,6 @@ export interface LoopRunEventData {
   pod_key?: string;
 }
 
-/**
- * Unified notification event payload (via NotificationDispatcher)
- */
 export interface NotificationPayloadData {
   source: string;
   title: string;
@@ -132,10 +102,6 @@ export interface NotificationPayloadData {
   channels: Record<string, boolean>;
 }
 
-/**
- * Loop run warning event payload
- * (e.g., sandbox resume degradation)
- */
 export interface LoopRunWarningData {
   loop_id: number;
   run_id: number;

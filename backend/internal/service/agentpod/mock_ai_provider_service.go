@@ -9,11 +9,9 @@ import (
 )
 
 var (
-	// ErrMissingAPIKey is returned when API key is missing
 	ErrMissingAPIKey = errors.New("api_key is required")
 )
 
-// MockAIProviderService is a mock implementation of AIProviderService for testing
 type MockAIProviderService struct {
 	mu        sync.RWMutex
 	providers map[int64]*domain.UserAIProvider
@@ -22,7 +20,6 @@ type MockAIProviderService struct {
 	err       error
 }
 
-// NewMockAIProviderService creates a new mock AI provider service
 func NewMockAIProviderService() *MockAIProviderService {
 	return &MockAIProviderService{
 		providers: make(map[int64]*domain.UserAIProvider),
@@ -31,14 +28,12 @@ func NewMockAIProviderService() *MockAIProviderService {
 	}
 }
 
-// SetError sets the error to return from all operations
 func (m *MockAIProviderService) SetError(err error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.err = err
 }
 
-// AddProvider adds a provider for testing
 func (m *MockAIProviderService) AddProvider(provider *domain.UserAIProvider) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -51,7 +46,6 @@ func (m *MockAIProviderService) AddProvider(provider *domain.UserAIProvider) {
 	m.userMap[provider.UserID] = append(m.userMap[provider.UserID], provider.ID)
 }
 
-// GetUserProviders implements AIProviderService
 func (m *MockAIProviderService) GetUserProviders(ctx context.Context, userID int64) ([]*domain.UserAIProvider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -71,7 +65,6 @@ func (m *MockAIProviderService) GetUserProviders(ctx context.Context, userID int
 	return result, nil
 }
 
-// CreateUserProvider implements AIProviderService
 func (m *MockAIProviderService) CreateUserProvider(
 	ctx context.Context,
 	userID int64,
@@ -102,7 +95,6 @@ func (m *MockAIProviderService) CreateUserProvider(
 	return provider, nil
 }
 
-// UpdateUserProvider implements AIProviderService
 func (m *MockAIProviderService) UpdateUserProvider(
 	ctx context.Context,
 	providerID int64,
@@ -132,7 +124,6 @@ func (m *MockAIProviderService) UpdateUserProvider(
 	return provider, nil
 }
 
-// DeleteUserProvider implements AIProviderService
 func (m *MockAIProviderService) DeleteUserProvider(ctx context.Context, providerID int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -149,7 +140,6 @@ func (m *MockAIProviderService) DeleteUserProvider(ctx context.Context, provider
 	return nil
 }
 
-// SetDefaultProvider implements AIProviderService
 func (m *MockAIProviderService) SetDefaultProvider(ctx context.Context, providerID int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -163,7 +153,6 @@ func (m *MockAIProviderService) SetDefaultProvider(ctx context.Context, provider
 		return ErrProviderNotFound
 	}
 
-	// Unset other defaults of the same type
 	for _, p := range m.providers {
 		if p.UserID == provider.UserID && p.ProviderType == provider.ProviderType {
 			p.IsDefault = false
@@ -174,7 +163,6 @@ func (m *MockAIProviderService) SetDefaultProvider(ctx context.Context, provider
 	return nil
 }
 
-// ValidateCredentials validates provider credentials
 func (m *MockAIProviderService) ValidateCredentials(providerType string, credentials map[string]string) error {
 	if m.err != nil {
 		return m.err
@@ -197,7 +185,6 @@ func (m *MockAIProviderService) ValidateCredentials(providerType string, credent
 	return nil
 }
 
-// GetAIProviderEnvVars implements AIProviderService
 func (m *MockAIProviderService) GetAIProviderEnvVars(ctx context.Context, userID int64) (map[string]string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -206,7 +193,6 @@ func (m *MockAIProviderService) GetAIProviderEnvVars(ctx context.Context, userID
 		return nil, m.err
 	}
 
-	// Find default provider
 	for _, id := range m.userMap[userID] {
 		p := m.providers[id]
 		if p.IsDefault && p.IsEnabled {

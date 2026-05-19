@@ -11,9 +11,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { CommentsSection } from "../editor/CommentsSection";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// ImageRenderer holds an image URL. Empty state shows an upload / paste-URL
-// zone; once data.url is set the image is rendered with an optional caption.
-// Upload reuses the same presigned-URL pipeline as the rest of the app.
 export function ImageRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const url = (block.data?.url as string | undefined) ?? "";

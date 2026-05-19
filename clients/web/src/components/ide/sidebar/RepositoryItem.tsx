@@ -12,7 +12,6 @@ import {
   Globe,
 } from "lucide-react";
 
-// Provider icons
 const providerIcons: Record<string, React.ReactNode> = {
   github: <FolderGit2 className="w-3.5 h-3.5" />,
   gitlab: <FolderGit2 className="w-3.5 h-3.5" />,
@@ -29,9 +28,6 @@ interface RepositoryItemProps {
   t: (key: string, params?: Record<string, string>) => string;
 }
 
-/**
- * Single repository item in the sidebar list
- */
 export function RepositoryItem({
   repo,
   isSelected,
@@ -90,9 +86,6 @@ export function RepositoryItem({
   );
 }
 
-/**
- * Expanded content showing branch and other details
- */
 function RepositoryExpandedContent({
   repo,
   t,

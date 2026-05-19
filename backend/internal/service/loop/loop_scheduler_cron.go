@@ -7,14 +7,11 @@ import (
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
 
-// CheckAndTriggerCronLoops checks for loops with cron scheduling that are due and triggers them.
-// Uses FOR UPDATE SKIP LOCKED within per-loop transactions for multi-instance safety:
-// each loop is claimed atomically so only one instance processes it.
-// Queries are scoped to local orgs via LocalOrgProvider.
+// CheckAndTriggerCronLoops uses FOR UPDATE SKIP LOCKED in per-loop tx so multi-instance
+// deployments never double-process a single loop.
 func (s *LoopScheduler) CheckAndTriggerCronLoops(ctx context.Context) error {
 	orgIDs := s.getOrgIDs()
 
-	// Get candidate loops (lightweight query, no lock, org-scoped)
 	dueLoops, err := s.loopService.GetDueCronLoops(ctx, orgIDs)
 	if err != nil {
 		s.logger.Error("failed to get due cron loops", "error", err)
@@ -28,7 +25,7 @@ func (s *LoopScheduler) CheckAndTriggerCronLoops(ctx context.Context) error {
 	s.logger.Info("found due cron loops", "count", len(dueLoops))
 
 	for _, loop := range dueLoops {
-		// Calculate next_run_at before claiming so we can advance it atomically
+		// Compute nextRunAt before claim so ClaimCronLoop advances it atomically with the claim.
 		var nextRunAt *time.Time
 		if loop.CronExpression != nil {
 			var calcErr error
@@ -40,17 +37,15 @@ func (s *LoopScheduler) CheckAndTriggerCronLoops(ctx context.Context) error {
 			}
 		}
 
-		// Try to claim this loop with a short transaction
 		claimed, err := s.loopService.ClaimCronLoop(ctx, loop.ID, nextRunAt)
 		if err != nil {
 			s.logger.Error("failed to claim cron loop", "loop_id", loop.ID, "error", err)
 			continue
 		}
 		if !claimed {
-			continue // Another instance claimed it
+			continue
 		}
 
-		// Trigger run outside transaction (lock already released, next_run_at already advanced)
 		result, err := s.orchestrator.TriggerRun(ctx, &TriggerRunRequest{
 			LoopID:        loop.ID,
 			TriggerType:   loopDomain.RunTriggerCron,
@@ -61,8 +56,6 @@ func (s *LoopScheduler) CheckAndTriggerCronLoops(ctx context.Context) error {
 			continue
 		}
 
-		// Start the run asynchronously (Pod creation + Autopilot setup)
-		// Uses the loop creator as the acting user for cron-triggered runs.
 		if !result.Skipped && result.Run != nil && result.Loop != nil {
 			go s.orchestrator.StartRun(context.Background(), result.Loop, result.Run, result.Loop.CreatedByID)
 		}

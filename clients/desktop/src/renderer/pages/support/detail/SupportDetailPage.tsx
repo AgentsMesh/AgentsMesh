@@ -47,7 +47,6 @@ export function SupportTicketDetailPage() {
 
   useEffect(() => {
     fetchDetail();
-    // Poll for new messages every 15s, but only when tab is visible
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchDetail();
@@ -140,7 +139,6 @@ export function SupportTicketDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      {/* Header */}
       <div className="flex items-start gap-3 mb-6">
         <Button
           variant="ghost"
@@ -163,14 +161,12 @@ export function SupportTicketDetailPage() {
         </div>
       </div>
 
-      {/* Messages */}
       <div className="rounded-lg border border-border bg-card">
         <div className="max-h-[500px] overflow-y-auto p-4">
           <MessageList messages={messages || []} />
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Reply Form */}
         {ticket.status !== "closed" && (
           <div className="border-t p-4">
             <div className="space-y-3">
@@ -186,7 +182,6 @@ export function SupportTicketDetailPage() {
                 }}
               />
 
-              {/* File previews */}
               {replyFiles.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {replyFiles.map((file, i) => (

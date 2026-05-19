@@ -13,17 +13,9 @@ import (
 	"gorm.io/plugin/dbresolver"
 )
 
-// New creates a new database connection with automatic read-write splitting
-// When replicas are configured via DB_REPLICA_DSNS, the returned *gorm.DB automatically:
-// - Routes SELECT queries to replicas (round-robin load balancing)
-// - Routes INSERT/UPDATE/DELETE to master
-// - Keeps transactions on master
-//
-// Services can use the returned *gorm.DB normally without any changes.
 func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	logMode := logger.Info
 
-	// Connect to master
 	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{
 		Logger: logger.Default.LogMode(logMode),
 	})
@@ -35,29 +27,22 @@ func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 		slog.Warn("failed to enable GORM OpenTelemetry tracing", "error", err)
 	}
 
-	// Get underlying SQL DB to configure connection pool
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get underlying DB: %w", err)
 	}
 
 	// Set connection pool settings for high-concurrency (100K runners support)
-	// MaxIdleConns: Keep 50 idle connections ready for burst traffic
-	// MaxOpenConns: Allow up to 300 concurrent connections
-	// ConnMaxLifetime: Recycle connections hourly to prevent stale connections
-	// ConnMaxIdleTime: Close idle connections after 10 minutes to free resources
 	sqlDB.SetMaxIdleConns(50)
 	sqlDB.SetMaxOpenConns(300)
 	sqlDB.SetConnMaxLifetime(time.Hour)
 	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
-	// Connect to replicas if configured
 	if len(cfg.ReplicaDSNs) > 0 {
 		var replicaDialectors []gorm.Dialector
 		connectedCount := 0
 
 		for i, dsn := range cfg.ReplicaDSNs {
-			// Validate replica DSN by attempting connection
 			replicaDB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 				Logger: logger.Default.LogMode(logMode),
 			})
@@ -66,7 +51,6 @@ func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 				continue
 			}
 
-			// Configure replica connection pool
 			replicaSQL, err := replicaDB.DB()
 			if err != nil {
 				slog.Warn("failed to get replica underlying DB", "index", i, "error", err)
@@ -82,11 +66,10 @@ func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 			connectedCount++
 		}
 
-		// Register DBResolver plugin for automatic read-write splitting
 		if len(replicaDialectors) > 0 {
 			err = db.Use(dbresolver.Register(dbresolver.Config{
 				Replicas: replicaDialectors,
-				Policy:   dbresolver.RandomPolicy{}, // Random load balancing
+				Policy:   dbresolver.RandomPolicy{},
 			}).SetConnMaxIdleTime(10 * time.Minute).
 				SetConnMaxLifetime(time.Hour).
 				SetMaxIdleConns(50).
@@ -108,7 +91,6 @@ func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
-// Close closes the database connection
 func Close(db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {

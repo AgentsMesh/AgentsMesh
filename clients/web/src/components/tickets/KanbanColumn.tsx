@@ -94,7 +94,6 @@ export function DroppableColumn({
               onMouseEnter={() => prefetchOnHover(ticket.slug)} onMouseLeave={cancelPrefetch} />
           ))}
         </SortableContext>
-        {/* Sentinel for infinite scroll */}
         {sentinelRef && <div ref={sentinelRef} className="h-1 shrink-0" />}
         {loadingMore && (
           <div className="flex justify-center py-2">

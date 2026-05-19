@@ -10,20 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Payment Webhook Handlers - LemonSqueezy
-// ===========================================
-
-// handleLemonSqueezyWebhook handles LemonSqueezy webhook events
 func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
-	// Check if LemonSqueezy is configured
 	if r.paymentFactory == nil || !r.paymentFactory.IsProviderAvailable(billingdomain.PaymentProviderLemonSqueezy) {
 		r.logger.Warn("LemonSqueezy webhook received but LemonSqueezy is not configured")
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "LemonSqueezy not configured")
 		return
 	}
 
-	// Read the request body
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		r.logger.Error("failed to read LemonSqueezy webhook body", "error", err)
@@ -31,7 +24,6 @@ func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
 		return
 	}
 
-	// Get the signature header (X-Signature)
 	signature := c.GetHeader("X-Signature")
 	if signature == "" {
 		r.logger.Warn("missing X-Signature header for LemonSqueezy webhook")
@@ -39,7 +31,6 @@ func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
 		return
 	}
 
-	// Get the LemonSqueezy provider
 	provider, err := r.paymentFactory.GetProvider(billingdomain.PaymentProviderLemonSqueezy)
 	if err != nil {
 		r.logger.Error("failed to get LemonSqueezy provider", "error", err)
@@ -47,7 +38,6 @@ func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the webhook
 	event, err := provider.HandleWebhook(c.Request.Context(), payload, signature)
 	if err != nil {
 		r.logger.Error("failed to validate LemonSqueezy webhook", "error", err)
@@ -62,7 +52,6 @@ func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
 		"subscription_id", event.SubscriptionID,
 	)
 
-	// Process the event based on type
 	processErr := r.processLemonSqueezyEvent(c, event)
 
 	if processErr != nil {
@@ -75,11 +64,9 @@ func (r *WebhookRouter) handleLemonSqueezyWebhook(c *gin.Context) {
 		return
 	}
 
-	// Acknowledge receipt
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }
 
-// processLemonSqueezyEvent processes LemonSqueezy webhook events
 func (r *WebhookRouter) processLemonSqueezyEvent(c *gin.Context, event *payment.WebhookEvent) error {
 	switch event.EventType {
 	case billingdomain.WebhookEventLSOrderCreated:

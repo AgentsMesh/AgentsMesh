@@ -15,9 +15,6 @@ interface SearchResultGroupsProps {
   onSelectRepository: (repo: RepositorySearchResult) => void;
 }
 
-/**
- * SearchResultGroups - Renders search result groups for pods, tickets, and repositories
- */
 export function SearchResultGroups({
   pods,
   tickets,

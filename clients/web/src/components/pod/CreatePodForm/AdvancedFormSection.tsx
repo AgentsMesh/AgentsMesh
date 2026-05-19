@@ -41,9 +41,6 @@ export function AdvancedFormSection({
 }: AdvancedFormSectionProps) {
   const t = useTranslations();
 
-  // When source mode is ON, hide form sections represented in the AgentFile Layer
-  // (ConfigForm, RepositorySelect, BranchInput, CredentialSelect)
-  // Keep: Alias, RunnerSelect (not represented in AgentFile Layer)
   const hideFormSections = form.rawLayerMode;
 
   return (

@@ -52,7 +52,7 @@ export function LocalRunnerSetupPage() {
         setConnectedRunner(onlineRunner);
         return true;
       }
-    } catch { /* Ignore errors during polling */ }
+    } catch { /* polling: ignore */ }
     return false;
   }, []);
 

@@ -9,13 +9,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// ===========================================
-// Webhook Internal Helper Methods
-// ===========================================
-
-// syncOrganizationSubscription syncs the redundant subscription fields on the organizations table.
-// The organizations table maintains subscription_plan and subscription_status for fast access.
-// This method MUST be called whenever subscription status or plan changes to keep them in sync.
+// syncOrganizationSubscription keeps organizations.{subscription_plan,subscription_status}
+// in sync with the canonical subscription row — must be called on every status/plan change.
 func (s *Service) syncOrganizationSubscription(ctx context.Context, orgID int64, planName *string, status *string) {
 	updates := map[string]interface{}{}
 	if planName != nil {
@@ -33,7 +28,6 @@ func (s *Service) syncOrganizationSubscription(ctx context.Context, orgID int64,
 	}
 }
 
-// findSubscriptionByProviderID finds a subscription by provider-specific ID
 func (s *Service) findSubscriptionByProviderID(ctx context.Context, provider string, subscriptionID string) (*billing.Subscription, error) {
 	sub, err := s.repo.FindSubscriptionByProviderID(ctx, provider, subscriptionID)
 	if err != nil {
@@ -45,8 +39,6 @@ func (s *Service) findSubscriptionByProviderID(ctx context.Context, provider str
 	return sub, nil
 }
 
-
-// setProviderIDs sets provider-specific IDs on a subscription
 func setProviderIDs(sub *billing.Subscription, event *payment.WebhookEvent) {
 	switch event.Provider {
 	case billing.PaymentProviderLemonSqueezy:
@@ -57,7 +49,7 @@ func setProviderIDs(sub *billing.Subscription, event *payment.WebhookEvent) {
 			sub.LemonSqueezySubscriptionID = &event.SubscriptionID
 		}
 	default:
-		// Default to Stripe for backward compatibility
+		// Default to Stripe for back-compat.
 		if event.CustomerID != "" {
 			sub.StripeCustomerID = &event.CustomerID
 		}
@@ -67,7 +59,6 @@ func setProviderIDs(sub *billing.Subscription, event *payment.WebhookEvent) {
 	}
 }
 
-// findPlanByVariantID looks up a plan by LemonSqueezy variant ID from plan_prices table
 func (s *Service) findPlanByVariantID(ctx context.Context, variantID string) (*billing.SubscriptionPlan, error) {
 	plan, err := s.repo.FindPlanByVariantID(ctx, variantID)
 	if err != nil {
@@ -79,9 +70,7 @@ func (s *Service) findPlanByVariantID(ctx context.Context, variantID string) (*b
 	return plan, nil
 }
 
-// addSeats adds seats to a subscription after payment
 func (s *Service) addSeats(ctx context.Context, order *billing.PaymentOrder) error {
-	// Validate against plan max_users limit
 	sub, err := s.GetSubscription(ctx, order.OrganizationID)
 	if err == nil && sub.Plan != nil && sub.Plan.MaxUsers > 0 {
 		if sub.SeatCount+order.Seats > sub.Plan.MaxUsers {
@@ -95,7 +84,6 @@ func (s *Service) addSeats(ctx context.Context, order *billing.PaymentOrder) err
 	return s.repo.AddSeats(ctx, order.OrganizationID, order.Seats)
 }
 
-// upgradePlan upgrades a subscription to a new plan
 func (s *Service) upgradePlan(ctx context.Context, order *billing.PaymentOrder) error {
 	if order.PlanID == nil {
 		return ErrInvalidPlan
@@ -108,7 +96,6 @@ func (s *Service) upgradePlan(ctx context.Context, order *billing.PaymentOrder) 
 		return err
 	}
 
-	// Sync organization table with new plan name
 	var planName string
 	if order.Plan != nil {
 		planName = order.Plan.Name
@@ -123,14 +110,12 @@ func (s *Service) upgradePlan(ctx context.Context, order *billing.PaymentOrder) 
 	return nil
 }
 
-// renewSubscriptionFromOrder renews a subscription from an order
 func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing.PaymentOrder) error {
 	sub, err := s.GetSubscription(ctx, order.OrganizationID)
 	if err != nil {
 		return err
 	}
 
-	// Apply pending changes BEFORE period calculation (consistent with handleRecurringPaymentSuccess)
 	var downgradedPlanName *string
 	if sub.DowngradeToPlan != nil {
 		plan, err := s.GetPlan(ctx, *sub.DowngradeToPlan)
@@ -148,8 +133,6 @@ func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing
 		sub.NextBillingCycle = nil
 	}
 
-	// Set new period using the (possibly updated) billing cycle
-	// Guard against zero-value CurrentPeriodEnd to avoid starting from epoch
 	if sub.CurrentPeriodEnd.IsZero() {
 		sub.CurrentPeriodStart = time.Now()
 	} else {
@@ -167,13 +150,11 @@ func (s *Service) renewSubscriptionFromOrder(ctx context.Context, order *billing
 		return err
 	}
 
-	// Sync organization table
 	status := billing.SubscriptionStatusActive
 	s.syncOrganizationSubscription(ctx, order.OrganizationID, downgradedPlanName, &status)
 	return nil
 }
 
-// strPtr returns a pointer to the string, or nil if empty
 func strPtr(s string) *string {
 	if s == "" {
 		return nil

@@ -3,7 +3,6 @@ import type { ChartSubType, JSONMap } from "@/lib/api/blockstoreTypes";
 // Single source of truth for chart block seed data — the slash menu and any
 // other entry point that creates a chart must use these defaults so the shape
 // matches what ChartPreview expects.
-//
 // Each sub-type has its own data shape because recharts expects different
 // fields per chart family (pie uses {name,value}, scatter uses {x,y}, radar
 // uses {axis,value}). Kept explicit rather than runtime-coerced so authors see

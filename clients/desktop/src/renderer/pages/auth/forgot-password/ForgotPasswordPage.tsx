@@ -32,7 +32,6 @@ export function ForgotPasswordPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm space-y-6 text-center">
-          {/* Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -42,7 +41,6 @@ export function ForgotPasswordPage() {
             </Link>
           </div>
 
-          {/* Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
               <svg
@@ -61,7 +59,6 @@ export function ForgotPasswordPage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
               {t("auth.forgotPasswordPage.checkEmail")}
@@ -71,7 +68,6 @@ export function ForgotPasswordPage() {
             </p>
           </div>
 
-          {/* Actions */}
           <div className="space-y-3 pt-4">
             <Link href="/login">
               <Button variant="outline" className="w-full">
@@ -87,7 +83,6 @@ export function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -103,7 +98,6 @@ export function ForgotPasswordPage() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
@@ -130,7 +124,6 @@ export function ForgotPasswordPage() {
           </Button>
         </form>
 
-        {/* Back link */}
         <p className="text-center text-sm text-muted-foreground">
           {t("auth.forgotPasswordPage.rememberPassword")}{" "}
           <Link href="/login" className="text-primary hover:underline">

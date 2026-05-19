@@ -16,9 +16,6 @@ interface FilterSectionProps {
   children: React.ReactNode;
 }
 
-/**
- * Generic collapsible filter section used by status, priority, and repository filters.
- */
 export function FilterSection({
   title,
   expanded,

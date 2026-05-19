@@ -6,7 +6,6 @@ import { useMeshStore, useTopology, type MeshEdge, type ChannelInfo, type MeshNo
 import { usePod } from "@/stores/pod";
 import { useAutopilotStore, useAutopilotControllers, type AutopilotController } from "@/stores/autopilot";
 
-/** Derived pod-centric data for BottomPanel tabs */
 export function useBottomPanelData() {
   const panes = useWorkspaceStore((s) => s.panes);
   const activePane = useWorkspaceStore((s) => s.activePane);

@@ -26,13 +26,11 @@ var (
 	ErrSSOEnforced         = errors.New("SSO login is required for this domain")
 )
 
-// Redis key prefixes
 const (
 	refreshTokenPrefix = "auth:refresh:"   // Stores refresh token data
 	tokenBlacklistKey  = "auth:blacklist:" // Stores revoked access tokens
 )
 
-// Config holds auth configuration
 type Config struct {
 	JWTSecret         string
 	JWTExpiration     time.Duration
@@ -41,7 +39,6 @@ type Config struct {
 	OAuthProviders    map[string]OAuthConfig
 }
 
-// OAuthConfig holds OAuth provider configuration
 type OAuthConfig struct {
 	ClientID     string
 	ClientSecret string
@@ -49,7 +46,6 @@ type OAuthConfig struct {
 	Scopes       []string
 }
 
-// Claims represents JWT claims
 type Claims struct {
 	UserID         int64  `json:"user_id"`
 	Email          string `json:"email"`
@@ -59,7 +55,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// TokenPair represents access and refresh tokens
 type TokenPair struct {
 	AccessToken  string    `json:"access_token"`
 	RefreshToken string    `json:"refresh_token"`
@@ -67,7 +62,6 @@ type TokenPair struct {
 	TokenType    string    `json:"token_type"`
 }
 
-// RefreshTokenData stores refresh token metadata
 type RefreshTokenData struct {
 	UserID         int64     `json:"user_id"`
 	OrganizationID int64     `json:"organization_id,omitempty"`
@@ -76,7 +70,6 @@ type RefreshTokenData struct {
 	ExpiresAt      time.Time `json:"expires_at"`
 }
 
-// OAuthUserInfo represents user info from OAuth provider
 type OAuthUserInfo struct {
 	ID          string
 	Username    string
@@ -86,7 +79,6 @@ type OAuthUserInfo struct {
 	AccessToken string // OAuth access token for API calls
 }
 
-// RegisterRequest represents a registration request
 type RegisterRequest struct {
 	Email    string
 	Username string
@@ -94,7 +86,6 @@ type RegisterRequest struct {
 	Name     string
 }
 
-// LoginResult represents the result of a login operation
 type LoginResult struct {
 	User         *user.User
 	Token        string
@@ -102,7 +93,6 @@ type LoginResult struct {
 	ExpiresIn    int64
 }
 
-// OAuthLoginRequest represents OAuth login request
 type OAuthLoginRequest struct {
 	Provider       string
 	ProviderUserID string
@@ -115,12 +105,10 @@ type OAuthLoginRequest struct {
 	ExpiresAt      *time.Time
 }
 
-// SSOEnforcementChecker checks if password login is allowed for an email
 type SSOEnforcementChecker interface {
 	IsPasswordLoginAllowed(ctx context.Context, email string, isSystemAdmin bool) (bool, error)
 }
 
-// Service handles authentication
 type Service struct {
 	config      *Config
 	userService *userService.Service
@@ -128,7 +116,6 @@ type Service struct {
 	ssoChecker  SSOEnforcementChecker
 }
 
-// NewService creates a new auth service
 func NewService(cfg *Config, userSvc *userService.Service) *Service {
 	return &Service{
 		config:      cfg,
@@ -136,7 +123,6 @@ func NewService(cfg *Config, userSvc *userService.Service) *Service {
 	}
 }
 
-// NewServiceWithRedis creates a new auth service with Redis support
 func NewServiceWithRedis(cfg *Config, userSvc *userService.Service, redisClient *redis.Client) *Service {
 	return &Service{
 		config:      cfg,
@@ -145,7 +131,6 @@ func NewServiceWithRedis(cfg *Config, userSvc *userService.Service, redisClient 
 	}
 }
 
-// SetSSOChecker sets the SSO enforcement checker (called after SSO service initialization)
 func (s *Service) SetSSOChecker(checker SSOEnforcementChecker) {
 	s.ssoChecker = checker
 }

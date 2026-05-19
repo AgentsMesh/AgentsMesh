@@ -9,14 +9,12 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// Compile-time interface compliance check.
 var _ notification.PreferenceRepository = (*notificationPreferenceRepo)(nil)
 
 type notificationPreferenceRepo struct {
 	db *gorm.DB
 }
 
-// NewNotificationPreferenceRepository creates a new GORM-backed PreferenceRepository.
 func NewNotificationPreferenceRepository(db *gorm.DB) notification.PreferenceRepository {
 	return &notificationPreferenceRepo{db: db}
 }

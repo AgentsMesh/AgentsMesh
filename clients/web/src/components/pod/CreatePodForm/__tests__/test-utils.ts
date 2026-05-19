@@ -1,7 +1,6 @@
 import { vi } from "vitest";
 import { POD_MODE_PTY } from "@/lib/pod-modes";
 
-// Mock functions
 export const mockSetSelectedRunnerId = vi.fn();
 export const mockFormReset = vi.fn();
 export const mockFormSubmit = vi.fn();
@@ -10,7 +9,6 @@ export const mockSetAlias = vi.fn();
 export const mockSetSelectedAgent = vi.fn();
 export const mockResetPluginConfig = vi.fn();
 
-// Default mock values
 export const defaultPodCreationData = {
   runners: [],
   repositories: [],
@@ -50,7 +48,6 @@ export const defaultFormState = {
   reset: mockFormReset,
   validate: vi.fn(),
   submit: mockFormSubmit,
-  // AgentFile Layer
   rawLayerMode: false,
   rawLayerText: "",
   agentfileLayer: "",
@@ -66,7 +63,6 @@ export const defaultConfigOptions = {
   resetConfig: mockResetPluginConfig,
 };
 
-// Common test data
 export const mockRunner = {
   id: 1,
   node_id: "runner-1",

@@ -18,11 +18,6 @@ interface UseMessageListScrollReturn {
   scrollToBottom: () => void;
 }
 
-/**
- * IM-standard scroll behavior for message lists.
- * Handles: stick-to-bottom, scroll position restoration on load-more,
- * new message counting, and jump-to-latest.
- */
 export function useMessageListScroll({
   messages,
   loading,
@@ -34,7 +29,6 @@ export function useMessageListScroll({
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessageCount, setNewMessageCount] = useState(0);
 
-  // Reset count directly in scroll handler (avoids effect-based setState)
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -55,7 +49,6 @@ export function useMessageListScroll({
     const prev = prevStateRef.current;
     const firstId = messages.length > 0 ? messages[0].id : undefined;
 
-    // Channel switch: messages became empty — reset all tracking state
     if (messages.length === 0 && prev.length > 0) {
       initialLoadDone.current = false;
       wasLoadingMoreRef.current = false;

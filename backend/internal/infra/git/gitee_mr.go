@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-// GetMergeRequest returns a specific pull request
 func (p *GiteeProvider) GetMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error) {
 	resp, err := p.doRequest(ctx, http.MethodGet, fmt.Sprintf("/repos/%s/pulls/%d", projectID, mrIID), nil)
 	if err != nil {
@@ -23,7 +22,6 @@ func (p *GiteeProvider) GetMergeRequest(ctx context.Context, projectID string, m
 	return p.parsePullRequest(resp.Body)
 }
 
-// ListMergeRequests returns pull requests for a repository
 func (p *GiteeProvider) ListMergeRequests(ctx context.Context, projectID string, state string, page, perPage int) ([]*MergeRequest, error) {
 	gtState := "all"
 	switch state {
@@ -96,7 +94,6 @@ func (p *GiteeProvider) ListMergeRequests(ctx context.Context, projectID string,
 	return mrs, nil
 }
 
-// ListMergeRequestsByBranch returns pull requests filtered by source branch
 func (p *GiteeProvider) ListMergeRequestsByBranch(ctx context.Context, projectID, sourceBranch, state string) ([]*MergeRequest, error) {
 	gtState := "all"
 	switch state {
@@ -108,7 +105,6 @@ func (p *GiteeProvider) ListMergeRequestsByBranch(ctx context.Context, projectID
 		gtState = "closed"
 	}
 
-	// Gitee supports head parameter for filtering by source branch
 	path := fmt.Sprintf("/repos/%s/pulls?state=%s&head=%s", projectID, gtState, url.QueryEscape(sourceBranch))
 	resp, err := p.doRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -172,7 +168,6 @@ func (p *GiteeProvider) ListMergeRequestsByBranch(ctx context.Context, projectID
 	return mrs, nil
 }
 
-// CreateMergeRequest creates a new pull request
 func (p *GiteeProvider) CreateMergeRequest(ctx context.Context, req *CreateMRRequest) (*MergeRequest, error) {
 	body := fmt.Sprintf(`{"title":"%s","body":"%s","head":"%s","base":"%s"}`,
 		req.Title, req.Description, req.SourceBranch, req.TargetBranch)
@@ -186,7 +181,6 @@ func (p *GiteeProvider) CreateMergeRequest(ctx context.Context, req *CreateMRReq
 	return p.parsePullRequest(resp.Body)
 }
 
-// UpdateMergeRequest updates a pull request
 func (p *GiteeProvider) UpdateMergeRequest(ctx context.Context, projectID string, mrIID int, title, description string) (*MergeRequest, error) {
 	body := fmt.Sprintf(`{"title":"%s","body":"%s"}`, title, description)
 
@@ -199,7 +193,6 @@ func (p *GiteeProvider) UpdateMergeRequest(ctx context.Context, projectID string
 	return p.parsePullRequest(resp.Body)
 }
 
-// MergeMergeRequest merges a pull request
 func (p *GiteeProvider) MergeMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error) {
 	resp, err := p.doRequest(ctx, http.MethodPut, fmt.Sprintf("/repos/%s/pulls/%d/merge", projectID, mrIID), nil)
 	if err != nil {
@@ -210,7 +203,6 @@ func (p *GiteeProvider) MergeMergeRequest(ctx context.Context, projectID string,
 	return p.GetMergeRequest(ctx, projectID, mrIID)
 }
 
-// CloseMergeRequest closes a pull request
 func (p *GiteeProvider) CloseMergeRequest(ctx context.Context, projectID string, mrIID int) (*MergeRequest, error) {
 	body := `{"state":"closed"}`
 

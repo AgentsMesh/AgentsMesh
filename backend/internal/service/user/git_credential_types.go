@@ -12,7 +12,6 @@ var (
 	ErrProviderIDRequired      = errors.New("repository_provider_id is required for oauth type")
 )
 
-// CreateGitCredentialRequest represents a request to create a Git credential
 type CreateGitCredentialRequest struct {
 	Name                 string
 	CredentialType       string // runner_local, oauth, pat, ssh_key
@@ -23,7 +22,6 @@ type CreateGitCredentialRequest struct {
 	HostPattern          string // Optional host pattern
 }
 
-// UpdateGitCredentialRequest represents a request to update a Git credential
 type UpdateGitCredentialRequest struct {
 	Name        *string
 	PAT         *string // For pat type
@@ -31,7 +29,6 @@ type UpdateGitCredentialRequest struct {
 	HostPattern *string
 }
 
-// DecryptedCredential holds decrypted credential information
 type DecryptedCredential struct {
 	Type          string // runner_local, oauth, pat, ssh_key
 	Token         string // For oauth and pat types

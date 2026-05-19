@@ -11,14 +11,10 @@ interface Label {
 
 interface LabelsListProps {
   labels: Label[];
-  /** Compact style for panel view */
   compact?: boolean;
   className?: string;
 }
 
-/**
- * Shared labels list component used by both TicketDetail and TicketDetailPane
- */
 export function LabelsList({
   labels,
   compact = false,

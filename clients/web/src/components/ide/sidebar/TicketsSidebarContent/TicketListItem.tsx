@@ -8,9 +8,6 @@ interface TicketListItemProps {
   onClick: (slug: string) => void;
 }
 
-/**
- * TicketListItem - Renders a single ticket in the sidebar list
- */
 export function TicketListItem({ ticket, onClick }: TicketListItemProps) {
   return (
     <div

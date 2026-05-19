@@ -9,11 +9,9 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// handlePodCreated handles pod creation event from runner (Proto type)
 func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCreatedEvent) {
 	ctx := context.Background()
 
-	// Resolve any pending ACK (pod is alive, no need to wait further)
 	pc.ackTracker.Resolve(data.PodKey)
 	pc.clearInitReportCount(data.PodKey)
 
@@ -25,7 +23,6 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		"last_activity": now,
 	}
 
-	// Store sandbox_path and branch_name for Resume functionality
 	if data.SandboxPath != "" {
 		updates["sandbox_path"] = data.SandboxPath
 	}
@@ -40,7 +37,6 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		return
 	}
 
-	// Register with pod router
 	pc.podRouter.RegisterPod(data.PodKey, runnerID)
 	otelinit.PodActiveCount.Add(ctx, 1)
 
@@ -51,24 +47,19 @@ func (pc *PodCoordinator) handlePodCreated(runnerID int64, data *runnerv1.PodCre
 		"sandbox_path", data.SandboxPath,
 		"branch_name", data.BranchName)
 
-	// Notify status change
 	if pc.onStatusChange != nil {
 		pc.onStatusChange(data.PodKey, agentpod.StatusRunning, "")
 	}
 }
 
-// handlePodTerminated handles pod termination event from runner (Proto type)
 func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.PodTerminatedEvent) {
 	ctx := context.Background()
 
 	now := time.Now()
 
-	// Status is decided by Runner and sent explicitly in data.Status.
-	// Backend stores it directly — no interpretation of exit codes or error messages.
 	status := data.Status
 	if status == "" {
-		// Backward compatibility: old runners without status field.
-		// Fall back to ErrorMessage-based inference.
+		// Back-compat for old runners without status field — infer from ErrorMessage.
 		if data.ErrorMessage != "" {
 			status = agentpod.StatusError
 		} else {
@@ -86,8 +77,6 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		updates["error_message"] = data.ErrorMessage
 	}
 
-	// Only update if pod is still active — prevents overwriting a pod already
-	// in terminal state (e.g., server-initiated TerminatePod pre-sets completed).
 	if status == agentpod.StatusError {
 		rowsAffected, err := pc.podStore.UpdateTerminatedIfActive(ctx, data.PodKey, updates, "process_exit")
 		if err != nil {
@@ -108,7 +97,6 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 			return
 		}
 		if rowsAffected > 0 {
-			// keep status as-is
 		} else {
 			pc.logger.Info("pod already in terminal state, skipping status update",
 				"pod_key", data.PodKey)
@@ -116,11 +104,9 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		}
 	}
 
-	// Decrement runner pod count
 	_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 	otelinit.PodActiveCount.Add(ctx, -1)
 
-	// Unregister from pod router and clean up miss counter
 	pc.podRouter.UnregisterPod(data.PodKey)
 	pc.clearMissCount(data.PodKey)
 
@@ -130,13 +116,11 @@ func (pc *PodCoordinator) handlePodTerminated(runnerID int64, data *runnerv1.Pod
 		"exit_code", data.ExitCode,
 		"status", status)
 
-	// Notify status change (skip if pod was already in terminal state)
 	if pc.onStatusChange != nil && status != "" {
 		pc.onStatusChange(data.PodKey, status, "")
 	}
 }
 
-// handlePodError handles pod creation error event from runner (Proto type)
 func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEvent) {
 	if data.PodKey == "" {
 		pc.logger.Warn("received pod error without pod_key, ignoring",
@@ -146,14 +130,12 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 		return
 	}
 
-	// Resolve any pending ACK (error is also an acknowledgment)
 	pc.ackTracker.Resolve(data.PodKey)
 
 	ctx := context.Background()
 
 	now := time.Now()
 
-	// Handle errors during initialization (pod creation failed)
 	rowsAffected, err := pc.podStore.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusInitializing, map[string]interface{}{
 		"status":        agentpod.StatusError,
 		"error_code":    data.Code,
@@ -168,7 +150,6 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 	}
 
 	if rowsAffected > 0 {
-		// Initialization error -- decrement runner pod count
 		_ = pc.runnerRepo.DecrementPods(ctx, runnerID)
 
 		pc.logger.Error("pod creation failed",
@@ -183,9 +164,8 @@ func (pc *PodCoordinator) handlePodError(runnerID int64, data *runnerv1.ErrorEve
 		return
 	}
 
-	// Handle errors during runtime (e.g., PTY read failure due to disk full).
-	// Only store the error info; don't change status or finished_at here because
-	// a pod_terminated event will follow shortly to finalize the pod lifecycle.
+	// Runtime errors (e.g. PTY read after disk full) — keep status/finished_at unchanged
+	// because pod_terminated will arrive shortly to finalize the lifecycle.
 	rowsAffected, err = pc.podStore.UpdateByKeyAndStatusCounted(ctx, data.PodKey, agentpod.StatusRunning, map[string]interface{}{
 		"error_code":    data.Code,
 		"error_message": data.Message,

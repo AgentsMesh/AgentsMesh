@@ -6,15 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 )
 
-// evalTriggerPredicate evaluates a boolean-ish predicate against the target
-// block's data. Phase 1 supports a minimal set:
-//   - "true" / "false" literals
-//   - simple comparisons: {col} >= 0.5, {col} == "done"
-//   - empty predicate → always fire
-//
-// Everything richer lives in a future expression engine. Kept intentionally
-// narrow so trigger authors don't accidentally smuggle Turing-complete
-// expressions into a hot write path.
 func evalTriggerPredicate(predicate string, data blockstore.JSONMap) bool {
 	p := predicate
 	if p == "" || p == "true" {
@@ -27,7 +18,6 @@ func evalTriggerPredicate(predicate string, data blockstore.JSONMap) bool {
 }
 
 func triggerCompare(expr string, data blockstore.JSONMap) bool {
-	// Find operator token; order matters (== before =).
 	ops := []string{">=", "<=", "!=", "==", ">", "<"}
 	for _, op := range ops {
 		i := indexOf(expr, op)
@@ -49,8 +39,6 @@ func triggerCompare(expr string, data blockstore.JSONMap) bool {
 	return false
 }
 
-// resolveOperand parses one side of a comparison. `{col}` references look up
-// data[col]; literals parse as JSON (number / string / bool).
 func resolveOperand(tok string, data blockstore.JSONMap) (any, bool) {
 	if len(tok) >= 2 && tok[0] == '{' && tok[len(tok)-1] == '}' {
 		return data[tok[1:len(tok)-1]], true
@@ -106,9 +94,6 @@ func toFloat(v any) (float64, bool) {
 	return 0, false
 }
 
-// indexOf returns the index of sub in s, or -1. Kept inline to avoid pulling
-// in strings just for two usages and to make the expression grammar easy to
-// trace.
 func indexOf(s, sub string) int {
 	for i := 0; i+len(sub) <= len(s); i++ {
 		if s[i:i+len(sub)] == sub {
@@ -118,8 +103,6 @@ func indexOf(s, sub string) int {
 	return -1
 }
 
-// trim strips leading / trailing ASCII whitespace. Cheaper than importing
-// strings for the 2 call sites.
 func trim(s string) string {
 	start := 0
 	end := len(s)

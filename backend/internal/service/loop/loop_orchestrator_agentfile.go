@@ -13,23 +13,19 @@ import (
 	"github.com/anthropics/agentsmesh/agentfile/serialize"
 )
 
-// buildLoopAgentfileLayer generates an AgentFile Layer from Loop configuration.
 func (o *LoopOrchestrator) buildLoopAgentfileLayer(ctx context.Context, loop *loopDomain.Loop, resolvedPrompt string) string {
 	var lines []string
 
-	// PROMPT content
 	if resolvedPrompt != "" {
 		lines = append(lines, fmt.Sprintf("PROMPT %s", serialize.QuoteString(resolvedPrompt)))
 	}
 
-	// Permission mode
 	permissionMode := loop.PermissionMode
 	if permissionMode == "" {
 		permissionMode = "bypassPermissions"
 	}
 	lines = append(lines, fmt.Sprintf(`CONFIG %s = "%s"`, agentDomain.ConfigKeyPermissionMode, permissionMode))
 
-	// Config overrides
 	var configOverrides map[string]interface{}
 	if loop.ConfigOverrides != nil {
 		_ = json.Unmarshal(loop.ConfigOverrides, &configOverrides)
@@ -41,7 +37,6 @@ func (o *LoopOrchestrator) buildLoopAgentfileLayer(ctx context.Context, loop *lo
 		lines = append(lines, fmt.Sprintf("CONFIG %s = %s", k, serialize.FormatValue(v)))
 	}
 
-	// Repository slug (resolve from ID)
 	if loop.RepositoryID != nil && o.repoQuery != nil {
 		repo, err := o.repoQuery.GetByID(ctx, *loop.RepositoryID)
 		if err == nil && repo != nil {
@@ -57,7 +52,6 @@ func (o *LoopOrchestrator) buildLoopAgentfileLayer(ctx context.Context, loop *lo
 	return strings.Join(lines, "\n")
 }
 
-// startAutopilot delegates Autopilot creation to AutopilotControllerService.CreateAndStart.
 func (o *LoopOrchestrator) startAutopilot(ctx context.Context, loop *loopDomain.Loop, run *loopDomain.LoopRun, pod *agentpod.Pod, resolvedPrompt string) (string, error) {
 	apCfg := loop.ParseAutopilotConfig()
 

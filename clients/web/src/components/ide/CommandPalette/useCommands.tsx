@@ -17,9 +17,6 @@ import {
 } from "lucide-react";
 import type { CommandItemData } from "./types";
 
-/**
- * Custom hook for defining navigation and action commands
- */
 export function useCommands(t: (key: string) => string): {
   navigationCommands: CommandItemData[];
   actionCommands: CommandItemData[];

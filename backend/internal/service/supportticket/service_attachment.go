@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// UploadAttachment uploads a file attachment and associates it with a ticket/message
 func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, messageID *int64, isAdmin bool, req *UploadAttachmentRequest) (*supportticket.SupportTicketAttachment, error) {
 	if s.storage == nil {
 		return nil, ErrStorageError
@@ -67,7 +66,6 @@ func (s *Service) UploadAttachment(ctx context.Context, ticketID, userID int64, 
 	return attachment, nil
 }
 
-// GetAttachmentURL returns a presigned URL for downloading an attachment
 func (s *Service) GetAttachmentURL(ctx context.Context, attachmentID, userID int64) (string, error) {
 	if s.storage == nil {
 		return "", ErrStorageError

@@ -22,7 +22,6 @@ export function CreateOrgPage() {
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [siteHost, setSiteHost] = useState("agentsmesh.dev");
 
-  // Derive site host from window.location at runtime
   useEffect(() => {
     setSiteHost(window.location.host);
   }, []);
@@ -63,7 +62,6 @@ export function CreateOrgPage() {
     try {
       await organizationApi.create({ name: name.trim(), slug: slug.trim() });
 
-      // Refresh organizations
       const { organizations } = await organizationApi.list();
       setOrganizations(organizations);
 
@@ -72,7 +70,6 @@ export function CreateOrgPage() {
         setCurrentOrg(newOrg);
       }
 
-      // Go to runner setup
       router.push("/onboarding/setup-runner");
     } catch (err) {
       const serverSuggestion = getErrorSuggestion(err);
@@ -92,7 +89,6 @@ export function CreateOrgPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -108,7 +104,6 @@ export function CreateOrgPage() {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
@@ -171,7 +166,6 @@ export function CreateOrgPage() {
           </Button>
         </form>
 
-        {/* Back Link */}
         <div className="text-center">
           <Link
             href="/onboarding"

@@ -5,14 +5,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getAuthApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import { lightResetPassword } from "@/lib/light-auth";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 import { Logo } from "@/components/common";
 
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  useRedirectIfAuthenticated();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,7 +23,6 @@ function ResetPasswordContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await initWasmCore();
 
     if (!token) {
       setError("Reset token is missing. Please request a new password reset link.");
@@ -43,10 +43,9 @@ function ResetPasswordContent() {
     setError("");
 
     try {
-      await getAuthApiService().reset_password(JSON.stringify({token, new_password: password}));
+      await lightResetPassword({ token, newPassword: password });
       setSuccess(true);
 
-      // Redirect to login after a brief delay
       setTimeout(() => {
         router.push("/login");
       }, 2000);

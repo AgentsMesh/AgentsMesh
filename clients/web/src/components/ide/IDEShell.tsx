@@ -33,25 +33,12 @@ interface IDEShellProps {
   className?: string;
 }
 
-/**
- * IDEShell - Desktop IDE-style layout
- *
- * Layout structure:
- * ┌──────────┬──────────────┬─────────────────────────────────┐
- * │ Activity │  Side Bar    │       Main Content Area         │
- * │   Bar    │  (resizable) │                                 │
- * │  (48px)  │              │                                 │
- * │          │              ├─────────────────────────────────┤
- * │          │              │       Bottom Panel              │
- * └──────────┴──────────────┴─────────────────────────────────┘
- */
 interface SidebarCallbacks {
   onCreatePod?: () => void;
   onAddRunner?: () => void;
   onImportRepo?: () => void;
 }
 
-// Get sidebar content based on current activity
 function getSidebarContent(
   activity: ActivityType,
   callbacks: SidebarCallbacks
@@ -92,21 +79,16 @@ export function IDEShell({
   sidebarContent,
   className,
 }: IDEShellProps) {
-  // Use selectors to only subscribe to specific state slices
-  // This prevents unnecessary re-renders when unrelated state changes
   const bottomPanelOpen = useIDEStore((state) => state.bottomPanelOpen);
   const activeActivity = useIDEStore((state) => state.activeActivity);
   const _hasHydrated = useIDEStore((state) => state._hasHydrated);
   const addPane = useWorkspaceStore((state) => state.addPane);
-  // Use selector to only subscribe to fetchPods action, not the entire pods array
-  // This prevents re-renders when pod titles or statuses change
   const fetchPods = usePodStore((state) => state.fetchPods);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
   const addRunnerModal = useCtaModal();
   const importRepoModal = useCtaModal();
 
-  // Handle pod creation
   const handleCreatePod = useCallback(() => {
     setCreatePodModalOpen(true);
   }, []);
@@ -123,7 +105,6 @@ export function IDEShell({
     }
   }, [addPane, fetchPods]);
 
-  // Use provided sidebar content or auto-generate based on activity
   const sidebarCallbacks: SidebarCallbacks = {
     onCreatePod: handleCreatePod,
     onAddRunner: addRunnerModal.open,
@@ -131,7 +112,6 @@ export function IDEShell({
   };
   const effectiveSidebarContent = sidebarContent ?? getSidebarContent(activeActivity, sidebarCallbacks);
 
-  // Show loading state while hydrating to prevent flash
   if (!_hasHydrated) {
     return (
       <div className="h-screen bg-background">
@@ -142,49 +122,40 @@ export function IDEShell({
 
   return (
     <div className={cn("app-shell flex h-screen bg-background overflow-hidden", className)}>
-      {/* Activity Bar - fixed width */}
       <ActivityBar className="flex-shrink-0" />
 
-      {/* Side Bar - resizable */}
       <SideBar className="flex-shrink-0">{effectiveSidebarContent}</SideBar>
 
-      {/* Main area - flexible */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Main content */}
         <main
           className={cn(
             "flex-1 overflow-auto",
-            activeActivity === "workspace" && bottomPanelOpen ? "" : "pb-8" // Space for collapsed bottom panel (only on workspace)
+            activeActivity === "workspace" && bottomPanelOpen ? "" : "pb-8"
           )}
         >
           {children}
         </main>
 
-        {/* Bottom Panel - only visible on workspace */}
         {activeActivity === "workspace" && <BottomPanel />}
       </div>
 
-      {/* Command Palette */}
       <CommandPalette
         open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
       />
 
-      {/* Create Pod Modal */}
       <CreatePodModal
         open={createPodModalOpen}
         onClose={() => setCreatePodModalOpen(false)}
         onCreated={handlePodCreated}
       />
 
-      {/* Add Runner Modal */}
       <AddRunnerModal
         open={addRunnerModal.isOpen}
         onClose={addRunnerModal.close}
         onCreated={addRunnerModal.commit}
       />
 
-      {/* Import Repository Modal */}
       <ImportRepositoryModal
         open={importRepoModal.isOpen}
         onClose={importRepoModal.close}

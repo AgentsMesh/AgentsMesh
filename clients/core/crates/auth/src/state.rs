@@ -83,18 +83,10 @@ impl AuthState {
         }
     }
 
-    /// Install a session blob deserialized from storage as-is — preserves
-    /// the original `expires_at` instead of recomputing it from `now`.
-    /// Bootstrap uses this; new logins/refreshes use `apply_session` /
-    /// `apply_tokens` which DO recompute expiry from the server response.
     pub(crate) fn restore_persisted(&mut self, persisted: PersistedSession) {
         self.session = Some(persisted);
     }
 
-    /// Replace the in-memory user. Used by `fetch_me()` after a fresh
-    /// `/users/me` round-trip — keeps the writer-of-state set small so
-    /// future invariants on `user` (e.g., always agreeing with `session`)
-    /// can be enforced in one place.
     pub(crate) fn set_user(&mut self, user: User) {
         self.user = Some(user);
     }

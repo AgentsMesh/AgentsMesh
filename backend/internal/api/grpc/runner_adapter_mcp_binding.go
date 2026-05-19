@@ -6,9 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 )
 
-// ==================== Binding MCP Methods ====================
-
-// mcpRequestBinding handles the "request_binding" MCP method.
 func (a *GRPCRunnerAdapter) mcpRequestBinding(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TargetPod string   `json:"target_pod"`
@@ -34,7 +31,6 @@ func (a *GRPCRunnerAdapter) mcpRequestBinding(ctx context.Context, tc *middlewar
 	return map[string]interface{}{"binding": binding}, nil
 }
 
-// mcpAcceptBinding handles the "accept_binding" MCP method.
 func (a *GRPCRunnerAdapter) mcpAcceptBinding(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		BindingID int64 `json:"binding_id"`
@@ -55,7 +51,6 @@ func (a *GRPCRunnerAdapter) mcpAcceptBinding(ctx context.Context, tc *middleware
 	return map[string]interface{}{"binding": binding}, nil
 }
 
-// mcpRejectBinding handles the "reject_binding" MCP method.
 func (a *GRPCRunnerAdapter) mcpRejectBinding(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		BindingID int64  `json:"binding_id"`
@@ -77,7 +72,6 @@ func (a *GRPCRunnerAdapter) mcpRejectBinding(ctx context.Context, tc *middleware
 	return map[string]interface{}{"binding": binding}, nil
 }
 
-// mcpUnbindPod handles the "unbind_pod" MCP method.
 func (a *GRPCRunnerAdapter) mcpUnbindPod(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TargetPod string `json:"target_pod"`
@@ -101,7 +95,6 @@ func (a *GRPCRunnerAdapter) mcpUnbindPod(ctx context.Context, tc *middleware.Ten
 	return map[string]interface{}{"message": "unbound successfully"}, nil
 }
 
-// mcpGetBindings handles the "get_bindings" MCP method.
 func (a *GRPCRunnerAdapter) mcpGetBindings(ctx context.Context, tc *middleware.TenantContext, podKey string, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		Status *string `json:"status"`
@@ -118,7 +111,6 @@ func (a *GRPCRunnerAdapter) mcpGetBindings(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"bindings": bindings}, nil
 }
 
-// mcpGetBoundPods handles the "get_bound_pods" MCP method.
 func (a *GRPCRunnerAdapter) mcpGetBoundPods(ctx context.Context, tc *middleware.TenantContext, podKey string) (interface{}, *mcpError) {
 	pods, err := a.bindingService.GetBoundPods(ctx, podKey)
 	if err != nil {

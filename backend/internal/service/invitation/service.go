@@ -18,17 +18,14 @@ var (
 )
 
 const (
-	// InvitationValidDays is the number of days an invitation is valid
 	InvitationValidDays = 7
 )
 
-// Service handles invitation operations
 type Service struct {
 	repo         invitation.Repository
 	emailService email.Service
 }
 
-// NewService creates a new invitation service
 func NewService(repo invitation.Repository, emailService email.Service) *Service {
 	return &Service{
 		repo:         repo,

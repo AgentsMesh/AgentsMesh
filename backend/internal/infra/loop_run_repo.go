@@ -8,12 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// loopRunRepo implements loop.LoopRunRepository using GORM
 type loopRunRepo struct {
 	db *gorm.DB
 }
 
-// NewLoopRunRepository creates a new loop run repository
 func NewLoopRunRepository(db *gorm.DB) loop.LoopRunRepository {
 	return &loopRunRepo{db: db}
 }
@@ -36,9 +34,6 @@ func (r *loopRunRepo) GetByID(ctx context.Context, id int64) (*loop.LoopRun, err
 func (r *loopRunRepo) List(ctx context.Context, filter *loop.RunListFilter) ([]*loop.LoopRun, int64, error) {
 	query := r.db.WithContext(ctx).Where("loop_id = ?", filter.LoopID)
 
-	// For finished runs, status in DB is authoritative — filter at DB level.
-	// For active runs (pending/running), status may be resolved from Pod later,
-	// so we include them regardless and let the service layer post-filter.
 	if filter.Status != "" {
 		query = query.Where(
 			"(finished_at IS NOT NULL AND status = ?) OR (finished_at IS NULL)",
@@ -111,7 +106,6 @@ func (r *loopRunRepo) GetByAutopilotKey(ctx context.Context, autopilotKey string
 	return &run, nil
 }
 
-// DeleteOldFinishedRuns deletes finished runs exceeding the retention limit.
 func (r *loopRunRepo) DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error) {
 	if keep <= 0 {
 		return 0, nil
@@ -134,5 +128,4 @@ func (r *loopRunRepo) DeleteOldFinishedRuns(ctx context.Context, loopID int64, k
 	return result.RowsAffected, nil
 }
 
-// Compile-time interface compliance check
 var _ loop.LoopRunRepository = (*loopRunRepo)(nil)

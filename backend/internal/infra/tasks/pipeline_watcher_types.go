@@ -7,7 +7,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Redis key constants
 const (
 	WatchingSetKey        = "pipelines:watching"
 	PipelineKeyPrefix     = "pipeline:"
@@ -19,7 +18,6 @@ const (
 	RecentUpdateThreshold = 5 * time.Second
 )
 
-// Terminal pipeline statuses
 var TerminalStatuses = map[string]bool{
 	"success":  true,
 	"failed":   true,
@@ -27,7 +25,6 @@ var TerminalStatuses = map[string]bool{
 	"skipped":  true,
 }
 
-// WatchedPipeline represents a pipeline being watched
 type WatchedPipeline struct {
 	ProjectID    string                 `json:"project_id"`
 	PipelineID   string                 `json:"pipeline_id"`
@@ -42,13 +39,11 @@ type WatchedPipeline struct {
 	ResultJSON   string                 `json:"result_json,omitempty"`
 }
 
-// PipelineWatcher manages pipeline status watching in Redis
 type PipelineWatcher struct {
 	redis  *redis.Client
 	logger *slog.Logger
 }
 
-// NewPipelineWatcher creates a new pipeline watcher
 func NewPipelineWatcher(redisClient *redis.Client, logger *slog.Logger) *PipelineWatcher {
 	return &PipelineWatcher{
 		redis:  redisClient,

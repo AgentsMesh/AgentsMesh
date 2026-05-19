@@ -11,7 +11,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// publishRunEvent publishes a loop run event to the event bus
 func (o *LoopOrchestrator) publishRunEvent(orgID int64, eventType eventbus.EventType, run *loopDomain.LoopRun) {
 	if o.eventBus == nil {
 		return
@@ -36,7 +35,6 @@ func (o *LoopOrchestrator) publishRunEvent(orgID int64, eventType eventbus.Event
 	})
 }
 
-// publishWarningEvent publishes a loop run warning event to the event bus
 func (o *LoopOrchestrator) publishWarningEvent(orgID int64, loopID int64, runID int64, runNumber int, warning string, detail string) {
 	if o.eventBus == nil {
 		return
@@ -61,8 +59,6 @@ func (o *LoopOrchestrator) publishWarningEvent(orgID int64, loopID int64, runID 
 	})
 }
 
-// sendWebhookCallback POSTs run result to the loop's callback URL.
-// Fire-and-forget: errors are logged but do not affect the run.
 func (o *LoopOrchestrator) sendWebhookCallback(callbackURL string, loop *loopDomain.Loop, run *loopDomain.LoopRun, status string) {
 	payload, _ := json.Marshal(map[string]interface{}{
 		"loop_id":      loop.ID,
@@ -101,7 +97,6 @@ func (o *LoopOrchestrator) sendWebhookCallback(callbackURL string, loop *loopDom
 	}
 }
 
-// postTicketComment creates a comment on the associated ticket with run results.
 func (o *LoopOrchestrator) postTicketComment(ctx context.Context, ticketID int64, userID int64, loop *loopDomain.Loop, run *loopDomain.LoopRun, status string) {
 	statusEmoji := "✅"
 	switch status {
@@ -129,8 +124,6 @@ func (o *LoopOrchestrator) postTicketComment(ctx context.Context, ticketID int64
 	}
 }
 
-// resolvePrompt merges default variables with trigger-time overrides,
-// then substitutes {{key}} placeholders in the template.
 func resolvePrompt(template string, defaults json.RawMessage, overrides json.RawMessage) string {
 	vars := make(map[string]interface{})
 	if len(defaults) > 0 {

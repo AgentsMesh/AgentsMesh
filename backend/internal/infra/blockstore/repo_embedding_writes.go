@@ -12,9 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// detectPgvector probes column existence + dim width and memoizes the result
-// on the Repository. Safe to call on any dialect — non-Postgres short-circuits
-// to false so SQLite tests stay on the JSONB path.
 func (r *Repository) detectPgvector() (bool, int) {
 	r.pgvectorOnce.Do(func() {
 		if r.db.Name() != "postgres" {
@@ -43,11 +40,6 @@ func (r *Repository) detectPgvector() (bool, int) {
 	return r.pgvectorReady, r.pgvectorDims
 }
 
-// UpsertEmbedding writes the latest embedding for a block, replacing any
-// prior row. When the pgvector `vec` column is present we write to both the
-// JSONB `vector` (portable, used by reads on downgraded servers) and the
-// native `vec` column (indexed, used by HNSW search). On SQLite / pgvector-
-// less Postgres only `vector` is written.
 func (r *Repository) UpsertEmbedding(
 	ctx context.Context,
 	blockID uuid.UUID,
@@ -60,10 +52,6 @@ func (r *Repository) UpsertEmbedding(
 	if err != nil {
 		return err
 	}
-	// Write to pgvector column only when available AND the embedder's dim
-	// matches the column width. Mismatch (e.g. OpenAI 1536 vs column 256)
-	// silently degrades to JSONB-only so operators can run a mixed fleet
-	// during an embedding-model migration.
 	usePgvector, colDims := r.detectPgvector()
 	if usePgvector && colDims == dims {
 		vecLit := formatVectorLiteral(vector)
@@ -91,8 +79,6 @@ func (r *Repository) UpsertEmbedding(
 	`, blockID, model, dims, string(raw), sourceHash).Error
 }
 
-// DeleteEmbedding removes the embedding for a block (e.g. on block delete
-// or model switch). Errors other than not-found bubble up.
 func (r *Repository) DeleteEmbedding(ctx context.Context, blockID uuid.UUID) error {
 	res := r.db.WithContext(ctx).Where("block_id = ?", blockID).Delete(&blockstore.BlockEmbedding{})
 	if res.Error != nil && !errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -101,9 +87,6 @@ func (r *Repository) DeleteEmbedding(ctx context.Context, blockID uuid.UUID) err
 	return nil
 }
 
-// formatVectorLiteral serialises a []float32 into the `[1,2,3]` form expected
-// by pgvector's text input. Cheaper than creating a driver-level type; also
-// makes the SQL readable in query logs.
 func formatVectorLiteral(v []float32) string {
 	var b strings.Builder
 	b.WriteByte('[')

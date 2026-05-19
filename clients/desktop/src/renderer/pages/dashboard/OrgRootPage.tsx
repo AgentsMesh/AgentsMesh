@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-/**
- * Organization root page - redirects to workspace
- */
 export function OrganizationPage() {
   const router = useRouter();
   const params = useParams();

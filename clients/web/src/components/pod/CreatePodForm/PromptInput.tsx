@@ -7,9 +7,6 @@ interface PromptInputProps {
   t: (key: string) => string;
 }
 
-/**
- * Initial prompt textarea component
- */
 export function PromptInput({
   value,
   onChange,

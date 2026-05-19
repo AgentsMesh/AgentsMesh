@@ -7,10 +7,8 @@ import (
 	"time"
 )
 
-// Features represents plan features as JSONB
 type Features map[string]interface{}
 
-// Scan implements sql.Scanner for Features
 func (f *Features) Scan(value interface{}) error {
 	if value == nil {
 		*f = nil
@@ -28,7 +26,6 @@ func (f *Features) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, f)
 }
 
-// Value implements driver.Valuer for Features
 func (f Features) Value() (driver.Value, error) {
 	if f == nil {
 		return nil, nil
@@ -36,7 +33,6 @@ func (f Features) Value() (driver.Value, error) {
 	return json.Marshal(f)
 }
 
-// SubscriptionPlan represents a subscription plan
 type SubscriptionPlan struct {
 	ID          int64  `gorm:"primaryKey" json:"id"`
 	Name        string `gorm:"size:50;not null;uniqueIndex" json:"name"`
@@ -54,7 +50,6 @@ type SubscriptionPlan struct {
 
 	Features Features `gorm:"type:jsonb;not null;default:'{}'" json:"features"`
 
-	// Stripe Price IDs
 	StripePriceIDMonthly *string `gorm:"size:255" json:"stripe_price_id_monthly,omitempty"`
 	StripePriceIDYearly  *string `gorm:"size:255" json:"stripe_price_id_yearly,omitempty"`
 
@@ -63,7 +58,6 @@ type SubscriptionPlan struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 }
 
-// GetPrice returns the price per seat for the given billing cycle
 func (p *SubscriptionPlan) GetPrice(billingCycle string) float64 {
 	if billingCycle == BillingCycleYearly {
 		return p.PricePerSeatYearly

@@ -24,7 +24,6 @@ export function LoopsPage() {
     fetchLoops();
   }, [fetchLoops]);
 
-  // Master view: auto-redirect to the first enabled loop (or first loop).
   useEffect(() => {
     if (loading || loops.length === 0 || !orgSlug) return;
     const first = loops.find((l) => l.status === "enabled") ?? loops[0];
@@ -76,6 +75,5 @@ export function LoopsPage() {
     );
   }
 
-  // While redirecting to detail
   return <CenteredSpinner className="h-full" />;
 }

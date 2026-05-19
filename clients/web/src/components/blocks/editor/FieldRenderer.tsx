@@ -8,14 +8,10 @@ import { useBlock } from "@/stores/blockstore";
 
 import { UserPicker } from "./UserPicker";
 
-// FieldRenderer dispatches one ColumnSpec to the correct primitive input.
-// Kept in a single file — every column type is a thin controlled input;
-// factoring each into its own file would outweigh the gain.
 export interface FieldRendererProps {
   column: ColumnSpec;
   value: unknown;
   onChange: (next: unknown) => void;
-  /** Disables editing; useful for read-only contexts (time-travel views). */
   readOnly?: boolean;
 }
 
@@ -139,7 +135,6 @@ function MultiSelectField({ options, value, onChange, readOnly }: {
 function DateField({ value, onChange, readOnly }: {
   value: string; onChange: (v: string) => void; readOnly?: boolean;
 }) {
-  // ISO date (YYYY-MM-DD). For more precision callers can switch to datetime-local.
   return (
     <input
       type="date"

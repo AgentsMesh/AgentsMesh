@@ -9,16 +9,10 @@ interface AutopilotStartButtonProps {
   triggerRef: MutableRefObject<(() => void) | null>;
 }
 
-/**
- * Manages the CreateAutopilotControllerModal and exposes a trigger
- * function via triggerRef so the parent can open the modal.
- * Extracted from TerminalPane for SRP.
- */
 export function AutopilotStartButton({ podKey, triggerRef }: AutopilotStartButtonProps) {
   const [showModal, setShowModal] = useState(false);
   const podTitle = usePodTitle(podKey);
 
-  // Expose trigger to parent via ref
   useEffect(() => {
     triggerRef.current = () => setShowModal(true);
     return () => {

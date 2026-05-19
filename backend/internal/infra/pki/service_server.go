@@ -1,4 +1,3 @@
-// Package pki provides PKI (Public Key Infrastructure) services for Runner certificate management.
 package pki
 
 import (
@@ -14,23 +13,17 @@ import (
 	"time"
 )
 
-// loadOrGenerateServerCert loads server certificate from files or generates a new one.
 func (s *Service) loadOrGenerateServerCert(cfg *Config) (tls.Certificate, error) {
-	// Try to load existing server certificate
 	if cfg.ServerCertFile != "" && cfg.ServerKeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(cfg.ServerCertFile, cfg.ServerKeyFile)
 		if err == nil {
 			return cert, nil
 		}
-		// If files don't exist, generate new certificate
 	}
 
-	// Generate new server certificate with configured SANs
 	return s.generateServerCert(cfg.ServerCertSANs)
 }
 
-// generateServerCert generates a new server certificate signed by CA.
-// extraSANs are additional DNS names to include (e.g., public domain names).
 func (s *Service) generateServerCert(extraSANs []string) (tls.Certificate, error) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -45,14 +38,12 @@ func (s *Service) generateServerCert(extraSANs []string) (tls.Certificate, error
 	now := time.Now()
 	expiresAt := now.Add(365 * 24 * time.Hour)
 
-	// Default SANs for internal/development use
 	dnsNames := []string{
 		"localhost",
 		"backend",
 		"agentmesh-backend",
 	}
 
-	// Append public domain SANs (deduplicated)
 	seen := make(map[string]bool, len(dnsNames)+len(extraSANs))
 	for _, name := range dnsNames {
 		seen[name] = true
@@ -90,7 +81,6 @@ func (s *Service) generateServerCert(extraSANs []string) (tls.Certificate, error
 	return tls.X509KeyPair(certPEM, keyPEM)
 }
 
-// ServerCert returns the server TLS certificate for gRPC server.
 func (s *Service) ServerCert() tls.Certificate {
 	return s.serverCert
 }

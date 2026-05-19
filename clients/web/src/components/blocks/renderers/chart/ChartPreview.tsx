@@ -23,7 +23,6 @@ import {
 
 export interface ChartPreviewProps {
   data: JSONMap;
-  /** Force a fixed height for the preview. Defaults to 300px. */
   height?: number;
 }
 

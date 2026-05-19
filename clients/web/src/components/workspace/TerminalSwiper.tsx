@@ -26,14 +26,10 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Handle swipe gesture for switching between terminals
-  // Uses "lock" axis mode to detect swipe direction first, then lock to that axis
-  // This allows vertical scrolling in terminal while still supporting horizontal swipe to switch
   const bind = useDrag(
     ({ movement: [mx, my], direction: [dx], velocity: [vx], last, cancel, event }) => {
       if (panes.length <= 1) return;
 
-      // Exclude terminal input area from swipe gestures to prevent input conflicts
       const target = event?.target as HTMLElement;
       if (target?.closest('.xterm-helper-textarea') || target?.closest('.xterm-screen')) {
         cancel();
@@ -42,8 +38,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         return;
       }
 
-      // If vertical movement is greater than horizontal, cancel the gesture
-      // This allows touch events to pass through to terminal for scrolling
       if (!last && Math.abs(my) > Math.abs(mx) * 1.2) {
         cancel();
         setTranslateX(0);
@@ -54,7 +48,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
       setIsDragging(!last);
 
       if (last) {
-        // Determine if we should change slide
         const threshold = 50;
         const velocityThreshold = 0.5;
 
@@ -69,20 +62,18 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         setMobileActiveIndex(newIndex);
         setTranslateX(0);
       } else {
-        // Limit drag range
         const maxDrag = 100;
         setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, mx)));
       }
     },
     {
-      axis: "lock", // Lock to first detected axis direction
+      axis: "lock",
       filterTaps: true,
       rubberband: true,
-      threshold: 10, // Require 10px movement before starting gesture
+      threshold: 10,
     }
   );
 
-  // Navigate to previous/next
   const goToPrev = () => {
     if (mobileActiveIndex > 0) {
       setMobileActiveIndex(mobileActiveIndex - 1);
@@ -95,7 +86,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
     }
   };
 
-  // Ensure index is valid after hydration or panes change
   useEffect(() => {
     if (panes.length === 0) return;
 
@@ -130,7 +120,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Swipe indicator / pagination */}
       <SwiperHeader
         podKey={currentPane?.podKey}
         mobileActiveIndex={mobileActiveIndex}
@@ -140,7 +129,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         onSyncSize={syncSize}
       />
 
-      {/* Dots indicator */}
       {panes.length > 1 && (
         <div className="flex items-center justify-center gap-1.5 py-2 bg-terminal-bg-secondary">
           {panes.map((pane, index) => (
@@ -158,7 +146,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
         </div>
       )}
 
-      {/* Terminal container with swipe */}
       <div
         ref={containerRef}
         {...bind()}
@@ -184,7 +171,6 @@ export function TerminalSwiper({ onAddNew, className }: TerminalSwiperProps) {
   );
 }
 
-/** Swiper header bar with title and navigation. */
 function SwiperHeader({
   podKey,
   mobileActiveIndex,
@@ -245,7 +231,6 @@ function SwiperHeader({
   );
 }
 
-/** Reads pod title via usePodTitle hook. */
 function SwiperPaneTitle({ podKey }: { podKey: string }) {
   const title = usePodTitle(podKey, "Terminal");
   return <>{title}</>;

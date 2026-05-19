@@ -8,7 +8,6 @@ import (
 	"net/url"
 )
 
-// GetFileContent returns file content
 func (p *GiteeProvider) GetFileContent(ctx context.Context, projectID, filePath, ref string) ([]byte, error) {
 	path := fmt.Sprintf("/repos/%s/contents/%s?ref=%s", projectID, filePath, url.QueryEscape(ref))
 

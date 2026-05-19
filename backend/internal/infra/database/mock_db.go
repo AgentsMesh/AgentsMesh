@@ -9,14 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// MockDB is a mock implementation of DB interface for testing.
 type MockDB struct {
 	mu sync.RWMutex
 
-	// In-memory storage for mock data
 	data map[string][]interface{} // table name -> records
 
-	// Query state (chain pattern)
 	model       interface{}
 	tableName   string
 	conditions  []mockCondition
@@ -29,7 +26,6 @@ type MockDB struct {
 	groupBy     string
 	joins       []mockJoin
 
-	// Configurable error responses
 	CreateErr      error
 	FirstErr       error
 	FindErr        error
@@ -40,7 +36,6 @@ type MockDB struct {
 	ScanErr        error
 	TransactionErr error
 
-	// Captured calls for verification
 	CreatedRecords  []interface{}
 	UpdatedRecords  []interface{}
 	DeletedRecords  []interface{}
@@ -58,14 +53,12 @@ type mockJoin struct {
 	args  []interface{}
 }
 
-// NewMockDB creates a new mock database for testing.
 func NewMockDB() *MockDB {
 	return &MockDB{
 		data: make(map[string][]interface{}),
 	}
 }
 
-// clone creates a shallow copy for chain operations
 func (m *MockDB) clone() *MockDB {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -100,7 +93,6 @@ func (m *MockDB) clone() *MockDB {
 	}
 }
 
-// Transaction implements DB interface.
 func (m *MockDB) Transaction(fc func(tx DB) error) error {
 	m.mu.Lock()
 	m.TransactionHits++
@@ -112,12 +104,10 @@ func (m *MockDB) Transaction(fc func(tx DB) error) error {
 	return fc(m)
 }
 
-// WithContext implements DB interface.
 func (m *MockDB) WithContext(ctx context.Context) DB {
 	return m.clone()
 }
 
-// Create implements DB interface.
 func (m *MockDB) Create(value interface{}) error {
 	if m.CreateErr != nil {
 		return m.CreateErr
@@ -127,7 +117,6 @@ func (m *MockDB) Create(value interface{}) error {
 
 	m.CreatedRecords = append(m.CreatedRecords, value)
 
-	// Set ID if exists
 	setID(value, int64(len(m.CreatedRecords)))
 
 	tableName := getTableName(value)
@@ -135,16 +124,13 @@ func (m *MockDB) Create(value interface{}) error {
 	return nil
 }
 
-// First implements DB interface.
 func (m *MockDB) First(dest interface{}, conds ...interface{}) error {
 	if m.FirstErr != nil {
 		return m.FirstErr
 	}
-	// Return not found by default if no data
 	return gorm.ErrRecordNotFound
 }
 
-// Find implements DB interface.
 func (m *MockDB) Find(dest interface{}, conds ...interface{}) error {
 	if m.FindErr != nil {
 		return m.FindErr
@@ -152,7 +138,6 @@ func (m *MockDB) Find(dest interface{}, conds ...interface{}) error {
 	return nil
 }
 
-// Save implements DB interface.
 func (m *MockDB) Save(value interface{}) error {
 	if m.SaveErr != nil {
 		return m.SaveErr
@@ -163,7 +148,6 @@ func (m *MockDB) Save(value interface{}) error {
 	return nil
 }
 
-// Delete implements DB interface.
 func (m *MockDB) Delete(value interface{}, conds ...interface{}) error {
 	if m.DeleteErr != nil {
 		return m.DeleteErr
@@ -174,7 +158,6 @@ func (m *MockDB) Delete(value interface{}, conds ...interface{}) error {
 	return nil
 }
 
-// Updates implements DB interface.
 func (m *MockDB) Updates(model interface{}, values interface{}) error {
 	if m.UpdatesErr != nil {
 		return m.UpdatesErr
@@ -188,7 +171,6 @@ func (m *MockDB) Updates(model interface{}, values interface{}) error {
 	return nil
 }
 
-// Model implements DB interface.
 func (m *MockDB) Model(value interface{}) DB {
 	c := m.clone()
 	c.model = value
@@ -196,7 +178,6 @@ func (m *MockDB) Model(value interface{}) DB {
 	return c
 }
 
-// Table implements DB interface.
 func (m *MockDB) Table(name string) DB {
 	c := m.clone()
 	c.tableName = name
@@ -206,14 +187,12 @@ func (m *MockDB) Table(name string) DB {
 	return c
 }
 
-// Where implements DB interface.
 func (m *MockDB) Where(query interface{}, args ...interface{}) DB {
 	c := m.clone()
 	c.conditions = append(c.conditions, mockCondition{query: query, args: args})
 	return c
 }
 
-// Select implements DB interface.
 func (m *MockDB) Select(query interface{}, args ...interface{}) DB {
 	c := m.clone()
 	c.selectQuery = query
@@ -221,49 +200,42 @@ func (m *MockDB) Select(query interface{}, args ...interface{}) DB {
 	return c
 }
 
-// Joins implements DB interface.
 func (m *MockDB) Joins(query string, args ...interface{}) DB {
 	c := m.clone()
 	c.joins = append(c.joins, mockJoin{query: query, args: args})
 	return c
 }
 
-// Preload implements DB interface.
 func (m *MockDB) Preload(query string, args ...interface{}) DB {
 	c := m.clone()
 	c.preloads = append(c.preloads, query)
 	return c
 }
 
-// Order implements DB interface.
 func (m *MockDB) Order(value interface{}) DB {
 	c := m.clone()
 	c.orderBy = value
 	return c
 }
 
-// Limit implements DB interface.
 func (m *MockDB) Limit(limit int) DB {
 	c := m.clone()
 	c.limitVal = limit
 	return c
 }
 
-// Offset implements DB interface.
 func (m *MockDB) Offset(offset int) DB {
 	c := m.clone()
 	c.offsetVal = offset
 	return c
 }
 
-// Group implements DB interface.
 func (m *MockDB) Group(name string) DB {
 	c := m.clone()
 	c.groupBy = name
 	return c
 }
 
-// Count implements DB interface.
 func (m *MockDB) Count(count *int64) error {
 	if m.CountErr != nil {
 		return m.CountErr
@@ -272,7 +244,6 @@ func (m *MockDB) Count(count *int64) error {
 	return nil
 }
 
-// Scan implements DB interface.
 func (m *MockDB) Scan(dest interface{}) error {
 	if m.ScanErr != nil {
 		return m.ScanErr
@@ -280,14 +251,10 @@ func (m *MockDB) Scan(dest interface{}) error {
 	return nil
 }
 
-// GormDB returns nil for mock (no underlying GORM).
 func (m *MockDB) GormDB() *gorm.DB {
 	return nil
 }
 
-// --- Test Helper Methods ---
-
-// SetData sets mock data for a table.
 func (m *MockDB) SetData(tableName string, records []interface{}) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -321,7 +288,6 @@ func (m *MockDB) GetDeletedRecords() []interface{} {
 	return result
 }
 
-// Reset clears all captured data.
 func (m *MockDB) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -337,8 +303,6 @@ func (m *MockDB) Reset() {
 	m.model = nil
 	m.tableName = ""
 }
-
-// --- Helper functions ---
 
 func getTableName(value interface{}) string {
 	t := reflect.TypeOf(value)
@@ -362,20 +326,14 @@ func setID(value interface{}, id int64) {
 	}
 }
 
-// SetFirstResult configures First to return the given result
 func (m *MockDB) SetFirstResult(result interface{}, err error) {
 	m.FirstErr = err
-	// Note: For more sophisticated mocking, you'd store the result
-	// and copy it in First(). This is a simplified version.
 }
 
-// SetFindResult configures Find to return the given result
 func (m *MockDB) SetFindResult(result interface{}, err error) {
 	m.FindErr = err
 }
 
-// Ensure MockDB implements DB interface
 var _ DB = (*MockDB)(nil)
 
-// ErrMockNotImplemented indicates the mock doesn't support this operation
 var ErrMockNotImplemented = errors.New("mock: operation not implemented")

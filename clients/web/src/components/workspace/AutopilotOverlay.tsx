@@ -13,11 +13,6 @@ interface AutopilotOverlayProps {
   podKey: string;
 }
 
-/**
- * Renders autopilot UI elements (TakeoverBanner, CircuitBreakerAlert,
- * AutopilotStatusBar) and manages the auto-open BottomPanel effect.
- * Extracted from TerminalPane for SRP.
- */
 export function AutopilotOverlay({ podKey }: AutopilotOverlayProps) {
   const autopilotController = useAutopilotStore((state) =>
     state.getAutopilotControllerByPodKey(podKey)
@@ -28,7 +23,6 @@ export function AutopilotOverlay({ podKey }: AutopilotOverlayProps) {
   const autopilotControllerKey = autopilotController?.autopilot_controller_key;
   const thinking = useAutopilotThinking(autopilotControllerKey);
 
-  // Auto-open BottomPanel Autopilot tab when help is needed
   useEffect(() => {
     if (
       thinking?.decision_type === "need_help" ||

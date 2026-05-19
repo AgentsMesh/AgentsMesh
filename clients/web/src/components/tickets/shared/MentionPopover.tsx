@@ -6,22 +6,13 @@ import type { OrganizationMember } from "@/lib/api";
 import { getOrgApiService } from "@/lib/wasm-getters";
 
 interface MentionPopoverProps {
-  /** Whether the popover is visible */
   visible: boolean;
-  /** Current search query (text after @) */
   query: string;
-  /** Position of the popover */
   position: { top: number; left: number };
-  /** Called when a member is selected */
   onSelect: (username: string) => void;
-  /** Called when the popover should close */
   onClose: () => void;
 }
 
-/**
- * Popover component for @mention user selection.
- * Fetches organization members and filters by search query.
- */
 export function MentionPopover({
   visible,
   query,
@@ -31,18 +22,15 @@ export function MentionPopover({
 }: MentionPopoverProps) {
   const currentOrg = useCurrentOrg();
   const [members, setMembers] = useState<OrganizationMember[]>([]);
-  // Track prev query to reset selectedIndex when query changes (derived state pattern)
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [prevQuery, setPrevQuery] = useState(query);
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  // Derived state: reset selection when query changes
   if (prevQuery !== query) {
     setPrevQuery(query);
     setSelectedIndex(0);
   }
 
-  // Fetch members once
   useEffect(() => {
     if (!currentOrg?.slug) return;
     getOrgApiService()
@@ -51,7 +39,6 @@ export function MentionPopover({
       .catch(() => setMembers([]));
   }, [currentOrg?.slug]);
 
-  // Filter members by query
   const filtered = useMemo(() => {
     return members.filter((m) => {
       if (!query) return true;
@@ -62,7 +49,6 @@ export function MentionPopover({
     });
   }, [members, query]);
 
-  // Close on outside click
   useEffect(() => {
     if (!visible) return;
     const handleClick = (e: MouseEvent) => {
@@ -74,7 +60,6 @@ export function MentionPopover({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [visible, onClose]);
 
-  // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!visible) return;

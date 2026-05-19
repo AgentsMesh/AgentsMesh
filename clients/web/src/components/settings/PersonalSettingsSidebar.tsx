@@ -15,7 +15,6 @@ export function PersonalSettingsSidebar({ className }: PersonalSettingsSidebarPr
   const pathname = usePathname();
   const t = useTranslations();
 
-  // Personal settings tabs configuration
   const settingsTabs = [
     {
       id: "general",
@@ -40,14 +39,12 @@ export function PersonalSettingsSidebar({ className }: PersonalSettingsSidebarPr
     },
   ];
 
-  // Handle tab click
   const handleTabClick = (path: string) => {
     router.push(path);
   };
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Header */}
       <div className="px-2 py-3 border-b border-border">
         <h3 className="text-sm font-semibold">{t("settings.personal.title")}</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -55,7 +52,6 @@ export function PersonalSettingsSidebar({ className }: PersonalSettingsSidebarPr
         </p>
       </div>
 
-      {/* Settings navigation */}
       <div className="flex-1 overflow-y-auto py-2">
         {settingsTabs.map((tab) => {
           const Icon = tab.icon;
@@ -91,7 +87,6 @@ export function PersonalSettingsSidebar({ className }: PersonalSettingsSidebarPr
         })}
       </div>
 
-      {/* User info */}
       <div className="border-t border-border px-2 py-3">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <User className="w-3 h-3" />

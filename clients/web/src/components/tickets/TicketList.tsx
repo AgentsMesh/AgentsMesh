@@ -91,7 +91,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                 className="border-b hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => onTicketClick?.(ticket)}
               >
-                {/* Ticket Info */}
                 <td className="py-3">
                   <div className="flex items-center gap-3">
                     <div>
@@ -121,7 +120,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                   </div>
                 </td>
 
-                {/* Status */}
                 <td className="py-3">
                   <span
                     className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${statusStyle.bg} ${statusStyle.color}`}
@@ -130,7 +128,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                   </span>
                 </td>
 
-                {/* Priority */}
                 <td className="py-3">
                   <span
                     className={`inline-flex items-center gap-1 ${priorityStyle.color}`}
@@ -141,7 +138,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                   </span>
                 </td>
 
-                {/* Assignees */}
                 <td className="py-3">
                   {ticket.assignees && ticket.assignees.length > 0 ? (
                     <div className="flex -space-x-1">
@@ -176,7 +172,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                   )}
                 </td>
 
-                {/* Due Date */}
                 <td className="py-3">
                   {ticket.due_date ? (
                     <span
@@ -194,7 +189,6 @@ export function TicketList({ tickets, loading, onTicketClick }: TicketListProps)
                   )}
                 </td>
 
-                {/* Updated */}
                 <td className="py-3 text-muted-foreground">
                   {formatDate(ticket.updated_at ?? '')}
                 </td>

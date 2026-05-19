@@ -6,10 +6,6 @@ import (
 	"errors"
 )
 
-// JSONMap is a generic JSONB field used by Block Store entities for
-// free-form payload (block.data / block.meta / ref.meta / op.payload ...).
-// Block-type-specific shape is validated at the service layer against a
-// registered JSON schema, not at the GORM layer.
 type JSONMap map[string]any
 
 func (m *JSONMap) Scan(value interface{}) error {
@@ -36,7 +32,6 @@ func (m JSONMap) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-// Clone returns a deep copy via JSON round-trip; safe for storing in op diffs.
 func (m JSONMap) Clone() JSONMap {
 	if m == nil {
 		return nil

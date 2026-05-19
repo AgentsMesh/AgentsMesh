@@ -4,8 +4,6 @@ import (
 	"context"
 )
 
-// ForceUnregister removes a relay immediately.
-// Skips store deletion if the relay is not in memory (avoids unnecessary I/O).
 func (m *Manager) ForceUnregister(relayID string) {
 	m.mu.Lock()
 	_, existed := m.relays[relayID]
@@ -18,7 +16,6 @@ func (m *Manager) ForceUnregister(relayID string) {
 	m.logger.Info("Relay force unregistered", "relay_id", relayID)
 }
 
-// GracefulUnregister marks a relay as offline (graceful shutdown from relay itself)
 func (m *Manager) GracefulUnregister(relayID string, reason string) {
 	m.mu.Lock()
 
@@ -37,7 +34,6 @@ func (m *Manager) GracefulUnregister(relayID string, reason string) {
 		"reason", reason)
 }
 
-// deleteFromStore removes a relay from the persistent store if configured.
 func (m *Manager) deleteFromStore(relayID string) {
 	if m.store == nil {
 		return

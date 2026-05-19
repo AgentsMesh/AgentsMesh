@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// GetCommit returns a specific commit
 func (p *GitHubProvider) GetCommit(ctx context.Context, projectID, sha string) (*Commit, error) {
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/repos/%s/commits/%s", projectID, sha), nil)
 	if err != nil {
@@ -41,7 +40,6 @@ func (p *GitHubProvider) GetCommit(ctx context.Context, projectID, sha string) (
 	}, nil
 }
 
-// ListCommits returns commits for a branch
 func (p *GitHubProvider) ListCommits(ctx context.Context, projectID, branch string, page, perPage int) ([]*Commit, error) {
 	path := fmt.Sprintf("/repos/%s/commits?sha=%s&page=%d&per_page=%d", projectID, url.QueryEscape(branch), page, perPage)
 

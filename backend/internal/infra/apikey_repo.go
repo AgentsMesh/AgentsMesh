@@ -8,14 +8,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ apikey.Repository = (*apikeyRepo)(nil)
 
 type apikeyRepo struct {
 	db *gorm.DB
 }
 
-// NewAPIKeyRepository creates a new GORM-based API key repository
 func NewAPIKeyRepository(db *gorm.DB) apikey.Repository {
 	return &apikeyRepo{db: db}
 }

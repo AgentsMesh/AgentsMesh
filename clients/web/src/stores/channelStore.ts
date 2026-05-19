@@ -30,7 +30,6 @@ export interface ChannelLastMessage {
   timestamp: string;
 }
 
-/** Read the cached last-message preview for a channel (from WASM `last_messages` map). */
 export function getLastMessage(channelId: number): ChannelLastMessage | null {
   const raw = svc().get_last_message_json(BigInt(channelId));
   if (!raw) return null;
@@ -57,8 +56,6 @@ export interface ChannelMember {
   joined_at: string;
 }
 
-/** Members of a given channel. Rust ChannelService caches the list per channel
- *  in state; the hook re-reads whenever `_tick` bumps (fetch / invite / remove). */
 export function useChannelMembers(channelId: number | null | undefined): ChannelMember[] {
   const tick = useChannelStore((s) => s._tick);
   return useMemo(() => {
@@ -93,8 +90,7 @@ interface ChannelState {
   setCurrentChannel: (ch: Channel | null) => void; clearError: () => void;
 }
 
-// TODO(wasm): move these to dedicated ChannelService methods once the core crate
-// adds invite/join/leave APIs. For now they use the shared ApiClient directly.
+// TODO(wasm): move to ChannelService once core crate adds invite/join/leave APIs.
 async function orgScopedPost(path: string, body?: unknown): Promise<unknown> {
   return await getApiClient().post(path, body ?? {});
 }

@@ -15,9 +15,7 @@ export function SettingsPage() {
   const t = useTranslations();
 
   const renderContent = () => {
-    // Personal settings
     if (scope === "personal") {
-      // Handle agent config pages (agents/{slug})
       if (activeTab.startsWith("agents/")) {
         const agentSlug = activeTab.replace("agents/", "");
         return <AgentConfigPage agentSlug={agentSlug} />;
@@ -39,7 +37,6 @@ export function SettingsPage() {
       }
     }
 
-    // Organization settings
     switch (activeTab) {
       case "general":
         return <GeneralSettings org={currentOrg} t={t} />;
@@ -69,8 +66,6 @@ export function SettingsPage() {
   );
 }
 
-// ===== Personal Settings Components =====
-
 function PersonalGeneralSettings() {
   const router = useRouter();
   const t = useTranslations();
@@ -78,15 +73,11 @@ function PersonalGeneralSettings() {
 
   const handleLogout = () => {
     logout();
-    // Hard reload — clears in-memory Zustand state for workspace / channels /
-    // pods / etc. so a subsequent login doesn't inherit stale caches from
-    // the previous account.
     window.location.reload();
   };
 
   return (
     <div className="space-y-6">
-      {/* Account Information */}
       <div className="border border-border rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-4">
           {t("settings.personal.general.accountInfo")}
@@ -120,7 +111,6 @@ function PersonalGeneralSettings() {
       <LanguageSettings />
       <ThemeSettings />
 
-      {/* Session / Logout */}
       <div className="border border-border rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-2">
           {t("settings.personal.general.session")}

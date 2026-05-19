@@ -7,12 +7,6 @@ import { BLOCK_TYPE_COMMENT, REL_COMMENTS_ON } from "@/lib/api/blockstoreTypes";
 import { cn } from "@/lib/utils";
 import { useRefs, useBlockstoreStore } from "@/stores/blockstore";
 
-/**
- * Comment tail — shown below a block only when that block has comments. Clicks
- * open the right-rail comments panel for the block. Blocks without comments
- * render nothing here; the BlockChrome hover toolbar is the only affordance
- * for starting a thread.
- */
 interface Props {
   blockID: string;
   workspaceID: string;

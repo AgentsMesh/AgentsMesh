@@ -8,8 +8,6 @@ import (
 	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 )
 
-// Dispatcher routes notifications to users based on preferences.
-// Pushes directly to WebSocket via RealtimePusher, bypassing EventBus.
 type Dispatcher struct {
 	pusher           notifDomain.RealtimePusher
 	prefStore        *PreferenceStore

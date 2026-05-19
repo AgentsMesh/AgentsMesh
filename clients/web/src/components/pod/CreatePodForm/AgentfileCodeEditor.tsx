@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * AgentFile source code editor powered by CodeMirror 6.
- *
- * Features:
- * - AgentFile syntax highlighting (keywords, strings, comments, etc.)
- * - Context-aware autocomplete (keywords + data candidates per keyword)
- * - Real-time lint diagnostics (syntax errors, unknown keywords)
- */
 import React, { useMemo } from "react";
 import { keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -26,7 +18,6 @@ import { agentfileEditorTheme } from "./agentfileEditorTheme";
 interface AgentfileCodeEditorProps {
   value: string;
   onChange: (value: string) => void;
-  /** Full completion context with agents, repos, credentials, config schema */
   completionContext: AgentfileCompletionContext;
 }
 

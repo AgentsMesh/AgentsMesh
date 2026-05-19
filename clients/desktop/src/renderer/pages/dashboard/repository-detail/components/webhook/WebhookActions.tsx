@@ -2,9 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Trash2 } from "lucide-react";
 import type { WebhookActionsProps } from "./types";
 
-/**
- * Action buttons for webhook management
- */
 export function WebhookActions({
   status,
   actionLoading,
@@ -15,7 +12,6 @@ export function WebhookActions({
 }: WebhookActionsProps) {
   return (
     <div className="flex flex-wrap gap-3">
-      {/* Register / Re-register button */}
       {(!status?.is_active || status?.needs_manual_setup) && (
         <Button
           variant="outline"
@@ -31,7 +27,6 @@ export function WebhookActions({
         </Button>
       )}
 
-      {/* Re-register button for active webhooks */}
       {status?.is_active && !status?.needs_manual_setup && (
         <Button
           variant="outline"
@@ -45,7 +40,6 @@ export function WebhookActions({
         </Button>
       )}
 
-      {/* Mark as configured button */}
       {status?.needs_manual_setup && (
         <Button
           variant="default"
@@ -59,7 +53,6 @@ export function WebhookActions({
         </Button>
       )}
 
-      {/* Delete button */}
       {(status?.registered || status?.needs_manual_setup) && (
         <Button
           variant="ghost"

@@ -18,9 +18,6 @@ pub enum LogError {
 // reconnect retry, etc.) without panicking.
 static INSTALLED: OnceLock<()> = OnceLock::new();
 
-// Keeps the non-blocking writer's worker thread alive for the process'
-// lifetime. Dropping the guard would terminate the writer and lose buffered
-// logs. We never read it back — the OnceLock is purely a refcount.
 #[cfg(not(target_arch = "wasm32"))]
 static FILE_GUARD: OnceLock<tracing_appender::non_blocking::WorkerGuard> = OnceLock::new();
 

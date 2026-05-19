@@ -64,7 +64,6 @@ export function PopoverTrigger({ children, asChild }: PopoverTriggerProps) {
         const forwardedRef = (child as { ref?: React.Ref<HTMLElement> }).ref;
         if (typeof forwardedRef === "function") forwardedRef(node);
         else if (forwardedRef && typeof forwardedRef === "object") {
-          // React 19 unified RefObject: .current is writable.
           // eslint-disable-next-line react-hooks/immutability
           (forwardedRef as { current: HTMLElement | null }).current = node;
         }
@@ -94,12 +93,6 @@ export interface PopoverContentProps extends React.HTMLAttributes<HTMLDivElement
   sideOffset?: number;
 }
 
-/**
- * Renders in a portal anchored to document.body with `position: fixed`, then
- * computes its position from the trigger's bounding rect. This escapes any
- * ancestor `overflow-y-auto` / `overflow-hidden` clipping (e.g. the channel
- * right rail) that would otherwise crop the popover.
- */
 export function PopoverContent({
   children,
   className,
@@ -126,7 +119,6 @@ export function PopoverContent({
     if (align === "start") left = t.left;
     else if (align === "end") left = t.right - w;
     else left = t.left + t.width / 2 - w / 2;
-    // Clamp into viewport (leave 8px margin).
     const max = window.innerWidth - w - 8;
     if (left < 8) left = 8;
     if (left > max) left = max;

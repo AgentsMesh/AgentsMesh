@@ -4,9 +4,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// ==================== Upgrade Event Handlers ====================
-
-// HandleUpgradeStatus handles upgrade status event from runner (Proto type)
 func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *runnerv1.UpgradeStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("received upgrade status",
@@ -22,7 +19,6 @@ func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *run
 	}
 }
 
-// HandleLogUploadStatus handles log upload status event from runner (Proto type)
 func (cm *RunnerConnectionManager) HandleLogUploadStatus(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("received log upload status",
@@ -39,9 +35,6 @@ func (cm *RunnerConnectionManager) HandleLogUploadStatus(runnerID int64, data *r
 	}
 }
 
-// ==================== AutopilotController Event Handlers ====================
-
-// HandleAutopilotStatus handles AutopilotController status update event (Proto type)
 func (cm *RunnerConnectionManager) HandleAutopilotStatus(runnerID int64, data *runnerv1.AutopilotStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Debug("received AutopilotController status",
@@ -54,7 +47,6 @@ func (cm *RunnerConnectionManager) HandleAutopilotStatus(runnerID int64, data *r
 	}
 }
 
-// HandleAutopilotIteration handles AutopilotController iteration event (Proto type)
 func (cm *RunnerConnectionManager) HandleAutopilotIteration(runnerID int64, data *runnerv1.AutopilotIterationEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Debug("received AutopilotController iteration",
@@ -68,7 +60,6 @@ func (cm *RunnerConnectionManager) HandleAutopilotIteration(runnerID int64, data
 	}
 }
 
-// HandleAutopilotCreated handles AutopilotController created event (Proto type)
 func (cm *RunnerConnectionManager) HandleAutopilotCreated(runnerID int64, data *runnerv1.AutopilotCreatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("AutopilotController created",
@@ -81,7 +72,6 @@ func (cm *RunnerConnectionManager) HandleAutopilotCreated(runnerID int64, data *
 	}
 }
 
-// HandleAutopilotTerminated handles AutopilotController terminated event (Proto type)
 func (cm *RunnerConnectionManager) HandleAutopilotTerminated(runnerID int64, data *runnerv1.AutopilotTerminatedEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("AutopilotController terminated",
@@ -94,8 +84,6 @@ func (cm *RunnerConnectionManager) HandleAutopilotTerminated(runnerID int64, dat
 	}
 }
 
-// HandleAutopilotThinking handles AutopilotController thinking event (Proto type)
-// This event exposes the Control Agent's decision-making process to the user
 func (cm *RunnerConnectionManager) HandleAutopilotThinking(runnerID int64, data *runnerv1.AutopilotThinkingEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Debug("received AutopilotController thinking",

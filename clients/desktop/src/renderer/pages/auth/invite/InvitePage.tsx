@@ -43,17 +43,14 @@ export function InvitePage() {
     try {
       const { organization } = await invitationApi.accept(inviteToken);
 
-      // Refresh organizations list
       const { organizations } = await organizationApi.list();
       setOrganizations(organizations);
 
-      // Set the new org as current
       const newOrg = organizations.find((o) => o.id === organization.id);
       if (newOrg) {
         setCurrentOrg(newOrg);
       }
 
-      // Redirect to the organization workspace
       router.push(`/${organization.slug}/workspace`);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "data" in err) {
@@ -66,7 +63,6 @@ export function InvitePage() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -80,12 +76,10 @@ export function InvitePage() {
     );
   }
 
-  // Error state (invalid/expired)
   if (error && !invitation) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-md space-y-6 text-center">
-          {/* Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -95,7 +89,6 @@ export function InvitePage() {
             </Link>
           </div>
 
-          {/* Error Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <svg
@@ -114,7 +107,6 @@ export function InvitePage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
               Invalid Invitation
@@ -130,12 +122,10 @@ export function InvitePage() {
     );
   }
 
-  // Expired invitation
   if (invitation?.is_expired) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-md space-y-6 text-center">
-          {/* Logo */}
           <div>
             <Link href="/" className="inline-flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -145,7 +135,6 @@ export function InvitePage() {
             </Link>
           </div>
 
-          {/* Warning Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <svg
@@ -164,7 +153,6 @@ export function InvitePage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold text-foreground">
               Invitation Expired
@@ -183,11 +171,9 @@ export function InvitePage() {
     );
   }
 
-  // Valid invitation - show accept UI
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
-        {/* Logo */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -197,9 +183,7 @@ export function InvitePage() {
           </Link>
         </div>
 
-        {/* Invitation Card */}
         <div className="p-6 border border-border rounded-lg space-y-4">
-          {/* Icon */}
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
               <svg
@@ -218,7 +202,6 @@ export function InvitePage() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="text-center space-y-2">
             <h1 className="text-xl font-semibold text-foreground">
               You&apos;re invited to join
@@ -232,14 +215,12 @@ export function InvitePage() {
             </p>
           </div>
 
-          {/* Error message */}
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
               {error}
             </div>
           )}
 
-          {/* Actions */}
           {isAuthenticated && user ? (
             <div className="space-y-3">
               <p className="text-sm text-center text-muted-foreground">
@@ -270,7 +251,6 @@ export function InvitePage() {
           )}
         </div>
 
-        {/* Expiration notice */}
         {invitation && (
           <p className="text-center text-xs text-muted-foreground">
             This invitation expires on{" "}

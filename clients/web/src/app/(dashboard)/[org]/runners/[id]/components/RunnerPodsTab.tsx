@@ -34,9 +34,6 @@ interface RunnerPodsTabProps {
   onResume: (pod: RunnerPodData) => void;
 }
 
-/**
- * Pods tab content showing pod list with filtering and pagination
- */
 export function RunnerPodsTab({
   runner,
   pods,

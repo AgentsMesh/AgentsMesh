@@ -8,11 +8,9 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// AuditAction represents types of admin actions
 type AuditAction string
 
 const (
-	// User actions
 	AuditActionUserView        AuditAction = "user.view"
 	AuditActionUserUpdate      AuditAction = "user.update"
 	AuditActionUserDisable     AuditAction = "user.disable"
@@ -22,12 +20,10 @@ const (
 	AuditActionUserVerifyEmail   AuditAction = "user.verify_email"
 	AuditActionUserUnverifyEmail AuditAction = "user.unverify_email"
 
-	// Organization actions
 	AuditActionOrgView   AuditAction = "organization.view"
 	AuditActionOrgUpdate AuditAction = "organization.update"
 	AuditActionOrgDelete AuditAction = "organization.delete"
 
-	// Subscription actions
 	AuditActionSubView     AuditAction = "subscription.view"
 	AuditActionSubUpdate   AuditAction = "subscription.update"
 	AuditActionSubExtend   AuditAction = "subscription.extend"
@@ -37,36 +33,30 @@ const (
 	AuditActionSubRenew    AuditAction = "subscription.renew"
 	AuditActionSubQuota    AuditAction = "subscription.set_quota"
 
-	// Runner actions
 	AuditActionRunnerView    AuditAction = "runner.view"
 	AuditActionRunnerDisable AuditAction = "runner.disable"
 	AuditActionRunnerEnable  AuditAction = "runner.enable"
 	AuditActionRunnerDelete  AuditAction = "runner.delete"
 
-	// Promo code actions
 	AuditActionPromoCodeCreate     AuditAction = "promo_code.create"
 	AuditActionPromoCodeUpdate     AuditAction = "promo_code.update"
 	AuditActionPromoCodeDelete     AuditAction = "promo_code.delete"
 	AuditActionPromoCodeActivate   AuditAction = "promo_code.activate"
 	AuditActionPromoCodeDeactivate AuditAction = "promo_code.deactivate"
 
-	// Generic actions (for new entity types)
 	AuditActionCreate     AuditAction = "create"
 	AuditActionUpdate     AuditAction = "update"
 	AuditActionDelete     AuditAction = "delete"
 	AuditActionActivate   AuditAction = "activate"
 	AuditActionDeactivate AuditAction = "deactivate"
 
-	// Config actions
 	AuditActionConfigUpdate AuditAction = "config.update"
 
-	// Support ticket actions
 	AuditActionSupportTicketReply  AuditAction = "support_ticket.reply"
 	AuditActionSupportTicketStatus AuditAction = "support_ticket.status"
 	AuditActionSupportTicketAssign AuditAction = "support_ticket.assign"
 )
 
-// TargetType represents the type of entity being acted upon
 type TargetType string
 
 const (
@@ -79,7 +69,6 @@ const (
 	TargetTypeSupportTicket TargetType = "support_ticket"
 	TargetTypeSSOConfig     TargetType = "sso_config"
 
-	// Aliases for convenience
 	AuditTargetUser          = TargetTypeUser
 	AuditTargetOrganization  = TargetTypeOrganization
 	AuditTargetSubscription  = TargetTypeSubscription
@@ -90,7 +79,6 @@ const (
 	AuditTargetSSOConfig     = TargetTypeSSOConfig
 )
 
-// AuditLog represents a system admin audit log entry
 type AuditLog struct {
 	ID          int64       `gorm:"primaryKey" json:"id"`
 	AdminUserID int64       `gorm:"not null;index" json:"admin_user_id"`
@@ -103,7 +91,6 @@ type AuditLog struct {
 	UserAgent   *string     `gorm:"type:text" json:"user_agent,omitempty"`
 	CreatedAt   time.Time   `gorm:"not null;default:now()" json:"created_at"`
 
-	// Associations (for eager loading)
 	AdminUser *user.User `gorm:"foreignKey:AdminUserID" json:"admin_user,omitempty"`
 }
 
@@ -111,7 +98,6 @@ func (AuditLog) TableName() string {
 	return "system_admin_audit_logs"
 }
 
-// AuditLogEntry is used for creating new audit log entries
 type AuditLogEntry struct {
 	AdminUserID int64
 	Action      AuditAction
@@ -123,7 +109,6 @@ type AuditLogEntry struct {
 	UserAgent   string
 }
 
-// ToAuditLog converts AuditLogEntry to AuditLog for database storage
 func (e *AuditLogEntry) ToAuditLog() (*AuditLog, error) {
 	log := &AuditLog{
 		AdminUserID: e.AdminUserID,
@@ -163,7 +148,6 @@ func (e *AuditLogEntry) ToAuditLog() (*AuditLog, error) {
 	return log, nil
 }
 
-// AuditLogQuery represents query parameters for audit logs
 type AuditLogQuery struct {
 	AdminUserID *int64
 	Action      *AuditAction
@@ -175,7 +159,6 @@ type AuditLogQuery struct {
 	PageSize    int
 }
 
-// AuditLogListResponse represents paginated audit log response
 type AuditLogListResponse struct {
 	Data       []AuditLog `json:"data"`
 	Total      int64      `json:"total"`

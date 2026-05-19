@@ -6,15 +6,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// CalculateRenewalPrice calculates the price for renewing a subscription
 func (s *Service) CalculateRenewalPrice(ctx context.Context, orgID int64, newBillingCycle string) (*PriceCalculation, error) {
-	// Get current subscription
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get plan
 	plan, err := s.GetPlanByID(ctx, sub.PlanID)
 	if err != nil {
 		return nil, err
@@ -49,20 +46,16 @@ func (s *Service) CalculateRenewalPrice(ctx context.Context, orgID int64, newBil
 	}, nil
 }
 
-// CalculateBillingCycleChangePrice calculates the price difference when changing billing cycle
 func (s *Service) CalculateBillingCycleChangePrice(ctx context.Context, orgID int64, newBillingCycle string) (*PriceCalculation, error) {
-	// Get current subscription
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// If same cycle, no change needed
 	if sub.BillingCycle == newBillingCycle {
 		return nil, nil
 	}
 
-	// Get plan
 	plan, err := s.GetPlanByID(ctx, sub.PlanID)
 	if err != nil {
 		return nil, err
@@ -73,7 +66,6 @@ func (s *Service) CalculateBillingCycleChangePrice(ctx context.Context, orgID in
 		seats = 1
 	}
 
-	// Calculate prices for both cycles
 	var currentPrice, newPrice float64
 	if sub.BillingCycle == billing.BillingCycleYearly {
 		currentPrice = plan.PricePerSeatYearly * float64(seats)
@@ -83,12 +75,8 @@ func (s *Service) CalculateBillingCycleChangePrice(ctx context.Context, orgID in
 		newPrice = plan.PricePerSeatYearly * float64(seats)
 	}
 
-	// Calculate remaining period ratio
 	ratio := calculateRemainingPeriodRatio(sub.CurrentPeriodStart, sub.CurrentPeriodEnd)
 
-	// Calculate prorated difference
-	// Positive = need to pay more (monthly to yearly)
-	// Negative = credit (yearly to monthly, handled at renewal)
 	actualAmount := (newPrice - currentPrice) * ratio
 	if actualAmount < 0 {
 		actualAmount = 0 // Credit will be applied at renewal

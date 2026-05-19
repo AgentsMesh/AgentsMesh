@@ -51,7 +51,6 @@ export default function SupportTicketDetailPage() {
 
   useEffect(() => {
     fetchDetail();
-    // Poll for new messages every 15s, but only when tab is visible
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchDetail();

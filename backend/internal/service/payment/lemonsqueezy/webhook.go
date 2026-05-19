@@ -13,26 +13,20 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// ErrWebhookSecretNotConfigured indicates webhook secret is not configured
 var ErrWebhookSecretNotConfigured = fmt.Errorf("webhook secret is not configured - this is required for security")
 
-// HandleWebhook parses and validates a LemonSqueezy webhook
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
-	// Verify signature using HMAC-SHA256
 	if err := p.verifySignature(payload, signature); err != nil {
 		return nil, fmt.Errorf("webhook signature verification failed: %w", err)
 	}
 
-	// Parse the webhook payload
 	var webhookPayload WebhookPayload
 	if err := json.Unmarshal(payload, &webhookPayload); err != nil {
 		return nil, fmt.Errorf("failed to parse webhook payload: %w", err)
 	}
 
-	// Build a unique event identifier for idempotency.
-	// data.id alone is the resource ID (e.g., subscription ID), which is the same
-	// across different event types and repeated updates. We combine it with event_name
-	// and updated_at to ensure each webhook delivery has a unique idempotency key.
+	// data.id alone is the resource ID (same across repeated updates) — combine with
+	// event_name + updated_at/created_at to get a per-delivery idempotency key.
 	eventID := webhookPayload.Data.ID
 	if eventID == "" {
 		eventID = "unknown"
@@ -50,14 +44,12 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		Provider:  billing.PaymentProviderLemonSqueezy,
 	}
 
-	// Extract custom data for order_no
 	if webhookPayload.Meta.CustomData != nil {
 		if orderNo, ok := webhookPayload.Meta.CustomData["order_no"].(string); ok {
 			result.OrderNo = orderNo
 		}
 	}
 
-	// Parse event data based on type
 	switch webhookPayload.Meta.EventName {
 	case billing.WebhookEventLSOrderCreated:
 		p.parseOrderEvent(&webhookPayload, result)
@@ -87,19 +79,15 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		p.parsePaymentFailedEvent(&webhookPayload, result)
 	}
 
-	// Store raw payload
 	result.RawPayload = make(map[string]interface{})
 	_ = json.Unmarshal(payload, &result.RawPayload)
 
 	return result, nil
 }
 
-// verifySignature verifies the webhook signature using HMAC-SHA256
-// SECURITY: Webhook secret MUST be configured for signature verification
+// verifySignature — webhook secret MUST be configured; HMAC-SHA256 over payload.
 func (p *Provider) verifySignature(payload []byte, signature string) error {
 	if p.webhookSecret == "" {
-		// SECURITY: Never skip signature verification
-		// This prevents processing webhooks without proper authentication
 		return ErrWebhookSecretNotConfigured
 	}
 
@@ -118,10 +106,9 @@ func (p *Provider) verifySignature(payload []byte, signature string) error {
 	return nil
 }
 
-// parseOrderEvent parses an order_created event
 func (p *Provider) parseOrderEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.ExternalOrderNo = payload.Data.ID
-	result.Amount = float64(payload.Data.Attributes.Total) / 100.0 // Convert from cents to dollars
+	result.Amount = float64(payload.Data.Attributes.Total) / 100.0
 	result.Currency = payload.Data.Attributes.Currency
 	result.Status = billing.OrderStatusSucceeded
 
@@ -130,7 +117,6 @@ func (p *Provider) parseOrderEvent(payload *WebhookPayload, result *types.Webhoo
 	}
 }
 
-// parseSubscriptionCreatedEvent parses a subscription_created event
 func (p *Provider) parseSubscriptionCreatedEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = billing.SubscriptionStatusActive
@@ -139,18 +125,15 @@ func (p *Provider) parseSubscriptionCreatedEvent(payload *WebhookPayload, result
 		result.CustomerID = strconv.Itoa(payload.Data.Attributes.CustomerID)
 	}
 
-	// Extract seat quantity from first_subscription_item
 	if payload.Data.Attributes.FirstSubscriptionItem != nil {
 		result.Seats = payload.Data.Attributes.FirstSubscriptionItem.Quantity
 	}
 
-	// Extract variant_id for plan identification
 	if payload.Data.Attributes.VariantID != 0 {
 		result.VariantID = strconv.Itoa(payload.Data.Attributes.VariantID)
 	}
 }
 
-// parseSubscriptionUpdatedEvent parses a subscription_updated event
 func (p *Provider) parseSubscriptionUpdatedEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = payload.Data.Attributes.Status
@@ -159,18 +142,15 @@ func (p *Provider) parseSubscriptionUpdatedEvent(payload *WebhookPayload, result
 		result.CustomerID = strconv.Itoa(payload.Data.Attributes.CustomerID)
 	}
 
-	// Extract seat quantity from first_subscription_item
 	if payload.Data.Attributes.FirstSubscriptionItem != nil {
 		result.Seats = payload.Data.Attributes.FirstSubscriptionItem.Quantity
 	}
 
-	// Extract variant_id for plan change detection
 	if payload.Data.Attributes.VariantID != 0 {
 		result.VariantID = strconv.Itoa(payload.Data.Attributes.VariantID)
 	}
 }
 
-// parseSubscriptionCancelledEvent parses a subscription_cancelled event
 func (p *Provider) parseSubscriptionCancelledEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = billing.SubscriptionStatusCanceled
@@ -180,10 +160,9 @@ func (p *Provider) parseSubscriptionCancelledEvent(payload *WebhookPayload, resu
 	}
 }
 
-// parsePaymentSuccessEvent parses a subscription_payment_success event
 func (p *Provider) parsePaymentSuccessEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.ExternalOrderNo = payload.Data.ID
-	result.Amount = float64(payload.Data.Attributes.Total) / 100.0 // Convert from cents to dollars
+	result.Amount = float64(payload.Data.Attributes.Total) / 100.0
 	result.Currency = payload.Data.Attributes.Currency
 	result.Status = billing.OrderStatusSucceeded
 
@@ -195,7 +174,6 @@ func (p *Provider) parsePaymentSuccessEvent(payload *WebhookPayload, result *typ
 	}
 }
 
-// parsePaymentFailedEvent parses a subscription_payment_failed event
 func (p *Provider) parsePaymentFailedEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.ExternalOrderNo = payload.Data.ID
 	result.Status = billing.OrderStatusFailed
@@ -208,7 +186,6 @@ func (p *Provider) parsePaymentFailedEvent(payload *WebhookPayload, result *type
 	}
 }
 
-// parseSubscriptionPausedEvent parses a subscription_paused event
 func (p *Provider) parseSubscriptionPausedEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = billing.SubscriptionStatusPaused
@@ -218,7 +195,6 @@ func (p *Provider) parseSubscriptionPausedEvent(payload *WebhookPayload, result 
 	}
 }
 
-// parseSubscriptionResumedEvent parses a subscription_resumed event
 func (p *Provider) parseSubscriptionResumedEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = billing.SubscriptionStatusActive
@@ -228,7 +204,6 @@ func (p *Provider) parseSubscriptionResumedEvent(payload *WebhookPayload, result
 	}
 }
 
-// parseSubscriptionExpiredEvent parses a subscription_expired event
 func (p *Provider) parseSubscriptionExpiredEvent(payload *WebhookPayload, result *types.WebhookEvent) {
 	result.SubscriptionID = payload.Data.ID
 	result.Status = billing.SubscriptionStatusExpired

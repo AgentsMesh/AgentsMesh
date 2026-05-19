@@ -7,7 +7,6 @@ import (
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// flush writes all buffered heartbeats to the database
 func (b *HeartbeatBatcher) flush() {
 	// Swap buffer atomically
 	b.mu.Lock()
@@ -19,7 +18,6 @@ func (b *HeartbeatBatcher) flush() {
 	b.buffer = make(map[int64]*HeartbeatItem)
 	b.mu.Unlock()
 
-	// Process in batches for better performance
 	items := make([]*HeartbeatItem, 0, len(batch))
 	for _, item := range batch {
 		items = append(items, item)
@@ -46,14 +44,11 @@ func (b *HeartbeatBatcher) flush() {
 		"duration", time.Since(start))
 }
 
-// flushBatch writes a batch of heartbeats to the database via RunnerRepository.
-// Each update is independent so one failure doesn't abort the entire batch.
 func (b *HeartbeatBatcher) flushBatch(ctx context.Context, items []*HeartbeatItem) int {
 	if len(items) == 0 {
 		return 0
 	}
 
-	// Convert HeartbeatItem to domain HeartbeatUpdate
 	domainItems := make([]runnerDomain.HeartbeatUpdate, len(items))
 	for i, item := range items {
 		domainItems[i] = runnerDomain.HeartbeatUpdate{

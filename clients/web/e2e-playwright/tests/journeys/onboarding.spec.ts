@@ -62,9 +62,15 @@ test.describe("Journey: New User Onboarding", () => {
       }).first();
       if (await createBtn.isVisible()) {
         await createBtn.click();
-        await page.waitForURL((url) => !url.pathname.includes("/onboarding"), {
-          timeout: 15_000,
-        });
+        // Onboarding flow may route to /onboarding/setup-runner next; accept
+        // anything past /onboarding (workspace/dashboard) OR the setup-runner
+        // sub-step.
+        await page.waitForURL(
+          (url) =>
+            !url.pathname.includes("/onboarding") ||
+            url.pathname.includes("/setup-runner"),
+          { timeout: 15_000 },
+        );
       }
     }
 

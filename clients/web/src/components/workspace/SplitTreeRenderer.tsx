@@ -15,9 +15,6 @@ interface SplitTreeRendererProps {
   onPopout?: (paneId: string) => void;
 }
 
-/**
- * VS Code style resize handle — hidden by default, highlights on hover
- */
 function ResizeHandle({ direction }: { direction: "horizontal" | "vertical" }) {
   const isHorizontal = direction === "horizontal";
   return (
@@ -32,9 +29,6 @@ function ResizeHandle({ direction }: { direction: "horizontal" | "vertical" }) {
   );
 }
 
-/**
- * Recursive renderer for a SplitTreeNode
- */
 export function SplitTreeRenderer({ node, onPopout }: SplitTreeRendererProps) {
   const activePane = useWorkspaceStore((s) => s.activePane);
   const removePane = useWorkspaceStore((s) => s.removePane);
@@ -61,7 +55,6 @@ export function SplitTreeRenderer({ node, onPopout }: SplitTreeRendererProps) {
     );
   }
 
-  // Split node — render N children with resize handles between them
   const orientation = node.direction === "horizontal" ? "horizontal" : "vertical";
 
   return (
@@ -82,10 +75,6 @@ export function SplitTreeRenderer({ node, onPopout }: SplitTreeRendererProps) {
   );
 }
 
-/**
- * Leaf pane wrapper — subscribes reactively to pane data from the store
- * instead of using getState() which breaks reactivity.
- */
 function LeafPane({
   paneId,
   activePane,

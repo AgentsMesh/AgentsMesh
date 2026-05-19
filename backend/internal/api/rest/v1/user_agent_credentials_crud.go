@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetProfile returns a single credential profile
-// GET /api/v1/users/agent-credentials/profiles/:id
 func (h *UserAgentCredentialHandler) GetProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -35,7 +33,6 @@ func (h *UserAgentCredentialHandler) GetProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"profile": h.credentialSvc.ProfileToResponse(profile)})
 }
 
-// UpdateCredentialProfileRequest represents a request to update a credential profile
 type UpdateCredentialProfileRequest struct {
 	Name         *string           `json:"name"`
 	Description  *string           `json:"description"`
@@ -45,8 +42,6 @@ type UpdateCredentialProfileRequest struct {
 	IsActive     *bool             `json:"is_active"`
 }
 
-// UpdateProfile updates a credential profile
-// PUT /api/v1/users/agent-credentials/profiles/:id
 func (h *UserAgentCredentialHandler) UpdateProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -86,8 +81,6 @@ func (h *UserAgentCredentialHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"profile": h.credentialSvc.ProfileToResponse(profile)})
 }
 
-// DeleteProfile deletes a credential profile
-// DELETE /api/v1/users/agent-credentials/profiles/:id
 func (h *UserAgentCredentialHandler) DeleteProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -110,8 +103,6 @@ func (h *UserAgentCredentialHandler) DeleteProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile deleted"})
 }
 
-// SetDefault sets a profile as the default for its agent
-// POST /api/v1/users/agent-credentials/profiles/:id/set-default
 func (h *UserAgentCredentialHandler) SetDefault(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

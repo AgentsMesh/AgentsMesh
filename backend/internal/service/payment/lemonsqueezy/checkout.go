@@ -11,9 +11,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// CreateCheckoutSession creates a LemonSqueezy Checkout session
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
-	// LemonSqueezy requires a variant ID - this should be passed via metadata
 	variantID := ""
 	if req.Metadata != nil {
 		variantID = req.Metadata["variant_id"]
@@ -22,7 +20,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		return nil, fmt.Errorf("variant_id is required in metadata for LemonSqueezy checkout")
 	}
 
-	// Build custom data for checkout
 	customData := map[string]any{
 		"organization_id": strconv.FormatInt(req.OrganizationID, 10),
 		"user_id":         strconv.FormatInt(req.UserID, 10),
@@ -36,10 +33,8 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		}
 	}
 
-	// Helper function for bool pointers
 	boolPtr := func(b bool) *bool { return &b }
 
-	// Prepare checkout attributes
 	checkoutAttrs := &lemonsqueezy.CheckoutCreateAttributes{
 		CheckoutData: lemonsqueezy.CheckoutCreateData{
 			Email:  req.UserEmail,
@@ -66,11 +61,9 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		},
 	}
 
-	// Set expiration time (30 minutes from now)
 	expiresAt := time.Now().Add(30 * time.Minute).Format(time.RFC3339)
 	checkoutAttrs.ExpiresAt = &expiresAt
 
-	// Create checkout
 	storeID := stringToInt(p.storeID)
 	variantIDInt := stringToInt(variantID)
 
@@ -79,7 +72,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		return nil, fmt.Errorf("failed to create LemonSqueezy checkout: %w", err)
 	}
 
-	// Get expiration time
 	expiresAtTime := time.Now().Add(30 * time.Minute)
 	if checkout.Data.Attributes.ExpiresAt != nil {
 		expiresAtTime = *checkout.Data.Attributes.ExpiresAt

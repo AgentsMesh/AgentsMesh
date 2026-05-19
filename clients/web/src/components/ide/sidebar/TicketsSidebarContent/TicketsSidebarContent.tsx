@@ -15,9 +15,6 @@ import { TicketFilterSection } from "./TicketFilterSection";
 import { RepoFilterSection } from "./RepoFilterSection";
 import type { TicketsSidebarContentProps } from "./types";
 
-/**
- * TicketsSidebarContent - Sidebar content for browsing and filtering tickets
- */
 export function TicketsSidebarContent({ className }: TicketsSidebarContentProps) {
   const t = useTranslations();
   const router = useRouter();

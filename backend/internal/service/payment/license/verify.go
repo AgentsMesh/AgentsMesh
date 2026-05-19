@@ -17,13 +17,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// verifySignature verifies the license signature
 func (p *Provider) verifySignature(data *LicenseData) error {
 	if p.publicKey == nil {
 		return ErrNoPublicKey
 	}
 
-	// Create the data to verify (all fields except signature)
 	dataToSign := LicenseData{
 		LicenseKey:        data.LicenseKey,
 		OrganizationName:  data.OrganizationName,
@@ -43,16 +41,13 @@ func (p *Provider) verifySignature(data *LicenseData) error {
 		return fmt.Errorf("%w: failed to marshal data for verification", ErrInvalidSignature)
 	}
 
-	// Decode signature
 	sigBytes, err := base64.StdEncoding.DecodeString(data.Signature)
 	if err != nil {
 		return fmt.Errorf("%w: failed to decode signature", ErrInvalidSignature)
 	}
 
-	// Hash the data
 	hash := sha256.Sum256(jsonData)
 
-	// Verify signature
 	if err := rsa.VerifyPKCS1v15(p.publicKey, crypto.SHA256, hash[:], sigBytes); err != nil {
 		return ErrInvalidSignature
 	}
@@ -60,7 +55,6 @@ func (p *Provider) verifySignature(data *LicenseData) error {
 	return nil
 }
 
-// licenseToStatus converts a License to LicenseStatus
 func (p *Provider) licenseToStatus(license *billing.License) *types.LicenseStatus {
 	status := &types.LicenseStatus{
 		IsValid:         license.IsValid(),
@@ -85,7 +79,6 @@ func (p *Provider) licenseToStatus(license *billing.License) *types.LicenseStatu
 	return status
 }
 
-// loadPublicKey loads an RSA public key from a PEM file
 func loadPublicKey(path string) (*rsa.PublicKey, error) {
 	keyData, err := os.ReadFile(path)
 	if err != nil {

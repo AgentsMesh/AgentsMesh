@@ -1,6 +1,3 @@
-/**
- * Webhook settings components
- */
 export { WebhookStatusDisplay } from "./WebhookStatusDisplay";
 export { WebhookActiveInfo } from "./WebhookActiveInfo";
 export { WebhookManualSetup } from "./WebhookManualSetup";

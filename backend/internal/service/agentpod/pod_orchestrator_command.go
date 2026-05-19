@@ -9,7 +9,6 @@ import (
 	podDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
-// buildPodCommand constructs the CreatePodCommand using ConfigBuilder.
 func (o *PodOrchestrator) buildPodCommand(
 	ctx context.Context,
 	req *OrchestrateCreatePodRequest,
@@ -18,17 +17,14 @@ func (o *PodOrchestrator) buildPodCommand(
 	isResumeMode bool,
 	resolved *agentfileResolved,
 ) (*runnerv1.CreatePodCommand, error) {
-	// Resume mode: resolve local_path from source pod's sandbox
 	localPath := ""
 	if isResumeMode && sourcePod != nil && sourcePod.SandboxPath != nil {
 		localPath = *sourcePod.SandboxPath
 	}
 
-	// Effective values: resolved (AgentFile) > req (resume inheritance only)
 	effectiveBranch := firstNonEmptyPtr(resolved.BranchName, req.BranchName)
 	effectiveRepoID := firstNonNilInt64(resolved.RepositoryID, req.RepositoryID)
 
-	// Resolve repository info
 	httpCloneURL, sshCloneURL := "", ""
 	sourceBranch, preparationScript := "", ""
 	preparationTimeout := 300
@@ -52,7 +48,6 @@ func (o *PodOrchestrator) buildPodCommand(
 		sourceBranch = *effectiveBranch
 	}
 
-	// Resolve ticket slug
 	ticketSlug := ""
 	if req.TicketSlug != nil && *req.TicketSlug != "" {
 		ticketSlug = *req.TicketSlug
@@ -63,7 +58,6 @@ func (o *PodOrchestrator) buildPodCommand(
 		}
 	}
 
-	// Get Git credentials
 	credentialType, gitToken, sshPrivateKey := "", "", ""
 	if o.userService != nil {
 		gitCred := o.getUserGitCredential(ctx, req.UserID)
@@ -78,13 +72,11 @@ func (o *PodOrchestrator) buildPodCommand(
 		}
 	}
 
-	// When resuming from local path, skip repository clone
 	if localPath != "" {
 		httpCloneURL = ""
 		sshCloneURL = ""
 	}
 
-	// Query Runner's agent versions for version-aware command building
 	var runnerAgentVersions map[string]string
 	if o.runnerQuery != nil && req.RunnerID > 0 {
 		r, err := o.runnerQuery.GetRunner(ctx, req.RunnerID)

@@ -8,7 +8,6 @@ interface ConfigFormProps {
   fields: ConfigField[];
   values: Record<string, unknown>;
   onChange: (fieldName: string, value: unknown) => void;
-  /** Agent slug for i18n translation key construction */
   agentSlug: string;
 }
 
@@ -16,14 +15,9 @@ interface FieldWrapperProps {
   field: ConfigField;
   value: unknown;
   onChange: (fieldName: string, value: unknown) => void;
-  /** Agent slug for i18n translation key construction */
   agentSlug: string;
 }
 
-/**
- * Wrapper component for individual fields
- * Handles the field key generation and change propagation
- */
 const FieldWrapper = memo(function FieldWrapper({
   field,
   value,
@@ -99,7 +93,6 @@ export const ConfigForm = memo(function ConfigForm({
   );
 });
 
-// Re-export types for external use
 export type { FieldRendererProps } from "./field-renderers";
 
 export default ConfigForm;

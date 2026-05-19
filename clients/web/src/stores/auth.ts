@@ -43,10 +43,7 @@ interface AuthState {
   switchOrg: (slug: string) => void;
   refreshSession: () => Promise<void>;
 
-  // setAuth / setOrganizations / logout return Promise: on Electron the
-  // underlying adapter awaits an IPC round-trip to the Rust SSOT. Callers
-  // MUST await — fire-and-forget leaves the main process without the token
-  // (the v0.31.x OAuth deep-link bug). Wasm path resolves synchronously.
+  // Callers MUST await — Electron IPC round-trip to Rust SSOT (v0.31.x OAuth deep-link bug).
   setAuth: (token: string, user: User, refreshToken?: string) => Promise<void>;
   setOrganizations: (orgs: Organization[]) => Promise<void>;
   setCurrentOrg: (org: Organization) => Promise<void>;
@@ -58,10 +55,6 @@ interface AuthState {
 
 const mgr = () => getAuthManager();
 const bump = () => useAuthStore.setState((s) => ({ _tick: s._tick + 1 }));
-
-// Selector helpers: Rust is SSOT — these read from AuthManager on every tick.
-// ApiClient shares AuthManager's token store (Plan I6), so token writes
-// propagate without TS-side `client.set_token()` synchronization.
 
 function parseJson<T>(raw: unknown): T | null {
   if (raw == null) return null;
@@ -130,8 +123,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       const json = await mgr().bootstrap();
       result = JSON.parse(json) as BootstrapResult;
     } catch (e) {
-      // Bootstrap call itself failed (network down before any storage hit).
-      // Treat as anonymous; storage is untouched so retry on reload is safe.
       console.warn("auth bootstrap failed:", getErrorMessage(e));
       result = { kind: "anonymous" };
     }
@@ -207,10 +198,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    // Sync local cleanup first — guarantees post-call state is logged-out
-    // even if the network POST below fails or hangs.
     try { await mgr().clear_session(); } catch { /* noop */ }
-    // Best-effort API logout (informs server, doesn't block UI).
     try { mgr().logout().catch(() => {}); } catch { /* noop */ }
     set({ error: null });
     bump();

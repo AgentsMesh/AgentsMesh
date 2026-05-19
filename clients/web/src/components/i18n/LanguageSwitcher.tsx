@@ -27,7 +27,6 @@ export function LanguageSwitcher({ variant = "icon", className }: LanguageSwitch
     setOpen(false);
   };
 
-  // Select variant - simple dropdown for settings page
   if (variant === "select") {
     return (
       <select
@@ -44,7 +43,6 @@ export function LanguageSwitcher({ variant = "icon", className }: LanguageSwitch
     );
   }
 
-  // Full variant - shows current language name
   if (variant === "full") {
     return (
       <Popover open={open} onOpenChange={setOpen}>
@@ -73,7 +71,6 @@ export function LanguageSwitcher({ variant = "icon", className }: LanguageSwitch
     );
   }
 
-  // Icon variant (default) - just shows globe icon
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

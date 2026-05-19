@@ -2,20 +2,12 @@
 
 import { useTranslations } from "next-intl";
 
-/**
- * Architecture diagram for docs Introduction page.
- * Pure CSS/HTML — no external diagram library needed.
- *
- * Layout (top → bottom):
- *   Client Layer → Cloud Layer → [Control Plane / Data Plane split] → Runner Layer → Agent Layer
- */
 export default function ArchitectureDiagram() {
   const t = useTranslations("docs.architecture");
 
   return (
     <div className="my-8 overflow-x-auto">
       <div className="min-w-[600px] max-w-3xl mx-auto flex flex-col items-center gap-0">
-        {/* ── Client Layer ── */}
         <LayerBox
           label={t("clientLayer")}
           color="blue"
@@ -27,10 +19,8 @@ export default function ArchitectureDiagram() {
           subtitle={t("clientSubtitle")}
         />
 
-        {/* Arrow: HTTPS / WebSocket */}
         <Arrow label="HTTPS / WebSocket" />
 
-        {/* ── Cloud Layer ── */}
         <div className="w-full border-2 border-emerald-500/40 rounded-xl bg-emerald-500/5 overflow-hidden">
           <div className="bg-emerald-500/10 px-4 py-1.5">
             <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
@@ -61,9 +51,7 @@ export default function ArchitectureDiagram() {
           </div>
         </div>
 
-        {/* ── Split: Control Plane + Data Plane ── */}
         <div className="w-full grid grid-cols-2 gap-4 my-1">
-          {/* Control Plane */}
           <div className="flex flex-col items-center">
             <div className="h-6 w-px border-l-2 border-dashed border-amber-500/60" />
             <div className="border border-amber-500/40 rounded-lg bg-amber-500/5 px-3 py-2.5 text-center w-full">
@@ -78,7 +66,6 @@ export default function ArchitectureDiagram() {
             <div className="h-6 w-px border-l-2 border-dashed border-amber-500/60" />
           </div>
 
-          {/* Data Plane */}
           <div className="flex flex-col items-center">
             <div className="h-6 w-px border-l-2 border-dashed border-violet-500/60" />
             <div className="border border-violet-500/40 rounded-lg bg-violet-500/5 px-3 py-2.5 text-center w-full">
@@ -94,7 +81,6 @@ export default function ArchitectureDiagram() {
           </div>
         </div>
 
-        {/* ── Runner Layer ── */}
         <div className="w-full border-2 border-sky-500/40 rounded-xl bg-sky-500/5 overflow-hidden">
           <div className="bg-sky-500/10 px-4 py-1.5">
             <span className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
@@ -127,10 +113,8 @@ export default function ArchitectureDiagram() {
           </div>
         </div>
 
-        {/* Arrow: PTY / Sandbox */}
         <Arrow label="PTY + Sandbox + Git Worktree" />
 
-        {/* ── Agent Layer ── */}
         <LayerBox
           label={t("agentLayer")}
           color="rose"
@@ -143,7 +127,6 @@ export default function ArchitectureDiagram() {
           subtitle={t("agentSubtitle")}
         />
 
-        {/* ── Security callout ── */}
         <div className="mt-4 w-full border border-amber-500/30 rounded-lg bg-amber-500/5 px-4 py-3">
           <div className="flex items-start gap-2">
             <span className="text-base mt-0.5">🔐</span>
@@ -162,7 +145,6 @@ export default function ArchitectureDiagram() {
   );
 }
 
-/* ── Helper: Arrow ── */
 function Arrow({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center py-1">
@@ -176,7 +158,6 @@ function Arrow({ label }: { label: string }) {
   );
 }
 
-/* ── Helper: Layer Box ── */
 function LayerBox({
   label,
   color,

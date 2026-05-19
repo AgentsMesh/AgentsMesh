@@ -1,6 +1,5 @@
 package testkit
 
-// loopTableDDLs returns DDLs for loops and loop runs.
 func loopTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS loops (
@@ -48,7 +47,6 @@ func loopTableDDLs() []string {
 	}
 }
 
-// billingTableDDLs returns DDLs for plans, subscriptions, payments, invoices, licenses.
 func billingTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS subscription_plans (

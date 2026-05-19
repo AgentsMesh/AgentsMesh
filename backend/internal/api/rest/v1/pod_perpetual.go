@@ -15,8 +15,6 @@ type updatePodPerpetualRequest struct {
 	Perpetual bool `json:"perpetual"`
 }
 
-// UpdatePodPerpetual toggles perpetual mode for a pod.
-// PATCH /api/v1/organizations/:slug/pods/:key/perpetual
 func (h *PodHandler) UpdatePodPerpetual(c *gin.Context) {
 	podKey := c.Param("key")
 
@@ -48,7 +46,6 @@ func (h *PodHandler) UpdatePodPerpetual(c *gin.Context) {
 		return
 	}
 
-	// Notify runner so in-memory pod state is updated immediately.
 	if h.commandSender != nil {
 		h.notifyRunnerPerpetual(c.Request.Context(), pod.RunnerID, podKey, req.Perpetual)
 	}
@@ -73,7 +70,6 @@ func (h *PodHandler) UpdatePodPerpetual(c *gin.Context) {
 
 func (h *PodHandler) notifyRunnerPerpetual(ctx context.Context, runnerID int64, podKey string, perpetual bool) {
 	if err := h.commandSender.SendUpdatePodPerpetual(ctx, runnerID, podKey, perpetual); err != nil {
-		// Non-fatal: DB is already updated; runner will use correct state on next restart.
 		_ = err
 	}
 }

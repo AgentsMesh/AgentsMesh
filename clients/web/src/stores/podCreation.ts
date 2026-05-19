@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-/**
- * Pod creation preferences - remembers last user choices
- */
 interface PodCreationPreferences {
   lastAgentSlug: string | null;
   lastRepositoryId: number | null;
@@ -20,7 +17,6 @@ interface PodCreationPreferences {
   ) => void;
   clearLastChoices: () => void;
 
-  // Hydration state for SSR
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
 }
@@ -42,7 +38,6 @@ export const usePodCreationStore = create<PodCreationPreferences>()(
           lastBranchName: null,
         }),
 
-      // Hydration
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),

@@ -7,11 +7,6 @@ export interface PageNode {
   children: PageNode[];
 }
 
-/**
- * Walk the nest tree rooted at `rootId`, keeping only blocks of type "page".
- * `nestChildren` stores nest-relation **ref** ids (not block ids); each ref
- * maps to a child block via `refs[refId].to_id`.
- */
 export function buildPageTree(
   blocks: Record<string, Block>,
   refs: Record<number, BlockRef>,

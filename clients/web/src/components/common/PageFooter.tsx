@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-/**
- * Shared footer for public/static pages (about, careers, changelog, privacy, terms, blog).
- * Single source of truth — avoids duplicating footer markup across every page.
- */
 export function PageFooter() {
   const t = useTranslations();
 

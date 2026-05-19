@@ -80,21 +80,18 @@ impl WasmWebSocket {
     }
 
     pub fn close(&self) {
-        // Detach business callbacks first — caller is tearing down this
-        // transport and doesn't want late onmessage/onerror/onclose
-        // events bubbling up after close intent.
         self.ws.set_onmessage(None);
         self.ws.set_onerror(None);
         self.ws.set_onclose(None);
 
         if self.ws.ready_state() == WebSocket::CONNECTING {
-            // Calling ws.close() during the handshake makes the browser log
-            // "WebSocket is closed before the connection is established" —
-            // a spec-mandated warning whenever a CONNECTING socket is
-            // aborted. Defer the close until onopen so readyState is OPEN
-            // at close time. This fires under React Strict Mode's
-            // double-mount: the first mount's ws is still negotiating
-            // when EventSubscriptionManager.disconnect() runs.
+            // Workaround: calling ws.close() during the handshake makes the
+            // browser log "WebSocket is closed before the connection is
+            // established" — a spec-mandated warning whenever a CONNECTING
+            // socket is aborted. Defer until onopen so readyState is OPEN
+            // at close time. Fires under React Strict Mode's double-mount:
+            // first mount's ws is still negotiating when
+            // EventSubscriptionManager.disconnect() runs.
             let ws_clone = self.ws.clone();
             let close_after_open = Closure::wrap(Box::new(move || {
                 ws_clone.set_onopen(None);
@@ -102,8 +99,6 @@ impl WasmWebSocket {
             }) as Box<dyn FnMut()>);
             self.ws
                 .set_onopen(Some(close_after_open.as_ref().unchecked_ref()));
-            // Transport is being torn down — leak the closure so it
-            // outlives the struct drop and still fires when onopen lands.
             close_after_open.forget();
             return;
         }

@@ -17,9 +17,6 @@ export interface DefaultCredentialSectionProps {
   t: (key: string) => string;
 }
 
-/**
- * DefaultCredentialSection - Section for selecting the default Git credential
- */
 export function DefaultCredentialSection({
   credentials,
   onSetDefault,

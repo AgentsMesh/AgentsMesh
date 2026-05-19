@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// GetBlock GET /blocks/:id
 func (h *BlockstoreHandler) GetBlock(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -27,7 +26,6 @@ func (h *BlockstoreHandler) GetBlock(c *gin.Context) {
 	c.JSON(http.StatusOK, b)
 }
 
-// ListChildren GET /blocks/:id/children?rel=nest
 func (h *BlockstoreHandler) ListChildren(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -46,7 +44,6 @@ func (h *BlockstoreHandler) ListChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// ListBacklinks GET /blocks/:id/backlinks
 func (h *BlockstoreHandler) ListBacklinks(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -64,7 +61,6 @@ func (h *BlockstoreHandler) ListBacklinks(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"refs": refs})
 }
 
-// GetSubtree GET /blocks/workspaces/:ws_id/subtree?root=<uuid>&max_depth=N
 func (h *BlockstoreHandler) GetSubtree(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -88,8 +84,6 @@ func (h *BlockstoreHandler) GetSubtree(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// StreamOps GET /blocks/workspaces/:ws_id/ops?after=<id>&limit=N
-// Used by clients to catch up missed ops after reconnect.
 func (h *BlockstoreHandler) StreamOps(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -109,10 +103,6 @@ func (h *BlockstoreHandler) StreamOps(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ops": ops})
 }
 
-// ExportWorkspace GET /blocks/workspaces/:ws_id/export
-// Returns the full workspace contents (blocks + refs + ops) as a single JSON
-// document. Callers that want to stream can page through /subtree + /ops
-// themselves; this endpoint is for backup / template / inspection.
 func (h *BlockstoreHandler) ExportWorkspace(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -132,9 +122,6 @@ func (h *BlockstoreHandler) ExportWorkspace(c *gin.Context) {
 	c.JSON(http.StatusOK, out)
 }
 
-// GetBlockAt GET /blocks/:id/at?op_id=N
-// Returns the block's reconstructed state at op N (inclusive). op_id=0
-// returns the earliest known snapshot (the initial createBlock only).
 func (h *BlockstoreHandler) GetBlockAt(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -153,11 +140,7 @@ func (h *BlockstoreHandler) GetBlockAt(c *gin.Context) {
 	c.JSON(http.StatusOK, snap)
 }
 
-// ListTypeDefs GET /blocks/workspaces/:ws_id/type-defs
-// Returns every block_type_def in the workspace as raw Block rows. The
-// frontend scans these to build a live indicator registry — type_defs live
-// outside the nest hierarchy so they'd otherwise never reach the store on
-// first load.
+// type_defs live outside nest hierarchy — frontend MUST scan via this route to build the indicator registry.
 func (h *BlockstoreHandler) ListTypeDefs(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {

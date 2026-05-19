@@ -20,9 +20,6 @@ interface ResumeDialogProps {
   onConfirm: () => void;
 }
 
-/**
- * Dialog for confirming pod resume action
- */
 export function ResumeDialog({
   open,
   onOpenChange,

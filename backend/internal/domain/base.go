@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// BaseModel contains common fields for all models
 type BaseModel struct {
 	ID        int64     `gorm:"primaryKey" json:"id"`
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`

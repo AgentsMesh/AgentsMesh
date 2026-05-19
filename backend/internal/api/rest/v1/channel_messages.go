@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListMessages lists channel messages
-// GET /api/v1/organizations/:slug/channels/:id/messages
 func (h *ChannelHandler) ListMessages(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -52,16 +50,11 @@ func (h *ChannelHandler) ListMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"messages": messages, "has_more": hasMore})
 }
 
-// MentionRefRequest is the wire-format mapping a `@<key>` substring in a
-// markdown source string to a typed entity reference. Used by Send/EditMessage
-// when `source` is supplied.
 type MentionRefRequest struct {
 	EntityType string `json:"entity_type"`
 	EntityKey  string `json:"entity_key"`
 }
 
-// SendMessageRequest accepts EITHER a markdown source string (server parses to
-// AST) OR a pre-built MessageContent AST. Sending both is a 400.
 type SendMessageRequest struct {
 	Source        *string                       `json:"source,omitempty"`
 	Mentions      map[string]MentionRefRequest  `json:"mentions,omitempty"`
@@ -102,8 +95,6 @@ func resolveContent(source *string, mentions map[string]MentionRefRequest, conte
 	return resolved, nil
 }
 
-// SendMessage sends a message to a channel
-// POST /api/v1/organizations/:slug/channels/:id/messages
 func (h *ChannelHandler) SendMessage(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -150,7 +141,6 @@ func (h *ChannelHandler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": msg})
 }
 
-// EditMessageRequest mirrors SendMessageRequest's source/content choice.
 type EditMessageRequest struct {
 	Source        *string                       `json:"source,omitempty"`
 	Mentions      map[string]MentionRefRequest  `json:"mentions,omitempty"`
@@ -158,8 +148,6 @@ type EditMessageRequest struct {
 	AttachmentKey string                        `json:"attachment_key,omitempty"`
 }
 
-// EditMessage edits a channel message
-// PUT /api/v1/organizations/:slug/channels/:id/messages/:msg_id
 func (h *ChannelHandler) EditMessage(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -205,8 +193,6 @@ func (h *ChannelHandler) EditMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": msg})
 }
 
-// DeleteMessage soft-deletes a channel message
-// DELETE /api/v1/organizations/:slug/channels/:id/messages/:msg_id
 func (h *ChannelHandler) DeleteMessage(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -238,8 +224,6 @@ func (h *ChannelHandler) DeleteMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
-// SearchMessages searches channel messages by full-text query
-// GET /api/v1/organizations/:slug/channels/:id/messages/search?q=term&limit=20
 func (h *ChannelHandler) SearchMessages(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

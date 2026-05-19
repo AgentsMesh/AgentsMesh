@@ -19,7 +19,6 @@ export function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Check if user already has organizations
   useEffect(() => {
     const checkOrgs = async () => {
       try {
@@ -30,7 +29,6 @@ export function OnboardingPage() {
           router.push(`/${organizations[0].slug}/workspace`);
         }
       } catch {
-        // No organizations, stay on onboarding
       }
     };
     checkOrgs();
@@ -64,15 +62,13 @@ export function OnboardingPage() {
       setError(t("auth.onboarding.enterInviteCode"));
       return;
     }
-    // TODO: Implement invite code API (inviteApi.accept). For now this path
-    // only surfaces a "coming soon" notice.
+    // TODO: invite code API (inviteApi.accept) — currently surfaces "coming soon" only.
     setError(t("auth.onboarding.inviteCodeComingSoon"));
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
-        {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -88,16 +84,13 @@ export function OnboardingPage() {
           </p>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
             {error}
           </div>
         )}
 
-        {/* Options */}
         <div className="space-y-4">
-          {/* Quick Start */}
           <div className="p-6 border border-border rounded-lg hover:border-primary/50 transition-colors">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -131,7 +124,6 @@ export function OnboardingPage() {
             </div>
           </div>
 
-          {/* Create Team */}
           <div className="p-6 border border-border rounded-lg hover:border-primary/50 transition-colors">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
@@ -164,7 +156,6 @@ export function OnboardingPage() {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-border" />
@@ -176,7 +167,6 @@ export function OnboardingPage() {
           </div>
         </div>
 
-        {/* Join with Invite */}
         {showInviteInput ? (
           <div className="space-y-3">
             <Input

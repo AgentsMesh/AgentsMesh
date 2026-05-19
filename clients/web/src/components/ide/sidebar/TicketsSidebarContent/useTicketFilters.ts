@@ -24,10 +24,8 @@ export function useTicketFilters(): TicketFilterState & TicketFilterActions & {
 
   const { selectedStatuses, selectedPriorities, selectedRepositoryIds } = uiFilters;
 
-  // Local search input state (debounced before pushing to store)
   const [searchQuery, setSearchQuery] = useState(filters.search || "");
 
-  // Debounce search → store
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilters({ ...filters, search: searchQuery || undefined });
@@ -36,7 +34,6 @@ export function useTicketFilters(): TicketFilterState & TicketFilterActions & {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  // Single source of truth for filtered tickets (shared with main page)
   const filteredTickets = useFilteredTickets();
 
   const clearAllFilters = useCallback(() => {
@@ -51,14 +48,12 @@ export function useTicketFilters(): TicketFilterState & TicketFilterActions & {
     selectedRepositoryIds.length > 0;
 
   return {
-    // State
     searchQuery,
     selectedStatuses,
     selectedPriorities,
     selectedRepositoryIds,
     filteredTickets,
 
-    // Actions
     setSearchQuery,
     toggleStatus,
     togglePriority,

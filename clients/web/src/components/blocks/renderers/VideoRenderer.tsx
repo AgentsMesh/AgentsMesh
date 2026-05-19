@@ -11,10 +11,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { CommentsSection } from "../editor/CommentsSection";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// VideoRenderer handles two cases:
-//   - provider='native': data.url points at an uploaded mp4 (uses <video>)
-//   - provider='youtube'|'vimeo': data.url is the share link; renderer builds
-//     an iframe embed URL.
 export function VideoRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const url = (block.data?.url as string | undefined) ?? "";

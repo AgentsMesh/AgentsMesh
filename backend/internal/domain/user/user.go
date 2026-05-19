@@ -17,23 +17,18 @@ type User struct {
 	IsSystemAdmin bool       `gorm:"not null;default:false" json:"is_system_admin"`
 	LastLoginAt   *time.Time `json:"last_login_at,omitempty"`
 
-	// Email verification fields
 	IsEmailVerified            bool       `gorm:"not null;default:false" json:"is_email_verified"`
 	EmailVerificationToken     *string    `gorm:"size:255" json:"-"`
 	EmailVerificationExpiresAt *time.Time `json:"-"`
 
-	// Password reset fields
 	PasswordResetToken     *string    `gorm:"size:255" json:"-"`
 	PasswordResetExpiresAt *time.Time `json:"-"`
 
-	// Default Git credential preference
-	// NULL means use Runner local credential (default behavior)
 	DefaultGitCredentialID *int64 `gorm:"index" json:"default_git_credential_id,omitempty"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Associations
 	Identities           []Identity       `gorm:"foreignKey:UserID" json:"identities,omitempty"`
 	DefaultGitCredential *GitCredential   `gorm:"foreignKey:DefaultGitCredentialID" json:"default_git_credential,omitempty"`
 }
@@ -42,7 +37,6 @@ func (User) TableName() string {
 	return "users"
 }
 
-// Identity represents an OAuth identity linked to a user
 type Identity struct {
 	ID     int64 `gorm:"primaryKey" json:"id"`
 	UserID int64 `gorm:"not null;index" json:"user_id"`
@@ -58,7 +52,6 @@ type Identity struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Associations
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
@@ -66,13 +59,11 @@ func (Identity) TableName() string {
 	return "user_identities"
 }
 
-// UserWithOrgs represents a user with their organization memberships
 type UserWithOrgs struct {
 	User
 	Organizations []UserOrganization `json:"organizations,omitempty"`
 }
 
-// UserOrganization represents a user's membership in an organization
 type UserOrganization struct {
 	ID       int64  `json:"id"`
 	Name     string `json:"name"`

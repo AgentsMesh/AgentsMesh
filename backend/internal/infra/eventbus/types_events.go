@@ -1,6 +1,5 @@
 package eventbus
 
-// PodStatusChangedData represents the payload for pod status change events
 type PodStatusChangedData struct {
 	PodKey         string `json:"pod_key"`
 	Status         string `json:"status"`
@@ -10,7 +9,6 @@ type PodStatusChangedData struct {
 	ErrorMessage   string `json:"error_message,omitempty"`
 }
 
-// PodCreatedData represents the payload for pod created events
 type PodCreatedData struct {
 	PodKey      string `json:"pod_key"`
 	Status      string `json:"status"`
@@ -21,7 +19,6 @@ type PodCreatedData struct {
 	CreatedByID int64  `json:"created_by_id"`
 }
 
-// RunnerStatusData represents the payload for runner status events
 type RunnerStatusData struct {
 	RunnerID      int64  `json:"runner_id"`
 	NodeID        string `json:"node_id"`
@@ -30,38 +27,32 @@ type RunnerStatusData struct {
 	LastHeartbeat string `json:"last_heartbeat,omitempty"`
 }
 
-// TicketStatusChangedData represents the payload for ticket status change events
 type TicketStatusChangedData struct {
 	Slug           string `json:"slug"`
 	Status         string `json:"status"`
 	PreviousStatus string `json:"previous_status,omitempty"`
 }
 
-// PodTitleChangedData represents the payload for pod title change events
 type PodTitleChangedData struct {
 	PodKey string `json:"pod_key"`
 	Title  string `json:"title"`
 }
 
-// PodAliasChangedData represents the payload for pod alias change events
 type PodAliasChangedData struct {
 	PodKey string `json:"pod_key"`
 	Alias  *string `json:"alias"`
 }
 
-// SenderPodAgent contains agent info for a sender pod.
 type SenderPodAgent struct {
 	Name string `json:"name"`
 }
 
-// SenderPodInfo contains resolved sender pod info for WS events.
 type SenderPodInfo struct {
 	PodKey string          `json:"pod_key"`
 	Alias  *string         `json:"alias,omitempty"`
 	Agent  *SenderPodAgent `json:"agent,omitempty"`
 }
 
-// ChannelMessageData represents the payload for channel message events
 type ChannelMessageData struct {
 	ID            int64          `json:"id"`
 	ChannelID     int64          `json:"channel_id"`
@@ -77,7 +68,6 @@ type ChannelMessageData struct {
 	CreatedAt     string         `json:"created_at"`
 }
 
-// ChannelMessageEditedData represents the payload for message edit events
 type ChannelMessageEditedData struct {
 	ID        int64       `json:"id"`
 	ChannelID int64       `json:"channel_id"`
@@ -87,28 +77,24 @@ type ChannelMessageEditedData struct {
 	EditedAt  string      `json:"edited_at"`
 }
 
-// ChannelMessageDeletedData represents the payload for message delete events
 type ChannelMessageDeletedData struct {
 	ID        int64 `json:"id"`
 	ChannelID int64 `json:"channel_id"`
 }
 
-// PodInitProgressData represents the payload for pod initialization progress events
 type PodInitProgressData struct {
 	PodKey   string `json:"pod_key"`
 	Phase    string `json:"phase"`    // pending, cloning, preparing, starting_pty, ready
 	Progress int    `json:"progress"` // 0-100
-	Message  string `json:"message"`  // Human-readable progress message
+	Message  string `json:"message"`
 }
 
-// PodRestartingData represents the payload for perpetual pod restart events
 type PodRestartingData struct {
 	PodKey       string `json:"pod_key"`
 	ExitCode     int32  `json:"exit_code"`
 	RestartCount int32  `json:"restart_count"`
 }
 
-// AutopilotStatusChangedData represents the payload for AutopilotController status change events
 type AutopilotStatusChangedData struct {
 	AutopilotControllerKey string `json:"autopilot_controller_key"`
 	PodKey                 string `json:"pod_key"`
@@ -120,7 +106,6 @@ type AutopilotStatusChangedData struct {
 	UserTakeover           bool   `json:"user_takeover"`
 }
 
-// AutopilotIterationData represents the payload for AutopilotController iteration events
 type AutopilotIterationData struct {
 	AutopilotControllerKey string   `json:"autopilot_controller_key"`
 	Iteration              int32    `json:"iteration"`
@@ -130,24 +115,17 @@ type AutopilotIterationData struct {
 	DurationMs             int64    `json:"duration_ms,omitempty"`
 }
 
-// AutopilotCreatedData represents the payload for AutopilotController created events
 type AutopilotCreatedData struct {
 	AutopilotControllerKey string `json:"autopilot_controller_key"`
 	PodKey                 string `json:"pod_key"`
 }
 
-// AutopilotTerminatedData represents the payload for AutopilotController terminated events.
-//
-// Phase is the resolved domain phase (e.g. "completed", "failed", "stopped").
-// Reason is the raw termination reason from the Runner (may differ from Phase).
 type AutopilotTerminatedData struct {
 	AutopilotControllerKey string `json:"autopilot_controller_key"`
 	Phase                  string `json:"phase,omitempty"`
 	Reason                 string `json:"reason,omitempty"`
 }
 
-// AutopilotThinkingData represents the payload for AutopilotController thinking events
-// Exposes the Control Agent's decision-making process to the user
 type AutopilotThinkingData struct {
 	AutopilotControllerKey string                    `json:"autopilot_controller_key"`
 	Iteration              int32                     `json:"iteration"`
@@ -159,14 +137,12 @@ type AutopilotThinkingData struct {
 	HelpRequest            *AutopilotHelpRequestData `json:"help_request,omitempty"`
 }
 
-// AutopilotActionData describes the action taken by Control Agent
 type AutopilotActionData struct {
 	Type    string `json:"type"`    // observe, send_input, wait, none
-	Content string `json:"content"` // Action content
-	Reason  string `json:"reason"`  // Action reason
+	Content string `json:"content"`
+	Reason  string `json:"reason"`
 }
 
-// AutopilotProgressData describes task progress
 type AutopilotProgressData struct {
 	Summary        string   `json:"summary"`
 	CompletedSteps []string `json:"completed_steps,omitempty"`
@@ -174,7 +150,6 @@ type AutopilotProgressData struct {
 	Percent        int32    `json:"percent"`
 }
 
-// AutopilotHelpRequestData describes help request details
 type AutopilotHelpRequestData struct {
 	Reason          string                        `json:"reason"`
 	Context         string                        `json:"context"`
@@ -182,13 +157,11 @@ type AutopilotHelpRequestData struct {
 	Suggestions     []AutopilotHelpSuggestionData `json:"suggestions,omitempty"`
 }
 
-// AutopilotHelpSuggestionData describes a help request suggestion
 type AutopilotHelpSuggestionData struct {
 	Action string `json:"action"`
 	Label  string `json:"label"`
 }
 
-// MREventData represents the payload for merge request events
 type MREventData struct {
 	MRID           int64  `json:"mr_id"`
 	MRIID          int    `json:"mr_iid"`
@@ -205,8 +178,6 @@ type MREventData struct {
 	PipelineStatus string `json:"pipeline_status,omitempty"`
 }
 
-// LoopRunWarningData represents the payload for loop run warning events
-// (e.g., sandbox resume degradation to fresh mode)
 type LoopRunWarningData struct {
 	LoopID    int64  `json:"loop_id"`
 	RunID     int64  `json:"run_id"`
@@ -215,7 +186,6 @@ type LoopRunWarningData struct {
 	Detail    string `json:"detail,omitempty"`
 }
 
-// PipelineEventData represents the payload for pipeline events
 type PipelineEventData struct {
 	MRID           int64  `json:"mr_id,omitempty"`
 	PipelineID     int64  `json:"pipeline_id"`
@@ -228,7 +198,6 @@ type PipelineEventData struct {
 	RepositoryID   int64  `json:"repository_id"`
 }
 
-// ChannelMemberChangedData represents the payload for channel member add/remove events
 type ChannelMemberChangedData struct {
 	ChannelID int64  `json:"channel_id"`
 	UserID    int64  `json:"user_id"`

@@ -9,11 +9,8 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// ========== Ticket Commits ==========
-
 var ErrCommitNotFound = errors.New("commit not found")
 
-// LinkCommit links a git commit to a ticket.
 func (s *Service) LinkCommit(ctx context.Context, orgID, ticketID, repoID int64, podID *int64, commitSHA, commitMessage string, commitURL, authorName, authorEmail *string, committedAt *time.Time) (*ticket.Commit, error) {
 	commit := &ticket.Commit{
 		OrganizationID: orgID,
@@ -36,7 +33,6 @@ func (s *Service) LinkCommit(ctx context.Context, orgID, ticketID, repoID int64,
 	return commit, nil
 }
 
-// UnlinkCommit removes a commit link from a ticket.
 func (s *Service) UnlinkCommit(ctx context.Context, commitID int64) error {
 	if err := s.repo.DeleteCommit(ctx, commitID); err != nil {
 		slog.ErrorContext(ctx, "failed to unlink commit", "commit_id", commitID, "error", err)
@@ -46,12 +42,10 @@ func (s *Service) UnlinkCommit(ctx context.Context, commitID int64) error {
 	return nil
 }
 
-// ListCommits returns commits for a ticket.
 func (s *Service) ListCommits(ctx context.Context, ticketID int64) ([]*ticket.Commit, error) {
 	return s.repo.ListCommitsByTicket(ctx, ticketID)
 }
 
-// GetCommitBySHA returns a commit by SHA.
 func (s *Service) GetCommitBySHA(ctx context.Context, repoID int64, commitSHA string) (*ticket.Commit, error) {
 	commit, err := s.repo.GetCommitBySHA(ctx, repoID, commitSHA)
 	if err != nil {

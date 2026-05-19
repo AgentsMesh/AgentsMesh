@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ agent.CredentialProfileRepository = (*credentialProfileRepo)(nil)
 
 type credentialProfileRepo struct {
 	db *gorm.DB
 }
 
-// NewCredentialProfileRepository creates a new GORM-based credential profile repository
 func NewCredentialProfileRepository(db *gorm.DB) agent.CredentialProfileRepository {
 	return &credentialProfileRepo{db: db}
 }

@@ -14,7 +14,6 @@ import (
 // maxSkillUploadSize is the maximum file size allowed for skill uploads (50MB)
 const maxSkillUploadSize = 50 << 20
 
-// handleServiceError maps service-layer errors to appropriate HTTP error responses
 func handleServiceError(c *gin.Context, err error, fallbackMsg string) {
 	switch {
 	case errors.Is(err, extensionservice.ErrNotFound):
@@ -30,8 +29,6 @@ func handleServiceError(c *gin.Context, err error, fallbackMsg string) {
 	}
 }
 
-// requireOrgAdmin checks if the current user has admin or owner role.
-// Returns true if the user is authorized, false otherwise (and sends 403 response).
 func requireOrgAdmin(c *gin.Context) bool {
 	tenant := middleware.GetTenant(c)
 	if tenant.UserRole != "admin" && tenant.UserRole != "owner" {
@@ -41,22 +38,16 @@ func requireOrgAdmin(c *gin.Context) bool {
 	return true
 }
 
-// ExtensionHandler handles extension-related API endpoints
 type ExtensionHandler struct {
 	extensionSvc *extensionservice.Service
 }
 
-// NewExtensionHandler creates a new extension handler
 func NewExtensionHandler(extensionSvc *extensionservice.Service) *ExtensionHandler {
 	return &ExtensionHandler{
 		extensionSvc: extensionSvc,
 	}
 }
 
-// --- Skill Registries (org admin only) ---
-
-// ListSkillRegistries lists skill registries for the organization
-// GET /api/v1/organizations/:slug/skill-registries
 func (h *ExtensionHandler) ListSkillRegistries(c *gin.Context) {
 	if !requireOrgAdmin(c) {
 		return
@@ -73,7 +64,6 @@ func (h *ExtensionHandler) ListSkillRegistries(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"skill_registries": registries})
 }
 
-// CreateSkillRegistryRequest represents a skill registry creation request
 type CreateSkillRegistryRequest struct {
 	RepositoryURL    string   `json:"repository_url" binding:"required,url"`
 	Branch           string   `json:"branch"`
@@ -83,8 +73,6 @@ type CreateSkillRegistryRequest struct {
 	AuthCredential   string   `json:"auth_credential"`   // PAT or SSH key (encrypted at service layer)
 }
 
-// CreateSkillRegistry creates a new skill registry
-// POST /api/v1/organizations/:slug/skill-registries
 func (h *ExtensionHandler) CreateSkillRegistry(c *gin.Context) {
 	if !requireOrgAdmin(c) {
 		return
@@ -116,8 +104,6 @@ func (h *ExtensionHandler) CreateSkillRegistry(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"registry": registry})
 }
 
-// SyncSkillRegistry triggers a sync for a skill registry
-// POST /api/v1/organizations/:slug/skill-registries/:id/sync
 func (h *ExtensionHandler) SyncSkillRegistry(c *gin.Context) {
 	registryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -140,8 +126,6 @@ func (h *ExtensionHandler) SyncSkillRegistry(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"registry": registry})
 }
 
-// DeleteSkillRegistry deletes a skill registry
-// DELETE /api/v1/organizations/:slug/skill-registries/:id
 func (h *ExtensionHandler) DeleteSkillRegistry(c *gin.Context) {
 	registryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -163,15 +147,10 @@ func (h *ExtensionHandler) DeleteSkillRegistry(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// --- Skill Registry Overrides ---
-
-// TogglePlatformRegistryRequest represents a request to toggle a platform registry
 type TogglePlatformRegistryRequest struct {
 	Disabled bool `json:"disabled"`
 }
 
-// TogglePlatformRegistry toggles a platform-level skill registry for the organization
-// PUT /api/v1/organizations/:slug/skill-registries/:id/toggle
 func (h *ExtensionHandler) TogglePlatformRegistry(c *gin.Context) {
 	registryID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -196,7 +175,6 @@ func (h *ExtensionHandler) TogglePlatformRegistry(c *gin.Context) {
 		return
 	}
 
-	// Return updated overrides list
 	overrides, err := h.extensionSvc.ListSkillRegistryOverrides(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
 		handleServiceError(c, err, "Failed to list overrides")
@@ -206,8 +184,6 @@ func (h *ExtensionHandler) TogglePlatformRegistry(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"overrides": overrides})
 }
 
-// ListSkillRegistryOverrides returns all skill registry overrides for the organization
-// GET /api/v1/organizations/:slug/skill-registry-overrides
 func (h *ExtensionHandler) ListSkillRegistryOverrides(c *gin.Context) {
 	if !requireOrgAdmin(c) {
 		return
@@ -224,10 +200,6 @@ func (h *ExtensionHandler) ListSkillRegistryOverrides(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"overrides": overrides})
 }
 
-// --- Marketplace ---
-
-// ListMarketSkills returns skills available in the marketplace
-// GET /api/v1/organizations/:slug/market/skills?q=&category=
 func (h *ExtensionHandler) ListMarketSkills(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	query := c.Query("q")
@@ -242,8 +214,6 @@ func (h *ExtensionHandler) ListMarketSkills(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"skills": skills})
 }
 
-// ListMarketMcpServers returns MCP server templates from the marketplace
-// GET /api/v1/organizations/:slug/market/mcp-servers?q=&category=&limit=50&offset=0
 func (h *ExtensionHandler) ListMarketMcpServers(c *gin.Context) {
 	query := c.Query("q")
 	category := c.Query("category")
@@ -270,4 +240,3 @@ func (h *ExtensionHandler) ListMarketMcpServers(c *gin.Context) {
 		"offset":      offset,
 	})
 }
-

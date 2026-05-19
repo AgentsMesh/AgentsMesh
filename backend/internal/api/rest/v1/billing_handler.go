@@ -11,17 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// BillingHandler handles billing-related HTTP requests
 type BillingHandler struct {
 	billingService *billingsvc.Service
 }
 
-// NewBillingHandler creates a new billing handler
 func NewBillingHandler(billingService *billingsvc.Service) *BillingHandler {
 	return &BillingHandler{billingService: billingService}
 }
 
-// GetOverview returns the billing overview for the organization
 func (h *BillingHandler) GetOverview(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -34,7 +31,6 @@ func (h *BillingHandler) GetOverview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"overview": overview})
 }
 
-// GetUsage returns usage statistics for the current period
 func (h *BillingHandler) GetUsage(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	usageType := c.Query("type")
@@ -58,7 +54,6 @@ func (h *BillingHandler) GetUsage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"usage": overview.Usage})
 }
 
-// GetUsageHistory returns usage history
 func (h *BillingHandler) GetUsageHistory(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	usageType := c.Query("type")
@@ -78,13 +73,11 @@ func (h *BillingHandler) GetUsageHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"records": records})
 }
 
-// SetCustomQuotaRequest represents the custom quota setting request
 type SetCustomQuotaRequest struct {
 	Resource string `json:"resource" binding:"required"`
 	Limit    int    `json:"limit" binding:"required"`
 }
 
-// SetCustomQuota sets a custom quota for the organization (admin only)
 func (h *BillingHandler) SetCustomQuota(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
@@ -111,7 +104,6 @@ func (h *BillingHandler) SetCustomQuota(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "custom quota updated"})
 }
 
-// CheckQuota checks if the organization has quota available
 func (h *BillingHandler) CheckQuota(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 	resource := c.Query("resource")
@@ -148,7 +140,6 @@ func handleQuotaError(c *gin.Context, err error) {
 	}
 }
 
-// ListInvoices returns invoice history
 func (h *BillingHandler) ListInvoices(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 

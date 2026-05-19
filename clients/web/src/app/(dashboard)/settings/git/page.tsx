@@ -5,12 +5,6 @@ import { useTranslations } from "next-intl";
 import { ChevronLeft } from "lucide-react";
 import { GitSettingsContent } from "@/components/settings";
 
-/**
- * GitSettingsPage - User settings page for Git configuration
- *
- * This page wraps the shared GitSettingsContent component with
- * a page header including navigation back to settings.
- */
 export default function GitSettingsPage() {
   const t = useTranslations();
 

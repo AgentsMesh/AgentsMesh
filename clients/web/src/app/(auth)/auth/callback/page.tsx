@@ -1,76 +1,24 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
-import { getUserApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
-import { resolvePostLoginUrl } from "@/lib/auth/post-login";
+import { useOAuthCallback } from "@/hooks/useOAuthCallback";
 import { Logo } from "@/components/common";
 
+function describeError(reason: string): string {
+  if (reason === "access_denied") return "You cancelled the authorization request.";
+  if (reason === "missing_token") return "Authentication token is missing.";
+  // Anything else (invalid_state, missing_state, server errors, …) is
+  // either internal or sensitive — keep the user-facing message generic.
+  return "Failed to complete authentication.";
+}
+
 function OAuthCallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const refreshToken = searchParams.get("refresh_token");
-  const error = searchParams.get("error");
-  const redirectParam = searchParams.get("redirect");
-  const { setAuth, setOrganizations } = useAuthStore();
-
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    const handleCallback = async () => {
-      await initWasmCore();
-      // Check for OAuth error
-      if (error) {
-        setStatus("error");
-        setErrorMessage(error === "access_denied"
-          ? "You cancelled the authorization request."
-          : `Authentication failed: ${error}`);
-        return;
-      }
-
-      // Check for missing token
-      if (!token) {
-        setStatus("error");
-        setErrorMessage("Authentication token is missing.");
-        return;
-      }
-
-      try {
-        // First, set the token so subsequent API calls work
-        // We'll get user info from the API
-        await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
-
-        // Get user info
-        const userResponse = JSON.parse(await getUserApiService().get_me());
-        const user = userResponse.user;
-
-        // Update auth with actual user info
-        await setAuth(token, user, refreshToken || undefined);
-
-        const url = await resolvePostLoginUrl({
-          redirectParam,
-          setOrganizations,
-        });
-        setStatus("success");
-        setTimeout(() => { router.push(url); }, 1500);
-      } catch (err: unknown) {
-        setStatus("error");
-        if (err instanceof Error) {
-          setErrorMessage(err.message);
-        } else {
-          setErrorMessage("Failed to complete authentication.");
-        }
-      }
-    };
-
-    handleCallback();
-  }, [token, refreshToken, error, redirectParam, setAuth, setOrganizations, router]);
+  const { status, errorReason } = useOAuthCallback(searchParams);
+  const errorMessage = describeError(errorReason);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -1,4 +1,3 @@
-// Package runnerlog provides the service layer for runner diagnostic log uploads.
 package runnerlog
 
 import (
@@ -12,39 +11,32 @@ import (
 	"github.com/google/uuid"
 )
 
-// presignPutExpiry is the default expiry for presigned PUT URLs (30 minutes).
 const presignPutExpiry = 30 * time.Minute
 
-// downloadURLExpiry is the default expiry for download URLs (1 hour).
 const downloadURLExpiry = 1 * time.Hour
 
-// Service handles runner log upload operations.
 type Service struct {
 	repo    runnerlog.Repository
 	storage storage.Storage
 }
 
-// NewService creates a new runner log upload service.
 func NewService(repo runnerlog.Repository, s storage.Storage) *Service {
 	return &Service{repo: repo, storage: s}
 }
 
-// UploadRequest contains the result of a log upload request initiation.
 type UploadRequest struct {
 	RequestID    string `json:"request_id"`
 	PresignedURL string `json:"presigned_url"`
-	ExpiresAt    int64  `json:"expires_at"` // Unix seconds
+	ExpiresAt    int64  `json:"expires_at"`
 }
 
-// RequestUpload initiates a log upload request: creates DB record and presigned PUT URL.
 func (s *Service) RequestUpload(ctx context.Context, orgID, runnerID, userID int64) (*UploadRequest, error) {
 	requestID := uuid.New().String()
 	now := time.Now()
 	storageKey := fmt.Sprintf("orgs/%d/runner-logs/%d/%d/%s.tar.gz",
 		orgID, now.Year(), int(now.Month()), fmt.Sprintf("%d_%s", runnerID, requestID))
 
-	// Create DB record first (before generating presigned URL) so that
-	// a failed URL generation doesn't leave orphaned S3 objects.
+	// DB record before presigned URL — failed URL gen must not leave orphan S3 objects.
 	record := &runnerlog.RunnerLog{
 		OrganizationID: orgID,
 		RunnerID:       runnerID,
@@ -58,11 +50,9 @@ func (s *Service) RequestUpload(ctx context.Context, orgID, runnerID, userID int
 		return nil, fmt.Errorf("failed to create log record: %w", err)
 	}
 
-	// Generate presigned PUT URL
-	// Use public presigned URL because Runner is self-hosted and connects from external networks
+	// Public presigned URL — Runners are self-hosted and connect from external networks.
 	presignedURL, err := s.storage.PresignPutURL(ctx, storageKey, "application/gzip", presignPutExpiry)
 	if err != nil {
-		// Mark the record as failed since we can't proceed
 		_ = s.repo.MarkFailed(ctx, requestID, "failed to generate upload URL")
 		return nil, fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
@@ -75,13 +65,10 @@ func (s *Service) RequestUpload(ctx context.Context, orgID, runnerID, userID int
 	}, nil
 }
 
-// HandleUploadStatus updates the log record based on Runner status reports.
-// runnerID is used to verify the reporting runner owns the record.
 func (s *Service) HandleUploadStatus(runnerID int64, requestID, phase string, progress int32, message, errMsg string, sizeBytes int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Validate phase
 	if !runnerlog.ValidStatuses[phase] {
 		slog.WarnContext(ctx, "Unknown log upload phase", "request_id", requestID, "phase", phase)
 		return
@@ -97,7 +84,6 @@ func (s *Service) HandleUploadStatus(runnerID int64, requestID, phase string, pr
 	}
 }
 
-// MarkFailed sets a log record to failed status. Used when gRPC command send fails.
 func (s *Service) MarkFailed(requestID, reason string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -110,13 +96,11 @@ func (s *Service) MarkFailed(requestID, reason string) {
 	}
 }
 
-// LogEntry represents a log record with optional download URL for API response.
 type LogEntry struct {
 	*runnerlog.RunnerLog
 	DownloadURL string `json:"download_url,omitempty"`
 }
 
-// ListByRunner returns log records for a runner with download URLs for completed entries.
 func (s *Service) ListByRunner(ctx context.Context, orgID, runnerID int64, limit, offset int) ([]*LogEntry, error) {
 	logs, err := s.repo.ListByRunner(ctx, orgID, runnerID, limit, offset)
 	if err != nil {

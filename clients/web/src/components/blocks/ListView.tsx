@@ -11,9 +11,6 @@ export interface ListViewProps {
   blockType: string;
 }
 
-// ListView enumerates every block of a given type inside a workspace and
-// renders each with its registered component. Useful for "All tasks",
-// "All pages" style dashboards without nesting context.
 export function ListView({ workspaceID, blockType }: ListViewProps) {
   const blocks = useBlocks();
   const filtered = useMemo(

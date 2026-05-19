@@ -2,7 +2,6 @@ package loop
 
 import "context"
 
-// LoopRunRepository defines the interface for loop run data access
 type LoopRunRepository interface {
 	Create(ctx context.Context, run *LoopRun) error
 	GetByID(ctx context.Context, id int64) (*LoopRun, error)
@@ -23,8 +22,6 @@ type LoopRunRepository interface {
 	// SSOT: cross-table queries (JOIN with pods/autopilot_controllers)
 	CountActiveRuns(ctx context.Context, loopID int64) (int64, error)
 	GetActiveRunByPodKey(ctx context.Context, podKey string) (*LoopRun, error)
-	// GetTimedOutRuns returns running runs that have exceeded their timeout.
-	// orgIDs filters to specific organizations; nil means all orgs (single-instance mode).
 	GetTimedOutRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
 	// GetOrphanPendingRuns returns pending runs with no pod_key stuck for > 5 minutes.
 	GetOrphanPendingRuns(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
@@ -35,10 +32,8 @@ type LoopRunRepository interface {
 	BatchGetPodStatuses(ctx context.Context, podKeys []string) ([]PodStatusInfo, error)
 	BatchGetAutopilotPhases(ctx context.Context, autopilotKeys []string) (map[string]string, error)
 
-	// CountActiveRunsByLoopIDs batch-counts active runs for multiple loops.
 	CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []int64) (map[int64]int64, error)
 
-	// GetAvgDuration returns the average duration in seconds for completed runs of a loop.
 	GetAvgDuration(ctx context.Context, loopID int64) (*float64, error)
 
 	// DeleteOldFinishedRuns deletes finished runs exceeding the retention limit.
@@ -46,7 +41,5 @@ type LoopRunRepository interface {
 	// Returns the number of rows deleted.
 	DeleteOldFinishedRuns(ctx context.Context, loopID int64, keep int) (int64, error)
 
-	// GetIdleLoopPods returns active loop runs whose Pods have been idle (agent waiting)
-	// longer than the loop's idle_timeout_sec. Used by the scheduler to auto-terminate.
 	GetIdleLoopPods(ctx context.Context, orgIDs []int64) ([]*LoopRun, error)
 }

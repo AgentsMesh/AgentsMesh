@@ -9,24 +9,7 @@ import (
 	blockstoreservice "github.com/anthropics/agentsmesh/backend/internal/service/blockstore"
 )
 
-// Block Store MCP handlers. Called from runner_adapter_mcp.go:dispatchMcpMethod
-// when an agent in a Pod sends a `block.*` / `indicator.define` /
-// `trigger.define` / `memory.retrieve` tool call through the Runner's MCP
-// server → backend gRPC stream.
-//
-// Contract with ticket/channel siblings: each handler extracts its typed
-// params via unmarshalPayload, constructs a blockstore.ActorContext tagged
-// ActorType="agent" (TenantContext.PodID is populated by authenticatePod on
-// the gRPC path), calls the blockstore service, and returns an interface{}
-// result plus an optional *mcpError.
-//
-// Actor extraction (actorFromTenant + ctx helpers) lives in
-// runner_adapter_mcp_block_actor.go so this file stays focused on
-// dispatch / error mapping.
-
-// applyOpsPayload carries a workspace_id + idempotency_key plus a single
-// primitive op. Runner-side tools map exactly one tool call to one op; batch
-// writing stays REST-only for now.
+// One tool call → one op. Batch writes stay REST-only.
 type applyOpsPayload struct {
 	WorkspaceID    string         `json:"workspace_id"`
 	IdempotencyKey string         `json:"idempotency_key,omitempty"`
@@ -49,10 +32,6 @@ func (a *GRPCRunnerAdapter) applySingleOp(
 	return a.applyOneWithParams(ctx, tc, opKind, params)
 }
 
-// applyOneWithParams dispatches a single op where the caller has already
-// assembled the envelope — used by sugar tools (indicator.define,
-// trigger.define) that construct their own payload instead of relying on
-// raw client-supplied bytes.
 func (a *GRPCRunnerAdapter) applyOneWithParams(
 	ctx context.Context,
 	tc *middleware.TenantContext,
@@ -97,9 +76,7 @@ func (a *GRPCRunnerAdapter) mcpBlockUpdateRef(ctx context.Context, tc *middlewar
 	return a.applySingleOp(ctx, tc, blockstore.OpUpdateRef, payload)
 }
 
-// blockstoreErrToMcp maps service-layer errors to MCP protocol error codes.
-// Mirrors translateErr in the REST layer so both transports produce
-// consistent 4xx/5xx distinctions.
+// Mirrors translateErr in REST layer — both transports MUST produce consistent 4xx/5xx.
 func blockstoreErrToMcp(err error) *mcpError {
 	switch {
 	case errors.Is(err, blockstore.ErrWorkspaceNotFound),

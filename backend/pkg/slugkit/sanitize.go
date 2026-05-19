@@ -10,9 +10,6 @@ var (
 	trailingDash = regexp.MustCompile(`-+$`)
 )
 
-// Sanitize lowercases, replaces non-alphanumeric runs with hyphens, trims
-// leading/trailing hyphens, and truncates to MaxLen. Output may still be
-// invalid (empty, reserved, too short) — call Validate to confirm.
 func Sanitize(raw string) string {
 	s := strings.ToLower(strings.TrimSpace(raw))
 	s = nonAlnum.ReplaceAllString(s, "-")

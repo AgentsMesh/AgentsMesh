@@ -13,20 +13,12 @@ import { RuntimeConfigSection } from "./RuntimeConfigSection";
 import { CredentialDialog } from "./CredentialDialog";
 import type { AgentConfigPageProps, CredentialFormData } from "./types";
 
-/**
- * AgentConfigPage - Unified configuration page for a single agent
- *
- * Combines credentials management and runtime configuration in one place.
- * Acts as the coordinator for the extracted sub-components.
- */
 export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
   const t = useTranslations();
 
-  // Dialog state
   const [showCredentialDialog, setShowCredentialDialog] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CredentialProfileData | null>(null);
 
-  // Use the custom hook for data and actions
   const {
     loading,
     savingConfig,
@@ -48,22 +40,18 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
     setSuccess,
   } = useAgentConfig(agentSlug, t);
 
-  // Confirm dialog for delete
   const { dialogProps, confirm } = useConfirmDialog();
 
-  // Open credential add dialog
   const handleOpenAddDialog = useCallback(() => {
     setEditingProfile(null);
     setShowCredentialDialog(true);
   }, []);
 
-  // Open credential edit dialog
   const handleOpenEditDialog = useCallback((profile: CredentialProfileData) => {
     setEditingProfile(profile);
     setShowCredentialDialog(true);
   }, []);
 
-  // Handle credential form submission
   const handleCredentialSubmit = useCallback(async (
     data: CredentialFormData,
     profile: CredentialProfileData | null
@@ -72,7 +60,6 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
     setShowCredentialDialog(false);
   }, [handleSaveProfile]);
 
-  // Handle delete with confirmation
   const handleDeleteWithConfirm = useCallback(async (profileId: number) => {
     const confirmed = await confirm({
       title: t("common.confirmDelete"),

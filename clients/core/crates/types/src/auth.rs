@@ -37,8 +37,6 @@ pub struct AuthSession {
     pub refresh_token: String,
     pub user: User,
     pub expires_in: Option<i64>,
-    /// Backend register/login may emit a banner message (e.g. "Please verify
-    /// your email"). Keep so the UI can surface it; absent on most sessions.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

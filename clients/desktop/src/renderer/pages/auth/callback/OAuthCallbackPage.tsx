@@ -19,7 +19,6 @@ function OAuthCallbackContent() {
 
   useEffect(() => {
     const handleCallback = async () => {
-      // Check for OAuth error
       if (error) {
         setStatus("error");
         setErrorMessage(error === "access_denied"
@@ -28,7 +27,6 @@ function OAuthCallbackContent() {
         return;
       }
 
-      // Check for missing token
       if (!token) {
         setStatus("error");
         setErrorMessage("Authentication token is missing.");
@@ -36,16 +34,10 @@ function OAuthCallbackContent() {
       }
 
       try {
-        // Set the token first so ApiClient can include it in /users/me.
-        // MUST await — on Electron, setAuth fans out an authApplySession
-        // IPC to the main-process Rust AuthManager (ApiClient's SSOT). The
-        // synchronous v0.31.x path left the token in renderer-only state,
-        // so the next userGetMe IPC saw no token → 401 → auth_expired.
-        // This placeholder is overwritten with the real user as soon as
-        // getMe() succeeds — but if anything below throws, we MUST run
-        // logout() in catch to wipe it. Leaving a placeholder with token
-        // but invalid identity is what the v0.31 onboarding-loop bug
-        // was about.
+        // MUST await: setAuth fans out authApplySession IPC to main-process Rust AuthManager
+        // (ApiClient's SSOT). v0.31.x onboarding-loop bug: synchronous path left token in
+        // renderer-only state, next userGetMe IPC saw no token → 401. Placeholder is
+        // overwritten by getMe() below; catch MUST logout() to wipe if anything throws.
         await setAuth(token, { id: 0, email: "", username: "" }, refreshToken || undefined);
 
         const userResponse = await userApi.getMe();
@@ -66,9 +58,6 @@ function OAuthCallbackContent() {
           }, 1500);
         }
       } catch (err: unknown) {
-        // Wipe the placeholder auth before surfacing the error — otherwise
-        // RootRedirect on the next mount would still see a token and route
-        // back to dashboard, creating an infinite loop.
         await useAuthStore.getState().logout();
         setStatus("error");
         if (err instanceof Error) {
@@ -85,7 +74,6 @@ function OAuthCallbackContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6 text-center">
-        {/* Logo */}
         <div>
           <Link href="/" className="inline-flex items-center gap-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
@@ -95,7 +83,6 @@ function OAuthCallbackContent() {
           </Link>
         </div>
 
-        {/* Loading State */}
         {status === "loading" && (
           <>
             <div className="flex justify-center">
@@ -132,7 +119,6 @@ function OAuthCallbackContent() {
           </>
         )}
 
-        {/* Success State */}
         {status === "success" && (
           <>
             <div className="flex justify-center">
@@ -165,7 +151,6 @@ function OAuthCallbackContent() {
           </>
         )}
 
-        {/* Error State */}
         {status === "error" && (
           <>
             <div className="flex justify-center">

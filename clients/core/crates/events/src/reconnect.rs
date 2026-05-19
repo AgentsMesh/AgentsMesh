@@ -72,7 +72,6 @@ mod tests {
     fn test_first_delay_is_around_initial() {
         let mut policy = ReconnectPolicy::new(1000, 30000, 10);
         let delay = policy.next_delay().unwrap();
-        // first attempt: 1000 * 2^0 + jitter(0..1000) = 1000..2000
         assert!(delay.as_millis() >= 1000);
         assert!(delay.as_millis() <= 2000);
     }
@@ -83,7 +82,6 @@ mod tests {
         let d1 = policy.next_delay().unwrap();
         let d2 = policy.next_delay().unwrap();
         let d3 = policy.next_delay().unwrap();
-        // d2 base = 2000, d3 base = 4000 — each roughly doubles
         assert!(d2.as_millis() > d1.as_millis());
         assert!(d3.as_millis() > d2.as_millis());
     }

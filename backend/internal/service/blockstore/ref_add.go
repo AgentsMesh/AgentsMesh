@@ -53,8 +53,6 @@ func (s *Service) applyAddRef(
 	if p.Meta == nil {
 		p.Meta = blockstore.JSONMap{}
 	}
-	// Clone so later mutations to the payload map (unlikely but cheap to
-	// guard against) can't race the stored row / forward diff.
 	storedMeta := p.Meta.Clone()
 	now := timeNowUTC()
 	ref := &blockstore.BlockRef{

@@ -12,7 +12,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// buildProvider creates an SSO provider from a config
 func (s *Service) buildProvider(ctx context.Context, cfg *sso.Config) (ssoprovider.Provider, error) {
 	if s.providerFactory != nil {
 		return s.providerFactory(ctx, cfg)
@@ -42,7 +41,6 @@ func (s *Service) buildOIDCProvider(ctx context.Context, cfg *sso.Config) (ssopr
 	scopes := []string{"openid", "email", "profile"}
 	if cfg.OIDCScopes != nil && *cfg.OIDCScopes != "" {
 		if err := json.Unmarshal([]byte(*cfg.OIDCScopes), &scopes); err != nil {
-			// Fallback: try space-separated or comma-separated format
 			slog.WarnContext(ctx, "OIDC scopes not valid JSON, falling back to text parsing",
 				"domain", cfg.Domain, "scopes", *cfg.OIDCScopes, "error", err)
 			raw := strings.TrimSpace(*cfg.OIDCScopes)
@@ -52,7 +50,6 @@ func (s *Service) buildOIDCProvider(ctx context.Context, cfg *sso.Config) (ssopr
 				scopes = strings.Fields(raw)
 			}
 		}
-		// Trim whitespace from each scope
 		for i := range scopes {
 			scopes[i] = strings.TrimSpace(scopes[i])
 		}
@@ -163,8 +160,6 @@ func (s *Service) buildLDAPProvider(cfg *sso.Config) (*ssoprovider.LDAPProvider,
 
 	return ssoprovider.NewLDAPProvider(ldapCfg)
 }
-
-// Test connection helpers
 
 func (s *Service) testOIDCConnection(ctx context.Context, cfg *sso.Config) error {
 	_, err := s.buildOIDCProvider(ctx, cfg)

@@ -10,12 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// invitationRepo implements invitation.Repository using GORM
 type invitationRepo struct {
 	db *gorm.DB
 }
 
-// NewInvitationRepository creates a new invitation repository
 func NewInvitationRepository(db *gorm.DB) invitation.Repository {
 	return &invitationRepo{db: db}
 }
@@ -77,7 +75,6 @@ func (r *invitationRepo) DeleteExpired(ctx context.Context) error {
 	return r.db.WithContext(ctx).Where("expires_at < ? AND accepted_at IS NULL", time.Now()).Delete(&invitation.Invitation{}).Error
 }
 
-// CheckMemberExists checks if a user is already a member of the organization
 func (r *invitationRepo) CheckMemberExists(ctx context.Context, orgID int64, userID int64) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&organization.Member{}).
@@ -86,7 +83,6 @@ func (r *invitationRepo) CheckMemberExists(ctx context.Context, orgID int64, use
 	return count > 0, err
 }
 
-// CheckMemberExistsByEmail checks if a user (by email) is already a member of the organization
 func (r *invitationRepo) CheckMemberExistsByEmail(ctx context.Context, orgID int64, email string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&organization.Member{}).
@@ -95,7 +91,6 @@ func (r *invitationRepo) CheckMemberExistsByEmail(ctx context.Context, orgID int
 	return count > 0, err
 }
 
-// GetOrganization returns basic organization info
 func (r *invitationRepo) GetOrganization(ctx context.Context, orgID int64) (*invitation.OrgInfo, error) {
 	var org organization.Organization
 	if err := r.db.WithContext(ctx).First(&org, orgID).Error; err != nil {
@@ -107,7 +102,6 @@ func (r *invitationRepo) GetOrganization(ctx context.Context, orgID int64) (*inv
 	}, nil
 }
 
-// GetUserDisplayName returns the display name for a user
 func (r *invitationRepo) GetUserDisplayName(ctx context.Context, userID int64) (string, error) {
 	var u user.User
 	if err := r.db.WithContext(ctx).First(&u, userID).Error; err != nil {
@@ -124,14 +118,12 @@ func (r *invitationRepo) AcceptInvitationAtomic(ctx context.Context, params *inv
 	var result invitation.AcceptInvitationResult
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Get organization (verify it exists)
 		var org organization.Organization
 		if err := tx.First(&org, params.Invitation.OrganizationID).Error; err != nil {
 			return err
 		}
 		result.OrganizationID = org.ID
 
-		// Add user as member
 		member := &organization.Member{
 			OrganizationID: params.Invitation.OrganizationID,
 			UserID:         params.UserID,
@@ -142,7 +134,6 @@ func (r *invitationRepo) AcceptInvitationAtomic(ctx context.Context, params *inv
 		}
 		result.MemberID = member.ID
 
-		// Mark invitation as accepted
 		now := time.Now()
 		params.Invitation.AcceptedAt = &now
 		return tx.Save(params.Invitation).Error
@@ -151,5 +142,4 @@ func (r *invitationRepo) AcceptInvitationAtomic(ctx context.Context, params *inv
 	return &result, err
 }
 
-// Compile-time interface compliance check
 var _ invitation.Repository = (*invitationRepo)(nil)

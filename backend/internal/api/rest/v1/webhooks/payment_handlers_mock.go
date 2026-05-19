@@ -9,19 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Mock Payment Handlers (for testing)
-// ===========================================
-
-// MockCheckoutCompleteRequest represents a request to complete a mock checkout
 type MockCheckoutCompleteRequest struct {
 	SessionID string `json:"session_id" binding:"required"`
 	OrderNo   string `json:"order_no"`
 }
 
-// handleMockCheckoutComplete handles mock checkout completion
 func (r *WebhookRouter) handleMockCheckoutComplete(c *gin.Context) {
-	// Check if mock is enabled
 	if r.paymentFactory == nil || !r.paymentFactory.IsMockEnabled() {
 		r.logger.Warn("mock checkout complete requested but mock is not enabled")
 		apierr.Forbidden(c, apierr.MOCK_PAYMENT_DISABLED, "Mock payment is not enabled")
@@ -34,14 +27,12 @@ func (r *WebhookRouter) handleMockCheckoutComplete(c *gin.Context) {
 		return
 	}
 
-	// Get the mock provider
 	mockProvider := r.paymentFactory.GetMockProvider()
 	if mockProvider == nil {
 		apierr.InternalError(c, "mock provider not available")
 		return
 	}
 
-	// Complete the session
 	session, err := mockProvider.CompleteSession(req.SessionID)
 	if err != nil {
 		r.logger.Error("failed to complete mock session", "error", err, "session_id", req.SessionID)
@@ -54,7 +45,6 @@ func (r *WebhookRouter) handleMockCheckoutComplete(c *gin.Context) {
 		"order_no", req.OrderNo,
 	)
 
-	// Create a webhook event to process
 	event := &payment.WebhookEvent{
 		EventID:         "mock_evt_" + req.SessionID,
 		EventType:       billingdomain.WebhookEventCheckoutCompleted,
@@ -68,7 +58,6 @@ func (r *WebhookRouter) handleMockCheckoutComplete(c *gin.Context) {
 		Status:          billingdomain.OrderStatusSucceeded,
 	}
 
-	// Process the payment success
 	if err := r.billingSvc.HandlePaymentSucceeded(c, event); err != nil {
 		r.logger.Error("failed to process mock payment",
 			"error", err,
@@ -87,9 +76,7 @@ func (r *WebhookRouter) handleMockCheckoutComplete(c *gin.Context) {
 	})
 }
 
-// getMockSession retrieves mock session information
 func (r *WebhookRouter) getMockSession(c *gin.Context) {
-	// Check if mock is enabled
 	if r.paymentFactory == nil || !r.paymentFactory.IsMockEnabled() {
 		apierr.Forbidden(c, apierr.MOCK_PAYMENT_DISABLED, "Mock payment is not enabled")
 		return
@@ -101,14 +88,12 @@ func (r *WebhookRouter) getMockSession(c *gin.Context) {
 		return
 	}
 
-	// Get the mock provider
 	mockProvider := r.paymentFactory.GetMockProvider()
 	if mockProvider == nil {
 		apierr.InternalError(c, "mock provider not available")
 		return
 	}
 
-	// Get session info
 	session, err := mockProvider.GetSession(sessionID)
 	if err != nil {
 		apierr.ResourceNotFound(c, err.Error())

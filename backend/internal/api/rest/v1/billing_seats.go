@@ -10,14 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetSeatUsage returns seat usage information
 func (h *BillingHandler) GetSeatUsage(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
 	usage, err := h.billingService.GetSeatUsage(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
 		if errors.Is(err, billingsvc.ErrSubscriptionNotFound) {
-			// Return default for free plan
 			c.JSON(http.StatusOK, gin.H{
 				"total_seats":     1,
 				"used_seats":      1,
@@ -34,17 +32,13 @@ func (h *BillingHandler) GetSeatUsage(c *gin.Context) {
 	c.JSON(http.StatusOK, usage)
 }
 
-// PurchaseSeatsRequest represents a seat purchase request
 type PurchaseSeatsRequest struct {
 	Seats int `json:"seats" binding:"required,min=1"`
 }
 
-// PurchaseSeats updates the subscription seat count via the payment provider.
-// LemonSqueezy automatically handles proration for the billing difference.
 func (h *BillingHandler) PurchaseSeats(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
-	// Only owners can purchase seats
 	if tenant.UserRole != "owner" {
 		apierr.Forbidden(c, apierr.INSUFFICIENT_PERMISSIONS, "insufficient permissions")
 		return
@@ -74,10 +68,8 @@ func (h *BillingHandler) PurchaseSeats(c *gin.Context) {
 		return
 	}
 
-	// Return updated seat usage
 	usage, err := h.billingService.GetSeatUsage(c.Request.Context(), tenant.OrganizationID)
 	if err != nil {
-		// Seats were updated successfully, just return success without usage data
 		c.JSON(http.StatusOK, gin.H{"message": "seats updated successfully"})
 		return
 	}

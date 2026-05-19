@@ -14,13 +14,6 @@ interface CredentialFormFieldsProps {
   t: (key: string) => string;
 }
 
-/**
- * CredentialFormFields - Dynamic form fields for credential profiles.
- *
- * Renders inputs based on AgentFile ENV SECRET/TEXT declarations.
- * Secret fields render as password inputs and are never echoed on edit.
- * Text fields render as plain inputs and are echoed on edit.
- */
 export function CredentialFormFields({
   credentialFields,
   fieldValues,

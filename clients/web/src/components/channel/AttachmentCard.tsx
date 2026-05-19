@@ -34,10 +34,6 @@ function fileNameOf(url: string): string {
   }
 }
 
-/**
- * Inline attachment rendered below a message body. Images show a capped
- * thumbnail (click → open in new tab); other files show a download link.
- */
 export function AttachmentCard({ url, className }: AttachmentCardProps) {
   const t = useTranslations("channels.attachment");
   const ext = extOf(url);

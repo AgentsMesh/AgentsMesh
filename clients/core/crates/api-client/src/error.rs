@@ -11,10 +11,6 @@ pub enum ApiError {
         code: Option<String>,
         server_message: Option<String>,
         data: Option<serde_json::Value>,
-        // Full request URL the response came back from. None for synthetic
-        // errors constructed in tests; production paths in `parse_response`
-        // always set this so users see *which host* returned 5xx — critical
-        // when debugging "is the desktop hitting prod or my local OrbStack?"
         url: Option<String>,
     },
 
@@ -40,9 +36,6 @@ impl ApiError {
         }
     }
 
-    /// Structured, JSON wire-format representation for FFI boundaries.
-    /// Use this instead of `.to_string()` in `map_err` so the front-end can
-    /// discriminate on `kind` without regex-matching the human message.
     pub fn to_wire(&self) -> String {
         ServiceError::from(self).to_wire()
     }

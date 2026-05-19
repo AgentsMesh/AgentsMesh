@@ -13,7 +13,6 @@ const (
 	TypeRepository = "repository"
 )
 
-// IntResourceID converts an int64 ID to the string format used in resource_grants.
 func IntResourceID(id int64) string {
 	return strconv.FormatInt(id, 10)
 }

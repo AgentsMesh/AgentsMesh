@@ -19,9 +19,6 @@ export function DashboardShell({
 }) {
   const router = useRouter();
   const params = useParams<{ org?: string }>();
-  // Auth store migrated to Rust SSOT — `organizations` / `currentOrg`
-  // are no longer Zustand state. Use the dedicated hooks that read
-  // from Rust via _tick subscriptions.
   const _hasHydrated = useAuthStore((s) => s._hasHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const setCurrentOrg = useAuthStore((s) => s.setCurrentOrg);

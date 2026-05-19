@@ -51,19 +51,13 @@ export function TerminalPane({
 
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
 
-  // Pod status tracking
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
 
-  // "Sticky ready" flag: once the terminal has been shown, don't unmount it
-  // due to transient status changes (e.g., stale WebSocket events causing
-  // status to temporarily revert to "initializing").
-  // Uses the React-recommended "adjusting state during render" pattern.
   const [showTerminal, setShowTerminal] = useState(false);
   if (isPodReady && !showTerminal) {
     setShowTerminal(true);
   }
 
-  // Terminal initialization and management
   const {
     terminalRef,
     xtermRef,
@@ -72,7 +66,6 @@ export function TerminalPane({
     syncSize,
   } = useTerminal(podKey, terminalFontSize, showTerminal, isActive);
 
-  // Mobile touch scrolling support
   useTouchScroll(terminalRef, xtermRef, showTerminal);
 
   const handleFocus = useCallback(() => {
@@ -82,8 +75,6 @@ export function TerminalPane({
   const handleMaximize = useCallback(() => {
     setIsMaximized((prev) => !prev);
     onMaximize?.();
-    // ResizeObserver in useTerminal will auto-fit after layout change.
-    // Use syncSize as a fallback to ensure pod size is updated.
     if (maximizeRafRef.current !== undefined) cancelAnimationFrame(maximizeRafRef.current);
     maximizeRafRef.current = requestAnimationFrame(() => {
       maximizeRafRef.current = undefined;
@@ -91,7 +82,6 @@ export function TerminalPane({
     });
   }, [onMaximize, syncSize]);
 
-  // Cancel pending maximize RAF on unmount
   useEffect(() => {
     return () => {
       if (maximizeRafRef.current !== undefined) cancelAnimationFrame(maximizeRafRef.current);
@@ -108,7 +98,6 @@ export function TerminalPane({
       )}
       onClick={handleFocus}
     >
-      {/* Header */}
       {showHeader && (
         <TerminalPaneHeader
           podKey={podKey}
@@ -127,7 +116,6 @@ export function TerminalPane({
         />
       )}
 
-      {/* Terminal or Loading/Error/Reconnecting State */}
       {!showTerminal ? (
         podError ? (
           <PaneErrorState error={podError} onClose={onClose} />
@@ -144,7 +132,6 @@ export function TerminalPane({
         <div className="flex flex-col flex-1 min-h-0">
           <AutopilotOverlay podKey={podKey} />
           <div className="relative flex-1 min-h-0">
-            {/* Reconnecting overlay - shown when pod is orphaned but terminal was previously active */}
             {podStatus === "orphaned" && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-terminal-bg/80 backdrop-blur-sm">
                 <div className="text-center p-4">
@@ -158,7 +145,6 @@ export function TerminalPane({
                 </div>
               </div>
             )}
-            {/* Relay connection status overlay - always visible, floating at top */}
             <RelayStatusOverlay
               connectionStatus={connectionStatus}
               isRunnerDisconnected={isRunnerDisconnected}
@@ -167,17 +153,15 @@ export function TerminalPane({
               ref={terminalRef}
               className="h-full overflow-auto"
               style={{
-                touchAction: "pan-y pinch-zoom", // Enable touch scrolling and zoom
+                touchAction: "pan-y pinch-zoom",
               }}
             />
           </div>
         </div>
       )}
 
-      {/* Autopilot modal (managed by AutopilotStartButton) */}
       <AutopilotStartButton podKey={podKey} triggerRef={triggerAutopilotRef} />
 
-      {/* Pod selector for split */}
       {pendingSplitDirection && (
         <PodSelectorModal
           openPodKeys={openPodKeys}

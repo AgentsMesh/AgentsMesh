@@ -9,7 +9,6 @@ import (
 
 // ComputeLoopStats computes run statistics from Pod status (SSOT).
 func (r *loopRunRepo) ComputeLoopStats(ctx context.Context, loopID int64) (total, successful, failed int, err error) {
-	// Phase 1: Aggregate finished runs via SQL
 	type finishedStats struct {
 		Total      int `gorm:"column:total"`
 		Successful int `gorm:"column:successful"`
@@ -37,7 +36,6 @@ func (r *loopRunRepo) ComputeLoopStats(ctx context.Context, loopID int64) (total
 	return
 }
 
-// resolveActiveRunStats resolves active run stats from Pod/autopilot status.
 func (r *loopRunRepo) resolveActiveRunStats(ctx context.Context, loopID int64, total, successful, failed int) (int, int, int, error) {
 	type activeRunRow struct {
 		Status         string  `gorm:"column:status"`
@@ -85,7 +83,6 @@ func (r *loopRunRepo) resolveActiveRunStats(ctx context.Context, loopID int64, t
 	return total, successful, failed, nil
 }
 
-// BatchGetPodStatuses returns Pod status info for a batch of pod keys.
 func (r *loopRunRepo) BatchGetPodStatuses(ctx context.Context, podKeys []string) ([]loop.PodStatusInfo, error) {
 	if len(podKeys) == 0 {
 		return nil, nil
@@ -100,7 +97,6 @@ func (r *loopRunRepo) BatchGetPodStatuses(ctx context.Context, podKeys []string)
 	return results, err
 }
 
-// BatchGetAutopilotPhases returns autopilot phases for a batch of keys.
 func (r *loopRunRepo) BatchGetAutopilotPhases(ctx context.Context, autopilotKeys []string) (map[string]string, error) {
 	if len(autopilotKeys) == 0 {
 		return nil, nil
@@ -161,7 +157,6 @@ func (r *loopRunRepo) CountActiveRunsByLoopIDs(ctx context.Context, loopIDs []in
 	return result, nil
 }
 
-// GetAvgDuration returns the average duration in seconds for completed runs of a loop.
 func (r *loopRunRepo) GetAvgDuration(ctx context.Context, loopID int64) (*float64, error) {
 	var avg *float64
 	err := r.db.WithContext(ctx).
@@ -172,9 +167,6 @@ func (r *loopRunRepo) GetAvgDuration(ctx context.Context, loopID int64) (*float6
 	return avg, err
 }
 
-// deriveLoopRunStatus maps Pod/Autopilot state to Loop Run status.
-// This is a local helper mirroring the canonical logic in service/loop.DeriveRunStatus,
-// used here to avoid a circular infra → service import.
 func deriveLoopRunStatus(podStatus string, autopilotPhase string) string {
 	if autopilotPhase != "" {
 		switch autopilotPhase {

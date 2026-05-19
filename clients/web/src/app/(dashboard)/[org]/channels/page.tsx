@@ -19,7 +19,6 @@ export default function ChannelsPage() {
     setSelectedChannelId(null);
   }, [setSelectedChannelId]);
 
-  // Mobile: show channel list when none selected, full-screen chat when selected
   if (isMobile) {
     if (!selectedChannelId) {
       return <ChannelsSidebarContent className="h-full" />;
@@ -32,7 +31,6 @@ export default function ChannelsPage() {
     );
   }
 
-  // Desktop: empty state when no channel selected
   if (!selectedChannelId) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">

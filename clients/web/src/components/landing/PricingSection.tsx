@@ -20,7 +20,6 @@ const FALLBACK_PRICING: PublicPricingResponse = {
   ],
 };
 
-// Plan type for pricing cards
 interface PricingPlan {
   key: string;
   name: string;
@@ -77,7 +76,6 @@ export function PricingSection() {
       : t("landing.pricing.seatYear");
   };
 
-  // Build plans array from API data
   const buildPlans = (): PricingPlan[] => {
     if (!pricing) return [];
 

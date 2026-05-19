@@ -10,9 +10,6 @@ interface AgentSelectProps {
   t: (key: string) => string;
 }
 
-/**
- * Agent selection dropdown component
- */
 export function AgentSelect({
   agents,
   selectedAgentSlug,

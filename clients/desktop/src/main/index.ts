@@ -13,22 +13,12 @@ import {
 import * as serverConfig from "./server_config";
 import { isValidServerUrl } from "../shared/server-config-types";
 
-// SSOT: server_config owns the persisted choice (server.json), main owns
-// the cold-start env override policy. Keeping the env-override resolution
-// out of server_config means that module stays a pure function library
-// (easier to test, harder to misuse from `serverConfig:set` handler).
-//
-// Cold-start resolution order:
-//   1. AGENTSMESH_API_URL env (dev / e2e / ad-hoc) — does NOT pollute the
-//      dialog SSOT, just redirects requests for this process lifetime.
-//   2. activeUrl(currentCfg) — server.json or DEFAULT.
-//
-// Once the user saves through the dialog, `serverConfig:set` rebinds to
-// `activeUrl(next)` directly, shadowing the env override.
-
-// Stashed at module load (before app.ready); flushed in whenReady so users
-// actually see the dialog. Calling dialog.showErrorBox at module load is
-// unreliable — most Electron dialog APIs assume app.ready has fired.
+// Cold-start resolution: (1) AGENTSMESH_API_URL env override (dev/e2e, process-only,
+// does NOT pollute SSOT) → (2) activeUrl(currentCfg). After save, serverConfig:set
+// rebinds directly, shadowing env. Env-override lives here (not server_config.ts) to keep
+// that module pure.
+// pendingStartupErrorMsg is module-load stashed; flushed in whenReady because
+// dialog.showErrorBox is unreliable before app.ready fires.
 let pendingStartupErrorMsg: string | null = null;
 
 function resolveColdStartApiUrl(cfg: serverConfig.ServerConfig): string {
@@ -46,13 +36,8 @@ let currentCfg = serverConfig.load();
 let currentApiUrl = resolveColdStartApiUrl(currentCfg);
 
 const storageDir = path.join(app.getPath("userData"), "agentsmesh");
-// Electron resolves "logs" to ~/Library/Logs/<AppName>/ on macOS,
-// %APPDATA%\<AppName>\logs\ on Windows, ~/.config/<AppName>/logs/ on Linux.
-// The Rust logger creates the dir if missing and rolls files daily inside it.
 const logsDir = app.getPath("logs");
 
-// Headless flag for e2e: keeps the window invisible + drops the macOS
-// dock icon so the test process doesn't steal focus from the user's IDE.
 const isHeadlessTest = process.env.NODE_ENV === "test";
 
 let appState: AppState;
@@ -107,10 +92,8 @@ function createWindow() {
   flushPendingUrl(getMainWindow);
 }
 
-// Re-bind every IPC channel that fronts an `AppState` method. Called once
-// at boot and again when the user switches server (which constructs a new
-// AppState bound to the new base_url). Must `removeHandler` first because
-// `ipcMain.handle` throws on duplicate registration.
+// Called at boot and after server switch (new AppState). MUST removeHandler first
+// because ipcMain.handle throws on duplicate registration.
 function bindAppStateHandlers() {
   for (const ch of appStateHandlers) {
     ipcMain.removeHandler(ch);
@@ -137,22 +120,11 @@ function bindAppStateHandlers() {
   console.log(`[electron] Registered ${methodNames.length} IPC handlers`);
 }
 
-// Replace the running AppState with one bound to a new base_url. Used when
-// the user picks a different server. Old service instances inside the prior
-// AppState are dropped naturally once their last `Arc` ref expires
-// (in-flight requests fade out without aborting).
-//
-// Known limitation: Rust services without explicit shutdown logic
-// (LocalRunnerManager, RelayManager) may keep tokio tasks alive past
-// the rebind, leaking until process exit. Fine in practice because
-// server switches are rare; would need graceful shutdown plumbing in
-// Rust core to fix properly.
+// Known leak: LocalRunnerManager / RelayManager have no shutdown hook, so their tokio
+// tasks may outlive the rebind. Rare in practice (server switches are uncommon).
 function rebindAppState(newApiUrl: string) {
   console.log(`[electron] Rebinding AppState: ${currentApiUrl} → ${newApiUrl}`);
   appState = new AppState(newApiUrl, storageDir);
-  // Stubs are scoped to the AppState that owns them — re-create alongside.
-  // (isHeadlessTest itself is fixed at startup; the conditional here is
-  // not a runtime check, just a "if we needed stubs before, we need them now".)
   if (isHeadlessTest) {
     stubs = createLocalRunnerStubs();
   }
@@ -167,33 +139,19 @@ function registerStaticHandlers() {
     }
   });
 
-  // Renderer-side log forwarding. Renderer calls `electronAPI.log(...)` →
-  // we hand it to the Rust subscriber so renderer + main + Rust all land
-  // in one rolling file in timestamp order.
+  // Renderer log forwarding into rolling file (renderer + main + Rust in timestamp order).
   ipcMain.handle("core:log", (_e, level: string, target: string, msg: string) => {
     logEvent(level, target, msg);
   });
 
-  // Help → Open Logs reveals the rolling log directory in Finder/Explorer.
   ipcMain.handle("logs:openFolder", async () => {
     await shell.openPath(logsDir);
   });
 
-  // server-config IPC. The sync variants are deliberate: preload reads
-  // them at boot to populate `window.electronAPI.apiUrl` / serverConfig
-  // .snapshot synchronously, so renderer's getApiBaseUrl() stays
-  // synchronous (no async ceremony in OAuth/WS hot paths).
-  //
-  // The Electron sync-IPC anti-pattern warning is about runtime calls
-  // that block the renderer's UI thread; here the call happens during
-  // preload BEFORE any renderer code runs, so there's no UI to block.
-  // On `mainWindow.reload()`, preload re-executes and re-reads — that's
-  // also how we propagate `serverConfig:set` updates without a separate
-  // mutable IPC channel.
-  //
-  // Invariant: registerStaticHandlers() MUST run before createWindow()
-  // so the sync handlers exist when preload sends. Enforced by ordering
-  // in app.whenReady() below.
+  // Sync IPC by design: preload populates window.electronAPI.apiUrl synchronously at boot
+  // (before any renderer code runs — no UI thread to block). mainWindow.reload() re-runs
+  // preload to propagate serverConfig:set updates.
+  // Invariant: registerStaticHandlers() MUST run before createWindow() (enforced by ordering below).
   ipcMain.on("serverConfig:getActiveUrlSync", (e) => {
     e.returnValue = currentApiUrl;
   });
@@ -202,12 +160,9 @@ function registerStaticHandlers() {
   });
   ipcMain.handle("serverConfig:get", () => serverConfig.load());
   ipcMain.handle("serverConfig:set", async (_e, raw: serverConfig.ServerConfig) => {
-    // `raw` is whatever the renderer (or a misbehaving stub) sent over
-    // IPC — type-erased at the boundary. Validate via activeUrl first
-    // (throws on malformed custom URL → propagates back to dialog), then
-    // let `save` normalise + persist. Use `save`'s return value as the new
-    // currentCfg so memory and disk stay byte-identical; assigning `raw`
-    // directly was the third-round bug.
+    // raw is type-erased at IPC boundary. activeUrl throws on invalid custom URL (propagates
+    // back to dialog). MUST use save()'s return value as currentCfg (round-3 bug: assigning
+    // raw left untrimmed fields in memory).
     serverConfig.activeUrl(raw); // validate, throw on invalid
     const next = serverConfig.save(raw);
     const newUrl = serverConfig.activeUrl(next);
@@ -215,21 +170,13 @@ function registerStaticHandlers() {
     if (newUrl !== currentApiUrl) {
       rebindAppState(newUrl);
     }
-    // Always reload renderer after a save — preload's sync snapshot of
-    // serverConfig is captured at boot, so even when the resolved URL
-    // doesn't change (e.g. env override masks both old and new), the
-    // *cfg* fields the dialog reads can have changed (kind/custom* etc).
-    // Reloading is the cheap way to re-snapshot without a separate
-    // mutable IPC channel.
+    // Always reload: even when resolved URL is unchanged (env override masks both), the cfg
+    // fields the dialog reads can have changed (kind/custom*). Reload re-snapshots preload.
     mainWindow?.reload();
   });
 }
 
 function buildMenu() {
-  // Default-role menus give us the standard macOS/Win/Linux items (Quit,
-  // Cut/Copy/Paste, View, Window) without re-implementing them. The Help
-  // submenu is the only item we customise — it exposes the rolling log
-  // directory so users can ship logs back when reporting bugs.
   const isMac = process.platform === "darwin";
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(isMac ? ([{ role: "appMenu" }] as Electron.MenuItemConstructorOptions[]) : []),
@@ -253,16 +200,8 @@ function buildMenu() {
 }
 
 app.whenReady().then(() => {
-  // Install the global tracing subscriber FIRST — every Rust call after
-  // this (including AppState construction) emits through it. Failure here
-  // is logged but not fatal; renderer still works, just without persistent
-  // logs. Idempotent on the Rust side.
   try {
     initLogger(logsDir, process.env.AGENTSMESH_LOG_LEVEL ?? "info");
-    // First post-init record proves the file sink is live. The Rust
-    // non-blocking writer flushes per-line, so this lands on disk
-    // immediately — useful as a "logger is wired up" smoke marker for
-    // bug reports.
     logEvent("info", "electron-main", `Starting, API: ${currentApiUrl}`);
   } catch (e) {
     console.warn("[electron] initLogger failed:", e);
@@ -271,9 +210,6 @@ app.whenReady().then(() => {
   if (isHeadlessTest && process.platform === "darwin") {
     app.dock?.hide();
   }
-  // Surface any startup error stashed during module load (server.json
-  // pointed at a malformed custom URL etc.). Dialog APIs need app.ready,
-  // which is why we deferred this from `resolveColdStartApiUrl`.
   if (pendingStartupErrorMsg) {
     dialog.showErrorBox(
       "Invalid server configuration",

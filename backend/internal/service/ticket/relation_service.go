@@ -7,14 +7,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// ========== Ticket Relations ==========
-
 var (
 	ErrRelationNotFound = errors.New("relation not found")
 	ErrSelfRelation     = errors.New("cannot create relation to self")
 )
 
-// GetReverseRelationType returns the reverse relation type.
 func GetReverseRelationType(relationType string) string {
 	switch relationType {
 	case ticket.RelationTypeBlocks:
@@ -28,7 +25,6 @@ func GetReverseRelationType(relationType string) string {
 	}
 }
 
-// CreateRelation creates a relation between two tickets.
 func (s *Service) CreateRelation(ctx context.Context, orgID, sourceTicketID, targetTicketID int64, relationType string) (*ticket.Relation, error) {
 	if sourceTicketID == targetTicketID {
 		return nil, ErrSelfRelation
@@ -54,7 +50,6 @@ func (s *Service) CreateRelation(ctx context.Context, orgID, sourceTicketID, tar
 	return relation, nil
 }
 
-// DeleteRelation deletes a relation and its reverse.
 func (s *Service) DeleteRelation(ctx context.Context, relationID int64) error {
 	relation, err := s.repo.GetRelation(ctx, relationID)
 	if err != nil {
@@ -68,7 +63,6 @@ func (s *Service) DeleteRelation(ctx context.Context, relationID int64) error {
 	return s.repo.DeleteRelationPair(ctx, relation, reverseType)
 }
 
-// ListRelations returns relations for a ticket.
 func (s *Service) ListRelations(ctx context.Context, ticketID int64) ([]*ticket.Relation, error) {
 	return s.repo.ListRelations(ctx, ticketID)
 }

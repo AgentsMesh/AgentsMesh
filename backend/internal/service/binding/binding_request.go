@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 )
 
-// RequestBinding creates a binding request between two pods
 func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod, targetPod string, scopes []string, policy string) (*channel.PodBinding, error) {
 	if err := s.validateScopes(scopes); err != nil {
 		return nil, err
@@ -19,23 +18,19 @@ func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod,
 		return nil, ErrSelfBinding
 	}
 
-	// Check for existing binding (active or pending)
 	existing, err := s.GetExistingBinding(ctx, initiatorPod, targetPod)
 	if err == nil && existing != nil {
 		return existing, nil
 	}
 
-	// Evaluate policy to determine if auto-approve
 	autoApprove, initialStatus := s.evaluatePolicy(ctx, initiatorPod, targetPod, policy)
 
-	// Calculate expiry for pending bindings
 	var expiresAt *time.Time
 	if initialStatus == channel.BindingStatusPending {
 		t := time.Now().Add(time.Duration(PendingExpiryHours) * time.Hour)
 		expiresAt = &t
 	}
 
-	// Determine granted vs pending scopes based on policy
 	var grantedScopes, pendingScopes []string
 	if autoApprove {
 		grantedScopes = scopes
@@ -70,7 +65,6 @@ func (s *Service) RequestBinding(ctx context.Context, orgID int64, initiatorPod,
 	return binding, nil
 }
 
-// CreateAutoBinding creates a binding that is immediately active without approval
 func (s *Service) CreateAutoBinding(ctx context.Context, orgID int64, initiatorPod, targetPod string, scopes []string) (*channel.PodBinding, error) {
 	if err := s.validateScopes(scopes); err != nil {
 		return nil, err
@@ -80,7 +74,6 @@ func (s *Service) CreateAutoBinding(ctx context.Context, orgID int64, initiatorP
 		return nil, ErrSelfBinding
 	}
 
-	// Check for existing binding
 	existing, err := s.GetExistingBinding(ctx, initiatorPod, targetPod)
 	if err == nil && existing != nil {
 		return existing, nil
@@ -108,7 +101,6 @@ func (s *Service) CreateAutoBinding(ctx context.Context, orgID int64, initiatorP
 	return binding, nil
 }
 
-// AcceptBinding accepts a pending binding request (moves all pending scopes to granted)
 func (s *Service) AcceptBinding(ctx context.Context, bindingID int64, targetPod string) (*channel.PodBinding, error) {
 	binding, err := s.GetBinding(ctx, bindingID)
 	if err != nil {
@@ -123,7 +115,6 @@ func (s *Service) AcceptBinding(ctx context.Context, bindingID int64, targetPod 
 		return nil, ErrBindingNotPending
 	}
 
-	// Move pending scopes to granted
 	newGranted := append([]string{}, binding.GrantedScopes...)
 	newGranted = append(newGranted, binding.PendingScopes...)
 
@@ -143,7 +134,6 @@ func (s *Service) AcceptBinding(ctx context.Context, bindingID int64, targetPod 
 	return binding, nil
 }
 
-// RejectBinding rejects a pending binding request
 func (s *Service) RejectBinding(ctx context.Context, bindingID int64, targetPod string, reason string) (*channel.PodBinding, error) {
 	binding, err := s.GetBinding(ctx, bindingID)
 	if err != nil {
@@ -174,9 +164,7 @@ func (s *Service) RejectBinding(ctx context.Context, bindingID int64, targetPod 
 	return binding, nil
 }
 
-// Unbind removes an active binding between two pods
 func (s *Service) Unbind(ctx context.Context, initiatorPod, targetPod string) (bool, error) {
-	// Try both directions
 	binding, err := s.GetActiveBinding(ctx, initiatorPod, targetPod)
 	if err != nil {
 		binding, err = s.GetActiveBinding(ctx, targetPod, initiatorPod)
@@ -195,7 +183,6 @@ func (s *Service) Unbind(ctx context.Context, initiatorPod, targetPod string) (b
 	return true, nil
 }
 
-// CleanupExpiredBindings marks expired pending bindings as expired
 func (s *Service) CleanupExpiredBindings(ctx context.Context) (int64, error) {
 	count, err := s.repo.MarkExpired(ctx, time.Now())
 	if err != nil {

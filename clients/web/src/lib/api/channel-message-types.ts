@@ -9,7 +9,6 @@ export interface InlineElement {
   type: "text" | "mention" | "link" | "linebreak";
   text?: string;
   style?: InlineStyle;
-  // Backward compat: old messages may have flat booleans
   bold?: boolean;
   italic?: boolean;
   strike?: boolean;

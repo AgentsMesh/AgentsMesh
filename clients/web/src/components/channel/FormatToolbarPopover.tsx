@@ -10,7 +10,6 @@ type WrapRule = {
   before: string;
   after: string;
   placeholder: string;
-  /** Cursor offset from end when there's no selection — lets user fill placeholder. */
   cursorOffsetFromEnd?: number;
 };
 

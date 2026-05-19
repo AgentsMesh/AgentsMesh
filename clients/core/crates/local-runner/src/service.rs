@@ -3,15 +3,10 @@ use crate::error::{LocalRunnerError, Result};
 use crate::paths::InstallPaths;
 use serde::{Deserialize, Serialize};
 
-/// OS service status as reported by `agentsmesh-runner service status`.
-///
-/// `Stale` is the runner-CLI's own signal that the launchd/systemd job is
-/// installed but the runner config (`~/.agentsmesh/config.yaml`) is missing,
-/// so the daemon physically cannot run. The UI must treat this as "not
-/// registered" — the user needs to either re-register or
-/// `service uninstall` to clean up the orphan job. Without this state, a
-/// stale launchd job from an old registration would still report `Running`
-/// or `Stopped` and the UI would falsely claim the Mac is registered.
+/// `Stale` means the OS service job is installed but the runner config
+/// (`~/.agentsmesh/config.yaml`) is missing — UI must treat this as
+/// "not registered" so a stale launchd/systemd job from an old
+/// registration doesn't falsely report `Running` or `Stopped`.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub enum ServiceStatus {
     Running,
@@ -37,13 +32,6 @@ pub async fn stop(paths: &InstallPaths) -> Result<()> {
     run_runner_cli(paths, &["service", "stop"]).await?.ok().map(|_| ())
 }
 
-/// Maps the `Service Status: <token>` line emitted by the runner CLI to the
-/// strongly-typed enum. A non-zero exit (service not installed) is mapped to
-/// `NotInstalled` rather than an error so callers can treat the four-state
-/// model uniformly. The same applies when the runner binary itself is
-/// missing — semantically that's still "not installed", not a programming
-/// error, and the renderer wants a clean enum value, not an exception that
-/// surfaces as an unhandled promise rejection in DevTools.
 pub async fn status(paths: &InstallPaths) -> Result<ServiceStatus> {
     if !crate::install::is_installed(paths).await {
         return Ok(ServiceStatus::NotInstalled);

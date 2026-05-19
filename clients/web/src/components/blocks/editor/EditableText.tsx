@@ -10,20 +10,12 @@ export interface EditableTextProps {
   placeholder?: string;
   className?: string;
   debounceMs?: number;
-  /** Fired when Enter is pressed (without Shift). Caller typically inserts a sibling block. */
   onEnter?: () => void;
-  /** Fired when Backspace is pressed while the editor is empty. Typically deletes the block. */
   onBackspaceEmpty?: () => void;
-  /** Fired when "/" is pressed on an empty editor. Caller typically opens a SlashMenu. */
   onSlashOnEmpty?: () => void;
-  /** When flipped to true, the editor grabs focus and positions the caret at the end. */
   autoFocus?: boolean;
 }
 
-// Minimal contentEditable wrapper. Keeps the DOM text in sync with `value`
-// without re-rendering while the user is typing (re-rendering blows away the
-// caret). Changes are flushed on blur and on a debounce timer so downstream
-// dispatch isn't called on every keystroke.
 export function EditableText({
   value,
   onChange,

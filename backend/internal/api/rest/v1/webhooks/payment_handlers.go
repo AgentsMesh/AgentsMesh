@@ -9,20 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ===========================================
-// Payment Webhook Handlers - Stripe
-// ===========================================
-
-// handleStripeWebhook handles Stripe webhook events
 func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
-	// Check if Stripe is configured
 	if r.paymentFactory == nil || !r.paymentFactory.IsProviderAvailable(billingdomain.PaymentProviderStripe) {
 		r.logger.Warn("Stripe webhook received but Stripe is not configured")
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Stripe not configured")
 		return
 	}
 
-	// Read the request body
 	payload, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		r.logger.Error("failed to read Stripe webhook body", "error", err)
@@ -30,7 +23,6 @@ func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
 		return
 	}
 
-	// Get the Stripe signature header
 	signature := c.GetHeader("Stripe-Signature")
 	if signature == "" {
 		r.logger.Warn("missing Stripe-Signature header")
@@ -38,7 +30,6 @@ func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
 		return
 	}
 
-	// Get the Stripe provider
 	provider, err := r.paymentFactory.GetProvider(billingdomain.PaymentProviderStripe)
 	if err != nil {
 		r.logger.Error("failed to get Stripe provider", "error", err)
@@ -46,7 +37,6 @@ func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate the webhook
 	event, err := provider.HandleWebhook(c.Request.Context(), payload, signature)
 	if err != nil {
 		r.logger.Error("failed to validate Stripe webhook", "error", err)
@@ -59,7 +49,6 @@ func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
 		"event_type", event.EventType,
 	)
 
-	// Process the event based on type
 	var processErr error
 	switch event.EventType {
 	case billingdomain.WebhookEventCheckoutCompleted:
@@ -95,6 +84,5 @@ func (r *WebhookRouter) handleStripeWebhook(c *gin.Context) {
 		return
 	}
 
-	// Acknowledge receipt
 	c.JSON(http.StatusOK, gin.H{"received": true})
 }

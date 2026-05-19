@@ -75,7 +75,6 @@ interface MeshState {
   getRunnerInfo: (runnerId: number) => RunnerInfo | undefined;
 }
 
-// Debounce timer for fetchTopology — coalesce rapid pod events into a single API call.
 let topologyDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useMeshStore = create<MeshState>((set, get) => ({

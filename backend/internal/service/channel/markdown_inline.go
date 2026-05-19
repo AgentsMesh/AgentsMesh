@@ -63,9 +63,6 @@ func (w *mdWalker) inlineWalk(node ast.Node, style channel.InlineStyle, out *[]c
 				w.emitText(label, style, out)
 			}
 		case *ast.Image:
-			// Schema has no image block; fall back to a clickable link so the
-			// destination URL stays visible. Plain text alt is preserved when
-			// the URL scheme is rejected by the allowlist.
 			href := string(v.Destination)
 			label := childrenText(v, w.src)
 			if label == "" {
@@ -144,10 +141,6 @@ func (w *mdWalker) splitMentions(s string) []textPart {
 	return out
 }
 
-// isMentionLeftBoundary returns true when the byte preceding `@` is start-of-
-// string or a non-identifier character. Prevents `foo@alice.com` (an email
-// address) from being chopped into a mention even when `alice` is a known
-// mention key.
 func isMentionLeftBoundary(s string, at int) bool {
 	if at == 0 {
 		return true
@@ -156,9 +149,6 @@ func isMentionLeftBoundary(s string, at int) bool {
 	return !isIdentifierByte(prev)
 }
 
-// isMentionRightBoundary returns true when the byte after a matched `@key`
-// is end-of-string or non-identifier. Prevents `@alice` from matching key
-// `ali` when the user actually meant `@alice`.
 func isMentionRightBoundary(s string, end int) bool {
 	if end >= len(s) {
 		return true

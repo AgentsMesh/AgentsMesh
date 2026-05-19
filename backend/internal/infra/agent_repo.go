@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ agent.AgentRepository = (*agentRepo)(nil)
 
 type agentRepo struct {
 	db *gorm.DB
 }
 
-// NewAgentRepository creates a new GORM-based agent repository
 func NewAgentRepository(db *gorm.DB) agent.AgentRepository {
 	return &agentRepo{db: db}
 }

@@ -62,7 +62,6 @@ export const blockstoreApi = {
         result.blocks = [root, ...result.blocks];
       }
     } catch {
-      // Root not present yet (fresh workspace before first op) — tolerate.
     }
     return result;
   },

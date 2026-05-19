@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SAMLRedirect initiates SAML authentication
 func (h *SSOAuthHandler) SAMLRedirect(c *gin.Context) {
 	domain, ok := validateDomain(c)
 	if !ok {
@@ -28,7 +27,6 @@ func (h *SSOAuthHandler) SAMLRedirect(c *gin.Context) {
 		return
 	}
 
-	// Generate state (used as RelayState)
 	state, err := h.authService.GenerateOAuthState(c.Request.Context(), "sso_saml_"+domain, redirectTo)
 	if err != nil {
 		apierr.InternalError(c, "Failed to generate state")
@@ -48,7 +46,6 @@ func (h *SSOAuthHandler) SAMLRedirect(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, authURL)
 }
 
-// SAMLACS handles SAML Assertion Consumer Service POST
 func (h *SSOAuthHandler) SAMLACS(c *gin.Context) {
 	domain, ok := validateDomain(c)
 	if !ok {
@@ -62,7 +59,6 @@ func (h *SSOAuthHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	// Validate RelayState (our state parameter for CSRF protection)
 	var redirectTo string
 	if relayState != "" {
 		var err error
@@ -73,12 +69,9 @@ func (h *SSOAuthHandler) SAMLACS(c *gin.Context) {
 			return
 		}
 	} else {
-		// IdP-initiated flow (no RelayState) — use default redirect
 		redirectTo = h.config.FrontendURL() + "/auth/sso/callback"
 	}
 
-	// Handle callback — pass RelayState so the service layer can retrieve
-	// the stored AuthnRequest ID for InResponseTo validation.
 	params := map[string]string{
 		"SAMLResponse": samlResponse,
 		"RelayState":   relayState,
@@ -90,7 +83,6 @@ func (h *SSOAuthHandler) SAMLACS(c *gin.Context) {
 		return
 	}
 
-	// Authenticate, create/get user, and redirect with tokens
 	_, tokens, err := h.authenticateSSO(c, sso.ProtocolSAML, configID, userInfo)
 	if err != nil {
 		slog.ErrorContext(c.Request.Context(), "SAML user authentication failed", "domain", domain, "error", err)
@@ -104,7 +96,6 @@ func (h *SSOAuthHandler) SAMLACS(c *gin.Context) {
 	h.redirectWithTokens(c, redirectTo, tokens)
 }
 
-// SAMLMetadata returns the SP metadata XML
 func (h *SSOAuthHandler) SAMLMetadata(c *gin.Context) {
 	domain, ok := validateDomain(c)
 	if !ok {

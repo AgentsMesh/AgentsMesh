@@ -16,7 +16,6 @@ interface SpawnPodButtonProps {
   className?: string;
 }
 
-/** Prominent CTA matching the design's "Spawn Pod" button on ticket detail header. */
 export function SpawnPodButton({
   ticket,
   ticketSlug,

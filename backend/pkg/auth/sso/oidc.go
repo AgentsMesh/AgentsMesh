@@ -8,7 +8,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// OIDCConfig holds OIDC provider configuration
 type OIDCConfig struct {
 	IssuerURL    string
 	ClientID     string
@@ -17,7 +16,6 @@ type OIDCConfig struct {
 	Scopes       []string
 }
 
-// OIDCProvider implements Provider for OpenID Connect
 type OIDCProvider struct {
 	config   *OIDCConfig
 	provider *oidc.Provider
@@ -25,13 +23,10 @@ type OIDCProvider struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-// NewOIDCProvider creates a new OIDC provider
 func NewOIDCProvider(ctx context.Context, cfg *OIDCConfig) (*OIDCProvider, error) {
 	if cfg.IssuerURL == "" || cfg.ClientID == "" {
 		return nil, fmt.Errorf("%w: missing OIDC issuer URL or client ID", ErrInvalidConfig)
 	}
-	// ClientSecret is optional: public clients (PKCE) don't require it.
-	// If the IdP requires a secret, the code exchange will fail with a clear error.
 
 	provider, err := oidc.NewProvider(ctx, cfg.IssuerURL)
 	if err != nil {
@@ -61,25 +56,21 @@ func NewOIDCProvider(ctx context.Context, cfg *OIDCConfig) (*OIDCProvider, error
 	}, nil
 }
 
-// GetAuthURL returns the OIDC authorization URL
 func (p *OIDCProvider) GetAuthURL(_ context.Context, state string) (string, error) {
 	return p.oauth2.AuthCodeURL(state), nil
 }
 
-// HandleCallback exchanges the authorization code for tokens and returns user info
 func (p *OIDCProvider) HandleCallback(ctx context.Context, params map[string]string) (*UserInfo, error) {
 	code := params["code"]
 	if code == "" {
 		return nil, fmt.Errorf("%w: missing authorization code", ErrAuthFailed)
 	}
 
-	// Exchange code for token
 	token, err := p.oauth2.Exchange(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
 
-	// Extract and verify ID token
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		return nil, fmt.Errorf("%w: no id_token in response", ErrAuthFailed)
@@ -90,7 +81,6 @@ func (p *OIDCProvider) HandleCallback(ctx context.Context, params map[string]str
 		return nil, fmt.Errorf("failed to verify ID token: %w", err)
 	}
 
-	// Extract claims
 	var claims struct {
 		Sub      string `json:"sub"`
 		Email    string `json:"email"`
@@ -118,7 +108,6 @@ func (p *OIDCProvider) HandleCallback(ctx context.Context, params map[string]str
 	}, nil
 }
 
-// Authenticate is not supported for OIDC
 func (p *OIDCProvider) Authenticate(_ context.Context, _, _ string) (*UserInfo, error) {
 	return nil, ErrNotSupported
 }

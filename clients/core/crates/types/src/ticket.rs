@@ -85,8 +85,6 @@ pub struct TicketListResponse {
     pub offset: Option<i64>,
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LabelListResponse {
     pub labels: Vec<Label>,

@@ -7,9 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// CreateTicket creates a new ticket.
 func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*ticket.Ticket, error) {
-	// Determine ticket prefix from repository (cross-domain)
 	ticketPrefix := "TICKET"
 	if req.RepositoryID != nil {
 		prefix, err := s.repo.GetRepoTicketPrefix(ctx, *req.RepositoryID)
@@ -23,10 +21,6 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 		status = ticket.TicketStatusBacklog
 	}
 
-	// When Block Store is wired, rich content is persisted as a `document`
-	// block and the ticket row stores only the block id. Legacy fallback:
-	// if blockstore isn't configured, keep Content inline on the ticket
-	// row (allows staged rollout or minimal test setups).
 	var (
 		contentBlockID *uuid.UUID
 		inlineContent  *string
@@ -68,7 +62,6 @@ func (s *Service) CreateTicket(ctx context.Context, req *CreateTicketRequest) (*
 		return nil, err
 	}
 
-	// Get the created ticket with full details
 	createdTicket, err := s.GetTicket(ctx, t.ID)
 	if err != nil {
 		return nil, err

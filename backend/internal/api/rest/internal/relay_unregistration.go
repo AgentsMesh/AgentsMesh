@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Unregister handles graceful relay unregistration
-// POST /api/internal/relays/unregister
 func (h *RelayHandler) Unregister(c *gin.Context) {
 	var req UnregisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -16,7 +14,6 @@ func (h *RelayHandler) Unregister(c *gin.Context) {
 		return
 	}
 
-	// Get relay info before unregistering
 	relayInfo := h.relayManager.GetRelayByID(req.RelayID)
 	if relayInfo == nil {
 		// Relay not found, but that's OK for unregister (idempotent)
@@ -27,7 +24,6 @@ func (h *RelayHandler) Unregister(c *gin.Context) {
 		return
 	}
 
-	// Gracefully unregister
 	h.relayManager.GracefulUnregister(req.RelayID, req.Reason)
 
 	h.logger.Info("Relay gracefully unregistered",
@@ -40,8 +36,6 @@ func (h *RelayHandler) Unregister(c *gin.Context) {
 	})
 }
 
-// ForceUnregister removes a relay
-// DELETE /api/internal/relays/:relay_id
 func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 	relayID := c.Param("relay_id")
 	if relayID == "" {
@@ -57,7 +51,6 @@ func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 		return
 	}
 
-	// Force unregister
 	h.relayManager.ForceUnregister(relayID)
 
 	h.logger.Info("Relay force unregistered", "relay_id", relayID)

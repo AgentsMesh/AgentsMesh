@@ -11,9 +11,6 @@ interface PlansDialogProps {
   t: TranslationFn;
 }
 
-/**
- * PlansDialog - Modal dialog for selecting subscription plans
- */
 export function PlansDialog({
   plans,
   currentPlan,

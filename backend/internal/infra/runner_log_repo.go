@@ -9,18 +9,15 @@ import (
 	"gorm.io/gorm"
 )
 
-// Sentinel errors for runner log repository operations.
 var (
 	ErrRunnerLogNotFound = errors.New("runner log record not found")
 	ErrStaleStatus       = errors.New("record already in terminal status")
 )
 
-// Compile-time interface check.
 var _ runnerlog.Repository = (*runnerLogRepository)(nil)
 
 type runnerLogRepository struct{ db *gorm.DB }
 
-// NewRunnerLogRepository creates a new RunnerLog repository backed by GORM.
 func NewRunnerLogRepository(db *gorm.DB) runnerlog.Repository {
 	return &runnerLogRepository{db: db}
 }
@@ -44,11 +41,9 @@ func (r *runnerLogRepository) UpdateStatus(ctx context.Context, requestID string
 	updates := map[string]interface{}{
 		"status": status,
 	}
-	// Only update size_bytes when non-zero to avoid overwriting previous values
 	if sizeBytes > 0 {
 		updates["size_bytes"] = sizeBytes
 	}
-	// Only update error_message when non-empty
 	if errorMessage != "" {
 		updates["error_message"] = errorMessage
 	}
@@ -57,7 +52,6 @@ func (r *runnerLogRepository) UpdateStatus(ctx context.Context, requestID string
 		updates["completed_at"] = &now
 	}
 
-	// State machine: reject updates to already-terminal records
 	result := r.db.WithContext(ctx).Model(&runnerlog.RunnerLog{}).
 		Where("request_id = ? AND runner_id = ? AND status NOT IN ?", requestID, runnerID, []string{runnerlog.StatusCompleted, runnerlog.StatusFailed}).
 		Updates(updates)
@@ -66,7 +60,6 @@ func (r *runnerLogRepository) UpdateStatus(ctx context.Context, requestID string
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		// Distinguish between not-found and already-terminal
 		existing, err := r.GetByRequestID(ctx, requestID)
 		if err != nil {
 			return err

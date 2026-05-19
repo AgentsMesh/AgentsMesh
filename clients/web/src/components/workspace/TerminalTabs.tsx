@@ -35,7 +35,6 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
         className
       )}
     >
-      {/* Tabs */}
       <div className="flex-1 flex items-center overflow-x-auto scrollbar-none">
         {panes.map((pane) => (
           <div
@@ -66,7 +65,6 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
           </div>
         ))}
 
-        {/* Add new tab button */}
         {onAddNew && (
           <Button
             variant="ghost"
@@ -79,7 +77,6 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
         )}
       </div>
 
-      {/* Fullscreen toggle */}
       {onToggleFullscreen && (
         <div className="flex items-center gap-1 px-2 border-l border-terminal-border">
           <Button
@@ -101,7 +98,6 @@ export function TerminalTabs({ onAddNew, className, isFullscreen, onToggleFullsc
   );
 }
 
-/** Reactive connection status dot — subscribes via useTerminalStatus hook. */
 function ConnectionDot({ podKey }: { podKey: string }) {
   const { status } = useTerminalStatus(podKey);
 
@@ -117,7 +113,6 @@ function ConnectionDot({ podKey }: { podKey: string }) {
   return <Circle className={cn("w-2 h-2 flex-shrink-0", statusClass)} />;
 }
 
-/** Reads pod title via usePodTitle hook — single source of truth. */
 function TabPaneTitle({ podKey }: { podKey: string }) {
   const title = usePodTitle(podKey, `Pod ${getShortPodKey(podKey)}`);
   return <>{title}</>;

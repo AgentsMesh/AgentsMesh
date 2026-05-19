@@ -9,7 +9,6 @@ const TICKETS = {
 
 export function getDemoFrames(): DemoFrame[] {
   return [
-    // Phase 0: Board with backlog tickets
     {
       time: 0,
       tickets: [
@@ -21,7 +20,6 @@ export function getDemoFrames(): DemoFrame[] {
       terminals: [],
       showTerminals: false,
     },
-    // Phase 1: Auth "Execute" button clicked
     {
       time: 1500,
       tickets: [
@@ -33,7 +31,6 @@ export function getDemoFrames(): DemoFrame[] {
       terminals: [],
       showTerminals: false,
     },
-    // Phase 2: Auth moves to in_progress, terminal spawns
     {
       time: 2500,
       tickets: [
@@ -53,7 +50,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 3: Payment "Execute" button clicked
     {
       time: 4000,
       tickets: [
@@ -74,7 +70,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 4: Payment moves to in_progress, second terminal
     {
       time: 5000,
       tickets: [
@@ -103,7 +98,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 5: Both agents working
     {
       time: 7500,
       tickets: [
@@ -133,7 +127,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 6: Auth done, Tests "Execute" clicked
     {
       time: 9500,
       tickets: [
@@ -154,7 +147,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 7: Tests in_progress, new terminal
     {
       time: 10500,
       tickets: [
@@ -175,7 +167,6 @@ export function getDemoFrames(): DemoFrame[] {
       ],
       showTerminals: true,
     },
-    // Phase 8: All done
     {
       time: 13000,
       tickets: [

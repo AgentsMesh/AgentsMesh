@@ -17,9 +17,6 @@ import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 import { useRefs, useNestChildrenIndex, useBlocks } from "@/stores/blockstore";
 import { readBlockText } from "./readBlockText";
 
-// ListItemRenderer handles both bulleted and numbered items. Bullet is a
-// plain "•"; number is derived from the item's position among siblings of
-// the same type. Enter inserts another item of the same kind.
 export function ListItemRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);
@@ -65,17 +62,11 @@ export function ListItemRenderer({ block, depth }: { block: Block; depth: number
   );
 }
 
-// useListMarker derives the display marker for this item:
-//   - bullet:   always "•"
-//   - numbered: the 1-based index among sibling refs whose target is also a
-//               numbered_list_item. Gaps in numbering (e.g. a paragraph
-//               between two numbered items) restart counting per cluster.
 function useListMarker(blockID: string, numbered: boolean): string {
   const refs = useRefs();
   const nestChildren = useNestChildrenIndex();
   const blocks = useBlocks();
   if (!numbered) return "•";
-  // Find the parent of this block via its nest ref.
   const selfRef = Object.values(refs).find(
     (r) => r.rel === "nest" && r.to_id === blockID,
   );

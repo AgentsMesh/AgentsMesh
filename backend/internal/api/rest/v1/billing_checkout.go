@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateCheckoutRequest represents a checkout request
 type CreateCheckoutRequest struct {
 	OrderType    string `json:"order_type" binding:"required,oneof=subscription seat_purchase plan_upgrade renewal"`
 	PlanName     string `json:"plan_name"`     // Required for subscription/plan_upgrade
@@ -22,18 +21,15 @@ type CreateCheckoutRequest struct {
 	CancelURL    string `json:"cancel_url" binding:"required"`
 }
 
-// CreateCheckout creates a payment checkout session
 func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 	tenant := c.MustGet("tenant").(*middleware.TenantContext)
 
-	// Only owners can create checkouts
 	if tenant.UserRole != "owner" {
 		apierr.Forbidden(c, apierr.INSUFFICIENT_PERMISSIONS, "insufficient permissions")
 		return
 	}
 
 	var req CreateCheckoutRequest
-	// Check if request was passed from another handler (e.g., PurchaseSeats)
 	if passedReq, exists := c.Get("checkout_request"); exists {
 		req = passedReq.(CreateCheckoutRequest)
 	} else if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,19 +37,15 @@ func (h *BillingHandler) CreateCheckout(c *gin.Context) {
 		return
 	}
 
-	// Validate and calculate price
 	priceCalc, providerName, provider, err := h.validateAndCalculateCheckout(c, tenant, &req)
 	if err != nil {
-		return // Error already sent to client
+		return
 	}
 
-	// Build checkout request and create session
 	h.createCheckoutSession(c, tenant, &req, priceCalc, providerName, provider)
 }
 
-// validateAndCalculateCheckout validates the request and calculates the price
 func (h *BillingHandler) validateAndCalculateCheckout(c *gin.Context, tenant *middleware.TenantContext, req *CreateCheckoutRequest) (*billingService.PriceCalculation, string, interface{}, error) {
-	// Validate request based on order type
 	if (req.OrderType == billing.OrderTypeSubscription || req.OrderType == billing.OrderTypePlanUpgrade) && req.PlanName == "" {
 		apierr.BadRequest(c, apierr.MISSING_REQUIRED, "plan_name is required for subscription/plan_upgrade")
 		return nil, "", nil, fmt.Errorf("validation failed")
@@ -63,19 +55,16 @@ func (h *BillingHandler) validateAndCalculateCheckout(c *gin.Context, tenant *mi
 		return nil, "", nil, fmt.Errorf("validation failed")
 	}
 
-	// Default billing cycle
 	if req.BillingCycle == "" {
 		req.BillingCycle = billing.BillingCycleMonthly
 	}
 
-	// Get payment factory
 	factory := h.billingService.GetPaymentFactory()
 	if factory == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "payment service not configured")
 		return nil, "", nil, fmt.Errorf("no payment factory")
 	}
 
-	// Determine provider
 	var provider interface{}
 	var err error
 	var providerName string
@@ -97,7 +86,6 @@ func (h *BillingHandler) validateAndCalculateCheckout(c *gin.Context, tenant *mi
 		return nil, "", nil, err
 	}
 
-	// Calculate price
 	priceCalc, err := h.calculateCheckoutPrice(c, tenant, req)
 	if err != nil {
 		return nil, "", nil, err
@@ -106,7 +94,6 @@ func (h *BillingHandler) validateAndCalculateCheckout(c *gin.Context, tenant *mi
 	return priceCalc, providerName, provider, nil
 }
 
-// calculateCheckoutPrice calculates the price based on order type
 func (h *BillingHandler) calculateCheckoutPrice(c *gin.Context, tenant *middleware.TenantContext, req *CreateCheckoutRequest) (*billingService.PriceCalculation, error) {
 	ctx := c.Request.Context()
 
@@ -114,7 +101,7 @@ func (h *BillingHandler) calculateCheckoutPrice(c *gin.Context, tenant *middlewa
 	case billing.OrderTypeSubscription:
 		seats := req.Seats
 		if seats <= 0 {
-			seats = 1 // Default to 1 seat
+			seats = 1
 		}
 		priceCalc, err := h.billingService.CalculateSubscriptionPrice(ctx, req.PlanName, req.BillingCycle, seats)
 		if err != nil {

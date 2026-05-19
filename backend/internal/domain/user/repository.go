@@ -5,16 +5,12 @@ import (
 	"errors"
 )
 
-// Domain-level errors
 var (
 	ErrNotFound         = errors.New("user not found")
 	ErrIdentityNotFound = errors.New("identity not found")
 )
 
-// Repository defines the persistence interface for users, identities,
-// git credentials, and repository providers.
 type Repository interface {
-	// User CRUD
 	CreateUser(ctx context.Context, u *User) error
 	GetByID(ctx context.Context, id int64) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
@@ -26,11 +22,9 @@ type Repository interface {
 	DeleteUser(ctx context.Context, id int64) error
 	SearchUsers(ctx context.Context, query string, limit int) ([]*User, error)
 
-	// Auth token fields (verification, reset)
 	GetByVerificationToken(ctx context.Context, token string) (*User, error)
 	GetByResetToken(ctx context.Context, token string) (*User, error)
 
-	// Identity (OAuth)
 	GetIdentityByProviderUser(ctx context.Context, provider, providerUserID string) (*Identity, error)
 	GetIdentity(ctx context.Context, userID int64, provider string) (*Identity, error)
 	CreateIdentity(ctx context.Context, identity *Identity) error
@@ -38,7 +32,6 @@ type Repository interface {
 	ListIdentities(ctx context.Context, userID int64) ([]*Identity, error)
 	DeleteIdentity(ctx context.Context, userID int64, provider string) error
 
-	// Git Credentials
 	CreateGitCredential(ctx context.Context, credential *GitCredential) error
 	GetGitCredentialWithProvider(ctx context.Context, userID, credentialID int64) (*GitCredential, error)
 	ListGitCredentialsWithProvider(ctx context.Context, userID int64) ([]*GitCredential, error)
@@ -50,7 +43,6 @@ type Repository interface {
 	ClearAllDefaultGitCredentials(ctx context.Context, userID int64) error
 	GetDefaultGitCredential(ctx context.Context, userID int64) (*GitCredential, error)
 
-	// Repository Providers
 	CreateRepositoryProvider(ctx context.Context, provider *RepositoryProvider) error
 	GetRepositoryProvider(ctx context.Context, userID, providerID int64) (*RepositoryProvider, error)
 	GetRepositoryProviderWithIdentity(ctx context.Context, userID, providerID int64) (*RepositoryProvider, error)

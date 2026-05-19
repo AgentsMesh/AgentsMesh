@@ -9,9 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Commit Management Endpoints ==========
-
-// LinkCommitRequest represents commit link request
 type LinkCommitRequest struct {
 	CommitSHA     string `json:"commit_sha" binding:"required"`
 	CommitMessage string `json:"commit_message"`
@@ -20,8 +17,6 @@ type LinkCommitRequest struct {
 	AuthorEmail   string `json:"author_email"`
 }
 
-// ListCommits lists commits for a ticket
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug/commits
 func (h *TicketHandler) ListCommits(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -41,8 +36,6 @@ func (h *TicketHandler) ListCommits(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"commits": commits})
 }
 
-// LinkCommit links a commit to a ticket
-// POST /api/v1/organizations/:slug/tickets/:ticket_slug/commits
 func (h *TicketHandler) LinkCommit(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -97,8 +90,6 @@ func (h *TicketHandler) LinkCommit(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"commit": commit})
 }
 
-// UnlinkCommit unlinks a commit from a ticket
-// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/commits/:commit_id
 func (h *TicketHandler) UnlinkCommit(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	commitID, err := strconv.ParseInt(c.Param("commit_id"), 10, 64)

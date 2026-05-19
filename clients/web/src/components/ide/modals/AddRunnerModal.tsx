@@ -14,11 +14,6 @@ interface AddRunnerModalProps {
   onCreated?: () => void;
 }
 
-/**
- * AddRunnerModal - Modal for generating runner registration token
- *
- * Extracted from runners/page.tsx to be reusable across the application
- */
 export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps) {
   const t = useTranslations();
   const serverUrl = useServerUrl();
@@ -27,7 +22,6 @@ export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setGeneratedToken(null);
@@ -96,7 +90,6 @@ export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps
 
         {generatedToken ? (
           <div className="space-y-4">
-            {/* Warning */}
             <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
@@ -104,7 +97,6 @@ export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps
               </p>
             </div>
 
-            {/* Token display */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 {t("runners.addRunnerModal.tokenLabel")}
@@ -128,7 +120,6 @@ export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps
               </div>
             </div>
 
-            {/* Install CLI section */}
             <div>
               <label className="block text-sm font-medium mb-1">
                 {t("runners.addRunnerModal.installTitle")}
@@ -152,7 +143,6 @@ export function AddRunnerModal({ open, onClose, onCreated }: AddRunnerModalProps
               </div>
             </div>
 
-            {/* Register & Run */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 {t("runners.addRunnerModal.usageTitle")}
@@ -173,7 +163,6 @@ agentsmesh-runner run`}
               </div>
             </div>
 
-            {/* Run as Background Service */}
             <div>
               <label className="block text-sm font-medium mb-1">
                 {t("runners.addRunnerModal.serviceTitle")}

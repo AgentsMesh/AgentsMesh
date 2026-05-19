@@ -1,7 +1,3 @@
-/**
- * Utilities for generating AgentFile Layer source from form fields.
- * An AgentFile Layer is a DSL fragment that configures a Pod's environment.
- */
 
 import { POD_MODE_PTY } from "@/lib/pod-modes";
 
@@ -28,10 +24,6 @@ function formatAgentfileValue(value: unknown): string {
   return `"${escapeAgentfileString(String(value))}"`;
 }
 
-/**
- * Build an AgentFile Layer source string from structured form parameters.
- * Each non-empty field is emitted as an AgentFile declaration line.
- */
 export function buildAgentfileLayer(params: {
   configValues: Record<string, unknown>;
   repositorySlug?: string;
@@ -42,29 +34,24 @@ export function buildAgentfileLayer(params: {
 }): string {
   const lines: string[] = [];
 
-  // MODE declaration (if not default PTY)
   if (params.interactionMode && params.interactionMode !== POD_MODE_PTY) {
     lines.push(`MODE ${params.interactionMode}`);
   }
 
-  // CREDENTIAL declaration (profile name; omit for runner_host default)
   if (params.credentialProfileName) {
     lines.push(`CREDENTIAL "${escapeAgentfileString(params.credentialProfileName)}"`);
   }
 
-  // PROMPT declaration (prompt content)
   if (params.prompt) {
     lines.push(`PROMPT "${escapeAgentfileString(params.prompt)}"`);
   }
 
-  // CONFIG declarations
   for (const [key, value] of Object.entries(params.configValues)) {
     if (value !== undefined && value !== null && value !== "") {
       lines.push(`CONFIG ${key} = ${formatAgentfileValue(value)}`);
     }
   }
 
-  // Repository slug / branch
   if (params.repositorySlug) {
     lines.push(`REPO "${params.repositorySlug}"`);
   }

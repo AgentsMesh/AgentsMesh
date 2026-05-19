@@ -12,12 +12,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RegisterUserRoutes registers user routes
 func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *organization.Service, agentSvc *agent.AgentService, credentialSvc *agent.CredentialProfileService, userConfigSvc *agent.UserConfigService, agentpodSettingsSvc *agentpod.SettingsService, agentpodAIProviderSvc *agentpod.AIProviderService) {
 	userHandler := NewUserHandler(userSvc, orgSvc)
 	agentHandler := NewAgentHandler(agentSvc, credentialSvc, userConfigSvc)
 
-	// Profile routes
 	rg.GET("/me", userHandler.GetCurrentUser)
 	rg.PUT("/me", userHandler.UpdateCurrentUser)
 	rg.POST("/me/password", userHandler.ChangePassword)
@@ -25,22 +23,18 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 	rg.GET("/me/identities", userHandler.ListIdentities)
 	rg.DELETE("/me/identities/:provider", userHandler.DeleteIdentity)
 
-	// User agent configs (personal runtime configuration)
 	rg.GET("/me/agent-configs", agentHandler.ListUserAgentConfigs)
 	rg.GET("/me/agent-configs/:slug", agentHandler.GetUserAgentConfig)
 	rg.PUT("/me/agent-configs/:slug", agentHandler.SetUserAgentConfig)
 	rg.DELETE("/me/agent-configs/:slug", agentHandler.DeleteUserAgentConfig)
 
-	// AgentPod settings routes
 	if agentpodSettingsSvc != nil && agentpodAIProviderSvc != nil {
 		agentpodHandler := NewAgentPodHandler(agentpodSettingsSvc, agentpodAIProviderSvc)
 		agentpodGroup := rg.Group("/me/agentpod")
 		{
-			// Settings
 			agentpodGroup.GET("/settings", agentpodHandler.GetSettings)
 			agentpodGroup.PUT("/settings", agentpodHandler.UpdateSettings)
 
-			// AI Providers
 			providers := agentpodGroup.Group("/providers")
 			{
 				providers.GET("", agentpodHandler.ListProviders)
@@ -52,29 +46,21 @@ func RegisterUserRoutes(rg *gin.RouterGroup, userSvc *user.Service, orgSvc *orga
 		}
 	}
 
-	// User Repository Providers (for importing repositories)
 	repositoryProviderHandler := NewUserRepositoryProviderHandler(userSvc)
 	repositoryProviderHandler.RegisterRoutes(rg)
 
-	// User Git Credentials (for Git operations)
 	gitCredentialHandler := NewUserGitCredentialHandler(userSvc)
 	gitCredentialHandler.RegisterRoutes(rg)
 
-	// User Agent Credential Profiles (for agent API credentials)
 	agentCredentialHandler := NewUserAgentCredentialHandler(credentialSvc)
 	agentCredentialHandler.RegisterRoutes(rg)
 
-	// User search
 	rg.GET("/search", userHandler.SearchUsers)
 }
 
-// RegisterOrganizationRoutes registers organization routes.
-// redisClient may be nil; when set, applies a per-user rate limit on
-// /personal to prevent onboarding spam.
 func RegisterOrganizationRoutes(rg *gin.RouterGroup, orgSvc *organization.Service, userSvc *user.Service, redisClient *redis.Client) {
 	handler := NewOrganizationHandler(orgSvc, userSvc)
 
-	// Organization CRUD
 	rg.GET("", handler.ListOrganizations)
 	rg.POST("", handler.CreateOrganization)
 	rg.POST("/personal",
@@ -84,7 +70,6 @@ func RegisterOrganizationRoutes(rg *gin.RouterGroup, orgSvc *organization.Servic
 	rg.PUT("/:slug", handler.UpdateOrganization)
 	rg.DELETE("/:slug", handler.DeleteOrganization)
 
-	// Member management
 	rg.GET("/:slug/members", handler.ListMembers)
 	rg.POST("/:slug/members", handler.InviteMember)
 	rg.PUT("/:slug/members/:user_id", handler.UpdateMemberRole)

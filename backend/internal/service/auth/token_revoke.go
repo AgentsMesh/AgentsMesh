@@ -7,14 +7,12 @@ import (
 	"time"
 )
 
-// revokeRefreshToken removes a refresh token from Redis
 func (s *Service) revokeRefreshToken(ctx context.Context, refreshToken string) error {
 	tokenHash := hashToken(refreshToken)
 	key := refreshTokenPrefix + tokenHash
 	return s.redis.Del(ctx, key).Err()
 }
 
-// RevokeToken revokes an access token by adding it to the blacklist
 func (s *Service) RevokeToken(ctx context.Context, token string) error {
 	if s.redis == nil {
 		return nil
@@ -40,7 +38,6 @@ func (s *Service) RevokeToken(ctx context.Context, token string) error {
 	return s.redis.Set(ctx, key, "1", ttl).Err()
 }
 
-// RevokeAllUserTokens revokes all tokens for a user
 func (s *Service) RevokeAllUserTokens(ctx context.Context, userID int64) error {
 	if s.redis == nil {
 		return nil

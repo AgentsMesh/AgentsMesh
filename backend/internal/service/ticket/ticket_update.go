@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// UpdateTicket updates a ticket.
 func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[string]interface{}) (*domainTicket.Ticket, error) {
 	oldTicket, err := s.GetTicket(ctx, ticketID)
 	if err != nil {
@@ -18,16 +17,9 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[
 	}
 	previousStatus := oldTicket.Status
 
-	// Intercept any content update so it flows through Block Store rather
-	// than the legacy tickets.content column. The handler still accepts a
-	// content string (REST shape unchanged), but we route it to
-	// createBlock/updateBlock and replace the field in `updates` with
-	// content_block_id before hitting the ticket repo.
 	if rawContent, has := updates["content"]; has && s.blockstore != nil {
 		contentStr, ok := rawContent.(string)
 		if !ok && rawContent != nil {
-			// non-string content from a caller — surface clearly rather than
-			// silently dropping the update.
 			return nil, fmt.Errorf("content must be a string, got %T", rawContent)
 		}
 		delete(updates, "content")
@@ -36,8 +28,6 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[
 			return nil, err
 		}
 		updates["content_block_id"] = blockID
-		// Clear the legacy column so a stale inline copy doesn't shadow the
-		// block-backed value during the transition period.
 		updates["content"] = nil
 	}
 
@@ -63,12 +53,6 @@ func (s *Service) UpdateTicket(ctx context.Context, ticketID int64, updates map[
 	return updatedTicket, nil
 }
 
-// syncContentBlockForUpdate keeps the ticket's content block in sync with
-// the incoming string: creates a new document block if none exists, updates
-// the existing one if the ticket already has a backing block, or deletes
-// the old block and clears the pointer when content goes empty. Returns
-// the block id to stamp on the ticket row, or *uuid.Nil-typed nil when
-// there's no block.
 func (s *Service) syncContentBlockForUpdate(
 	ctx context.Context,
 	oldTicket *domainTicket.Ticket,
@@ -76,7 +60,6 @@ func (s *Service) syncContentBlockForUpdate(
 ) (*uuid.UUID, error) {
 	if oldTicket.ContentBlockID != nil {
 		if !hasRichContent(newContent) {
-			// Content cleared — drop the block and null out the pointer.
 			if err := s.deleteContentBlock(ctx, oldTicket.OrganizationID, oldTicket.ReporterID, *oldTicket.ContentBlockID); err != nil {
 				slog.WarnContext(ctx, "ticket content block delete failed", "block_id", *oldTicket.ContentBlockID, "err", err)
 			}
@@ -87,7 +70,6 @@ func (s *Service) syncContentBlockForUpdate(
 		}
 		return oldTicket.ContentBlockID, nil
 	}
-	// No existing block. Create one only if the payload is non-empty.
 	if !hasRichContent(newContent) {
 		return nil, nil
 	}
@@ -101,7 +83,6 @@ func (s *Service) syncContentBlockForUpdate(
 	return &id, nil
 }
 
-// UpdateStatus updates a ticket's status.
 func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status string) error {
 	oldTicket, err := s.GetTicket(ctx, ticketID)
 	if err != nil {
@@ -128,7 +109,6 @@ func (s *Service) UpdateStatus(ctx context.Context, ticketID int64, status strin
 	return nil
 }
 
-// DeleteTicket deletes a ticket and its associated comments within a transaction.
 func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 	oldTicket, err := s.GetTicket(ctx, ticketID)
 	if err != nil {
@@ -140,10 +120,8 @@ func (s *Service) DeleteTicket(ctx context.Context, ticketID int64) error {
 		return err
 	}
 
-	// Cascade the content block (no DB FK — this is the hand-rolled
-	// equivalent). Logged-not-returned because leaving a content block
-	// behind is recoverable (later GC / admin tool) whereas refusing the
-	// ticket delete after the ticket row is already gone would be worse.
+	// Hand-rolled block cascade (no DB FK). Logged-not-returned: orphan block is recoverable
+	// by GC/admin; refusing ticket delete after the row is gone would be worse.
 	if oldTicket.ContentBlockID != nil {
 		if err := s.deleteContentBlock(ctx, oldTicket.OrganizationID, oldTicket.ReporterID, *oldTicket.ContentBlockID); err != nil {
 			slog.WarnContext(ctx, "ticket content block cascade delete failed",

@@ -8,7 +8,6 @@ interface PWAProviderProps {
   children: React.ReactNode;
 }
 
-// Detect client-side mount using useSyncExternalStore
 function subscribe() {
   return () => {};
 }

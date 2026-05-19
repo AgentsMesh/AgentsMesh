@@ -10,7 +10,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// JWTClaims represents the JWT claims
 type JWTClaims struct {
 	UserID   int64  `json:"user_id"`
 	Email    string `json:"email"`
@@ -18,25 +17,20 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// Claims is an alias for JWTClaims for convenience
 type Claims = JWTClaims
 
-// AuthMiddleware validates JWT tokens
 func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 
-		// Get token from Authorization header first
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
-			// Check Bearer prefix
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) == 2 && parts[0] == "Bearer" {
 				tokenString = parts[1]
 			}
 		}
 
-		// If no token in header, check query parameter (for WebSocket connections)
 		if tokenString == "" {
 			tokenString = c.Query("token")
 		}
@@ -46,7 +40,6 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		// Parse and validate token
 		claims := &JWTClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -60,7 +53,6 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		// Set user info in context
 		c.Set("user_id", claims.UserID)
 		c.Set("email", claims.Email)
 		c.Set("username", claims.Username)
@@ -70,7 +62,6 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	}
 }
 
-// GenerateToken generates a new JWT token for a user
 func GenerateToken(userID int64, email, username, jwtSecret string, expirationHours int) (string, error) {
 	claims := JWTClaims{
 		UserID:   userID,
@@ -87,7 +78,6 @@ func GenerateToken(userID int64, email, username, jwtSecret string, expirationHo
 	return token.SignedString([]byte(jwtSecret))
 }
 
-// OptionalAuthMiddleware validates JWT tokens but doesn't require them
 func OptionalAuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")

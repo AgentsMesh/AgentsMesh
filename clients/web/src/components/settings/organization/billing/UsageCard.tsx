@@ -8,9 +8,6 @@ interface UsageCardProps {
   t: TranslationFn;
 }
 
-/**
- * UsageCard - Displays current resource usage with progress bars
- */
 export function UsageCard({
   usage,
   getUsagePercent,

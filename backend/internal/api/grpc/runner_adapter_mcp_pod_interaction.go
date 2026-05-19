@@ -7,17 +7,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
-// PodRouterForMCP defines the interface for pod router operations needed by MCP handlers.
 type PodRouterForMCP interface {
 	RoutePodInput(podKey string, data []byte) error
 	RoutePrompt(podKey string, prompt string) error
 	ObservePod(ctx context.Context, podKey string, lines int32, includeScreen bool) (*runner.ObservePodResult, error)
 }
 
-// ==================== Pod interaction MCP Methods ====================
-
-// mcpGetPodSnapshot handles the "get_pod_snapshot" MCP method.
-// Proxies the request to the Runner via gRPC and waits for the result.
 func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		PodKey        string `json:"pod_key"`
@@ -32,7 +27,6 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 		return nil, newMcpError(400, "pod_key is required")
 	}
 
-	// Verify pod belongs to the organization
 	pod, err := a.podService.GetPodByKey(ctx, params.PodKey)
 	if err != nil {
 		return nil, newMcpError(404, "pod not found")
@@ -41,7 +35,6 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 		return nil, newMcpError(403, "access denied")
 	}
 
-	// Look up pod router
 	if a.podRouter == nil {
 		return nil, newMcpError(503, "pod router not available")
 	}
@@ -54,7 +47,6 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 		lines = 100
 	}
 
-	// Proxy the request to the runner and wait for the result
 	result, err := a.podRouter.ObservePod(ctx, params.PodKey, lines, params.IncludeScreen)
 	if err != nil {
 		return nil, newMcpErrorf(500, "failed to get pod snapshot: %v", err)
@@ -80,8 +72,6 @@ func (a *GRPCRunnerAdapter) mcpGetPodSnapshot(ctx context.Context, tc *middlewar
 	return response, nil
 }
 
-// mcpSendPodInput handles the "send_pod_input" MCP method.
-// Accepts text and/or keys; sends text first, then loops through keys.
 func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		PodKey string   `json:"pod_key"`
@@ -99,7 +89,6 @@ func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.
 		return nil, newMcpError(400, "at least one of text or keys is required")
 	}
 
-	// Verify pod belongs to the organization
 	pod, err := a.podService.GetPodByKey(ctx, params.PodKey)
 	if err != nil {
 		return nil, newMcpError(404, "pod not found")
@@ -112,16 +101,12 @@ func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.
 		return nil, newMcpError(503, "pod router not available")
 	}
 
-	// Send text via RoutePodInput (raw write, no auto-submit). RoutePrompt
-	// now submits on PTY too — use it only when the caller intends submission.
-	// MCP exposes Enter as an explicit `keys: ["enter"]` opt-in.
 	if params.Text != "" {
 		if err := a.podRouter.RoutePodInput(params.PodKey, []byte(params.Text)); err != nil {
 			return nil, newMcpErrorf(500, "failed to send pod input text: %v", err)
 		}
 	}
 
-	// Send keys via RoutePodInput (PTY-specific: terminal escape sequences).
 	for _, key := range params.Keys {
 		input := convertKeyToInput(key)
 		if err := a.podRouter.RoutePodInput(params.PodKey, []byte(input)); err != nil {
@@ -132,7 +117,6 @@ func (a *GRPCRunnerAdapter) mcpSendPodInput(ctx context.Context, tc *middleware.
 	return map[string]interface{}{"message": "input sent"}, nil
 }
 
-// convertKeyToInput converts a key name to its terminal escape sequence.
 func convertKeyToInput(key string) string {
 	switch key {
 	case "enter", "Enter":

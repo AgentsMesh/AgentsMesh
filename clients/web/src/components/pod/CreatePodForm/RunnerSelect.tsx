@@ -10,10 +10,6 @@ interface RunnerSelectProps {
   t: (key: string) => string;
 }
 
-/**
- * Runner selection dropdown component
- * Default option is auto-select (backend picks the best available runner)
- */
 export function RunnerSelect({
   runners,
   selectedRunnerId,

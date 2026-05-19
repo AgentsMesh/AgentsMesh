@@ -17,17 +17,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// domainRegexp validates email domain format in URL path parameters.
 var domainRegexp = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$`)
 
-// SSOAuthHandler handles SSO authentication requests
 type SSOAuthHandler struct {
 	ssoService  *ssoservice.Service
 	authService *auth.Service
 	config      *config.Config
 }
 
-// NewSSOAuthHandler creates a new SSO auth handler
 func NewSSOAuthHandler(ssoSvc *ssoservice.Service, authSvc *auth.Service, cfg *config.Config) *SSOAuthHandler {
 	return &SSOAuthHandler{
 		ssoService:  ssoSvc,
@@ -36,7 +33,6 @@ func NewSSOAuthHandler(ssoSvc *ssoservice.Service, authSvc *auth.Service, cfg *c
 	}
 }
 
-// RegisterRoutes registers SSO authentication routes
 func (h *SSOAuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/discover", h.Discover)
 	rg.GET("/:domain/oidc", h.OIDCRedirect)
@@ -47,7 +43,6 @@ func (h *SSOAuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.GET("/:domain/saml/metadata", h.SAMLMetadata)
 }
 
-// Discover returns available SSO configurations for a given email domain
 func (h *SSOAuthHandler) Discover(c *gin.Context) {
 	email := c.Query("email")
 	if email == "" {
@@ -68,7 +63,6 @@ func (h *SSOAuthHandler) Discover(c *gin.Context) {
 		return
 	}
 
-	// Return sanitized list
 	result := make([]*ssoservice.DiscoverResponse, 0, len(configs))
 	for _, cfg := range configs {
 		result = append(result, h.ssoService.ToDiscoverResponse(cfg))
@@ -77,8 +71,6 @@ func (h *SSOAuthHandler) Discover(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"configs": result})
 }
 
-// authenticateSSO creates/gets the user from SSO identity, checks if active, and generates tokens.
-// It does NOT write HTTP responses — callers decide how to handle errors (JSON vs redirect).
 func (h *SSOAuthHandler) authenticateSSO(c *gin.Context, protocol sso.Protocol, configID int64, userInfo *ssoprovider.UserInfo) (*userDomain.User, *auth.TokenPair, error) {
 	providerName := ssoservice.SSOProviderName(protocol, configID)
 	u, tokens, err := h.authService.SSOLogin(c.Request.Context(), &auth.SSOLoginRequest{
@@ -96,8 +88,6 @@ func (h *SSOAuthHandler) authenticateSSO(c *gin.Context, protocol sso.Protocol, 
 	return u, tokens, nil
 }
 
-// redirectWithError redirects to the frontend with an error code as a query parameter.
-// Used for browser-based flows (OIDC/SAML) where returning JSON would not be useful.
 func (h *SSOAuthHandler) redirectWithError(c *gin.Context, redirectTo, errorCode string) {
 	if !h.isAllowedRedirect(redirectTo) {
 		redirectTo = h.config.FrontendURL() + "/auth/sso/callback"
@@ -115,10 +105,7 @@ func (h *SSOAuthHandler) redirectWithError(c *gin.Context, redirectTo, errorCode
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL.String())
 }
 
-// redirectWithTokens redirects to the frontend with tokens as query parameters.
-// Validates the redirect URL as a defense-in-depth measure.
 func (h *SSOAuthHandler) redirectWithTokens(c *gin.Context, redirectTo string, tokens *auth.TokenPair) {
-	// Defense-in-depth: re-validate redirect URL before sending tokens
 	if !h.isAllowedRedirect(redirectTo) {
 		redirectTo = h.config.FrontendURL() + "/auth/sso/callback"
 	}
@@ -136,9 +123,6 @@ func (h *SSOAuthHandler) redirectWithTokens(c *gin.Context, redirectTo string, t
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL.String())
 }
 
-// isAllowedRedirect validates that a redirect URL is safe.
-// It checks both hostname and port against FrontendURL to prevent
-// open-redirect attacks to attacker-controlled ports on the same host.
 func (h *SSOAuthHandler) isAllowedRedirect(redirectTo string) bool {
 	if strings.HasPrefix(redirectTo, "/") && !strings.HasPrefix(redirectTo, "//") {
 		return true
@@ -147,7 +131,6 @@ func (h *SSOAuthHandler) isAllowedRedirect(redirectTo string) bool {
 	if err != nil {
 		return false
 	}
-	// Only allow http/https schemes to prevent javascript: and other dangerous protocols
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		return false
 	}
@@ -159,8 +142,6 @@ func (h *SSOAuthHandler) isAllowedRedirect(redirectTo string) bool {
 		normalizePort(parsed) == normalizePort(allowed)
 }
 
-// normalizePort returns the explicit port or the default port for the scheme,
-// ensuring that "https://example.com" and "https://example.com:443" are treated equally.
 func normalizePort(u *url.URL) string {
 	if p := u.Port(); p != "" {
 		return p
@@ -171,7 +152,6 @@ func normalizePort(u *url.URL) string {
 	return "80"
 }
 
-// validateDomain checks the domain path parameter format and returns it lowercased, or writes an error response.
 func validateDomain(c *gin.Context) (string, bool) {
 	domain := strings.ToLower(strings.TrimSpace(c.Param("domain")))
 	if domain == "" {
@@ -185,7 +165,6 @@ func validateDomain(c *gin.Context) (string, bool) {
 	return domain, true
 }
 
-// extractEmailDomain extracts the domain part from an email address
 func extractEmailDomain(email string) string {
 	parts := strings.SplitN(email, "@", 2)
 	if len(parts) != 2 {

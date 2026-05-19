@@ -22,10 +22,6 @@ interface RenameDialogProps {
 
 const ALIAS_MAX_LENGTH = 100;
 
-/**
- * Inner form content — mounted fresh each time the dialog opens,
- * so local state is automatically reset to `currentName`.
- */
 function RenameForm({
   currentName,
   onConfirm,

@@ -1,4 +1,3 @@
-// Billing types
 
 export interface SubscriptionPlan {
   id: number;
@@ -18,7 +17,6 @@ export interface SubscriptionPlan {
   stripe_price_id_yearly?: string;
 }
 
-// Multi-currency price for a plan
 export interface PlanPrice {
   id: number;
   plan_id: number;
@@ -30,13 +28,11 @@ export interface PlanPrice {
   plan?: SubscriptionPlan;
 }
 
-// Plan with price in specific currency
 export interface PlanWithPrice {
   plan: SubscriptionPlan;
   price: PlanPrice;
 }
 
-// Currency type
 export type Currency = "USD" | "CNY";
 
 export interface UsageOverview {
@@ -85,7 +81,6 @@ export interface Subscription {
   next_billing_cycle?: string;
 }
 
-// Checkout types
 export type OrderType = "subscription" | "seat_purchase" | "plan_upgrade" | "renewal";
 export type BillingCycle = "monthly" | "yearly";
 export type PaymentProvider = "stripe" | "lemonsqueezy" | "alipay" | "wechat";
@@ -119,7 +114,6 @@ export interface CheckoutStatus {
   paid_at?: string;
 }
 
-// Seat types
 export interface SeatUsage {
   total_seats: number;
   used_seats: number;
@@ -128,7 +122,6 @@ export interface SeatUsage {
   can_add_seats: boolean;
 }
 
-// Invoice types
 export interface Invoice {
   id: number;
   organization_id: number;
@@ -145,13 +138,11 @@ export interface Invoice {
   created_at: string;
 }
 
-// Deployment info
 export interface DeploymentInfo {
   deployment_type: "global" | "cn" | "onpremise";
   available_providers: string[];
 }
 
-// Public pricing info (no auth required)
 export interface PublicPlanPricing {
   name: string;
   display_name: string;

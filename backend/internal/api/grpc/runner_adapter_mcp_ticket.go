@@ -12,9 +12,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/blocknote"
 )
 
-// mcpTicketResponse wraps ticket.Ticket to add resolved slug fields and content pagination
-// metadata for MCP responses. The runner expects parent_ticket_slug (string) instead of
-// parent_ticket_id (int64).
 type mcpTicketResponse struct {
 	*ticketDomain.Ticket
 	ParentTicketSlug  string `json:"parent_ticket_slug,omitempty"`
@@ -23,19 +20,12 @@ type mcpTicketResponse struct {
 	ContentLimit      int    `json:"content_limit,omitempty"`       // Number of lines returned
 }
 
-// contentPaginationParams holds parsed content pagination parameters.
 type contentPaginationParams struct {
 	Offset int
 	Limit  int
 }
 
-// enrichTicketForMCP resolves the parent ticket's numeric ID to its slug and
-// converts BlockNote JSON content to readable plain text with line-range pagination.
 func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64, t *ticketDomain.Ticket, pagination *contentPaginationParams) *mcpTicketResponse {
-	// Shallow copy ticket to avoid mutating the domain object.
-	// NOTE: ticketCopy.Content still shares the same *string pointer with t.Content.
-	// Always reassign the pointer (ticketCopy.Content = &newVal) instead of
-	// dereference-modifying (*ticketCopy.Content = "...") to keep the original safe.
 	ticketCopy := *t
 	resp := &mcpTicketResponse{Ticket: &ticketCopy}
 
@@ -46,15 +36,6 @@ func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64,
 		}
 	}
 
-	// Resolve plain text. Preference order matches cost:
-	//   1. Inline t.Content — hydrated by GetTicket for block-backed tickets,
-	//      or the legacy inline value for pre-migration rows. Either way we
-	//      can flatten in memory with no extra DB hit.
-	//   2. Block Store fallback — ListTickets (used by search_tickets) skips
-	//      hydration to avoid N+1, so block-backed tickets arrive with
-	//      Content=nil and ContentBlockID set; pull block.Text directly.
-	//      Still O(N) block reads across a search result, but one per ticket
-	//      (not two), and only for block-backed rows.
 	plainText := ""
 	switch {
 	case ticketCopy.Content != nil && *ticketCopy.Content != "":
@@ -81,7 +62,6 @@ func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64,
 			limit = pagination.Limit
 		}
 
-		// Clamp offset
 		if offset < 0 {
 			offset = 0
 		}
@@ -89,7 +69,6 @@ func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64,
 			offset = totalLines
 		}
 
-		// Clamp end
 		end := offset + limit
 		if end > totalLines {
 			end = totalLines
@@ -107,9 +86,6 @@ func (a *GRPCRunnerAdapter) enrichTicketForMCP(ctx context.Context, orgID int64,
 	return resp
 }
 
-// ==================== Ticket MCP Methods ====================
-
-// mcpSearchTickets handles the "search_tickets" MCP method.
 func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		RepositoryID      *int64  `json:"repository_id"`
@@ -135,7 +111,6 @@ func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware
 		offset = (params.Page - 1) * limit
 	}
 
-	// Resolve parent ticket slug to ID
 	var parentTicketID *int64
 	if params.ParentTicketSlug != nil && *params.ParentTicketSlug != "" {
 		parentTicket, err := a.ticketService.GetTicketByIDOrSlug(ctx, tc.OrganizationID, *params.ParentTicketSlug)
@@ -168,8 +143,6 @@ func (a *GRPCRunnerAdapter) mcpSearchTickets(ctx context.Context, tc *middleware
 	return map[string]interface{}{"tickets": enriched}, nil
 }
 
-// mcpGetTicket handles the "get_ticket" MCP method.
-// Supports content_offset and content_limit for paginated reading of ticket content.
 func (a *GRPCRunnerAdapter) mcpGetTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
 	var params struct {
 		TicketSlug    string `json:"ticket_slug"`
@@ -189,7 +162,6 @@ func (a *GRPCRunnerAdapter) mcpGetTicket(ctx context.Context, tc *middleware.Ten
 		return nil, newMcpError(404, "ticket not found")
 	}
 
-	// Build pagination params
 	pagination := &contentPaginationParams{Offset: 0, Limit: 200}
 	if params.ContentOffset != nil {
 		pagination.Offset = *params.ContentOffset
@@ -200,5 +172,3 @@ func (a *GRPCRunnerAdapter) mcpGetTicket(ctx context.Context, tc *middleware.Ten
 
 	return map[string]interface{}{"ticket": a.enrichTicketForMCP(ctx, tc.OrganizationID, t, pagination)}, nil
 }
-
-// Write operations (mcpCreateTicket, mcpUpdateTicket, mcpPostComment) are in runner_adapter_mcp_ticket_write.go

@@ -7,13 +7,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// EventBusPublisher implements EventPublisher using EventBus
 type EventBusPublisher struct {
 	eventBus *eventbus.EventBus
 	logger   *slog.Logger
 }
 
-// NewEventBusPublisher creates a new EventBusPublisher
 func NewEventBusPublisher(eventBus *eventbus.EventBus, logger *slog.Logger) *EventBusPublisher {
 	if logger == nil {
 		logger = slog.Default()
@@ -24,13 +22,11 @@ func NewEventBusPublisher(eventBus *eventbus.EventBus, logger *slog.Logger) *Eve
 	}
 }
 
-// PublishTicketEvent publishes a ticket event
 func (p *EventBusPublisher) PublishTicketEvent(ctx context.Context, eventType TicketEventType, orgID int64, slug, status, previousStatus string) {
 	if p.eventBus == nil {
 		return
 	}
 
-	// Map TicketEventType to eventbus.EventType (compile-time type safety)
 	var et eventbus.EventType
 	switch eventType {
 	case TicketEventCreated:

@@ -52,10 +52,6 @@ pub struct WasmAuthManager {
 }
 
 impl WasmAuthManager {
-    /// SSOT bridge: ApiClient consumes the same token store that AuthManager
-    /// owns, so token writes (login / refresh / bootstrap) propagate to API
-    /// calls without TS-side `set_token()` synchronization. AuthManager is
-    /// `AuthTokenStore + Send + Sync`, the unsized coercion is automatic.
     pub(crate) fn token_store_arc(&self) -> Arc<dyn AuthTokenStore> {
         self.manager.clone()
     }
@@ -97,9 +93,6 @@ impl WasmAuthManager {
         serde_json::to_string(&tokens).map_err(agentsmesh_services::wire)
     }
 
-    /// Hydrate auth from storage and verify token freshness end-to-end.
-    /// Returns BootstrapResult JSON: `{kind: "anonymous" | "authenticated" |
-    /// "anonymous_after_cleanup", ...}`. Caller must drive UI off of this.
     pub async fn bootstrap(&self) -> Result<String, String> {
         let result = self.manager.bootstrap().await;
         serde_json::to_string(&result).map_err(agentsmesh_services::wire)
@@ -134,8 +127,6 @@ impl WasmAuthManager {
         serde_json::to_string(&self.manager.get_organizations()).unwrap_or_default()
     }
 
-    /// Apply an already-obtained AuthSession (SSO / register callback path).
-    /// Writes token + refresh_token + user into Rust AuthState and persists.
     pub fn apply_session(&self, session_json: &str) -> Result<(), String> {
         let session: agentsmesh_types::AuthSession = serde_json::from_str(session_json)
             .map_err(agentsmesh_services::wire)?;
@@ -143,8 +134,6 @@ impl WasmAuthManager {
         Ok(())
     }
 
-    /// Replace the organizations list (e.g. after a refetch outside fetch_organizations).
-    /// Also promotes the first org to current_org if none is set.
     pub fn set_organizations(&self, orgs_json: &str) -> Result<(), String> {
         let orgs: Vec<agentsmesh_types::Organization> = serde_json::from_str(orgs_json)
             .map_err(agentsmesh_services::wire)?;
@@ -152,7 +141,6 @@ impl WasmAuthManager {
         Ok(())
     }
 
-    /// Set or clear current organization. Empty json string clears it.
     pub fn set_current_org(&self, org_json: &str) -> Result<(), String> {
         if org_json.is_empty() {
             self.manager.set_current_org(None);
@@ -164,7 +152,6 @@ impl WasmAuthManager {
         Ok(())
     }
 
-    /// Clear all session data (logout without API call). Useful for test reset.
     pub fn clear_session(&self) {
         self.manager.clear();
     }

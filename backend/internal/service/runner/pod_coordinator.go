@@ -12,23 +12,18 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// Terminate command backoff constants
 const (
 	terminateCooldown     = 5 * time.Minute
 	terminateCacheCleanup = 30 * time.Minute
 
-	// orphanMissThreshold: consecutive heartbeat misses before marking pod orphaned.
-	// At ~30s per heartbeat cycle, 3 misses ~ 90s.
+	// orphanMissThreshold: 3 misses × 30s heartbeat ≈ 90s before marking pod orphaned.
 	orphanMissThreshold = 3
 
-	// initRecoverThreshold: consecutive heartbeat reports of "initializing" pod
-	// before recovering to "running".
 	initRecoverThreshold = 2
 
 	ErrCodeRunnerDisconnected = "RUNNER_DISCONNECTED"
 )
 
-// PodCoordinator coordinates pod lifecycle events between backend and runners.
 type PodCoordinator struct {
 	podStore          PodStore
 	runnerRepo        runnerDomain.RunnerRepository
@@ -137,7 +132,6 @@ func (pc *PodCoordinator) DecrementPods(ctx context.Context, runnerID int64) err
 	return pc.runnerRepo.DecrementPods(ctx, runnerID)
 }
 
-// CreatePod creates a new pod on a runner (uses Proto type directly for zero-copy).
 func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *runnerv1.CreatePodCommand) error {
 	if err := pc.IncrementPods(ctx, runnerID); err != nil {
 		return err
@@ -151,12 +145,9 @@ func (pc *PodCoordinator) CreatePod(ctx context.Context, runnerID int64, cmd *ru
 	return nil
 }
 
-// ErrPodAlreadyTerminated is returned when TerminatePod is called on a non-active pod.
 var ErrPodAlreadyTerminated = fmt.Errorf("pod already terminated")
 
-// TerminatePod terminates a pod on a runner.
-// This is the single source of truth for pod termination — all callers
-// (REST API, Loop Orchestrator, etc.) MUST use this method.
+// TerminatePod is the SSOT for pod termination — REST API, Loop Orchestrator, all callers route here.
 func (pc *PodCoordinator) TerminatePod(ctx context.Context, podKey string) error {
 	pod, err := pc.podStore.GetByKey(ctx, podKey)
 	if err != nil {
@@ -212,8 +203,6 @@ func (pc *PodCoordinator) MarkReconnected(ctx context.Context, podKey string) er
 		"last_activity": time.Now(),
 	})
 }
-
-// ==================== AutopilotController Commands ====================
 
 func (pc *PodCoordinator) SendCreateAutopilot(runnerID int64, cmd *runnerv1.CreateAutopilotCommand) error {
 	return pc.commandSender.SendCreateAutopilot(runnerID, cmd)

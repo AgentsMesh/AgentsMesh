@@ -45,11 +45,9 @@ export function WhyTerminalBased() {
 
   return (
     <section className="py-24 relative" id="why-terminal">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
             {t("landing.whyTerminal.title")} <span className="text-primary">{t("landing.whyTerminal.titleHighlight")}</span>{t("landing.whyTerminal.titleEnd")}
@@ -59,7 +57,6 @@ export function WhyTerminalBased() {
           </p>
         </div>
 
-        {/* Benefits cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-16">
           {benefits.map((benefit, index) => (
             <div
@@ -75,10 +72,8 @@ export function WhyTerminalBased() {
           ))}
         </div>
 
-        {/* Comparison table */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
-            {/* Table header */}
             <div className="grid grid-cols-3 bg-muted border-b border-border">
               <div className="p-4 font-semibold text-sm"></div>
               <div className="p-4 font-semibold text-sm text-center text-muted-foreground">
@@ -91,7 +86,6 @@ export function WhyTerminalBased() {
               </div>
             </div>
 
-            {/* Table rows */}
             {comparisonData.map((row, index) => (
               <div
                 key={index}

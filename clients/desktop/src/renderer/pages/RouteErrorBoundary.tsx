@@ -3,15 +3,6 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Home, RefreshCw, ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-/**
- * Route-level error boundary. React-router-dom sets this on any route via
- * `errorElement`; when a descendant throws, the router unmounts the subtree
- * and renders this instead.
- *
- * Desktop stands alone (no server-side fallback), so an uncaught render
- * error would otherwise wedge the whole window — leaving the user to quit
- * the app. This boundary lets them navigate home, reload, or go back.
- */
 export function RouteErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();

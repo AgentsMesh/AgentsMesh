@@ -1,6 +1,3 @@
-/**
- * Types and interfaces for relay WebSocket connections.
- */
 
 import type { IRelayTransport } from "./relayBackend";
 

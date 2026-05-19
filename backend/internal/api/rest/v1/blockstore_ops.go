@@ -9,9 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ApplyOps POST /blocks/ops
-// Request body: service.ApplyOpsInput  (workspace_id, ops[], idempotency_key?, parent_op_id?)
-// Response 200: service.ApplyOpsResult (op_ids[], was_replay, parent_op_id?)
 func (h *BlockstoreHandler) ApplyOps(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -33,7 +30,6 @@ func (h *BlockstoreHandler) ApplyOps(c *gin.Context) {
 	c.JSON(status, res)
 }
 
-// ListWorkspaces GET /blocks/workspaces
 func (h *BlockstoreHandler) ListWorkspaces(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -46,9 +42,6 @@ func (h *BlockstoreHandler) ListWorkspaces(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"workspaces": list})
 }
 
-// EnsureDefaultWorkspace POST /blocks/workspaces/default
-// Returns the caller org's default workspace, creating it with a root page on
-// first access.
 func (h *BlockstoreHandler) EnsureDefaultWorkspace(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -61,12 +54,6 @@ func (h *BlockstoreHandler) EnsureDefaultWorkspace(c *gin.Context) {
 	c.JSON(http.StatusOK, ws)
 }
 
-// CreateWorkspace POST /blocks/workspaces
-// Body: {slug, name?}. Provisions an additional workspace in the caller's
-// org (beyond the default). Primary consumer is E2E tests wanting an
-// isolated workspace per run so accumulated test data can't affect
-// assertions. Production flows that want to offer users named workspaces
-// also go through here.
 func (h *BlockstoreHandler) CreateWorkspace(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {
@@ -87,11 +74,6 @@ func (h *BlockstoreHandler) CreateWorkspace(c *gin.Context) {
 	c.JSON(http.StatusCreated, ws)
 }
 
-// DeleteWorkspace DELETE /blocks/workspaces/:ws_id
-// Hard-deletes the workspace and every row it owns. Refuses to touch the
-// org's default workspace. Primary caller: E2E fixture teardown so each
-// isolated workspace is reclaimed after its test completes, preventing the
-// dev DB from accumulating Playwright detritus between runs.
 func (h *BlockstoreHandler) DeleteWorkspace(c *gin.Context) {
 	actor, ok := actorFrom(c)
 	if !ok {

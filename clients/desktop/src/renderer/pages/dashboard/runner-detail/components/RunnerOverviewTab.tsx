@@ -14,9 +14,6 @@ interface RunnerOverviewTabProps {
   latestRunnerVersion?: string;
 }
 
-/**
- * Overview tab content showing runner basic info, capacity, available agents, and relay connections
- */
 export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersion }: RunnerOverviewTabProps) {
   const t = useTranslations();
   const [upgrading, setUpgrading] = useState(false);
@@ -41,7 +38,6 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Basic Info */}
       <div className="bg-card rounded-lg border border-border p-6">
         <h3 className="text-lg font-medium text-foreground mb-4">
           {t("runners.detail.basicInfo")}
@@ -118,7 +114,6 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
         </dl>
       </div>
 
-      {/* Capacity */}
       <div className="bg-card rounded-lg border border-border p-6">
         <h3 className="text-lg font-medium text-foreground mb-4">
           {t("runners.detail.capacity")}
@@ -167,7 +162,6 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
         </dl>
       </div>
 
-      {/* Available Agents */}
       {runner.available_agents && runner.available_agents.length > 0 && (
         <div className="bg-card rounded-lg border border-border p-6 md:col-span-2">
           <h3 className="text-lg font-medium text-foreground mb-4">
@@ -187,7 +181,6 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
         </div>
       )}
 
-      {/* Relay Connections */}
       {relayConnections && relayConnections.length > 0 && (
         <div className="bg-card rounded-lg border border-border p-6 md:col-span-2">
           <h3 className="text-lg font-medium text-foreground mb-4 flex items-center">
@@ -246,15 +239,11 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
         </div>
       )}
 
-      {/* Diagnostic Logs */}
       <RunnerLogsCard runnerId={runner.id} runnerStatus={runner.status} />
     </div>
   );
 }
 
-/**
- * Extract host from relay URL for display
- */
 function extractRelayHost(url: string): string {
   try {
     const parsed = new URL(url);

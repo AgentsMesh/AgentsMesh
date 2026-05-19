@@ -9,14 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface compliance check.
 var _ channel.BindingRepository = (*bindingRepository)(nil)
 
 type bindingRepository struct {
 	db *gorm.DB
 }
 
-// NewBindingRepository creates a new GORM-backed BindingRepository.
 func NewBindingRepository(db *gorm.DB) channel.BindingRepository {
 	return &bindingRepository{db: db}
 }

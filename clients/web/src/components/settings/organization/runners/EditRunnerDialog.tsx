@@ -14,9 +14,6 @@ interface EditRunnerDialogProps {
   t: TranslationFn;
 }
 
-/**
- * Dialog for editing runner settings
- */
 export function EditRunnerDialog({
   runner,
   onClose,

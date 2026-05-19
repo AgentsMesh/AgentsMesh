@@ -39,9 +39,6 @@ import {
 } from "../renderers/chart/chartDefaults";
 import type { SlashOption } from "./SlashMenu";
 
-// DispatchAPI is a narrow slice of useBlockstoreDispatch — only the calls the
-// add-block menu actually needs. Kept separate so this module doesn't re-pull
-// the full hook surface and so tests can stub it.
 interface DispatchAPI {
   insertChild: (
     parentID: string,
@@ -123,18 +120,12 @@ export function buildAddOptions({ dispatch, rootBlockID, dynamicSpecs }: BuildOp
     makeViewOption("timeline", "Timeline view", "Gantt by start/end dates"),
     makeViewOption("tree", "Tree view", "Nested outline"),
     makeViewOption("gallery", "Gallery view", "Card grid"),
-    // Chart family — one option per sub-type, sharing the same seed data
-    // shape from chartDefaults so slash menu and ChartPreview stay in sync.
     ...CHART_SUB_TYPES.map((sub) => ({
       id: `chart-${sub}`,
       label: chartLabel(sub),
       hint: chartHint(sub),
       onSelect: addChild(BLOCK_TYPE_CHART, chartInitialData(sub), null),
     })),
-    // Tier 1 — every workspace-registered indicator type gets an entry.
-    // Selecting it creates a new record with sensible placeholders for
-    // required columns so server validation passes; the user fills them in
-    // using the RecordEditor that renders immediately.
     ...Object.values(dynamicSpecs).map((spec) => ({
       id: `indicator-${spec.type}`,
       label: spec.label ?? spec.type,

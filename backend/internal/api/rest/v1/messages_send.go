@@ -8,16 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SendMessage handles POST /messages
-// @Summary Send a message to another pod
-// @Tags messages
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param request body SendMessageRequest true "Message request"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Router /messages [post]
 func (h *MessageHandler) SendMessage(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {

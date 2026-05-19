@@ -13,13 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SupportTicketHandler handles admin support ticket management
 type SupportTicketHandler struct {
 	service      *supportticket.Service
 	adminService *adminservice.Service
 }
 
-// NewSupportTicketHandler creates a new admin support ticket handler
 func NewSupportTicketHandler(service *supportticket.Service, adminSvc *adminservice.Service) *SupportTicketHandler {
 	return &SupportTicketHandler{
 		service:      service,
@@ -27,7 +25,6 @@ func NewSupportTicketHandler(service *supportticket.Service, adminSvc *adminserv
 	}
 }
 
-// RegisterRoutes registers admin support ticket routes
 func (h *SupportTicketHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/support-tickets")
 	{
@@ -42,13 +39,10 @@ func (h *SupportTicketHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// logAction is a helper method that delegates to the shared LogAdminAction function
 func (h *SupportTicketHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// List returns all support tickets with filtering and pagination
-// GET /api/v1/admin/support-tickets
 func (h *SupportTicketHandler) List(c *gin.Context) {
 	query := &supportticket.AdminListQuery{
 		Search:   c.Query("search"),
@@ -75,8 +69,6 @@ func (h *SupportTicketHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetStats returns support ticket statistics
-// GET /api/v1/admin/support-tickets/stats
 func (h *SupportTicketHandler) GetStats(c *gin.Context) {
 	stats, err := h.service.AdminGetStats(c.Request.Context())
 	if err != nil {
@@ -87,8 +79,6 @@ func (h *SupportTicketHandler) GetStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-// GetByID returns a single support ticket with messages
-// GET /api/v1/admin/support-tickets/:id
 func (h *SupportTicketHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -117,8 +107,6 @@ func (h *SupportTicketHandler) GetByID(c *gin.Context) {
 	})
 }
 
-// ListMessages returns all messages for a support ticket
-// GET /api/v1/admin/support-tickets/:id/messages
 func (h *SupportTicketHandler) ListMessages(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

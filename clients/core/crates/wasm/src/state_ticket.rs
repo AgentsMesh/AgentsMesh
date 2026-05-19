@@ -14,8 +14,6 @@ impl WasmTicketState {
         Self { inner: TicketState::with_storage(crate::new_memory_backend()) }
     }
 
-    // --- Ticket CRUD ---
-
     pub fn tickets_json(&self) -> String {
         serde_json::to_string(self.inner.get_tickets()).unwrap_or_default()
     }
@@ -55,8 +53,6 @@ impl WasmTicketState {
         self.inner.remove_ticket(slug);
     }
 
-    // --- Filtering ---
-
     pub fn filter_tickets_json(
         &self,
         search: &str,
@@ -71,8 +67,6 @@ impl WasmTicketState {
         let filtered = self.inner.filter_tickets(search_opt, &statuses, &priorities, &repo_ids);
         serde_json::to_string(&filtered).unwrap_or_default()
     }
-
-    // --- Board columns ---
 
     pub fn board_columns_json(&self) -> String {
         serde_json::to_string(self.inner.get_board_columns()).unwrap_or_default()
@@ -93,8 +87,6 @@ impl WasmTicketState {
         }
     }
 
-    // --- Labels ---
-
     pub fn labels_json(&self) -> String {
         serde_json::to_string(self.inner.get_labels()).unwrap_or_default()
     }
@@ -114,8 +106,6 @@ impl WasmTicketState {
     pub fn remove_label(&mut self, id: f64) {
         self.inner.remove_label(id as i64);
     }
-
-    // --- Current ticket ---
 
     pub fn current_ticket_json(&self) -> JsValue {
         match self.inner.get_current_ticket() {

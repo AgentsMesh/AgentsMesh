@@ -11,14 +11,12 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// GitHubProvider implements Provider interface for GitHub
 type GitHubProvider struct {
 	baseURL     string
 	accessToken string
 	httpClient  *http.Client
 }
 
-// NewGitHubProvider creates a new GitHub provider
 func NewGitHubProvider(baseURL, accessToken string) (*GitHubProvider, error) {
 	if baseURL == "" {
 		baseURL = "https://api.github.com"
@@ -74,7 +72,6 @@ func (p *GitHubProvider) doRequest(ctx context.Context, method, path string, bod
 		return nil, ErrRateLimited
 	}
 
-	// Handle other 4xx/5xx errors
 	if resp.StatusCode >= 400 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()

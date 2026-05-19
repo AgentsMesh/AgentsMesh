@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// registerAPIKeyManagementRoutes registers API key CRUD routes (JWT auth, owner/admin only)
 func registerAPIKeyManagementRoutes(rg *gin.RouterGroup, svc *Services) {
 	if svc.APIKey == nil {
 		return
@@ -24,10 +23,7 @@ func registerAPIKeyManagementRoutes(rg *gin.RouterGroup, svc *Services) {
 	}
 }
 
-// RegisterExtRoutes registers third-party API key-authenticated routes.
-// These routes reuse existing handler instances with scope-based access control.
 func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
-	// Pod routes
 	var podOpts []PodHandlerOption
 	if svc.PodCoordinator != nil {
 		podOpts = append(podOpts, WithPodCoordinator(svc.PodCoordinator))
@@ -53,7 +49,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		podsWrite.POST("/:key/terminate", podHandler.TerminatePod)
 	}
 
-	// Ticket routes
 	ticketHandler := NewTicketHandler(svc.Ticket)
 
 	ticketsRead := rg.Group("/tickets")
@@ -72,7 +67,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		ticketsWrite.DELETE("/:ticket_slug", ticketHandler.DeleteTicket)
 	}
 
-	// Channel routes
 	channelHandler := NewChannelHandler(svc.Channel, svc.Ticket)
 
 	channelsRead := rg.Group("/channels")
@@ -90,7 +84,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		channelsWrite.POST("/:id/messages", channelHandler.SendMessage)
 	}
 
-	// Runner routes (read-only)
 	var runnerOpts []RunnerHandlerOption
 	if svc.SandboxQueryService != nil {
 		runnerOpts = append(runnerOpts, WithSandboxQueryService(svc.SandboxQueryService))
@@ -112,7 +105,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		runnersRead.GET("/:id/pods", runnerHandler.ListRunnerPods)
 	}
 
-	// Repository routes (read-only)
 	repositoryHandler := NewRepositoryHandler(svc.Repository, WithBillingService(svc.Billing))
 
 	reposRead := rg.Group("/repositories")
@@ -124,7 +116,6 @@ func RegisterExtRoutes(rg *gin.RouterGroup, svc *Services) {
 		reposRead.GET("/:id/merge-requests", repositoryHandler.ListRepositoryMergeRequests)
 	}
 
-	// Loop routes
 	if svc.Loop != nil && svc.LoopOrchestrator != nil {
 		loopHandler := NewLoopHandler(svc.Loop, svc.LoopRun, svc.LoopOrchestrator, svc.PodCoordinator)
 

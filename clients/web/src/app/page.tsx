@@ -20,7 +20,6 @@ export default function Home() {
   const router = useRouter();
   const { session, hydrated } = useLightSession();
 
-  // Determine if we should redirect based on auth state
   const shouldRedirect = useMemo(() => {
     if (!hydrated) return false;
     if (!session?.isAuthenticated || !session.currentOrgSlug) return false;
@@ -30,20 +29,17 @@ export default function Home() {
     if (typeof window !== "undefined") {
       const referrer = document.referrer;
       const isInternalNavigation = referrer && new URL(referrer).origin === window.location.origin;
-      // Only redirect if user is authenticated with an org and came from external source
       return !isInternalNavigation;
     }
     return false;
   }, [hydrated, session]);
 
-  // Handle redirect in effect
   useEffect(() => {
     if (shouldRedirect && session?.currentOrgSlug) {
       router.replace(getDefaultRoute(session.currentOrgSlug));
     }
   }, [shouldRedirect, session, router]);
 
-  // Show loading state while hydrating or redirecting
   if (!hydrated || shouldRedirect) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

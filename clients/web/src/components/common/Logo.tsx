@@ -4,10 +4,6 @@ interface LogoProps {
   className?: string;
 }
 
-/**
- * AgentsMesh Logo - Control Tower icon
- * Reusable SVG component for consistent branding across the app.
- */
 export function Logo({ className }: LogoProps) {
   return (
     <svg

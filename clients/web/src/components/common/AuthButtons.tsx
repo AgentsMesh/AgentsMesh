@@ -6,26 +6,13 @@ import { useCurrentUser, useCurrentOrg, useAuthStore } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 
 interface AuthButtonsProps {
-  /** Button size variant */
   size?: "sm" | "default";
-  /** Style variant for the console button when logged in */
   consoleVariant?: "primary" | "outline";
-  /** Whether to show the "Get Started" (register) button when logged out */
   showRegister?: boolean;
-  /** Additional callback when a link is clicked (e.g. close mobile menu) */
   onClick?: () => void;
-  /** Additional className for the container */
   className?: string;
 }
 
-/**
- * Shared auth-aware action buttons.
- * - Logged in: shows "Console" button linking to /{org}/workspace
- * - Logged out: shows "Sign In" (and optionally "Get Started")
- *
- * Single source of truth for auth CTA — used by landing Navbar, docs header,
- * PageHeader, and any other public-facing page header.
- */
 export function AuthButtons({
   size = "default",
   consoleVariant = "primary",

@@ -12,8 +12,7 @@ import (
 
 var ErrHasActiveRuns = errors.New("loop has active runs")
 
-// Delete deletes a Loop (hard delete).
-// Atomically checks for active runs — returns ErrHasActiveRuns if any exist.
+// Delete is atomic — returns ErrHasActiveRuns when active runs exist (no orphan rows).
 func (s *LoopService) Delete(ctx context.Context, orgID int64, slug string) error {
 	affected, err := s.repo.Delete(ctx, orgID, slug)
 	if err != nil {
@@ -35,8 +34,6 @@ var validStatuses = map[string]bool{
 	loopDomain.StatusDisabled: true,
 }
 
-// SetStatus updates the status of a Loop.
-// When re-enabling a cron loop, recalculates next_run_at so cron scheduling resumes immediately.
 func (s *LoopService) SetStatus(ctx context.Context, orgID int64, slug string, status string) (*loopDomain.Loop, error) {
 	if !validStatuses[status] {
 		return nil, fmt.Errorf("%w: status must be 'enabled' or 'disabled'", ErrInvalidEnumValue)

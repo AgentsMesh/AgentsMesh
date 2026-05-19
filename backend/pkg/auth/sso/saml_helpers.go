@@ -13,8 +13,6 @@ import (
 	"github.com/crewjam/saml"
 )
 
-// extractUserInfoFromAssertion extracts user info from a SAML assertion.
-// Returns an error if the NameID (used as ExternalID) is missing or empty.
 func extractUserInfoFromAssertion(assertion *saml.Assertion) (*UserInfo, error) {
 	info := &UserInfo{}
 
@@ -23,12 +21,10 @@ func extractUserInfoFromAssertion(assertion *saml.Assertion) (*UserInfo, error) 
 	}
 
 	info.ExternalID = assertion.Subject.NameID.Value
-	// If NameID format is email, use it as email
 	if assertion.Subject.NameID.Format == "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" {
 		info.Email = assertion.Subject.NameID.Value
 	}
 
-	// Extract attributes
 	for _, stmt := range assertion.AttributeStatements {
 		for _, attr := range stmt.Attributes {
 			if len(attr.Values) == 0 {
@@ -49,8 +45,6 @@ func extractUserInfoFromAssertion(assertion *saml.Assertion) (*UserInfo, error) 
 	return info, nil
 }
 
-// parsePEMCertificate parses a PEM-encoded certificate.
-// Rejects non-CERTIFICATE PEM blocks (e.g., private keys) with a clear error.
 func parsePEMCertificate(pemData string) (*x509.Certificate, error) {
 	block, _ := pem.Decode([]byte(pemData))
 	if block == nil {
@@ -62,12 +56,10 @@ func parsePEMCertificate(pemData string) (*x509.Certificate, error) {
 	return x509.ParseCertificate(block.Bytes)
 }
 
-// encodeCertificateDER returns the base64-encoded DER of a certificate
 func encodeCertificateDER(cert *x509.Certificate) string {
 	return base64.StdEncoding.EncodeToString(cert.Raw)
 }
 
-// fetchIDPMetadata retrieves and parses SAML IdP metadata from a URL.
 func fetchIDPMetadata(metadataURL string) (*saml.EntityDescriptor, error) {
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Get(metadataURL) //nolint:gosec // URL is admin-configured, not user input

@@ -13,27 +13,18 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
 )
 
-// ==================== Pre-generated Token Registration ====================
-
-// GenerateGRPCRegistrationToken creates a new pre-generated registration token.
 func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, userID int64, req *GenerateGRPCRegistrationTokenRequest, serverURL string) (*GenerateGRPCRegistrationTokenResponse, error) {
-	// Generate random token
 	tokenBytes := make([]byte, 32)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 	token := hex.EncodeToString(tokenBytes)
 
-	// Hash for storage
 	tokenHashBytes := sha256.Sum256([]byte(token))
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
 
-	// Set defaults
 	expiresIn := req.ExpiresIn
 	if expiresIn <= 0 {
-		// 24h default — 1h was too short for the realistic "copy token → install
-		// runner on laptop → run register" flow; users routinely hit expired-token
-		// errors after stepping away briefly.
 		expiresIn = 86400
 	}
 	maxUses := req.MaxUses
@@ -43,7 +34,6 @@ func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, user
 
 	expiresAt := time.Now().Add(time.Duration(expiresIn) * time.Second)
 
-	// Create token record
 	regToken := &runner.GRPCRegistrationToken{
 		TokenHash:      tokenHash,
 		OrganizationID: orgID,
@@ -75,14 +65,11 @@ func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, user
 	}, nil
 }
 
-// RegisterWithToken registers a new runner using a pre-generated token.
-// Uses database transaction with atomic token usage update to prevent race conditions.
+// RegisterWithToken — token claim + runner create + PKI issue must be atomic (token race).
 func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenRequest, pkiService interfaces.PKICertificateIssuer) (*RegisterWithTokenResponse, error) {
-	// Hash the provided token
 	tokenHashBytes := sha256.Sum256([]byte(req.Token))
 	tokenHash := hex.EncodeToString(tokenHashBytes[:])
 
-	// Find the token first (read-only check)
 	regToken, err := s.repo.GetRegistrationTokenByHash(ctx, tokenHash)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to lookup registration token", "error", err)
@@ -93,13 +80,11 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		return nil, ErrInvalidToken
 	}
 
-	// Basic validation (before transaction)
 	if regToken.IsExpired() {
 		slog.WarnContext(ctx, "expired registration token presented", "token_id", regToken.ID)
 		return nil, ErrTokenExpired
 	}
 
-	// Get org slug
 	orgSlug, err := s.repo.GetOrgSlug(ctx, regToken.OrganizationID)
 	if err != nil {
 		return nil, err
@@ -108,7 +93,6 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		return nil, fmt.Errorf("organization not found")
 	}
 
-	// Check runner quota
 	if s.billingService != nil {
 		if err := s.billingService.CheckQuota(ctx, regToken.OrganizationID, "runners", 1); err != nil {
 			slog.WarnContext(ctx, "runner quota exceeded", "org_id", regToken.OrganizationID)
@@ -116,7 +100,6 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		}
 	}
 
-	// Generate node ID if not provided
 	nodeID := req.NodeID
 	if nodeID == "" {
 		nodeIDBytes := make([]byte, 8)
@@ -126,7 +109,6 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		nodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
 	}
 
-	// Check if runner already exists
 	exists, err := s.repo.ExistsByNodeIDAndOrg(ctx, regToken.OrganizationID, nodeID)
 	if err != nil {
 		return nil, err
@@ -136,7 +118,6 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		return nil, ErrRunnerAlreadyExists
 	}
 
-	// Prepare runner and certificate objects
 	r := &runner.Runner{
 		OrganizationID:     regToken.OrganizationID,
 		NodeID:             nodeID,
@@ -146,9 +127,7 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		RegisteredByUserID: regToken.CreatedBy,
 	}
 
-	// Atomic: claim token + create runner.
-	// PKI issuance happens inside the callback so that if the token is exhausted,
-	// the PKI call is never reached.
+	// PKI issuance lives inside the atomic claim — exhausted tokens never reach the CA.
 	cert := &runner.Certificate{}
 	var certPEM, keyPEM []byte
 	if err := s.repo.RegisterWithTokenAtomic(ctx, regToken.ID, r, cert, func() error {

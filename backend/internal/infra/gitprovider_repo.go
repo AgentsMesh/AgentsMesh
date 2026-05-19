@@ -10,14 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check.
 var _ gitprovider.RepositoryRepo = (*gitProviderRepo)(nil)
 
 type gitProviderRepo struct {
 	db *gorm.DB
 }
 
-// NewGitProviderRepository creates a new GORM-based gitprovider repository.
 func NewGitProviderRepository(db *gorm.DB) gitprovider.RepositoryRepo {
 	return &gitProviderRepo{db: db}
 }

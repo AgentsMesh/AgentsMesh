@@ -97,8 +97,6 @@ export interface SelectValueProps {
 export function SelectValue({ placeholder }: SelectValueProps) {
   const { value } = useSelect();
 
-  // Find the label from SelectItem children - this is a simplified version
-  // In real usage, we pass the display text through context
   return (
     <span className={cn(!value && "text-muted-foreground")}>
       {value || placeholder}
@@ -114,7 +112,6 @@ export function SelectContent({ children, className, ...props }: SelectContentPr
   const { open, setOpen } = useSelect();
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Close on click outside
   React.useEffect(() => {
     if (!open) return;
 
@@ -133,7 +130,6 @@ export function SelectContent({ children, className, ...props }: SelectContentPr
       }
     };
 
-    // Small delay to prevent immediate close on trigger click
     const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside);
     }, 0);

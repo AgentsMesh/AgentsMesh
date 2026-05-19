@@ -1,15 +1,3 @@
-//! Desktop-side orchestration of the local `agentsmesh-runner` binary.
-//!
-//! This crate is intentionally thin: it owns no state, knows no business
-//! logic, and never speaks gRPC. It just exposes async wrappers around the
-//! runner's existing `register` and `service install/start/stop/status`
-//! CLI subcommands so the desktop GUI can drive registration and OS-service
-//! lifecycle from a single Rust SSOT.
-//!
-//! Platform isolation: only the `node-bridge` crate depends on this. The
-//! `wasm` and `ffi` crates do not, so neither the web bundle nor the iOS
-//! XCFramework picks up process-spawning code.
-
 mod cli;
 mod error;
 mod install;
@@ -22,18 +10,13 @@ pub use paths::InstallPaths;
 pub use service::ServiceStatus;
 
 /// Bundled runner version used when the backend's `latest-release` endpoint
-/// is unreachable. Single source of truth — bumped per desktop release in
-/// lockstep with `backend/internal/api/rest/v1/runners_release.go`. The
-/// renderer reads this via napi rather than embedding its own const, so the
-/// fallback used in production never drifts from the crate the desktop
-/// shipped with. Source: latest tag at github.com/AgentsMesh/AgentsMesh.
+/// is unreachable. Keep in sync with
+/// `backend/internal/api/rest/v1/runners_release.go` — bumped per desktop
+/// release. Source: latest tag at github.com/AgentsMesh/AgentsMesh.
 pub const FALLBACK_RUNNER_VERSION: &str = "0.29.0";
 
 use std::path::PathBuf;
 
-/// Top-level façade exposing all local-runner orchestration to host
-/// languages. Methods are async so the host can await CLI subprocesses
-/// without blocking the IPC thread.
 #[derive(Debug, Clone)]
 pub struct LocalRunnerManager {
     paths: InstallPaths,
@@ -48,8 +31,6 @@ impl LocalRunnerManager {
         }
     }
 
-    /// Defaults to the OS-conventional home directory; falls back to the
-    /// current working directory when unset (tests + sandboxed runs).
     pub fn from_default_home(server_url: String) -> Self {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         Self::new(home, server_url)
@@ -59,9 +40,6 @@ impl LocalRunnerManager {
         self.paths.binary_path()
     }
 
-    /// Returns the host's release-asset target string (e.g. `darwin_arm64`,
-    /// `linux_amd64`, `windows_amd64`) for picking the matching runner archive.
-    /// Compiled into the napi binary so it always reflects the actual machine.
     pub fn host_target(&self) -> Option<String> {
         let os = match std::env::consts::OS {
             "macos" => "darwin",

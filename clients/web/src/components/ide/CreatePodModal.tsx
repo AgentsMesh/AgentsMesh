@@ -10,24 +10,14 @@ interface CreatePodModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (pod?: PodData) => void;
-  /** Optional ticket context for creating pod from ticket */
   ticketContext?: TicketContext;
 }
 
-/**
- * Modal wrapper for CreatePodForm
- *
- * This component provides the modal container and delegates all form logic
- * to the shared CreatePodForm component.
- */
 export function CreatePodModal({ open, onClose, onCreated, ticketContext }: CreatePodModalProps) {
   const t = useTranslations();
 
-  // Focus trap for modal accessibility
   const modalRef = useFocusTrap<HTMLDivElement>(open, onClose);
 
-  // Build form configuration based on ticket context.
-  // promptGenerator is supplied by mergeConfig via the "ticket" preset.
   const formConfig: CreatePodFormConfig = useMemo(() => ({
     scenario: ticketContext ? "ticket" : "workspace",
     context: ticketContext ? { ticket: ticketContext } : undefined,

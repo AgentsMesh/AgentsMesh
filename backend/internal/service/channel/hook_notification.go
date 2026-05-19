@@ -9,17 +9,14 @@ import (
 	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 )
 
-// NotificationDispatcher is the interface for dispatching notifications.
 type NotificationDispatcher interface {
 	Dispatch(ctx context.Context, req *notifDomain.NotificationRequest) error
 }
 
-// UserNameResolver resolves a user ID to a display name.
 type UserNameResolver interface {
 	GetUsername(ctx context.Context, userID int64) (string, error)
 }
 
-// NewNotificationHook creates a hook that dispatches notifications for new messages.
 func NewNotificationHook(dispatcher NotificationDispatcher, userNames UserNameResolver) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if dispatcher == nil {
@@ -74,7 +71,6 @@ func NewNotificationHook(dispatcher NotificationDispatcher, userNames UserNameRe
 	}
 }
 
-// resolveSenderName extracts a human-readable sender name from the message context.
 func resolveSenderName(ctx context.Context, mc *MessageContext, userNames UserNameResolver) string {
 	if mc.Message.SenderPod != nil {
 		if mc.Message.SenderPodInfo != nil && mc.Message.SenderPodInfo.Alias != nil && *mc.Message.SenderPodInfo.Alias != "" {

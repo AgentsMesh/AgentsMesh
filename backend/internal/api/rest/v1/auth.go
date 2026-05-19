@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthHandler handles authentication requests
 type AuthHandler struct {
 	authService  *auth.Service
 	userService  *user.Service
@@ -17,7 +16,6 @@ type AuthHandler struct {
 	config       *config.Config
 }
 
-// NewAuthHandler creates a new auth handler
 func NewAuthHandler(authSvc *auth.Service, userSvc *user.Service, emailSvc email.Service, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService:  authSvc,
@@ -27,45 +25,35 @@ func NewAuthHandler(authSvc *auth.Service, userSvc *user.Service, emailSvc email
 	}
 }
 
-// RegisterRoutes registers authentication routes
 func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	rg.POST("/login", h.Login)
 	rg.POST("/register", h.Register)
 	rg.POST("/refresh", h.RefreshToken)
 	rg.POST("/logout", h.Logout)
 
-	// Email verification routes
 	rg.POST("/verify-email", h.VerifyEmail)
 	rg.POST("/resend-verification", h.ResendVerification)
 
-	// Password reset routes
 	rg.POST("/forgot-password", h.ForgotPassword)
 	rg.POST("/reset-password", h.ResetPassword)
 
-	// OAuth routes
 	oauthGroup := rg.Group("/oauth")
 	{
-		// GitHub
 		oauthGroup.GET("/github", h.OAuthRedirect("github"))
 		oauthGroup.GET("/github/callback", h.OAuthCallback("github"))
 
-		// Google
 		oauthGroup.GET("/google", h.OAuthRedirect("google"))
 		oauthGroup.GET("/google/callback", h.OAuthCallback("google"))
 
-		// GitLab
 		oauthGroup.GET("/gitlab", h.OAuthRedirect("gitlab"))
 		oauthGroup.GET("/gitlab/callback", h.OAuthCallback("gitlab"))
 
-		// Gitee
 		oauthGroup.GET("/gitee", h.OAuthRedirect("gitee"))
 		oauthGroup.GET("/gitee/callback", h.OAuthCallback("gitee"))
 	}
 }
 
-// getOAuthConfig returns OAuth configuration for a provider
 func (h *AuthHandler) getOAuthConfig(provider string) *oauth.Config {
-	// RedirectURLs are derived from PrimaryDomain
 	switch provider {
 	case "github":
 		if h.config.OAuth.GitHub.ClientID == "" {

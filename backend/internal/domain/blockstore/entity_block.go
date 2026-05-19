@@ -6,20 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Block is the minimal addressable, extensible data unit.
-// Block itself holds NO relationship fields — all relations (nest / mention /
-// embed / depends_on / ...) live in block_refs, keyed by rel.
-//
-// Field responsibilities:
-//   - Data  — structured, type-specific payload. Schema defined by BlockTypeSpec.
-//   - Text  — plain-text summary used for full-text search (tsv) and semantic
-//     embedding. **The writer maintains this field.** The service layer does
-//     NOT derive Text from Data — doing so would silently couple every new
-//     block type to a server-side extractor and break openness. Agents and UI
-//     are responsible for supplying a relevant Text when they want the block
-//     discoverable by search / memory retrieval.
-//   - Meta  — ACL / tags / extension points that don't belong to the type
-//     payload itself.
 type Block struct {
 	ID          uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
 	WorkspaceID uuid.UUID  `gorm:"type:uuid;not null;index" json:"workspace_id"`

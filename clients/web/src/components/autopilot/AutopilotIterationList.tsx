@@ -22,7 +22,6 @@ interface AutopilotIterationListProps {
   maxItems?: number;
 }
 
-// Iteration phase display configuration
 const iterationPhaseConfig: Record<
   string,
   { label: string; color: string; icon: React.ReactNode }

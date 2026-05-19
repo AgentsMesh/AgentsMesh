@@ -12,23 +12,10 @@ export interface InlineEditableTextProps {
   inputClassName?: string;
   multiline?: boolean;
   disabled?: boolean;
-  /**
-   * Debounce delay in ms for auto-save. Set to 0 for immediate save on blur.
-   * @default 500
-   */
   debounceMs?: number;
-  /**
-   * Whether to auto-save on change (with debounce) or only on blur/enter
-   * @default false
-   */
   autoSave?: boolean;
 }
 
-/**
- * Inline editable text component with click-to-edit functionality.
- * Supports both single-line and multiline editing.
- * Features auto-save with debounce and optimistic updates.
- */
 export function InlineEditableText({
   value,
   onSave,
@@ -47,14 +34,12 @@ export function InlineEditableText({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update edit value when prop changes
   useEffect(() => {
     if (!isEditing) {
       setEditValue(value);
     }
   }, [value, isEditing]);
 
-  // Focus input when entering edit mode
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -62,7 +47,6 @@ export function InlineEditableText({
     }
   }, [isEditing]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -86,7 +70,6 @@ export function InlineEditableText({
     } catch (err) {
       console.error("Failed to save:", err);
       setError(err instanceof Error ? err.message : "Failed to save");
-      // Keep editing mode open on error
     } finally {
       setIsSaving(false);
     }

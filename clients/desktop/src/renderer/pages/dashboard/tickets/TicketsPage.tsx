@@ -14,7 +14,6 @@ export function TicketsPage() {
   const router = useRouter();
   const { currentOrg } = useAuthStore();
 
-  // Use individual selectors to prevent re-renders from unrelated store changes
   const viewMode = useTicketStore(state => state.viewMode);
   const fetchTickets = useTicketStore(state => state.fetchTickets);
   const fetchBoard = useTicketStore(state => state.fetchBoard);
@@ -22,16 +21,12 @@ export function TicketsPage() {
 
   const tickets = useFilteredTickets();
 
-  // Keyboard-selected ticket for J/K navigation highlighting
   const [keyboardSelectedSlug, setKeyboardSelectedSlug] = useState<string | null>(null);
 
-  // Local loading state — store's shared `loading` is no longer set by async actions
   const [loading, setLoading] = useState(true);
 
-  // State for auto-triggered create pod modal (when dragging ticket to in_progress)
   const [createPodTicket, setCreatePodTicket] = useState<Ticket | null>(null);
 
-  // Load tickets on mount and when view mode changes
   useEffect(() => {
     const load = viewMode === "board" ? fetchBoard() : fetchTickets();
     load.finally(() => setLoading(false));
@@ -46,7 +41,6 @@ export function TicketsPage() {
   }, [updateTicketStatus]);
 
   const handleTicketClick = useCallback((ticket: Ticket) => {
-    // Navigate directly to ticket detail page (Linear-style)
     router.push(`/${currentOrg?.slug}/tickets/${ticket.slug}`);
   }, [router, currentOrg]);
 
@@ -58,7 +52,6 @@ export function TicketsPage() {
     setCreatePodTicket(null);
   }, []);
 
-  // J/K only highlights, does not navigate
   const handleSelectTicket = useCallback((slug: string | null) => {
     setKeyboardSelectedSlug(slug);
   }, []);
@@ -67,17 +60,15 @@ export function TicketsPage() {
     return <CenteredSpinner className="h-full" />;
   }
 
-  // Keyboard handler props
   const keyboardHandlerProps = {
     tickets,
     selectedSlug: keyboardSelectedSlug,
     onSelectTicket: handleSelectTicket,
-    onOpenDetail: handleTicketClick,          // Enter → navigate
-    onCloseDetail: () => setKeyboardSelectedSlug(null), // Escape → clear selection
+    onOpenDetail: handleTicketClick,
+    onCloseDetail: () => setKeyboardSelectedSlug(null),
     enabled: true,
   };
 
-  // Render content based on view mode
   if (viewMode === "list") {
     return (
       <>
@@ -92,7 +83,6 @@ export function TicketsPage() {
     );
   }
 
-  // Board view
   return (
     <>
       <TicketKeyboardHandler {...keyboardHandlerProps} />

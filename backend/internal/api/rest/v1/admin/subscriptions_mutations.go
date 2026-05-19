@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AdminCreateSubscription creates a new subscription for an organization that doesn't have one
 func (h *SubscriptionHandler) AdminCreateSubscription(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -53,7 +52,6 @@ func (h *SubscriptionHandler) AdminCreateSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// AdminUpdatePlan changes the subscription plan directly without payment checks
 func (h *SubscriptionHandler) AdminUpdatePlan(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -91,7 +89,6 @@ func (h *SubscriptionHandler) AdminUpdatePlan(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// AdminUpdateSeats changes the seat count directly
 func (h *SubscriptionHandler) AdminUpdateSeats(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -121,7 +118,6 @@ func (h *SubscriptionHandler) AdminUpdateSeats(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// AdminUpdateCycle changes the billing cycle
 func (h *SubscriptionHandler) AdminUpdateCycle(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

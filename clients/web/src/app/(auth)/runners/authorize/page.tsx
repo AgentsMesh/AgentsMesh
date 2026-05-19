@@ -2,11 +2,15 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useCurrentUser, useAuthOrganizations, useAuthStore } from "@/stores/auth";
-import { getRunnerService, initWasmCore } from "@/lib/wasm-core";
+import {
+  lightFetchMe,
+  lightGetRunnerAuthStatus,
+  lightAuthorizeRunner,
+  lightListOrganizations,
+  type LightOrganization,
+} from "@/lib/light-auth";
+import { useLightSession } from "@/hooks/useLightSession";
 import type { RunnerAuthStatus } from "@/lib/api/runnerTypes";
-import type { OrganizationData } from "@/lib/api/organizationTypes";
-import { getOrgApiService } from "@/lib/wasm-getters";
 import { ApiError } from "@/lib/api/api-types";
 import { isApiErrorCode } from "@/lib/api/errors";
 import { useTranslations } from "next-intl";
@@ -21,13 +25,13 @@ export default function RunnerAuthorizePage() {
   const searchParams = useSearchParams();
   const authKey = searchParams.get("key");
 
-  const user = useCurrentUser();
-  const organizations = useAuthOrganizations();
-  const setOrganizations = useAuthStore((s) => s.setOrganizations);
-  const _hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const { session, hydrated } = useLightSession();
+  const isSignedIn = !!session?.isAuthenticated;
 
   const [authStatus, setAuthStatus] = useState<RunnerAuthStatus | null>(null);
-  const [selectedOrg, setSelectedOrg] = useState<OrganizationData | null>(null);
+  const [meEmail, setMeEmail] = useState<string | undefined>(undefined);
+  const [organizations, setOrganizations] = useState<LightOrganization[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<LightOrganization | null>(null);
   const [nodeIdInput, setNodeIdInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [authorizing, setAuthorizing] = useState(false);
@@ -35,42 +39,40 @@ export default function RunnerAuthorizePage() {
   const [error, setError] = useState("");
 
   const fetchAuthStatus = useCallback(async () => {
-    await initWasmCore();
     if (!authKey) { setError(t("missingAuthKey")); setLoading(false); return; }
     try {
-      const status: RunnerAuthStatus = JSON.parse(
-        await getRunnerService().get_auth_status(authKey)
-      );
+      const status = await lightGetRunnerAuthStatus(authKey);
       setAuthStatus(status);
       if (status.node_id) setNodeIdInput(status.node_id);
     } catch { setError(t("invalidAuthKey")); }
     finally { setLoading(false); }
   }, [authKey, t]);
 
-  const fetchOrganizations = useCallback(async () => {
-    await initWasmCore();
-    if (!user) return;
-    try {
-      const resp: { organizations: OrganizationData[] } = JSON.parse(await getOrgApiService().list());
-      setOrganizations(resp.organizations);
-      const adminOrg = resp.organizations.find((org) => org.subscription_status === "active" || org.subscription_plan);
-      setSelectedOrg(adminOrg || resp.organizations[0] || null);
-    } catch { /* ignore */ }
-  }, [user, setOrganizations]);
+  const fetchUserAndOrgs = useCallback(async () => {
+    if (!isSignedIn) return;
+    const [me, orgs] = await Promise.all([
+      lightFetchMe(),
+      lightListOrganizations().catch(() => []),
+    ]);
+    setMeEmail(me?.email);
+    setOrganizations(orgs);
+    const adminOrg = orgs.find((org) => org.subscription_status === "active" || org.subscription_plan);
+    setSelectedOrg(adminOrg || orgs[0] || null);
+  }, [isSignedIn]);
 
   useEffect(() => { fetchAuthStatus(); }, [fetchAuthStatus]);
-  useEffect(() => { if (user) fetchOrganizations(); }, [user, fetchOrganizations]);
+  useEffect(() => { fetchUserAndOrgs(); }, [fetchUserAndOrgs]);
 
   const handleAuthorize = async () => {
-    await initWasmCore();
     if (!authKey || !selectedOrg) return;
     setAuthorizing(true);
     setError("");
     try {
-      const json = await getRunnerService().authorize_runner(
-        JSON.stringify({ auth_key: authKey, node_id: nodeIdInput || undefined })
-      );
-      const _result = JSON.parse(json);
+      await lightAuthorizeRunner({
+        organizationSlug: selectedOrg.slug,
+        authKey,
+        nodeId: nodeIdInput || undefined,
+      });
       setAuthorized(true);
     } catch (err: unknown) {
       if (isApiErrorCode(err, "RUNNER_QUOTA_EXCEEDED")) setError(t("quotaExceeded"));
@@ -79,7 +81,7 @@ export default function RunnerAuthorizePage() {
     } finally { setAuthorizing(false); }
   };
 
-  if (loading || !_hasHydrated) return <LoadingScreen message={tCommon("loading")} />;
+  if (loading || !hydrated) return <LoadingScreen message={tCommon("loading")} />;
 
   if (!authKey || (error && !authStatus)) {
     return <ErrorScreen error={error || t("invalidAuthKey")} loginLabel={t("goToLogin")} />;
@@ -97,7 +99,7 @@ export default function RunnerAuthorizePage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center"><BrandLogo /></div>
-        <AuthForm authUser={user} userEmail={user?.email} authKey={authKey!}
+        <AuthForm isSignedIn={isSignedIn} userEmail={meEmail} authKey={authKey!}
           organizations={organizations} selectedOrg={selectedOrg} onSelectOrg={setSelectedOrg}
           nodeIdInput={nodeIdInput} onNodeIdChange={setNodeIdInput} authorizing={authorizing}
           onAuthorize={handleAuthorize} error={error} t={t} tCommon={tCommon} />

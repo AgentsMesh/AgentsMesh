@@ -5,12 +5,6 @@ import { Server, Key, Star, Check, Edit2, Trash2, Plus } from "lucide-react";
 import type { CredentialsSectionProps } from "./types";
 import { getCredentialFieldLabel } from "../credentialFieldLabel";
 
-/**
- * CredentialsSection - Displays and manages credential profiles
- *
- * Shows RunnerHost as the first option and custom credential profiles below.
- * Allows setting default, editing, and deleting profiles.
- */
 export function CredentialsSection({
   isRunnerHostDefault,
   credentialProfiles,

@@ -7,36 +7,25 @@ import (
 	"github.com/google/uuid"
 )
 
-// BlockSnapshot is the shape returned by GetBlockAt. It keeps the wire format
-// deliberately loose (JSONMap values everywhere) so callers can diff two
-// snapshots without worrying about type-assertion ceremony.
 type BlockSnapshot struct {
-	ID       uuid.UUID          `json:"id"`
-	Type     string             `json:"type"`
-	Data     blockstore.JSONMap `json:"data"`
-	Text     *string            `json:"text,omitempty"`
-	Meta     blockstore.JSONMap `json:"meta"`
-	Deleted  bool               `json:"deleted"`
-	/** AtOpID echoes back the snapshot cutoff so clients can chain queries. */
-	AtOpID int64 `json:"at_op_id"`
+	ID      uuid.UUID          `json:"id"`
+	Type    string             `json:"type"`
+	Data    blockstore.JSONMap `json:"data"`
+	Text    *string            `json:"text,omitempty"`
+	Meta    blockstore.JSONMap `json:"meta"`
+	Deleted bool               `json:"deleted"`
+	AtOpID  int64              `json:"at_op_id"`
 }
 
-// GetBlockAt reconstructs `blockID`'s state at the point in time represented
-// by op_id == upto (inclusive). Implementation is a linear fold over the op
-// log: every createBlock / updateBlock / deleteBlock whose target_block
-// matches is merged on top of the running state.
-//
-// Because every op carries its own forward diff in JSONB, the fold does not
-// need to consult the live blocks row — which means the same method doubles
-// as the primitive behind future "undo to point X" features.
+// GetBlockAt reconstructs `blockID` state at op_id <= upto by folding the op
+// log's forward diffs — never reads the live row, so the same primitive works
+// for future "undo to point X".
 func (s *Service) GetBlockAt(
 	ctx context.Context,
 	actor ActorContext,
 	blockID uuid.UUID,
 	uptoOpID int64,
 ) (*BlockSnapshot, error) {
-	// Resolve the workspace via the live row so we can enforce org isolation
-	// even when every previous revision is soft-deleted.
 	live, err := s.repo.GetBlock(ctx, blockID)
 	if err != nil {
 		return nil, err
@@ -68,9 +57,6 @@ func (s *Service) GetBlockAt(
 	return snap, nil
 }
 
-// collectBlockOps streams every op targeting `blockID` in this workspace up
-// to and including `uptoOpID`. We page through StreamOps rather than
-// introducing a dedicated query path; block histories are typically short.
 func (s *Service) collectBlockOps(
 	ctx context.Context,
 	workspaceID, blockID uuid.UUID,
@@ -101,8 +87,6 @@ func (s *Service) collectBlockOps(
 	return out, nil
 }
 
-// applyOpToSnapshot folds a single op into the running snapshot by inspecting
-// its forward diff. Fields absent from forward are preserved.
 func applyOpToSnapshot(snap *BlockSnapshot, op *blockstore.BlockOp) {
 	switch op.Op {
 	case blockstore.OpCreateBlock:

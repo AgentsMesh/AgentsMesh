@@ -16,16 +16,10 @@ import { useBlockstoreDispatch } from "./editor/useBlockstoreDispatch";
 export interface DocumentViewProps {
   workspaceID: string;
   rootBlockID: string;
-  /** Controlled slash-menu visibility — the Blocks page lifts this so the
-   *  doc header's "+ Block" CTA can toggle the same menu. */
   menuOpen?: boolean;
   onMenuOpenChange?: (open: boolean) => void;
 }
 
-// DocumentView is Phase 1's primary rendering surface: a recursive tree of
-// blocks rooted at a single page, with an "add block" control at the bottom.
-// The catalog of what the add-block button lists lives in documentAddOptions
-// so this file stays focused on lifecycle + layout.
 export function DocumentView({
   workspaceID,
   rootBlockID,
@@ -44,13 +38,10 @@ export function DocumentView({
   const dynamicSpecs = useBlockTypeSpecs(workspaceID);
 
   useEffect(() => {
-    // First-time hydrate: pull the whole nest subtree so the editor has data.
     if (root) return;
     void useBlockstoreStore.getState().actions.loadSubtree(workspaceID, rootBlockID);
   }, [workspaceID, rootBlockID, root]);
 
-  // Memoise the option catalog so we don't rebuild 35+ entries on every
-  // keystroke-driven re-render. buildAddOptions is pure in its inputs.
   const addOptions = useMemo(
     () => buildAddOptions({ dispatch, rootBlockID, dynamicSpecs }),
     [dispatch, rootBlockID, dynamicSpecs],

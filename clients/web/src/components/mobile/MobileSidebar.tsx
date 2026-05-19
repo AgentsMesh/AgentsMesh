@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 
-// Import sidebar content components
 import { WorkspaceSidebarContent } from "@/components/ide/sidebar/WorkspaceSidebarContent";
 import { TicketsSidebarContent } from "@/components/ide/sidebar/TicketsSidebarContent";
 import { MeshSidebarContent } from "@/components/ide/sidebar/MeshSidebarContent";
@@ -22,7 +21,6 @@ import { RepositoriesSidebarContent } from "@/components/ide/sidebar/Repositorie
 import { RunnersSidebarContent } from "@/components/ide/sidebar/RunnersSidebarContent";
 import { SettingsSidebarContent } from "@/components/ide/sidebar/SettingsSidebarContent";
 
-// Import modals
 import { CreatePodModal } from "@/components/ide/CreatePodModal";
 import { AddRunnerModal } from "@/components/ide/modals/AddRunnerModal";
 import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal/index";
@@ -31,9 +29,6 @@ interface MobileSidebarProps {
   className?: string;
 }
 
-/**
- * Get display title for activity
- */
 function getActivityTitle(activity: ActivityType): string {
   switch (activity) {
     case "workspace":
@@ -60,9 +55,6 @@ interface SidebarCallbacks {
   onTerminatePod?: () => void;
 }
 
-/**
- * Get sidebar content based on current activity
- */
 function getSidebarContent(
   activity: ActivityType,
   callbacks: SidebarCallbacks
@@ -85,12 +77,6 @@ function getSidebarContent(
   }
 }
 
-/**
- * MobileSidebar - Right-side drawer containing activity-specific sidebar content
- *
- * This provides mobile users access to the same sidebar functionality
- * available on desktop (e.g., ticket lists, channel lists, etc.)
- */
 export function MobileSidebar({ className }: MobileSidebarProps) {
   const activeActivity = useIDEStore((s) => s.activeActivity);
   const mobileSidebarOpen = useIDEStore((s) => s.mobileSidebarOpen);
@@ -99,12 +85,10 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
   const addPane = useWorkspaceStore((s) => s.addPane);
   const fetchPods = usePodStore((s) => s.fetchPods);
 
-  // Modal states
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
   const addRunnerModal = useCtaModal();
   const importRepoModal = useCtaModal();
 
-  // Handle pod creation
   const handleCreatePod = useCallback(() => {
     setCreatePodModalOpen(true);
   }, []);
@@ -121,7 +105,6 @@ export function MobileSidebar({ className }: MobileSidebarProps) {
     }
   }, [addPane, fetchPods]);
 
-  // Handle terminate pod - close sidebar after terminating
   const handleTerminatePod = useCallback(() => {
     setMobileSidebarOpen(false);
   }, [setMobileSidebarOpen]);

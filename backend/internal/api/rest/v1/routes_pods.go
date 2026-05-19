@@ -35,7 +35,6 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		pods.DELETE("/:key/grants/:grant_id", podHandler.RevokePodGrant)
 	}
 
-	// Relay connection endpoint
 	if svc.RelayManager != nil && svc.RelayTokenGenerator != nil {
 		var commandSender runner.RunnerCommandSender
 		var stateReader runner.RunnerStateReader
@@ -49,7 +48,6 @@ func registerPodRoutes(rg *gin.RouterGroup, svc *Services) {
 		RegisterPodConnectRoutes(rg, svc.Pod, svc.RelayManager, svc.RelayTokenGenerator, commandSender, stateReader, svc.GeoResolver, svc.Grant)
 	}
 
-	// AutopilotControllers
 	var autopilotOpts []AutopilotControllerHandlerOption
 	if svc.Pod != nil {
 		autopilotOpts = append(autopilotOpts, WithPodServiceForAutopilot(svc.Pod))

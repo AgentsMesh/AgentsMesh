@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// PromoCodeType represents the type of promo code
 type PromoCodeType string
 
 const (
@@ -15,7 +14,6 @@ const (
 	PromoTypeReferral PromoCodeType = "referral" // Referral code
 )
 
-// PromoCode represents a promotional code
 type PromoCode struct {
 	ID          int64  `gorm:"primaryKey" json:"id"`
 	Code        string `gorm:"size:50;not null;uniqueIndex" json:"code"`
@@ -40,31 +38,25 @@ type PromoCode struct {
 	UpdatedAt   time.Time `gorm:"not null;default:now()" json:"updated_at"`
 }
 
-// TableName returns the table name for PromoCode
 func (PromoCode) TableName() string {
 	return "promo_codes"
 }
 
-// IsValid checks if the promo code is valid for use
 func (p *PromoCode) IsValid() bool {
 	now := time.Now()
 
-	// Check if active
 	if !p.IsActive {
 		return false
 	}
 
-	// Check if started
 	if now.Before(p.StartsAt) {
 		return false
 	}
 
-	// Check if expired
 	if p.ExpiresAt != nil && now.After(*p.ExpiresAt) {
 		return false
 	}
 
-	// Check if max uses reached
 	if p.MaxUses != nil && p.UsedCount >= *p.MaxUses {
 		return false
 	}
@@ -72,7 +64,6 @@ func (p *PromoCode) IsValid() bool {
 	return true
 }
 
-// RemainingUses returns the remaining number of uses (-1 means unlimited)
 func (p *PromoCode) RemainingUses() int {
 	if p.MaxUses == nil {
 		return -1
@@ -84,7 +75,6 @@ func (p *PromoCode) RemainingUses() int {
 	return remaining
 }
 
-// Redemption represents a promo code redemption record
 type Redemption struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	PromoCodeID    int64 `gorm:"not null;index" json:"promo_code_id"`
@@ -103,16 +93,13 @@ type Redemption struct {
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 
-	// Associations
 	PromoCode *PromoCode `gorm:"foreignKey:PromoCodeID" json:"promo_code,omitempty"`
 }
 
-// TableName returns the table name for Redemption
 func (Redemption) TableName() string {
 	return "promo_code_redemptions"
 }
 
-// ListFilter represents filter options for listing promo codes
 type ListFilter struct {
 	Type     *PromoCodeType
 	PlanName *string

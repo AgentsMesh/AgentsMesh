@@ -7,11 +7,8 @@ import { userApi, type UserSummary } from "@/lib/api/user";
 import { cn, getErrorMessage } from "@/lib/utils";
 
 export interface UserPickerProps {
-  /** Current selection; 0 or absent = no user chosen. */
   value?: number;
-  /** Called with {id, display} on pick; display may be empty on clear. */
   onPick: (user: UserSummary | null) => void;
-  /** Visible trigger label when nothing selected. */
   placeholder?: string;
   className?: string;
 }

@@ -6,9 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// BlockWorkspace is a named namespace inside an organization.
-// Holds an optional root_block_id that points to the conventional entry page
-// for UI navigation. Blocks and their refs live under exactly one workspace.
 type BlockWorkspace struct {
 	ID             uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
 	OrganizationID int64      `gorm:"not null;index" json:"organization_id"`
@@ -24,6 +21,4 @@ func (BlockWorkspace) TableName() string {
 	return "block_workspaces"
 }
 
-// DefaultWorkspaceSlug is used by the workspace bootstrapper for the auto-created
-// first workspace of an organization.
 const DefaultWorkspaceSlug = "default"

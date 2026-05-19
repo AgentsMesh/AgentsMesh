@@ -11,13 +11,9 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// CreateAgreementSign creates a signing request for auto-debit agreement
-// Note: This requires special Alipay merchant permissions
 func (p *Provider) CreateAgreementSign(ctx context.Context, req *types.AgreementSignRequest) (*types.AgreementSignResponse, error) {
-	// Generate external agreement number
 	externalAgreementNo := fmt.Sprintf("org_%d_%d", req.OrganizationID, time.Now().Unix())
 
-	// Build sign URL params (this would typically be done via SDK)
 	signParams := fmt.Sprintf(
 		"app_id=%s&method=alipay.user.agreement.page.sign&charset=utf-8&sign_type=RSA2"+
 			"&personal_product_code=GENERAL_WITHHOLDING_P&sign_scene=INDUSTRY|DIGITAL_MEDIA"+
@@ -35,7 +31,6 @@ func (p *Provider) CreateAgreementSign(ctx context.Context, req *types.Agreement
 	}, nil
 }
 
-// ExecuteAgreementPay executes a payment using the agreement
 func (p *Provider) ExecuteAgreementPay(ctx context.Context, req *types.AgreementPayRequest) (*types.AgreementPayResponse, error) {
 	pay := alipay.TradePay{
 		Trade: alipay.Trade{
@@ -70,13 +65,10 @@ func (p *Provider) ExecuteAgreementPay(ctx context.Context, req *types.Agreement
 	}, nil
 }
 
-// CancelAgreement cancels an auto-debit agreement
-// Note: This requires the agreement to be in an active state
 func (p *Provider) CancelAgreement(ctx context.Context, agreementNo string) error {
 	return fmt.Errorf("alipay agreement cancellation requires additional merchant configuration")
 }
 
-// GetAgreementStatus checks the status of an agreement
 func (p *Provider) GetAgreementStatus(ctx context.Context, agreementNo string) (string, error) {
 	return "", fmt.Errorf("alipay agreement query requires additional merchant configuration")
 }

@@ -23,7 +23,6 @@ export function CircuitBreakerAlert({
 
   const isWaitingApproval = autopilotController.phase === "waiting_approval";
 
-  // Calculate time remaining (simplified - would need actual timestamp in production)
   React.useEffect(() => {
     if (!isWaitingApproval) return;
 
@@ -45,7 +44,6 @@ export function CircuitBreakerAlert({
     return () => clearInterval(interval);
   }, [isWaitingApproval, autopilotController.last_iteration_at, approvalTimeoutMin]);
 
-  // Only show when in waiting_approval phase
   if (!isWaitingApproval) {
     return null;
   }

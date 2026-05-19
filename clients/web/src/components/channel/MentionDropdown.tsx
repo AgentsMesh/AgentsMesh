@@ -13,10 +13,6 @@ interface MentionDropdownProps {
   visible: boolean;
 }
 
-/**
- * Floating dropdown for @ mention candidates.
- * Rendered as an absolutely positioned popup near the textarea cursor.
- */
 export function MentionDropdown({
   items,
   activeIndex,
@@ -28,18 +24,15 @@ export function MentionDropdown({
   const listRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLButtonElement>(null);
 
-  // Scroll active item into view
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
   if (!visible || items.length === 0 || !position) return null;
 
-  // Group items by type
   const userItems = items.filter((i) => i.type === "user");
   const podItems = items.filter((i) => i.type === "pod");
 
-  // Calculate flat index offset for pods
   const podIndexOffset = userItems.length;
 
   const renderItem = (item: MentionItem, index: number) => {
@@ -61,7 +54,6 @@ export function MentionDropdown({
           onSelect(item);
         }}
       >
-        {/* Avatar / Icon */}
         {item.type === "user" ? (
           item.avatarUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -95,7 +87,6 @@ export function MentionDropdown({
           </div>
         )}
 
-        {/* Name & description */}
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm truncate">
             {item.displayName}
@@ -120,7 +111,6 @@ export function MentionDropdown({
         left: position.left,
       }}
     >
-      {/* Users section */}
       {userItems.length > 0 && (
         <>
           <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/30 sticky top-0">
@@ -130,7 +120,6 @@ export function MentionDropdown({
         </>
       )}
 
-      {/* Pods section */}
       {podItems.length > 0 && (
         <>
           <div className="px-3 py-1 text-xs font-medium text-muted-foreground bg-muted/30 sticky top-0">

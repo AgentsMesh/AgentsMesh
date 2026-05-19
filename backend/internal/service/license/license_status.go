@@ -7,14 +7,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// GetCurrentLicense returns the current active license
 func (s *Service) GetCurrentLicense() *LicenseData {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.currentLicense
 }
 
-// IsLicenseValid checks if the current license is valid
 func (s *Service) IsLicenseValid() bool {
 	license := s.GetCurrentLicense()
 	if license == nil {
@@ -23,7 +21,6 @@ func (s *Service) IsLicenseValid() bool {
 	return time.Now().Before(license.ExpiresAt)
 }
 
-// GetLicenseStatus returns the current license status
 func (s *Service) GetLicenseStatus() *billing.LicenseStatus {
 	license := s.GetCurrentLicense()
 
@@ -64,7 +61,6 @@ func (s *Service) GetLicenseStatus() *billing.LicenseStatus {
 	return status
 }
 
-// CheckLimits checks if the current usage is within license limits
 func (s *Service) CheckLimits(users, runners, repositories, podMinutes int) error {
 	license := s.GetCurrentLicense()
 	if license == nil {
@@ -96,7 +92,6 @@ func (s *Service) CheckLimits(users, runners, repositories, podMinutes int) erro
 	return nil
 }
 
-// HasFeature checks if a specific feature is enabled in the license
 func (s *Service) HasFeature(feature string) bool {
 	license := s.GetCurrentLicense()
 	if license == nil {

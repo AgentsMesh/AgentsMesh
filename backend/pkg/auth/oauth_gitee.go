@@ -9,17 +9,14 @@ import (
 	"strings"
 )
 
-// GiteeProvider implements OAuth for Gitee
 type GiteeProvider struct {
 	config *OAuthConfig
 }
 
-// NewGiteeProvider creates a new Gitee OAuth provider
 func NewGiteeProvider(config *OAuthConfig) *GiteeProvider {
 	return &GiteeProvider{config: config}
 }
 
-// GetAuthURL returns the Gitee OAuth authorization URL
 func (p *GiteeProvider) GetAuthURL(state string) string {
 	params := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -31,7 +28,6 @@ func (p *GiteeProvider) GetAuthURL(state string) string {
 	return "https://gitee.com/oauth/authorize?" + params.Encode()
 }
 
-// ExchangeCode exchanges authorization code for tokens
 func (p *GiteeProvider) ExchangeCode(ctx context.Context, code string) (*OAuthToken, error) {
 	params := url.Values{
 		"grant_type":    {"authorization_code"},
@@ -61,7 +57,6 @@ func (p *GiteeProvider) ExchangeCode(ctx context.Context, code string) (*OAuthTo
 	return &token, nil
 }
 
-// GetUserInfo retrieves user info from Gitee
 func (p *GiteeProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://gitee.com/api/v5/user?access_token="+token.AccessToken, nil)
 	if err != nil {

@@ -15,7 +15,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// Provider implements payment.AgreementProvider for Alipay
 type Provider struct {
 	client    *alipay.Client
 	appID     string
@@ -23,15 +22,12 @@ type Provider struct {
 	returnURL string
 }
 
-// NewProvider creates a new Alipay provider
-// notifyURL and returnURL are derived from the application's primary domain
 func NewProvider(cfg *config.AlipayConfig, notifyURL, returnURL string) (*Provider, error) {
 	client, err := alipay.New(cfg.AppID, cfg.PrivateKey, !cfg.IsSandbox)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create alipay client: %w", err)
 	}
 
-	// Load Alipay public key for signature verification
 	if err := client.LoadAliPayPublicKey(cfg.AlipayPublicKey); err != nil {
 		return nil, fmt.Errorf("failed to load alipay public key: %w", err)
 	}
@@ -44,12 +40,10 @@ func NewProvider(cfg *config.AlipayConfig, notifyURL, returnURL string) (*Provid
 	}, nil
 }
 
-// GetProviderName returns the provider name
 func (p *Provider) GetProviderName() string {
 	return billing.PaymentProviderAlipay
 }
 
-// CreateCheckoutSession creates a face-to-face QR code payment
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
 	trade := alipay.TradePreCreate{
 		Trade: alipay.Trade{
@@ -83,7 +77,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 	}, nil
 }
 
-// GetCheckoutStatus checks the status of a payment
 func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (string, error) {
 	query := alipay.TradeQuery{
 		OutTradeNo: sessionID,
@@ -110,28 +103,23 @@ func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (str
 	}
 }
 
-// HandleWebhook parses and validates an Alipay async notification
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
-	// Parse the form data from JSON
 	var formData map[string]string
 	if err := json.Unmarshal(payload, &formData); err != nil {
 		slog.ErrorContext(ctx, "failed to parse alipay notification", "error", err)
 		return nil, fmt.Errorf("failed to parse alipay notification: %w", err)
 	}
 
-	// Convert to url.Values for verification
 	values := make(url.Values)
 	for k, v := range formData {
 		values.Set(k, v)
 	}
 
-	// Verify signature
 	if err := p.client.VerifySign(values); err != nil {
 		slog.ErrorContext(ctx, "alipay signature verification failed", "notify_id", formData["notify_id"], "error", err)
 		return nil, fmt.Errorf("alipay signature verification failed: %w", err)
 	}
 
-	// Build webhook event
 	result := &types.WebhookEvent{
 		EventID:         formData["notify_id"],
 		EventType:       formData["notify_type"],
@@ -141,14 +129,12 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		Currency:        "CNY",
 	}
 
-	// Parse amount
 	if totalAmount, ok := formData["total_amount"]; ok && totalAmount != "" {
 		var amount float64
 		_, _ = fmt.Sscanf(totalAmount, "%f", &amount)
 		result.Amount = amount
 	}
 
-	// Map trade status
 	switch formData["trade_status"] {
 	case "TRADE_SUCCESS", "TRADE_FINISHED":
 		result.Status = billing.OrderStatusSucceeded
@@ -160,7 +146,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		result.Status = billing.OrderStatusPending
 	}
 
-	// Store raw payload
 	result.RawPayload = make(map[string]interface{})
 	for k, v := range formData {
 		result.RawPayload[k] = v
@@ -170,7 +155,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 	return result, nil
 }
 
-// RefundPayment initiates a refund
 func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) (*types.RefundResponse, error) {
 	refund := alipay.TradeRefund{
 		OutTradeNo:   req.OrderNo,
@@ -199,9 +183,7 @@ func (p *Provider) RefundPayment(ctx context.Context, req *types.RefundRequest) 
 	}, nil
 }
 
-// CancelSubscription cancels a subscription (closes the trade if pending)
 func (p *Provider) CancelSubscription(ctx context.Context, subscriptionID string, immediate bool) error {
-	// For Alipay, we close the trade
 	close := alipay.TradeClose{
 		OutTradeNo: subscriptionID,
 	}

@@ -3,21 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useCurrentOrg, useAuthStore } from "@/stores/auth";
+import { useLightSession } from "@/hooks/useLightSession";
+import { useRequireLightAuth } from "@/hooks/useRequireLightAuth";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
 
 export default function SetupRunnerPage() {
   const router = useRouter();
   const t = useTranslations();
-  const currentOrg = useCurrentOrg();
+  useRequireLightAuth();
+  const { session } = useLightSession();
+  const orgSlug = session?.currentOrgSlug ?? null;
 
   const handleSkip = () => {
-    if (currentOrg) {
-      router.push(`/${currentOrg.slug}/workspace`);
-    } else {
-      router.push("/");
-    }
+    router.push(orgSlug ? `/${orgSlug}/workspace` : "/");
   };
 
   return (

@@ -1,7 +1,3 @@
-/**
- * CodeMirror theme for AgentFile editor.
- * Uses CSS custom properties for dark/light mode compatibility.
- */
 import { EditorView } from "@codemirror/view";
 
 export const agentfileEditorTheme = EditorView.theme({
@@ -23,7 +19,6 @@ export const agentfileEditorTheme = EditorView.theme({
   ".cm-line": {
     padding: "0 12px",
   },
-  // Syntax token colors — use hsl for theme compatibility
   ".cm-keyword": {
     color: "hsl(var(--chart-1, 220 70% 50%))",
     fontWeight: "600",
@@ -51,7 +46,6 @@ export const agentfileEditorTheme = EditorView.theme({
   ".cm-punctuation": {
     color: "hsl(var(--muted-foreground, 0 0% 45%))",
   },
-  // Autocomplete popup
   ".cm-tooltip-autocomplete": {
     border: "1px solid hsl(var(--border))",
     borderRadius: "6px",
@@ -67,18 +61,15 @@ export const agentfileEditorTheme = EditorView.theme({
     backgroundColor: "hsl(var(--accent))",
     color: "hsl(var(--accent-foreground))",
   },
-  // Lint gutter / diagnostics
   ".cm-diagnostic-error": {
     borderLeft: "3px solid hsl(var(--destructive, 0 84% 60%))",
   },
   ".cm-diagnostic-warning": {
     borderLeft: "3px solid hsl(var(--chart-3, 30 80% 55%))",
   },
-  // Cursor
   ".cm-cursor": {
     borderLeftColor: "hsl(var(--foreground))",
   },
-  // Selection
   ".cm-selectionBackground": {
     backgroundColor: "hsl(var(--accent) / 0.4) !important",
   },

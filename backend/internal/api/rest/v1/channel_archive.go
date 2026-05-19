@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ArchiveChannel archives a channel
-// POST /api/v1/organizations/:slug/channels/:id/archive
 func (h *ChannelHandler) ArchiveChannel(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -23,8 +21,6 @@ func (h *ChannelHandler) ArchiveChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Channel archived"})
 }
 
-// UnarchiveChannel unarchives a channel
-// POST /api/v1/organizations/:slug/channels/:id/unarchive
 func (h *ChannelHandler) UnarchiveChannel(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

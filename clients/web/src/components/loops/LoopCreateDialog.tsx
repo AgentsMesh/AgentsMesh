@@ -25,7 +25,6 @@ import { useLoopStore } from "@/stores/loop";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
-// Reuse Pod creation components
 import { usePodCreationData } from "@/components/pod/hooks";
 import { useConfigOptions } from "@/components/ide/hooks";
 import { AgentSelect } from "@/components/pod/CreatePodForm/AgentSelect";
@@ -40,7 +39,6 @@ import { getUserCredentialService } from "@/lib/wasm-core";
 import type { CredentialProfileData } from "@/lib/api";
 import type { LoopData } from "@/lib/api/loopTypes";
 
-// Special value for RunnerHost credential
 const RUNNER_HOST_PROFILE_ID = 0;
 
 interface LoopCreateDialogProps {
@@ -63,12 +61,10 @@ export function LoopCreateDialog({
 
   const [loading, setLoading] = useState(false);
 
-  // --- Basic fields ---
   const [name, setName] = useState(editLoop?.name || "");
   const [description, setDescription] = useState(editLoop?.description || "");
   const [promptTemplate, setPromptTemplate] = useState(editLoop?.prompt_template || "");
 
-  // --- Pod configuration fields ---
   const [selectedAgentSlug, setSelectedAgentSlug] = useState<string | null>(editLoop?.agent_slug || null);
   const [selectedRunnerId, setSelectedRunnerId] = useState<number | null>(editLoop?.runner_id || null);
   const [selectedRepositoryId, setSelectedRepositoryId] = useState<number | null>(editLoop?.repository_id || null);
@@ -79,7 +75,6 @@ export function LoopCreateDialog({
   const [credentialProfiles, setCredentialProfiles] = useState<CredentialProfileData[]>([]);
   const [loadingCredentials, setLoadingCredentials] = useState(false);
 
-  // --- Loop-specific fields ---
   const [executionMode, setExecutionMode] = useState<string>(editLoop?.execution_mode || "autopilot");
   const [cronEnabled, setCronEnabled] = useState(!!editLoop?.cron_expression);
   const [cronExpression, setCronExpression] = useState(editLoop?.cron_expression || "");
@@ -91,7 +86,6 @@ export function LoopCreateDialog({
   const [maxConcurrentRuns, setMaxConcurrentRuns] = useState(editLoop?.max_concurrent_runs || 1);
   const [maxRetainedRuns, setMaxRetainedRuns] = useState(editLoop?.max_retained_runs || 0);
 
-  // Sync form state when dialog opens or editLoop changes
   useEffect(() => {
     if (!open) return;
     setName(editLoop?.name || "");
@@ -115,7 +109,6 @@ export function LoopCreateDialog({
     setLoading(false);
   }, [open, editLoop]);
 
-  // --- Load Pod creation data (runners, agents, repositories) ---
   const {
     runners,
     repositories,
@@ -124,13 +117,10 @@ export function LoopCreateDialog({
     availableAgents,
   } = usePodCreationData(open);
 
-  // Sync runner selection with Pod creation data hook
   useEffect(() => {
     setPodSelectedRunnerId(selectedRunnerId);
   }, [selectedRunnerId, setPodSelectedRunnerId]);
 
-
-  // Load agent config schema
   const {
     fields: configFields,
     loading: loadingConfig,
@@ -156,12 +146,9 @@ export function LoopCreateDialog({
     }
   }, [open, editLoop, configFields, configOverridesRestored, handleConfigChange]);
 
-  // Load credential profiles when agent changes.
-  // In edit mode, preserve the editLoop's credential_profile_id on first load.
   const [credentialInitialized, setCredentialInitialized] = useState(false);
 
   useEffect(() => {
-    // Reset initialization flag when dialog re-opens
     if (!open) {
       setCredentialInitialized(false);
       return;
@@ -185,7 +172,6 @@ export function LoopCreateDialog({
         const profiles = res.profiles || [];
         setCredentialProfiles(profiles);
 
-        // In edit mode, preserve editLoop's credential on initial load
         if (editLoop?.credential_profile_id && !credentialInitialized) {
           setSelectedCredentialProfileId(editLoop.credential_profile_id);
           setCredentialInitialized(true);
@@ -208,7 +194,6 @@ export function LoopCreateDialog({
     loadCredentials();
   }, [selectedAgentSlug, editLoop, credentialInitialized]);
 
-  // Auto-fill branch when repository changes
   useEffect(() => {
     if (!selectedRepositoryId) {
       setSelectedBranch("");
@@ -220,7 +205,6 @@ export function LoopCreateDialog({
     }
   }, [selectedRepositoryId, repositories]);
 
-  // Reset agent if not available in current runner's agents (only after agents loaded)
   useEffect(() => {
     if (availableAgents.length > 0 && selectedAgentSlug && !availableAgents.find((a) => a.slug === selectedAgentSlug)) {
       setSelectedAgentSlug(null);

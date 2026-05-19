@@ -12,10 +12,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { CommentsSection } from "../editor/CommentsSection";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// EquationRenderer holds a LaTeX expression in data.latex and renders it via
-// KaTeX. display="block" centers the formula; "inline" keeps it flowing.
-// Click-to-edit uses a prompt for Phase-1 UX; a real inline editor can swap
-// in later without touching the data shape.
 export function EquationRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const latex = (block.data?.latex as string | undefined) ?? "";

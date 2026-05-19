@@ -13,7 +13,6 @@ func init() {
 	gin.SetMode(gin.TestMode)
 }
 
-// NewGinContext creates a Gin test context with an HTTP recorder.
 func NewGinContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
 	t.Helper()
 	w := httptest.NewRecorder()
@@ -22,7 +21,6 @@ func NewGinContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
 	return c, w
 }
 
-// SetGinTenantContext sets tenant context on a Gin context (same keys as middleware).
 func SetGinTenantContext(c *gin.Context, orgID, userID int64, role string) {
 	tc := &middleware.TenantContext{
 		OrganizationID:   orgID,
@@ -34,7 +32,6 @@ func SetGinTenantContext(c *gin.Context, orgID, userID int64, role string) {
 	c.Set("user_id", userID)
 }
 
-// SetTenantContext returns a context.Context with tenant info embedded.
 func SetTenantContext(ctx context.Context, orgID, userID int64, role string) context.Context {
 	tc := &middleware.TenantContext{
 		OrganizationID:   orgID,

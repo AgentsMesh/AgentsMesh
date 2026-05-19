@@ -13,23 +13,19 @@ import (
 	gorillaWs "github.com/gorilla/websocket"
 )
 
-// WebSocket upgrader configuration
 var upgrader = gorillaWs.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		// Allow all origins in development, configure properly in production
 		return true
 	},
 }
 
-// EventsHandler handles events WebSocket connections
 type EventsHandler struct {
 	hub    *websocket.Hub
 	logger *slog.Logger
 }
 
-// NewEventsHandler creates a new events handler
 func NewEventsHandler(hub *websocket.Hub) *EventsHandler {
 	return &EventsHandler{
 		hub:    hub,
@@ -37,22 +33,18 @@ func NewEventsHandler(hub *websocket.Hub) *EventsHandler {
 	}
 }
 
-// EventsClientMessage represents a message from the client
 type EventsClientMessage struct {
 	Type string          `json:"type"`
 	Data json.RawMessage `json:"data,omitempty"`
 }
 
-// EventsServerMessage represents a message to the client
 type EventsServerMessage struct {
 	Type      string          `json:"type"`
 	Data      json.RawMessage `json:"data,omitempty"`
 	Timestamp int64           `json:"timestamp"`
 }
 
-// HandleEvents handles WebSocket connection for events channel
 func (h *EventsHandler) HandleEvents(c *gin.Context) {
-	// Get user from context
 	claims, exists := c.Get("claims")
 	if !exists {
 		apierr.Unauthorized(c, apierr.AUTH_REQUIRED, "unauthorized")
@@ -60,7 +52,6 @@ func (h *EventsHandler) HandleEvents(c *gin.Context) {
 	}
 	userClaims := claims.(*middleware.Claims)
 
-	// Get tenant context
 	tenant, exists := c.Get("tenant")
 	if !exists {
 		apierr.BadRequest(c, apierr.VALIDATION_FAILED, "missing organization context")
@@ -74,7 +65,6 @@ func (h *EventsHandler) HandleEvents(c *gin.Context) {
 		"org_slug", tenantCtx.OrganizationSlug,
 	)
 
-	// Upgrade to WebSocket
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		h.logger.Error("failed to upgrade connection", "error", err)
@@ -86,13 +76,10 @@ func (h *EventsHandler) HandleEvents(c *gin.Context) {
 		"org_id", tenantCtx.OrganizationID,
 	)
 
-	// Create events client
 	client := websocket.NewEventsClient(h.hub, conn, userClaims.UserID, tenantCtx.OrganizationID)
 
-	// Register client with hub
 	h.hub.Register(client)
 
-	// Send connected message
 	connectedMsg := &EventsServerMessage{
 		Type:      "connected",
 		Timestamp: time.Now().UnixMilli(),
@@ -105,18 +92,15 @@ func (h *EventsHandler) HandleEvents(c *gin.Context) {
 	}
 	_ = connectedMsg // avoid unused variable warning
 
-	// Start read/write pumps
 	go client.WritePump()
 	go client.ReadPump(func(c *websocket.Client, msg *websocket.Message) {
 		h.handleClientMessage(c, msg)
 	})
 }
 
-// handleClientMessage handles messages from the client
 func (h *EventsHandler) handleClientMessage(client *websocket.Client, msg *websocket.Message) {
 	switch msg.Type {
 	case websocket.MessageTypePing:
-		// Respond with pong
 		pongMsg := &websocket.Message{
 			Type:      websocket.MessageTypePong,
 			Timestamp: time.Now().UnixMilli(),

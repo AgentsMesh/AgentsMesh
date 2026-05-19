@@ -99,7 +99,6 @@ export function ShareDialog({ open, onOpenChange, resourceType, resourceId }: Sh
             <DialogTitle>{t("share.title")}</DialogTitle>
           </DialogHeader>
           <DialogBody className="space-y-4">
-            {/* Grant form */}
             <div className="space-y-3 pb-3 border-b border-border">
               <FormField label={t("share.selectUser")} htmlFor="share-user">
                 <select
@@ -122,7 +121,6 @@ export function ShareDialog({ open, onOpenChange, resourceType, resourceId }: Sh
               </Button>
             </div>
 
-            {/* Grants list */}
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">{t("share.sharedWith")}</p>
               {loading ? (

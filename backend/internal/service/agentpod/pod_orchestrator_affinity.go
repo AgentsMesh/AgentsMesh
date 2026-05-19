@@ -7,9 +7,6 @@ import (
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// buildAffinityHints builds affinity context for runner selection.
-// Always returns non-nil hints so creator + load scoring is always active.
-// Repo and tag fields are populated when context is available.
 func (o *PodOrchestrator) buildAffinityHints(ctx context.Context, req *OrchestrateCreatePodRequest) *runnerDomain.AffinityHints {
 	hints := &runnerDomain.AffinityHints{}
 

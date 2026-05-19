@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// AuditLog represents an audit log entry
 type AuditLog struct {
 	ID             int64           `gorm:"primaryKey" json:"id"`
 	OrganizationID *int64          `gorm:"index" json:"organization_id,omitempty"`
@@ -28,7 +27,6 @@ func (AuditLog) TableName() string {
 	return "audit_logs"
 }
 
-// AuditConfig holds configuration for the audit middleware
 type AuditConfig struct {
 	DB              *gorm.DB
 	SkipPaths       []string
@@ -38,7 +36,6 @@ type AuditConfig struct {
 	SensitiveFields []string
 }
 
-// DefaultAuditConfig returns a default audit configuration
 func DefaultAuditConfig(db *gorm.DB) *AuditConfig {
 	return &AuditConfig{
 		DB:          db,
@@ -53,7 +50,6 @@ func DefaultAuditConfig(db *gorm.DB) *AuditConfig {
 	}
 }
 
-// LogActionOptions holds options for logging an action
 type LogActionOptions struct {
 	OrganizationID int64
 	ActorID        int64
@@ -66,7 +62,6 @@ type LogActionOptions struct {
 	UserAgent      string
 }
 
-// AuditLogFilter holds filters for querying audit logs
 type AuditLogFilter struct {
 	OrganizationID int64
 	ActorID        int64

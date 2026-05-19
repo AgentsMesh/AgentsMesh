@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// AddMember implements Interface.
 func (m *MockService) AddMember(ctx context.Context, orgID, userID int64, role string) error {
 	if m.AddMemberErr != nil {
 		return m.AddMemberErr
@@ -29,7 +28,6 @@ func (m *MockService) AddMember(ctx context.Context, orgID, userID int64, role s
 	return nil
 }
 
-// RemoveMember implements Interface.
 func (m *MockService) RemoveMember(ctx context.Context, orgID, userID int64) error {
 	if m.RemoveMemberErr != nil {
 		return m.RemoveMemberErr
@@ -38,7 +36,6 @@ func (m *MockService) RemoveMember(ctx context.Context, orgID, userID int64) err
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Check if owner
 	if member, ok := m.members[orgID][userID]; ok && member.Role == organization.RoleOwner {
 		return ErrCannotRemoveOwner
 	}
@@ -48,7 +45,6 @@ func (m *MockService) RemoveMember(ctx context.Context, orgID, userID int64) err
 	return nil
 }
 
-// UpdateMemberRole implements Interface.
 func (m *MockService) UpdateMemberRole(ctx context.Context, orgID, userID int64, role string) error {
 	if m.UpdateMemberRoleErr != nil {
 		return m.UpdateMemberRoleErr
@@ -63,7 +59,6 @@ func (m *MockService) UpdateMemberRole(ctx context.Context, orgID, userID int64,
 	return nil
 }
 
-// GetMember implements Interface.
 func (m *MockService) GetMember(ctx context.Context, orgID, userID int64) (*organization.Member, error) {
 	if m.GetMemberErr != nil {
 		return nil, m.GetMemberErr
@@ -80,7 +75,6 @@ func (m *MockService) GetMember(ctx context.Context, orgID, userID int64) (*orga
 	return nil, ErrOrganizationNotFound
 }
 
-// ListMembers implements Interface.
 func (m *MockService) ListMembers(ctx context.Context, orgID int64) ([]*organization.Member, error) {
 	if m.ListMembersErr != nil {
 		return nil, m.ListMembersErr
@@ -100,7 +94,6 @@ func (m *MockService) ListMembers(ctx context.Context, orgID int64) ([]*organiza
 	return result, nil
 }
 
-// IsAdmin implements Interface.
 func (m *MockService) IsAdmin(ctx context.Context, orgID, userID int64) (bool, error) {
 	if m.IsAdminErr != nil {
 		return false, m.IsAdminErr
@@ -117,7 +110,6 @@ func (m *MockService) IsAdmin(ctx context.Context, orgID, userID int64) (bool, e
 	return false, nil
 }
 
-// IsOwner implements Interface.
 func (m *MockService) IsOwner(ctx context.Context, orgID, userID int64) (bool, error) {
 	if m.IsOwnerErr != nil {
 		return false, m.IsOwnerErr
@@ -134,7 +126,6 @@ func (m *MockService) IsOwner(ctx context.Context, orgID, userID int64) (bool, e
 	return false, nil
 }
 
-// IsMember implements Interface.
 func (m *MockService) IsMember(ctx context.Context, orgID, userID int64) (bool, error) {
 	if m.IsMemberErr != nil {
 		return false, m.IsMemberErr
@@ -150,7 +141,6 @@ func (m *MockService) IsMember(ctx context.Context, orgID, userID int64) (bool, 
 	return false, nil
 }
 
-// GetUserRole implements Interface.
 func (m *MockService) GetUserRole(ctx context.Context, orgID, userID int64) (string, error) {
 	if m.GetUserRoleErr != nil {
 		return "", m.GetUserRoleErr
@@ -167,14 +157,10 @@ func (m *MockService) GetUserRole(ctx context.Context, orgID, userID int64) (str
 	return "", ErrOrganizationNotFound
 }
 
-// GetMemberRole implements Interface.
 func (m *MockService) GetMemberRole(ctx context.Context, orgID, userID int64) (string, error) {
 	return m.GetUserRole(ctx, orgID, userID)
 }
 
-// --- Test Helper Methods ---
-
-// AddOrg adds an organization to the mock storage.
 func (m *MockService) AddOrg(org *organization.Organization) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -187,7 +173,6 @@ func (m *MockService) AddOrg(org *organization.Organization) {
 	m.orgsBySlug[org.Slug] = org
 }
 
-// SetMember sets a member for an organization.
 func (m *MockService) SetMember(orgID, userID int64, role string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -214,7 +199,6 @@ func (m *MockService) GetOrgs() []*organization.Organization {
 	return result
 }
 
-// Reset clears all data.
 func (m *MockService) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()

@@ -4,7 +4,6 @@ import { DashboardShell } from "@/pages/layouts/DashboardShell";
 import { useAuthStore, useCurrentOrg, useAuthOrganizations, useIsAuthenticated } from "@/stores/auth";
 import { RequireAuth } from "@/components/auth/RequireAuth";
 
-// Auth pages
 import { LoginPage } from "@/pages/auth/login/LoginPage";
 import { RegisterPage } from "@/pages/auth/register/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/auth/forgot-password/ForgotPasswordPage";
@@ -20,7 +19,6 @@ import { SetupRunnerPage } from "@/pages/auth/onboarding/setup-runner/SetupRunne
 import { LocalRunnerSetupPage } from "@/pages/auth/onboarding/setup-runner/local/LocalRunnerSetupPage";
 import { RunnerAuthorizePage } from "@/pages/auth/runners-authorize/RunnerAuthorizePage";
 
-// Dashboard pages
 import { WorkspacePage } from "@/pages/dashboard/workspace/WorkspacePage";
 import { TicketsPage } from "@/pages/dashboard/tickets/TicketsPage";
 import { TicketDetailPage } from "@/pages/dashboard/tickets/TicketDetailPage";
@@ -34,32 +32,21 @@ import InfraPage from "@/app/(dashboard)/[org]/infra/page";
 import { RepositoryDetailPage } from "@/pages/dashboard/repository-detail/RepositoryDetailPage";
 import { SettingsPage } from "@/pages/dashboard/settings/OrgSettingsPage";
 
-// User settings
 import { PersonalSettingsPage } from "@/pages/settings/SettingsRootPage";
 import { GeneralSettingsPage } from "@/pages/settings/general/GeneralSettingsPage";
 import { GitSettingsPage } from "@/pages/settings/git/GitSettingsPage";
 import { PersonalNotificationsPage } from "@/pages/settings/notifications/NotificationsPage";
 
-// Support
 import { SupportPage } from "@/pages/support/SupportPage";
 import { SupportTicketDetailPage } from "@/pages/support/detail/SupportDetailPage";
 
-// Popout
 import { PopoutTerminalPage } from "@/pages/popout/terminal/PopoutTerminalPage";
 
-// Route-level error boundary — prevents uncaught render errors from wedging
-// the whole window (HashRouter has no server-side fallback in Electron).
 import { RouteErrorBoundary } from "@/pages/RouteErrorBoundary";
 
-// react-router v7's `<Navigate to="../infra?tab=runners">` and even its
-// absolute-path equivalent drop the search string intermittently when the
-// HashRouter is the active history — runners-nav.spec failed deterministically
-// (3 retries), repositories-nav.spec failed flakily (1 retry recovered). The
-// same hash-write fallback `replaceWithHashFallback` uses in
-// shims/next-navigation.ts is the proven workaround: write the full
-// `#/{org}/infra?tab=...` to window.location.hash directly so HashRouter
-// picks up both pathname and search atomically. InfraPage's "default tab"
-// effect then sees `tab` already set and won't overwrite it.
+// Workaround: react-router v7 `<Navigate>` drops the search string intermittently under
+// HashRouter (runners-nav.spec/repositories-nav.spec flake). Same hash-write fallback as
+// shims/next-navigation.ts replaceWithHashFallback — write full hash atomically.
 function LegacyInfraTabRedirect({ tab }: { tab: "runners" | "repositories" }) {
   const { org } = useParams<{ org: string }>();
   useEffect(() => {
@@ -75,7 +62,6 @@ function LegacyInfraTabRedirect({ tab }: { tab: "runners" | "repositories" }) {
 }
 
 export const router = createBrowserRouter([
-  // Auth routes (no shell)
   { path: "/login", element: <LoginPage /> },
   { path: "/register", element: <RegisterPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
@@ -96,13 +82,10 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Popout (no shell) — RequireAuth gates the new BrowserWindow. The
-  // window.open()-spawned renderer runs its own AppProviders.PlatformGate
-  // (bootstrap → setHasHydrated), so by the time this route mounts the
-  // session has been rehydrated from localStorage.
+  // Popout (no shell): window.open()-spawned renderer runs its own AppProviders.PlatformGate
+  // bootstrap, so session has been rehydrated from localStorage by the time this route mounts.
   { path: "/popout/terminal/:podKey", element: <RequireAuth><PopoutTerminalPage /></RequireAuth> },
 
-  // Dashboard routes (wrapped in DashboardShell)
   {
     path: "/:org",
     element: <DashboardShell><Outlet /></DashboardShell>,
@@ -127,7 +110,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // User settings (wrapped in DashboardShell)
   {
     path: "/settings",
     element: <DashboardShell><Outlet /></DashboardShell>,
@@ -140,7 +122,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Support (wrapped in DashboardShell)
   {
     path: "/support",
     element: <DashboardShell><Outlet /></DashboardShell>,
@@ -151,9 +132,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Root redirect — auth-aware
   { path: "/", element: <RootRedirect />, errorElement: <RouteErrorBoundary /> },
-  // 404 fallback
   { path: "*", element: <RouteErrorBoundary /> },
 ]);
 

@@ -17,12 +17,10 @@ export function APIKeysSettings({ t }: APIKeysSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Dialog states
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createdRawKey, setCreatedRawKey] = useState<string | null>(null);
   const [editingKey, setEditingKey] = useState<APIKeyData | null>(null);
 
-  // Confirm dialog for revoke
   const { dialogProps, confirm } = useConfirmDialog();
 
   const fetchKeys = useCallback(async () => {

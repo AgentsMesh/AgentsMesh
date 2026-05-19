@@ -37,19 +37,14 @@ func (s *Service) applyCreateBlock(
 	if p.Meta == nil {
 		p.Meta = blockstore.JSONMap{}
 	}
-	// Tier 1: a schema-driven type runs full record validation (required +
-	// per-column type / options). Legacy types fall back to the old
-	// required-key presence check inside the same call.
 	if key, reason := spec.ValidateRecord(p.Data); key != "" {
 		if reason == "required" {
 			return nil, fmt.Errorf("%w: %s", blockstore.ErrMissingRequiredKey, key)
 		}
 		return nil, fmt.Errorf("%w: %s: %s", blockstore.ErrColumnValueInvalid, key, reason)
 	}
-	// Trigger-specific invariants (SSRF guard). Sinks here so both the gRPC
-	// MCP path and the REST /blocks/ops path share a single validation point
-	// — previously the guard lived in the REST MCP dispatcher and a direct
-	// /blocks/ops writer would have bypassed it.
+	// Trigger SSRF guard runs here (not in REST MCP dispatcher) so the gRPC MCP path
+	// and direct /blocks/ops both pass through it.
 	if p.Type == blockstore.BlockTypeTriggerDef {
 		if err := validateTriggerDefData(p.Data); err != nil {
 			return nil, err

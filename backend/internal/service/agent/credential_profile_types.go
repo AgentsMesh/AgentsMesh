@@ -8,26 +8,22 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// Errors for CredentialProfileService
 var (
 	ErrCredentialProfileNotFound = errors.New("credential profile not found")
 	ErrCredentialProfileExists   = errors.New("credential profile with this name already exists")
 	ErrCredentialsRequired       = errors.New("required credentials missing")
 )
 
-// AgentProvider provides agent lookup for credential profile operations
 type AgentProvider interface {
 	GetAgent(ctx context.Context, slug string) (*agent.Agent, error)
 }
 
-// CredentialProfileService handles user credential profile operations
 type CredentialProfileService struct {
 	repo         agent.CredentialProfileRepository
 	agentSvc     AgentProvider
 	encryptor        *crypto.Encryptor
 }
 
-// NewCredentialProfileService creates a new credential profile service
 func NewCredentialProfileService(repo agent.CredentialProfileRepository, agentSvc AgentProvider, encryptor *crypto.Encryptor) *CredentialProfileService {
 	return &CredentialProfileService{
 		repo:      repo,
@@ -36,7 +32,6 @@ func NewCredentialProfileService(repo agent.CredentialProfileRepository, agentSv
 	}
 }
 
-// encryptCredentials encrypts a map of plaintext credentials
 func (s *CredentialProfileService) encryptCredentials(creds map[string]string) (agent.EncryptedCredentials, error) {
 	encrypted := make(agent.EncryptedCredentials, len(creds))
 	for k, v := range creds {
@@ -49,7 +44,6 @@ func (s *CredentialProfileService) encryptCredentials(creds map[string]string) (
 	return encrypted, nil
 }
 
-// decryptCredentials decrypts a map of encrypted credentials
 func (s *CredentialProfileService) decryptCredentials(creds agent.EncryptedCredentials) (agent.EncryptedCredentials, error) {
 	decrypted := make(agent.EncryptedCredentials, len(creds))
 	for k, v := range creds {
@@ -62,19 +56,15 @@ func (s *CredentialProfileService) decryptCredentials(creds agent.EncryptedCrede
 	return decrypted, nil
 }
 
-// ProfileToResponse converts a profile to API response, decrypting text field values
-// in ConfiguredValues. Secret field values remain hidden (only field names in ConfiguredFields).
 func (s *CredentialProfileService) ProfileToResponse(p *agent.UserAgentCredentialProfile) *agent.CredentialProfileResponse {
 	resp := p.ToResponse()
 
-	// Decrypt text field values in ConfiguredValues (they are stored encrypted)
 	if resp.ConfiguredValues != nil {
 		for k, v := range resp.ConfiguredValues {
 			dec, err := s.encryptor.Decrypt(v)
 			if err == nil {
 				resp.ConfiguredValues[k] = dec
 			}
-			// If decryption fails (e.g., value was not encrypted), keep original
 		}
 	}
 

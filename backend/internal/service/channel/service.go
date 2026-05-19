@@ -19,7 +19,6 @@ var (
 	ErrInvalidContent   = errors.New("invalid message content")
 )
 
-// Service handles channel operations
 type Service struct {
 	repo               channel.ChannelRepository
 	eventBus           *eventbus.EventBus
@@ -40,12 +39,10 @@ func (s *Service) SetUserLookup(lookup UserLookup) {
 	s.userLookup = lookup
 }
 
-// AddPostSendHook registers a hook to be called after message persistence
 func (s *Service) AddPostSendHook(hook PostSendHook) {
 	s.postSendHooks = append(s.postSendHooks, hook)
 }
 
-// CreateChannelRequest represents a channel creation request
 type CreateChannelRequest struct {
 	OrganizationID   int64
 	Name             string
@@ -58,7 +55,6 @@ type CreateChannelRequest struct {
 	InitialMemberIDs []int64
 }
 
-// CreateChannel creates a new channel with explicit membership
 func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) (*channel.Channel, error) {
 	existing, err := s.repo.GetByOrgAndName(ctx, req.OrganizationID, req.Name)
 	if err != nil {
@@ -90,7 +86,6 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 		return nil, err
 	}
 
-	// Creator auto-joins with creator role
 	if req.CreatedByUserID != nil {
 		_ = s.repo.AddMemberWithRole(ctx, ch.ID, *req.CreatedByUserID, channel.RoleCreator)
 	}
@@ -106,7 +101,6 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 	return ch, nil
 }
 
-// GetChannel returns a channel by ID
 func (s *Service) GetChannel(ctx context.Context, channelID int64) (*channel.Channel, error) {
 	ch, err := s.repo.GetByID(ctx, channelID)
 	if err != nil {
@@ -118,7 +112,6 @@ func (s *Service) GetChannel(ctx context.Context, channelID int64) (*channel.Cha
 	return ch, nil
 }
 
-// GetChannelForUser returns a channel by ID with membership info populated.
 func (s *Service) GetChannelForUser(ctx context.Context, channelID, userID int64) (*channel.Channel, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
@@ -130,7 +123,6 @@ func (s *Service) GetChannelForUser(ctx context.Context, channelID, userID int64
 	return ch, nil
 }
 
-// GetChannelByName returns a channel by name within an organization
 func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string) (*channel.Channel, error) {
 	ch, err := s.repo.GetByOrgAndName(ctx, orgID, name)
 	if err != nil {
@@ -142,13 +134,10 @@ func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string
 	return ch, nil
 }
 
-// ListChannels returns channels visible to a user within an organization.
-// Public channels are always visible; private channels require membership.
 func (s *Service) ListChannels(ctx context.Context, orgID, userID int64, filter *channel.ChannelListFilter) ([]*channel.Channel, int64, error) {
 	return s.repo.ListVisibleForUser(ctx, orgID, userID, filter)
 }
 
-// UpdateChannel updates a channel
 func (s *Service) UpdateChannel(ctx context.Context, channelID int64, name, description, document *string) (*channel.Channel, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {

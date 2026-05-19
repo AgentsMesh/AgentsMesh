@@ -1,6 +1,5 @@
 package ticket
 
-// Label represents a label that can be applied to tickets
 type Label struct {
 	ID             int64  `gorm:"primaryKey" json:"id"`
 	OrganizationID int64  `gorm:"not null;index" json:"organization_id"`
@@ -14,7 +13,6 @@ func (Label) TableName() string {
 	return "labels"
 }
 
-// TicketLabel represents the many-to-many relationship between tickets and labels
 type TicketLabel struct {
 	TicketID int64 `gorm:"primaryKey" json:"ticket_id"`
 	LabelID  int64 `gorm:"primaryKey" json:"label_id"`

@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LogAdminAction logs an audit action with proper error handling.
-// This is a shared helper function used by all admin handlers.
 func LogAdminAction(
 	c *gin.Context,
 	svc *adminservice.Service,
@@ -40,8 +38,6 @@ func LogAdminAction(
 	)
 
 	if err != nil {
-		// Log the error but don't fail the request
-		// Audit logging failure should not prevent the operation from succeeding
 		slog.WarnContext(c.Request.Context(), "failed to log admin audit action",
 			"action", action, "target_type", targetType, "target_id", targetID,
 			"admin_id", adminUserID, "error", err)

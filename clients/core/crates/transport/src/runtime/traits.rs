@@ -33,13 +33,9 @@ pub trait Runtime: Clone + 'static {
     fn sleep(&self, duration: Duration) -> BoxFuture<()>;
 }
 
-/// Race a future against a runtime-specific sleep. Returns `Ok(value)` if
-/// the future resolved first, `Err(Elapsed)` if the timer fired first.
-///
-/// Why a free function instead of a `Runtime` trait method: the bound on
-/// the future's `Output` would force every Runtime impl to spell out the
-/// generic; a free function with `R: Runtime` keeps the trait dyn-safe and
-/// the call sites compact.
+/// Free function rather than a `Runtime` trait method: the bound on the
+/// future's `Output` would force every Runtime impl to spell out the
+/// generic; `R: Runtime` keeps the trait dyn-safe.
 pub async fn timeout<R, F>(runtime: &R, duration: Duration, fut: F) -> Result<F::Output, Elapsed>
 where
     R: Runtime,

@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListPodsRequest represents pod list request
 type ListPodsRequest struct {
 	Status      string `form:"status"`
 	CreatedByID int64  `form:"created_by_id"`
@@ -21,8 +20,6 @@ type ListPodsRequest struct {
 	Offset      int    `form:"offset"`
 }
 
-// ListPods lists pods
-// GET /api/v1/organizations/:slug/pods
 func (h *PodHandler) ListPods(c *gin.Context) {
 	var req ListPodsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -42,7 +39,6 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 		statuses = strings.Split(req.Status, ",")
 	}
 
-	// Members can only list their own pods; override any user-supplied created_by_id.
 	sub := policy.NewSubject(tenant.OrganizationID, tenant.UserID, tenant.UserRole)
 	filter := policy.PodPolicy.ListFilter(sub)
 	if filter.OwnerOnly > 0 {
@@ -73,8 +69,6 @@ func (h *PodHandler) ListPods(c *gin.Context) {
 	})
 }
 
-// GetPod returns pod by key
-// GET /api/v1/organizations/:slug/pods/:key
 func (h *PodHandler) GetPod(c *gin.Context) {
 	podKey := c.Param("key")
 
@@ -94,8 +88,6 @@ func (h *PodHandler) GetPod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pod": pod})
 }
 
-// GetPodConnection returns connection info for pod
-// GET /api/v1/organizations/:slug/pods/:key/connect
 func (h *PodHandler) GetPodConnection(c *gin.Context) {
 	podKey := c.Param("key")
 
@@ -117,7 +109,6 @@ func (h *PodHandler) GetPodConnection(c *gin.Context) {
 		return
 	}
 
-	// Return WebSocket connection URL
 	c.JSON(http.StatusOK, gin.H{
 		"pod_key": podKey,
 		"ws_url":  "/api/v1/ws/terminal/" + podKey,
@@ -125,8 +116,6 @@ func (h *PodHandler) GetPodConnection(c *gin.Context) {
 	})
 }
 
-// ListPodsByTicket lists pods for a ticket, filtered by the requester's pod visibility.
-// GET /api/v1/organizations/:slug/tickets/:id/pods
 func (h *PodHandler) ListPodsByTicket(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -165,8 +154,6 @@ func (h *PodHandler) ListPodsByTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pods": pods})
 }
 
-// GetConnectionInfo returns connection info for pod (alias for GetPodConnection)
-// GET /api/v1/organizations/:slug/pods/:key/connect
 func (h *PodHandler) GetConnectionInfo(c *gin.Context) {
 	h.GetPodConnection(c)
 }

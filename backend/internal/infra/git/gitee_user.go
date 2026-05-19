@@ -7,7 +7,6 @@ import (
 	"strconv"
 )
 
-// GetCurrentUser returns the authenticated user
 func (p *GiteeProvider) GetCurrentUser(ctx context.Context) (*User, error) {
 	resp, err := p.doRequest(ctx, http.MethodGet, "/user", nil)
 	if err != nil {

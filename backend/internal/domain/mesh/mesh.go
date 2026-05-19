@@ -2,7 +2,6 @@ package mesh
 
 import "time"
 
-// MeshNode represents a pod node in the Mesh topology
 type MeshNode struct {
 	PodKey           string        `json:"pod_key"`
 	Status           string        `json:"status"`
@@ -22,7 +21,6 @@ type MeshNode struct {
 	Position         *NodePosition `json:"position,omitempty"`
 }
 
-// RunnerInfo represents runner summary information for the Mesh topology
 type RunnerInfo struct {
 	ID                int64  `json:"id"`
 	NodeID            string `json:"node_id"`
@@ -31,13 +29,11 @@ type RunnerInfo struct {
 	CurrentPods       int    `json:"current_pods"`
 }
 
-// NodePosition represents the visual position of a node in the topology graph
 type NodePosition struct {
 	X float64 `json:"x"`
 	Y float64 `json:"y"`
 }
 
-// MeshEdge represents a binding/connection between two pod nodes
 type MeshEdge struct {
 	ID            int64    `json:"id"`
 	Source        string   `json:"source"`         // Initiator pod key
@@ -47,7 +43,6 @@ type MeshEdge struct {
 	Status        string   `json:"status"`
 }
 
-// ChannelInfo represents channel information for Mesh visualization
 type ChannelInfo struct {
 	ID           int64    `json:"id"`
 	Name         string   `json:"name"`
@@ -57,7 +52,6 @@ type ChannelInfo struct {
 	IsArchived   bool     `json:"is_archived"`
 }
 
-// MeshTopology represents the complete topology of active pods and their connections
 type MeshTopology struct {
 	Nodes    []MeshNode    `json:"nodes"`
 	Edges    []MeshEdge    `json:"edges"`
@@ -65,7 +59,6 @@ type MeshTopology struct {
 	Runners  []RunnerInfo  `json:"runners"`
 }
 
-// ChannelPod represents the association between a channel and a pod
 type ChannelPod struct {
 	ID        int64     `gorm:"primaryKey" json:"id"`
 	ChannelID int64     `gorm:"not null;index" json:"channel_id"`
@@ -77,7 +70,6 @@ func (ChannelPod) TableName() string {
 	return "channel_pods"
 }
 
-// ChannelAccess represents access tracking for channels
 type ChannelAccess struct {
 	ID         int64     `gorm:"primaryKey" json:"id"`
 	ChannelID  int64     `gorm:"not null;index" json:"channel_id"`
@@ -90,7 +82,6 @@ func (ChannelAccess) TableName() string {
 	return "channel_access"
 }
 
-// CreatePodForTicketRequest represents the request to create a pod for a ticket
 type CreatePodForTicketRequest struct {
 	OrganizationID int64  `json:"organization_id"`
 	TicketID       int64  `json:"ticket_id"`
@@ -101,13 +92,11 @@ type CreatePodForTicketRequest struct {
 	PermissionMode string `json:"permission_mode,omitempty"`
 }
 
-// TicketPodInfo represents pod information for a ticket
 type TicketPodInfo struct {
 	TicketID int64         `json:"ticket_id"`
 	Pods     []MeshNode `json:"pods"`
 }
 
-// BatchTicketPodsResponse represents the response for batch ticket pods query
 type BatchTicketPodsResponse struct {
 	TicketPods map[int64][]MeshNode `json:"ticket_pods"`
 }

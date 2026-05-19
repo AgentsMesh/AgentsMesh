@@ -83,18 +83,12 @@ pub struct CredentialProfilesByAgent {
     pub profiles: Vec<AgentCredentialProfile>,
 }
 
-// Backend wire format: `GET /api/v1/users/agent-credentials` returns
-// `{ "items": [{ agent_slug, agent_name, profiles: [...] }] }` — a grouped
-// view across all agents. Distinct from the per-agent endpoint below.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentCredentialProfileListResponse {
     #[serde(default)]
     pub items: Vec<CredentialProfilesByAgent>,
 }
 
-// Backend wire format: `GET /api/v1/users/agent-credentials/agents/:slug`
-// returns `{ "profiles": [...], "runner_host": {...} }` — a flat list for a
-// single agent plus the virtual RunnerHost descriptor.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentCredentialProfilesForAgentResponse {
     #[serde(default)]

@@ -11,9 +11,6 @@ interface IterationItemProps {
   iteration: AutopilotIteration;
 }
 
-/**
- * IterationItem - A single iteration entry in the history
- */
 function IterationItem({ iteration }: IterationItemProps) {
   const [expanded, setExpanded] = React.useState(false);
   const phaseInfo = iterationPhaseConfig[iteration.phase] || {
@@ -88,9 +85,6 @@ interface HistoryTabProps {
   autopilotControllerKey: string;
 }
 
-/**
- * HistoryTab - Displays the iteration history for an autopilot session
- */
 export function HistoryTab({ autopilotControllerKey }: HistoryTabProps) {
   const controllerIterations = useAutopilotIterations(autopilotControllerKey);
   const fetchIterations = useAutopilotStore((s) => s.fetchIterations);
@@ -110,7 +104,6 @@ export function HistoryTab({ autopilotControllerKey }: HistoryTabProps) {
     );
   }
 
-  // Show iterations in reverse order (most recent first)
   const displayIterations = [...controllerIterations].reverse();
 
   return (

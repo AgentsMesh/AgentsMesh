@@ -16,17 +16,6 @@ interface ChannelRightRailProps {
   onOpenSettings?: () => void;
 }
 
-/**
- * Right drawer — design/desktop/pages/channels.pastel `drawer_rail`. Four sections
- * in a fixed 280px column:
- *   PODS · N     → pod list + manager
- *   MEMBERS · N  → member manager
- *   LINKED       → ticket + repo (conditional)
- *   DOCUMENT     → channel.document preview + settings link
- *
- * Hidden unless the header "⋯" button toggles it on. No duplicated
- * controls on the header — everything lives here.
- */
 export function ChannelRightRail({
   channel,
   channelId,

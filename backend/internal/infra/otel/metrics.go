@@ -12,9 +12,6 @@ var (
 	GRPCMessagesRecv  metric.Int64Counter       = noop.Int64Counter{}
 	PodCreateDuration metric.Float64Histogram   = noop.Float64Histogram{}
 
-	// Blockstore metrics. Tagged at call site with op_kind + actor_type so
-	// grafana breakdowns (Agent vs user writes, createBlock vs updateBlock)
-	// just work without new metric names.
 	BlockstoreOpsApplied     metric.Int64Counter       = noop.Int64Counter{}
 	BlockstoreOpsDuration    metric.Float64Histogram   = noop.Float64Histogram{}
 	BlockstoreEmbedQueue     metric.Int64UpDownCounter = noop.Int64UpDownCounter{}

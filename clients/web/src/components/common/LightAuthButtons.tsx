@@ -16,7 +16,6 @@ interface LightAuthButtonsProps {
 // Auth-aware CTA for marketing pages — reads PersistedSession from localStorage
 // directly instead of going through wasm. Interface matches AuthButtons so
 // PageHeader / Navbar can swap imports without changing call sites.
-//
 // Use this on routes that must stay wasm-free (/, /docs, /about, /blog, ...).
 // Use AuthButtons inside (auth) / (dashboard) where wasm is already loaded.
 export function LightAuthButtons({

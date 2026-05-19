@@ -12,14 +12,10 @@ const (
 	perpetualCircuitBreakerThreshold = 3
 )
 
-// handlePodRestarting handles pod restarting event from runner (perpetual pod auto-restart).
-// Updates restart tracking fields and publishes an event for frontend notification.
-// If restarts are too frequent, triggers a circuit breaker (TerminatePod).
 func (pc *PodCoordinator) handlePodRestarting(runnerID int64, data *runnerv1.PodRestartingEvent) {
 	ctx := context.Background()
 	now := time.Now()
 
-	// Read BEFORE write: capture previous last_restart_at for circuit breaker check.
 	var prevLastRestartAt *time.Time
 	if data.RestartCount >= perpetualCircuitBreakerThreshold {
 		pod, err := pc.podStore.GetByKey(ctx, data.PodKey)
@@ -51,8 +47,6 @@ func (pc *PodCoordinator) handlePodRestarting(runnerID int64, data *runnerv1.Pod
 		pc.onPodRestarting(data.PodKey, data.ExitCode, data.RestartCount)
 	}
 
-	// Circuit breaker: N restarts within a time window → force terminate.
-	// Uses the PREVIOUS last_restart_at (before this event) to measure the actual interval.
 	if data.RestartCount >= perpetualCircuitBreakerThreshold && prevLastRestartAt != nil {
 		if now.Sub(*prevLastRestartAt) < perpetualCircuitBreakerWindow {
 			pc.logger.Warn("perpetual pod circuit breaker triggered",

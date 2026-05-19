@@ -11,8 +11,6 @@ import (
 	"github.com/yuin/goldmark/text"
 )
 
-// MentionRef describes a resolved mention target the parser uses to upgrade
-// `@<key>` substrings into typed mention inline elements.
 type MentionRef struct {
 	EntityType string
 	EntityKey  string
@@ -21,13 +19,10 @@ type MentionRef struct {
 var mdParser = goldmark.New(
 	goldmark.WithExtensions(
 		extension.Strikethrough,
-		extension.Linkify, // bare URLs (https://x.com) → autolink
+		extension.Linkify,
 	),
 ).Parser()
 
-// ParseMarkdown converts a markdown source string into the canonical
-// MessageContent AST. The mentions map is consulted while walking inline text
-// nodes so that `@bot` becomes a typed mention element.
 func ParseMarkdown(source string, mentions map[string]MentionRef) (channel.MessageContent, error) {
 	if len(source) > channel.MaxContentSize {
 		return channel.MessageContent{}, fmt.Errorf("source too large: %d bytes (max %d)", len(source), channel.MaxContentSize)

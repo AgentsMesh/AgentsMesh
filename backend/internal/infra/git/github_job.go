@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// GetJob returns a specific job
 func (p *GitHubProvider) GetJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	path := fmt.Sprintf("/repos/%s/actions/jobs/%d", projectID, jobID)
 
@@ -21,7 +20,6 @@ func (p *GitHubProvider) GetJob(ctx context.Context, projectID string, jobID int
 	return p.parseGitHubJob(resp.Body)
 }
 
-// ListPipelineJobs returns jobs for a workflow run
 func (p *GitHubProvider) ListPipelineJobs(ctx context.Context, projectID string, pipelineID int) ([]*Job, error) {
 	path := fmt.Sprintf("/repos/%s/actions/runs/%d/jobs", projectID, pipelineID)
 
@@ -71,7 +69,6 @@ func (p *GitHubProvider) ListPipelineJobs(ctx context.Context, projectID string,
 	return jobs, nil
 }
 
-// RetryJob re-runs a specific job
 func (p *GitHubProvider) RetryJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	path := fmt.Sprintf("/repos/%s/actions/jobs/%d/rerun", projectID, jobID)
 
@@ -84,12 +81,10 @@ func (p *GitHubProvider) RetryJob(ctx context.Context, projectID string, jobID i
 	return p.GetJob(ctx, projectID, jobID)
 }
 
-// CancelJob cancels a workflow run (GitHub doesn't support cancelling individual jobs)
 func (p *GitHubProvider) CancelJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	return p.GetJob(ctx, projectID, jobID)
 }
 
-// GetJobTrace returns the job logs
 func (p *GitHubProvider) GetJobTrace(ctx context.Context, projectID string, jobID int) (string, error) {
 	path := fmt.Sprintf("/repos/%s/actions/jobs/%d/logs", projectID, jobID)
 
@@ -107,12 +102,10 @@ func (p *GitHubProvider) GetJobTrace(ctx context.Context, projectID string, jobI
 	return string(data), nil
 }
 
-// GetJobArtifact downloads a specific artifact
 func (p *GitHubProvider) GetJobArtifact(ctx context.Context, projectID string, jobID int, artifactPath string) ([]byte, error) {
 	return nil, ErrNotFound
 }
 
-// DownloadJobArtifacts downloads artifacts for a workflow run
 func (p *GitHubProvider) DownloadJobArtifacts(ctx context.Context, projectID string, jobID int) ([]byte, error) {
 	return nil, ErrNotFound
 }

@@ -9,16 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Ticket Relations Endpoints ==========
-
-// CreateRelationRequest represents relation creation request
 type CreateRelationRequest struct {
 	TargetSlug       string `json:"target_slug" binding:"required"`
 	RelationType     string `json:"relation_type" binding:"required,oneof=blocks blocked_by relates_to duplicates"`
 }
 
-// ListRelations lists relations for a ticket
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug/relations
 func (h *TicketHandler) ListRelations(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -38,8 +33,6 @@ func (h *TicketHandler) ListRelations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"relations": relations})
 }
 
-// CreateRelation creates a relation between tickets
-// POST /api/v1/organizations/:slug/tickets/:ticket_slug/relations
 func (h *TicketHandler) CreateRelation(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 
@@ -51,14 +44,12 @@ func (h *TicketHandler) CreateRelation(c *gin.Context) {
 
 	tenant := middleware.GetTenant(c)
 
-	// Get source ticket
 	sourceTicket, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Source ticket not found")
 		return
 	}
 
-	// Get target ticket (same org)
 	targetTicket, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, req.TargetSlug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Target ticket not found")
@@ -80,8 +71,6 @@ func (h *TicketHandler) CreateRelation(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"relation": relation})
 }
 
-// DeleteRelation deletes a relation
-// DELETE /api/v1/organizations/:slug/tickets/:ticket_slug/relations/:relation_id
 func (h *TicketHandler) DeleteRelation(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	relationID, err := strconv.ParseInt(c.Param("relation_id"), 10, 64)
@@ -107,8 +96,6 @@ func (h *TicketHandler) DeleteRelation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Relation deleted"})
 }
 
-// ListMergeRequests lists merge requests for a ticket
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug/merge-requests
 func (h *TicketHandler) ListMergeRequests(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 

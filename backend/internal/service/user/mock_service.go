@@ -8,16 +8,13 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
 )
 
-// MockService is a mock implementation of Interface for testing.
 type MockService struct {
 	mu sync.RWMutex
 
-	// In-memory storage
 	users      map[int64]*user.User
 	identities map[int64][]*user.Identity
 	nextID     int64
 
-	// Configurable error responses
 	CreateErr              error
 	GetByIDErr             error
 	GetByEmailErr          error
@@ -33,7 +30,6 @@ type MockService struct {
 	DeleteIdentityErr      error
 	SearchErr              error
 
-	// Captured calls for verification
 	CreatedUsers     []*CreateRequest
 	UpdatedUsers     []map[string]interface{}
 	DeletedUserIDs   []int64
@@ -47,7 +43,6 @@ type authAttempt struct {
 	Password string
 }
 
-// NewMockService creates a new mock user service for testing.
 func NewMockService() *MockService {
 	return &MockService{
 		users:      make(map[int64]*user.User),
@@ -56,7 +51,6 @@ func NewMockService() *MockService {
 	}
 }
 
-// Create implements Interface.
 func (m *MockService) Create(ctx context.Context, req *CreateRequest) (*user.User, error) {
 	if m.CreateErr != nil {
 		return nil, m.CreateErr
@@ -83,7 +77,6 @@ func (m *MockService) Create(ctx context.Context, req *CreateRequest) (*user.Use
 	return u, nil
 }
 
-// GetByID implements Interface.
 func (m *MockService) GetByID(ctx context.Context, id int64) (*user.User, error) {
 	if m.GetByIDErr != nil {
 		return nil, m.GetByIDErr
@@ -98,7 +91,6 @@ func (m *MockService) GetByID(ctx context.Context, id int64) (*user.User, error)
 	return nil, ErrUserNotFound
 }
 
-// GetByEmail implements Interface.
 func (m *MockService) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	if m.GetByEmailErr != nil {
 		return nil, m.GetByEmailErr
@@ -115,7 +107,6 @@ func (m *MockService) GetByEmail(ctx context.Context, email string) (*user.User,
 	return nil, ErrUserNotFound
 }
 
-// GetByUsername implements Interface.
 func (m *MockService) GetByUsername(ctx context.Context, username string) (*user.User, error) {
 	if m.GetByUsernameErr != nil {
 		return nil, m.GetByUsernameErr
@@ -132,7 +123,6 @@ func (m *MockService) GetByUsername(ctx context.Context, username string) (*user
 	return nil, ErrUserNotFound
 }
 
-// Update implements Interface.
 func (m *MockService) Update(ctx context.Context, id int64, updates map[string]interface{}) (*user.User, error) {
 	if m.UpdateErr != nil {
 		return nil, m.UpdateErr
@@ -148,7 +138,6 @@ func (m *MockService) Update(ctx context.Context, id int64, updates map[string]i
 		return nil, ErrUserNotFound
 	}
 
-	// Apply updates
 	if name, ok := updates["name"].(string); ok {
 		u.Name = &name
 	}
@@ -159,7 +148,6 @@ func (m *MockService) Update(ctx context.Context, id int64, updates map[string]i
 	return u, nil
 }
 
-// UpdatePassword implements Interface.
 func (m *MockService) UpdatePassword(ctx context.Context, id int64, password string) error {
 	if m.UpdatePasswordErr != nil {
 		return m.UpdatePasswordErr
@@ -167,7 +155,6 @@ func (m *MockService) UpdatePassword(ctx context.Context, id int64, password str
 	return nil
 }
 
-// Delete implements Interface.
 func (m *MockService) Delete(ctx context.Context, id int64) error {
 	if m.DeleteErr != nil {
 		return m.DeleteErr
@@ -181,7 +168,6 @@ func (m *MockService) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// Authenticate implements Interface.
 func (m *MockService) Authenticate(ctx context.Context, email, password string) (*user.User, error) {
 	m.mu.Lock()
 	m.AuthAttempts = append(m.AuthAttempts, authAttempt{Email: email, Password: password})
@@ -194,7 +180,6 @@ func (m *MockService) Authenticate(ctx context.Context, email, password string) 
 	return m.GetByEmail(ctx, email)
 }
 
-// RecordLogin implements Interface.
 func (m *MockService) RecordLogin(_ context.Context, userID int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -202,19 +187,16 @@ func (m *MockService) RecordLogin(_ context.Context, userID int64) {
 	m.RecordLoginCalls = append(m.RecordLoginCalls, userID)
 }
 
-// GetOrCreateByOAuth implements Interface.
 func (m *MockService) GetOrCreateByOAuth(ctx context.Context, provider, providerUserID, providerUsername, email, name, avatarURL string) (*user.User, bool, error) {
 	if m.GetOrCreateByOAuthErr != nil {
 		return nil, false, m.GetOrCreateByOAuthErr
 	}
 
-	// Check if user exists
 	u, err := m.GetByEmail(ctx, email)
 	if err == nil {
 		return u, false, nil
 	}
 
-	// Create new user
 	u, err = m.Create(ctx, &CreateRequest{
 		Email:    email,
 		Username: providerUsername,
@@ -227,7 +209,6 @@ func (m *MockService) GetOrCreateByOAuth(ctx context.Context, provider, provider
 	return u, true, nil
 }
 
-// UpdateIdentityTokens implements Interface.
 func (m *MockService) UpdateIdentityTokens(ctx context.Context, userID int64, provider, accessToken, refreshToken string, expiresAt *time.Time) error {
 	if m.UpdateIdentityErr != nil {
 		return m.UpdateIdentityErr
@@ -235,7 +216,6 @@ func (m *MockService) UpdateIdentityTokens(ctx context.Context, userID int64, pr
 	return nil
 }
 
-// GetIdentity implements Interface.
 func (m *MockService) GetIdentity(ctx context.Context, userID int64, provider string) (*user.Identity, error) {
 	if m.GetIdentityErr != nil {
 		return nil, m.GetIdentityErr
@@ -253,7 +233,6 @@ func (m *MockService) GetIdentity(ctx context.Context, userID int64, provider st
 	return nil, ErrUserNotFound
 }
 
-// ListIdentities implements Interface.
 func (m *MockService) ListIdentities(ctx context.Context, userID int64) ([]*user.Identity, error) {
 	if m.ListIdentitiesErr != nil {
 		return nil, m.ListIdentitiesErr
@@ -265,7 +244,6 @@ func (m *MockService) ListIdentities(ctx context.Context, userID int64) ([]*user
 	return m.identities[userID], nil
 }
 
-// DeleteIdentity implements Interface.
 func (m *MockService) DeleteIdentity(ctx context.Context, userID int64, provider string) error {
 	if m.DeleteIdentityErr != nil {
 		return m.DeleteIdentityErr
@@ -284,7 +262,6 @@ func (m *MockService) DeleteIdentity(ctx context.Context, userID int64, provider
 	return nil
 }
 
-// Search implements Interface.
 func (m *MockService) Search(ctx context.Context, query string, limit int) ([]*user.User, error) {
 	m.mu.Lock()
 	m.SearchQueries = append(m.SearchQueries, query)
@@ -307,9 +284,6 @@ func (m *MockService) Search(ctx context.Context, query string, limit int) ([]*u
 	return results, nil
 }
 
-// --- Test Helper Methods ---
-
-// AddUser adds a user to the mock storage.
 func (m *MockService) AddUser(u *user.User) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -321,7 +295,6 @@ func (m *MockService) AddUser(u *user.User) {
 	m.users[u.ID] = u
 }
 
-// AddIdentity adds an identity to a user.
 func (m *MockService) AddIdentity(userID int64, identity *user.Identity) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -341,7 +314,6 @@ func (m *MockService) GetUsers() []*user.User {
 	return result
 }
 
-// Reset clears all data.
 func (m *MockService) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -357,5 +329,4 @@ func (m *MockService) Reset() {
 	m.SearchQueries = nil
 }
 
-// Ensure MockService implements Interface
 var _ Interface = (*MockService)(nil)

@@ -40,7 +40,6 @@ export function CreateAPIKeyDialog({ open, onOpenChange, onCreate, t }: CreateAP
   const [expiresIn, setExpiresIn] = useState(0);
   const [creating, setCreating] = useState(false);
 
-  // Reset form state when dialog opens
   useEffect(() => {
     if (open) {
       setName("");

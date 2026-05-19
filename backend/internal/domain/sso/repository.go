@@ -2,13 +2,11 @@ package sso
 
 import "context"
 
-// ListQuery holds optional filters for listing SSO configs
 type ListQuery struct {
 	Search   string   // search by domain or name (ILIKE)
 	Protocol Protocol // filter by protocol (empty = all)
 }
 
-// Repository defines the interface for SSO config persistence
 type Repository interface {
 	Create(ctx context.Context, cfg *Config) error
 	GetByID(ctx context.Context, id int64) (*Config, error)

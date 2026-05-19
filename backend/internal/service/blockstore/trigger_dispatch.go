@@ -8,15 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// dispatchTriggers runs after an ApplyOps commit. It walks every applied op,
-// filters to the ones that could match a trigger (create/update/delete on a
-// block), loads the workspace's enabled trigger_defs once, evaluates
-// predicates against the target block's data, and fires matching actions.
-//
-// Execution is best-effort and fully async — triggers never block the write
-// path, and a failing webhook logs + retries once, no more. Trigger
-// reliability semantics land in a future "delivery queue" phase if the
-// volume justifies the complexity.
 func (s *Service) dispatchTriggers(ctx context.Context, wsID uuid.UUID, ops []*blockstore.BlockOp) {
 	triggers, err := s.loadTriggers(ctx, wsID)
 	if err != nil {
@@ -50,11 +41,6 @@ func (s *Service) dispatchTriggers(ctx context.Context, wsID uuid.UUID, ops []*b
 	}
 }
 
-// fireTrigger routes to the per-action-kind implementation. Webhook makes an
-// outbound HTTP POST; agent writes an agent_event block the target agent
-// consumes via memory.retrieve / subtree query. The agent_event block path
-// is a polling model — not true push — but it keeps trigger output durable,
-// auditable, and uniform with every other Block Store write.
 func (s *Service) fireTrigger(ctx context.Context, t TriggerDef, target *blockstore.Block, op *blockstore.BlockOp) {
 	switch t.Action.Kind {
 	case "webhook":
@@ -80,9 +66,6 @@ func opToTriggerEvent(op string) string {
 	}
 }
 
-// loadTriggers pulls every trigger_def in the workspace and decodes its
-// data. Invalid rows are skipped — the logger surfaces malformed entries
-// so operators can fix them without breaking live workflow.
 func (s *Service) loadTriggers(ctx context.Context, wsID uuid.UUID) ([]TriggerDef, error) {
 	def := blockstore.BlockTypeTriggerDef
 	blocks, _, err := s.repo.ListBlocks(ctx, blockstore.BlockFilter{
@@ -98,8 +81,6 @@ func (s *Service) loadTriggers(ctx context.Context, wsID uuid.UUID) ([]TriggerDe
 		if !ok {
 			continue
 		}
-		// Stamp CreatedBy from the owning block so downstream side-effects
-		// can attribute writes to a real user (权限跟着人走).
 		t.CreatedBy = b.CreatedBy
 		out = append(out, t)
 	}

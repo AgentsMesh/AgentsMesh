@@ -10,7 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// CompleteGitHubInstall completes the installation of a skill from GitHub
 func (p *SkillPackager) CompleteGitHubInstall(ctx context.Context, orgID, repoID, userID int64, url, branch, path, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -56,7 +55,6 @@ func (p *SkillPackager) CompleteGitHubInstall(ctx context.Context, orgID, repoID
 	return skill, nil
 }
 
-// CompleteUploadInstall completes the installation of a skill from upload
 func (p *SkillPackager) CompleteUploadInstall(ctx context.Context, orgID, repoID, userID int64, reader io.Reader, filename, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err

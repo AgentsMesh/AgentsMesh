@@ -61,7 +61,6 @@ export function SupportPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold">{t("support.title")}</h1>
@@ -75,7 +74,6 @@ export function SupportPage() {
         </Button>
       </div>
 
-      {/* Status Filter */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {statusOptions.map((opt) => (
           <button
@@ -95,7 +93,6 @@ export function SupportPage() {
         ))}
       </div>
 
-      {/* Ticket List */}
       <div className="space-y-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -140,7 +137,6 @@ export function SupportPage() {
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
           <Button
@@ -165,7 +161,6 @@ export function SupportPage() {
         </div>
       )}
 
-      {/* Create Dialog */}
       <CreateTicketDialog
         open={showCreate}
         onOpenChange={setShowCreate}

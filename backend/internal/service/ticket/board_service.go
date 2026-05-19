@@ -6,9 +6,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// ========== Board View (Kanban) ==========
-
-// GetBoard returns a kanban board view of tickets.
 func (s *Service) GetBoard(ctx context.Context, filter *ticket.TicketListFilter) (*ticket.Board, error) {
 	columnStatuses := []string{
 		ticket.TicketStatusBacklog,
@@ -22,7 +19,6 @@ func (s *Service) GetBoard(ctx context.Context, filter *ticket.TicketListFilter)
 		Columns: make([]ticket.BoardColumn, len(columnStatuses)),
 	}
 
-	// Use a copy for each column query to avoid mutating the caller's filter
 	for i, status := range columnStatuses {
 		colFilter := *filter
 		colFilter.Status = status
@@ -42,7 +38,6 @@ func (s *Service) GetBoard(ctx context.Context, filter *ticket.TicketListFilter)
 		board.Columns[i] = column
 	}
 
-	// Fetch priority distribution counts
 	priorityCounts, err := s.repo.GetPriorityCounts(ctx, filter.OrganizationID, filter.RepositoryID)
 	if err != nil {
 		return nil, err
@@ -52,24 +47,18 @@ func (s *Service) GetBoard(ctx context.Context, filter *ticket.TicketListFilter)
 	return board, nil
 }
 
-// GetActiveTickets returns active (non-completed) tickets.
 func (s *Service) GetActiveTickets(ctx context.Context, orgID int64, repoID *int64, limit int) ([]*ticket.Ticket, error) {
 	return s.repo.GetActiveTickets(ctx, orgID, repoID, limit)
 }
 
-// GetChildTickets returns child tickets for a parent ticket.
 func (s *Service) GetChildTickets(ctx context.Context, parentTicketID int64) ([]*ticket.Ticket, error) {
 	return s.repo.GetChildTickets(ctx, parentTicketID)
 }
 
-// GetSubTicketCounts returns sub-ticket counts for multiple parent tickets.
 func (s *Service) GetSubTicketCounts(ctx context.Context, parentTicketIDs []int64) (map[int64]map[string]int64, error) {
 	return s.repo.GetSubTicketCounts(ctx, parentTicketIDs)
 }
 
-// ========== Statistics ==========
-
-// GetTicketStats returns ticket statistics for a repository.
 func (s *Service) GetTicketStats(ctx context.Context, orgID int64, repoID *int64) (map[string]int64, error) {
 	return s.repo.GetTicketStats(ctx, orgID, repoID)
 }

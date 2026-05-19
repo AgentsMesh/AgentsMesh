@@ -1,18 +1,7 @@
-/**
- * ACP event dispatcher — routes relay messages to the acpSession store.
- *
- * Extracted from AgentPanel so that:
- * 1. Store-layer logic doesn't live in a UI component
- * 2. Other consumers (e.g. RealtimeProvider) can reuse the same dispatcher
- */
 
 import { useAcpSessionStore } from "@/stores/acpSession";
 import { MsgType } from "@/stores/relayProtocol";
 
-/**
- * Dispatch an ACP relay event to the acpSessionStore.
- * Safe to call from any context — wraps all operations in try-catch.
- */
 export function dispatchAcpRelayEvent(podKey: string, msgType: number, payload: unknown): void {
   try {
     const data = payload as Record<string, unknown>;
@@ -31,7 +20,6 @@ export function dispatchAcpRelayEvent(podKey: string, msgType: number, payload: 
 
 type AcpStore = ReturnType<typeof useAcpSessionStore.getState>;
 
-/** Route a single ACP event to the appropriate store mutation. */
 function dispatchEvent(
   store: AcpStore,
   podKey: string,
@@ -87,14 +75,12 @@ function dispatchEvent(
   }
 }
 
-/** Replay a full session snapshot into the store. */
 function dispatchSnapshot(
   store: AcpStore,
   podKey: string,
   sessionId: string,
   data: Record<string, unknown>,
 ): void {
-  // Clear first, then replay in order: state -> plan -> toolCalls -> messages -> permissions.
   store.clearSession(podKey);
 
   if (data.state) {
@@ -103,7 +89,6 @@ function dispatchSnapshot(
   if (Array.isArray(data.plan)) {
     store.updatePlan(podKey, sessionId, data.plan as Parameters<AcpStore["updatePlan"]>[2]);
   }
-  // Replay tool calls from snapshot (includes status + result in one object)
   if (Array.isArray(data.toolCalls)) {
     for (const tc of data.toolCalls as Array<{
       toolCallId: string;

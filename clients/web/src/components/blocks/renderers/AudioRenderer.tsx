@@ -11,8 +11,6 @@ import { BlockChrome } from "../editor/BlockChrome";
 import { CommentsSection } from "../editor/CommentsSection";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// AudioRenderer wraps an uploaded audio URL in a native <audio> element.
-// Parallels VideoRenderer structurally; shares the presigned upload path.
 export function AudioRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const url = (block.data?.url as string | undefined) ?? "";

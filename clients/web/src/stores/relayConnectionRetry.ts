@@ -1,6 +1,3 @@
-/**
- * Retry and reconnect logic for relay connections.
- */
 
 import { ApiError } from "@/lib/api/api-types";
 import { MsgType, encodeMessage } from "./relayProtocol";

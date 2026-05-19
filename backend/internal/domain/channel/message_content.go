@@ -6,7 +6,6 @@ import (
 	"errors"
 )
 
-// InlineElement types
 const (
 	InlineText      = "text"
 	InlineMention   = "mention"
@@ -14,7 +13,6 @@ const (
 	InlineLinebreak = "linebreak"
 )
 
-// Mention entity types
 const (
 	EntityPod     = "pod"
 	EntityUser    = "user"
@@ -72,7 +70,6 @@ func (el *InlineElement) UnmarshalJSON(data []byte) error {
 	el.Display = raw.Display
 	el.URL = raw.URL
 
-	// Prefer new Style object; fall back to old flat booleans
 	if raw.Style != nil {
 		el.Style = raw.Style
 	} else if raw.Bold || raw.Italic || raw.Strike || raw.Code {
@@ -89,9 +86,6 @@ type Block struct {
 	Language string          `json:"language,omitempty"`
 	Text     string          `json:"text,omitempty"`
 	Ordered  bool            `json:"ordered,omitempty"`
-	// Items represents list-item bodies. Each item is a sequence of blocks
-	// (typically a paragraph + an optional nested list), matching the
-	// CommonMark semantics that a list item is a block container.
 	Items [][]Block `json:"items,omitempty"`
 }
 

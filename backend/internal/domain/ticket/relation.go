@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// Relation type constants
 const (
 	RelationTypeBlocks    = "blocks"
 	RelationTypeBlockedBy = "blocked_by"
@@ -12,7 +11,6 @@ const (
 	RelationTypeDuplicate = "duplicates"
 )
 
-// Relation represents a relationship between two tickets
 type Relation struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
@@ -23,7 +21,6 @@ type Relation struct {
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 
-	// Associations
 	SourceTicket *Ticket `gorm:"foreignKey:SourceTicketID" json:"source_ticket,omitempty"`
 	TargetTicket *Ticket `gorm:"foreignKey:TargetTicketID" json:"target_ticket,omitempty"`
 }

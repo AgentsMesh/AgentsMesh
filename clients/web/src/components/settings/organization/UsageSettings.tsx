@@ -96,18 +96,13 @@ export function UsageSettings({ t }: UsageSettingsProps) {
   // selecting an agent filter would otherwise shrink the filter options list.
   const [allAgents, setAllAgents] = useState<string[]>([]);
 
-  // AbortController ref to cancel in-flight requests on filter changes.
   const abortRef = useRef<AbortController | null>(null);
 
-  // Stable ref for translation function — avoids re-fetching when `t` identity changes
-  // (e.g., on every render from next-intl).
   const tRef = useRef(t);
   tRef.current = t;
 
-  // Sync filter state to URL (shallow replace, no navigation).
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    // Always preserve existing scope/tab params.
     if (timeRange !== "30d") {
       params.set("timeRange", timeRange);
     } else {
@@ -132,7 +127,6 @@ export function UsageSettings({ t }: UsageSettingsProps) {
   }, [timeRange, granularity, agent, searchParams, router]);
 
   const loadData = useCallback(async () => {
-    // Cancel any in-flight request from the previous filter change.
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -158,8 +152,6 @@ export function UsageSettings({ t }: UsageSettingsProps) {
       );
       const data = JSON.parse(raw);
 
-      // Guard against stale responses: if abort() was called after the fetch
-      // resolved but before we reach here, skip the state update.
       if (controller.signal.aborted) return;
 
       setSummary(data.summary ?? null);
@@ -168,15 +160,12 @@ export function UsageSettings({ t }: UsageSettingsProps) {
       setByUser(data.by_user ?? []);
       setByModel(data.by_model ?? []);
 
-      // Update agent list only from unfiltered requests to break
-      // the circular dependency (filtered byAgent → fewer filter options).
       if (!agent && data.by_agent) {
         setAllAgents(
           [...new Set(data.by_agent.map((a: TokenUsageByAgent) => a.agent_slug))].filter(Boolean) as string[]
         );
       }
     } catch (err: unknown) {
-      // Ignore aborted requests — a newer request is in flight.
       if (err instanceof DOMException && err.name === "AbortError") return;
       setError(tRef.current("settings.usagePage.loadFailed"));
     } finally {
@@ -186,7 +175,6 @@ export function UsageSettings({ t }: UsageSettingsProps) {
 
   useEffect(() => {
     loadData();
-    // Cleanup: abort on unmount.
     return () => abortRef.current?.abort();
   }, [loadData]);
 
@@ -211,7 +199,6 @@ export function UsageSettings({ t }: UsageSettingsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-lg font-semibold">{t("settings.usagePage.title")}</h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -219,14 +206,12 @@ export function UsageSettings({ t }: UsageSettingsProps) {
         </p>
       </div>
 
-      {/* Error banner */}
       {error && (
         <div className="p-4 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800">
           {error}
         </div>
       )}
 
-      {/* Filters */}
       <UsageFilters
         timeRange={timeRange}
         granularity={granularity}
@@ -238,16 +223,12 @@ export function UsageSettings({ t }: UsageSettingsProps) {
         t={t}
       />
 
-      {/* Overview Cards */}
       <UsageOverviewCards summary={summary} t={t} />
 
-      {/* Time Series Chart */}
       <UsageTimeSeriesChart data={timeSeries} t={t} />
 
-      {/* By Agent Chart */}
       <UsageByAgentChart data={byAgent} t={t} />
 
-      {/* By User & By Model Tables (side by side on large screens) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <UsageByUserTable data={byUser} t={t} />
         <UsageByModelTable data={byModel} t={t} />

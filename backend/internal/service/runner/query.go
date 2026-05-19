@@ -10,8 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// GetByNodeID returns a runner by its node ID.
-// This is used by gRPC server for mTLS authentication.
 func (s *Service) GetByNodeID(ctx context.Context, nodeID string) (*runner.Runner, error) {
 	r, err := s.repo.GetByNodeID(ctx, nodeID)
 	if err != nil {
@@ -23,8 +21,6 @@ func (s *Service) GetByNodeID(ctx context.Context, nodeID string) (*runner.Runne
 	return r, nil
 }
 
-// GetByNodeIDAndOrgID returns a runner by node ID within a specific organization.
-// This prevents cross-org runner mismatch when the same node_id exists in multiple orgs.
 func (s *Service) GetByNodeIDAndOrgID(ctx context.Context, nodeID string, orgID int64) (*runner.Runner, error) {
 	r, err := s.repo.GetByNodeIDAndOrgID(ctx, nodeID, orgID)
 	if err != nil {
@@ -36,8 +32,6 @@ func (s *Service) GetByNodeIDAndOrgID(ctx context.Context, nodeID string, orgID 
 	return r, nil
 }
 
-// UpdateLastSeen updates the last heartbeat time for a runner.
-// This is called when gRPC server receives messages from a runner.
 func (s *Service) UpdateLastSeen(ctx context.Context, runnerID int64) error {
 	now := time.Now()
 	return s.repo.UpdateFields(ctx, runnerID, map[string]interface{}{
@@ -46,17 +40,13 @@ func (s *Service) UpdateLastSeen(ctx context.Context, runnerID int64) error {
 	})
 }
 
-// GetRunner returns a runner by ID
-// Tries to return from cache first, falls back to database
 func (s *Service) GetRunner(ctx context.Context, runnerID int64) (*runner.Runner, error) {
-	// Try cache first
 	if active, ok := s.activeRunners.Load(runnerID); ok {
 		if ar, ok := active.(*ActiveRunner); ok && ar.Runner != nil {
 			return ar.Runner, nil
 		}
 	}
 
-	// Fall back to database
 	r, err := s.repo.GetByID(ctx, runnerID)
 	if err != nil {
 		return nil, err
@@ -67,19 +57,14 @@ func (s *Service) GetRunner(ctx context.Context, runnerID int64) (*runner.Runner
 	return r, nil
 }
 
-// ListRunners returns runners for an organization, filtered by visibility.
-// Organization-visible runners are returned for all users; private runners only for the registrant.
 func (s *Service) ListRunners(ctx context.Context, orgID int64, userID int64) ([]*runner.Runner, error) {
 	return s.repo.ListByOrg(ctx, orgID, userID)
 }
 
-// ListAvailableRunners returns online runners that can accept pods, filtered by visibility.
 func (s *Service) ListAvailableRunners(ctx context.Context, orgID int64, userID int64) ([]*runner.Runner, error) {
 	return s.repo.ListAvailable(ctx, orgID, userID)
 }
 
-// SelectAvailableRunner selects an available runner using least-pods strategy, filtered by visibility.
-// Prioritizes runners from activeRunners cache for better performance.
 func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID int64) (*runner.Runner, error) {
 	cachedRunners := s.collectEligibleRunners(ctx, orgID, userID, "")
 
@@ -102,8 +87,6 @@ func (s *Service) SelectAvailableRunner(ctx context.Context, orgID int64, userID
 	return runners[0], nil
 }
 
-// SelectAvailableRunnerForAgent selects an available runner that supports the given agent type, filtered by visibility.
-// Uses the same cache-first, DB-fallback pattern as SelectAvailableRunner with agent compatibility filtering.
 func (s *Service) SelectAvailableRunnerForAgent(ctx context.Context, orgID int64, userID int64, agentSlug string) (*runner.Runner, error) {
 	cachedRunners := s.collectEligibleRunners(ctx, orgID, userID, agentSlug)
 

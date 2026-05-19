@@ -12,7 +12,6 @@ var _ agentpod.AutopilotRepository = (*autopilotRepo)(nil)
 
 type autopilotRepo struct{ db *gorm.DB }
 
-// NewAutopilotRepository creates a new AutopilotRepository backed by GORM.
 func NewAutopilotRepository(db *gorm.DB) agentpod.AutopilotRepository {
 	return &autopilotRepo{db: db}
 }

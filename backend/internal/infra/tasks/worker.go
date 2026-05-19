@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// JobPriority defines the priority level for jobs
 type JobPriority int
 
 const (
@@ -18,7 +17,6 @@ const (
 	PriorityCritical
 )
 
-// Job represents a background job to be processed
 type Job struct {
 	ID       string
 	Type     string
@@ -27,16 +25,13 @@ type Job struct {
 	MaxRetry int
 	Timeout  time.Duration
 
-	// Internal fields
 	retryCount int
 	createdAt  time.Time
 	startedAt  time.Time
 }
 
-// JobHandler is the function signature for job handlers
 type JobHandler func(ctx context.Context, job *Job) error
 
-// JobResult represents the result of a job execution
 type JobResult struct {
 	JobID     string
 	JobType   string
@@ -46,7 +41,6 @@ type JobResult struct {
 	Retried   bool
 }
 
-// WorkerPool manages a pool of workers for processing jobs
 type WorkerPool struct {
 	handlers map[string]JobHandler
 	jobs     chan *Job
@@ -57,18 +51,15 @@ type WorkerPool struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 
-	// Configuration
 	workerCount int
 	maxQueueSize int
 }
 
-// WorkerPoolConfig holds configuration for the worker pool
 type WorkerPoolConfig struct {
 	WorkerCount  int
 	MaxQueueSize int
 }
 
-// DefaultWorkerPoolConfig returns default configuration
 func DefaultWorkerPoolConfig() WorkerPoolConfig {
 	return WorkerPoolConfig{
 		WorkerCount:  4,
@@ -76,7 +67,6 @@ func DefaultWorkerPoolConfig() WorkerPoolConfig {
 	}
 }
 
-// NewWorkerPool creates a new worker pool
 func NewWorkerPool(logger *slog.Logger, cfg WorkerPoolConfig) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -92,7 +82,6 @@ func NewWorkerPool(logger *slog.Logger, cfg WorkerPoolConfig) *WorkerPool {
 	}
 }
 
-// RegisterHandler registers a handler for a job type
 func (wp *WorkerPool) RegisterHandler(jobType string, handler JobHandler) {
 	wp.mu.Lock()
 	defer wp.mu.Unlock()
@@ -100,7 +89,6 @@ func (wp *WorkerPool) RegisterHandler(jobType string, handler JobHandler) {
 	wp.logger.Info("job handler registered", "type", jobType)
 }
 
-// Start begins the worker pool
 func (wp *WorkerPool) Start() {
 	wp.logger.Info("starting worker pool",
 		"workers", wp.workerCount,
@@ -112,14 +100,10 @@ func (wp *WorkerPool) Start() {
 	}
 }
 
-// Stop gracefully stops the worker pool
 func (wp *WorkerPool) Stop() {
 	wp.logger.Info("stopping worker pool")
 	wp.cancel()
 
-	// Wait for all workers and retry goroutines to finish before closing
-	// channels. cancel() causes workers to exit their loop and retry
-	// goroutines to abort their backoff, so they will all return.
 	wp.wg.Wait()
 	close(wp.jobs)
 	close(wp.results)
@@ -127,9 +111,7 @@ func (wp *WorkerPool) Stop() {
 	wp.logger.Info("worker pool stopped gracefully")
 }
 
-// Submit adds a job to the queue
 func (wp *WorkerPool) Submit(job *Job) error {
-	// Reject submissions after the pool has been canceled
 	select {
 	case <-wp.ctx.Done():
 		return fmt.Errorf("worker pool is stopped")
@@ -159,12 +141,10 @@ func (wp *WorkerPool) Submit(job *Job) error {
 	}
 }
 
-// Results returns the results channel for monitoring
 func (wp *WorkerPool) Results() <-chan JobResult {
 	return wp.results
 }
 
-// worker processes jobs from the queue
 func (wp *WorkerPool) worker(id int) {
 	defer wp.wg.Done()
 
@@ -181,8 +161,6 @@ func (wp *WorkerPool) worker(id int) {
 
 			result := wp.processJob(job)
 
-			// Use select to avoid blocking if results channel
-			// is closed concurrently during shutdown.
 			select {
 			case wp.results <- result:
 			case <-wp.ctx.Done():
@@ -192,7 +170,6 @@ func (wp *WorkerPool) worker(id int) {
 	}
 }
 
-// processJob executes a single job
 func (wp *WorkerPool) processJob(job *Job) JobResult {
 	job.startedAt = time.Now()
 	result := JobResult{
@@ -200,7 +177,6 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 		JobType: job.Type,
 	}
 
-	// Get handler
 	wp.mu.RLock()
 	handler, exists := wp.handlers[job.Type]
 	wp.mu.RUnlock()
@@ -212,11 +188,9 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 		return result
 	}
 
-	// Create context with timeout
 	ctx, cancel := context.WithTimeout(wp.ctx, job.Timeout)
 	defer cancel()
 
-	// Execute with panic recovery
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -229,7 +203,6 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 	result.Duration = time.Since(job.startedAt)
 	result.Success = result.Error == nil
 
-	// Handle retry
 	if result.Error != nil && job.retryCount < job.MaxRetry {
 		job.retryCount++
 		result.Retried = true
@@ -241,7 +214,6 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 			"max_retry", job.MaxRetry,
 			"error", result.Error)
 
-		// Re-submit with exponential backoff (tracked by WaitGroup)
 		wp.wg.Add(1)
 		go func() {
 			defer wp.wg.Done()
@@ -269,12 +241,10 @@ func (wp *WorkerPool) processJob(job *Job) JobResult {
 	return result
 }
 
-// QueueLength returns the current number of jobs in the queue
 func (wp *WorkerPool) QueueLength() int {
 	return len(wp.jobs)
 }
 
-// GetHandlerTypes returns all registered handler types
 func (wp *WorkerPool) GetHandlerTypes() []string {
 	wp.mu.RLock()
 	defer wp.mu.RUnlock()

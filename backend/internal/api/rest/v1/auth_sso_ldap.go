@@ -11,13 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LDAPAuthRequest represents LDAP authentication request
 type LDAPAuthRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-// LDAPAuth handles LDAP authentication
 func (h *SSOAuthHandler) LDAPAuth(c *gin.Context) {
 	domain, ok := validateDomain(c)
 	if !ok {
@@ -40,7 +38,6 @@ func (h *SSOAuthHandler) LDAPAuth(c *gin.Context) {
 		return
 	}
 
-	// Authenticate, create/get user, and generate tokens
 	u, tokens, err := h.authenticateSSO(c, sso.ProtocolLDAP, configID, userInfo)
 	if err != nil {
 		if errors.Is(err, auth.ErrUserDisabled) {

@@ -45,8 +45,6 @@ function BindingEdge({
   const pendingScopes = data?.pendingScopes ?? [];
   const scopeCount = grantedScopes.length + pendingScopes.length;
 
-  // Design spec: write (control) edges = solid 2px dark; read (observe) edges = dashed 1px light.
-  // pending edges keep the dashed 5,5 treatment from before.
   const isWrite = grantedScopes.some((s) => s.endsWith(":write") || s === "pod:write");
   const isPending = data?.status === "pending";
 

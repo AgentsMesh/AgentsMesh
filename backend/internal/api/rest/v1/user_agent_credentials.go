@@ -11,31 +11,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserAgentCredentialHandler handles user agent credential profile requests
 type UserAgentCredentialHandler struct {
 	credentialSvc *agentService.CredentialProfileService
 }
 
-// NewUserAgentCredentialHandler creates a new handler
 func NewUserAgentCredentialHandler(credentialSvc *agentService.CredentialProfileService) *UserAgentCredentialHandler {
 	return &UserAgentCredentialHandler{
 		credentialSvc: credentialSvc,
 	}
 }
 
-// RegisterRoutes registers user agent credential routes
-// Base path: /api/v1/users/agent-credentials
 func (h *UserAgentCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	credentials := rg.Group("/agent-credentials")
 	{
-		// List all profiles grouped by agent
 		credentials.GET("", h.ListProfiles)
 
-		// Agent specific routes
 		credentials.GET("/agents/:slug", h.ListProfilesForAgent)
 		credentials.POST("/agents/:slug", h.CreateProfile)
 
-		// Profile specific routes
 		credentials.GET("/profiles/:id", h.GetProfile)
 		credentials.PUT("/profiles/:id", h.UpdateProfile)
 		credentials.DELETE("/profiles/:id", h.DeleteProfile)
@@ -43,8 +36,6 @@ func (h *UserAgentCredentialHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// ListProfiles lists all credential profiles for the current user, grouped by agent
-// GET /api/v1/users/agent-credentials
 func (h *UserAgentCredentialHandler) ListProfiles(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -57,8 +48,6 @@ func (h *UserAgentCredentialHandler) ListProfiles(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": profiles})
 }
 
-// ListProfilesForAgent lists all credential profiles for a specific agent
-// GET /api/v1/users/agent-credentials/types/:agent_slug
 func (h *UserAgentCredentialHandler) ListProfilesForAgent(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -70,13 +59,11 @@ func (h *UserAgentCredentialHandler) ListProfilesForAgent(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	responses := make([]*agent.CredentialProfileResponse, len(profiles))
 	for i, p := range profiles {
 		responses[i] = h.credentialSvc.ProfileToResponse(p)
 	}
 
-	// Always include RunnerHost as a virtual option
 	runnerHostInfo := gin.H{
 		"available":   true,
 		"description": "Use Runner machine's local environment configuration",
@@ -88,7 +75,6 @@ func (h *UserAgentCredentialHandler) ListProfilesForAgent(c *gin.Context) {
 	})
 }
 
-// CreateCredentialProfileRequest represents a request to create a credential profile
 type CreateCredentialProfileRequest struct {
 	Name         string            `json:"name" binding:"required,max=100"`
 	Description  *string           `json:"description"`
@@ -97,8 +83,6 @@ type CreateCredentialProfileRequest struct {
 	IsDefault    bool              `json:"is_default"`
 }
 
-// CreateProfile creates a new credential profile for a specific agent
-// POST /api/v1/users/agent-credentials/types/:agent_slug
 func (h *UserAgentCredentialHandler) CreateProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 

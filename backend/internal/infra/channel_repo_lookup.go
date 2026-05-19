@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// channelUserLookup implements channel.UserLookup using GORM.
 type channelUserLookup struct {
 	db *gorm.DB
 }
@@ -63,7 +62,6 @@ func (l *channelUserLookup) ValidateUserIDs(ctx context.Context, orgID int64, us
 	return validIDs, nil
 }
 
-// channelPodLookup implements channel.PodLookup using GORM.
 type channelPodLookup struct {
 	db *gorm.DB
 }

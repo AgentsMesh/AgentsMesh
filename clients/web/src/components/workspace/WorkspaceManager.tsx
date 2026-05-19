@@ -21,26 +21,21 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
   const _hasHydrated = useWorkspaceStore((s) => s._hasHydrated);
   const [showPodSelector, setShowPodSelector] = useState(false);
 
-  // Memoize to avoid creating a new array reference on every render
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
 
-  // Handle adding new terminal
   const handleAddNew = () => {
     setShowPodSelector(true);
   };
 
-  // Handle selecting a pod
   const handleSelectPod = (podKey: string) => {
     addPane(podKey);
     setShowPodSelector(false);
   };
 
-  // Handle popout (desktop only)
   const handlePopout = (paneId: string) => {
     const pane = panes.find((p) => p.id === paneId);
     if (!pane) return;
 
-    // Open in new window
     const popoutUrl = `/popout/terminal/${pane.podKey}`;
     const popoutWindow = window.open(
       popoutUrl,
@@ -49,8 +44,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
     );
 
     if (popoutWindow) {
-      // Optionally remove from main workspace
-      // removePane(paneId);
     }
   };
 
@@ -64,7 +57,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
 
   return (
     <div className={cn("flex flex-col h-full bg-terminal-bg", className)}>
-      {/* Desktop layout */}
       {!isMobile && (
         <TerminalGrid
           onPopout={handlePopout}
@@ -73,7 +65,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
         />
       )}
 
-      {/* Mobile layout */}
       {isMobile && (
         <>
           <TerminalSwiper onAddNew={handleAddNew} className="flex-1" />
@@ -81,7 +72,6 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
         </>
       )}
 
-      {/* Pod selector modal — subscribes to podStore only when open */}
       {showPodSelector && (
         <PodSelectorModal
           openPodKeys={openPodKeys}

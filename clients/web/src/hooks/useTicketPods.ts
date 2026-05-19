@@ -38,8 +38,6 @@ async function fetchTicketPods(slug: string): Promise<TicketPodSummary[]> {
   const p = svc()
     .get_ticket_pods(slug, true)
     .then((json: string) => {
-      // Rust TicketService is SSOT: get_ticket_pods caches the response
-      // into `pods_by_ticket_slug`. Just notify subscribers to re-read.
       const parsed = JSON.parse(json) as { pods?: TicketPodSummary[] };
       inflight.delete(slug);
       notify(slug);
@@ -71,11 +69,6 @@ export interface UseTicketPodsResult {
   refresh: () => Promise<TicketPodSummary[]>;
 }
 
-/**
- * Per-ticket pods hook. Rust TicketService is the SSOT — `get_ticket_pods`
- * caches the server response into `pods_by_ticket_slug`. The hook reads via
- * `ticket_pods_json` on every fetch + cross-subscriber notification.
- */
 export function useTicketPods(ticketSlug: string | null): UseTicketPodsResult {
   const [, force] = useReducer((n) => n + 1, 0);
 
@@ -88,7 +81,6 @@ export function useTicketPods(ticketSlug: string | null): UseTicketPodsResult {
 
   const pods = readPodsFromRust(ticketSlug);
   const loading = !!ticketSlug && inflight.has(ticketSlug);
-  // `ready` fires after the first successful fetch — Rust state has an entry.
   const ready = !!ticketSlug && !loading;
 
   return {

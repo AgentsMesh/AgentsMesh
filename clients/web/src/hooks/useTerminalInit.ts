@@ -6,7 +6,6 @@ import { MutableRefObject } from "react";
 import { terminalRegistry } from "@/stores/workspace";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
 
-// Re-export from split files for consumers
 export { setupConnection, setupDataHandlers } from "./useTerminalConnection";
 export type { TerminalConnection } from "./useTerminalConnection";
 export { setupIME, setupImagePaste } from "./useTerminalInputHandlers";
@@ -35,12 +34,6 @@ export const TERMINAL_THEME = {
   brightWhite: "#e5e5e5",
 };
 
-/**
- * Safely fit terminal only when container has valid dimensions.
- * Uses FitAddon.proposeDimensions() to check before fitting.
- *
- * @see https://github.com/xtermjs/xterm.js/issues/3029
- */
 export function safeFit(fitAddon: FitAddon): { cols: number; rows: number } | null {
   const dims = fitAddon.proposeDimensions();
   if (!dims || !Number.isFinite(dims.cols) || !Number.isFinite(dims.rows) || dims.cols <= 0 || dims.rows <= 0) {
@@ -54,14 +47,9 @@ export interface SetupTerminalResult {
   term: XTerm;
   fitAddon: FitAddon;
   scheduler: TerminalWriteScheduler;
-  /** rAF ID for the deferred fit — caller must cancel on cleanup. */
   deferredFitRafId: number;
 }
 
-/**
- * Creates an XTerm instance with addons, opens it in the container,
- * schedules a deferred fit, and registers in the terminal registry.
- */
 export function setupTerminal(
   container: HTMLDivElement,
   podKey: string,

@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check.
 var _ billing.LicenseRepository = (*licenseRepo)(nil)
 
 type licenseRepo struct {
 	db *gorm.DB
 }
 
-// NewLicenseRepository creates a new GORM-based license repository.
 func NewLicenseRepository(db *gorm.DB) billing.LicenseRepository {
 	return &licenseRepo{db: db}
 }

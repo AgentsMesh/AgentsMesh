@@ -13,9 +13,6 @@ export interface GitProviderCardProps {
   t: (key: string) => string;
 }
 
-/**
- * GitProviderCard - Displays a single Git provider with actions
- */
 export function GitProviderCard({
   provider,
   onEdit,

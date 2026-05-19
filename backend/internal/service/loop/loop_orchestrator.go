@@ -13,44 +13,30 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// PodTerminator defines the minimal interface needed by LoopOrchestrator
-// to terminate Pods (used for timeout handling).
 type PodTerminator interface {
 	TerminatePod(ctx context.Context, podKey string) error
 }
 
-// RepoQueryForLoop provides repository lookup for AgentFile Layer generation.
 type RepoQueryForLoop interface {
 	GetByID(ctx context.Context, id int64) (*gitprovider.Repository, error)
 }
 
-// LoopOrchestrator orchestrates the full lifecycle of a Loop run:
-//   - TriggerRun:          atomic run record creation (FOR UPDATE + SSOT concurrency check)
-//   - StartRun:            Pod creation + optional Autopilot setup
-//   - HandleRunCompleted:  stats update, runtime state (last_pod_key), event publishing
-//
-// Architecture: Pod is the Single Source of Truth (SSOT) for execution status.
-// The orchestrator creates LoopRun records and associates them with Pods,
-// but does NOT maintain run status independently. Status is always derived
-// from Pod state when queried.
+// LoopOrchestrator never owns run.Status — Pod is SSOT, status is derived on read.
 type LoopOrchestrator struct {
 	loopService    *LoopService
 	loopRunService *LoopRunService
 	eventBus       *eventbus.EventBus
 	logger         *slog.Logger
 
-	// External dependencies (injected after construction)
 	podOrchestrator *agentpodSvc.PodOrchestrator
 	autopilotSvc    *agentpodSvc.AutopilotControllerService
-	podTerminator   PodTerminator // for terminating timed-out Pods
+	podTerminator   PodTerminator
 	ticketService   *ticketSvc.Service
-	repoQuery       RepoQueryForLoop // for resolving RepositoryID → clone URL
+	repoQuery       RepoQueryForLoop
 
-	// HTTP client for webhook callbacks (reused across calls)
 	httpClient *http.Client
 }
 
-// NewLoopOrchestrator creates a new LoopOrchestrator
 func NewLoopOrchestrator(
 	loopService *LoopService,
 	loopRunService *LoopRunService,
@@ -72,8 +58,6 @@ func NewLoopOrchestrator(
 	}
 }
 
-// SetPodDependencies injects Pod-related dependencies after construction.
-// Called from main.go after PodOrchestrator and PodCoordinator are available.
 func (o *LoopOrchestrator) SetPodDependencies(
 	podOrch *agentpodSvc.PodOrchestrator,
 	autopilot *agentpodSvc.AutopilotControllerService,

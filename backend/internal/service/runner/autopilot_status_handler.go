@@ -8,7 +8,6 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// handleAutopilotControllerStatus handles AutopilotController status events from runner
 func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *runnerv1.AutopilotStatusEvent) {
 	ctx := context.Background()
 
@@ -21,7 +20,6 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 
 	now := time.Now()
 
-	// Determine user_takeover from phase
 	userTakeover := status.GetPhase() == agentpod.AutopilotPhaseUserTakeover
 
 	updates := map[string]interface{}{
@@ -32,22 +30,18 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 		"updated_at":            now,
 	}
 
-	// Update circuit breaker reason if present
 	if reason := status.GetCircuitBreakerReason(); reason != "" {
 		updates["circuit_breaker_reason"] = reason
 	}
 
-	// Update last_iteration_at if iteration changed
 	if status.GetLastIterationAt() > 0 {
 		updates["last_iteration_at"] = time.Unix(status.GetLastIterationAt(), 0)
 	}
 
-	// Update started_at if provided and not already set
 	if status.GetStartedAt() > 0 {
 		updates["started_at"] = time.Unix(status.GetStartedAt(), 0)
 	}
 
-	// Set completed_at for terminal states
 	if status.GetPhase() == agentpod.AutopilotPhaseCompleted ||
 		status.GetPhase() == agentpod.AutopilotPhaseFailed ||
 		status.GetPhase() == agentpod.AutopilotPhaseStopped ||
@@ -55,7 +49,6 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 		updates["completed_at"] = now
 	}
 
-	// Set approval_request_at for waiting_approval state
 	if status.GetPhase() == agentpod.AutopilotPhaseWaitingApproval {
 		updates["approval_request_at"] = now
 	}
@@ -74,7 +67,6 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 		"iteration", status.GetCurrentIteration(),
 		"circuit_breaker", status.GetCircuitBreakerState())
 
-	// Notify via callback (to publish realtime event)
 	if pc.onAutopilotStatusChange != nil {
 		pc.onAutopilotStatusChange(
 			data.GetAutopilotKey(),
@@ -89,7 +81,6 @@ func (pc *PodCoordinator) handleAutopilotControllerStatus(runnerID int64, data *
 	}
 }
 
-// handleAutopilotControllerCreated handles AutopilotController creation confirmation from runner
 func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data *runnerv1.AutopilotCreatedEvent) {
 	ctx := context.Background()
 
@@ -112,9 +103,7 @@ func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data 
 		"pod_key", data.GetPodKey(),
 		"runner_id", runnerID)
 
-	// Notify via callback
 	if pc.onAutopilotStatusChange != nil {
-		// Fetch the full AutopilotController to get max_iterations
 		rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
 		if err == nil {
 			pc.onAutopilotStatusChange(
@@ -131,7 +120,6 @@ func (pc *PodCoordinator) handleAutopilotControllerCreated(runnerID int64, data 
 	}
 }
 
-// handleAutopilotControllerTerminated handles AutopilotController termination event from runner
 func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, data *runnerv1.AutopilotTerminatedEvent) {
 	ctx := context.Background()
 
@@ -166,9 +154,7 @@ func (pc *PodCoordinator) handleAutopilotControllerTerminated(runnerID int64, da
 		"runner_id", runnerID,
 		"reason", data.GetReason())
 
-	// Notify via callback
 	if pc.onAutopilotStatusChange != nil {
-		// Fetch the full AutopilotController to get details
 		rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
 		if err == nil {
 			pc.onAutopilotStatusChange(

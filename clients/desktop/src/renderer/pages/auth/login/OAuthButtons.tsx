@@ -37,22 +37,16 @@ function GoogleIcon() {
 
 async function handleOAuth(provider: "github" | "google") {
   const oauthUrl = getApiBaseUrl();
-  // Deep-link callback: backend 302's to `agentsmesh://oauth/callback?token=...`,
-  // OS hands the URL back to the desktop app via open-url (mac) / second-instance
-  // argv (win), main process forwards over IPC, renderer navigates to /auth/callback.
+  // Deep-link: backend 302's to agentsmesh:// scheme. OS forwards URL to desktop app
+  // (mac open-url / win second-instance argv), main → IPC → renderer → /auth/callback.
   const redirectUrl = encodeURIComponent("agentsmesh://oauth/callback");
   const fullUrl = `${oauthUrl}/api/v1/auth/oauth/${provider}?redirect=${redirectUrl}`;
 
-  // System browser keeps the user's existing GitHub/Google session, password
-  // managers, and 2FA extensions all working — much better UX than an
-  // embedded webview, and avoids GitHub's user-agent blocklist.
   try {
     const { open } = await import("@/shims/electron-shell");
     await open(fullUrl);
   } catch {
-    // Fallback: navigate in webview. The deep-link won't fire (renderer is
-    // already focused on the OAuth page), but the user can manually paste
-    // the token URL — used only when the IPC bridge is unavailable.
+    // Fallback when IPC bridge unavailable — deep-link won't fire so user must paste token manually.
     window.location.href = fullUrl;
   }
 }

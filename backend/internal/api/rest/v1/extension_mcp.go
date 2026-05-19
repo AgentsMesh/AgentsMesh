@@ -11,10 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// --- Repo MCP Servers ---
-
-// ListRepoMcpServers lists installed MCP servers for a repository.
-// GET /api/v1/organizations/:slug/repositories/:id/mcp-servers?scope=org|user|all
 func (h *ExtensionHandler) ListRepoMcpServers(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -34,15 +30,12 @@ func (h *ExtensionHandler) ListRepoMcpServers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mcp_servers": servers})
 }
 
-// InstallMcpFromMarketRequest represents a market MCP server installation request.
 type InstallMcpFromMarketRequest struct {
 	MarketItemID int64             `json:"market_item_id" binding:"required"`
 	EnvVars      map[string]string `json:"env_vars"`
 	Scope        string            `json:"scope" binding:"required"`
 }
 
-// InstallMcpFromMarket installs an MCP server from a marketplace template.
-// POST /api/v1/organizations/:slug/repositories/:id/mcp-servers/install-from-market
 func (h *ExtensionHandler) InstallMcpFromMarket(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -73,7 +66,6 @@ func (h *ExtensionHandler) InstallMcpFromMarket(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"mcp_server": server})
 }
 
-// InstallCustomMcpServerRequest represents a custom MCP server installation request.
 type InstallCustomMcpServerRequest struct {
 	Name          string            `json:"name" binding:"required"`
 	Slug          string            `json:"slug" binding:"required"`
@@ -86,8 +78,6 @@ type InstallCustomMcpServerRequest struct {
 	Scope         string            `json:"scope" binding:"required"`
 }
 
-// InstallCustomMcpServer installs a custom MCP server.
-// POST /api/v1/organizations/:slug/repositories/:id/mcp-servers/install-custom
 func (h *ExtensionHandler) InstallCustomMcpServer(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -160,14 +150,11 @@ func (h *ExtensionHandler) InstallCustomMcpServer(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"mcp_server": result})
 }
 
-// UpdateMcpServerRequest represents an MCP server update request.
 type UpdateMcpServerRequest struct {
 	IsEnabled *bool             `json:"is_enabled"`
 	EnvVars   map[string]string `json:"env_vars"`
 }
 
-// UpdateMcpServer updates an installed MCP server.
-// PUT /api/v1/organizations/:slug/repositories/:id/mcp-servers/:installId
 func (h *ExtensionHandler) UpdateMcpServer(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -198,8 +185,6 @@ func (h *ExtensionHandler) UpdateMcpServer(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"mcp_server": server})
 }
 
-// UninstallMcpServer removes an installed MCP server.
-// DELETE /api/v1/organizations/:slug/repositories/:id/mcp-servers/:installId
 func (h *ExtensionHandler) UninstallMcpServer(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

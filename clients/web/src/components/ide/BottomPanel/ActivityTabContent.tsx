@@ -5,9 +5,6 @@ import { Terminal, ArrowRight, ArrowLeft } from "lucide-react";
 import { getShortPodKey } from "@/lib/pod-display-name";
 import type { ActivityTabContentProps } from "./types";
 
-/**
- * Activity tab content - shows incoming/outgoing bindings for selected pod
- */
 export function ActivityTabContent({
   selectedPodKey,
   incomingBindings,
@@ -15,7 +12,6 @@ export function ActivityTabContent({
   getPodInfo,
   t,
 }: ActivityTabContentProps) {
-  // No pod selected
   if (!selectedPodKey) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground text-sm">

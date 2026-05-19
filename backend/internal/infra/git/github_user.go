@@ -6,7 +6,6 @@ import (
 	"strconv"
 )
 
-// GetCurrentUser returns the authenticated user
 func (p *GitHubProvider) GetCurrentUser(ctx context.Context) (*User, error) {
 	resp, err := p.doRequest(ctx, "GET", "/user", nil)
 	if err != nil {

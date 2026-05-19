@@ -23,17 +23,14 @@ var (
 	ErrRunnerHasLoopRefs           = errors.New("cannot delete runner referenced by one or more loops")
 )
 
-// Service provides admin management functionality
 type Service struct {
 	db database.DB
 }
 
-// NewService creates a new admin service
 func NewService(db database.DB) *Service {
 	return &Service{db: db}
 }
 
-// PaginationParams holds normalized pagination parameters
 type PaginationParams struct {
 	Page       int
 	PageSize   int
@@ -41,7 +38,6 @@ type PaginationParams struct {
 	TotalPages int
 }
 
-// normalizePagination normalizes and calculates pagination parameters
 func normalizePagination(page, pageSize int, total int64) PaginationParams {
 	if page < 1 {
 		page = 1
@@ -55,7 +51,6 @@ func normalizePagination(page, pageSize int, total int64) PaginationParams {
 
 	offset := (page - 1) * pageSize
 
-	// Safe calculation to avoid overflow: (total + pageSize - 1) / pageSize
 	totalPages := (int(total) + pageSize - 1) / pageSize
 	if totalPages < 0 {
 		totalPages = 0

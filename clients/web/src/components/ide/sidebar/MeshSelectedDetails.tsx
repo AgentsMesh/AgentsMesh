@@ -14,9 +14,6 @@ interface MeshSelectedDetailsProps {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-/**
- * Details panel for selected node in mesh sidebar
- */
 export function MeshSelectedDetails({
   selectedNode,
   nodeChannels,

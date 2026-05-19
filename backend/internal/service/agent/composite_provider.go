@@ -6,13 +6,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// CompositeAgentProvider implements AgentConfigProvider by combining sub-services.
 type CompositeAgentProvider struct {
 	agentSvc      *AgentService
 	credentialSvc *CredentialProfileService
 }
 
-// NewCompositeProvider creates an AgentConfigProvider that delegates to sub-services.
 func NewCompositeProvider(
 	agentSvc *AgentService,
 	credSvc *CredentialProfileService,

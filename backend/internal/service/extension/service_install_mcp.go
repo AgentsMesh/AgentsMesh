@@ -9,7 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// InstallMcpFromMarket installs an MCP server from the marketplace.
 func (s *Service) InstallMcpFromMarket(ctx context.Context, orgID, repoID, userID, marketItemID int64, envVars map[string]string, scope string) (*extension.InstalledMcpServer, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -58,7 +57,6 @@ func (s *Service) InstallMcpFromMarket(ctx context.Context, orgID, repoID, userI
 	return server, nil
 }
 
-// InstallCustomMcpServer installs a custom MCP server configuration.
 func (s *Service) InstallCustomMcpServer(ctx context.Context, orgID, repoID, userID int64, server *extension.InstalledMcpServer, envVars map[string]string) (*extension.InstalledMcpServer, error) {
 	if err := validateScope(server.Scope); err != nil {
 		return nil, err
@@ -89,7 +87,6 @@ func (s *Service) InstallCustomMcpServer(ctx context.Context, orgID, repoID, use
 	return server, nil
 }
 
-// UpdateMcpServer updates an installed MCP server's settings.
 func (s *Service) UpdateMcpServer(ctx context.Context, orgID, repoID, installID, userID int64, userRole string, enabled *bool, envVars map[string]string) (*extension.InstalledMcpServer, error) {
 	server, err := s.repo.GetInstalledMcpServer(ctx, installID)
 	if err != nil {
@@ -120,7 +117,6 @@ func (s *Service) UpdateMcpServer(ctx context.Context, orgID, repoID, installID,
 	return server, nil
 }
 
-// UninstallMcpServer removes an installed MCP server from a repository.
 func (s *Service) UninstallMcpServer(ctx context.Context, orgID, repoID, installID, userID int64, userRole string) error {
 	server, err := s.repo.GetInstalledMcpServer(ctx, installID)
 	if err != nil {
@@ -140,7 +136,6 @@ func (s *Service) UninstallMcpServer(ctx context.Context, orgID, repoID, install
 	return nil
 }
 
-// validateMcpServerAccess checks org/repo ownership and scope-based permissions.
 func validateMcpServerAccess(server *extension.InstalledMcpServer, orgID, repoID, userID int64, userRole string) error {
 	if server.OrganizationID != orgID {
 		return fmt.Errorf("%w: MCP server does not belong to this organization", ErrForbidden)

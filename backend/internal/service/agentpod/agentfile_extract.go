@@ -11,9 +11,6 @@ import (
 	agentDomain "github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// agentfileExtractResult holds values extracted from a merged AgentFile (base + user layer).
-// CONFIG values land in ConfigValues; the serialized merged source goes to Runner so
-// downstream consumers never re-parse the AgentFile.
 type agentfileExtractResult struct {
 	Mode                  string // MODE pty/acp
 	CredentialProfile     string // CREDENTIAL "profile-name"
@@ -24,9 +21,6 @@ type agentfileExtractResult struct {
 	MergedAgentfileSource string
 }
 
-// extractFromAgentfileLayer parses the agent base AgentFile and user layer,
-// merges them, resolves CONFIG values, serializes the result, and extracts declarations.
-// Single-pass: parse + merge + resolve + serialize + extract — all in one place.
 func extractFromAgentfileLayer(
 	baseAgentfileSrc, userLayerSrc string,
 	userPrefs, systemOverrides map[string]interface{},
@@ -41,12 +35,10 @@ func extractFromAgentfileLayer(
 		return nil, fmt.Errorf("%w: %v", ErrInvalidAgentfileLayer, userErrs[0])
 	}
 
-	// Track which CONFIG fields were explicitly set in the user's Layer.
 	layerConfigNames := resolve.ExtractConfigNames(userProg)
 
 	merge.Merge(baseProg, userProg)
 
-	// Inject final config values: system > layer > userPrefs > base defaults.
 	resolve.ResolveConfigValues(baseProg, layerConfigNames, userPrefs, systemOverrides)
 
 	mergedSource := serialize.Serialize(baseProg)

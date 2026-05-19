@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// GetJob returns a specific job
 func (p *GitLabProvider) GetJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/jobs/%d", encodedID, jobID)
@@ -23,7 +22,6 @@ func (p *GitLabProvider) GetJob(ctx context.Context, projectID string, jobID int
 	return p.parseGitLabJob(resp.Body)
 }
 
-// ListPipelineJobs returns jobs for a pipeline
 func (p *GitLabProvider) ListPipelineJobs(ctx context.Context, projectID string, pipelineID int) ([]*Job, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/pipelines/%d/jobs", encodedID, pipelineID)
@@ -76,7 +74,6 @@ func (p *GitLabProvider) ListPipelineJobs(ctx context.Context, projectID string,
 	return jobs, nil
 }
 
-// RetryJob retries a job
 func (p *GitLabProvider) RetryJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/jobs/%d/retry", encodedID, jobID)
@@ -90,7 +87,6 @@ func (p *GitLabProvider) RetryJob(ctx context.Context, projectID string, jobID i
 	return p.parseGitLabJob(resp.Body)
 }
 
-// CancelJob cancels a job
 func (p *GitLabProvider) CancelJob(ctx context.Context, projectID string, jobID int) (*Job, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/jobs/%d/cancel", encodedID, jobID)
@@ -104,7 +100,6 @@ func (p *GitLabProvider) CancelJob(ctx context.Context, projectID string, jobID 
 	return p.parseGitLabJob(resp.Body)
 }
 
-// GetJobTrace returns the job log (trace)
 func (p *GitLabProvider) GetJobTrace(ctx context.Context, projectID string, jobID int) (string, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/jobs/%d/trace", encodedID, jobID)
@@ -123,7 +118,6 @@ func (p *GitLabProvider) GetJobTrace(ctx context.Context, projectID string, jobI
 	return string(data), nil
 }
 
-// GetJobArtifact downloads a specific artifact file from a job
 func (p *GitLabProvider) GetJobArtifact(ctx context.Context, projectID string, jobID int, artifactPath string) ([]byte, error) {
 	encodedID := url.PathEscape(projectID)
 	encodedPath := url.PathEscape(artifactPath)
@@ -138,7 +132,6 @@ func (p *GitLabProvider) GetJobArtifact(ctx context.Context, projectID string, j
 	return io.ReadAll(resp.Body)
 }
 
-// DownloadJobArtifacts downloads the complete artifacts archive from a job
 func (p *GitLabProvider) DownloadJobArtifacts(ctx context.Context, projectID string, jobID int) ([]byte, error) {
 	encodedID := url.PathEscape(projectID)
 	path := fmt.Sprintf("/projects/%s/jobs/%d/artifacts", encodedID, jobID)

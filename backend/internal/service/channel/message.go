@@ -12,8 +12,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
-// SendMessage sends a message with structured content to a channel.
-// The server extracts body (plain text) and mentions from the content AST.
 func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *string, senderUserID *int64, content channel.MessageContent, replyTo *int64) (*channel.Message, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
@@ -180,7 +178,6 @@ func collectMentionsFromElements(elements []channel.InlineElement, m *channel.Me
 	}
 }
 
-// GetMessages returns messages for a channel.
 func (s *Service) GetMessages(ctx context.Context, channelID int64, before *time.Time, after *time.Time, limit int) ([]*channel.Message, bool, error) {
 	messages, err := s.repo.GetMessages(ctx, channelID, before, after, limit+1)
 	if err != nil {
@@ -196,7 +193,6 @@ func (s *Service) GetMessages(ctx context.Context, channelID int64, before *time
 	return messages, hasMore, nil
 }
 
-// SendSystemMessage sends a system message (body-only, no structured content).
 func (s *Service) SendSystemMessage(ctx context.Context, channelID int64, body string) (*channel.Message, error) {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
@@ -227,17 +223,14 @@ func (s *Service) SendSystemMessage(ctx context.Context, channelID int64, body s
 	return msg, nil
 }
 
-// SendMessageAsUser sends a message as a user (human) to a channel.
 func (s *Service) SendMessageAsUser(ctx context.Context, channelID int64, userID int64, content channel.MessageContent) (*channel.Message, error) {
 	return s.SendMessage(ctx, channelID, nil, &userID, content, nil)
 }
 
-// SendMessageAsPod sends a message as a pod (agent) to a channel.
 func (s *Service) SendMessageAsPod(ctx context.Context, channelID int64, podKey string, content channel.MessageContent) (*channel.Message, error) {
 	return s.SendMessage(ctx, channelID, &podKey, nil, content, nil)
 }
 
-// GetMessagesMentioning returns messages mentioning a specific pod.
 func (s *Service) GetMessagesMentioning(ctx context.Context, channelID int64, podKey string, limit int) ([]*channel.Message, bool, error) {
 	messages, hasMore, err := s.repo.GetMessagesMentioning(ctx, channelID, podKey, limit)
 	if err != nil {
@@ -247,7 +240,6 @@ func (s *Service) GetMessagesMentioning(ctx context.Context, channelID int64, po
 	return messages, hasMore, nil
 }
 
-// GetMessagesByCursor returns messages before a given message ID (cursor-based pagination).
 func (s *Service) GetMessagesByCursor(ctx context.Context, channelID int64, beforeID int64, limit int) ([]*channel.Message, bool, error) {
 	messages, err := s.repo.GetMessagesBefore(ctx, channelID, beforeID, limit+1)
 	if err != nil {
@@ -261,7 +253,6 @@ func (s *Service) GetMessagesByCursor(ctx context.Context, channelID int64, befo
 	return messages, hasMore, nil
 }
 
-// GetRecentMessages returns the most recent messages from a channel.
 func (s *Service) GetRecentMessages(ctx context.Context, channelID int64, limit int) ([]*channel.Message, error) {
 	messages, err := s.repo.GetRecentMessages(ctx, channelID, limit)
 	if err != nil {
@@ -271,7 +262,6 @@ func (s *Service) GetRecentMessages(ctx context.Context, channelID int64, limit 
 	return messages, nil
 }
 
-// SearchMessages searches channel messages by full-text query on body.
 func (s *Service) SearchMessages(ctx context.Context, channelID int64, query string, limit int) ([]*channel.Message, error) {
 	if limit <= 0 {
 		limit = 20

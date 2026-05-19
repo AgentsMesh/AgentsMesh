@@ -19,8 +19,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/runner"
 )
 
-// initializePKIAndGRPC initializes PKI service, gRPC Server, and gRPC runner handler.
-// Returns nil values if initialization fails.
 func initializePKIAndGRPC(
 	cfg *config.Config,
 	runnerSvc *runner.Service,
@@ -30,7 +28,6 @@ func initializePKIAndGRPC(
 	appLogger *logger.Logger,
 	mcpDeps *grpcserver.MCPDependencies,
 ) (*grpcserver.Server, *v1.GRPCRunnerHandler) {
-	// Initialize PKI service
 	pkiService, err := pki.NewService(&pki.Config{
 		CACertFile:     cfg.PKI.CACertFile,
 		CAKeyFile:      cfg.PKI.CAKeyFile,
@@ -42,7 +39,6 @@ func initializePKIAndGRPC(
 	if err != nil {
 		slog.Error("Failed to initialize PKI service", "error", err)
 		slog.Warn("Continuing without gRPC/mTLS support - token management routes still available")
-		// Return handler with nil pkiService so token management routes still work
 		return nil, v1.NewGRPCRunnerHandler(runnerSvc, nil, cfg)
 	}
 
@@ -51,10 +47,8 @@ func initializePKIAndGRPC(
 		"validity_days", cfg.PKI.ValidityDays,
 	)
 
-	// Create gRPC runner handler for REST API (certificate issuance/renewal)
 	grpcRunnerHandler := v1.NewGRPCRunnerHandler(runnerSvc, pkiService, cfg)
 
-	// Create and start gRPC server
 	grpcServerInst := createGRPCServer(cfg, pkiService, runnerSvc, orgSvc, agentSvc, runnerConnMgr, appLogger, mcpDeps)
 	if grpcServerInst == nil {
 		return nil, grpcRunnerHandler
@@ -64,7 +58,6 @@ func initializePKIAndGRPC(
 	return grpcServerInst, grpcRunnerHandler
 }
 
-// createGRPCServer creates and starts the gRPC server
 func createGRPCServer(
 	cfg *config.Config,
 	pkiService *pki.Service,
@@ -75,12 +68,10 @@ func createGRPCServer(
 	appLogger *logger.Logger,
 	mcpDeps *grpcserver.MCPDependencies,
 ) *grpcserver.Server {
-	// Create service adapters
 	runnerServiceAdapter := &grpcRunnerServiceAdapter{svc: runnerSvc}
 	orgServiceAdapter := &grpcOrgServiceAdapter{svc: orgSvc}
 	agentAdapter := &grpcAgentAdapter{svc: agentSvc}
 
-	// Create gRPC server
 	grpcServerInst, err := grpcserver.NewServer(&grpcserver.ServerDependencies{
 		Logger:             appLogger.Logger,
 		Config:             &cfg.GRPC,
@@ -97,7 +88,6 @@ func createGRPCServer(
 		return nil
 	}
 
-	// Start gRPC server
 	if err := grpcServerInst.Start(); err != nil {
 		slog.Error("Failed to start gRPC server", "error", err)
 		slog.Warn("Continuing without gRPC server")
@@ -107,7 +97,6 @@ func createGRPCServer(
 	return grpcServerInst
 }
 
-// grpcRunnerServiceAdapter adapts runner.Service to grpcserver.RunnerServiceInterface
 type grpcRunnerServiceAdapter struct {
 	svc *runner.Service
 }
@@ -172,7 +161,6 @@ func (a *grpcRunnerServiceAdapter) MergeAgentVersions(ctx context.Context, runne
 	return a.svc.MergeAgentVersions(ctx, runnerID, changes)
 }
 
-// grpcOrgServiceAdapter adapts organization.Service to grpcserver.OrganizationServiceInterface
 type grpcOrgServiceAdapter struct {
 	svc *organization.Service
 }
@@ -188,7 +176,6 @@ func (a *grpcOrgServiceAdapter) GetBySlug(ctx context.Context, slug string) (grp
 	}, nil
 }
 
-// grpcAgentAdapter adapts agent.AgentService to interfaces.AgentsProvider
 type grpcAgentAdapter struct {
 	svc *agent.AgentService
 }
@@ -207,7 +194,6 @@ func (a *grpcAgentAdapter) GetAgentsForRunner() []interfaces.AgentInfo {
 	return result
 }
 
-// createDNSProvider creates a DNS provider based on configuration
 func createDNSProvider(relayCfg config.RelayConfig) dns.Provider {
 	switch relayCfg.DNS.Provider {
 	case string(config.DNSProviderCloudflare):
@@ -225,17 +211,9 @@ func createDNSProvider(relayCfg config.RelayConfig) dns.Provider {
 	}
 }
 
-// deriveServerCertSANs extracts domain names from PrimaryDomain and GRPC.Endpoint
-// to include as SANs in the auto-generated server certificate.
-//
-// Examples:
-//   - PrimaryDomain="agentsmesh.cn"       → ["agentsmesh.cn"]
-//   - PrimaryDomain="localhost:10000"      → ["localhost"] (already a default SAN)
-//   - GRPC.Endpoint="grpcs://api.agentsmesh.cn:9443" → ["api.agentsmesh.cn"]
 func deriveServerCertSANs(cfg *config.Config) []string {
 	var sans []string
 
-	// Extract hostname from PrimaryDomain (strip port if present)
 	if cfg.PrimaryDomain != "" {
 		host := cfg.PrimaryDomain
 		if idx := strings.LastIndex(host, ":"); idx != -1 {
@@ -246,7 +224,6 @@ func deriveServerCertSANs(cfg *config.Config) []string {
 		}
 	}
 
-	// Extract hostname from GRPC public endpoint URL
 	if cfg.GRPC.Endpoint != "" {
 		if u, err := url.Parse(cfg.GRPC.Endpoint); err == nil && u.Hostname() != "" {
 			sans = append(sans, u.Hostname())

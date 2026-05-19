@@ -77,8 +77,6 @@ impl<R: Runtime> Drop for HeartbeatManager<R> {
     }
 }
 
-// Race a runtime sleep against a single command-channel recv. Returns the
-// command if it arrived first, or None if the timer fired.
 async fn recv_with_timeout<R: Runtime>(
     runtime: &R,
     duration: Duration,
@@ -110,7 +108,6 @@ async fn heartbeat_loop<R: Runtime>(
         }
         debug!("heartbeat: sending ping");
 
-        // Wait for pong with timeout
         match recv_with_timeout(&runtime, pong_timeout, &mut cmd_rx).await {
             None => {
                 warn!("heartbeat: pong timeout");
@@ -123,7 +120,6 @@ async fn heartbeat_loop<R: Runtime>(
             Some(Some(HeartbeatCommand::Stop)) | Some(None) => break,
         }
 
-        // Wait for next ping interval, watching for stop
         match recv_with_timeout(&runtime, ping_interval, &mut cmd_rx).await {
             None => {}
             Some(Some(HeartbeatCommand::Stop)) | Some(None) => break,

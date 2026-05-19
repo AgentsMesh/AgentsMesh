@@ -21,8 +21,6 @@ import {
   useBlockstoreStore,
 } from "@/stores/blockstore";
 
-// useBlockstoreDispatch hands block renderers a small, typed API so they don't
-// need to know about OpEnvelope construction or fractional indexing.
 export function useBlockstoreDispatch(workspaceID: string) {
   return useMemo(() => makeDispatcher(workspaceID), [workspaceID]);
 }
@@ -47,14 +45,12 @@ function makeDispatcher(workspaceID: string) {
       await dispatchOps(workspaceID, [op]);
     },
 
-    /** Merge a partial meta patch (ACL, tags, etc.) onto the block. */
     async updateBlockMeta(id: string, patch: JSONMap) {
       const existing = readBlock(id);
       const nextMeta = { ...(existing?.meta ?? {}), ...patch };
       await dispatchOps(workspaceID, [updateBlockOp({ id, meta: nextMeta })]);
     },
 
-    /** Convenience: flip a block's meta.acl.visibility. */
     async setBlockVisibility(id: string, visibility: "workspace" | "private") {
       const existing = readBlock(id);
       const currentACL = (existing?.meta?.acl as JSONMap | undefined) ?? {};
@@ -95,7 +91,6 @@ function makeDispatcher(workspaceID: string) {
       return newID;
     },
 
-    /** Insert a sibling block immediately after siblingID and request focus on it. */
     async insertSiblingAfter(siblingID: string, type: string, initialData?: JSONMap, opts?: { text?: string | null }) {
       const parent = nestParentOf(siblingID);
       if (!parent) return null;
@@ -154,7 +149,6 @@ function makeDispatcher(workspaceID: string) {
       );
     },
 
-    /** Write a comment block anchored on `targetID` via rel='comments_on'. */
     async createCommentOn(targetID: string, text: string) {
       const newID = randomUUID();
       await dispatchOps(workspaceID, [

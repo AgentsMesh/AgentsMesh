@@ -16,10 +16,6 @@ interface CollapsedColumnProps {
   t: (key: string) => string;
 }
 
-/**
- * Narrow collapsed column showing only status dot, count, and expand button.
- * Acts as a valid drag-and-drop target.
- */
 export function CollapsedColumn({
   status, labelKey, topColor, dotColor, totalCount, isOver, onExpand, t,
 }: CollapsedColumnProps) {

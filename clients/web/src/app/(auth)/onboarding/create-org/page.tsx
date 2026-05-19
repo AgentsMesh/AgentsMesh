@@ -5,16 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthStore } from "@/stores/auth";
-import { getOrgApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import { lightCreateOrganization } from "@/lib/light-auth";
+import { useRequireLightAuth } from "@/hooks/useRequireLightAuth";
 import { useTranslations } from "next-intl";
 import { Logo } from "@/components/common";
 
 export default function CreateOrgPage() {
   const router = useRouter();
   const t = useTranslations();
-  const { setOrganizations, setCurrentOrg } = useAuthStore();
+  useRequireLightAuth();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
@@ -22,12 +21,10 @@ export default function CreateOrgPage() {
   const [error, setError] = useState("");
   const [siteHost, setSiteHost] = useState("agentsmesh.dev");
 
-  // Derive site host from window.location at runtime
   useEffect(() => {
     setSiteHost(window.location.host);
   }, []);
 
-  // Auto-generate slug from name
   useEffect(() => {
     if (!slugEdited && name) {
       const generatedSlug = name
@@ -41,7 +38,6 @@ export default function CreateOrgPage() {
 
   const handleSlugChange = (value: string) => {
     setSlugEdited(true);
-    // Only allow lowercase letters, numbers, and hyphens
     const sanitized = value
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "")
@@ -51,7 +47,6 @@ export default function CreateOrgPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await initWasmCore();
 
     if (!name.trim()) {
       setError(t("auth.onboarding.createOrg.enterWorkspaceName"));
@@ -72,18 +67,7 @@ export default function CreateOrgPage() {
     setError("");
 
     try {
-      await getOrgApiService().create(JSON.stringify({ name: name.trim(), slug: slug.trim() }));
-
-      // Refresh organizations
-      const { organizations } = JSON.parse(await getOrgApiService().list());
-      setOrganizations(organizations);
-
-      const newOrg = organizations.find((o: { slug: string }) => o.slug === slug);
-      if (newOrg) {
-        setCurrentOrg(newOrg);
-      }
-
-      // Go to runner setup
+      await lightCreateOrganization({ name: name.trim(), slug: slug.trim() });
       router.push("/onboarding/setup-runner");
     } catch (err) {
       if (err instanceof Error && err.message.includes("already")) {

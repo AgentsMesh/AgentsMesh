@@ -8,9 +8,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/crypto"
 )
 
-// SetDefaultGitCredential sets a Git credential as the user's default
 func (s *Service) SetDefaultGitCredential(ctx context.Context, userID, credentialID int64) error {
-	// Verify ownership
 	_, err := s.GetGitCredential(ctx, userID, credentialID)
 	if err != nil {
 		return err
@@ -25,7 +23,6 @@ func (s *Service) SetDefaultGitCredential(ctx context.Context, userID, credentia
 	return nil
 }
 
-// ClearDefaultGitCredential clears the user's default Git credential (falls back to runner_local)
 func (s *Service) ClearDefaultGitCredential(ctx context.Context, userID int64) error {
 	return s.repo.ClearAllDefaultGitCredentials(ctx, userID)
 }
@@ -36,7 +33,6 @@ func (s *Service) GetDefaultGitCredential(ctx context.Context, userID int64) (*d
 	return s.repo.GetDefaultGitCredential(ctx, userID)
 }
 
-// GetDecryptedCredentialToken retrieves and decrypts the token for a Git credential
 func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, credentialID int64) (*DecryptedCredential, error) {
 	credential, err := s.GetGitCredential(ctx, userID, credentialID)
 	if err != nil {
@@ -49,7 +45,6 @@ func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, crede
 
 	switch credential.CredentialType {
 	case domainUser.CredentialTypeRunnerLocal:
-		// No credentials to decrypt
 		return result, nil
 
 	case domainUser.CredentialTypeOAuth:
@@ -100,7 +95,6 @@ func (s *Service) GetDecryptedCredentialToken(ctx context.Context, userID, crede
 	return result, nil
 }
 
-// CreateCredentialFromProvider creates a Git credential linked to a repository provider (oauth type)
 func (s *Service) CreateCredentialFromProvider(ctx context.Context, userID, providerID int64) (*domainUser.GitCredential, error) {
 	provider, err := s.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {

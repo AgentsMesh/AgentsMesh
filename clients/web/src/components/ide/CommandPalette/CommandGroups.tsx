@@ -10,9 +10,6 @@ interface CommandGroupsProps {
   t: (key: string) => string;
 }
 
-/**
- * CommandGroups - Renders navigation and action command groups
- */
 export function CommandGroups({
   navigationCommands,
   actionCommands,

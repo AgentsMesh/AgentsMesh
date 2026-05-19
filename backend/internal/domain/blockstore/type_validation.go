@@ -1,9 +1,5 @@
 package blockstore
 
-// ValidateRequiredFields checks that the data map carries all required keys
-// for a given spec. Returns the first missing key or "" on success. Required
-// keys come from both the legacy RequiredDataKey list AND any column marked
-// Required — see RequiredKeys().
 func (spec BlockTypeSpec) ValidateRequiredFields(data JSONMap) string {
 	for _, k := range spec.RequiredKeys() {
 		if _, present := data[k]; !present {
@@ -48,9 +44,6 @@ func (spec BlockTypeSpec) ValidateRecord(data JSONMap) (string, string) {
 	return "", ""
 }
 
-// validateEnumValues enforces string-enum constraints on named data keys.
-// Non-column-driven types like `chart` still need value validation
-// (e.g. chart.data.type ∈ allowed set).
 func validateEnumValues(enums map[string][]string, data JSONMap) (string, string) {
 	for key, allowed := range enums {
 		raw, present := data[key]
@@ -75,9 +68,6 @@ func validateEnumValues(enums map[string][]string, data JSONMap) (string, string
 	return "", ""
 }
 
-// validateNonEmptyArrays guards fields whose semantics demand at least one
-// element (e.g. chart.series). Presence-only checks in RequiredDataKey don't
-// catch `{series: []}` which would silently degrade downstream.
 func validateNonEmptyArrays(keys []string, data JSONMap) (string, string) {
 	for _, key := range keys {
 		raw, present := data[key]
@@ -95,9 +85,6 @@ func validateNonEmptyArrays(keys []string, data JSONMap) (string, string) {
 	return "", ""
 }
 
-// validateColumnValue applies per-type checks. Kept lenient: frontends vary
-// in how they serialise dates / numbers, so we only reject values that are
-// unambiguously wrong shape (e.g. number column with a non-numeric value).
 func validateColumnValue(col ColumnSpec, raw any) string {
 	switch col.Type {
 	case ColumnTypeNumber:

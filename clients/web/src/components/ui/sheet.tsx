@@ -86,7 +86,6 @@ export function SheetContent({
   const { open, setOpen } = useSheet();
   const contentRef = React.useRef<HTMLDivElement>(null);
 
-  // Handle escape key
   React.useEffect(() => {
     if (!open) return;
 
@@ -100,7 +99,6 @@ export function SheetContent({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, setOpen]);
 
-  // Prevent body scroll when open
   React.useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -123,12 +121,10 @@ export function SheetContent({
 
   return (
     <>
-      {/* Overlay */}
       <div
         className="fixed inset-0 z-50 bg-black/50"
         onClick={() => setOpen(false)}
       />
-      {/* Content */}
       <div
         ref={contentRef}
         className={cn(

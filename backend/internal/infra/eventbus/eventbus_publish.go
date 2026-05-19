@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Publish publishes an event locally and to Redis for multi-instance sync
 func (eb *EventBus) Publish(ctx context.Context, event *Event) error {
 	ctx, span := otel.Tracer("agentsmesh-backend").Start(ctx, "eventbus.publish",
 		trace.WithAttributes(attribute.String("event.type", string(event.Type))),
@@ -22,12 +21,10 @@ func (eb *EventBus) Publish(ctx context.Context, event *Event) error {
 		event.Timestamp = time.Now().UnixMilli()
 	}
 
-	// Set category from registry if not set
 	if event.Category == "" {
 		event.Category = eb.registry.GetCategory(event.Type)
 	}
 
-	// Set source instance ID to prevent duplicate dispatch from Redis
 	event.SourceInstanceID = eb.instanceID
 
 	eb.logger.Debug("publishing event",
@@ -38,10 +35,8 @@ func (eb *EventBus) Publish(ctx context.Context, event *Event) error {
 		"entity_id", event.EntityID,
 	)
 
-	// Dispatch locally
 	eb.dispatchLocal(event)
 
-	// Publish to Redis for multi-instance sync
 	if eb.redisClient != nil {
 		if err := eb.publishToRedis(ctx, event); err != nil {
 			eb.logger.Error("failed to publish event to Redis",
@@ -49,26 +44,22 @@ func (eb *EventBus) Publish(ctx context.Context, event *Event) error {
 				"type", event.Type,
 				"org_id", event.OrganizationID,
 			)
-			// Don't return error - local dispatch already succeeded
 		}
 	}
 
 	return nil
 }
 
-// dispatchLocal dispatches an event to local handlers
 func (eb *EventBus) dispatchLocal(event *Event) {
 	eb.mu.RLock()
 	defer eb.mu.RUnlock()
 
-	// Call type-specific handlers
 	if handlers, ok := eb.handlers[event.Type]; ok {
 		for _, handler := range handlers {
 			go eb.safeCallHandler(handler, event)
 		}
 	}
 
-	// Call category handlers
 	if handlers, ok := eb.categoryHandlers[event.Category]; ok {
 		for _, handler := range handlers {
 			go eb.safeCallHandler(handler, event)
@@ -76,7 +67,6 @@ func (eb *EventBus) dispatchLocal(event *Event) {
 	}
 }
 
-// safeCallHandler calls a handler with panic recovery
 func (eb *EventBus) safeCallHandler(handler EventHandler, event *Event) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -92,7 +82,6 @@ func (eb *EventBus) safeCallHandler(handler EventHandler, event *Event) {
 	handler(event)
 }
 
-// publishToRedis publishes an event to Redis pub/sub
 func (eb *EventBus) publishToRedis(ctx context.Context, event *Event) error {
 	channel := eb.redisChannel(event.OrganizationID)
 
@@ -104,7 +93,6 @@ func (eb *EventBus) publishToRedis(ctx context.Context, event *Event) error {
 	return eb.redisClient.Publish(ctx, channel, data).Err()
 }
 
-// redisChannel returns the Redis pub/sub channel name for an organization
 func (eb *EventBus) redisChannel(orgID int64) string {
 	return fmt.Sprintf("events:org:%d", orgID)
 }

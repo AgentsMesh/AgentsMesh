@@ -48,7 +48,6 @@ export function BillingCycleSwitch({
     setShowConfirm(true);
   };
 
-  // If there's already a pending cycle change
   if (nextCycle && nextCycle !== currentCycle) {
     return (
       <div className="border border-border rounded-lg p-4">
@@ -78,7 +77,6 @@ export function BillingCycleSwitch({
     );
   }
 
-  // Confirmation dialog
   if (showConfirm && targetCycle) {
     return (
       <div className="border border-border rounded-lg p-4">
@@ -117,7 +115,6 @@ export function BillingCycleSwitch({
     );
   }
 
-  // Normal state - show switch options
   return (
     <div className="border border-border rounded-lg p-4">
       <h3 className="text-sm font-medium mb-2">

@@ -13,8 +13,6 @@ import { useAutoFocusIfPending } from "../editor/useAutoFocus";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 import { readBlockText } from "./readBlockText";
 
-// CalloutRenderer is a boxed attention block with an optional emoji prefix.
-// Common usages: ℹ️ note, ⚠️ warning, 💡 tip. Nested content allowed.
 export function CalloutRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const autoFocus = useAutoFocusIfPending(block.id);

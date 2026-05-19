@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListRuns lists runs for a loop.
-// GET /api/v1/orgs/:slug/loops/:loop_slug/runs
 func (h *LoopHandler) ListRuns(c *gin.Context) {
 	var req listRunsQuery
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -64,8 +62,6 @@ func (h *LoopHandler) ListRuns(c *gin.Context) {
 	})
 }
 
-// GetRun gets a run by ID.
-// GET /api/v1/orgs/:slug/loops/:loop_slug/runs/:run_id
 func (h *LoopHandler) GetRun(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
@@ -105,8 +101,6 @@ func (h *LoopHandler) GetRun(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"run": run})
 }
 
-// CancelRun cancels a running loop run.
-// POST /api/v1/orgs/:slug/loops/:loop_slug/runs/:run_id/cancel
 func (h *LoopHandler) CancelRun(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")

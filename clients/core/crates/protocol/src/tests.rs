@@ -141,8 +141,6 @@ mod tests {
         assert_eq!(MsgType::AcpSnapshot as u8, 0x0d);
     }
 
-    // --- Additional tests for 95%+ coverage ---
-
     #[test]
     fn large_payload_over_64kb() {
         let payload = vec![0xAB_u8; 100_000];

@@ -56,11 +56,9 @@ export function AgentPanel({
   const openPodKeys = useMemo(() => panes.map((p) => p.podKey), [panes]);
   const { podStatus, isPodReady, podError } = usePodStatus(podKey);
 
-  // Subscribe to Relay for ACP messages when pod is ready
   const shouldSubscribe = isPodReady || podStatus === "running";
   useAcpRelay(podKey, paneId, shouldSubscribe);
 
-  // Relay connection status (same as PTY terminal)
   const relayStatus = useTerminalStatus(podKey);
 
   const handleFocus = useCallback(() => {
@@ -71,7 +69,6 @@ export function AgentPanel({
     setIsMaximized((prev) => !prev);
     onMaximize?.();
   }, [onMaximize]);
-
 
   return (
     <div

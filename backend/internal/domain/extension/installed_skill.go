@@ -2,14 +2,12 @@ package extension
 
 import "time"
 
-// Install source constants
 const (
 	InstallSourceMarket = "market"
 	InstallSourceGitHub = "github"
 	InstallSourceUpload = "upload"
 )
 
-// InstalledSkill represents a Skill installed for a specific repository
 type InstalledSkill struct {
 	ID             int64   `gorm:"primaryKey" json:"id"`
 	OrganizationID int64   `gorm:"not null" json:"organization_id"`
@@ -28,13 +26,11 @@ type InstalledSkill struct {
 	CreatedAt      time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt      time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Relations
 	MarketItem *SkillMarketItem `gorm:"foreignKey:MarketItemID" json:"market_item,omitempty"`
 }
 
 func (InstalledSkill) TableName() string { return "installed_skills" }
 
-// GetEffectiveSha returns the content SHA to use (from market item if tracking latest, or own SHA)
 func (s *InstalledSkill) GetEffectiveSha() string {
 	if s.InstallSource == InstallSourceMarket && s.PinnedVersion == nil && s.MarketItem != nil {
 		return s.MarketItem.ContentSha
@@ -42,7 +38,6 @@ func (s *InstalledSkill) GetEffectiveSha() string {
 	return s.ContentSha
 }
 
-// GetEffectiveStorageKey returns the storage key to use
 func (s *InstalledSkill) GetEffectiveStorageKey() string {
 	if s.InstallSource == InstallSourceMarket && s.PinnedVersion == nil && s.MarketItem != nil {
 		return s.MarketItem.StorageKey
@@ -50,7 +45,6 @@ func (s *InstalledSkill) GetEffectiveStorageKey() string {
 	return s.StorageKey
 }
 
-// GetEffectivePackageSize returns the package size to use
 func (s *InstalledSkill) GetEffectivePackageSize() int64 {
 	if s.InstallSource == InstallSourceMarket && s.PinnedVersion == nil && s.MarketItem != nil {
 		return s.MarketItem.PackageSize

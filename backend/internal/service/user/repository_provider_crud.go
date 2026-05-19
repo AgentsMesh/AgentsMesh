@@ -15,7 +15,6 @@ var (
 	ErrInvalidProviderType   = errors.New("invalid provider type")
 )
 
-// CreateRepositoryProviderRequest represents a request to create a repository provider
 type CreateRepositoryProviderRequest struct {
 	ProviderType string
 	Name         string
@@ -25,14 +24,11 @@ type CreateRepositoryProviderRequest struct {
 	BotToken     string // Plain text, will be encrypted
 }
 
-// CreateRepositoryProvider creates a new repository provider for a user
 func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, req *CreateRepositoryProviderRequest) (*user.RepositoryProvider, error) {
-	// Validate provider type
 	if !user.IsValidProviderType(req.ProviderType) {
 		return nil, ErrInvalidProviderType
 	}
 
-	// Check if provider with same name already exists
 	exists, err := s.repo.RepositoryProviderNameExists(ctx, userID, req.Name, nil)
 	if err != nil {
 		return nil, err
@@ -50,12 +46,10 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 		IsActive:     true,
 	}
 
-	// Set optional fields
 	if req.ClientID != "" {
 		provider.ClientID = &req.ClientID
 	}
 
-	// Encrypt secrets
 	if s.encryptionKey != "" {
 		if req.ClientSecret != "" {
 			encrypted, err := crypto.EncryptWithKey(req.ClientSecret, s.encryptionKey)
@@ -76,7 +70,6 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 			provider.BotTokenEncrypted = &encrypted
 		}
 	} else {
-		// No encryption key - store as-is (not recommended)
 		slog.WarnContext(ctx, "storing provider secrets without encryption",
 			"user_id", userID, "provider_type", req.ProviderType)
 		if req.ClientSecret != "" {
@@ -98,7 +91,6 @@ func (s *Service) CreateRepositoryProvider(ctx context.Context, userID int64, re
 	return provider, nil
 }
 
-// GetRepositoryProvider returns a repository provider by ID
 func (s *Service) GetRepositoryProvider(ctx context.Context, userID, providerID int64) (*user.RepositoryProvider, error) {
 	provider, err := s.repo.GetRepositoryProvider(ctx, userID, providerID)
 	if err != nil {
@@ -110,12 +102,10 @@ func (s *Service) GetRepositoryProvider(ctx context.Context, userID, providerID 
 	return provider, nil
 }
 
-// ListRepositoryProviders returns all repository providers for a user
 func (s *Service) ListRepositoryProviders(ctx context.Context, userID int64) ([]*user.RepositoryProvider, error) {
 	return s.repo.ListRepositoryProviders(ctx, userID)
 }
 
-// DeleteRepositoryProvider deletes a repository provider
 func (s *Service) DeleteRepositoryProvider(ctx context.Context, userID, providerID int64) error {
 	rowsAffected, err := s.repo.DeleteRepositoryProvider(ctx, userID, providerID)
 	if err != nil {

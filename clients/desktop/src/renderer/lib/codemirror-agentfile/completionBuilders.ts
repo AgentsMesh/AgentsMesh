@@ -1,14 +1,6 @@
-/**
- * Completion builders for AgentFile autocomplete.
- * Converts domain data (agents, repos, credentials, config) into CodeMirror completions.
- */
 import type { Completion } from "@codemirror/autocomplete";
 import type { ConfigField } from "@/lib/api/agent";
 import type { AgentfileCompletionContext } from "./autocomplete";
-
-// ---------------------------------------------------------------------------
-// Static value completions
-// ---------------------------------------------------------------------------
 
 export const MODE_VALUES: Completion[] = [
   { label: "pty", type: "constant", detail: "Terminal mode" },
@@ -26,10 +18,6 @@ export const PROMPT_POSITION_VALUES: Completion[] = [
   { label: "append", type: "constant", detail: "Append to launch args" },
   { label: "none", type: "constant", detail: "Do not inject prompt" },
 ];
-
-// ---------------------------------------------------------------------------
-// Dynamic builders
-// ---------------------------------------------------------------------------
 
 export function buildFieldCompletions(fields: ConfigField[]): Completion[] {
   return fields.map((f) => ({

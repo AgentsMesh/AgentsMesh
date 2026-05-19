@@ -34,7 +34,6 @@ export function WebhookSettingsCard({
   const [showSecret, setShowSecret] = useState(false);
   const [copied, setCopied] = useState<CopiedField>(null);
 
-  // Load webhook status
   const loadStatus = useCallback(async () => {
     try {
       setLoading(true);
@@ -54,7 +53,6 @@ export function WebhookSettingsCard({
     loadStatus();
   }, [loadStatus]);
 
-  // Register webhook
   const handleRegister = useCallback(async () => {
     try {
       setActionLoading("register");
@@ -64,10 +62,8 @@ export function WebhookSettingsCard({
         await loadStatus();
         onStatusChange?.();
       } else if (res.result.needs_manual_setup) {
-        // Need to fetch secret for manual setup
         try {
           const secretRes = await repositoryApi.getWebhookSecret(repository.id);
-          // Transform API response to component format
           setSecretInfo({
             url: secretRes.webhook_url,
             secret: secretRes.webhook_secret,
@@ -90,7 +86,6 @@ export function WebhookSettingsCard({
     }
   }, [repository.id, loadStatus, onStatusChange, t]);
 
-  // Delete webhook
   const handleDelete = useCallback(async () => {
     try {
       setActionLoading("delete");
@@ -109,7 +104,6 @@ export function WebhookSettingsCard({
     }
   }, [repository.id, loadStatus, onStatusChange, t]);
 
-  // Mark as configured (for manual setup)
   const handleMarkConfigured = useCallback(async () => {
     try {
       setActionLoading("markConfigured");
@@ -127,13 +121,11 @@ export function WebhookSettingsCard({
     }
   }, [repository.id, loadStatus, onStatusChange, t]);
 
-  // Get webhook secret for manual setup
   const handleGetSecret = useCallback(async () => {
     try {
       setActionLoading("getSecret");
       setError(null);
       const res = await repositoryApi.getWebhookSecret(repository.id);
-      // Transform API response to component format
       setSecretInfo({
         url: res.webhook_url,
         secret: res.webhook_secret,
@@ -149,7 +141,6 @@ export function WebhookSettingsCard({
     }
   }, [repository.id, t]);
 
-  // Copy to clipboard
   const handleCopy = useCallback(
     async (text: string, type: "url" | "secret") => {
       try {
@@ -157,7 +148,6 @@ export function WebhookSettingsCard({
         setCopied(type);
         setTimeout(() => setCopied(null), 2000);
       } catch {
-        // Ignore clipboard errors
       }
     },
     []
@@ -197,13 +187,10 @@ export function WebhookSettingsCard({
         </div>
       )}
 
-      {/* Status display */}
       <WebhookStatusDisplay status={status} t={t} />
 
-      {/* Active webhook info */}
       {status && <WebhookActiveInfo status={status} t={t} />}
 
-      {/* Manual setup instructions */}
       {status?.needs_manual_setup && (
         <WebhookManualSetup
           repository={repository}
@@ -217,14 +204,12 @@ export function WebhookSettingsCard({
         />
       )}
 
-      {/* Not registered state */}
       {!status?.registered && !status?.needs_manual_setup && (
         <div className="text-sm text-muted-foreground mb-4">
           {t("repositories.webhook.notRegisteredDescription")}
         </div>
       )}
 
-      {/* Action buttons */}
       <WebhookActions
         status={status}
         actionLoading={actionLoading}

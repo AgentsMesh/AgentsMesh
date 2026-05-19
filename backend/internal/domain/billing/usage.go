@@ -7,10 +7,8 @@ import (
 	"time"
 )
 
-// UsageMetadata represents optional usage metadata
 type UsageMetadata map[string]interface{}
 
-// Scan implements sql.Scanner for UsageMetadata
 func (um *UsageMetadata) Scan(value interface{}) error {
 	if value == nil {
 		*um = nil
@@ -28,7 +26,6 @@ func (um *UsageMetadata) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, um)
 }
 
-// Value implements driver.Valuer for UsageMetadata
 func (um UsageMetadata) Value() (driver.Value, error) {
 	if um == nil {
 		return nil, nil
@@ -36,7 +33,6 @@ func (um UsageMetadata) Value() (driver.Value, error) {
 	return json.Marshal(um)
 }
 
-// UsageRecord represents a usage record for billing
 type UsageRecord struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`

@@ -12,11 +12,8 @@ pub struct BlockstoreState {
     pub workspaces: HashMap<String, Workspace>,
     pub blocks: HashMap<String, Block>,
     pub refs: HashMap<i64, BlockRef>,
-    /// parent block id → ordered ref ids (sorted by order_key, then ref id)
     pub nest_children: HashMap<String, Vec<i64>>,
-    /// target block id → ref ids (non-nest)
     pub backlinks: HashMap<String, Vec<i64>>,
-    /// per-workspace op watermark for WS catchup
     pub last_op_id: HashMap<String, i64>,
 }
 
@@ -31,8 +28,6 @@ impl BlockstoreState {
         Self::default()
     }
 
-    // ── Workspaces ──
-
     pub fn upsert_workspace(&mut self, ws: Workspace) {
         self.workspaces.insert(ws.id.clone(), ws);
     }
@@ -43,8 +38,6 @@ impl BlockstoreState {
             self.workspaces.insert(w.id.clone(), w);
         }
     }
-
-    // ── Blocks ──
 
     pub fn upsert_block(&mut self, b: Block) {
         self.blocks.insert(b.id.clone(), b);
@@ -63,7 +56,6 @@ impl BlockstoreState {
 
     pub fn remove_block(&mut self, id: &str) {
         if self.blocks.remove(id).is_none() { return; }
-        // Cascade: drop every ref touching this block and clean indexes.
         let doomed: Vec<i64> = self.refs.iter()
             .filter(|(_, r)| r.from_id == id || r.to_id == id)
             .map(|(k, _)| *k).collect();
@@ -75,8 +67,6 @@ impl BlockstoreState {
         self.nest_children.remove(id);
         self.backlinks.remove(id);
     }
-
-    // ── Refs ──
 
     pub fn upsert_ref(&mut self, r: BlockRef) {
         if let Some(prev) = self.refs.get(&r.id).cloned() {
@@ -135,8 +125,6 @@ impl BlockstoreState {
         }
     }
 
-    // ── Ops ──
-
     pub fn apply_remote_op(&mut self, op: &BlockOp) {
         apply_op(self, op);
         if op.id > *self.last_op_id.get(&op.workspace_id).unwrap_or(&0) {
@@ -147,8 +135,6 @@ impl BlockstoreState {
     pub fn set_last_op_id(&mut self, workspace_id: &str, id: i64) {
         self.last_op_id.insert(workspace_id.to_string(), id);
     }
-
-    // ── Reads (serialized for WASM) ──
 
     pub fn workspaces_json(&self) -> String {
         serde_json::to_string(&self.workspaces).unwrap_or_else(|_| "{}".into())
@@ -184,30 +170,22 @@ impl BlockstoreState {
         *self.last_op_id.get(workspace_id).unwrap_or(&0)
     }
 
-    /// Serialise ALL blocks as `{[id]: Block}` for JS-side selectors that
-    /// need the whole map (sidebar tree traversal, view filtering).
     pub fn blocks_json(&self) -> String {
         serde_json::to_string(&self.blocks).unwrap_or_else(|_| "{}".into())
     }
 
-    /// Serialise ALL refs as `{[id]: BlockRef}`. Consumers: SortableNest uses
-    /// `refs[id].order_key` for before/after insertion heuristics.
     pub fn refs_json(&self) -> String {
         serde_json::to_string(&self.refs).unwrap_or_else(|_| "{}".into())
     }
 
-    /// Serialise the nest-children index as `{[parentId]: [refId]}`.
     pub fn nest_children_json(&self) -> String {
         serde_json::to_string(&self.nest_children).unwrap_or_else(|_| "{}".into())
     }
 
-    /// Serialise the backlinks index as `{[targetId]: [refId]}`.
     pub fn backlinks_json(&self) -> String {
         serde_json::to_string(&self.backlinks).unwrap_or_else(|_| "{}".into())
     }
 
-    /// Serialise per-workspace last-op watermarks as `{[workspaceId]: opId}`.
-    /// Used by the reconnect catchup loop that iterates all loaded workspaces.
     pub fn last_op_ids_json(&self) -> String {
         serde_json::to_string(&self.last_op_id).unwrap_or_else(|_| "{}".into())
     }

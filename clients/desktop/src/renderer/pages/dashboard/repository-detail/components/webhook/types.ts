@@ -1,26 +1,16 @@
 import type { WebhookStatus, RepositoryData } from "@/lib/api";
 
-/**
- * Webhook settings card props
- */
 export interface WebhookSettingsCardProps {
   repository: RepositoryData;
   onStatusChange?: () => void;
 }
 
-/**
- * Webhook secret info for manual setup
- * Maps from API response (webhook_url, webhook_secret) to display format
- */
 export interface WebhookSecretInfo {
-  url: string;          // webhook_url from API
-  secret: string;       // webhook_secret from API
+  url: string;
+  secret: string;
   events: string[];
 }
 
-/**
- * Webhook action type for loading states
- */
 export type WebhookActionType =
   | "register"
   | "delete"
@@ -28,14 +18,8 @@ export type WebhookActionType =
   | "getSecret"
   | null;
 
-/**
- * Copied field type
- */
 export type CopiedField = "url" | "secret" | null;
 
-/**
- * Props for child components
- */
 export interface WebhookStatusDisplayProps {
   status: WebhookStatus | null;
   t: (key: string) => string;

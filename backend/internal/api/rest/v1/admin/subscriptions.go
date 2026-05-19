@@ -14,13 +14,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SubscriptionHandler handles subscription management requests
 type SubscriptionHandler struct {
 	adminService   *adminservice.Service
 	billingService *billingservice.Service
 }
 
-// NewSubscriptionHandler creates a new subscription handler
 func NewSubscriptionHandler(adminSvc *adminservice.Service, billingSvc *billingservice.Service) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		adminService:   adminSvc,
@@ -28,7 +26,6 @@ func NewSubscriptionHandler(adminSvc *adminservice.Service, billingSvc *billings
 	}
 }
 
-// RegisterRoutes registers subscription management routes under /organizations/:id/subscription
 func (h *SubscriptionHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	subGroup := rg.Group("/organizations/:id/subscription")
 	{
@@ -47,7 +44,6 @@ func (h *SubscriptionHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// GetSubscription returns the full subscription details for an organization
 func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -72,7 +68,6 @@ func (h *SubscriptionHandler) GetSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(sub, seatUsage))
 }
 
-// ListPlans returns all available subscription plans
 func (h *SubscriptionHandler) ListPlans(c *gin.Context) {
 	plans, err := h.billingService.ListPlans(c.Request.Context())
 	if err != nil {
@@ -88,18 +83,14 @@ func (h *SubscriptionHandler) ListPlans(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": planList})
 }
 
-// logAction is a helper method that delegates to the shared LogAdminAction function
 func (h *SubscriptionHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// syncOrgStatus syncs the subscription_status field in the organizations table
 func (h *SubscriptionHandler) syncOrgStatus(c *gin.Context, orgID int64, status string) {
-	// Use adminService to update organization status directly via DB
 	_ = h.adminService.UpdateOrganizationSubscriptionStatus(c.Request.Context(), orgID, status)
 }
 
-// subscriptionResponse creates a comprehensive subscription response
 func subscriptionResponse(sub *billing.Subscription, seatUsage *billingservice.SeatUsage) gin.H {
 	resp := gin.H{
 		"id":                   sub.ID,
@@ -117,7 +108,6 @@ func subscriptionResponse(sub *billing.Subscription, seatUsage *billingservice.S
 		"updated_at":           sub.UpdatedAt,
 	}
 
-	// Payment info (reference only, does not restrict operations)
 	if sub.PaymentProvider != nil {
 		resp["payment_provider"] = *sub.PaymentProvider
 	}
@@ -125,13 +115,11 @@ func subscriptionResponse(sub *billing.Subscription, seatUsage *billingservice.S
 		resp["payment_method"] = *sub.PaymentMethod
 	}
 
-	// Payment provider flags
 	resp["has_stripe"] = sub.StripeSubscriptionID != nil
 	resp["has_alipay"] = sub.AlipayAgreementNo != nil
 	resp["has_wechat"] = sub.WeChatContractID != nil
 	resp["has_lemonsqueezy"] = sub.LemonSqueezySubscriptionID != nil
 
-	// Optional fields
 	if sub.CanceledAt != nil {
 		resp["canceled_at"] = sub.CanceledAt
 	}
@@ -145,12 +133,10 @@ func subscriptionResponse(sub *billing.Subscription, seatUsage *billingservice.S
 		resp["next_billing_cycle"] = *sub.NextBillingCycle
 	}
 
-	// Plan details
 	if sub.Plan != nil {
 		resp["plan"] = planResponse(sub.Plan)
 	}
 
-	// Seat usage
 	if seatUsage != nil {
 		resp["seat_usage"] = seatUsage
 	}
@@ -158,7 +144,6 @@ func subscriptionResponse(sub *billing.Subscription, seatUsage *billingservice.S
 	return resp
 }
 
-// planResponse creates a plan response
 func planResponse(p *billing.SubscriptionPlan) gin.H {
 	return gin.H{
 		"id":                     p.ID,

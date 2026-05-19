@@ -18,15 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "next-intl";
 
-/**
- * Master sidebar for the Blocks page. Self-contained: reads the active
- * workspace from the blockstore store and `?page` from the URL. Triggering
- * search dispatches the same ⌘K shortcut the page already listens for, so
- * neither side needs prop-drilling.
- *
- * Layout follows `design/desktop/pages/blocks-document.pastel`:
- *   Search pill → PAGES tree → INDICATOR TYPES list → Triggers footer.
- */
 export function BlocksSidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -165,8 +156,6 @@ export function BlocksSidebar() {
                 const victim = pendingDelete;
                 setPendingDelete(null);
                 await dispatch.removeBlock(victim.id);
-                // Main BlocksPage effect watches `?page=` and falls back
-                // to the workspace root when the target block disappears.
               }}
             >
               {t("common.delete")}

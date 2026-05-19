@@ -8,9 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// SelectRunnerWithAffinity selects the best runner considering affinity hints.
-// repoHistory maps runnerID → pod count for the target repo (nil = no repo context).
-// Falls back to simple least-pods if hints is nil.
 func (s *Service) SelectRunnerWithAffinity(
 	ctx context.Context,
 	orgID int64, userID int64, agentSlug string,
@@ -27,7 +24,6 @@ func (s *Service) SelectRunnerWithAffinity(
 		return s.selectWithScoring(cachedRunners, userID, hints, repoHistory)
 	}
 
-	// DB fallback — still apply affinity scoring
 	agentJSON, err := json.Marshal([]string{agentSlug})
 	if err != nil {
 		return nil, err

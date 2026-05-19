@@ -4,23 +4,19 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth";
-import { getAuthApiService } from "@/lib/wasm-getters";
-import { initWasmCore } from "@/lib/wasm-core";
+import { lightVerifyEmail } from "@/lib/light-auth";
 import { Logo } from "@/components/common";
 
 function VerifyEmailCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
-  const { setAuth } = useAuthStore();
 
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [error, setError] = useState("");
 
   useEffect(() => {
     const verifyEmail = async () => {
-      await initWasmCore();
       if (!token) {
         setStatus("error");
         setError("Verification token is missing");
@@ -28,19 +24,8 @@ function VerifyEmailCallbackContent() {
       }
 
       try {
-        const response = JSON.parse(await getAuthApiService().verify_email(token));
-
-        // Store auth tokens
-        await setAuth(response.token, {
-          id: response.user.id,
-          email: response.user.email,
-          username: response.user.username,
-          name: response.user.name,
-        });
-
+        await lightVerifyEmail(token);
         setStatus("success");
-
-        // Redirect to onboarding after a brief delay
         setTimeout(() => {
           router.push("/onboarding");
         }, 2000);
@@ -55,7 +40,7 @@ function VerifyEmailCallbackContent() {
     };
 
     verifyEmail();
-  }, [token, setAuth, router]);
+  }, [token, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

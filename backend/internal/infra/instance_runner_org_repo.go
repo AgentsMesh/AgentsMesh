@@ -7,12 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface compliance check.
 var _ instance.RunnerOrgQuerier = (*runnerOrgQuerier)(nil)
 
 type runnerOrgQuerier struct{ db *gorm.DB }
 
-// NewRunnerOrgQuerier creates a new GORM-backed RunnerOrgQuerier.
 func NewRunnerOrgQuerier(db *gorm.DB) instance.RunnerOrgQuerier {
 	return &runnerOrgQuerier{db: db}
 }

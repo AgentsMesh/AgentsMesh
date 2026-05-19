@@ -16,10 +16,6 @@ interface DebugEntry {
   raw?: string;
 }
 
-/**
- * ACP debug panel for monitoring protocol messages.
- * Shows tool calls, state changes, and permission requests.
- */
 export function AcpDebugPanel({ podKey }: AcpDebugPanelProps) {
   const [open, setOpen] = useState(false);
   const session = useAcpSession(podKey);
@@ -29,7 +25,6 @@ export function AcpDebugPanel({ podKey }: AcpDebugPanelProps) {
     if (!session) return [];
     const items: DebugEntry[] = [];
 
-    // Tool calls
     for (const tc of Object.values(session.toolCalls)) {
       items.push({
         timestamp: tc.timestamp,
@@ -40,7 +35,6 @@ export function AcpDebugPanel({ podKey }: AcpDebugPanelProps) {
       });
     }
 
-    // Logs
     for (const log of session.logs) {
       items.push({
         timestamp: log.timestamp,
@@ -50,7 +44,6 @@ export function AcpDebugPanel({ podKey }: AcpDebugPanelProps) {
       });
     }
 
-    // Pending permissions (use latest tool call timestamp as approximation)
     const latestTs = items.length > 0 ? items[items.length - 1].timestamp : 0;
     for (const perm of session.pendingPermissions) {
       items.push({

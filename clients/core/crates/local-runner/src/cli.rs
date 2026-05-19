@@ -4,12 +4,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use tokio::task;
 
-/// Runs the runner CLI with the given arguments off the async runtime.
-///
-/// The runner CLI commands we orchestrate (register, service install/start/...)
-/// are short-lived (≤ a few seconds), so std::process::Command on a blocking
-/// task keeps this crate's tokio feature footprint minimal — we don't need
-/// tokio's `process` feature, which the workspace excludes for iOS compat.
+// std::process on a blocking task instead of tokio's `process` feature —
+// workspace excludes the latter for iOS compat.
 pub(crate) async fn run_cli(binary: PathBuf, args: Vec<String>) -> Result<CliOutput> {
     if !binary.exists() {
         return Err(LocalRunnerError::BinaryNotFound {
@@ -48,7 +44,6 @@ impl CliOutput {
     }
 }
 
-/// Convenience: run the canonical runner binary located via `paths`.
 pub(crate) async fn run_runner_cli(paths: &InstallPaths, args: &[&str]) -> Result<CliOutput> {
     let owned: Vec<String> = args.iter().map(|s| s.to_string()).collect();
     run_cli(paths.binary_path(), owned).await

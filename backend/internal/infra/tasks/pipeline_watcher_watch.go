@@ -7,17 +7,14 @@ import (
 	"time"
 )
 
-// Watch starts watching a pipeline
 func (pw *PipelineWatcher) Watch(ctx context.Context, projectID, pipelineID string, taskType string, taskID int64, metadata map[string]interface{}) error {
 	key := fmt.Sprintf("%s:%s", projectID, pipelineID)
 	hashKey := PipelineKeyPrefix + key
 
-	// Add to watching set
 	if err := pw.redis.SAdd(ctx, WatchingSetKey, key).Err(); err != nil {
 		return fmt.Errorf("failed to add to watching set: %w", err)
 	}
 
-	// Store pipeline metadata
 	data := map[string]interface{}{
 		"project_id":  projectID,
 		"pipeline_id": pipelineID,
@@ -27,7 +24,6 @@ func (pw *PipelineWatcher) Watch(ctx context.Context, projectID, pipelineID stri
 		"updated_at":  time.Now().UTC().Format(time.RFC3339),
 	}
 
-	// Add metadata fields
 	if metadata != nil {
 		if artifactPath, ok := metadata["artifact_path"].(string); ok {
 			data["artifact_path"] = artifactPath
@@ -53,7 +49,6 @@ func (pw *PipelineWatcher) Watch(ctx context.Context, projectID, pipelineID stri
 	return nil
 }
 
-// UpdateStatus updates the status of a watched pipeline
 func (pw *PipelineWatcher) UpdateStatus(ctx context.Context, projectID, pipelineID, status string, webURL string) error {
 	key := fmt.Sprintf("%s:%s", projectID, pipelineID)
 	hashKey := PipelineKeyPrefix + key
@@ -70,7 +65,6 @@ func (pw *PipelineWatcher) UpdateStatus(ctx context.Context, projectID, pipeline
 		return fmt.Errorf("failed to update pipeline status: %w", err)
 	}
 
-	// If terminal status, remove from watching set and set TTL
 	if TerminalStatuses[status] {
 		pw.redis.SRem(ctx, WatchingSetKey, key)
 		pw.redis.Expire(ctx, hashKey, CompletedPipelineTTL)
@@ -79,15 +73,12 @@ func (pw *PipelineWatcher) UpdateStatus(ctx context.Context, projectID, pipeline
 	return nil
 }
 
-// Unwatch removes a pipeline from watching
 func (pw *PipelineWatcher) Unwatch(ctx context.Context, projectID, pipelineID string) error {
 	key := fmt.Sprintf("%s:%s", projectID, pipelineID)
 	hashKey := PipelineKeyPrefix + key
 
-	// Remove from watching set
 	pw.redis.SRem(ctx, WatchingSetKey, key)
 
-	// Delete the hash
 	pw.redis.Del(ctx, hashKey)
 
 	return nil

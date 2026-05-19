@@ -10,10 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== Board and View Endpoints ==========
-
-// GetActiveTickets returns active (non-completed) tickets
-// GET /api/v1/organizations/:slug/tickets/active
 func (h *TicketHandler) GetActiveTickets(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -40,8 +36,6 @@ func (h *TicketHandler) GetActiveTickets(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"tickets": tickets})
 }
 
-// GetBoard returns the kanban board view
-// GET /api/v1/organizations/:slug/tickets/board
 func (h *TicketHandler) GetBoard(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -85,8 +79,6 @@ func (h *TicketHandler) GetBoard(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"board": board})
 }
 
-// GetSubTickets returns sub-tickets of a parent ticket
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug/sub-tickets
 func (h *TicketHandler) GetSubTickets(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 

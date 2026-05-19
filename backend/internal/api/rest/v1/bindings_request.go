@@ -8,16 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RequestBinding handles POST /bindings
-// @Summary Request binding to another pod
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param request body BindingRequest true "Binding request"
-// @Success 201 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Router /bindings [post]
 func (h *BindingHandler) RequestBinding(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -31,7 +21,6 @@ func (h *BindingHandler) RequestBinding(c *gin.Context) {
 		return
 	}
 
-	// Get org ID from tenant context (set by TenantMiddleware)
 	tenant := middleware.GetTenant(c)
 	if tenant == nil {
 		apierr.InternalError(c, "invalid organization context")
@@ -48,16 +37,6 @@ func (h *BindingHandler) RequestBinding(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"binding": binding})
 }
 
-// AcceptBinding handles POST /bindings/accept
-// @Summary Accept a pending binding request
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param request body AcceptRequest true "Accept request"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Router /bindings/accept [post]
 func (h *BindingHandler) AcceptBinding(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -80,16 +59,6 @@ func (h *BindingHandler) AcceptBinding(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"binding": binding})
 }
 
-// RejectBinding handles POST /bindings/reject
-// @Summary Reject a pending binding request
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param request body RejectRequest true "Reject request"
-// @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Router /bindings/reject [post]
 func (h *BindingHandler) RejectBinding(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {

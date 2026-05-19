@@ -10,13 +10,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 )
 
-// FindOrCreateMR finds or creates an MR record from git provider data.
 func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *ticket.Ticket, mrData *MRData, podID *int64) (*ticket.MergeRequest, error) {
 	if mrData.WebURL == "" {
 		return nil, errors.New("MR data must contain web URL")
 	}
 
-	// Try to find existing MR by URL
 	existing, err := s.repo.GetMRByURL(ctx, mrData.WebURL)
 	if err != nil {
 		return nil, err
@@ -33,7 +31,6 @@ func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *tick
 		return existing, nil
 	}
 
-	// Create new record
 	now := time.Now()
 	mr := &ticket.MergeRequest{
 		OrganizationID: orgID,
@@ -61,17 +58,14 @@ func (s *MRSyncService) FindOrCreateMR(ctx context.Context, orgID int64, t *tick
 	return mr, nil
 }
 
-// GetTicketMRs returns all MRs for a ticket.
 func (s *MRSyncService) GetTicketMRs(ctx context.Context, ticketID int64) ([]*ticket.MergeRequest, error) {
 	return s.repo.ListMRsByTicket(ctx, ticketID)
 }
 
-// GetPodMRs returns all MRs for a pod.
 func (s *MRSyncService) GetPodMRs(ctx context.Context, podID int64) ([]*ticket.MergeRequest, error) {
 	return s.repo.ListMRsByPod(ctx, podID)
 }
 
-// FindTicketByBranch finds a ticket by branch name pattern within an organization.
 func (s *MRSyncService) FindTicketByBranch(ctx context.Context, organizationID int64, branchName string) (*ticket.Ticket, error) {
 	match := ticketSlugRegex.FindString(branchName)
 	if match == "" {
@@ -80,7 +74,6 @@ func (s *MRSyncService) FindTicketByBranch(ctx context.Context, organizationID i
 	return s.repo.FindTicketByOrgAndSlug(ctx, organizationID, match)
 }
 
-// updateMRFromData updates MR record from provider data.
 func (s *MRSyncService) updateMRFromData(mr *ticket.MergeRequest, data *MRData) {
 	mr.Title = data.Title
 	mr.State = data.State
@@ -93,7 +86,6 @@ func (s *MRSyncService) updateMRFromData(mr *ticket.MergeRequest, data *MRData) 
 	mr.LastSyncedAt = &now
 }
 
-// buildMRData converts git provider MR to MRData.
 func (s *MRSyncService) buildMRData(mr *git.MergeRequest) *MRData {
 	data := &MRData{
 		IID:          mr.IID,

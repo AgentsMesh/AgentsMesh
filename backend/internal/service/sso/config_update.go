@@ -13,20 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
-// UpdateConfig updates an SSO configuration
 func (s *Service) UpdateConfig(ctx context.Context, id int64, req *UpdateConfigRequest) (*sso.Config, error) {
-	// Load current config to validate protocol-specific field constraints.
 	existing, err := s.GetConfig(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Strip all non-matching protocol fields unconditionally.
-	// Frontends send every field (including defaults like ldap_port=389),
-	// so we nil them before any validation to avoid false cross-protocol errors.
 	stripCrossProtocolEmptyFields(existing.Protocol, req)
 
-	// Reject explicitly clearing required fields (pointer non-nil but value empty).
 	if err := validateRequiredFieldsNotCleared(existing, req); err != nil {
 		return nil, err
 	}
@@ -53,12 +47,9 @@ func (s *Service) UpdateConfig(ctx context.Context, id int64, req *UpdateConfigR
 	return s.GetConfig(ctx, id)
 }
 
-// buildUpdateMap constructs the GORM column→value map from an UpdateConfigRequest.
-// Returns an error if secret encryption fails (never silently swallows encryption errors).
 func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface{}, error) {
 	updates := make(map[string]interface{})
 
-	// Common fields
 	if req.Name != nil {
 		updates["name"] = *req.Name
 	}
@@ -69,7 +60,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		updates["enforce_sso"] = *req.EnforceSSO
 	}
 
-	// OIDC fields
 	if req.OIDCIssuerURL != nil {
 		updates["oidc_issuer_url"] = *req.OIDCIssuerURL
 	}
@@ -85,7 +75,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 			}
 			updates["oidc_client_secret_encrypted"] = encrypted
 		} else {
-			// Clear secret (e.g., switching to public client)
 			updates["oidc_client_secret_encrypted"] = nil
 		}
 	}
@@ -93,7 +82,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		updates["oidc_scopes"] = *req.OIDCScopes
 	}
 
-	// SAML fields
 	if req.SAMLIDPMetadataURL != nil {
 		updates["saml_idp_metadata_url"] = *req.SAMLIDPMetadataURL
 	}
@@ -121,7 +109,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 			}
 			updates["saml_idp_cert_encrypted"] = encrypted
 		} else {
-			// Explicitly clear the certificate (validated by validateRequiredFieldsNotCleared)
 			updates["saml_idp_cert_encrypted"] = nil
 		}
 	}
@@ -132,7 +119,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 		updates["saml_name_id_format"] = *req.SAMLNameIDFormat
 	}
 
-	// LDAP fields
 	if req.LDAPHost != nil {
 		updates["ldap_host"] = *req.LDAPHost
 	}
@@ -154,7 +140,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 			}
 			updates["ldap_bind_password_encrypted"] = encrypted
 		} else {
-			// Clear password (e.g., switching to anonymous bind)
 			updates["ldap_bind_password_encrypted"] = nil
 		}
 	}
@@ -177,10 +162,6 @@ func (s *Service) buildUpdateMap(req *UpdateConfigRequest) (map[string]interface
 	return updates, nil
 }
 
-// stripCrossProtocolEmptyFields nils out ALL fields that don't belong to the
-// config's protocol. Frontends typically send every field (including defaults
-// like ldap_port=389 or ldap_user_filter="(uid=%s)") — these must be stripped
-// unconditionally, not just when empty.
 func stripCrossProtocolEmptyFields(protocol sso.Protocol, req *UpdateConfigRequest) {
 	if protocol != sso.ProtocolOIDC {
 		req.OIDCIssuerURL = nil
@@ -210,8 +191,6 @@ func stripCrossProtocolEmptyFields(protocol sso.Protocol, req *UpdateConfigReque
 	}
 }
 
-// validateRequiredFieldsNotCleared rejects updates that clear protocol-specific
-// required fields (pointer non-nil but value empty).
 func validateRequiredFieldsNotCleared(existing *sso.Config, req *UpdateConfigRequest) error {
 	switch existing.Protocol {
 	case sso.ProtocolOIDC:
@@ -222,8 +201,6 @@ func validateRequiredFieldsNotCleared(existing *sso.Config, req *UpdateConfigReq
 			return NewValidationError("OIDC client ID cannot be empty")
 		}
 	case sso.ProtocolSAML:
-		// SAML requires at least one IdP source to remain after the update.
-		// Simulate the post-update state by overlaying request values on existing config.
 		metadataURL := ptrStringOr(existing.SAMLIDPMetadataURL, "")
 		if req.SAMLIDPMetadataURL != nil {
 			metadataURL = *req.SAMLIDPMetadataURL
@@ -256,7 +233,6 @@ func validateRequiredFieldsNotCleared(existing *sso.Config, req *UpdateConfigReq
 	return nil
 }
 
-// ptrStringOr dereferences a *string, returning fallback if nil.
 func ptrStringOr(p *string, fallback string) string {
 	if p != nil {
 		return *p

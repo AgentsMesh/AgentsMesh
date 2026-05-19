@@ -11,19 +11,14 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// TaskHandler is the interface for task-specific handlers
 type TaskHandler interface {
-	// GetTaskType returns the task type this handler processes
 	GetTaskType() string
 
-	// ProcessCompletion processes a successfully completed task
 	ProcessCompletion(ctx context.Context, pipeline *infraTasks.WatchedPipeline) error
 
-	// ProcessFailure processes a failed task
 	ProcessFailure(ctx context.Context, pipeline *infraTasks.WatchedPipeline, errorMsg string) error
 }
 
-// TaskProcessorService processes completed pipeline tasks
 type TaskProcessorService struct {
 	redis    *redis.Client
 	watcher  *infraTasks.PipelineWatcher
@@ -32,7 +27,6 @@ type TaskProcessorService struct {
 	mu       sync.RWMutex
 }
 
-// NewTaskProcessorService creates a new task processor service
 func NewTaskProcessorService(
 	redisClient *redis.Client,
 	logger *slog.Logger,
@@ -45,7 +39,6 @@ func NewTaskProcessorService(
 	}
 }
 
-// RegisterHandler registers a handler for a task type
 func (s *TaskProcessorService) RegisterHandler(handler TaskHandler) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -53,7 +46,6 @@ func (s *TaskProcessorService) RegisterHandler(handler TaskHandler) {
 	s.logger.Info("task handler registered", "type", handler.GetTaskType())
 }
 
-// GetRegisteredTypes returns all registered task types
 func (s *TaskProcessorService) GetRegisteredTypes() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -65,14 +57,12 @@ func (s *TaskProcessorService) GetRegisteredTypes() []string {
 	return types
 }
 
-// ProcessResult represents the result of processing tasks
 type ProcessResult struct {
 	ProcessedCount int
 	Processed      []ProcessedTask
 	Errors         []ProcessError
 }
 
-// ProcessedTask represents a single processed task
 type ProcessedTask struct {
 	TaskID   int64
 	TaskType string
@@ -80,14 +70,12 @@ type ProcessedTask struct {
 	Success  bool
 }
 
-// ProcessError represents a processing error
 type ProcessError struct {
 	TaskID   int64
 	TaskType string
 	Error    string
 }
 
-// Process executes one processing cycle
 func (s *TaskProcessorService) Process(ctx context.Context) (*ProcessResult, error) {
 	result := &ProcessResult{
 		Processed: []ProcessedTask{},
@@ -102,7 +90,6 @@ func (s *TaskProcessorService) Process(ctx context.Context) (*ProcessResult, err
 	s.mu.RUnlock()
 
 	for _, taskType := range taskTypes {
-		// Get completed pipelines for this task type
 		pipelines, err := s.watcher.GetCompletedPipelines(ctx, taskType)
 		if err != nil {
 			s.logger.Error("failed to get completed pipelines",
@@ -130,7 +117,6 @@ func (s *TaskProcessorService) Process(ctx context.Context) (*ProcessResult, err
 				result.ProcessedCount++
 			}
 
-			// Mark as processed regardless of success/failure
 			if err := s.watcher.MarkProcessed(ctx, pipeline.ProjectID, pipeline.PipelineID); err != nil {
 				s.logger.Warn("failed to mark pipeline as processed",
 					"project_id", pipeline.ProjectID,
@@ -143,7 +129,6 @@ func (s *TaskProcessorService) Process(ctx context.Context) (*ProcessResult, err
 	return result, nil
 }
 
-// processSingleTask processes a single completed task
 func (s *TaskProcessorService) processSingleTask(
 	ctx context.Context,
 	taskType string,
@@ -195,7 +180,6 @@ func (s *TaskProcessorService) processSingleTask(
 	return result, nil
 }
 
-// TaskExecution represents a task execution record in the database
 type TaskExecution struct {
 	ID              int64     `gorm:"primaryKey"`
 	TaskType        string    `gorm:"size:50;not null;index"`
@@ -213,12 +197,10 @@ type TaskExecution struct {
 	UpdatedAt       time.Time `gorm:"autoUpdateTime"`
 }
 
-// TableName specifies the table name for TaskExecution
 func (TaskExecution) TableName() string {
 	return "task_executions"
 }
 
-// Task status constants
 const (
 	TaskStatusPending    = "pending"
 	TaskStatusRunning    = "running"
@@ -228,25 +210,21 @@ const (
 	TaskStatusCanceled   = "canceled"
 )
 
-// TaskExecutionRepository handles task execution persistence.
 type TaskExecutionRepository interface {
 	UpdateStatus(ctx context.Context, taskID int64, status string, errorMsg string) error
 	GetByID(ctx context.Context, taskID int64) (*TaskExecution, error)
 }
 
-// BaseTaskHandler provides common functionality for task handlers
 type BaseTaskHandler struct {
 	Repo   TaskExecutionRepository
 	Redis  *redis.Client
 	Logger *slog.Logger
 }
 
-// UpdateTaskStatus updates the status of a task execution
 func (h *BaseTaskHandler) UpdateTaskStatus(ctx context.Context, taskID int64, status string, errorMsg string) error {
 	return h.Repo.UpdateStatus(ctx, taskID, status, errorMsg)
 }
 
-// GetTaskExecution retrieves a task execution by ID
 func (h *BaseTaskHandler) GetTaskExecution(ctx context.Context, taskID int64) (*TaskExecution, error) {
 	return h.Repo.GetByID(ctx, taskID)
 }

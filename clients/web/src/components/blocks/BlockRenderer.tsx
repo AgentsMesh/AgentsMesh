@@ -69,8 +69,6 @@ export interface BlockRendererProps {
   depth?: number;
 }
 
-// Central dispatch: block.type → registered component.
-// Adding a new block type is one case-branch; no other site needs changing.
 export function BlockRenderer({ blockID, depth = 0 }: BlockRendererProps) {
   const block = useBlock(blockID);
   if (!block) return null;
@@ -135,10 +133,6 @@ export function BlockRenderer({ blockID, depth = 0 }: BlockRendererProps) {
   }
 }
 
-// DynamicRecord is the Tier 1 default: any block whose type matches a
-// workspace-registered block_type_def with columns gets schema-driven
-// rendering via RecordEditor. Truly unknown types (no spec at all) fall
-// back to UnknownBlock so the operator can still see + delete them.
 function DynamicRecord({ block, depth }: { block: Block; depth: number }) {
   const spec = useBlockTypeSpec(block.workspace_id, block.type);
   if (spec && spec.columns && spec.columns.length > 0) {
@@ -155,9 +149,6 @@ function UnknownBlock({ block }: { block: Block }) {
   );
 }
 
-// NestChildren renders the list of children under a given parent, ordered by
-// order_key. Children are wrapped in a SortableNest so drag-reordering within
-// the same parent is handled automatically.
 export function NestChildren({ parentID, depth }: { parentID: string; depth: number }) {
   const refIDs = useNestChildren(parentID);
   const refs = useRefs();

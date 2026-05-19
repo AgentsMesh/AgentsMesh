@@ -1,24 +1,13 @@
-/**
- * Docs navigation configuration.
- * Shared by docs/layout.tsx (sidebar + breadcrumbs) and DocNavigation (prev/next).
- */
-
 export interface DocNavItem {
-  /** i18n key for the title (resolved at render time) */
   titleKey: string;
-  /** Route path */
   href: string;
 }
 
 export interface DocNavSection {
-  /** i18n key for the section title */
   titleKey: string;
   items: DocNavItem[];
 }
 
-/**
- * Sectioned navigation for the sidebar.
- */
 export const docsNavSections: DocNavSection[] = [
   {
     titleKey: "docs.nav.gettingStarted",
@@ -114,23 +103,14 @@ export const docsNavSections: DocNavSection[] = [
   },
 ];
 
-/**
- * Flat ordered list of all doc pages for prev/next navigation.
- */
 export const docsNavFlat: DocNavItem[] = docsNavSections.flatMap(
   (section) => section.items
 );
 
-/**
- * Find the current page index in the flat navigation list.
- */
 export function findCurrentPageIndex(pathname: string): number {
   return docsNavFlat.findIndex((item) => item.href === pathname);
 }
 
-/**
- * Get previous and next navigation items for a given pathname.
- */
 export function getPrevNext(pathname: string): {
   prev: DocNavItem | null;
   next: DocNavItem | null;
@@ -143,10 +123,6 @@ export function getPrevNext(pathname: string): {
   };
 }
 
-/**
- * Get breadcrumb data for a given pathname.
- * Returns: [{ titleKey, href }, ...]
- */
 export function getBreadcrumbs(
   pathname: string
 ): Array<{ titleKey: string; href?: string }> {
@@ -157,7 +133,6 @@ export function getBreadcrumbs(
   for (const section of docsNavSections) {
     const item = section.items.find((i) => i.href === pathname);
     if (item) {
-      // Don't add section crumb for root "/docs" page
       if (pathname !== "/docs") {
         crumbs.push({ titleKey: section.titleKey });
         crumbs.push({ titleKey: item.titleKey });

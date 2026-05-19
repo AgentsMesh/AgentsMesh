@@ -8,12 +8,10 @@ import (
 	"time"
 )
 
-// MockStorage implements Storage interface for testing
 type MockStorage struct {
 	mu    sync.RWMutex
 	files map[string]*mockFile
 
-	// Error injection for testing
 	UploadErr        error
 	DeleteErr        error
 	GetURLErr        error
@@ -28,14 +26,12 @@ type mockFile struct {
 	size        int64
 }
 
-// NewMockStorage creates a new mock storage for testing
 func NewMockStorage() *MockStorage {
 	return &MockStorage{
 		files: make(map[string]*mockFile),
 	}
 }
 
-// Upload stores a file in memory
 func (m *MockStorage) Upload(ctx context.Context, key string, reader io.Reader, size int64, contentType string) (*FileInfo, error) {
 	if m.UploadErr != nil {
 		return nil, m.UploadErr
@@ -63,7 +59,6 @@ func (m *MockStorage) Upload(ctx context.Context, key string, reader io.Reader, 
 	}, nil
 }
 
-// Delete removes a file from memory
 func (m *MockStorage) Delete(ctx context.Context, key string) error {
 	if m.DeleteErr != nil {
 		return m.DeleteErr
@@ -76,7 +71,6 @@ func (m *MockStorage) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// GetURL returns a mock presigned URL
 func (m *MockStorage) GetURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	if m.GetURLErr != nil {
 		return "", m.GetURLErr
@@ -85,12 +79,10 @@ func (m *MockStorage) GetURL(ctx context.Context, key string, expiry time.Durati
 	return fmt.Sprintf("https://mock-storage.example.com/%s?expires=%d", key, time.Now().Add(expiry).Unix()), nil
 }
 
-// GetInternalURL returns a mock internal presigned URL (same as GetURL for mock)
 func (m *MockStorage) GetInternalURL(ctx context.Context, key string, expiry time.Duration) (string, error) {
 	return m.GetURL(ctx, key, expiry)
 }
 
-// PresignPutURL returns a mock presigned PUT URL
 func (m *MockStorage) PresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
 	if m.PresignPutURLErr != nil {
 		return "", m.PresignPutURLErr
@@ -99,12 +91,10 @@ func (m *MockStorage) PresignPutURL(ctx context.Context, key string, contentType
 	return fmt.Sprintf("https://mock-storage.example.com/%s?upload=true&expires=%d", key, time.Now().Add(expiry).Unix()), nil
 }
 
-// InternalPresignPutURL returns a mock internal presigned PUT URL (same as PresignPutURL for mock)
 func (m *MockStorage) InternalPresignPutURL(ctx context.Context, key string, contentType string, expiry time.Duration) (string, error) {
 	return m.PresignPutURL(ctx, key, contentType, expiry)
 }
 
-// Exists checks if a file exists in memory
 func (m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
 	if m.ExistsErr != nil {
 		return false, m.ExistsErr
@@ -117,7 +107,6 @@ func (m *MockStorage) Exists(ctx context.Context, key string) (bool, error) {
 	return exists, nil
 }
 
-// GetFile returns file data for testing (not part of Storage interface)
 func (m *MockStorage) GetFile(key string) ([]byte, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -129,28 +118,24 @@ func (m *MockStorage) GetFile(key string) ([]byte, bool) {
 	return f.data, true
 }
 
-// PutFile adds a file entry to mock storage (simulates direct S3 upload)
 func (m *MockStorage) PutFile(key string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.files[key] = &mockFile{key: key}
 }
 
-// FileCount returns the number of stored files for testing
 func (m *MockStorage) FileCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return len(m.files)
 }
 
-// Clear removes all files for testing
 func (m *MockStorage) Clear() {
 	m.mu.Lock()
 	m.files = make(map[string]*mockFile)
 	m.mu.Unlock()
 }
 
-// Reset clears all files and errors
 func (m *MockStorage) Reset() {
 	m.mu.Lock()
 	m.files = make(map[string]*mockFile)

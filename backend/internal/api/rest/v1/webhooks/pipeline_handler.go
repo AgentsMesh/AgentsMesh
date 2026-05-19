@@ -5,7 +5,6 @@ import (
 	"log/slog"
 )
 
-// Pipeline status constants
 const (
 	PipelineStatusPending  = "pending"
 	PipelineStatusRunning  = "running"
@@ -16,30 +15,24 @@ const (
 	PipelineStatusManual   = "manual"
 )
 
-// PipelineHandler handles pipeline webhook events
 type PipelineHandler struct {
 	logger *slog.Logger
 }
 
-// NewPipelineHandler creates a new pipeline handler
 func NewPipelineHandler(logger *slog.Logger) *PipelineHandler {
 	return &PipelineHandler{logger: logger}
 }
 
-// CanHandle checks if this is a pipeline event we should process
 func (h *PipelineHandler) CanHandle(ctx *WebhookContext) bool {
-	// Only handle pipeline events with valid IDs
 	return ctx.ObjectKind == "pipeline" && ctx.PipelineID > 0
 }
 
-// Handle processes the pipeline event
 func (h *PipelineHandler) Handle(ctx *WebhookContext) (map[string]interface{}, error) {
 	h.logger.Info("processing pipeline event",
 		"project_id", ctx.ProjectID,
 		"pipeline_id", ctx.PipelineID,
 		"status", ctx.PipelineStatus)
 
-	// Extract pipeline URL
 	var pipelineURL string
 	if objAttrs, ok := ctx.Payload["object_attributes"].(map[string]interface{}); ok {
 		if url, ok := objAttrs["url"].(string); ok {
@@ -54,31 +47,22 @@ func (h *PipelineHandler) Handle(ctx *WebhookContext) (map[string]interface{}, e
 		"pipeline_url":    pipelineURL,
 	}
 
-	// Here you would typically:
-	// 1. Update PipelineWatcher in Redis
-	// 2. Update related TaskExecution status
-	// 3. Notify interested parties via WebSocket
-
 	return result, nil
 }
 
-// MergeRequestHandler handles merge request webhook events
 type MergeRequestHandler struct {
 	logger *slog.Logger
 }
 
-// NewMergeRequestHandler creates a new merge request handler
 func NewMergeRequestHandler(logger *slog.Logger) *MergeRequestHandler {
 	return &MergeRequestHandler{logger: logger}
 }
 
-// CanHandle checks if this is an MR event we should process
 func (h *MergeRequestHandler) CanHandle(ctx *WebhookContext) bool {
 	if ctx.ObjectKind != "merge_request" {
 		return false
 	}
 
-	// Check if there's a source branch
 	if objAttrs, ok := ctx.Payload["object_attributes"].(map[string]interface{}); ok {
 		if sourceBranch, ok := objAttrs["source_branch"].(string); ok && sourceBranch != "" {
 			return true
@@ -88,7 +72,6 @@ func (h *MergeRequestHandler) CanHandle(ctx *WebhookContext) bool {
 	return false
 }
 
-// Handle processes the merge request event
 func (h *MergeRequestHandler) Handle(ctx *WebhookContext) (map[string]interface{}, error) {
 	objAttrs, ok := ctx.Payload["object_attributes"].(map[string]interface{})
 	if !ok {
@@ -113,7 +96,6 @@ func (h *MergeRequestHandler) Handle(ctx *WebhookContext) (map[string]interface{
 		"source_branch": sourceBranch,
 	}
 
-	// Extract additional MR data
 	if title, ok := objAttrs["title"].(string); ok {
 		result["title"] = title
 	}
@@ -127,33 +109,22 @@ func (h *MergeRequestHandler) Handle(ctx *WebhookContext) (map[string]interface{
 		result["mr_url"] = url
 	}
 
-	// Here you would typically:
-	// 1. Find associated pod by branch name
-	// 2. Find associated ticket
-	// 3. Create or update TicketMergeRequest record
-	// 4. Notify via WebSocket
-
 	return result, nil
 }
 
-// PushHandler handles push webhook events
 type PushHandler struct {
 	logger *slog.Logger
 }
 
-// NewPushHandler creates a new push handler
 func NewPushHandler(logger *slog.Logger) *PushHandler {
 	return &PushHandler{logger: logger}
 }
 
-// CanHandle checks if this is a push event we should process
 func (h *PushHandler) CanHandle(ctx *WebhookContext) bool {
 	return ctx.ObjectKind == "push"
 }
 
-// Handle processes the push event
 func (h *PushHandler) Handle(ctx *WebhookContext) (map[string]interface{}, error) {
-	// Extract push info
 	var ref, before, after string
 	var totalCommits int
 
@@ -183,23 +154,14 @@ func (h *PushHandler) Handle(ctx *WebhookContext) (map[string]interface{}, error
 		"total_commits": totalCommits,
 	}
 
-	// Here you would typically:
-	// 1. Check if branch is associated with a pod
-	// 2. Update pod branch status
-	// 3. Trigger any sync tasks
-
 	return result, nil
 }
 
-// SetupDefaultHandlers configures the default webhook handlers
 func SetupDefaultHandlers(registry *HandlerRegistry, logger *slog.Logger) {
-	// Register pipeline handler
 	registry.Register("pipeline", NewPipelineHandler(logger))
 
-	// Register merge request handler
 	registry.Register("merge_request", NewMergeRequestHandler(logger))
 
-	// Register push handler (composite with sub-handlers)
 	pushHandler := NewCompositeHandler(logger)
 	pushHandler.AddSubHandler(NewPushHandler(logger))
 	registry.Register("push", pushHandler)

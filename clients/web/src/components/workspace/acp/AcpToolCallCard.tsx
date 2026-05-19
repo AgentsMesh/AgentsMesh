@@ -4,15 +4,6 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle, Loader2, Circle } from "lucide-react";
 import type { AcpToolCall } from "@/stores/acpSession";
 
-/**
- * Tool call status has 3 phases in the ACP lifecycle:
- *
- * 1. running (status != "completed")       → spinner (blue)
- * 2. completed, awaiting result (success === undefined) → circle (muted)
- * 3. completed with result:
- *    - success === true  → green check
- *    - success === false → red X
- */
 function ToolStatusIcon({ toolCall }: { toolCall: AcpToolCall }) {
   if (toolCall.status !== "completed") {
     return <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500 shrink-0" />;
@@ -23,7 +14,6 @@ function ToolStatusIcon({ toolCall }: { toolCall: AcpToolCall }) {
   if (toolCall.success === true) {
     return <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />;
   }
-  // completed but no result yet (args collected, tool executing)
   return <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />;
 }
 

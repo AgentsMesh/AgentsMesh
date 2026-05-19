@@ -4,10 +4,6 @@
  * by MentionValidatorHook — no client-side regex parsing needed.
  */
 
-/**
- * Extract the @ query at the cursor position.
- * Returns the query string (text after @) and its start index, or null if not in a mention.
- */
 export function getMentionQuery(
   text: string,
   cursorPos: number
@@ -17,10 +13,8 @@ export function getMentionQuery(
 
   if (atIndex === -1) return null;
 
-  // '@' must be at start or preceded by whitespace
   if (atIndex > 0 && !/\s/.test(textBeforeCursor[atIndex - 1])) return null;
 
-  // Extract query: text between '@' and cursor (must not contain whitespace)
   const query = textBeforeCursor.slice(atIndex + 1);
   if (/\s/.test(query)) return null;
 

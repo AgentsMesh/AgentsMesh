@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Freeze freezes a subscription
 func (h *SubscriptionHandler) Freeze(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -28,7 +27,6 @@ func (h *SubscriptionHandler) Freeze(c *gin.Context) {
 		return
 	}
 
-	// Sync organization table
 	h.syncOrgStatus(c, orgID, billing.SubscriptionStatusFrozen)
 
 	newSub, _ := h.billingService.GetSubscription(c.Request.Context(), orgID)
@@ -38,7 +36,6 @@ func (h *SubscriptionHandler) Freeze(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// Unfreeze reactivates a frozen subscription
 func (h *SubscriptionHandler) Unfreeze(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -48,7 +45,6 @@ func (h *SubscriptionHandler) Unfreeze(c *gin.Context) {
 
 	oldSub, _ := h.billingService.GetSubscription(c.Request.Context(), orgID)
 
-	// Default to monthly if no cycle specified
 	cycle := billing.BillingCycleMonthly
 	if oldSub != nil && oldSub.BillingCycle != "" {
 		cycle = oldSub.BillingCycle
@@ -59,7 +55,6 @@ func (h *SubscriptionHandler) Unfreeze(c *gin.Context) {
 		return
 	}
 
-	// Sync organization table
 	h.syncOrgStatus(c, orgID, billing.SubscriptionStatusActive)
 
 	newSub, _ := h.billingService.GetSubscription(c.Request.Context(), orgID)
@@ -69,7 +64,6 @@ func (h *SubscriptionHandler) Unfreeze(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// Cancel cancels a subscription without calling external payment APIs
 func (h *SubscriptionHandler) Cancel(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -91,7 +85,6 @@ func (h *SubscriptionHandler) Cancel(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// AdminRenew extends the subscription by the specified number of months
 func (h *SubscriptionHandler) AdminRenew(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -125,7 +118,6 @@ func (h *SubscriptionHandler) AdminRenew(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// SetAutoRenew toggles auto-renewal
 func (h *SubscriptionHandler) SetAutoRenew(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -155,7 +147,6 @@ func (h *SubscriptionHandler) SetAutoRenew(c *gin.Context) {
 	c.JSON(http.StatusOK, subscriptionResponse(newSub, seatUsage))
 }
 
-// SetCustomQuota sets a custom quota override for a resource
 func (h *SubscriptionHandler) SetCustomQuota(c *gin.Context) {
 	orgID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

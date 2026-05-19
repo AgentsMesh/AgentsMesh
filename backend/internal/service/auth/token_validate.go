@@ -14,18 +14,15 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// hashToken creates a SHA-256 hash of the token
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(hash[:])
 }
 
-// ValidateToken validates a JWT token
 func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 	return s.ValidateTokenWithContext(context.Background(), tokenString)
 }
 
-// ValidateTokenWithContext validates a JWT token with context and blacklist check
 func (s *Service) ValidateTokenWithContext(ctx context.Context, tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -46,7 +43,6 @@ func (s *Service) ValidateTokenWithContext(ctx context.Context, tokenString stri
 		return nil, ErrInvalidToken
 	}
 
-	// Check if token is blacklisted (revoked)
 	if s.redis != nil {
 		if revoked, _ := s.isTokenBlacklisted(ctx, tokenString); revoked {
 			return nil, ErrTokenRevoked
@@ -56,7 +52,6 @@ func (s *Service) ValidateTokenWithContext(ctx context.Context, tokenString stri
 	return claims, nil
 }
 
-// isTokenBlacklisted checks if a token has been revoked
 func (s *Service) isTokenBlacklisted(ctx context.Context, token string) (bool, error) {
 	tokenHash := hashToken(token)
 	key := tokenBlacklistKey + tokenHash
@@ -64,7 +59,6 @@ func (s *Service) isTokenBlacklisted(ctx context.Context, token string) (bool, e
 	return exists > 0, err
 }
 
-// RefreshToken refreshes access token using refresh token stored in Redis
 func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*LoginResult, error) {
 	if s.redis == nil {
 		slog.ErrorContext(ctx, "refresh token attempted without redis")
@@ -88,7 +82,6 @@ func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*Login
 		return nil, ErrUserDisabled
 	}
 
-	// Invalidate old refresh token (token rotation for security)
 	if err := s.revokeRefreshToken(ctx, refreshToken); err != nil {
 		slog.WarnContext(ctx, "failed to revoke old refresh token during rotation", "user_id", u.ID, "error", err)
 	}
@@ -108,7 +101,6 @@ func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*Login
 	}, nil
 }
 
-// validateRefreshToken validates a refresh token against Redis storage
 func (s *Service) validateRefreshToken(ctx context.Context, refreshToken string) (*RefreshTokenData, error) {
 	tokenHash := hashToken(refreshToken)
 	key := refreshTokenPrefix + tokenHash

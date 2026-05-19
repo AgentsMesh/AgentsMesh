@@ -6,12 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// channelUserNameResolver implements channel.UserNameResolver using a simple DB query.
 type channelUserNameResolver struct {
 	db *gorm.DB
 }
 
-// NewChannelUserNameResolver creates a UserNameResolver backed by the users table.
 func NewChannelUserNameResolver(db *gorm.DB) *channelUserNameResolver {
 	return &channelUserNameResolver{db: db}
 }

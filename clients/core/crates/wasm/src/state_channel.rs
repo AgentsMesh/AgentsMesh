@@ -16,8 +16,6 @@ impl WasmChannelState {
         Self { inner: ChannelState::with_storage(crate::new_memory_backend()) }
     }
 
-    // ── Current user ──
-
     pub fn set_current_user_id(&mut self, user_id: Option<i64>) {
         self.inner.set_current_user_id(user_id);
     }
@@ -28,8 +26,6 @@ impl WasmChannelState {
             Err(_) => self.inner.set_current_user(None),
         }
     }
-
-    // ── Channels ──
 
     pub fn channels_json(&self) -> String {
         serde_json::to_string(self.inner.get_channels()).unwrap_or_default()
@@ -53,8 +49,6 @@ impl WasmChannelState {
     pub fn set_current_channel(&mut self, id: Option<i64>) {
         self.inner.set_current_channel(id);
     }
-
-    // ── Single channel CRUD ──
 
     pub fn get_channel_json(&self, id: i64) -> JsValue {
         match self.inner.get_channel(id) {
@@ -81,16 +75,11 @@ impl WasmChannelState {
         self.inner.remove_channel(id);
     }
 
-    // ── Channel search/filter ──
-
     pub fn filter_channels_json(&self, query: &str, include_archived: bool) -> String {
         let filtered = self.inner.filter_channels(query, include_archived);
         serde_json::to_string(&filtered).unwrap_or_else(|_| "[]".to_string())
     }
 
-    // ── Atomic select ──
-
-    /// Atomically: set current channel + clear unread + clear mentions.
     pub fn select_channel(&mut self, id: Option<i64>) -> JsValue {
         match self.inner.select_channel(id) {
             Some(c) => JsValue::from_str(
@@ -99,8 +88,6 @@ impl WasmChannelState {
             None => JsValue::NULL,
         }
     }
-
-    // ── Channel sorting ──
 
     pub fn sorted_channel_ids_json(&self, mode: &str, include_archived: bool) -> String {
         let sort_mode = match mode {
@@ -111,8 +98,6 @@ impl WasmChannelState {
         let ids = self.inner.sorted_channel_ids(sort_mode, include_archived);
         serde_json::to_string(&ids).unwrap_or_else(|_| "[]".to_string())
     }
-
-    // ── Last message preview ──
 
     pub fn get_last_message_json(&self, channel_id: i64) -> JsValue {
         match self.inner.get_last_message(channel_id) {
@@ -129,17 +114,12 @@ impl WasmChannelState {
         }
     }
 
-    // ── Messages ──
-
     pub fn add_message(&mut self, channel_id: i64, message_json: &str) {
         if let Ok(msg) = serde_json::from_str::<ChannelMessage>(message_json) {
             self.inner.add_message(channel_id, msg);
         }
     }
 
-    /// Handle a new incoming message (from realtime event).
-    /// Enriches sender, updates preview, increments unread if appropriate.
-    /// Returns true if the message was new (not a duplicate).
     pub fn on_new_message(&mut self, message_json: &str) -> bool {
         match serde_json::from_str::<ChannelMessage>(message_json) {
             Ok(msg) => self.inner.on_new_message(msg),
@@ -198,8 +178,6 @@ impl WasmChannelState {
         }
     }
 
-    // ── Unread counts ──
-
     pub fn set_unread_counts(&mut self, json: &str) {
         if let Ok(counts) = serde_json::from_str::<HashMap<i64, u32>>(json) {
             self.inner.set_unread_counts(counts);
@@ -222,12 +200,9 @@ impl WasmChannelState {
         self.inner.total_unread_count()
     }
 
-    /// Return all unread counts as JSON: `{"1": 3, "2": 5}`.
     pub fn unread_counts_json(&self) -> String {
         serde_json::to_string(self.inner.get_all_unread_counts()).unwrap_or_else(|_| "{}".to_string())
     }
-
-    // ── Mention counts ──
 
     pub fn increment_mention(&mut self, channel_id: i64) {
         self.inner.increment_mention(channel_id);
@@ -251,7 +226,6 @@ impl WasmChannelState {
         }
     }
 
-    /// Return all mention counts as JSON.
     pub fn mention_counts_json(&self) -> String {
         serde_json::to_string(self.inner.get_all_mention_counts()).unwrap_or_else(|_| "{}".to_string())
     }

@@ -9,17 +9,10 @@ import { cn, getErrorMessage } from "@/lib/utils";
 import { useBlockstoreStore } from "@/stores/blockstore";
 
 export interface WorkspaceBreadcrumbProps {
-  /** The currently-active workspace, already loaded. */
   current: Workspace;
-  /** Called with the selected workspace. Caller rehydrates state. */
   onSelect: (ws: Workspace) => void;
 }
 
-// WorkspaceBreadcrumb shows the active workspace name + a chevron that
-// opens a list of all workspaces in the org so users can switch. Creation
-// of additional workspaces is server-only for now (EnsureDefault on first
-// access); a richer create dialog lands once the POST /workspaces endpoint
-// is exposed.
 export function WorkspaceBreadcrumb({ current, onSelect }: WorkspaceBreadcrumbProps) {
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<Workspace[]>([]);
@@ -29,9 +22,6 @@ export function WorkspaceBreadcrumb({ current, onSelect }: WorkspaceBreadcrumbPr
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    // Wrap setState in queueMicrotask so the effect doesn't trip React's
-    // "setState synchronously within an effect" guard; the actual API call
-    // is async anyway so microtask delay is invisible to users.
     queueMicrotask(() => {
       if (cancelled) return;
       setLoading(true);

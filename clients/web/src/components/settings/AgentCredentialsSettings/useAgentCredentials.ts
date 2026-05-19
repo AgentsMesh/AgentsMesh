@@ -21,14 +21,12 @@ export function useAgentCredentials(
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Data state
   const [profilesByAgent, setProfilesByAgent] = useState<CredentialProfilesByAgent[]>([]);
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
   const [runnerHostDefaults, setRunnerHostDefaults] = useState<Set<string>>(new Set());
   const [credentialFieldsByAgent, setCredentialFieldsByAgent] = useState<Map<string, CredentialField[]>>(new Map());
 
-  // Load data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -43,7 +41,6 @@ export function useAgentCredentials(
       const agentList = [...(agentsRes.builtin_agents || []), ...(agentsRes.custom_agents || []), ...(agentsRes.agents || [])];
       setAgents(agentList);
 
-      // Fetch credential fields for all agents in parallel
       const fieldsMap = new Map<string, CredentialField[]>();
       const schemaResults = await Promise.allSettled(
         agentList.map((a: AgentData) =>
@@ -58,7 +55,6 @@ export function useAgentCredentials(
       });
       setCredentialFieldsByAgent(fieldsMap);
 
-      // Determine which agents have RunnerHost as default
       const runnerHostDefaultSet = new Set<string>();
       const agentSlugs = agentList.map((a: AgentData) => a.slug);
       agentSlugs.forEach((slug: string) => runnerHostDefaultSet.add(slug));
@@ -69,7 +65,6 @@ export function useAgentCredentials(
       });
       setRunnerHostDefaults(runnerHostDefaultSet);
 
-      // Auto-expand first agent or those with profiles
       const expandedIds = new Set<string>();
       if (agentList.length > 0) {
         expandedIds.add(agentList[0].slug);
@@ -142,7 +137,6 @@ export function useAgentCredentials(
     }
   }, [loadData, t]);
 
-  // Save credential profile — credentials keys are full ENV names from AgentFile.
   const handleSaveProfile = useCallback(async (
     agentSlug: string,
     data: CredentialFormData,

@@ -20,13 +20,6 @@ export interface BlockChromeProps {
   blockID?: string;
 }
 
-// BlockChrome wraps a block renderer and provides:
-//  - a left-side drag handle (consumes SortableNest listeners)
-//  - a right-side hover toolbar (lock indicator + comment + duplicate + delete)
-//  - a right-click ContextMenu (comment / duplicate / make private|public / delete)
-//  - selection ring on modifier+click when blockID is set
-// Clicking Comment pins the block to the right-rail comments panel; it never
-// expands inline inside the document flow.
 export function BlockChrome({
   children,
   onDelete,

@@ -11,22 +11,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
 )
 
-// fireAgentAction persists an agent_event block in the same workspace so the
-// named agent can pick it up on its next workspace read. We go through
-// ApplyOps (not a direct repo insert) so the write hits the regular op log,
-// ACL, and WebSocket broadcast — agents subscribing to the workspace see it
-// the same way humans see any other block.
-//
-// Errors are logged but not returned: trigger-side failures must never
-// propagate back to the original ApplyOps caller.
 func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blockstore.Block, op *blockstore.BlockOp) {
 	if t.Action.AgentSlug == "" {
 		s.logger.Warn("blockstore.trigger.agent_missing_slug", "trigger", t.Name)
 		return
 	}
-	// Pick up the workspace's org so ApplyOps passes its tenant check; we're
-	// attributing the write to the system, but every actor still needs a
-	// matching OrgID because that's how the service enforces tenant isolation.
+	// ActorContext needs the workspace's OrgID; ApplyOps enforces tenant isolation per-actor.
 	ws, err := s.repo.GetWorkspace(ctx, target.WorkspaceID)
 	if err != nil {
 		s.logger.Warn("blockstore.trigger.agent_event_workspace_lookup_failed",
@@ -42,13 +32,6 @@ func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blo
 		"fired_at":     time.Now().UTC().Format(time.RFC3339Nano),
 		"consumed":     false,
 	}
-	// Write scoped to the trigger's creator. Our permission model is
-	// "权限跟着人走 / 资源跟着组织走": agents and triggers don't carry
-	// independent principals — everything flows through to the human who
-	// wrote them. Attributing the agent_event to t.CreatedBy means:
-	//   * block.CreatedBy == that user, so ACL "private" rules can match
-	//   * memory.retrieve from another user's agents (a different pod
-	//     creator) won't surface this event once the ACL is set.
 	meta := blockstore.JSONMap{}
 	if t.CreatedBy != 0 {
 		meta["acl"] = map[string]any{
@@ -59,9 +42,7 @@ func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blo
 	in := ApplyOpsInput{
 		WorkspaceID:    target.WorkspaceID.String(),
 		IdempotencyKey: fmt.Sprintf("trigger-agent-%s-op%d", t.Name, op.ID),
-		// SuppressTriggers breaks the cascade — an agent_event block with
-		// target_type="agent_event" would otherwise re-fire this same
-		// trigger on our just-written event, unbounded.
+		// SuppressTriggers prevents the agent_event we're writing from re-firing this same trigger (unbounded cascade).
 		SuppressTriggers: true,
 		Ops: []OpEnvelope{
 			{Op: blockstore.OpCreateBlock, Payload: map[string]any{
@@ -72,14 +53,9 @@ func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blo
 			}},
 		},
 	}
-	// Actor: attribute to the human who wrote this trigger so block.CreatedBy
-	// lands on a real user (required for ACL private to resolve). ActorType
-	// stays system because the CALL is system-originated — the user didn't
-	// manually run ApplyOps; but the resource belongs to them.
-	//
-	// Correlation propagates from the originating op so a single trace id
-	// covers "user write → trigger → agent_event" — the audit consumer can
-	// stitch the chain together by trace_id without joining op id chains.
+	// Attribute block.CreatedBy to the trigger's author so ACL private resolves; ActorType
+	// stays system since the call origin is system; trace_id propagates the originating op
+	// so audit consumers can stitch "user write → trigger → agent_event" by trace_id alone.
 	traceID := traceIDFromOp(op)
 	actor := ActorContext{
 		OrgID:     ws.OrganizationID,
@@ -99,10 +75,6 @@ func (s *Service) fireAgentAction(ctx context.Context, t TriggerDef, target *blo
 		"attributed_to", t.CreatedBy)
 }
 
-// fireWebhook POSTs a JSON payload to the trigger's URL. The SSRF guard runs
-// twice: creation rejected private targets (dispatchDefineTrigger), and we
-// re-check here so older trigger_def rows stored before that check landed
-// can't slip through.
 func (s *Service) fireWebhook(ctx context.Context, t TriggerDef, target *blockstore.Block, op *blockstore.BlockOp) {
 	if err := validateWebhookURL(t.Action.URL); err != nil {
 		s.logger.Warn("blockstore.trigger.webhook_url_blocked",
@@ -130,9 +102,6 @@ func (s *Service) fireWebhook(ctx context.Context, t TriggerDef, target *blockst
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	// Stitch this webhook into the trace chain: receivers logging X-Trace-Id
-	// will land in the same OpenTelemetry trace as the originating op, no
-	// joins required. Header name lower-cased for canonical-form compliance.
 	if traceID := traceIDFromOp(op); traceID != "" {
 		req.Header.Set("X-Trace-Id", traceID)
 	}
@@ -155,9 +124,6 @@ func (s *Service) fireWebhook(ctx context.Context, t TriggerDef, target *blockst
 		"trigger", t.Name, "status", resp.StatusCode)
 }
 
-// traceIDFromOp extracts the originating OTel trace id from an op's
-// Context JSONB. Returns "" when absent (older ops written before audit
-// metadata landed, or system writes whose ctx had no span).
 func traceIDFromOp(op *blockstore.BlockOp) string {
 	if op == nil || op.Context == nil {
 		return ""

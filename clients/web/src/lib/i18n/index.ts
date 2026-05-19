@@ -1,4 +1,3 @@
-// Configuration
 export {
   locales,
   defaultLocale,
@@ -8,5 +7,4 @@ export {
   type Locale,
 } from "./config";
 
-// Locale switcher hook
 export { useSetLocale } from "./locale-switcher";

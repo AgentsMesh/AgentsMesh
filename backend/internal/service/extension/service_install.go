@@ -10,7 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
 
-// InstallSkillFromMarket installs a skill from the marketplace into a repository.
 func (s *Service) InstallSkillFromMarket(ctx context.Context, orgID, repoID, userID, marketItemID int64, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -21,7 +20,6 @@ func (s *Service) InstallSkillFromMarket(ctx context.Context, orgID, repoID, use
 		return nil, fmt.Errorf("%w: market item %d", ErrNotFound, marketItemID)
 	}
 
-	// Validate market item accessibility: must be platform-level (nil org) or belong to same org
 	if marketItem.Registry != nil && marketItem.Registry.OrganizationID != nil &&
 		*marketItem.Registry.OrganizationID != orgID {
 		return nil, fmt.Errorf("%w: skill not accessible to this organization", ErrForbidden)
@@ -53,7 +51,6 @@ func (s *Service) InstallSkillFromMarket(ctx context.Context, orgID, repoID, use
 	return skill, nil
 }
 
-// InstallSkillFromGitHub imports and installs a skill from a GitHub URL.
 func (s *Service) InstallSkillFromGitHub(ctx context.Context, orgID, repoID, userID int64, url, branch, path, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -66,7 +63,6 @@ func (s *Service) InstallSkillFromGitHub(ctx context.Context, orgID, repoID, use
 	return s.packager.CompleteGitHubInstall(ctx, orgID, repoID, userID, url, branch, path, scope)
 }
 
-// InstallSkillFromUpload processes an uploaded archive and installs it as a skill.
 func (s *Service) InstallSkillFromUpload(ctx context.Context, orgID, repoID, userID int64, reader io.Reader, filename, scope string) (*extension.InstalledSkill, error) {
 	if err := validateScope(scope); err != nil {
 		return nil, err
@@ -79,7 +75,6 @@ func (s *Service) InstallSkillFromUpload(ctx context.Context, orgID, repoID, use
 	return s.packager.CompleteUploadInstall(ctx, orgID, repoID, userID, reader, filename, scope)
 }
 
-// UpdateSkill updates an installed skill's settings.
 func (s *Service) UpdateSkill(ctx context.Context, orgID, repoID, installID, userID int64, userRole string, enabled *bool, pinnedVersion *int) (*extension.InstalledSkill, error) {
 	skill, err := s.repo.GetInstalledSkill(ctx, installID)
 	if err != nil {
@@ -106,7 +101,6 @@ func (s *Service) UpdateSkill(ctx context.Context, orgID, repoID, installID, use
 	return skill, nil
 }
 
-// UninstallSkill removes an installed skill from a repository.
 func (s *Service) UninstallSkill(ctx context.Context, orgID, repoID, installID, userID int64, userRole string) error {
 	skill, err := s.repo.GetInstalledSkill(ctx, installID)
 	if err != nil {
@@ -126,7 +120,6 @@ func (s *Service) UninstallSkill(ctx context.Context, orgID, repoID, installID, 
 	return nil
 }
 
-// validateSkillAccess checks org/repo ownership and scope-based permissions.
 func validateSkillAccess(skill *extension.InstalledSkill, orgID, repoID, userID int64, userRole string) error {
 	if skill.OrganizationID != orgID {
 		return fmt.Errorf("%w: skill does not belong to this organization", ErrForbidden)

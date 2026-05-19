@@ -11,14 +11,6 @@ import (
 	"time"
 )
 
-// OpenAIEmbedder calls the OpenAI embeddings API to produce dense vectors.
-// Usable as a drop-in EmbeddingProvider — the Service stores whatever bytes
-// the provider returns, so swapping Hash ⇄ OpenAI at boot is transparent.
-//
-// NOTE: when the embedder's dims differ from the Postgres `vec(D)` column
-// dims, the repo transparently falls back to the JSONB path for both write
-// and search. Operators who want HNSW under OpenAI must ALTER the column
-// to match the chosen model (3-small: 1536, 3-large: 3072).
 type OpenAIEmbedder struct {
 	apiKey  string
 	model   string
@@ -27,14 +19,11 @@ type OpenAIEmbedder struct {
 	hc      *http.Client
 }
 
-// OpenAIEmbedderConfig carries the tunables for an OpenAI-compatible embedder.
-// Compatible endpoints (Azure OpenAI, local proxies, LiteLLM) work by pointing
-// BaseURL at the alternate host; the wire shape matches OpenAI's v1 API.
 type OpenAIEmbedderConfig struct {
 	APIKey  string
-	Model   string // e.g. "text-embedding-3-small"
-	Dims    int    // dimensionality reported by the model (3-small: 1536)
-	BaseURL string // default: https://api.openai.com/v1
+	Model   string
+	Dims    int
+	BaseURL string
 	Timeout time.Duration
 }
 
@@ -82,15 +71,9 @@ type openaiEmbedResponse struct {
 	} `json:"error,omitempty"`
 }
 
-// Embed sends one request per call — the service layer already batches ops
-// into a worker goroutine, so request-per-text is acceptable and keeps the
-// retry story simple. Switch to the batch endpoint when p99 embed latency
-// becomes the bottleneck.
 func (e *OpenAIEmbedder) Embed(ctx context.Context, text string) ([]float32, error) {
 	reqBody := openaiEmbedRequest{Input: text, Model: e.model}
-	// 3-small / 3-large support a `dimensions` reduction parameter; pass it
-	// when the caller configured a non-default size to keep stored vectors
-	// aligned with the DB column width.
+	// 3-small/3-large support `dimensions` reduction — pass it so stored vectors match DB column width.
 	if e.dims != 0 {
 		reqBody.Dimensions = e.dims
 	}
@@ -127,8 +110,6 @@ func (e *OpenAIEmbedder) Embed(ctx context.Context, text string) ([]float32, err
 	}
 	vec := out.Data[0].Embedding
 	if len(vec) != e.dims {
-		// The API is authoritative — trust its length, update dims so the
-		// Dims() accessor stays consistent with what we've actually stored.
 		e.dims = len(vec)
 	}
 	return vec, nil

@@ -10,9 +10,6 @@ import (
 	runnerDomain "github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// collectEligibleRunners returns cached runners that pass all eligibility filters.
-// If agentSlug is non-empty, also filters by agent support.
-// Checks visibility including resource_grants.
 func (s *Service) collectEligibleRunners(ctx context.Context, orgID, userID int64, agentSlug string) []*ActiveRunner {
 	grantedIDs := s.fetchGrantedRunnerIDs(ctx, orgID, userID)
 

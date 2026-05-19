@@ -42,9 +42,6 @@ class TsEventsTransport implements IEventsTransport {
   send(data: string): void { this.ws.send(data); }
 
   close(code?: number, reason?: string): void {
-    // Detach business callbacks first — whoever called close() is tearing
-    // down the session and doesn't want late onmessage/onerror/onclose to
-    // bubble into the (already-replaced) EventSubscriptionManager.
     this.ws.onmessage = null;
     this.ws.onerror = null;
     this.ws.onclose = null;

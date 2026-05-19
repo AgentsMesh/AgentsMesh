@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// TriggerPipeline triggers a workflow run (GitHub Actions)
 func (p *GitHubProvider) TriggerPipeline(ctx context.Context, projectID string, req *TriggerPipelineRequest) (*Pipeline, error) {
 	path := fmt.Sprintf("/repos/%s/actions/workflows/ci.yml/dispatches", projectID)
 
@@ -47,7 +46,6 @@ func (p *GitHubProvider) TriggerPipeline(ctx context.Context, projectID string, 
 	}, nil
 }
 
-// GetPipeline returns a specific workflow run
 func (p *GitHubProvider) GetPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	path := fmt.Sprintf("/repos/%s/actions/runs/%d", projectID, pipelineID)
 
@@ -60,7 +58,6 @@ func (p *GitHubProvider) GetPipeline(ctx context.Context, projectID string, pipe
 	return p.parseWorkflowRun(resp.Body, projectID)
 }
 
-// ListPipelines returns workflow runs for a repository
 func (p *GitHubProvider) ListPipelines(ctx context.Context, projectID string, ref, status string, page, perPage int) ([]*Pipeline, error) {
 	path := fmt.Sprintf("/repos/%s/actions/runs?page=%d&per_page=%d", projectID, page, perPage)
 	if ref != "" {
@@ -116,7 +113,6 @@ func (p *GitHubProvider) ListPipelines(ctx context.Context, projectID string, re
 	return pipelines, nil
 }
 
-// CancelPipeline cancels a workflow run
 func (p *GitHubProvider) CancelPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	path := fmt.Sprintf("/repos/%s/actions/runs/%d/cancel", projectID, pipelineID)
 
@@ -129,7 +125,6 @@ func (p *GitHubProvider) CancelPipeline(ctx context.Context, projectID string, p
 	return p.GetPipeline(ctx, projectID, pipelineID)
 }
 
-// RetryPipeline re-runs a workflow
 func (p *GitHubProvider) RetryPipeline(ctx context.Context, projectID string, pipelineID int) (*Pipeline, error) {
 	path := fmt.Sprintf("/repos/%s/actions/runs/%d/rerun", projectID, pipelineID)
 

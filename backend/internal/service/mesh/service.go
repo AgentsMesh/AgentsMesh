@@ -18,7 +18,6 @@ var (
 	ErrRunnerNotFound = errors.New("runner not found")
 )
 
-// Service handles Mesh operations
 type Service struct {
 	repo           mesh.MeshRepository
 	podService     *podService.PodService
@@ -26,7 +25,6 @@ type Service struct {
 	bindingService *bindingService.Service
 }
 
-// NewService creates a new Mesh service
 func NewService(
 	repo mesh.MeshRepository,
 	ps *podService.PodService,
@@ -41,15 +39,12 @@ func NewService(
 	}
 }
 
-// GetTopology returns the complete Mesh topology for an organization
 func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.MeshTopology, error) {
-	// 1. Get active pods
 	pods, _, err := s.podService.ListPods(ctx, orgID, agentpod.PodListQuery{Limit: 100})
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter to only active pods and convert to nodes
 	nodes := make([]mesh.MeshNode, 0)
 	podKeys := make([]string, 0)
 
@@ -61,9 +56,8 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 		}
 	}
 
-	// 2. Get bindings (edges) for active pods
 	edges := make([]mesh.MeshEdge, 0)
-	seenBindings := make(map[int64]bool) // Track seen binding IDs to avoid duplicates
+	seenBindings := make(map[int64]bool)
 	for _, key := range podKeys {
 		activeStatus := channel.BindingStatusActive
 		bindings, err := s.bindingService.GetBindingsForPod(ctx, key, &activeStatus)
@@ -71,7 +65,6 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 			continue
 		}
 		for _, b := range bindings {
-			// Skip if we've already seen this binding (since it appears for both source and target pods)
 			if seenBindings[b.ID] {
 				continue
 			}
@@ -90,7 +83,6 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 		}
 	}
 
-	// 3. Get channels
 	channels, _, err := s.channelService.ListChannels(ctx, orgID, userID, &channel.ChannelListFilter{
 		IncludeArchived: false,
 		Limit:           50,
@@ -102,10 +94,8 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 
 	channelInfos := make([]mesh.ChannelInfo, 0, len(channels))
 	for _, ch := range channels {
-		// Get pods in this channel
 		channelPods := s.getChannelPods(ctx, ch.ID)
 
-		// Get message count
 		messageCount := s.getChannelMessageCount(ctx, ch.ID)
 
 		channelInfos = append(channelInfos, mesh.ChannelInfo{
@@ -118,7 +108,6 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 		})
 	}
 
-	// 4. Get enabled runners for the organization
 	runners, err := s.repo.ListEnabledRunners(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -143,7 +132,6 @@ func (s *Service) GetTopology(ctx context.Context, orgID, userID int64) (*mesh.M
 	}, nil
 }
 
-// podToNode converts a pod to a Mesh node
 func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 	node := mesh.MeshNode{
 		PodKey:       pod.PodKey,
@@ -159,13 +147,11 @@ func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 		StartedAt:    pod.StartedAt,
 	}
 
-	// Populate runner info if preloaded
 	if pod.Runner != nil {
 		node.RunnerNodeID = pod.Runner.NodeID
 		node.RunnerStatus = pod.Runner.Status
 	}
 
-	// Populate ticket info if preloaded
 	if pod.Ticket != nil {
 		node.TicketSlug = &pod.Ticket.Slug
 		node.TicketTitle = &pod.Ticket.Title
@@ -174,7 +160,6 @@ func (s *Service) podToNode(pod *agentpod.Pod) mesh.MeshNode {
 	return node
 }
 
-// getChannelPods returns pod keys in a channel
 func (s *Service) getChannelPods(ctx context.Context, channelID int64) []string {
 	keys, err := s.repo.GetChannelPodKeys(ctx, channelID)
 	if err != nil {
@@ -183,7 +168,6 @@ func (s *Service) getChannelPods(ctx context.Context, channelID int64) []string 
 	return keys
 }
 
-// getChannelMessageCount returns the message count for a channel
 func (s *Service) getChannelMessageCount(ctx context.Context, channelID int64) int {
 	count, err := s.repo.CountChannelMessages(ctx, channelID)
 	if err != nil {
@@ -192,11 +176,8 @@ func (s *Service) getChannelMessageCount(ctx context.Context, channelID int64) i
 	return int(count)
 }
 
-// CreatePodForTicket creates a new pod associated with a ticket.
-// Legacy ticket-pod API: predates the AgentFile SSOT flow and is Claude-only by
-// historical convention. Defaults live as constants on the mesh domain
-// (`mesh.LegacyTicketPod*`) so the convention is explicit at the boundary.
-// New pod creation should go through PodOrchestrator instead.
+// CreatePodForTicket is the legacy ticket-pod entry — predates AgentFile SSOT,
+// Claude-only by historical convention. New code uses PodOrchestrator.
 func (s *Service) CreatePodForTicket(ctx context.Context, req *mesh.CreatePodForTicketRequest) (*agentpod.Pod, error) {
 	model := req.Model
 	if model == "" {
@@ -218,7 +199,6 @@ func (s *Service) CreatePodForTicket(ctx context.Context, req *mesh.CreatePodFor
 	})
 }
 
-// GetPodsForTicket returns all pods associated with a ticket
 func (s *Service) GetPodsForTicket(ctx context.Context, ticketID int64) ([]mesh.MeshNode, error) {
 	pods, err := s.podService.GetPodsByTicket(ctx, ticketID)
 	if err != nil {
@@ -232,7 +212,6 @@ func (s *Service) GetPodsForTicket(ctx context.Context, ticketID int64) ([]mesh.
 	return nodes, nil
 }
 
-// GetActivePodsForTicket returns only active pods for a ticket
 func (s *Service) GetActivePodsForTicket(ctx context.Context, ticketID int64) ([]mesh.MeshNode, error) {
 	pods, err := s.podService.GetPodsByTicket(ctx, ticketID)
 	if err != nil {
@@ -248,15 +227,12 @@ func (s *Service) GetActivePodsForTicket(ctx context.Context, ticketID int64) ([
 	return nodes, nil
 }
 
-// BatchGetTicketPods returns pods for multiple tickets
 func (s *Service) BatchGetTicketPods(ctx context.Context, ticketIDs []int64) (*mesh.BatchTicketPodsResponse, error) {
-	// Get all pods for the given ticket IDs
 	pods, err := s.repo.ListPodsByTicketIDs(ctx, ticketIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Group by ticket ID
 	result := make(map[int64][]mesh.MeshNode)
 	for _, pod := range pods {
 		if pod.TicketID != nil {
@@ -268,7 +244,6 @@ func (s *Service) BatchGetTicketPods(ctx context.Context, ticketIDs []int64) (*m
 		}
 	}
 
-	// Ensure all requested ticket IDs are in the result (even if empty)
 	for _, id := range ticketIDs {
 		if _, exists := result[id]; !exists {
 			result[id] = make([]mesh.MeshNode, 0)
@@ -280,7 +255,6 @@ func (s *Service) BatchGetTicketPods(ctx context.Context, ticketIDs []int64) (*m
 	}, nil
 }
 
-// JoinChannel adds a pod to a channel
 func (s *Service) JoinChannel(ctx context.Context, channelID int64, podKey string) error {
 	cp := &mesh.ChannelPod{
 		ChannelID: channelID,
@@ -294,7 +268,6 @@ func (s *Service) JoinChannel(ctx context.Context, channelID int64, podKey strin
 	return nil
 }
 
-// LeaveChannel removes a pod from a channel
 func (s *Service) LeaveChannel(ctx context.Context, channelID int64, podKey string) error {
 	if err := s.repo.DeleteChannelPod(ctx, channelID, podKey); err != nil {
 		slog.ErrorContext(ctx, "failed to leave channel", "channel_id", channelID, "pod_key", podKey, "error", err)
@@ -304,7 +277,6 @@ func (s *Service) LeaveChannel(ctx context.Context, channelID int64, podKey stri
 	return nil
 }
 
-// RecordChannelAccess records access to a channel
 func (s *Service) RecordChannelAccess(ctx context.Context, channelID int64, podKey *string, userID *int64) error {
 	access := &mesh.ChannelAccess{
 		ChannelID: channelID,

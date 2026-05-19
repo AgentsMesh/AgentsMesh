@@ -10,9 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/agentfile/parser"
 )
 
-// ==================== Discovery MCP Methods ====================
-
-// mcpListAvailablePods handles the "list_available_pods" MCP method.
 func (a *GRPCRunnerAdapter) mcpListAvailablePods(ctx context.Context, tc *middleware.TenantContext) (interface{}, *mcpError) {
 	pods, _, err := a.mcpPodService.ListPods(ctx, tc.OrganizationID, agentpod.PodListQuery{
 		Statuses: agentpod.ActiveStatuses(),
@@ -22,7 +19,6 @@ func (a *GRPCRunnerAdapter) mcpListAvailablePods(ctx context.Context, tc *middle
 		return nil, newMcpError(500, "failed to list pods")
 	}
 
-	// Convert to simplified format for MCP
 	type podSummary struct {
 		PodKey string `json:"pod_key"`
 		Status string `json:"status"`
@@ -39,18 +35,15 @@ func (a *GRPCRunnerAdapter) mcpListAvailablePods(ctx context.Context, tc *middle
 	return map[string]interface{}{"pods": result}, nil
 }
 
-// mcpListRunners handles the "list_runners" MCP method.
 func (a *GRPCRunnerAdapter) mcpListRunners(ctx context.Context, tc *middleware.TenantContext) (interface{}, *mcpError) {
 	runners, err := a.runnerMcpService.ListRunners(ctx, tc.OrganizationID, tc.UserID)
 	if err != nil {
 		return nil, newMcpError(500, "failed to list runners")
 	}
 
-	// Get agents for enrichment
 	builtinTypes, _ := a.agentSvc.ListBuiltinAgents(ctx)
 	customTypes, _ := a.agentSvc.ListCustomAgents(ctx, tc.OrganizationID)
 
-	// Build slug -> Agent map
 	agentMap := make(map[string]*agentDomain.Agent)
 	for _, at := range builtinTypes {
 		agentMap[at.Slug] = at
@@ -61,14 +54,12 @@ func (a *GRPCRunnerAdapter) mcpListRunners(ctx context.Context, tc *middleware.T
 		customAgentMap[cat.Slug] = cat
 	}
 
-	// Get user's agent configs
 	userConfigs, _ := a.userConfigSvc.ListUserAgentConfigs(ctx, tc.UserID)
 	userConfigMap := make(map[string]agentDomain.ConfigValues)
 	for _, cfg := range userConfigs {
 		userConfigMap[cfg.AgentSlug] = cfg.ConfigValues
 	}
 
-	// Build result
 	type configFieldSummary struct {
 		Name     string      `json:"name"`
 		Type     string      `json:"type"`
@@ -165,7 +156,6 @@ func (a *GRPCRunnerAdapter) mcpListRunners(ctx context.Context, tc *middleware.T
 	return map[string]interface{}{"runners": result}, nil
 }
 
-// mcpListRepositories handles the "list_repositories" MCP method.
 func (a *GRPCRunnerAdapter) mcpListRepositories(ctx context.Context, tc *middleware.TenantContext) (interface{}, *mcpError) {
 	repos, err := a.repositoryService.ListByOrganization(ctx, tc.OrganizationID)
 	if err != nil {

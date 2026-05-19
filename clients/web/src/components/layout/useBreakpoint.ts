@@ -2,12 +2,6 @@
 
 import { useSyncExternalStore, useMemo } from "react";
 
-/**
- * Responsive breakpoints
- * - mobile: < 768px
- * - tablet: 768px - 1024px
- * - desktop: > 1024px
- */
 export type Breakpoint = "mobile" | "tablet" | "desktop";
 
 export interface BreakpointConfig {
@@ -32,17 +26,14 @@ function getBreakpoint(width: number, config: BreakpointConfig): Breakpoint {
   return "mobile";
 }
 
-// Get current window width
 function getWidthSnapshot(): number {
   return typeof window !== "undefined" ? window.innerWidth : 1200;
 }
 
-// Server snapshot
 function getServerWidthSnapshot(): number {
-  return 1200; // Default to desktop width for SSR
+  return 1200;
 }
 
-// Subscribe to resize events
 function subscribeToResize(callback: () => void): () => void {
   if (typeof window === "undefined") return () => {};
 
@@ -55,10 +46,6 @@ function subscribeToResize(callback: () => void): () => void {
   };
 }
 
-/**
- * Hook to detect current responsive breakpoint
- * Returns the current breakpoint based on window width
- */
 export function useBreakpoint(
   config: BreakpointConfig = DEFAULT_BREAKPOINTS
 ): {
@@ -88,9 +75,6 @@ export function useBreakpoint(
   return result;
 }
 
-/**
- * Hook to check if current breakpoint matches or is larger than the specified breakpoint
- */
 export function useMinBreakpoint(
   minBreakpoint: Breakpoint,
   config: BreakpointConfig = DEFAULT_BREAKPOINTS
@@ -104,9 +88,6 @@ export function useMinBreakpoint(
   return currentIndex >= minIndex;
 }
 
-/**
- * Hook to check if current breakpoint matches or is smaller than the specified breakpoint
- */
 export function useMaxBreakpoint(
   maxBreakpoint: Breakpoint,
   config: BreakpointConfig = DEFAULT_BREAKPOINTS

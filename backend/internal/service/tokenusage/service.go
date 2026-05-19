@@ -15,19 +15,15 @@ import (
 // of the same name — separate processes, no shared SSOT possible.
 const shortPodGracePeriod = 5 * time.Second
 
-// Service handles token usage recording and querying.
 type Service struct {
 	repo   tokenusage.Repository
 	logger *slog.Logger
 }
 
-// NewService creates a new token usage service.
 func NewService(repo tokenusage.Repository, logger *slog.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
-// RecordUsage persists token usage from a gRPC TokenUsageReport.
-// It creates one record per model reported by the runner.
 func (s *Service) RecordUsage(
 	ctx context.Context,
 	orgID int64,
@@ -45,7 +41,6 @@ func (s *Service) RecordUsage(
 	now := time.Now()
 	records := make([]*tokenusage.TokenUsage, 0, len(report.Models))
 	for _, m := range report.Models {
-		// Skip entries with negative token values (defensive).
 		if m.InputTokens < 0 || m.OutputTokens < 0 || m.CacheCreationTokens < 0 || m.CacheReadTokens < 0 {
 			s.logger.Warn("skipping token usage entry with negative values",
 				"pod_key", podKey,
@@ -53,7 +48,6 @@ func (s *Service) RecordUsage(
 			)
 			continue
 		}
-		// Enforce DB column length limits on string fields.
 		if len(m.Model) > 100 {
 			s.logger.Warn("skipping token usage entry: model name exceeds 100 bytes",
 				"pod_key", podKey,
@@ -99,14 +93,6 @@ func (s *Service) RecordUsage(
 	)
 }
 
-// logEmptyAfterFilter surfaces "runner sent N models but every one got
-// dropped" as Warn when the pod ran long enough that empty data is a
-// regression smell rather than a quick open-then-close session.
-//
-// Old runners predating proto field pod_started_at_unix_seconds send 0 (or
-// a buggy negative value from time.Time{}.Unix() = -62135596800) and are
-// logged at Info with an explicit marker so the rollout window doesn't
-// silently lose this signal.
 func (s *Service) logEmptyAfterFilter(podKey, agentSlug string, report *runnerv1.TokenUsageReport) {
 	args := []any{
 		"pod_key", podKey,
@@ -126,27 +112,22 @@ func (s *Service) logEmptyAfterFilter(podKey, agentSlug string, report *runnerv1
 	s.logger.Warn("token usage report had no usable records after filter", args...)
 }
 
-// GetSummary returns aggregated totals for the given organization and filter.
 func (s *Service) GetSummary(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) (*tokenusage.UsageSummary, error) {
 	return s.repo.GetSummary(ctx, orgID, filter)
 }
 
-// GetTimeSeries returns time-bucketed aggregation for the given organization.
 func (s *Service) GetTimeSeries(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) ([]tokenusage.TimeSeriesPoint, error) {
 	return s.repo.GetTimeSeries(ctx, orgID, filter)
 }
 
-// GetByAgent returns usage grouped by agent slug.
 func (s *Service) GetByAgent(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) ([]tokenusage.AgentUsage, error) {
 	return s.repo.GetByAgent(ctx, orgID, filter)
 }
 
-// GetByUser returns usage grouped by user ID.
 func (s *Service) GetByUser(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) ([]tokenusage.UserUsage, error) {
 	return s.repo.GetByUser(ctx, orgID, filter)
 }
 
-// GetByModel returns usage grouped by model name.
 func (s *Service) GetByModel(ctx context.Context, orgID int64, filter tokenusage.AggregationFilter) ([]tokenusage.ModelUsage, error) {
 	return s.repo.GetByModel(ctx, orgID, filter)
 }

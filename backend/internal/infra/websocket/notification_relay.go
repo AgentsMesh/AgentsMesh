@@ -19,9 +19,6 @@ type notificationRelayMessage struct {
 
 const notificationRelayChannel = "notif:push"
 
-// NotificationRelay delivers notification payloads to WebSocket clients.
-// Local delivery via Hub is immediate; Redis relay handles cross-instance sync.
-// Implements notification.RealtimePusher.
 type NotificationRelay struct {
 	hub         *Hub
 	redisClient *redis.Client

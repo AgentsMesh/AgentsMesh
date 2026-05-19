@@ -6,10 +6,8 @@ import type {
   PodTitleChangedData, PodAliasChangedData, PodInitProgressData,
 } from "@/lib/realtime";
 
-// Coalesce burst-y refetches: pod terminate fires status_changed + terminated
-// back-to-back, and reconnect catchup can replay many old events at once.
-// Without debounce each event triggers fetchSidebarPods + fetchTopology, and
-// the resulting setState storm has been linked to React #185 loops.
+// Debounce burst-y refetches: terminate fires status_changed+terminated back-to-back
+// and reconnect catchup can replay many events. Without this, setState storm links to React #185.
 let sidebarTimer: ReturnType<typeof setTimeout> | null = null;
 function debouncedSidebarRefresh() {
   if (sidebarTimer) clearTimeout(sidebarTimer);

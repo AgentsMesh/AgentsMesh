@@ -9,8 +9,6 @@ import { NestChildren } from "../BlockRenderer";
 import { EditableText } from "../editor/EditableText";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// A page is a container block that carries a title (stored in data.title)
-// and hosts a nest subtree. It renders no body text of its own — children do.
 export function PageRenderer({ block, depth }: { block: Block; depth: number }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const title = (block.data?.title as string | undefined) ?? "";

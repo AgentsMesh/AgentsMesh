@@ -8,14 +8,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/git"
 )
 
-// SyncFromProvider syncs repository info from git provider using user's token
 func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToken string) (*gitprovider.Repository, error) {
 	repo, err := s.GetByID(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create git provider client using repo's self-contained info
 	client, err := git.NewProvider(repo.ProviderType, repo.ProviderBaseURL, accessToken)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to create git provider client for sync", "repo_id", repoID, "provider_type", repo.ProviderType, "error", err)
@@ -45,14 +43,12 @@ func (s *Service) SyncFromProvider(ctx context.Context, repoID int64, accessToke
 	return s.Update(ctx, repoID, updates)
 }
 
-// ListBranches lists branches for a repository using user's token
 func (s *Service) ListBranches(ctx context.Context, repoID int64, accessToken string) ([]string, error) {
 	repo, err := s.GetByID(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create git provider client using repo's self-contained info
 	client, err := git.NewProvider(repo.ProviderType, repo.ProviderBaseURL, accessToken)
 	if err != nil {
 		return nil, err
@@ -70,7 +66,6 @@ func (s *Service) ListBranches(ctx context.Context, repoID int64, accessToken st
 	return names, nil
 }
 
-// GetNextTicketNumber returns the next ticket number for a repository
 func (s *Service) GetNextTicketNumber(ctx context.Context, repoID int64) (int, error) {
 	maxNumber, err := s.repo.GetMaxTicketNumber(ctx, repoID)
 	if err != nil {

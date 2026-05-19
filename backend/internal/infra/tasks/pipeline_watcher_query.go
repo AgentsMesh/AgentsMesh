@@ -10,7 +10,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// GetPipeline retrieves pipeline data from Redis
 func (pw *PipelineWatcher) GetPipeline(ctx context.Context, projectID, pipelineID string) (*WatchedPipeline, error) {
 	key := fmt.Sprintf("%s:%s", projectID, pipelineID)
 	hashKey := PipelineKeyPrefix + key
@@ -50,9 +49,7 @@ func (pw *PipelineWatcher) GetPipeline(ctx context.Context, projectID, pipelineI
 	return pipeline, nil
 }
 
-// GetCompletedPipelines retrieves all completed pipelines of a specific type
 func (pw *PipelineWatcher) GetCompletedPipelines(ctx context.Context, taskType string) ([]*WatchedPipeline, error) {
-	// Get all watching keys
 	keys, err := pw.redis.SMembers(ctx, WatchingSetKey).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get watching set: %w", err)
@@ -68,12 +65,10 @@ func (pw *PipelineWatcher) GetCompletedPipelines(ctx context.Context, taskType s
 			continue
 		}
 
-		// Filter by task type
 		if data["task_type"] != taskType {
 			continue
 		}
 
-		// Check if status is terminal
 		status := data["status"]
 		if !TerminalStatuses[status] {
 			continue
@@ -104,17 +99,14 @@ func (pw *PipelineWatcher) GetCompletedPipelines(ctx context.Context, taskType s
 	return completed, nil
 }
 
-// GetWatchingCount returns the number of pipelines being watched
 func (pw *PipelineWatcher) GetWatchingCount(ctx context.Context) (int64, error) {
 	return pw.redis.SCard(ctx, WatchingSetKey).Result()
 }
 
-// GetWatchingKeys returns all keys being watched
 func (pw *PipelineWatcher) GetWatchingKeys(ctx context.Context) ([]string, error) {
 	return pw.redis.SMembers(ctx, WatchingSetKey).Result()
 }
 
-// IsRecentlyUpdated checks if a pipeline was updated recently (by webhook)
 func (pw *PipelineWatcher) IsRecentlyUpdated(ctx context.Context, projectID, pipelineID string) (bool, error) {
 	key := fmt.Sprintf("%s:%s", projectID, pipelineID)
 	hashKey := PipelineKeyPrefix + key

@@ -43,7 +43,6 @@ export function RunnerDetailPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Link href="../runners">
@@ -76,7 +75,6 @@ export function RunnerDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-border">
         <nav className="flex space-x-8">
           {(["overview", "pods"] as const).map(tab => (

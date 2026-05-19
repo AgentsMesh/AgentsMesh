@@ -2,8 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::PodStatus;
 
-// --- Nested sub-objects matching the API response format ---
-
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PodRunnerInfo {
     pub id: Option<i64>,
@@ -59,11 +57,8 @@ pub struct PodCreatedByInfo {
     pub name: Option<String>,
 }
 
-// --- Full Pod matching the API response ---
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pod {
-    // Core identity
     #[serde(rename = "pod_key", alias = "key")]
     pub key: String,
     #[serde(default)]
@@ -73,13 +68,11 @@ pub struct Pod {
     #[serde(default)]
     pub agent_status: Option<String>,
 
-    // Display
     #[serde(default)]
     pub alias: Option<String>,
     #[serde(default)]
     pub title: Option<String>,
 
-    // Flat fields (legacy / internal)
     #[serde(default)]
     pub agent_slug: String,
     #[serde(default)]
@@ -93,7 +86,6 @@ pub struct Pod {
     #[serde(default)]
     pub channel_id: Option<i64>,
 
-    // Nested objects (from API response)
     #[serde(default)]
     pub runner: Option<PodRunnerInfo>,
     #[serde(default)]
@@ -107,7 +99,6 @@ pub struct Pod {
     #[serde(default)]
     pub created_by: Option<PodCreatedByInfo>,
 
-    // Timestamps & metadata
     #[serde(default)]
     pub prompt: Option<String>,
     #[serde(default)]
@@ -133,7 +124,6 @@ pub struct Pod {
     #[serde(default)]
     pub last_restart_at: Option<String>,
 
-    // Error info
     #[serde(default)]
     pub error_code: Option<String>,
     #[serde(default)]

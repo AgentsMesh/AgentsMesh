@@ -19,14 +19,11 @@ export function useBlockTypeSpecs(workspaceID: string): Record<string, BlockType
   return useMemo(() => buildSpecMap(blocks, workspaceID), [blocks, workspaceID]);
 }
 
-// useBlockTypeSpec is the single-lookup convenience wrapper.
 export function useBlockTypeSpec(workspaceID: string, typeKey: string): BlockTypeSpec | null {
   const all = useBlockTypeSpecs(workspaceID);
   return all[typeKey] ?? null;
 }
 
-// buildSpecMap is the pure computation. Exposed for unit tests without
-// touching the Zustand store.
 export function buildSpecMap(
   blocks: Record<string, Block>,
   workspaceID: string,

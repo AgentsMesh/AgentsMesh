@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-// getGitLabAuthURL returns GitLab OAuth authorization URL
 func getGitLabAuthURL(cfg OAuthConfig, state string) string {
 	return "https://gitlab.com/oauth/authorize" +
 		"?client_id=" + cfg.ClientID +
@@ -22,7 +21,6 @@ func getGitLabAuthURL(cfg OAuthConfig, state string) string {
 		"&state=" + state
 }
 
-// handleGitLabCallback exchanges code for token and fetches user info
 func handleGitLabCallback(ctx context.Context, cfg OAuthConfig, code string) (*OAuthUserInfo, error) {
 	accessToken, err := exchangeGitLabCode(ctx, cfg, code)
 	if err != nil {
@@ -32,7 +30,6 @@ func handleGitLabCallback(ctx context.Context, cfg OAuthConfig, code string) (*O
 	return fetchGitLabUserInfo(ctx, accessToken)
 }
 
-// exchangeGitLabCode exchanges authorization code for access token
 func exchangeGitLabCode(ctx context.Context, cfg OAuthConfig, code string) (string, error) {
 	client := &http.Client{Timeout: 30 * time.Second, Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	tokenResp, err := client.PostForm("https://gitlab.com/oauth/token", url.Values{
@@ -65,7 +62,6 @@ func exchangeGitLabCode(ctx context.Context, cfg OAuthConfig, code string) (stri
 	return tokenData.AccessToken, nil
 }
 
-// fetchGitLabUserInfo fetches user info from GitLab API
 func fetchGitLabUserInfo(ctx context.Context, accessToken string) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://gitlab.com/api/v4/user", nil)
 	if err != nil {

@@ -9,11 +9,6 @@ export interface SummaryBarProps {
   summaryColumns: SummaryColumn[];
 }
 
-// SummaryBar renders the Tier 2 aggregation row at the top of a view. It
-// takes the already-fetched source blocks and the summary_columns spec, and
-// computes each aggregate in memory. Keeping it pure lets every view
-// (kanban / table / gallery / tree / timeline) reuse the same bar without
-// re-implementing aggregation.
 export function SummaryBar({ blocks, summaryColumns }: SummaryBarProps) {
   if (summaryColumns.length === 0) return null;
   return (
@@ -106,5 +101,4 @@ function formatValue(value: number, format?: SummaryColumn["format"]): string {
   }
 }
 
-// Re-export for tests that want to exercise aggregation without a React tree.
 export type { AggregateOp };

@@ -137,7 +137,6 @@ func initializeSupportTicketService(cfg *config.Config, db *gorm.DB) *supporttic
 	return supportticketservice.NewService(supportTicketRepo, s3Storage, cfg.Storage)
 }
 
-// initializeLogUploadStorage creates an S3 storage client for runner log uploads.
 func initializeLogUploadStorage(cfg *config.Config) storage.Storage {
 	s3Storage, err := storage.NewS3Storage(storage.S3Config{
 		Endpoint:       cfg.Storage.Endpoint,

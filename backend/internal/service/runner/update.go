@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 )
 
-// RunnerUpdateInput represents input for updating a runner
 type RunnerUpdateInput struct {
 	Description       *string  `json:"description"`
 	MaxConcurrentPods *int     `json:"max_concurrent_pods"`
@@ -16,7 +15,6 @@ type RunnerUpdateInput struct {
 	Tags              []string `json:"tags"`
 }
 
-// UpdateRunner updates a runner's configuration
 func (s *Service) UpdateRunner(ctx context.Context, runnerID int64, input RunnerUpdateInput) (*runner.Runner, error) {
 	r, err := s.repo.GetByID(ctx, runnerID)
 	if err != nil {

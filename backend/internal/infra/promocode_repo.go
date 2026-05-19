@@ -9,12 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// promocodeRepo implements promocode.Repository using GORM
 type promocodeRepo struct {
 	db *gorm.DB
 }
 
-// NewPromocodeRepository creates a new promo code repository
 func NewPromocodeRepository(db *gorm.DB) promocode.Repository {
 	return &promocodeRepo{db: db}
 }
@@ -123,19 +121,16 @@ func (r *promocodeRepo) CountOrgRedemptionsForCode(ctx context.Context, orgID in
 // RedeemAtomic atomically creates a redemption, increments used count, and applies billing.
 func (r *promocodeRepo) RedeemAtomic(ctx context.Context, params *promocode.RedeemAtomicParams) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Apply billing changes within this transaction
 		if params.ApplyBilling != nil {
 			if err := params.ApplyBilling(ctx, tx); err != nil {
 				return err
 			}
 		}
 
-		// Create redemption record
 		if err := tx.Create(params.Redemption).Error; err != nil {
 			return err
 		}
 
-		// Increment used count
 		if err := tx.Model(&promocode.PromoCode{}).
 			Where("id = ?", params.PromoCodeID).
 			Update("used_count", gorm.Expr("used_count + 1")).Error; err != nil {
@@ -146,5 +141,4 @@ func (r *promocodeRepo) RedeemAtomic(ctx context.Context, params *promocode.Rede
 	})
 }
 
-// Compile-time interface compliance check
 var _ promocode.Repository = (*promocodeRepo)(nil)

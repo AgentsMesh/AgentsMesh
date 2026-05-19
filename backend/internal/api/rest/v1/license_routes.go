@@ -5,23 +5,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterLicenseHandlers registers license routes
 func RegisterLicenseHandlers(rg *gin.RouterGroup, licenseService *license.Service) {
 	handler := NewLicenseHandler(licenseService)
 
-	// Public endpoints (no auth required for status)
 	rg.GET("/status", handler.GetLicenseStatus)
 	rg.GET("/limits", handler.GetLicenseLimits)
 	rg.GET("/feature", handler.CheckFeature)
 
-	// Protected endpoints
 	rg.POST("/activate", handler.ActivateLicense)
 	rg.POST("/upload", handler.UploadLicense)
 	rg.POST("/refresh", handler.RefreshLicense)
 	rg.POST("/validate", handler.ValidateLicense)
 }
 
-// LicenseStatusResponse represents the license status response for API documentation
 type LicenseStatusResponse struct {
 	IsActive         bool     `json:"is_active"`
 	LicenseKey       string   `json:"license_key,omitempty"`

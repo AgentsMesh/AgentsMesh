@@ -307,11 +307,9 @@ impl ChannelService {
         serde_json::to_string(&msg).map_err(crate::wire)
     }
 
-    /// Edit a message. `request_json` is the JSON of either:
-    ///   - the new `EditChannelMessageRequest` (`{source}`, `{content}`, or
-    ///     `{source, mentions}`), or
-    ///   - a bare `MessageContent` AST (legacy callers) which is rewrapped
-    ///     into `{content: <ast>}`. Shape is detected structurally.
+    /// Accepts either an `EditChannelMessageRequest` or a bare
+    /// `MessageContent` AST from legacy callers — bare AST gets rewrapped
+    /// into `{content: <ast>}` (shape detected structurally).
     pub async fn edit_message(
         &self, channel_id: i64, message_id: i64, request_json: &str,
     ) -> Result<String, String> {
@@ -391,7 +389,6 @@ impl ChannelService {
         self.client
             .invite_channel_members(id, &req)
             .await.map_err(crate::wire)?;
-        // Server returns only ack; refresh cache by fetching updated list.
         let fresh = self.client
             .list_channel_members(id)
             .await.map_err(crate::wire)?;

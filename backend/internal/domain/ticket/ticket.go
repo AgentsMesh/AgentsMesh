@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Ticket status constants
 const (
 	TicketStatusBacklog    = "backlog"
 	TicketStatusTodo       = "todo"
@@ -15,7 +14,6 @@ const (
 	TicketStatusDone       = "done"
 )
 
-// Ticket priority constants
 const (
 	TicketPriorityNone   = "none"
 	TicketPriorityLow    = "low"
@@ -24,7 +22,6 @@ const (
 	TicketPriorityUrgent = "urgent"
 )
 
-// Ticket severity constants (primarily for bugs)
 const (
 	TicketSeverityCritical = "critical"
 	TicketSeverityMajor    = "major"
@@ -32,10 +29,8 @@ const (
 	TicketSeverityTrivial  = "trivial"
 )
 
-// Valid estimate values (Fibonacci sequence)
 var ValidEstimates = []int{1, 2, 3, 5, 8, 13, 21}
 
-// Ticket represents a task/issue in the system
 type Ticket struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
@@ -45,10 +40,6 @@ type Ticket struct {
 
 	Title   string  `gorm:"size:500;not null" json:"title"`
 	Content *string `gorm:"type:text" json:"content,omitempty"` // Deprecated: legacy BlockNote JSON. New writes go through ContentBlockID → Block Store `document` block.
-	// ContentBlockID references the Block Store document block that carries
-	// this ticket's rich content. No FK constraint — cross-aggregate coupling
-	// is enforced at the service layer (ticket deletion cascades into block
-	// deletion; stale content_block_id reads gracefully to empty).
 	ContentBlockID *uuid.UUID `gorm:"type:uuid;index:idx_tickets_content_block,where:content_block_id IS NOT NULL" json:"content_block_id,omitempty"`
 
 	Status   string  `gorm:"size:50;not null;default:'backlog';index" json:"status"`
@@ -67,7 +58,6 @@ type Ticket struct {
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`
 	UpdatedAt time.Time `gorm:"not null;default:now()" json:"updated_at"`
 
-	// Associations
 	Assignees     []Assignee     `gorm:"foreignKey:TicketID" json:"assignees,omitempty"`
 	Labels        []Label        `gorm:"many2many:ticket_labels;" json:"labels,omitempty"`
 	MergeRequests []MergeRequest `gorm:"foreignKey:TicketID" json:"merge_requests,omitempty"`
@@ -78,22 +68,18 @@ func (Ticket) TableName() string {
 	return "tickets"
 }
 
-// IsActive returns true if the ticket is in an active state
 func (t *Ticket) IsActive() bool {
 	return t.Status == TicketStatusInProgress || t.Status == TicketStatusInReview
 }
 
-// IsCompleted returns true if the ticket is completed
 func (t *Ticket) IsCompleted() bool {
 	return t.Status == TicketStatusDone
 }
 
-// HasSubTickets returns true if the ticket has sub-tickets
 func (t *Ticket) HasSubTickets() bool {
 	return len(t.SubTickets) > 0
 }
 
-// IsValidEstimate checks if the estimate value is valid
 func IsValidEstimate(estimate int) bool {
 	for _, v := range ValidEstimates {
 		if v == estimate {

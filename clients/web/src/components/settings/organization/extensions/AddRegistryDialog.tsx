@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import type { TranslationFn } from "../GeneralSettings";
 
-// Supported agents for the compatible_agents field
 const SUPPORTED_AGENTS = [
   { slug: "claude-code", label: "Claude Code" },
   { slug: "gemini-cli", label: "Gemini CLI" },

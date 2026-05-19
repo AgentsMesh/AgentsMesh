@@ -8,12 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// supportTicketRepo implements supportticket.Repository using GORM.
 type supportTicketRepo struct {
 	db *gorm.DB
 }
 
-// NewSupportTicketRepository creates a new support-ticket repository.
 func NewSupportTicketRepository(db *gorm.DB) supportticket.Repository {
 	return &supportTicketRepo{db: db}
 }
@@ -118,7 +116,6 @@ func (r *supportTicketRepo) AddMessageAndReopen(ctx context.Context, msg *suppor
 		if err := tx.Create(msg).Error; err != nil {
 			return err
 		}
-		// Reopen ticket if resolved/closed
 		return tx.Model(&supportticket.SupportTicket{}).
 			Where("id = ? AND status IN ?", ticketID, []string{supportticket.StatusResolved, supportticket.StatusClosed}).
 			Updates(map[string]interface{}{
@@ -133,7 +130,6 @@ func (r *supportTicketRepo) AddAdminReplyAndTransition(ctx context.Context, msg 
 		if err := tx.Create(msg).Error; err != nil {
 			return err
 		}
-		// Auto-transition open -> in_progress on first admin reply
 		return tx.Model(&supportticket.SupportTicket{}).
 			Where("id = ? AND status = ?", ticketID, supportticket.StatusOpen).
 			Updates(map[string]interface{}{
@@ -200,5 +196,4 @@ func (r *supportTicketRepo) CountByStatus(ctx context.Context, status string) (i
 	return count, err
 }
 
-// Compile-time interface compliance check
 var _ supportticket.Repository = (*supportTicketRepo)(nil)

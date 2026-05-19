@@ -12,11 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreatePersonalOrganization creates a personal workspace for the authenticated user.
-// The slug is derived from username server-side, with collision-resistant suffixing.
-// This endpoint accepts no request body — the client cannot supply an invalid slug.
-//
-// POST /api/v1/orgs/personal
 func (h *OrganizationHandler) CreatePersonalOrganization(c *gin.Context) {
 	ctx := c.Request.Context()
 	userID := middleware.GetUserID(c)

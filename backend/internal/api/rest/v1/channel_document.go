@@ -7,8 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetDocument returns the channel document
-// GET /api/v1/org/:slug/channels/:id/document
 func (h *ChannelHandler) GetDocument(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {
@@ -23,13 +21,10 @@ func (h *ChannelHandler) GetDocument(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"document": document})
 }
 
-// UpdateDocumentRequest represents document update request
 type UpdateDocumentRequest struct {
 	Document string `json:"document" binding:"required"`
 }
 
-// UpdateDocument updates the channel document
-// PUT /api/v1/org/:slug/channels/:id/document
 func (h *ChannelHandler) UpdateDocument(c *gin.Context) {
 	ch, ok := h.requireChannelAccess(c)
 	if !ok {

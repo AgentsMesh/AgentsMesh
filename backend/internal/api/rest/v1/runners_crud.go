@@ -13,8 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListRunners lists runners in organization
-// GET /api/v1/organizations/:slug/runners
 func (h *RunnerHandler) ListRunners(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -35,8 +33,6 @@ func (h *RunnerHandler) ListRunners(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// GetRunner returns runner by ID
-// GET /api/v1/organizations/:slug/runners/:id
 func (h *RunnerHandler) GetRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -59,7 +55,6 @@ func (h *RunnerHandler) GetRunner(c *gin.Context) {
 		return
 	}
 
-	// Get relay connections if pod coordinator is available
 	var relayConnections []runner.RelayConnectionInfo
 	if h.podCoordinator != nil {
 		relayConnections = h.podCoordinator.GetRelayConnections(runnerID)
@@ -77,8 +72,6 @@ func (h *RunnerHandler) GetRunner(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// UpdateRunner updates a runner
-// PUT /api/v1/organizations/:slug/runners/:id
 func (h *RunnerHandler) UpdateRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -113,7 +106,6 @@ func (h *RunnerHandler) UpdateRunner(c *gin.Context) {
 		return
 	}
 
-	// Update runner
 	updated, err := h.runnerService.UpdateRunner(c.Request.Context(), runnerID, runner.RunnerUpdateInput{
 		Description:       req.Description,
 		MaxConcurrentPods: req.MaxConcurrentPods,
@@ -129,8 +121,6 @@ func (h *RunnerHandler) UpdateRunner(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"runner": updated})
 }
 
-// DeleteRunner deletes a runner
-// DELETE /api/v1/organizations/:slug/runners/:id
 func (h *RunnerHandler) DeleteRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

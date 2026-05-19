@@ -30,13 +30,6 @@ interface UseTerminalResult {
   syncSize: () => void;
 }
 
-/**
- * Facade hook for initializing and managing an xterm.js terminal.
- *
- * Composes:
- * - useTerminalInit setup functions (xterm, connection, IME, paste, data handlers)
- * - useTerminalResize (debounced sync, ResizeObserver, visibility, focus, font size)
- */
 export function useTerminal(
   podKey: string,
   fontSize: number,
@@ -54,40 +47,32 @@ export function useTerminal(
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connecting");
   const [isRunnerDisconnected, setIsRunnerDisconnected] = useState(false);
 
-  // Main effect: create terminal, connect, wire handlers — single lifecycle
   useEffect(() => {
     if (!terminalRef.current || xtermRef.current || !isPodReady) return;
 
     const container = terminalRef.current;
 
-    // 1. Create XTerm + addons
     const { term, fitAddon, scheduler, deferredFitRafId } =
       setupTerminal(container, podKey, fontSize, lastSyncedSizeRef);
 
     schedulerRef.current = scheduler;
 
-    // 2. Connect to WebSocket pool
     const { abort, unsubscribeStatus } = setupConnection(
       podKey, scheduler, connectionRef,
       setConnectionStatus, setIsRunnerDisconnected,
     );
 
-    // 3. IME composition tracking
     const { isComposing } = setupIME(container, term, disposablesRef.current);
 
-    // 4. Image paste support
     setupImagePaste(container, connectionRef, disposablesRef.current);
 
-    // 5. Data & resize handlers
     setupDataHandlers(term, podKey, connectionRef, isComposing, disposablesRef.current);
 
-    // Store refs
     xtermRef.current = term;
     fitAddonRef.current = fitAddon;
     setIsTerminalReady(true);
 
-    // Cleanup — connectionRef is read at cleanup time intentionally because
-    // it's set asynchronously in setupConnection after the effect body runs.
+    // connectionRef is read at cleanup — async-set in setupConnection.
     return () => {
       abort.abort();
       unsubscribeStatus();
@@ -106,11 +91,9 @@ export function useTerminal(
       lastSyncedSizeRef.current = null;
       setIsTerminalReady(false);
     };
-    // fontSize intentionally excluded — handled by useTerminalResize
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [podKey, isPodReady]);
 
-  // Delegate all resize concerns to the resize hook
   const { syncSize } = useTerminalResize(
     podKey, fitAddonRef, xtermRef, terminalRef, isActive, fontSize, isTerminalReady,
   );

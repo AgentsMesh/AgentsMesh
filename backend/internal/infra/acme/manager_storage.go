@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 )
 
-// loadCertificate loads certificate from disk
 func (m *Manager) loadCertificate() error {
 	certPath := filepath.Join(m.cfg.StorageDir, "certificate.json")
 
@@ -32,7 +31,6 @@ func (m *Manager) loadCertificate() error {
 	return nil
 }
 
-// saveCertificate saves certificate to disk
 func (m *Manager) saveCertificate() error {
 	m.certMu.RLock()
 	cert := m.cert
@@ -53,7 +51,6 @@ func (m *Manager) saveCertificate() error {
 		return fmt.Errorf("failed to write certificate file: %w", err)
 	}
 
-	// Also save PEM files for debugging/manual use
 	certPEMPath := filepath.Join(m.cfg.StorageDir, "cert.pem")
 	keyPEMPath := filepath.Join(m.cfg.StorageDir, "key.pem")
 

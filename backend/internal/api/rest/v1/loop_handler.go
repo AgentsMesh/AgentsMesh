@@ -11,13 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PodTerminatorForLoop defines the minimal interface needed by LoopHandler
-// to terminate Pods (used for cancel run). Follows ISP — handler only needs TerminatePod.
 type PodTerminatorForLoop interface {
 	TerminatePod(ctx context.Context, podKey string) error
 }
 
-// LoopHandler handles loop-related requests
 type LoopHandler struct {
 	loopService    *loopService.LoopService
 	loopRunService *loopService.LoopRunService
@@ -25,7 +22,6 @@ type LoopHandler struct {
 	podTerminator  PodTerminatorForLoop
 }
 
-// NewLoopHandler creates a new loop handler
 func NewLoopHandler(
 	ls *loopService.LoopService,
 	lrs *loopService.LoopRunService,
@@ -40,10 +36,6 @@ func NewLoopHandler(
 	}
 }
 
-// ========== Loop CRUD ==========
-
-// ListLoops lists loops for an organization
-// GET /api/v1/orgs/:slug/loops
 func (h *LoopHandler) ListLoops(c *gin.Context) {
 	var req listLoopsQuery
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -78,7 +70,6 @@ func (h *LoopHandler) ListLoops(c *gin.Context) {
 		return
 	}
 
-	// Enrich with active run counts (H2)
 	if len(loops) > 0 {
 		loopIDs := make([]int64, len(loops))
 		for i, l := range loops {
@@ -101,8 +92,6 @@ func (h *LoopHandler) ListLoops(c *gin.Context) {
 	})
 }
 
-// GetLoop gets a loop by slug
-// GET /api/v1/orgs/:slug/loops/:loop_slug
 func (h *LoopHandler) GetLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	loopSlug := c.Param("loop_slug")
@@ -117,14 +106,12 @@ func (h *LoopHandler) GetLoop(c *gin.Context) {
 		return
 	}
 
-	// Enrich with active run count (H2)
 	if counts, err := h.loopRunService.CountActiveRunsByLoopIDs(c.Request.Context(), []int64{loop.ID}); err == nil {
 		if count, ok := counts[loop.ID]; ok {
 			loop.ActiveRunCount = int(count)
 		}
 	}
 
-	// Enrich with average duration (M5)
 	if avg, err := h.loopRunService.GetAvgDuration(c.Request.Context(), loop.ID); err == nil && avg != nil {
 		loop.AvgDurationSec = avg
 	}
@@ -132,8 +119,7 @@ func (h *LoopHandler) GetLoop(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"loop": loop})
 }
 
-// DeleteLoop deletes a loop.
-// Atomically rejects deletion if there are active (pending/running) runs to prevent orphaned Pods.
+// DeleteLoop atomically rejects deletion if there are active (pending/running) runs to prevent orphaned Pods.
 // DELETE /api/v1/orgs/:slug/loops/:loop_slug
 func (h *LoopHandler) DeleteLoop(c *gin.Context) {
 	tenant := middleware.GetTenant(c)

@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
-// Context to propagate onOpenChange to Cancel/Action children
 const AlertDialogContext = createContext<{
   onOpenChange: (open: boolean) => void;
 }>({ onOpenChange: () => {} });

@@ -13,8 +13,6 @@ export type OpKind =
   | "removeRef"
   | "updateRef";
 
-// Core block-store rel semantics. Business may extend with custom strings;
-// only "nest" carries order_key and enforces a single parent.
 export const REL_NEST = "nest";
 export const REL_MENTION = "mention";
 export const REL_EMBED = "embed";
@@ -54,13 +52,8 @@ export const BLOCK_TYPE_DOCUMENT = "document";
 export const BLOCK_TYPE_COLUMN_LIST = "column_list";
 export const BLOCK_TYPE_COLUMN = "column";
 
-// ViewSpec is the shape of a `view` block's data. Keys match the backend's
-// required_data_key registration so Agent-generated views validate cleanly.
 export type ViewLayout = "list" | "kanban" | "table" | "timeline" | "tree" | "gallery";
 
-// Chart sub-types carried on `chart` block's data.type. The renderer dispatches
-// on this field to pick the right recharts component (BarChart / LineChart /
-// PieChart / AreaChart / ScatterChart / RadarChart).
 export type ChartSubType = "bar" | "line" | "pie" | "area" | "scatter" | "radar";
 
 export interface ViewFilter {
@@ -80,25 +73,17 @@ export interface ViewColumn {
   width?: number;
 }
 
-// Tier 2: aggregation summary. Rendered as a "stat bar" on top of the view,
-// answering questions like "how many records?", "average progress?" without
-// requiring callers to open each record. Aggregations run client-side over
-// the already-loaded source blocks; backends can short-circuit to SQL later
-// for workspaces large enough that client aggregation is wasteful.
 export type AggregateOp = "count" | "count_distinct" | "sum" | "avg" | "min" | "max";
 
 export interface SummaryColumn {
   key: string;           // source data column (ignored for "count")
   aggregate: AggregateOp;
   label?: string;
-  /** Format hint for the renderer: 'int' | 'percent' | 'date' | 'number' (default). */
   format?: "int" | "percent" | "date" | "number";
 }
 
 export interface ViewSpec {
   source_type: string;
-  /** Tier 3: cross-type view. When set, useViewBlocks unions records
-   *  across every listed type (plus source_type). */
   source_types?: string[];
   layout: ViewLayout;
   filters?: ViewFilter[];
@@ -224,7 +209,6 @@ export interface ColumnSpec {
    *  render time from the record's other fields via a safe arithmetic
    *  expression (see lib/blockstore/computeColumn). */
   computed?: string;
-  /** Hidden from renderers but data preserved; used during schema evolution. */
   deprecated?: boolean;
 }
 

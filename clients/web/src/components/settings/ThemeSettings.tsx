@@ -19,7 +19,6 @@ export function ThemeSettings() {
   const t = useTranslations();
   const [mounted, setMounted] = React.useState(false);
 
-  // Avoid hydration mismatch
   React.useEffect(() => {
     setMounted(true);
   }, []);

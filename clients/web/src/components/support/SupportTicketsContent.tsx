@@ -19,14 +19,9 @@ import { getSupportTicketService } from "@/lib/wasm-core";
 import { formatTimeAgo } from "@/lib/utils/time";
 
 interface SupportTicketsContentProps {
-  /** Width style — `narrow` for nested-in-Settings, `wide` for the standalone page. */
   variant?: "narrow" | "wide";
 }
 
-/**
- * Reusable Support Tickets list. Renders inside both the standalone
- * `/support` route and the `Personal → Support` settings tab.
- */
 export function SupportTicketsContent({ variant = "wide" }: SupportTicketsContentProps) {
   const router = useRouter();
   const t = useTranslations();

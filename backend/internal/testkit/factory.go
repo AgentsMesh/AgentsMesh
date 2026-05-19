@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// CreateUser inserts a test user and returns it with its generated ID.
 func CreateUser(t *testing.T, db *gorm.DB, email, username string) (id int64) {
 	t.Helper()
 	result := db.Exec(
@@ -22,7 +21,6 @@ func CreateUser(t *testing.T, db *gorm.DB, email, username string) (id int64) {
 	return id
 }
 
-// CreateOrg inserts a test organization and adds ownerID as owner.
 func CreateOrg(t *testing.T, db *gorm.DB, slug string, ownerID int64) (id int64) {
 	t.Helper()
 	result := db.Exec(`INSERT INTO organizations (name, slug) VALUES (?, ?)`, "Org "+slug, slug)
@@ -36,7 +34,6 @@ func CreateOrg(t *testing.T, db *gorm.DB, slug string, ownerID int64) (id int64)
 	return id
 }
 
-// CreateRunner inserts a test runner.
 func CreateRunner(t *testing.T, db *gorm.DB, orgID int64, nodeID string) (id int64) {
 	t.Helper()
 	result := db.Exec(
@@ -50,7 +47,6 @@ func CreateRunner(t *testing.T, db *gorm.DB, orgID int64, nodeID string) (id int
 	return id
 }
 
-// CreatePod inserts a test pod with initializing status.
 func CreatePod(t *testing.T, db *gorm.DB, orgID, runnerID, userID int64) (podKey string) {
 	t.Helper()
 	podKey = fmt.Sprintf("pod-%d-%d", time.Now().UnixNano(), userID)
@@ -64,14 +60,11 @@ func CreatePod(t *testing.T, db *gorm.DB, orgID, runnerID, userID int64) (podKey
 	return podKey
 }
 
-// CreateAgent inserts a test agent definition.
 func CreateAgent(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string) {
 	t.Helper()
 	CreateAgentWithLegacyFlag(t, db, slug, name, agentfileSrc, false)
 }
 
-// CreateAgentWithLegacyFlag inserts a test agent and sets uses_legacy_columns.
-// Use this when the test relies on Claude-style legacy column persistence.
 func CreateAgentWithLegacyFlag(t *testing.T, db *gorm.DB, slug, name, agentfileSrc string, usesLegacy bool) {
 	t.Helper()
 	flag := 0
@@ -87,7 +80,6 @@ func CreateAgentWithLegacyFlag(t *testing.T, db *gorm.DB, slug, name, agentfileS
 	}
 }
 
-// CreateChannel inserts a test channel.
 func CreateChannel(t *testing.T, db *gorm.DB, orgID int64, name string) (id int64) {
 	t.Helper()
 	result := db.Exec(
@@ -100,7 +92,6 @@ func CreateChannel(t *testing.T, db *gorm.DB, orgID int64, name string) (id int6
 	return id
 }
 
-// CreateTicket inserts a test ticket.
 func CreateTicket(t *testing.T, db *gorm.DB, orgID, reporterID int64, title string) (id int64) {
 	t.Helper()
 	slug := fmt.Sprintf("T-%d", time.Now().UnixNano()%10000)
@@ -115,7 +106,6 @@ func CreateTicket(t *testing.T, db *gorm.DB, orgID, reporterID int64, title stri
 	return id
 }
 
-// CreateRepo inserts a test repository.
 func CreateRepo(t *testing.T, db *gorm.DB, orgID int64, slug, cloneURL string) (id int64) {
 	t.Helper()
 	result := db.Exec(
@@ -129,7 +119,6 @@ func CreateRepo(t *testing.T, db *gorm.DB, orgID int64, slug, cloneURL string) (
 	return id
 }
 
-// CreateLoop inserts a test loop.
 func CreateLoop(t *testing.T, db *gorm.DB, orgID, userID int64, slug string) (id int64) {
 	t.Helper()
 	result := db.Exec(
@@ -143,7 +132,6 @@ func CreateLoop(t *testing.T, db *gorm.DB, orgID, userID int64, slug string) (id
 	return id
 }
 
-// SeedBillingPlans inserts standard billing plans (free, pro, enterprise).
 func SeedBillingPlans(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	plans := []struct {

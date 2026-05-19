@@ -9,9 +9,6 @@ interface RepositorySelectProps {
   t: (key: string) => string;
 }
 
-/**
- * Repository selection dropdown component
- */
 export function RepositorySelect({
   repositories,
   selectedRepositoryId,
@@ -52,9 +49,6 @@ interface BranchInputProps {
   t: (key: string) => string;
 }
 
-/**
- * Branch input component
- */
 export function BranchInput({
   value,
   onChange,

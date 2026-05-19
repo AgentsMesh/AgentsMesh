@@ -18,8 +18,6 @@ export interface SlashMenuProps {
   anchorClassName?: string;
 }
 
-// SlashMenu is a headless pop-up list. Callers position it via a wrapping
-// element (usually relative-positioned) and drive `open` state externally.
 export function SlashMenu({ open, options, onClose, anchorClassName }: SlashMenuProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 

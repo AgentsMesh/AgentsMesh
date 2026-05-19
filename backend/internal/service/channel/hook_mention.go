@@ -7,20 +7,15 @@ import (
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 )
 
-// UserLookup resolves usernames to user IDs within an organization
 type UserLookup interface {
 	GetUsersByUsernames(ctx context.Context, orgID int64, usernames []string) (map[string]int64, error)
 	ValidateUserIDs(ctx context.Context, orgID int64, userIDs []int64) ([]int64, error)
 }
 
-// PodLookup validates pod keys within an organization
 type PodLookup interface {
 	GetPodsByKeys(ctx context.Context, orgID int64, podKeys []string) ([]string, error)
 }
 
-// NewMentionValidatorHook validates that mentioned entities exist in the org.
-// Invalid mentions are pruned from the MentionResult (affecting notification routing)
-// and synced back to the persisted mentions field.
 func NewMentionValidatorHook(userLookup UserLookup, podLookup PodLookup, repo channelDomain.ChannelRepository) PostSendHook {
 	return func(ctx context.Context, mc *MessageContext) error {
 		if mc.Mentions == nil {

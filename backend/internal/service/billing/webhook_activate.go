@@ -10,14 +10,12 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment"
 )
 
-// handleRecurringPaymentSuccess handles successful recurring payments
 func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *payment.WebhookEvent) error {
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		return nil // Subscription not found, ignore
 	}
 
-	// Apply pending changes BEFORE period calculation so the new period uses the updated cycle/plan
 	var downgradedPlanName *string
 	if sub.DowngradeToPlan != nil {
 		plan, err := s.GetPlan(ctx, *sub.DowngradeToPlan)
@@ -35,7 +33,6 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 		sub.NextBillingCycle = nil
 	}
 
-	// Renew the subscription period using the (possibly updated) billing cycle
 	if sub.CurrentPeriodEnd.IsZero() {
 		sub.CurrentPeriodStart = time.Now()
 	} else {
@@ -47,7 +44,6 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 		sub.CurrentPeriodEnd = sub.CurrentPeriodStart.AddDate(0, 1, 0)
 	}
 
-	// Unfreeze if was frozen
 	sub.Status = billing.SubscriptionStatusActive
 	sub.FrozenAt = nil
 
@@ -60,14 +56,12 @@ func (s *Service) handleRecurringPaymentSuccess(ctx context.Context, event *paym
 	return nil
 }
 
-// handleRecurringPaymentFailure handles failed recurring payments
 func (s *Service) handleRecurringPaymentFailure(ctx context.Context, event *payment.WebhookEvent) error {
 	sub, err := s.findSubscriptionByProviderID(ctx, event.Provider, event.SubscriptionID)
 	if err != nil {
 		return nil // Subscription not found, ignore
 	}
 
-	// Freeze the subscription
 	now := time.Now()
 	sub.Status = billing.SubscriptionStatusFrozen
 	sub.FrozenAt = &now
@@ -81,7 +75,6 @@ func (s *Service) handleRecurringPaymentFailure(ctx context.Context, event *paym
 	return nil
 }
 
-// activateSubscription activates a new subscription after payment
 func (s *Service) activateSubscription(ctx context.Context, order *billing.PaymentOrder, event *payment.WebhookEvent) error {
 	if order.PlanID == nil {
 		return fmt.Errorf("activateSubscription: order %s has nil PlanID, cannot activate subscription", order.OrderNo)
@@ -92,7 +85,6 @@ func (s *Service) activateSubscription(ctx context.Context, order *billing.Payme
 		seats = 1
 	}
 
-	// Resolve plan name for org sync
 	var planName string
 	if order.Plan != nil {
 		planName = order.Plan.Name
@@ -104,7 +96,6 @@ func (s *Service) activateSubscription(ctx context.Context, order *billing.Payme
 
 	sub, err := s.GetSubscription(ctx, order.OrganizationID)
 	if err != nil {
-		// Create new subscription
 		now := time.Now()
 		var periodEnd time.Time
 		if order.BillingCycle == billing.BillingCycleYearly {
@@ -138,7 +129,6 @@ func (s *Service) activateSubscription(ctx context.Context, order *billing.Payme
 		return nil
 	}
 
-	// Update existing subscription
 	now := time.Now()
 	var periodEnd time.Time
 	if order.BillingCycle == billing.BillingCycleYearly {

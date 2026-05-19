@@ -10,8 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SyncBranches syncs branches from git provider
-// POST /api/v1/organizations/:slug/repositories/:id/sync-branches
 func (h *RepositoryHandler) SyncBranches(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -49,8 +47,6 @@ func (h *RepositoryHandler) SyncBranches(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"branches": branches})
 }
 
-// ListBranches lists repository branches
-// GET /api/v1/organizations/:slug/repositories/:id/branches
 func (h *RepositoryHandler) ListBranches(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -91,9 +87,7 @@ func (h *RepositoryHandler) ListBranches(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"branches": branches})
 }
 
-// SetupWebhook sets up webhook for repository
-// POST /api/v1/organizations/:slug/repositories/:id/webhook
-// Deprecated: Use RegisterRepositoryWebhook instead
+// Deprecated: use RegisterRepositoryWebhook.
 func (h *RepositoryHandler) SetupWebhook(c *gin.Context) {
 	h.RegisterRepositoryWebhook(c)
 }

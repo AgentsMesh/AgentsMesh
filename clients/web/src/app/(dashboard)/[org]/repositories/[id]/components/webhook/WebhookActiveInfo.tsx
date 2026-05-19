@@ -2,9 +2,6 @@
 
 import type { WebhookActiveInfoProps } from "./types";
 
-/**
- * Displays information about an active webhook
- */
 export function WebhookActiveInfo({ status, t }: WebhookActiveInfoProps) {
   if (!status.is_active || !status.registered || status.needs_manual_setup) {
     return null;

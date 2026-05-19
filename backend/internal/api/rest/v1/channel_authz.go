@@ -11,9 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// requireChannelAccess fetches a channel, validates org ownership, and enforces
-// visibility rules (private channels require membership). Returns the channel
-// and true on success, or writes an error response and returns false.
 func (h *ChannelHandler) requireChannelAccess(c *gin.Context) (*channel.Channel, bool) {
 	channelID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

@@ -8,17 +8,14 @@ import (
 	"strings"
 )
 
-// GoogleProvider implements OAuth for Google
 type GoogleProvider struct {
 	config *OAuthConfig
 }
 
-// NewGoogleProvider creates a new Google OAuth provider
 func NewGoogleProvider(config *OAuthConfig) *GoogleProvider {
 	return &GoogleProvider{config: config}
 }
 
-// GetAuthURL returns the Google OAuth authorization URL
 func (p *GoogleProvider) GetAuthURL(state string) string {
 	params := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -31,7 +28,6 @@ func (p *GoogleProvider) GetAuthURL(state string) string {
 	return "https://accounts.google.com/o/oauth2/v2/auth?" + params.Encode()
 }
 
-// ExchangeCode exchanges authorization code for tokens
 func (p *GoogleProvider) ExchangeCode(ctx context.Context, code string) (*OAuthToken, error) {
 	data := url.Values{
 		"client_id":     {p.config.ClientID},
@@ -61,7 +57,6 @@ func (p *GoogleProvider) ExchangeCode(ctx context.Context, code string) (*OAuthT
 	return &token, nil
 }
 
-// GetUserInfo retrieves user info from Google
 func (p *GoogleProvider) GetUserInfo(ctx context.Context, token *OAuthToken) (*OAuthUserInfo, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/oauth2/v2/userinfo", nil)
 	if err != nil {

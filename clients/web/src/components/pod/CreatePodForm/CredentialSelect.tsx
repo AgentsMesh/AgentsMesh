@@ -12,9 +12,6 @@ interface CredentialSelectProps {
   t: (key: string) => string;
 }
 
-/**
- * Credential profile selection dropdown component
- */
 export function CredentialSelect({
   profiles,
   selectedProfileId,

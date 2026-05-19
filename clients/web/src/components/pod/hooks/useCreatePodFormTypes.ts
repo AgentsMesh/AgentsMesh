@@ -1,9 +1,6 @@
 import { PodData, CredentialProfileData } from "@/lib/api";
 import type { PodMode } from "@/lib/pod-modes";
 
-/**
- * Validation errors for the form
- */
 export interface FormValidationErrors {
   runner?: string;
   agent?: string;
@@ -12,11 +9,9 @@ export interface FormValidationErrors {
   prompt?: string;
 }
 
-// Special value for RunnerHost (use Runner's local environment)
 export const RUNNER_HOST_PROFILE_ID = 0;
 
 export interface CreatePodFormState {
-  // Selection state (order: Runner -> Agent -> Others)
   selectedAgent: string | null;
   selectedRepository: number | null;
   selectedBranch: string;
@@ -26,11 +21,9 @@ export interface CreatePodFormState {
   alias: string;
   perpetual: boolean;
 
-  // Credential profiles for selected agent
   credentialProfiles: CredentialProfileData[];
   loadingCredentials: boolean;
 
-  // Actions
   setSelectedAgent: (slug: string | null) => void;
   setSelectedRepository: (id: number | null) => void;
   setSelectedBranch: (branch: string) => void;
@@ -40,24 +33,20 @@ export interface CreatePodFormState {
   setAlias: (alias: string) => void;
   setPerpetual: (perpetual: boolean) => void;
 
-  // AgentFile Layer
   rawLayerMode: boolean;
   rawLayerText: string;
   agentfileLayer: string;
   setRawLayerMode: (enabled: boolean) => void;
   setRawLayerText: (text: string) => void;
 
-  // Computed
   selectedAgentSlug: string;
   supportedModes: string[]; // parsed from agent type's supported_modes
 
-  // Form state
   loading: boolean;
   error: string | null;
   validationErrors: FormValidationErrors;
   isValid: boolean;
 
-  // Actions
   reset: () => void;
   validate: () => boolean;
   submit: (

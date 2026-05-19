@@ -27,7 +27,6 @@ interface PrioritySelectProps {
   size?: "sm" | "md" | "lg";
 }
 
-// Linear-style priority icons and colors
 const priorityConfig: Record<TicketPriority, {
   icon: React.ComponentType<{ className?: string }>;
   color: string;

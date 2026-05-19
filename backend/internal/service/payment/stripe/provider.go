@@ -16,13 +16,11 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/service/payment/types"
 )
 
-// Provider implements payment.SubscriptionProvider for Stripe
 type Provider struct {
 	secretKey     string
 	webhookSecret string
 }
 
-// NewProvider creates a new Stripe provider
 func NewProvider(cfg *config.StripeConfig) *Provider {
 	stripe.Key = cfg.SecretKey
 	return &Provider{
@@ -31,14 +29,11 @@ func NewProvider(cfg *config.StripeConfig) *Provider {
 	}
 }
 
-// GetProviderName returns the provider name
 func (p *Provider) GetProviderName() string {
 	return billing.PaymentProviderStripe
 }
 
-// CreateCheckoutSession creates a Stripe Checkout session
 func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.CheckoutRequest) (*types.CheckoutResponse, error) {
-	// Build line items
 	lineItems := []*stripe.CheckoutSessionLineItemParams{
 		{
 			PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
@@ -52,13 +47,11 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		},
 	}
 
-	// Determine mode based on order type
 	mode := stripe.CheckoutSessionModePayment
 	if req.OrderType == billing.OrderTypeSubscription || req.OrderType == billing.OrderTypeRenewal {
 		mode = stripe.CheckoutSessionModeSubscription
 	}
 
-	// Build metadata
 	metadata := map[string]string{
 		"organization_id": fmt.Sprintf("%d", req.OrganizationID),
 		"user_id":         fmt.Sprintf("%d", req.UserID),
@@ -80,12 +73,10 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 		ExpiresAt:     stripe.Int64(time.Now().Add(30 * time.Minute).Unix()),
 	}
 
-	// Add idempotency key if provided
 	if req.IdempotencyKey != "" {
 		params.SetIdempotencyKey(req.IdempotencyKey)
 	}
 
-	// For subscription mode, configure subscription data
 	if mode == stripe.CheckoutSessionModeSubscription {
 		params.SubscriptionData = &stripe.CheckoutSessionSubscriptionDataParams{
 			Metadata: metadata,
@@ -109,7 +100,6 @@ func (p *Provider) CreateCheckoutSession(ctx context.Context, req *types.Checkou
 	}, nil
 }
 
-// GetCheckoutStatus checks the status of a checkout session
 func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (string, error) {
 	sess, err := checkoutsession.Get(sessionID, nil)
 	if err != nil {
@@ -129,7 +119,6 @@ func (p *Provider) GetCheckoutStatus(ctx context.Context, sessionID string) (str
 	}
 }
 
-// HandleWebhook parses and validates a Stripe webhook
 func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature string) (*types.WebhookEvent, error) {
 	event, err := webhook.ConstructEvent(payload, signature, p.webhookSecret)
 	if err != nil {
@@ -143,7 +132,6 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		Provider:  billing.PaymentProviderStripe,
 	}
 
-	// Parse event data based on type
 	switch string(event.Type) {
 	case billing.WebhookEventCheckoutCompleted:
 		var sess stripe.CheckoutSession
@@ -227,10 +215,8 @@ func (p *Provider) HandleWebhook(ctx context.Context, payload []byte, signature 
 		result.Status = string(sub.Status)
 	}
 
-	// Store raw payload
 	result.RawPayload = make(map[string]interface{})
 	_ = json.Unmarshal(event.Data.Raw, &result.RawPayload)
 
 	return result, nil
 }
-

@@ -70,8 +70,6 @@ export function MentionRenderer({ block }: { block: Block }) {
   );
 }
 
-// ChangeButton is a compact "edit" affordance rendered alongside the pill.
-// Deliberately small — mention pills should feel like tokens, not widgets.
 function ChangeButton({
   value,
   onChange,

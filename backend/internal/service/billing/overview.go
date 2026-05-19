@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/billing"
 )
 
-// BillingOverview represents billing overview
 type BillingOverview struct {
 	Plan               *billing.SubscriptionPlan `json:"plan"`
 	Status             string                    `json:"status"`
@@ -18,7 +17,6 @@ type BillingOverview struct {
 	Usage              UsageOverview             `json:"usage"`
 }
 
-// UsageOverview represents usage overview
 type UsageOverview struct {
 	PodMinutes         float64 `json:"pod_minutes"`
 	IncludedPodMinutes float64 `json:"included_pod_minutes"`
@@ -32,13 +30,11 @@ type UsageOverview struct {
 	MaxRepositories    int     `json:"max_repositories"`
 }
 
-// DeploymentInfo represents deployment information
 type DeploymentInfo struct {
 	DeploymentType     string   `json:"deployment_type"`
 	AvailableProviders []string `json:"available_providers"`
 }
 
-// GetBillingOverview returns billing overview for an organization
 func (s *Service) GetBillingOverview(ctx context.Context, orgID int64) (*BillingOverview, error) {
 	sub, err := s.GetSubscription(ctx, orgID)
 	if err != nil {
@@ -50,10 +46,8 @@ func (s *Service) GetBillingOverview(ctx context.Context, orgID int64) (*Billing
 		plan, _ = s.GetPlanByID(ctx, sub.PlanID)
 	}
 
-	// Get current usage
 	podMinutes, _ := s.GetUsage(ctx, orgID, billing.UsageTypePodMinutes)
 
-	// Count resources
 	userCount, _ := s.repo.CountOrgMembers(ctx, orgID)
 	runnerCount, _ := s.repo.CountRunners(ctx, orgID)
 	repoCount, _ := s.repo.CountRepositories(ctx, orgID)
@@ -81,7 +75,6 @@ func (s *Service) GetBillingOverview(ctx context.Context, orgID int64) (*Billing
 	}, nil
 }
 
-// GetDeploymentInfo returns deployment type and available payment providers
 func (s *Service) GetDeploymentInfo() *DeploymentInfo {
 	if s.paymentConfig == nil {
 		return &DeploymentInfo{

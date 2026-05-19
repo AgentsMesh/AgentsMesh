@@ -16,7 +16,6 @@ export function AgentStatusBadge({
   variant = "badge",
   className,
 }: AgentStatusBadgeProps) {
-  // Only show for active (running) pods
   if (podStatus !== "running") {
     return null;
   }
@@ -47,7 +46,6 @@ export function AgentStatusBadge({
     );
   }
 
-  // badge variant (default)
   return (
     <span
       className={cn(

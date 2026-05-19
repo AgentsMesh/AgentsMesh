@@ -7,15 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListBindings handles GET /bindings
-// @Summary List all bindings for this pod
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param status query string false "Filter by status"
-// @Success 200 {object} map[string]interface{}
-// @Router /bindings [get]
 func (h *BindingHandler) ListBindings(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -40,14 +31,6 @@ func (h *BindingHandler) ListBindings(c *gin.Context) {
 	})
 }
 
-// GetPendingBindings handles GET /bindings/pending
-// @Summary Get pending binding requests for this pod
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Success 200 {object} map[string]interface{}
-// @Router /bindings/pending [get]
 func (h *BindingHandler) GetPendingBindings(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -67,14 +50,6 @@ func (h *BindingHandler) GetPendingBindings(c *gin.Context) {
 	})
 }
 
-// GetBoundPods handles GET /bindings/pods
-// @Summary Get list of pods this pod is bound to
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Success 200 {object} map[string]interface{}
-// @Router /bindings/pods [get]
 func (h *BindingHandler) GetBoundPods(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -94,15 +69,6 @@ func (h *BindingHandler) GetBoundPods(c *gin.Context) {
 	})
 }
 
-// CheckBinding handles GET /bindings/check/:target_pod
-// @Summary Check if bound to a specific pod
-// @Tags bindings
-// @Accept json
-// @Produce json
-// @Param X-Pod-Key header string true "Pod Key"
-// @Param target_pod path string true "Target Pod Key"
-// @Success 200 {object} map[string]interface{}
-// @Router /bindings/check/{target_pod} [get]
 func (h *BindingHandler) CheckBinding(c *gin.Context) {
 	podKey := getPodKeyFromHeader(c)
 	if podKey == "" {
@@ -128,7 +94,6 @@ func (h *BindingHandler) CheckBinding(c *gin.Context) {
 	}
 
 	if isBound {
-		// Try to get the binding details
 		binding, err := h.bindingSvc.GetActiveBinding(c.Request.Context(), podKey, targetPod)
 		if err != nil {
 			binding, _ = h.bindingSvc.GetActiveBinding(c.Request.Context(), targetPod, podKey)

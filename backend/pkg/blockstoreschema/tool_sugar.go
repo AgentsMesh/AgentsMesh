@@ -1,9 +1,5 @@
 package blockstoreschema
 
-// memoryRetrieveTool exposes semantic search as an Agent-facing read tool.
-// Agents call this to surface prior notes/tasks/comments relevant to a query,
-// acting as durable long-term memory over the workspace. Unlike the write
-// tools it does not go through ApplyOps; handler dispatches to SemanticSearch.
 func memoryRetrieveTool() Tool {
 	return Tool{
 		Name:        ToolMemoryRetrieve,
@@ -17,12 +13,6 @@ func memoryRetrieveTool() Tool {
 	}
 }
 
-// defineIndicatorTool registers a schema-driven block type. Agents use this
-// to declare "what does a Bug look like" or "what columns does an OKR have"
-// — the registered type becomes instantly creatable by Agents and humans
-// alike via createBlock(type=<key>). Revisions can be stacked by calling
-// this tool again with a higher `revision` number; the resolver picks the
-// latest revision when hydrating specs.
 func defineIndicatorTool() Tool {
 	columnSchema := map[string]any{
 		"type": "object",
@@ -53,10 +43,6 @@ func defineIndicatorTool() Tool {
 	}
 }
 
-// defineTriggerTool exposes Tier 3's reactive-loop primitive to Agents.
-// Agents use this to declare "run this when X happens": e.g. post to Slack
-// when an incident turns P0, or call back into the Runner when an OKR drops
-// below 30% progress. Stored as a trigger_def block for auditability.
 func defineTriggerTool() Tool {
 	actionSchema := map[string]any{
 		"type": "object",

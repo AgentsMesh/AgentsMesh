@@ -9,10 +9,6 @@ import { useBlock } from "@/stores/blockstore";
 import { BlockChrome } from "../editor/BlockChrome";
 import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
-// LinkToPageRenderer displays a pill linking to another block in the same
-// workspace (typically a page). data.target_id points at the target block;
-// the renderer reads live block data for the display title so edits
-// propagate automatically.
 export function LinkToPageRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
   const targetID = (block.data?.target_id as string | undefined) ?? "";

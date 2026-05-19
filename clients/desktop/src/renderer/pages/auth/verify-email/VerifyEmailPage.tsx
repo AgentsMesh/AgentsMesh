@@ -23,7 +23,6 @@ function VerifyEmailContent() {
 
   const { setAuth, setOrganizations } = useAuthStore();
 
-  // Auto-verify when token is present in URL
   const handleVerifyToken = useCallback(async (verificationToken: string) => {
     setVerifyState("verifying");
     setError("");
@@ -88,7 +87,6 @@ function VerifyEmailContent() {
       <div className="w-full max-w-sm space-y-6 text-center">
         <LogoHeader />
 
-        {/* Email icon */}
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
             <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

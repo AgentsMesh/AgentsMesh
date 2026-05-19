@@ -49,10 +49,8 @@ export const usePushNotificationStore = create<PushNotificationState>()(
   )
 );
 
-// VAPID public key from environment
 export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 
-// Convert base64 to Uint8Array for VAPID key
 export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -65,7 +63,6 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuf
   return outputArray;
 }
 
-// API helpers
 export async function sendSubscriptionToServer(subscription: PushSubscription) {
   try {
     await fetch("/api/push/subscribe", {

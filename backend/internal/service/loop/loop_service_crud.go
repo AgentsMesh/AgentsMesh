@@ -9,7 +9,6 @@ import (
 	loopDomain "github.com/anthropics/agentsmesh/backend/internal/domain/loop"
 )
 
-// Create creates a new Loop.
 func (s *LoopService) Create(ctx context.Context, req *CreateLoopRequest) (*loopDomain.Loop, error) {
 	slug := req.Slug
 	if slug == "" {
@@ -19,7 +18,6 @@ func (s *LoopService) Create(ctx context.Context, req *CreateLoopRequest) (*loop
 		return nil, ErrInvalidSlug
 	}
 
-	// Set defaults
 	if req.PermissionMode == "" {
 		req.PermissionMode = "bypassPermissions"
 	}
@@ -58,7 +56,6 @@ func (s *LoopService) Create(ctx context.Context, req *CreateLoopRequest) (*loop
 		}
 	}
 
-	// Calculate initial next_run_at for cron loops
 	var nextRunAt *time.Time
 	if req.CronExpression != nil && *req.CronExpression != "" {
 		schedule, err := cronParser.Parse(*req.CronExpression)

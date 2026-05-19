@@ -11,14 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ==================== Pre-generated Token Registration ====================
-
-// GenerateGRPCToken creates a new pre-generated registration token.
-// POST /api/v1/organizations/:slug/runners/grpc/tokens
-// Requires JWT authentication (admin).
 func (h *GRPCRunnerHandler) GenerateGRPCToken(c *gin.Context) {
 	var req GenerateGRPCTokenRequest
-	// Allow empty body - all fields are optional
 	_ = c.ShouldBindJSON(&req)
 
 	tenant := middleware.GetTenant(c)
@@ -27,13 +21,11 @@ func (h *GRPCRunnerHandler) GenerateGRPCToken(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
 	}
 
-	// BaseURL is derived from PrimaryDomain
 	serverURL := h.config.BaseURL()
 
 	resp, err := h.runnerService.GenerateGRPCRegistrationToken(
@@ -63,9 +55,6 @@ func (h *GRPCRunnerHandler) GenerateGRPCToken(c *gin.Context) {
 	})
 }
 
-// ListGRPCTokens lists all gRPC registration tokens for an organization.
-// GET /api/v1/organizations/:slug/runners/grpc/tokens
-// Requires JWT authentication (admin).
 func (h *GRPCRunnerHandler) ListGRPCTokens(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 	if tenant == nil {
@@ -73,7 +62,6 @@ func (h *GRPCRunnerHandler) ListGRPCTokens(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
@@ -88,9 +76,6 @@ func (h *GRPCRunnerHandler) ListGRPCTokens(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"tokens": tokens})
 }
 
-// DeleteGRPCToken deletes a gRPC registration token.
-// DELETE /api/v1/organizations/:slug/runners/grpc/tokens/:id
-// Requires JWT authentication (admin).
 func (h *GRPCRunnerHandler) DeleteGRPCToken(c *gin.Context) {
 	tokenID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -104,7 +89,6 @@ func (h *GRPCRunnerHandler) DeleteGRPCToken(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	if tenant.UserRole != "owner" && tenant.UserRole != "admin" {
 		apierr.ForbiddenAdmin(c)
 		return
@@ -122,9 +106,6 @@ func (h *GRPCRunnerHandler) DeleteGRPCToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Token deleted"})
 }
 
-// RegisterWithToken registers a new runner using a pre-generated token.
-// POST /api/v1/runners/grpc/register
-// No authentication required - token serves as authentication.
 func (h *GRPCRunnerHandler) RegisterWithToken(c *gin.Context) {
 	if h.pkiService == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "PKI service not configured")

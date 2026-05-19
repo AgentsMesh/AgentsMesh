@@ -8,7 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 )
 
-// CheckPodForNewMR checks if a pod's branch has an MR.
 func (s *MRSyncService) CheckPodForNewMR(ctx context.Context, pod *agentpod.Pod) (*ticket.MergeRequest, error) {
 	if pod.BranchName == nil || pod.TicketID == nil {
 		return nil, nil
@@ -16,7 +15,6 @@ func (s *MRSyncService) CheckPodForNewMR(ctx context.Context, pod *agentpod.Pod)
 	return s.checkPod(ctx, pod.ID, pod.OrganizationID, *pod.BranchName, *pod.TicketID)
 }
 
-// BatchCheckPods checks active pods for new MRs.
 func (s *MRSyncService) BatchCheckPods(ctx context.Context) ([]*ticket.MergeRequest, error) {
 	if s.gitProvider == nil {
 		return nil, ErrNoGitProvider
@@ -46,7 +44,6 @@ func (s *MRSyncService) BatchCheckPods(ctx context.Context) ([]*ticket.MergeRequ
 	return newMRs, nil
 }
 
-// checkPod is the internal implementation shared by CheckPodForNewMR and BatchCheckPods.
 func (s *MRSyncService) checkPod(ctx context.Context, podID, orgID int64, branchName string, ticketID int64) (*ticket.MergeRequest, error) {
 	if s.gitProvider == nil {
 		return nil, ErrNoGitProvider
@@ -77,7 +74,6 @@ func (s *MRSyncService) checkPod(ctx context.Context, podID, orgID int64, branch
 	return s.FindOrCreateMR(ctx, orgID, t, mrData, &podID)
 }
 
-// BatchSyncMRStatus syncs status for open MRs.
 func (s *MRSyncService) BatchSyncMRStatus(ctx context.Context) ([]*ticket.MergeRequest, error) {
 	if s.gitProvider == nil {
 		return nil, ErrNoGitProvider
@@ -120,7 +116,6 @@ func (s *MRSyncService) BatchSyncMRStatus(ctx context.Context) ([]*ticket.MergeR
 	return updated, nil
 }
 
-// SyncMRByURL syncs a single MR by its URL.
 func (s *MRSyncService) SyncMRByURL(ctx context.Context, mrURL string) (*ticket.MergeRequest, error) {
 	mr, err := s.repo.GetMRByURLWithTicket(ctx, mrURL)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-// RegisterWebhook registers a webhook
 func (p *GitHubProvider) RegisterWebhook(ctx context.Context, projectID string, config *WebhookConfig) (string, error) {
 	events := make([]string, 0, len(config.Events))
 	for _, event := range config.Events {
@@ -41,7 +40,6 @@ func (p *GitHubProvider) RegisterWebhook(ctx context.Context, projectID string, 
 	return strconv.Itoa(result.ID), nil
 }
 
-// DeleteWebhook deletes a webhook
 func (p *GitHubProvider) DeleteWebhook(ctx context.Context, projectID, webhookID string) error {
 	resp, err := p.doRequest(ctx, "DELETE", fmt.Sprintf("/repos/%s/hooks/%s", projectID, webhookID), nil)
 	if err != nil {

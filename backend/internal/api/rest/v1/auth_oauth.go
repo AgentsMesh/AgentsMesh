@@ -10,44 +10,36 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// OAuthRedirect returns a handler for OAuth redirect
 func (h *AuthHandler) OAuthRedirect(provider string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get redirect URL from query params (for post-auth redirect)
 		redirectTo := c.Query("redirect")
 		if redirectTo == "" {
 			redirectTo = h.config.OAuth.DefaultRedirectURL
 		}
 
-		// Validate redirect URL to prevent open redirect attacks
 		if !h.isAllowedRedirect(redirectTo) {
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Invalid redirect URL")
 			return
 		}
 
-		// Get OAuth provider configuration
 		oauthCfg := h.getOAuthConfig(provider)
 		if oauthCfg == nil {
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "OAuth provider not configured")
 			return
 		}
 
-		// Generate state with redirect info
 		state, err := h.authService.GenerateOAuthState(c.Request.Context(), provider, redirectTo)
 		if err != nil {
 			apierr.InternalError(c, "Failed to generate OAuth state")
 			return
 		}
 
-		// Build authorization URL
 		authURL := oauthCfg.AuthURL(state)
 		c.Redirect(http.StatusTemporaryRedirect, authURL)
 	}
 }
 
-// isAllowedRedirect validates that a redirect URL is safe (same origin or relative path).
 func (h *AuthHandler) isAllowedRedirect(redirectTo string) bool {
-	// Allow relative paths
 	if strings.HasPrefix(redirectTo, "/") && !strings.HasPrefix(redirectTo, "//") {
 		return true
 	}
@@ -57,22 +49,15 @@ func (h *AuthHandler) isAllowedRedirect(redirectTo string) bool {
 		return false
 	}
 
-	// Allow the desktop deep-link callback. Path/host is fixed by the
-	// desktop client (`agentsmesh://oauth/callback`); we validate both
-	// scheme and host+path so users can't supply arbitrary other
-	// agentsmesh:// URLs to coax token leakage.
 	if parsed.Scheme == "agentsmesh" {
 		return parsed.Host == "oauth" && parsed.Path == "/callback"
 	}
 
-	// Allow URLs whose hostname matches PrimaryDomain's hostname.
-	// Port is intentionally ignored because the frontend may run on a
-	// different port than the API (e.g., dev: Next.js on :3000, API on :80).
+	// Port ignored: frontend may run on a different port than API (dev: Next.js :3000, API :80).
 	allowedHost, _, _ := strings.Cut(h.config.PrimaryDomain, ":")
 	return parsed.Hostname() == allowedHost
 }
 
-// OAuthCallback returns a handler for OAuth callback
 func (h *AuthHandler) OAuthCallback(provider string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		code := c.Query("code")
@@ -87,35 +72,30 @@ func (h *AuthHandler) OAuthCallback(provider string) gin.HandlerFunc {
 			return
 		}
 
-		// Validate state and get redirect URL
 		redirectTo, err := h.authService.ValidateOAuthState(c.Request.Context(), state)
 		if err != nil {
 			apierr.InvalidInput(c, "Invalid or expired state")
 			return
 		}
 
-		// Get OAuth provider configuration
 		oauthCfg := h.getOAuthConfig(provider)
 		if oauthCfg == nil {
 			apierr.BadRequest(c, apierr.VALIDATION_FAILED, "OAuth provider not configured")
 			return
 		}
 
-		// Exchange code for token
 		token, err := oauthCfg.Exchange(c.Request.Context(), code)
 		if err != nil {
 			apierr.InternalError(c, "Failed to exchange OAuth code")
 			return
 		}
 
-		// Get user info from provider
 		userInfo, err := oauthCfg.GetUserInfo(c.Request.Context(), token.AccessToken)
 		if err != nil {
 			apierr.InternalError(c, "Failed to get user info")
 			return
 		}
 
-		// Authenticate or create user
 		result, err := h.authService.OAuthLogin(c.Request.Context(), &auth.OAuthLoginRequest{
 			Provider:       provider,
 			ProviderUserID: userInfo.ID,
@@ -132,7 +112,6 @@ func (h *AuthHandler) OAuthCallback(provider string) gin.HandlerFunc {
 			return
 		}
 
-		// Redirect with token (for SPA to capture)
 		redirectURL, _ := url.Parse(redirectTo)
 		q := redirectURL.Query()
 		q.Set("token", result.Token)

@@ -25,7 +25,6 @@ interface RunnersSidebarContentProps {
   onAddRunner?: () => void;
 }
 
-// Status filter options - labels will be translated
 const STATUS_FILTER_VALUES = ["all", "online", "offline"] as const;
 
 export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebarContentProps) {
@@ -37,7 +36,6 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
   const loading = useRunnerStore((s) => s.loading);
   const fetchRunners = useRunnerStore((s) => s.fetchRunners);
 
-  // State
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | RunnerStatus>("all");
@@ -58,14 +56,12 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
     return Number.isNaN(n) ? null : n;
   }, [searchParams]);
 
-  // Load runners on mount
   useEffect(() => {
     if (currentOrg) {
       fetchRunners();
     }
   }, [currentOrg, fetchRunners]);
 
-  // Refresh handler
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -75,9 +71,7 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
     }
   }, [fetchRunners]);
 
-  // Filter runners
   const filteredRunners = runners.filter((runner) => {
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesNodeId = runner.node_id.toLowerCase().includes(query);
@@ -85,7 +79,6 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
       if (!matchesNodeId && !matchesDescription) return false;
     }
 
-    // Status filter
     if (statusFilter !== "all" && runner.status !== statusFilter) {
       return false;
     }
@@ -93,7 +86,6 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
     return true;
   });
 
-  // Computed stats
   const onlineCount = runners.filter(r => r.status === "online").length;
   const totalPods = runners.reduce((sum, r) => sum + r.current_pods, 0);
   const totalCapacity = runners.reduce((sum, r) => sum + r.max_concurrent_pods, 0);
@@ -225,7 +217,6 @@ export function RunnersSidebarContent({ className, onAddRunner }: RunnersSidebar
             {filteredRunners.map((runner) => {
               const isSelected = selectedRunnerId === runner.id;
               const statusInfo = getRunnerStatusInfo(runner.status);
-              // hostInfo reserved for tooltip display
               void formatHostInfo(runner.host_info);
 
               return (

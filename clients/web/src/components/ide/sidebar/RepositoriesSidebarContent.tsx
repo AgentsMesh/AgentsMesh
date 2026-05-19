@@ -23,7 +23,6 @@ interface RepositoriesSidebarContentProps {
   onImportRepo?: () => void;
 }
 
-// Provider filter values - labels will be translated
 const PROVIDER_FILTER_VALUES = ["all", "github", "gitlab", "gitee"] as const;
 
 export function RepositoriesSidebarContent({ className, onImportRepo }: RepositoriesSidebarContentProps) {
@@ -61,9 +60,7 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     }
   }, [fetchRepositories]);
 
-  // Filter repositories — memoized for stable ref
   const filteredRepositories = useMemo(() => repositories.filter((repo) => {
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       const matchesName = repo.name.toLowerCase().includes(query);
@@ -71,7 +68,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
       if (!matchesName && !matchesPath) return false;
     }
 
-    // Provider filter
     if (selectedProvider !== "all" && repo.provider_type !== selectedProvider) {
       return false;
     }
@@ -83,7 +79,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
     router.push(`/${currentOrg?.slug}/infra?tab=repositories&id=${repo.id}`);
   };
 
-  // Toggle repository expansion
   const toggleRepoExpand = (repoId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedRepos(prev => {
@@ -107,7 +102,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Search */}
       <div className="px-2 py-2">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -120,7 +114,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
         </div>
       </div>
 
-      {/* Action buttons */}
       <div className="flex items-center gap-1 px-2 pb-2">
         <Button
           size="sm"
@@ -142,7 +135,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
         </Button>
       </div>
 
-      {/* Provider filter */}
       <div className="px-2 pb-2">
         <div className="flex items-center gap-1 flex-wrap">
           {PROVIDER_FILTER_VALUES.map((value) => (
@@ -162,7 +154,6 @@ export function RepositoriesSidebarContent({ className, onImportRepo }: Reposito
         </div>
       </div>
 
-      {/* Repository list */}
       <div className="flex-1 overflow-y-auto border-t border-border">
         <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border">
           {filteredRepositories.length} {t("repositories.repoCount")}

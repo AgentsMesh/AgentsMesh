@@ -14,19 +14,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RunnerHandler handles runner management requests
 type RunnerHandler struct {
 	adminService *adminservice.Service
 }
 
-// NewRunnerHandler creates a new runner handler
 func NewRunnerHandler(adminSvc *adminservice.Service) *RunnerHandler {
 	return &RunnerHandler{
 		adminService: adminSvc,
 	}
 }
 
-// RegisterRoutes registers runner management routes
 func (h *RunnerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	runnersGroup := rg.Group("/runners")
 	{
@@ -38,12 +35,10 @@ func (h *RunnerHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// logAction is a helper method that delegates to the shared LogAdminAction function
 func (h *RunnerHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// ListRunners returns a list of runners with pagination
 func (h *RunnerHandler) ListRunners(c *gin.Context) {
 	query := &adminservice.RunnerListQuery{
 		Search:   c.Query("search"),
@@ -70,7 +65,6 @@ func (h *RunnerHandler) ListRunners(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
 	runnerList := make([]gin.H, len(result.Data))
 	for i, rwo := range result.Data {
 		runnerList[i] = runnerResponseWithOrg(&rwo.Runner, rwo.Organization)
@@ -85,7 +79,6 @@ func (h *RunnerHandler) ListRunners(c *gin.Context) {
 	})
 }
 
-// GetRunner returns a single runner
 func (h *RunnerHandler) GetRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -103,13 +96,11 @@ func (h *RunnerHandler) GetRunner(c *gin.Context) {
 		return
 	}
 
-	// Log view action
 	h.logAction(c, admin.AuditActionRunnerView, admin.TargetTypeRunner, runnerID, nil, nil)
 
 	c.JSON(http.StatusOK, runnerResponseWithOrg(&rwo.Runner, rwo.Organization))
 }
 
-// runnerResponse creates a sanitized runner response
 func runnerResponse(r *runner.Runner) gin.H {
 	return gin.H{
 		"id":                  r.ID,
@@ -129,7 +120,6 @@ func runnerResponse(r *runner.Runner) gin.H {
 	}
 }
 
-// runnerResponseWithOrg creates a runner response with organization info
 func runnerResponseWithOrg(r *runner.Runner, org *organization.Organization) gin.H {
 	response := runnerResponse(r)
 

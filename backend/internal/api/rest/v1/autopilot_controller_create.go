@@ -9,7 +9,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 )
 
-// CreateAutopilotController handles POST /autopilot-controllers
 func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 	orgID := getOrgID(c)
 	if orgID == 0 {
@@ -23,7 +22,6 @@ func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 		return
 	}
 
-	// Verify target pod exists
 	if h.podService == nil {
 		apierr.InternalError(c, "pod service not configured")
 		return
@@ -35,13 +33,11 @@ func (h *AutopilotControllerHandler) CreateAutopilotController(c *gin.Context) {
 		return
 	}
 
-	// Verify pod belongs to this organization
 	if targetPod.OrganizationID != orgID {
 		apierr.ForbiddenAccess(c)
 		return
 	}
 
-	// Delegate to service for record creation + gRPC command
 	if h.service == nil {
 		apierr.InternalError(c, "autopilot service not configured")
 		return

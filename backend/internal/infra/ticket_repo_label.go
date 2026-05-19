@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Label methods for ticketRepository ---
-
 func (r *ticketRepository) GetLabelByOrgNameRepo(ctx context.Context, orgID int64, name string, repoID *int64) (*ticket.Label, error) {
 	query := r.db.WithContext(ctx).Where("organization_id = ? AND name = ?", orgID, name)
 	if repoID != nil {

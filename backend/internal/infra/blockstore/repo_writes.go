@@ -58,9 +58,6 @@ func (w *txWriter) ListOpsByParent(ctx context.Context, parentOpID int64) ([]*bl
 	return ops, nil
 }
 
-// ListTypeDefs returns every block_type_def block in the txWriter's workspace.
-// Runs on the enclosing transaction so type definitions written earlier in
-// the same ApplyOps batch are immediately visible to the resolver.
 func (w *txWriter) ListTypeDefs(ctx context.Context) ([]*blockstore.Block, error) {
 	var out []*blockstore.Block
 	err := w.tx.WithContext(ctx).

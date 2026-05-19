@@ -5,12 +5,6 @@ import { ConfigForm } from "@/components/ide/ConfigForm";
 import { Settings2 } from "lucide-react";
 import type { RuntimeConfigSectionProps } from "./types";
 
-/**
- * RuntimeConfigSection - Displays and manages runtime configuration
- *
- * Shows the ConfigForm for the agent's runtime settings and provides
- * a save button to persist changes.
- */
 export function RuntimeConfigSection({
   configFields,
   configValues,

@@ -4,7 +4,6 @@ import { logger } from "./logger";
 // AGENTSMESH_CONSOLE_CAPTURE=verbose) to the cross-platform `logger`. The
 // originals still fire so DevTools/console keep their normal output — we
 // only fan out an additional copy to the Rust subscriber.
-//
 // PII surface: warn/error in this codebase are written defensively (status
 // messages, error paths) — no opt-in needed. log/info commonly carry user
 // data (channel messages, user objects, blockstore ops) so they're gated

@@ -9,11 +9,9 @@ import (
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
-// handleAutopilotIteration handles AutopilotController iteration events from runner
 func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv1.AutopilotIterationEvent) {
 	ctx := context.Background()
 
-	// Get AutopilotController by key
 	rp, err := pc.autopilotRepo.GetByKey(ctx, data.GetAutopilotKey())
 	if err != nil {
 		pc.logger.Error("failed to find autopilot pod for iteration",
@@ -22,7 +20,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		return
 	}
 
-	// Serialize files changed as JSON
 	var filesChangedJSON *string
 	if len(data.GetFilesChanged()) > 0 {
 		if jsonBytes, err := json.Marshal(data.GetFilesChanged()); err == nil {
@@ -31,7 +28,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		}
 	}
 
-	// Create iteration record
 	var summary *string
 	if s := data.GetSummary(); s != "" {
 		summary = &s
@@ -54,7 +50,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		return
 	}
 
-	// Update AutopilotController current_iteration and last_iteration_at
 	now := time.Now()
 	if err := pc.autopilotRepo.UpdateStatusByKey(ctx, data.GetAutopilotKey(), map[string]interface{}{
 		"current_iteration": data.GetIteration(),
@@ -72,7 +67,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		"phase", data.GetPhase(),
 		"summary", data.GetSummary())
 
-	// Notify via callback (to publish realtime event)
 	if pc.onAutopilotIterationChange != nil {
 		pc.onAutopilotIterationChange(
 			data.GetAutopilotKey(),
@@ -84,8 +78,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 		)
 	}
 
-	// Also send status_changed event to update current_iteration in frontend
-	// The frontend relies on autopilot:status_changed to update the iteration counter display
 	if pc.onAutopilotStatusChange != nil {
 		pc.onAutopilotStatusChange(
 			data.GetAutopilotKey(),
@@ -100,8 +92,6 @@ func (pc *PodCoordinator) handleAutopilotIteration(runnerID int64, data *runnerv
 	}
 }
 
-// handleAutopilotThinking handles AutopilotController thinking events from runner
-// This event exposes the Control Agent's decision-making process to the user
 func (pc *PodCoordinator) handleAutopilotThinking(runnerID int64, data *runnerv1.AutopilotThinkingEvent) {
 	pc.logger.Debug("autopilot thinking received",
 		"autopilot_controller_key", data.GetAutopilotKey(),
@@ -109,7 +99,6 @@ func (pc *PodCoordinator) handleAutopilotThinking(runnerID int64, data *runnerv1
 		"decision_type", data.GetDecisionType(),
 		"reasoning", data.GetReasoning())
 
-	// Notify via callback (to publish realtime event)
 	if pc.onAutopilotThinkingChange != nil {
 		pc.onAutopilotThinkingChange(runnerID, data)
 	}

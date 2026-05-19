@@ -6,9 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// ActorType distinguishes who performed the op.
-// ActorID points to users.id when ActorType is ActorUser; to an agent_pods / agents
-// identifier when ActorType is ActorAgent; 0 for ActorSystem.
 const (
 	ActorUser   = "user"
 	ActorAgent  = "agent"

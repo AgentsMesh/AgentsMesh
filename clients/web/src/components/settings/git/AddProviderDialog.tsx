@@ -20,9 +20,6 @@ const PROVIDERS = [
   { type: "gitee", name: "Gitee", defaultUrl: "https://gitee.com" },
 ];
 
-/**
- * AddProviderDialog - Dialog for adding a new Git provider
- */
 export function AddProviderDialog({ onClose, onSuccess }: AddProviderDialogProps) {
   const t = useTranslations();
   const [step, setStep] = useState<"type" | "details">("type");

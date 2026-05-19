@@ -1,4 +1,3 @@
-// Shell integration via Electron IPC (main process proxies to shell.openExternal)
 export async function open(url: string): Promise<void> {
   const api = (globalThis as any).window?.electronAPI;
   if (api?.invoke) {

@@ -9,10 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// --- Repo Skills ---
-
-// ListRepoSkills lists installed skills for a repository
-// GET /api/v1/organizations/:slug/repositories/:id/skills?scope=org|user|all
 func (h *ExtensionHandler) ListRepoSkills(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -32,14 +28,11 @@ func (h *ExtensionHandler) ListRepoSkills(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"skills": skills})
 }
 
-// InstallSkillFromMarketRequest represents a market skill installation request
 type InstallSkillFromMarketRequest struct {
 	MarketItemID int64  `json:"market_item_id" binding:"required"`
 	Scope        string `json:"scope" binding:"required"`
 }
 
-// InstallSkillFromMarket installs a skill from the marketplace
-// POST /api/v1/organizations/:slug/repositories/:id/skills/install-from-market
 func (h *ExtensionHandler) InstallSkillFromMarket(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -53,7 +46,6 @@ func (h *ExtensionHandler) InstallSkillFromMarket(c *gin.Context) {
 		return
 	}
 
-	// Org-scope installations require admin/owner role
 	if req.Scope == "org" {
 		if !requireOrgAdmin(c) {
 			return
@@ -71,7 +63,6 @@ func (h *ExtensionHandler) InstallSkillFromMarket(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"skill": skill})
 }
 
-// InstallSkillFromGitHubRequest represents a GitHub skill installation request
 type InstallSkillFromGitHubRequest struct {
 	URL    string `json:"url" binding:"required"`
 	Branch string `json:"branch"`
@@ -79,8 +70,6 @@ type InstallSkillFromGitHubRequest struct {
 	Scope  string `json:"scope" binding:"required"`
 }
 
-// InstallSkillFromGitHub installs a skill from a GitHub URL
-// POST /api/v1/organizations/:slug/repositories/:id/skills/install-from-github
 func (h *ExtensionHandler) InstallSkillFromGitHub(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -94,7 +83,6 @@ func (h *ExtensionHandler) InstallSkillFromGitHub(c *gin.Context) {
 		return
 	}
 
-	// Org-scope installations require admin/owner role
 	if req.Scope == "org" {
 		if !requireOrgAdmin(c) {
 			return
@@ -112,8 +100,6 @@ func (h *ExtensionHandler) InstallSkillFromGitHub(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"skill": skill})
 }
 
-// InstallSkillFromUpload installs a skill from an uploaded archive
-// POST /api/v1/organizations/:slug/repositories/:id/skills/install-from-upload
 func (h *ExtensionHandler) InstallSkillFromUpload(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -127,7 +113,6 @@ func (h *ExtensionHandler) InstallSkillFromUpload(c *gin.Context) {
 		return
 	}
 
-	// Enforce upload size limit
 	if file.Size > maxSkillUploadSize {
 		apierr.PayloadTooLarge(c, "File too large, maximum 50MB")
 		return
@@ -139,7 +124,6 @@ func (h *ExtensionHandler) InstallSkillFromUpload(c *gin.Context) {
 		return
 	}
 
-	// Org-scope installations require admin/owner role
 	if scope == "org" {
 		if !requireOrgAdmin(c) {
 			return
@@ -164,14 +148,11 @@ func (h *ExtensionHandler) InstallSkillFromUpload(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"skill": skill})
 }
 
-// UpdateSkillRequest represents a skill update request
 type UpdateSkillRequest struct {
 	IsEnabled     *bool `json:"is_enabled"`
 	PinnedVersion *int  `json:"pinned_version"`
 }
 
-// UpdateSkill updates an installed skill
-// PUT /api/v1/organizations/:slug/repositories/:id/skills/:installId
 func (h *ExtensionHandler) UpdateSkill(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -202,8 +183,6 @@ func (h *ExtensionHandler) UpdateSkill(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"skill": skill})
 }
 
-// UninstallSkill removes an installed skill
-// DELETE /api/v1/organizations/:slug/repositories/:id/skills/:installId
 func (h *ExtensionHandler) UninstallSkill(c *gin.Context) {
 	repoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

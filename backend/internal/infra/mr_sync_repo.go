@@ -9,17 +9,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface compliance check.
 var _ ticket.MRSyncRepository = (*mrSyncRepository)(nil)
 
 type mrSyncRepository struct{ db *gorm.DB }
 
-// NewMRSyncRepository returns a MRSyncRepository backed by GORM.
 func NewMRSyncRepository(db *gorm.DB) ticket.MRSyncRepository {
 	return &mrSyncRepository{db: db}
 }
-
-// --- MR CRUD ---
 
 func (r *mrSyncRepository) GetMRByURL(ctx context.Context, mrURL string) (*ticket.MergeRequest, error) {
 	var mr ticket.MergeRequest
@@ -76,8 +72,6 @@ func (r *mrSyncRepository) ListMRsByPod(ctx context.Context, podID int64) ([]*ti
 	return mrs, nil
 }
 
-// --- Ticket look-ups ---
-
 func (r *mrSyncRepository) FindTicketByOrgAndSlug(ctx context.Context, orgID int64, slug string) (*ticket.Ticket, error) {
 	var t ticket.Ticket
 	if err := r.db.WithContext(ctx).
@@ -101,8 +95,6 @@ func (r *mrSyncRepository) GetTicketByID(ctx context.Context, ticketID int64) (*
 	}
 	return &t, nil
 }
-
-// --- Cross-domain helpers ---
 
 func (r *mrSyncRepository) GetRepoExternalID(ctx context.Context, repoID int64) (string, error) {
 	var repo struct{ ExternalID string }

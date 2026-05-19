@@ -5,31 +5,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterBillingHandlers registers billing routes with actual handlers
 func RegisterBillingHandlers(rg *gin.RouterGroup, billingService *billingsvc.Service) {
 	handler := NewBillingHandler(billingService)
 
-	// Basic billing info
 	rg.GET("/overview", handler.GetOverview)
 	rg.GET("/subscription", handler.GetSubscription)
 	rg.POST("/subscription", handler.CreateSubscription)
 	rg.PUT("/subscription", handler.UpdateSubscription)
 	rg.DELETE("/subscription", handler.CancelSubscription)
 	rg.GET("/plans", handler.ListPlans)
-	rg.GET("/plans/prices", handler.ListPlansWithPrices)        // List all plans with prices for currency
-	rg.GET("/plans/:name/prices", handler.GetPlanPrices)        // Get prices for specific plan
-	rg.GET("/plans/:name/all-prices", handler.GetAllPlanPrices) // Get all currency prices for specific plan
+	rg.GET("/plans/prices", handler.ListPlansWithPrices)
+	rg.GET("/plans/:name/prices", handler.GetPlanPrices)
+	rg.GET("/plans/:name/all-prices", handler.GetAllPlanPrices)
 	rg.GET("/usage", handler.GetUsage)
 	rg.GET("/usage/history", handler.GetUsageHistory)
 	rg.POST("/quota", handler.SetCustomQuota)
 	rg.GET("/quota/check", handler.CheckQuota)
 	rg.POST("/stripe/customer", handler.CreateStripeCustomer)
 
-	// Payment checkout
 	rg.POST("/checkout", handler.CreateCheckout)
 	rg.GET("/checkout/:order_no", handler.GetCheckoutStatus)
 
-	// Subscription management
 	rg.POST("/subscription/cancel", handler.RequestCancelSubscription)
 	rg.POST("/subscription/reactivate", handler.ReactivateSubscription)
 	rg.POST("/subscription/change-cycle", handler.ChangeBillingCycle)
@@ -37,29 +33,20 @@ func RegisterBillingHandlers(rg *gin.RouterGroup, billingService *billingsvc.Ser
 	rg.POST("/subscription/downgrade", handler.DowngradeSubscription)
 	rg.PUT("/subscription/auto-renew", handler.UpdateAutoRenew)
 
-	// Seat management
 	rg.GET("/seats", handler.GetSeatUsage)
 	rg.POST("/seats/purchase", handler.PurchaseSeats)
 
-	// Invoice history
 	rg.GET("/invoices", handler.ListInvoices)
 
-	// Customer portal (Stripe only)
 	rg.POST("/customer-portal", handler.GetCustomerPortal)
 
-	// Deployment info
 	rg.GET("/deployment", handler.GetDeploymentInfo)
 }
 
-// RegisterPublicConfigRoutes registers public config routes that don't require authentication
-// These endpoints provide deployment configuration information for the frontend
 func RegisterPublicConfigRoutes(rg *gin.RouterGroup, billingService *billingsvc.Service) {
 	handler := NewBillingHandler(billingService)
 
-	// Deployment info - returns deployment type (global/cn/onpremise) and available payment providers
 	rg.GET("/deployment", handler.GetDeploymentInfo)
 
-	// Public pricing info - returns all plans with prices for landing page (no auth required)
-	// This is the Single Source of Truth for pricing display
 	rg.GET("/pricing", handler.GetPublicPricing)
 }

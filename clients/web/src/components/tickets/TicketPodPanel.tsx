@@ -44,7 +44,6 @@ export default function TicketPodPanel({
     }
   }, [refresh]);
 
-
   const handlePodCreated = () => {
     setShowCreateForm(false);
     fetchPods();
@@ -74,7 +73,6 @@ export default function TicketPodPanel({
 
   return (
     <>
-      {/* Create Pod Modal */}
       <CreatePodModal
         open={showCreateForm}
         onClose={handleCloseModal}
@@ -91,7 +89,6 @@ export default function TicketPodPanel({
       />
 
       <div className="space-y-2">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Terminal className="w-4 h-4 text-muted-foreground" />
@@ -115,14 +112,11 @@ export default function TicketPodPanel({
           </Button>
         </div>
 
-        {/* Pods List */}
         <div className="space-y-1">
-        {/* Active Pods */}
         {activePods.map((pod) => (
           <PodItem key={pod.pod_key} pod={pod} />
         ))}
 
-          {/* Inactive Pods (collapsed by default if there are active ones) */}
           {inactivePods.length > 0 && (
             <details className="group">
               <summary className="px-2.5 py-1.5 text-xs text-muted-foreground cursor-pointer hover:bg-muted/50 rounded-md">
@@ -136,7 +130,6 @@ export default function TicketPodPanel({
             </details>
           )}
 
-          {/* Empty State */}
           {pods.length === 0 && (
             <div className="py-4 text-center text-muted-foreground">
               <Terminal className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
@@ -161,13 +154,11 @@ function PodItem({ pod }: PodItemProps) {
   const isActive = pod.status === "running" || pod.status === "initializing";
 
   const handleConnect = () => {
-    // Add to workspace and navigate
     addPane(pod.pod_key);
     router.push(`/${currentOrg?.slug}/workspace`);
   };
 
   const handleOpenInNewTab = () => {
-    // Open pod detail in new tab
     window.open(`/${currentOrg?.slug}/workspace?pod=${pod.pod_key}`, "_blank");
   };
 
@@ -177,7 +168,6 @@ function PodItem({ pod }: PodItemProps) {
         isActive ? "hover:bg-green-50/50 dark:hover:bg-green-900/10" : "hover:bg-muted/50"
       }`}
     >
-      {/* Status Indicator */}
       <div
         className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
           pod.status === "running"
@@ -190,7 +180,6 @@ function PodItem({ pod }: PodItemProps) {
         }`}
       />
 
-      {/* Pod Name */}
       <code className="text-xs font-mono text-muted-foreground flex-1 truncate">
         {getPodDisplayName(pod)}
       </code>
@@ -200,7 +189,6 @@ function PodItem({ pod }: PodItemProps) {
         variant="dot"
       />
 
-      {/* Actions - show on hover */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {isActive && (
           <>

@@ -17,7 +17,6 @@ export function GeneralSettingsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">
           {t("settings.personal.general.title")}
@@ -27,14 +26,12 @@ export function GeneralSettingsPage() {
         </p>
       </div>
 
-      {/* Account Information */}
       <div className="border border-border rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-4">
           {t("settings.personal.general.accountInfo")}
         </h2>
 
         <div className="space-y-4">
-          {/* Username */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
               <User className="w-5 h-5 text-muted-foreground" />
@@ -47,7 +44,6 @@ export function GeneralSettingsPage() {
             </div>
           </div>
 
-          {/* Email */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
               <Mail className="w-5 h-5 text-muted-foreground" />
@@ -62,7 +58,6 @@ export function GeneralSettingsPage() {
         </div>
       </div>
 
-      {/* Session Management */}
       <div className="border border-border rounded-lg p-6">
         <h2 className="text-lg font-semibold mb-2">
           {t("settings.personal.general.session")}

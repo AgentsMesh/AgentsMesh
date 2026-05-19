@@ -5,9 +5,6 @@ import { Copy, CheckCircle, ExternalLink, Loader2 } from "lucide-react";
 import type { WebhookManualSetupProps } from "./types";
 import type { RepositoryData } from "@/lib/api";
 
-/**
- * Helper function to generate provider webhook settings URL
- */
 function getProviderWebhookSettingsUrl(repository: RepositoryData): string {
   const baseUrl = repository.provider_base_url || "https://github.com";
   const slug = repository.slug;
@@ -24,9 +21,6 @@ function getProviderWebhookSettingsUrl(repository: RepositoryData): string {
   }
 }
 
-/**
- * Displays manual setup instructions for webhook
- */
 export function WebhookManualSetup({
   repository,
   secretInfo,

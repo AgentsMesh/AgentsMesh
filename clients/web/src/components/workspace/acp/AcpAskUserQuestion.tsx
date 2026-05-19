@@ -193,7 +193,6 @@ function parseQuestions(json: string): AskUserQuestion[] | null {
       return data.questions;
     }
   } catch {
-    // not valid JSON
   }
   return null;
 }

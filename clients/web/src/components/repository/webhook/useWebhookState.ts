@@ -25,12 +25,10 @@ export function useWebhookState(repositoryId: number, onUpdate?: () => void): Us
         setState("registered");
       } else if (res.webhook_status.needs_manual_setup) {
         setState("needs_manual_setup");
-        // Load secret for manual setup
         try {
           const secretRes = JSON.parse(await getRepositoryService().get_webhook_secret(BigInt(repositoryId)));
           setSecretData(secretRes);
         } catch {
-          // Secret might not be available if already configured
         }
       } else {
         setState("not_registered");

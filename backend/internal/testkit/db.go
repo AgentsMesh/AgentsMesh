@@ -1,6 +1,3 @@
-// Package testkit provides shared test infrastructure for backend integration tests.
-// It consolidates DB setup, factory functions, and test context helpers
-// into a single reusable package.
 package testkit
 
 import (
@@ -11,9 +8,6 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// SetupTestDB creates an in-memory SQLite database with all business tables.
-// This is the single source of truth for test schema — all services should
-// use this instead of maintaining local DDL definitions.
 func SetupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -24,9 +18,6 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	if err != nil {
 		t.Fatalf("testkit: failed to open database: %v", err)
 	}
-	// SQLite `:memory:` is per-connection — every new pool connection opens a
-	// fresh (empty) DB. Pin the pool to one connection so every caller, including
-	// background goroutines started by services under test, sees the same tables.
 	if sqlDB, err := db.DB(); err == nil {
 		sqlDB.SetMaxOpenConns(1)
 	}
@@ -40,7 +31,6 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// allTableDDLs returns all table DDL statements in dependency order.
 func allTableDDLs() []string {
 	var ddls []string
 	ddls = append(ddls, coreTableDDLs()...)

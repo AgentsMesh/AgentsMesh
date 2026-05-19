@@ -2,7 +2,6 @@ package extension
 
 import "time"
 
-// SkillRegistryOverride allows an organization to disable a platform-level skill registry
 type SkillRegistryOverride struct {
 	ID             int64     `gorm:"primaryKey" json:"id"`
 	OrganizationID int64     `gorm:"column:organization_id;uniqueIndex:idx_registry_override_unique" json:"organization_id"`

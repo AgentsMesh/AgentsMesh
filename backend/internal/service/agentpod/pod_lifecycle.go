@@ -10,7 +10,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agentpod"
 )
 
-// HandlePodCreated handles the pod_created event from runner
 func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID int, sandboxPath, branchName string) error {
 	now := time.Now()
 	updates := map[string]interface{}{
@@ -34,7 +33,6 @@ func (s *PodService) HandlePodCreated(ctx context.Context, podKey string, ptyPID
 	return nil
 }
 
-// HandlePodTerminated handles the pod_terminated event from runner
 func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exitCode *int) error {
 	now := time.Now()
 	_, err := s.repo.UpdateByKey(ctx, podKey, map[string]interface{}{
@@ -50,14 +48,12 @@ func (s *PodService) HandlePodTerminated(ctx context.Context, podKey string, exi
 	return nil
 }
 
-// MarkDisconnected marks a pod as disconnected (user closed browser)
 func (s *PodService) MarkDisconnected(ctx context.Context, podKey string) error {
 	return s.repo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusRunning, map[string]interface{}{
 		"status": agentpod.StatusDisconnected,
 	})
 }
 
-// MarkReconnected marks a pod as running again (user reconnected)
 func (s *PodService) MarkReconnected(ctx context.Context, podKey string) error {
 	now := time.Now()
 	return s.repo.UpdateByKeyAndStatus(ctx, podKey, agentpod.StatusDisconnected, map[string]interface{}{
@@ -66,12 +62,10 @@ func (s *PodService) MarkReconnected(ctx context.Context, podKey string) error {
 	})
 }
 
-// RecordActivity records pod activity
 func (s *PodService) RecordActivity(ctx context.Context, podKey string) error {
 	return s.repo.UpdateField(ctx, podKey, "last_activity", time.Now())
 }
 
-// ReconcilePods marks orphaned pods that are not reported by runner
 func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reportedPodKeys []string) error {
 	dbPods, err := s.repo.ListActiveByRunner(ctx, runnerID)
 	if err != nil {
@@ -98,7 +92,6 @@ func (s *PodService) ReconcilePods(ctx context.Context, runnerID int64, reported
 	return errors.Join(errs...)
 }
 
-// CleanupStalePods marks stale pods as terminated
 func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (int64, error) {
 	threshold := time.Now().Add(-time.Duration(maxIdleHours) * time.Hour)
 	count, err := s.repo.CleanupStale(ctx, threshold)
@@ -112,10 +105,6 @@ func (s *PodService) CleanupStalePods(ctx context.Context, maxIdleHours int) (in
 	return count, nil
 }
 
-// MarkInitFailed marks an initializing pod as error with the given code and message.
-// This is called when pod dispatch fails (e.g., runner unreachable). The requesting
-// client receives the error via HTTP response; other clients will see the error
-// status on their next pod list refresh or via subsequent status change events.
 func (s *PodService) MarkInitFailed(ctx context.Context, podKey, errorCode, errorMessage string) error {
 	now := time.Now()
 	_, err := s.repo.UpdateByKeyAndStatusCounted(ctx, podKey, agentpod.StatusInitializing, map[string]interface{}{

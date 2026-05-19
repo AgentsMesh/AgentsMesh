@@ -10,27 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check.
 var _ billing.BillingRepository = (*billingRepository)(nil)
 
 type billingRepository struct {
 	db *gorm.DB
 }
 
-// NewBillingRepository creates a new BillingRepository backed by GORM.
 func NewBillingRepository(db *gorm.DB) billing.BillingRepository {
 	return &billingRepository{db: db}
 }
 
-// Scoped returns a new repository scoped to the given raw DB handle.
 func (r *billingRepository) Scoped(rawTx interface{}) billing.BillingRepository {
 	if tx, ok := rawTx.(*gorm.DB); ok {
 		return &billingRepository{db: tx}
 	}
 	return r
 }
-
-// --- Subscription ---
 
 func (r *billingRepository) GetSubscriptionByOrgID(ctx context.Context, orgID int64) (*billing.Subscription, error) {
 	var sub billing.Subscription
@@ -94,8 +89,6 @@ func (r *billingRepository) AddSeats(ctx context.Context, orgID int64, additiona
 		Update("seat_count", gorm.Expr("seat_count + ?", additionalSeats)).Error
 }
 
-// --- Plan ---
-
 func (r *billingRepository) GetPlanByName(ctx context.Context, name string) (*billing.SubscriptionPlan, error) {
 	var plan billing.SubscriptionPlan
 	if err := r.db.WithContext(ctx).Where("name = ? AND is_active = ?", name, true).First(&plan).Error; err != nil {
@@ -125,8 +118,6 @@ func (r *billingRepository) ListActivePlans(ctx context.Context) ([]*billing.Sub
 	}
 	return plans, nil
 }
-
-// --- PlanPrice ---
 
 func (r *billingRepository) GetPlanPrice(ctx context.Context, planID int64, currency string) (*billing.PlanPrice, error) {
 	var price billing.PlanPrice
@@ -162,8 +153,6 @@ func (r *billingRepository) FindPlanByVariantID(ctx context.Context, variantID s
 	return price.Plan, nil
 }
 
-// --- Cross-domain Counts ---
-
 func (r *billingRepository) CountOrgMembers(ctx context.Context, orgID int64) (int64, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Table("organization_members").Where("organization_id = ?", orgID).Count(&count).Error
@@ -198,8 +187,6 @@ func (r *billingRepository) CountPendingInvitations(ctx context.Context, orgID i
 		Count(&count).Error
 	return count, err
 }
-
-// --- Organization Sync ---
 
 func (r *billingRepository) SyncOrganizationSubscription(ctx context.Context, orgID int64, updates map[string]interface{}) error {
 	return r.db.WithContext(ctx).Table("organizations").Where("id = ?", orgID).Updates(updates).Error

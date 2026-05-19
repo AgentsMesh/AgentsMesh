@@ -14,13 +14,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SSOHandler handles admin SSO configuration management
 type SSOHandler struct {
 	ssoService   *ssoservice.Service
 	adminService *adminservice.Service
 }
 
-// NewSSOHandler creates a new admin SSO handler
 func NewSSOHandler(ssoSvc *ssoservice.Service, adminSvc *adminservice.Service) *SSOHandler {
 	return &SSOHandler{
 		ssoService:   ssoSvc,
@@ -28,7 +26,6 @@ func NewSSOHandler(ssoSvc *ssoservice.Service, adminSvc *adminservice.Service) *
 	}
 }
 
-// RegisterRoutes registers admin SSO management routes
 func (h *SSOHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	ssoGroup := rg.Group("/sso/configs")
 	{
@@ -43,12 +40,10 @@ func (h *SSOHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// logAction is a helper method for audit logging
 func (h *SSOHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// ListConfigs returns all SSO configurations with pagination
 func (h *SSOHandler) ListConfigs(c *gin.Context) {
 	page := 1
 	pageSize := 20
@@ -95,7 +90,6 @@ func (h *SSOHandler) ListConfigs(c *gin.Context) {
 	})
 }
 
-// CreateConfig creates a new SSO configuration
 func (h *SSOHandler) CreateConfig(c *gin.Context) {
 	var req ssoservice.CreateConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -103,7 +97,6 @@ func (h *SSOHandler) CreateConfig(c *gin.Context) {
 		return
 	}
 
-	// Get admin user ID from context
 	userID := getUserIDFromContext(c)
 
 	cfg, err := h.ssoService.CreateConfig(c.Request.Context(), &req, userID)
@@ -124,7 +117,6 @@ func (h *SSOHandler) CreateConfig(c *gin.Context) {
 	c.JSON(http.StatusCreated, h.ssoService.ToConfigResponse(cfg))
 }
 
-// GetConfig returns a single SSO configuration
 func (h *SSOHandler) GetConfig(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -145,7 +137,6 @@ func (h *SSOHandler) GetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, h.ssoService.ToConfigResponse(cfg))
 }
 
-// UpdateConfig updates an SSO configuration
 func (h *SSOHandler) UpdateConfig(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -159,7 +150,6 @@ func (h *SSOHandler) UpdateConfig(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldCfg, auditErr := h.ssoService.GetConfig(c.Request.Context(), id)
 	if auditErr != nil {
 		slog.WarnContext(c.Request.Context(), "failed to retrieve old SSO config for audit", "id", id, "error", auditErr)
@@ -185,7 +175,6 @@ func (h *SSOHandler) UpdateConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, h.ssoService.ToConfigResponse(cfg))
 }
 
-// DeleteConfig deletes an SSO configuration
 func (h *SSOHandler) DeleteConfig(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -193,7 +182,6 @@ func (h *SSOHandler) DeleteConfig(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldCfg, auditErr := h.ssoService.GetConfig(c.Request.Context(), id)
 	if auditErr != nil {
 		slog.WarnContext(c.Request.Context(), "failed to retrieve old SSO config for audit", "id", id, "error", auditErr)
@@ -215,13 +203,11 @@ func (h *SSOHandler) DeleteConfig(c *gin.Context) {
 
 func boolPtr(b bool) *bool { return &b }
 
-// getUserIDFromContext extracts user ID from gin context (set by auth middleware)
 func getUserIDFromContext(c *gin.Context) int64 {
 	if id, exists := c.Get("user_id"); exists {
 		if userID, ok := id.(int64); ok {
 			return userID
 		}
-		// Try float64 (JSON numbers are float64 by default)
 		if userID, ok := id.(float64); ok {
 			return int64(userID)
 		}

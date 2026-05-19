@@ -11,13 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RelayHandler handles relay management requests
 type RelayHandler struct {
 	adminService *adminservice.Service
 	relayManager *relay.Manager
 }
 
-// NewRelayHandler creates a new relay handler
 func NewRelayHandler(
 	adminSvc *adminservice.Service,
 	relayMgr *relay.Manager,
@@ -28,7 +26,6 @@ func NewRelayHandler(
 	}
 }
 
-// RegisterRoutes registers relay management routes
 func (h *RelayHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	relaysGroup := rg.Group("/relays")
 	{
@@ -39,12 +36,10 @@ func (h *RelayHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-// logAction is a helper method for audit logging
 func (h *RelayHandler) logAction(c *gin.Context, action admin.AuditAction, targetType admin.TargetType, targetID int64, oldData, newData interface{}) {
 	LogAdminAction(c, h.adminService, action, targetType, targetID, oldData, newData)
 }
 
-// ListRelays returns all registered relays
 func (h *RelayHandler) ListRelays(c *gin.Context) {
 	if h.relayManager == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay manager not available")
@@ -59,7 +54,6 @@ func (h *RelayHandler) ListRelays(c *gin.Context) {
 	})
 }
 
-// GetStats returns relay statistics
 func (h *RelayHandler) GetStats(c *gin.Context) {
 	if h.relayManager == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay manager not available")
@@ -71,7 +65,6 @@ func (h *RelayHandler) GetStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-// GetRelay returns a specific relay by ID
 func (h *RelayHandler) GetRelay(c *gin.Context) {
 	if h.relayManager == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay manager not available")
@@ -95,7 +88,6 @@ func (h *RelayHandler) GetRelay(c *gin.Context) {
 	})
 }
 
-// ForceUnregister removes a relay
 func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 	if h.relayManager == nil {
 		apierr.ServiceUnavailable(c, apierr.SERVICE_UNAVAILABLE, "Relay manager not available")
@@ -108,17 +100,14 @@ func (h *RelayHandler) ForceUnregister(c *gin.Context) {
 		return
 	}
 
-	// Get relay info before deletion for logging
 	relayInfo := h.relayManager.GetRelayByID(relayID)
 	if relayInfo == nil {
 		apierr.ResourceNotFound(c, "Relay not found")
 		return
 	}
 
-	// Force unregister
 	h.relayManager.ForceUnregister(relayID)
 
-	// Log admin action
 	h.logAction(c, admin.AuditActionDelete, admin.TargetType("relay"), 0,
 		gin.H{"relay_id": relayID, "url": relayInfo.URL},
 		nil)

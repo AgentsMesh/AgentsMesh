@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TerminatePod terminates a pod
-// POST /api/v1/organizations/:slug/pods/:key/terminate
 func (h *PodHandler) TerminatePod(c *gin.Context) {
 	podKey := c.Param("key")
 

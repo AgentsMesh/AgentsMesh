@@ -27,11 +27,6 @@ import {
 
 import { type ChartData, colorAt, mergeSeries, tooltipStyle } from "./chartUtils";
 
-// Variant components are plain functions (one per chart sub-type). Each takes
-// the normalised ChartData + an active palette and returns the recharts tree
-// rooted at a single chart element — ChartPreview's ResponsiveContainer wraps
-// them so each variant stays focused on its own composition.
-
 export function BarVariant({ d, palette }: { d: ChartData; palette: string[] }) {
   const xKey = d.x_key ?? "name";
   return (

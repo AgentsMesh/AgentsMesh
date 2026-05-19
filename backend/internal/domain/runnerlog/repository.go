@@ -2,7 +2,6 @@ package runnerlog
 
 import "context"
 
-// Repository defines the data access interface for runner logs.
 type Repository interface {
 	Create(ctx context.Context, log *RunnerLog) error
 	GetByRequestID(ctx context.Context, requestID string) (*RunnerLog, error)
@@ -14,7 +13,6 @@ type Repository interface {
 	// Returns ErrNotFound if no matching record exists, ErrStaleStatus if already terminal.
 	UpdateStatus(ctx context.Context, requestID string, runnerID int64, status string, sizeBytes int64, errorMessage string) error
 
-	// MarkFailed sets a record to failed status. Used when gRPC send fails.
 	MarkFailed(ctx context.Context, requestID string, errorMessage string) error
 
 	ListByRunner(ctx context.Context, orgID, runnerID int64, limit, offset int) ([]*RunnerLog, error)

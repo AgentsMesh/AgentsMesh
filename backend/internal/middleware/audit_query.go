@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// LogAction logs a specific action programmatically
 func LogAction(db *gorm.DB, action AuditAction, opts *LogActionOptions) error {
 	log := &AuditLog{
 		Action:       string(action),
@@ -40,7 +39,6 @@ func LogAction(db *gorm.DB, action AuditAction, opts *LogActionOptions) error {
 	return db.Create(log).Error
 }
 
-// QueryAuditLogs queries audit logs with filters
 func QueryAuditLogs(db *gorm.DB, filter *AuditLogFilter) ([]AuditLog, int64, error) {
 	var logs []AuditLog
 	var total int64
@@ -69,12 +67,10 @@ func QueryAuditLogs(db *gorm.DB, filter *AuditLogFilter) ([]AuditLog, int64, err
 		query = query.Where("created_at <= ?", filter.EndTime)
 	}
 
-	// Count total
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Apply pagination
 	if filter.Limit > 0 {
 		query = query.Limit(filter.Limit)
 	}
@@ -82,7 +78,6 @@ func QueryAuditLogs(db *gorm.DB, filter *AuditLogFilter) ([]AuditLog, int64, err
 		query = query.Offset(filter.Offset)
 	}
 
-	// Order by created_at desc
 	query = query.Order("created_at DESC")
 
 	if err := query.Find(&logs).Error; err != nil {

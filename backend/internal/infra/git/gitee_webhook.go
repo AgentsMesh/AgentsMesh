@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-// RegisterWebhook registers a webhook
 func (p *GiteeProvider) RegisterWebhook(ctx context.Context, projectID string, config *WebhookConfig) (string, error) {
 	pushEvents := false
 	prEvents := false
@@ -42,7 +41,6 @@ func (p *GiteeProvider) RegisterWebhook(ctx context.Context, projectID string, c
 	return strconv.Itoa(result.ID), nil
 }
 
-// DeleteWebhook deletes a webhook
 func (p *GiteeProvider) DeleteWebhook(ctx context.Context, projectID, webhookID string) error {
 	resp, err := p.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/repos/%s/hooks/%s", projectID, webhookID), nil)
 	if err != nil {

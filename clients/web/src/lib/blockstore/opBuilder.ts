@@ -1,9 +1,6 @@
 import { randomUUID } from "@/lib/blockstore/uuid";
 import type { JSONMap, OpEnvelope } from "@/lib/api/blockstoreTypes";
 
-// opBuilder — a typed helper for producing ApplyOps envelopes.
-// Every call returns a fresh OpEnvelope; batch by pushing into an array.
-
 export function createBlockOp(args: {
   id?: string;
   type: string;

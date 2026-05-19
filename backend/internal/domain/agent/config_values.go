@@ -6,18 +6,13 @@ import (
 	"errors"
 )
 
-// Canonical AgentFile CONFIG keys consumed by backend code. Bare-string usage
-// in service/orchestrator code should reference these constants to avoid typos
-// at the boundary between AgentFile DSL and Go.
 const (
 	ConfigKeyModel          = "model"
 	ConfigKeyPermissionMode = "permission_mode"
 )
 
-// ConfigValues represents dynamic configuration values (JSONB)
 type ConfigValues map[string]interface{}
 
-// GetString returns the string value at key, or "" when missing / wrong type / nil.
 func (cv ConfigValues) GetString(key string) string {
 	if cv == nil {
 		return ""
@@ -33,7 +28,6 @@ func (cv ConfigValues) GetString(key string) string {
 	return s
 }
 
-// Scan implements sql.Scanner for ConfigValues
 func (cv *ConfigValues) Scan(value interface{}) error {
 	if value == nil {
 		*cv = make(ConfigValues)
@@ -51,7 +45,6 @@ func (cv *ConfigValues) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, cv)
 }
 
-// Value implements driver.Valuer for ConfigValues
 func (cv ConfigValues) Value() (driver.Value, error) {
 	if cv == nil {
 		return json.Marshal(make(map[string]interface{}))
@@ -59,8 +52,6 @@ func (cv ConfigValues) Value() (driver.Value, error) {
 	return json.Marshal(cv)
 }
 
-// MergeConfigs merges multiple config maps with priority (later maps override earlier).
-// Used for: AgentFile CONFIG defaults -> user personal config -> pod overrides
 func MergeConfigs(configs ...map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 

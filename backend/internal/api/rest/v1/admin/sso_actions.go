@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// TestConnection tests connectivity to the SSO provider
 func (h *SSOHandler) TestConnection(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -21,7 +20,6 @@ func (h *SSOHandler) TestConnection(c *gin.Context) {
 	}
 
 	if err := h.ssoService.TestConnection(c.Request.Context(), id); err != nil {
-		// Log full error server-side; return sanitized message to client
 		slog.WarnContext(c.Request.Context(), "SSO test connection failed", "id", id, "error", err)
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
@@ -36,7 +34,6 @@ func (h *SSOHandler) TestConnection(c *gin.Context) {
 	})
 }
 
-// EnableConfig enables an SSO configuration
 func (h *SSOHandler) EnableConfig(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -65,7 +62,6 @@ func (h *SSOHandler) EnableConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, h.ssoService.ToConfigResponse(cfg))
 }
 
-// DisableConfig disables an SSO configuration
 func (h *SSOHandler) DisableConfig(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

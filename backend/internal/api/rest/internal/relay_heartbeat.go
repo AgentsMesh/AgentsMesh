@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Heartbeat handles relay heartbeat
-// POST /api/internal/relays/heartbeat
 func (h *RelayHandler) Heartbeat(c *gin.Context) {
 	var req HeartbeatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -27,7 +25,6 @@ func (h *RelayHandler) Heartbeat(c *gin.Context) {
 
 	response := HeartbeatResponse{Status: "ok"}
 
-	// Include TLS certificate only if relay needs it and ACME is enabled
 	if req.NeedCert && h.acmeManager != nil {
 		cert, key, expiry, err := h.acmeManager.GetCertificatePEM()
 		if err == nil && cert != "" {

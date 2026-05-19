@@ -1,9 +1,6 @@
 import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import type { WebhookStatusDisplayProps } from "./types";
 
-/**
- * Displays the webhook status with icon and text
- */
 export function WebhookStatusDisplay({ status, t }: WebhookStatusDisplayProps) {
   if (!status) return null;
 

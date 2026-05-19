@@ -13,8 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Reply adds an admin reply to a support ticket
-// POST /api/v1/admin/support-tickets/:id/reply
 func (h *SupportTicketHandler) Reply(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -44,13 +42,11 @@ func (h *SupportTicketHandler) Reply(c *gin.Context) {
 
 	uploadReplyAttachments(c, h.service, ticketID, adminUserID, msg.ID)
 
-	// Audit log
 	h.logAction(c, admin.AuditActionSupportTicketReply, admin.TargetTypeSupportTicket, ticketID, nil, gin.H{"content": content})
 
 	c.JSON(http.StatusCreated, msg)
 }
 
-// uploadReplyAttachments handles file uploads for a reply message.
 func uploadReplyAttachments(c *gin.Context, svc *supportticket.Service, ticketID, adminUserID, msgID int64) {
 	form, _ := c.MultipartForm()
 	if form == nil || form.File["files[]"] == nil {
@@ -80,13 +76,10 @@ func uploadReplyAttachments(c *gin.Context, svc *supportticket.Service, ticketID
 	}
 }
 
-// UpdateStatusRequest represents the request body for updating ticket status
 type UpdateStatusRequest struct {
 	Status string `json:"status" binding:"required"`
 }
 
-// UpdateStatus updates the status of a support ticket
-// PATCH /api/v1/admin/support-tickets/:id/status
 func (h *SupportTicketHandler) UpdateStatus(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -134,13 +127,10 @@ func handleStatusUpdateError(c *gin.Context, err error) {
 	}
 }
 
-// AssignRequest represents the request body for assigning a ticket
 type AssignRequest struct {
 	AdminID *int64 `json:"admin_id"`
 }
 
-// Assign assigns a support ticket to the current admin or a specified admin
-// POST /api/v1/admin/support-tickets/:id/assign
 func (h *SupportTicketHandler) Assign(c *gin.Context) {
 	ticketID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -173,8 +163,6 @@ func (h *SupportTicketHandler) Assign(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Ticket assigned"})
 }
 
-// GetAttachmentURL returns a presigned URL for downloading an attachment (admin)
-// GET /api/v1/admin/support-tickets/attachments/:attachmentId/url
 func (h *SupportTicketHandler) GetAttachmentURL(c *gin.Context) {
 	attachmentID, err := strconv.ParseInt(c.Param("attachmentId"), 10, 64)
 	if err != nil {

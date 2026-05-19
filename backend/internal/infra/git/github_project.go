@@ -9,7 +9,6 @@ import (
 	"time"
 )
 
-// GetProject returns repository details
 func (p *GitHubProvider) GetProject(ctx context.Context, projectID string) (*Project, error) {
 	resp, err := p.doRequest(ctx, "GET", fmt.Sprintf("/repos/%s", projectID), nil)
 	if err != nil {
@@ -50,7 +49,6 @@ func (p *GitHubProvider) GetProject(ctx context.Context, projectID string) (*Pro
 	}, nil
 }
 
-// ListProjects returns user's repositories
 func (p *GitHubProvider) ListProjects(ctx context.Context, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/user/repos?page=%d&per_page=%d&sort=updated", page, perPage)
 	resp, err := p.doRequest(ctx, "GET", path, nil)
@@ -97,7 +95,6 @@ func (p *GitHubProvider) ListProjects(ctx context.Context, page, perPage int) ([
 	return projects, nil
 }
 
-// SearchProjects searches for repositories
 func (p *GitHubProvider) SearchProjects(ctx context.Context, query string, page, perPage int) ([]*Project, error) {
 	path := fmt.Sprintf("/search/repositories?q=%s&page=%d&per_page=%d", url.QueryEscape(query), page, perPage)
 	resp, err := p.doRequest(ctx, "GET", path, nil)

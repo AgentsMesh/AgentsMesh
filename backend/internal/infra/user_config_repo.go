@@ -7,14 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Compile-time interface check
 var _ agent.UserConfigRepository = (*userConfigRepo)(nil)
 
 type userConfigRepo struct {
 	db *gorm.DB
 }
 
-// NewUserConfigRepository creates a new GORM-based user config repository
 func NewUserConfigRepository(db *gorm.DB) agent.UserConfigRepository {
 	return &userConfigRepo{db: db}
 }
@@ -41,7 +39,6 @@ func (r *userConfigRepo) Upsert(ctx context.Context, userID int64, agentSlug str
 		First(&existing).Error
 
 	if err != nil {
-		// Record doesn't exist, create new one
 		config := &agent.UserAgentConfig{
 			UserID:       userID,
 			AgentSlug:  agentSlug,
@@ -50,7 +47,6 @@ func (r *userConfigRepo) Upsert(ctx context.Context, userID int64, agentSlug str
 		return r.db.WithContext(ctx).Create(config).Error
 	}
 
-	// Record exists, update config_values
 	return r.db.WithContext(ctx).
 		Model(&existing).
 		Update("config_values", configValues).Error

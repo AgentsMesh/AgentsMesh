@@ -11,12 +11,6 @@ import { keyBetween } from "@/lib/blockstore/fractionalIndex";
 import { updateRefOp } from "@/lib/blockstore/opBuilder";
 import { dispatchOps } from "@/stores/blockstoreDispatch";
 
-/**
- * SortableNest wraps NestChildren's render area with a DndContext and a
- * SortableContext. The drag listeners are published via DragHandleContext so
- * only the BlockChrome grip activates the drag — avoiding conflicts with
- * contentEditable inside each block.
- */
 type DragListeners = Record<string, (e: unknown) => void> | undefined;
 const DragHandleContext = createContext<DragListeners>(undefined);
 export function useDragHandle(): DragListeners {
@@ -82,7 +76,6 @@ async function reorderNest(
   const toIdx = refIDs.indexOf(targetRefID);
   if (fromIdx < 0 || toIdx < 0) return;
 
-  // Compute the new neighbours as if the moved item were removed first.
   const without = refIDs.filter((id: number) => id !== movedRefID);
   const insertAt = without.indexOf(targetRefID) + (fromIdx < toIdx ? 1 : 0);
   const beforeKey = insertAt > 0 ? refs[without[insertAt - 1]]?.order_key ?? null : null;

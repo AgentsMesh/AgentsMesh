@@ -8,8 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/agentfile/parser"
 )
 
-// GetConfigSchema returns the config schema for an agent.
-// CONFIG declarations are extracted from the AgentFile source.
 func (b *ConfigBuilder) GetConfigSchema(ctx context.Context, agentSlug string) (*ConfigSchemaResponse, error) {
 	agentDef, err := b.provider.GetAgent(ctx, agentSlug)
 	if err != nil {
@@ -18,14 +16,12 @@ func (b *ConfigBuilder) GetConfigSchema(ctx context.Context, agentSlug string) (
 	if agentDef.AgentfileSource != nil && *agentDef.AgentfileSource != "" {
 		return b.getConfigSchemaFromAgentfile(*agentDef.AgentfileSource)
 	}
-	// No AgentFile = empty schema
 	return &ConfigSchemaResponse{
 		Fields:           []ConfigFieldResponse{},
 		CredentialFields: []CredentialFieldResponse{},
 	}, nil
 }
 
-// getConfigSchemaFromAgentfile parses an AgentFile and extracts CONFIG declarations as schema.
 func (b *ConfigBuilder) getConfigSchemaFromAgentfile(source string) (*ConfigSchemaResponse, error) {
 	prog, errs := parser.Parse(source)
 	if len(errs) > 0 {
@@ -51,7 +47,6 @@ func (b *ConfigBuilder) getConfigSchemaFromAgentfile(source string) (*ConfigSche
 		result.Fields = append(result.Fields, field)
 	}
 
-	// Extract credential fields from ENV SECRET/TEXT declarations
 	for _, env := range spec.Env {
 		if env.Source != "" {
 			result.CredentialFields = append(result.CredentialFields, CredentialFieldResponse{

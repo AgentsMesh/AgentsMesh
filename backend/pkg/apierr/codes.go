@@ -1,6 +1,5 @@
 package apierr
 
-// Authentication & Authorization
 const (
 	AUTH_REQUIRED            = "AUTH_REQUIRED"
 	INVALID_TOKEN            = "INVALID_TOKEN"
@@ -19,7 +18,6 @@ const (
 	API_KEY_ORG_MISMATCH     = "API_KEY_ORG_MISMATCH"
 )
 
-// Billing & Quotas
 const (
 	CONCURRENT_POD_QUOTA_EXCEEDED = "CONCURRENT_POD_QUOTA_EXCEEDED"
 	SUBSCRIPTION_FROZEN           = "SUBSCRIPTION_FROZEN"
@@ -30,14 +28,12 @@ const (
 	MOCK_PAYMENT_DISABLED         = "MOCK_PAYMENT_DISABLED"
 )
 
-// Validation
 const (
 	VALIDATION_FAILED = "VALIDATION_FAILED"
 	INVALID_INPUT     = "INVALID_INPUT"
 	MISSING_REQUIRED  = "MISSING_REQUIRED"
 )
 
-// Pod-specific (preserves existing codes from pod_create.go)
 const (
 	MISSING_RUNNER_ID          = "MISSING_RUNNER_ID"
 	MISSING_AGENT_SLUG         = "MISSING_AGENT_SLUG"
@@ -53,7 +49,6 @@ const (
 	UNSUPPORTED_INTERACTION_MODE = "UNSUPPORTED_INTERACTION_MODE"
 )
 
-// General
 const (
 	RESOURCE_NOT_FOUND  = "RESOURCE_NOT_FOUND"
 	ALREADY_EXISTS      = "ALREADY_EXISTS"

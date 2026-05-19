@@ -11,8 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListOrganizations lists user's organizations
-// GET /api/v1/organizations
 func (h *OrganizationHandler) ListOrganizations(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 
@@ -25,8 +23,6 @@ func (h *OrganizationHandler) ListOrganizations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"organizations": orgs})
 }
 
-// CreateOrganization creates a new organization
-// POST /api/v1/organizations
 func (h *OrganizationHandler) CreateOrganization(c *gin.Context) {
 	var req CreateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,8 +58,6 @@ func (h *OrganizationHandler) CreateOrganization(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"organization": org})
 }
 
-// GetOrganization returns organization by slug
-// GET /api/v1/organizations/:slug
 func (h *OrganizationHandler) GetOrganization(c *gin.Context) {
 	slug := c.Param("slug")
 	if slugkit.IsReserved(slug) {
@@ -77,7 +71,6 @@ func (h *OrganizationHandler) GetOrganization(c *gin.Context) {
 		return
 	}
 
-	// Check membership
 	userID := middleware.GetUserID(c)
 	isMember, _ := h.orgService.IsMember(c.Request.Context(), org.ID, userID)
 	if !isMember {
@@ -88,8 +81,6 @@ func (h *OrganizationHandler) GetOrganization(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"organization": org})
 }
 
-// UpdateOrganization updates an organization
-// PUT /api/v1/organizations/:slug
 func (h *OrganizationHandler) UpdateOrganization(c *gin.Context) {
 	slug := c.Param("slug")
 	if slugkit.IsReserved(slug) {
@@ -109,7 +100,6 @@ func (h *OrganizationHandler) UpdateOrganization(c *gin.Context) {
 		return
 	}
 
-	// Check admin permission
 	userID := middleware.GetUserID(c)
 	isAdmin, _ := h.orgService.IsAdmin(c.Request.Context(), org.ID, userID)
 	if !isAdmin {
@@ -134,8 +124,6 @@ func (h *OrganizationHandler) UpdateOrganization(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"organization": org})
 }
 
-// DeleteOrganization deletes an organization
-// DELETE /api/v1/organizations/:slug
 func (h *OrganizationHandler) DeleteOrganization(c *gin.Context) {
 	slug := c.Param("slug")
 	if slugkit.IsReserved(slug) {
@@ -149,7 +137,6 @@ func (h *OrganizationHandler) DeleteOrganization(c *gin.Context) {
 		return
 	}
 
-	// Check owner permission
 	userID := middleware.GetUserID(c)
 	isOwner, _ := h.orgService.IsOwner(c.Request.Context(), org.ID, userID)
 	if !isOwner {

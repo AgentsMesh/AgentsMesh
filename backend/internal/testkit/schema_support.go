@@ -1,8 +1,5 @@
 package testkit
 
-// supportTableDDLs returns DDLs for extensions, API keys, promo codes,
-// support tickets, invitations, SSO configs, notifications, token usage,
-// agent messages, and custom agents.
 func supportTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS installed_mcp_servers (

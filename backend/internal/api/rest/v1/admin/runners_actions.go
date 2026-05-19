@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DisableRunner disables a runner
 func (h *RunnerHandler) DisableRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -20,7 +19,6 @@ func (h *RunnerHandler) DisableRunner(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldRunner, _ := h.adminService.GetRunner(c.Request.Context(), runnerID)
 
 	r, err := h.adminService.DisableRunner(c.Request.Context(), runnerID)
@@ -33,13 +31,11 @@ func (h *RunnerHandler) DisableRunner(c *gin.Context) {
 		return
 	}
 
-	// Log disable action
 	h.logAction(c, admin.AuditActionRunnerDisable, admin.TargetTypeRunner, runnerID, oldRunner, r)
 
 	c.JSON(http.StatusOK, runnerResponse(r))
 }
 
-// EnableRunner enables a runner
 func (h *RunnerHandler) EnableRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -47,7 +43,6 @@ func (h *RunnerHandler) EnableRunner(c *gin.Context) {
 		return
 	}
 
-	// Get old data for audit log
 	oldRunner, _ := h.adminService.GetRunner(c.Request.Context(), runnerID)
 
 	r, err := h.adminService.EnableRunner(c.Request.Context(), runnerID)
@@ -60,13 +55,11 @@ func (h *RunnerHandler) EnableRunner(c *gin.Context) {
 		return
 	}
 
-	// Log enable action
 	h.logAction(c, admin.AuditActionRunnerEnable, admin.TargetTypeRunner, runnerID, oldRunner, r)
 
 	c.JSON(http.StatusOK, runnerResponse(r))
 }
 
-// DeleteRunner deletes a runner
 func (h *RunnerHandler) DeleteRunner(c *gin.Context) {
 	runnerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -88,7 +81,6 @@ func (h *RunnerHandler) DeleteRunner(c *gin.Context) {
 		return
 	}
 
-	// Log delete action
 	h.logAction(c, admin.AuditActionRunnerDelete, admin.TargetTypeRunner, runnerID, deletedRunner, nil)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Runner deleted successfully"})

@@ -11,9 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// setupRelayTokenRefreshCallback sets up the callback for relay token refresh requests.
-// When a runner's relay token expires during reconnection, it sends a RequestRelayToken event.
-// This callback generates a new token and sends a SubscribePod command back to the runner.
 func setupRelayTokenRefreshCallback(
 	db *gorm.DB,
 	runnerConnMgr *runner.RunnerConnectionManager,
@@ -26,7 +23,6 @@ func setupRelayTokenRefreshCallback(
 			"pod_key", data.PodKey,
 		)
 
-		// Get pod info to find organization ID and verify status
 		var pod struct {
 			OrganizationID int64  `gorm:"column:organization_id"`
 			RunnerID       int64  `gorm:"column:runner_id"`
@@ -40,7 +36,6 @@ func setupRelayTokenRefreshCallback(
 			return
 		}
 
-		// Verify the runner owns this pod
 		if pod.RunnerID != runnerID {
 			slog.Warn("runner does not own pod for relay token refresh",
 				"runner_id", runnerID,
@@ -50,7 +45,6 @@ func setupRelayTokenRefreshCallback(
 			return
 		}
 
-		// Check pod is still active
 		if pod.Status != "running" && pod.Status != "initializing" && pod.Status != "disconnected" {
 			slog.Warn("pod is not active for relay token refresh",
 				"pod_key", data.PodKey,
@@ -59,8 +53,6 @@ func setupRelayTokenRefreshCallback(
 			return
 		}
 
-		// Generate a new runner token
-		// userID=0 indicates this is a runner token (not a browser token)
 		newToken, err := tokenGenerator.GenerateToken(
 			data.PodKey,
 			runnerID,
@@ -76,8 +68,6 @@ func setupRelayTokenRefreshCallback(
 			return
 		}
 
-		// Send SubscribePod command with new token back to runner.
-		// localToken is "" here: this path only refreshes the cloud-relay runner token.
 		if err := commandSender.SendSubscribePod(
 			context.Background(),
 			runnerID,

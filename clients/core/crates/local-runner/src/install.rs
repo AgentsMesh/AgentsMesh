@@ -52,11 +52,6 @@ pub async fn install_binary(
     .map_err(|e| LocalRunnerError::Io(std::io::Error::other(e.to_string())))?
 }
 
-// Streams the archive in one pass: we hash chunks as they arrive instead of
-// buffering twice (reqwest::bytes() → Vec::to_vec() → verify pass) so the peak
-// memory use is one archive copy. Zip extraction below still needs the full
-// buffer (central directory lives at end-of-file), so we cannot avoid that
-// single copy without changing the on-disk extraction strategy.
 async fn download_with_optional_verify(
     url: &str,
     expected_sha256: Option<&str>,

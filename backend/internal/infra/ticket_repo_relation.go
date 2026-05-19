@@ -7,10 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Relation, Commit, and MR methods for ticketRepository ---
-
-// Relations
-
 func (r *ticketRepository) GetRelation(ctx context.Context, relationID int64) (*ticket.Relation, error) {
 	var rel ticket.Relation
 	if err := r.db.WithContext(ctx).First(&rel, relationID).Error; err != nil {
@@ -54,8 +50,6 @@ func (r *ticketRepository) ListRelations(ctx context.Context, ticketID int64) ([
 	return relations, nil
 }
 
-// Commits
-
 func (r *ticketRepository) CreateCommit(ctx context.Context, commit *ticket.Commit) error {
 	return r.db.WithContext(ctx).Create(commit).Error
 }
@@ -87,8 +81,6 @@ func (r *ticketRepository) GetCommitBySHA(ctx context.Context, repoID int64, sha
 	}
 	return &commit, nil
 }
-
-// Merge Requests
 
 func (r *ticketRepository) CreateMR(ctx context.Context, mr *ticket.MergeRequest) error {
 	return r.db.WithContext(ctx).Create(mr).Error

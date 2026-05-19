@@ -5,22 +5,17 @@ import (
 	"fmt"
 )
 
-// CreateTXTRecord creates a TXT record for ACME DNS-01 challenge
 func (p *AliyunProvider) CreateTXTRecord(ctx context.Context, fqdn, value string) error {
-	// Parse fqdn to get RR and domain
 	rr, domainName := p.parseSubdomain(fqdn)
 
-	// Check if record exists
 	existing, err := p.getTXTRecordByRR(ctx, domainName, rr)
 	if err != nil {
 		return err
 	}
 	if existing != nil {
-		// Update existing record
 		return p.updateTXTRecordByID(ctx, existing.RecordID, rr, value)
 	}
 
-	// Create new record
 	params := map[string]string{
 		"Action":     "AddDomainRecord",
 		"DomainName": domainName,
@@ -42,7 +37,6 @@ func (p *AliyunProvider) CreateTXTRecord(ctx context.Context, fqdn, value string
 	return nil
 }
 
-// DeleteTXTRecord deletes a TXT record
 func (p *AliyunProvider) DeleteTXTRecord(ctx context.Context, fqdn string) error {
 	rr, domainName := p.parseSubdomain(fqdn)
 
@@ -51,7 +45,7 @@ func (p *AliyunProvider) DeleteTXTRecord(ctx context.Context, fqdn string) error
 		return err
 	}
 	if record == nil {
-		return nil // Record doesn't exist
+		return nil
 	}
 
 	params := map[string]string{
@@ -71,7 +65,6 @@ func (p *AliyunProvider) DeleteTXTRecord(ctx context.Context, fqdn string) error
 	return nil
 }
 
-// getTXTRecordByRR finds a TXT record by its RR
 func (p *AliyunProvider) getTXTRecordByRR(ctx context.Context, domainName, rr string) (*aliyunRecord, error) {
 	params := map[string]string{
 		"Action":      "DescribeDomainRecords",
@@ -93,7 +86,6 @@ func (p *AliyunProvider) getTXTRecordByRR(ctx context.Context, domainName, rr st
 		return nil, nil
 	}
 
-	// Find exact match
 	for _, record := range resp.DomainRecords.Record {
 		if record.RR == rr && record.Type == "TXT" {
 			return &record, nil
@@ -103,7 +95,6 @@ func (p *AliyunProvider) getTXTRecordByRR(ctx context.Context, domainName, rr st
 	return nil, nil
 }
 
-// updateTXTRecordByID updates a TXT record by its ID
 func (p *AliyunProvider) updateTXTRecordByID(ctx context.Context, recordID, rr, value string) error {
 	params := map[string]string{
 		"Action":   "UpdateDomainRecord",

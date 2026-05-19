@@ -11,7 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RelayHandler handles internal relay API endpoints
 type RelayHandler struct {
 	relayManager *relay.Manager
 	dnsService   *relay.DNSService
@@ -20,7 +19,6 @@ type RelayHandler struct {
 	logger       *slog.Logger
 }
 
-// NewRelayHandler creates a new relay handler
 func NewRelayHandler(relayManager *relay.Manager, dnsService *relay.DNSService, acmeManager *acme.Manager, geoResolver geo.Resolver) *RelayHandler {
 	return &RelayHandler{
 		relayManager: relayManager,
@@ -31,7 +29,6 @@ func NewRelayHandler(relayManager *relay.Manager, dnsService *relay.DNSService, 
 	}
 }
 
-// RelayRouterDeps holds dependencies for relay routes
 type RelayRouterDeps struct {
 	RelayManager   *relay.Manager
 	DNSService     *relay.DNSService
@@ -40,11 +37,9 @@ type RelayRouterDeps struct {
 	InternalSecret string
 }
 
-// RegisterRelayRoutes registers relay API routes
 func RegisterRelayRoutes(router *gin.RouterGroup, deps *RelayRouterDeps) {
 	handler := NewRelayHandler(deps.RelayManager, deps.DNSService, deps.ACMEManager, deps.GeoResolver)
 
-	// Internal API authentication middleware
 	router.Use(InternalAPIAuth(deps.InternalSecret))
 
 	router.POST("/register", handler.Register)
@@ -56,9 +51,6 @@ func RegisterRelayRoutes(router *gin.RouterGroup, deps *RelayRouterDeps) {
 	router.DELETE("/:relay_id", handler.ForceUnregister)
 }
 
-// InternalAPIAuth is middleware for internal API authentication.
-// Uses constant-time comparison to prevent timing attacks on the secret.
-// Panics at setup time if secret is empty to prevent accidental auth bypass.
 func InternalAPIAuth(secret string) gin.HandlerFunc {
 	if secret == "" {
 		panic("internal API secret must not be empty")

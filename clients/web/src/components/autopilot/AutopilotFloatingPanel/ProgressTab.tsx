@@ -8,9 +8,6 @@ interface ProgressTabProps {
   thinking: AutopilotThinking | null;
 }
 
-/**
- * ProgressTab - Displays task progress with completed and remaining steps
- */
 export function ProgressTab({ thinking }: ProgressTabProps) {
   const progress = thinking?.progress;
 

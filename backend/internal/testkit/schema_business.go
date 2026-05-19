@@ -1,6 +1,5 @@
 package testkit
 
-// channelTableDDLs returns DDLs for channels, messages, members, access, bindings.
 func channelTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS channels (
@@ -76,7 +75,6 @@ func channelTableDDLs() []string {
 	}
 }
 
-// ticketTableDDLs returns DDLs for tickets, comments, labels, MRs, relations.
 func ticketTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS tickets (

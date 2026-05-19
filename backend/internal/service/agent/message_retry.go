@@ -8,12 +8,10 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/domain/agent"
 )
 
-// GetPendingRetries returns messages that need retry
 func (s *MessageService) GetPendingRetries(ctx context.Context, before time.Time, limit int) ([]*agent.AgentMessage, error) {
 	return s.repo.GetPendingRetries(ctx, before, limit)
 }
 
-// RecordDeliveryFailure records a delivery failure and schedules retry
 func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID int64, errorMsg string) error {
 	message, err := s.GetMessage(ctx, messageID)
 	if err != nil {
@@ -31,7 +29,6 @@ func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID in
 
 		slog.WarnContext(ctx, "message moved to dead letter", "message_id", messageID, "attempts", message.DeliveryAttempts, "error", errorMsg)
 
-		// Create dead letter entry
 		deadLetter := &agent.DeadLetterEntry{
 			OriginalMessageID: message.ID,
 			Reason:            errorMsg,
@@ -52,19 +49,16 @@ func (s *MessageService) RecordDeliveryFailure(ctx context.Context, messageID in
 	return s.repo.Save(ctx, message)
 }
 
-// GetDeadLetters returns dead letter entries for review
 func (s *MessageService) GetDeadLetters(ctx context.Context, limit, offset int) ([]*agent.DeadLetterEntry, error) {
 	return s.repo.GetDeadLetters(ctx, limit, offset)
 }
 
-// ReplayDeadLetter attempts to replay a dead letter message
 func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*agent.AgentMessage, error) {
 	entry, err := s.repo.GetDeadLetterWithMessage(ctx, entryID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Reset the original message for retry
 	now := time.Now()
 	entry.OriginalMessage.Status = agent.MessageStatusPending
 	entry.OriginalMessage.DeliveryAttempts = 0
@@ -75,7 +69,6 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 		return nil, err
 	}
 
-	// Update dead letter entry
 	entry.ReplayedAt = &now
 	result := "Replayed successfully"
 	entry.ReplayResult = &result
@@ -87,7 +80,6 @@ func (s *MessageService) ReplayDeadLetter(ctx context.Context, entryID int64) (*
 	return entry.OriginalMessage, nil
 }
 
-// CleanupExpiredMessages removes old dead letter entries
 func (s *MessageService) CleanupExpiredMessages(ctx context.Context, olderThan time.Time) (int64, error) {
 	return s.repo.CleanupExpiredDeadLetters(ctx, olderThan)
 }

@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// --- Comment methods for ticketRepository ---
-
 func (r *ticketRepository) GetCommentByIDAndTicket(ctx context.Context, commentID, ticketID int64) (*ticket.Comment, error) {
 	var c ticket.Comment
 	if err := r.db.WithContext(ctx).

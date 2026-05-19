@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import type { OrganizationData } from "@/lib/api/organizationTypes";
+import type { LightOrganization } from "@/lib/light-auth";
 
 interface AuthFormProps {
-  authUser: unknown;
+  isSignedIn: boolean;
   userEmail?: string;
   authKey: string;
-  organizations: OrganizationData[] | null;
-  selectedOrg: OrganizationData | null;
-  onSelectOrg: (org: OrganizationData | null) => void;
+  organizations: LightOrganization[] | null;
+  selectedOrg: LightOrganization | null;
+  onSelectOrg: (org: LightOrganization | null) => void;
   nodeIdInput: string;
   onNodeIdChange: (val: string) => void;
   authorizing: boolean;
@@ -19,7 +19,7 @@ interface AuthFormProps {
 }
 
 export function AuthForm({
-  authUser, userEmail, authKey, organizations, selectedOrg,
+  isSignedIn, userEmail, authKey, organizations, selectedOrg,
   onSelectOrg, nodeIdInput, onNodeIdChange, authorizing, onAuthorize,
   error, t, tCommon,
 }: AuthFormProps) {
@@ -44,7 +44,7 @@ export function AuthForm({
         <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">{error}</div>
       )}
 
-      {!authUser || !userEmail ? (
+      {!isSignedIn ? (
         <UnauthenticatedPrompt authKey={authKey} t={t} />
       ) : (
         <AuthenticatedForm
@@ -76,9 +76,9 @@ function UnauthenticatedPrompt({ authKey, t }: {
 
 function AuthenticatedForm({ userEmail, organizations, selectedOrg, onSelectOrg,
   nodeIdInput, onNodeIdChange, authorizing, onAuthorize, t, tCommon }: {
-  userEmail: string; organizations: OrganizationData[] | null;
-  selectedOrg: OrganizationData | null;
-  onSelectOrg: (org: OrganizationData | null) => void;
+  userEmail?: string; organizations: LightOrganization[] | null;
+  selectedOrg: LightOrganization | null;
+  onSelectOrg: (org: LightOrganization | null) => void;
   nodeIdInput: string; onNodeIdChange: (val: string) => void;
   authorizing: boolean; onAuthorize: () => void;
   t: (k: string, p?: Record<string, string | number>) => string;
@@ -86,9 +86,11 @@ function AuthenticatedForm({ userEmail, organizations, selectedOrg, onSelectOrg,
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-center text-muted-foreground">
-        {t("signedInAs")} <strong>{userEmail}</strong>
-      </p>
+      {userEmail && (
+        <p className="text-sm text-center text-muted-foreground">
+          {t("signedInAs")} <strong>{userEmail}</strong>
+        </p>
+      )}
 
       {organizations && organizations.length > 0 ? (
         <div className="space-y-2">

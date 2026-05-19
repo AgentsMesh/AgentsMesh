@@ -12,7 +12,6 @@ var (
 	ErrTokenExpired = errors.New("token expired")
 )
 
-// Claims represents JWT claims
 type Claims struct {
 	UserID         int64  `json:"user_id"`
 	Email          string `json:"email"`
@@ -22,14 +21,12 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// JWTManager handles JWT operations
 type JWTManager struct {
 	secretKey     []byte
 	tokenDuration time.Duration
 	issuer        string
 }
 
-// NewJWTManager creates a new JWT manager
 func NewJWTManager(secretKey string, tokenDuration time.Duration, issuer string) *JWTManager {
 	return &JWTManager{
 		secretKey:     []byte(secretKey),
@@ -38,7 +35,6 @@ func NewJWTManager(secretKey string, tokenDuration time.Duration, issuer string)
 	}
 }
 
-// GenerateToken generates a JWT token
 func (m *JWTManager) GenerateToken(userID int64, email, username string, orgID int64, role string) (string, error) {
 	now := time.Now()
 	expiresAt := now.Add(m.tokenDuration)
@@ -62,7 +58,6 @@ func (m *JWTManager) GenerateToken(userID int64, email, username string, orgID i
 	return token.SignedString(m.secretKey)
 }
 
-// ValidateToken validates a JWT token and returns claims
 func (m *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -86,12 +81,10 @@ func (m *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// RefreshToken creates a new token with updated expiration
 func (m *JWTManager) RefreshToken(claims *Claims) (string, error) {
 	return m.GenerateToken(claims.UserID, claims.Email, claims.Username, claims.OrganizationID, claims.Role)
 }
 
-// GetExpirationTime returns when the token will expire
 func (m *JWTManager) GetExpirationTime() time.Duration {
 	return m.tokenDuration
 }

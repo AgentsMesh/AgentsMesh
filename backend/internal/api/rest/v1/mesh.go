@@ -13,13 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MeshHandler handles Mesh-related requests
 type MeshHandler struct {
 	meshService   *meshService.Service
 	ticketService *ticket.Service
 }
 
-// NewMeshHandler creates a new Mesh handler
 func NewMeshHandler(ds *meshService.Service, ts *ticket.Service) *MeshHandler {
 	return &MeshHandler{
 		meshService:   ds,
@@ -27,8 +25,6 @@ func NewMeshHandler(ds *meshService.Service, ts *ticket.Service) *MeshHandler {
 	}
 }
 
-// GetTopology returns the Mesh topology for the organization
-// GET /api/v1/organizations/:slug/mesh/topology
 func (h *MeshHandler) GetTopology(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 
@@ -44,7 +40,6 @@ func (h *MeshHandler) GetTopology(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"topology": topology})
 }
 
-// CreatePodForTicketRequest represents the request to create a pod for a ticket
 type CreatePodForTicketRequest struct {
 	RunnerID       int64  `json:"runner_id" binding:"required"`
 	Prompt         string `json:"prompt"`
@@ -52,8 +47,6 @@ type CreatePodForTicketRequest struct {
 	PermissionMode string `json:"permission_mode"`
 }
 
-// CreatePodForTicket creates a new pod for a ticket
-// POST /api/v1/organizations/:slug/tickets/:ticket_slug/pods
 func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
@@ -64,14 +57,12 @@ func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 		return
 	}
 
-	// Get the ticket
 	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
 	}
 
-	// Create pod
 	pod, err := h.meshService.CreatePodForTicket(c.Request.Context(), &mesh.CreatePodForTicketRequest{
 		OrganizationID: tenant.OrganizationID,
 		TicketID:       t.ID,
@@ -92,20 +83,16 @@ func (h *MeshHandler) CreatePodForTicket(c *gin.Context) {
 	})
 }
 
-// GetTicketPods returns pods for a ticket
-// GET /api/v1/organizations/:slug/tickets/:ticket_slug/pods
 func (h *MeshHandler) GetTicketPods(c *gin.Context) {
 	slug := c.Param("ticket_slug")
 	tenant := middleware.GetTenant(c)
 
-	// Get the ticket
 	t, err := h.ticketService.GetTicketBySlug(c.Request.Context(), tenant.OrganizationID, slug)
 	if err != nil {
 		apierr.ResourceNotFound(c, "Ticket not found")
 		return
 	}
 
-	// Get pods
 	activeOnly := c.Query("active") == "true"
 	var pods []mesh.MeshNode
 	if activeOnly {
@@ -122,13 +109,10 @@ func (h *MeshHandler) GetTicketPods(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pods": pods})
 }
 
-// BatchGetTicketPodsRequest represents the batch request
 type BatchGetTicketPodsRequest struct {
 	TicketIDs []int64 `json:"ticket_ids" binding:"required"`
 }
 
-// BatchGetTicketPods returns pods for multiple tickets
-// POST /api/v1/organizations/:slug/tickets/batch-pods
 func (h *MeshHandler) BatchGetTicketPods(c *gin.Context) {
 	var req BatchGetTicketPodsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,13 +139,10 @@ func (h *MeshHandler) BatchGetTicketPods(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// JoinChannelRequest represents the request to join a channel
 type JoinChannelRequest struct {
 	PodKey string `json:"pod_key" binding:"required"`
 }
 
-// JoinChannel adds a pod to a channel
-// POST /api/v1/organizations/:slug/channels/:id/pods
 func (h *MeshHandler) JoinChannel(c *gin.Context) {
 	channelIDStr := c.Param("id")
 	channelID, err := strconv.ParseInt(channelIDStr, 10, 64)
@@ -184,8 +165,6 @@ func (h *MeshHandler) JoinChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Pod joined channel successfully"})
 }
 
-// LeaveChannel removes a pod from a channel
-// DELETE /api/v1/organizations/:slug/channels/:id/pods/:pod_key
 func (h *MeshHandler) LeaveChannel(c *gin.Context) {
 	channelIDStr := c.Param("id")
 	channelID, err := strconv.ParseInt(channelIDStr, 10, 64)

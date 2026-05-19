@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogFooter, DialogBody } from "./dialog";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 
-// Re-export hook from separate file
 export { useConfirmDialog } from "./use-confirm-dialog";
 export type { UseConfirmDialogOptions } from "./use-confirm-dialog";
 

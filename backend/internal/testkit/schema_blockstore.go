@@ -47,7 +47,6 @@ func blockstoreTableDDLs() []string {
 			created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
-		// Unique edge constraint — the service layer also guards rel='nest' uniqueness.
 		`CREATE UNIQUE INDEX idx_block_refs_unique_edge ON block_refs (from_id, to_id, rel, IFNULL(anchor, ''))`,
 		`CREATE INDEX idx_block_refs_children ON block_refs (from_id, rel, order_key)`,
 		`CREATE INDEX idx_block_refs_backlinks ON block_refs (to_id, rel)`,

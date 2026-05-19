@@ -16,7 +16,6 @@ import { GitProviderIcon } from "@/components/icons/GitProviderIcon";
 import { ImportRepositoryModal } from "@/components/ide/modals/ImportRepositoryModal/index";
 import { FolderGit2, Trash2, Plus } from "lucide-react";
 
-/** Organization > Infrastructure > Repositories tab. */
 export function RepositoriesSettings() {
   const { org: orgSlug } = useParams<{ org: string }>();
   const t = useTranslations();

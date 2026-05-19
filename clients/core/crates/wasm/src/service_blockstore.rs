@@ -14,8 +14,6 @@ impl WasmBlockstoreService {
         Self(BlockstoreService::new(client, state))
     }
 
-    // ── Mutations / fetches ──
-
     pub async fn apply_ops(&self, req_json: String) -> Result<String, String> {
         self.0.apply_ops(&req_json).await
     }
@@ -49,8 +47,6 @@ impl WasmBlockstoreService {
     pub fn apply_remote_op(&self, op_json: &str) -> Result<(), String> {
         self.0.apply_remote_op(op_json)
     }
-
-    // ── Sync getters ──
 
     pub fn workspaces_json(&self) -> String { self.0.workspaces_json() }
 

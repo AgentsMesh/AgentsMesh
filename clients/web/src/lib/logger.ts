@@ -13,7 +13,6 @@ declare global {
 //   1. Electron IPC → main → Rust subscriber → rolling file (Desktop)
 //   2. Native console — on Web the wasm-side tracing subscriber renders
 //      Rust events to console too, so the destination is the same.
-//
 // Why not also push to the wasm subscriber from here: doing so requires
 // importing `wasm-core` (which depends on the `agentsmesh-wasm` package).
 // Desktop bundles that package out via vite alias, so a renderer-shared

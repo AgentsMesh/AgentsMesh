@@ -27,7 +27,6 @@ interface StatusSelectProps {
   size?: "sm" | "md" | "lg";
 }
 
-// Linear-style status icons and colors
 const statusConfig: Record<TicketStatus, {
   icon: React.ComponentType<{ className?: string }>;
   color: string;

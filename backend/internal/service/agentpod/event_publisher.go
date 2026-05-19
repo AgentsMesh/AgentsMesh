@@ -7,7 +7,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
 )
 
-// PodEventType defines pod event types for the publisher interface
 type PodEventType string
 
 const (
@@ -17,19 +16,15 @@ const (
 	PodEventTerminated    PodEventType = "terminated"
 )
 
-// EventPublisher defines the interface for publishing pod events
-// This allows the service to be decoupled from the eventbus implementation
 type EventPublisher interface {
 	PublishPodEvent(ctx context.Context, eventType PodEventType, orgID int64, podKey, status, previousStatus, agentStatus string)
 }
 
-// EventBusPublisher implements EventPublisher using EventBus
 type EventBusPublisher struct {
 	eventBus *eventbus.EventBus
 	logger   *slog.Logger
 }
 
-// NewEventBusPublisher creates a new EventBusPublisher
 func NewEventBusPublisher(eventBus *eventbus.EventBus, logger *slog.Logger) *EventBusPublisher {
 	if logger == nil {
 		logger = slog.Default()
@@ -40,13 +35,11 @@ func NewEventBusPublisher(eventBus *eventbus.EventBus, logger *slog.Logger) *Eve
 	}
 }
 
-// PublishPodEvent publishes a pod event
 func (p *EventBusPublisher) PublishPodEvent(ctx context.Context, eventType PodEventType, orgID int64, podKey, status, previousStatus, agentStatus string) {
 	if p.eventBus == nil {
 		return
 	}
 
-	// Map PodEventType to eventbus.EventType (compile-time type safety)
 	var et eventbus.EventType
 	switch eventType {
 	case PodEventCreated:
