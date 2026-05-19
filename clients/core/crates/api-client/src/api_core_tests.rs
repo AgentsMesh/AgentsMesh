@@ -365,6 +365,13 @@ mod api_core_tests {
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let r = c.list_market_skills(Some("git"), None).await.unwrap();
         assert_eq!(r.skills[0].display_name.as_deref(), Some("Git Commit"));
+        assert_eq!(r.skills[0].registry_id, Some(10));
+        let reg = r.skills[0].registry.as_ref().expect("registry survives relay");
+        assert_eq!(reg.sync_status.as_deref(), Some("success"));
+        assert_eq!(
+            reg.repository_url.as_deref(),
+            Some("https://github.com/acme/skills")
+        );
     }
 
     // ── file ────────────────────────────────────────────────────────────

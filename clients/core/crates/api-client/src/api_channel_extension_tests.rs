@@ -506,11 +506,34 @@ mod api_channel_extension_tests {
             .and(path("/api/v1/orgs/acme/market/mcp-servers"))
             .and(query_param("q", "docker"))
             .and(query_param("limit", "5"))
-            .respond_with(ok(json!({"mcp_servers":[],"total":0})))
+            .respond_with(ok(json!({"mcp_servers":[{
+                "id": 1,
+                "name": "GitHub MCP",
+                "slug": "github",
+                "description": "Access GitHub repos",
+                "icon": "github",
+                "transport_type": "http",
+                "command": "npx",
+                "default_args": ["mcp-github"],
+                "default_http_url": "https://api.github.com",
+                "env_var_schema": [{
+                    "name": "GH_TOKEN", "label": "GitHub Token",
+                    "required": true, "sensitive": true
+                }],
+                "category": "dev",
+                "source": "registry",
+                "version": "1.2.0",
+                "repository_url": "https://github.com/example/mcp-github"
+            }]})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let r = c.list_market_mcp_servers(Some("docker"), Some(5), None).await.unwrap();
-        assert!(r.mcp_servers.is_empty());
+        assert_eq!(r.mcp_servers.len(), 1);
+        let server = &r.mcp_servers[0];
+        assert_eq!(server.command.as_deref(), Some("npx"));
+        assert_eq!(server.default_args.as_ref().map(|v| v.len()), Some(1));
+        assert_eq!(server.env_var_schema.as_ref().map(|v| v.len()), Some(1));
+        assert_eq!(server.version.as_deref(), Some("1.2.0"));
     }
 
     #[tokio::test]
@@ -532,7 +555,7 @@ mod api_channel_extension_tests {
         Mock::given(method("POST"))
             .and(path("/api/v1/orgs/acme/repositories/5/skills/install-from-market"))
             .and(body_json(json!({"market_item_id":42,"scope":null})))
-            .respond_with(ok(json!({"id":1,"skill_slug":"git-commit"})))
+            .respond_with(ok(json!({"id":1,"slug":"git-commit"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let data = agentsmesh_types::InstallMarketSkillRequest {
@@ -552,7 +575,7 @@ mod api_channel_extension_tests {
                 "url":"https://github.com/org/skill",
                 "branch":null,"path":null,"scope":null
             })))
-            .respond_with(ok(json!({"id":2,"source":"github"})))
+            .respond_with(ok(json!({"id":2,"install_source":"github"})))
             .expect(1).mount(&s).await;
         let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
         let data = agentsmesh_types::InstallGithubSkillRequest {

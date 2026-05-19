@@ -43,20 +43,41 @@ pub struct ToggleRegistryRequest {
 pub struct SkillRegistryOverride {
     pub id: i64,
     pub registry_id: Option<i64>,
-    pub skill_slug: Option<String>,
     pub is_disabled: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpHeaderSchemaEntry {
+    pub name: String,
+    pub description: Option<String>,
+    pub value: Option<String>,
+    pub required: bool,
+    pub sensitive: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvVarSchemaEntry {
+    pub name: String,
+    pub label: String,
+    pub required: bool,
+    pub sensitive: bool,
+    pub placeholder: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarketSkill {
     pub id: i64,
+    pub registry_id: Option<i64>,
     pub slug: Option<String>,
     #[serde(default, alias = "name")]
     pub display_name: Option<String>,
     pub description: Option<String>,
+    pub license: Option<String>,
     pub category: Option<String>,
-    pub author: Option<String>,
-    pub icon_url: Option<String>,
+    pub content_sha: Option<String>,
+    pub version: Option<i64>,
+    pub is_active: Option<bool>,
+    pub registry: Option<SkillRegistry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,21 +86,34 @@ pub struct MarketMcpServer {
     pub name: String,
     pub slug: Option<String>,
     pub description: Option<String>,
-    pub category: Option<String>,
-    pub author: Option<String>,
+    pub icon: Option<String>,
     pub transport_type: Option<String>,
+    pub command: Option<String>,
+    pub default_args: Option<Vec<String>>,
+    pub default_http_url: Option<String>,
+    pub default_http_headers: Option<Vec<McpHeaderSchemaEntry>>,
+    pub env_var_schema: Option<Vec<EnvVarSchemaEntry>>,
+    pub category: Option<String>,
+    pub source: Option<String>,
+    pub registry_name: Option<String>,
+    pub version: Option<String>,
+    pub repository_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepoSkillInstall {
     pub id: i64,
-    pub repository_id: Option<i64>,
-    pub skill_slug: Option<String>,
-    pub name: Option<String>,
+    pub organization_id: Option<i64>,
+    pub market_item_id: Option<i64>,
+    pub installed_by: Option<i64>,
+    pub slug: Option<String>,
     pub scope: Option<String>,
-    pub is_enabled: Option<bool>,
+    pub install_source: Option<String>,
+    pub source_url: Option<String>,
+    pub content_sha: Option<String>,
+    pub package_size: Option<i64>,
     pub pinned_version: Option<String>,
-    pub source: Option<String>,
+    pub is_enabled: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,10 +139,17 @@ pub struct UpdateSkillInstallRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RepoMcpServerInstall {
     pub id: i64,
-    pub repository_id: Option<i64>,
+    pub organization_id: Option<i64>,
+    pub market_item_id: Option<i64>,
+    pub installed_by: Option<i64>,
     pub name: Option<String>,
     pub slug: Option<String>,
     pub transport_type: Option<String>,
+    pub command: Option<String>,
+    pub args: Option<Vec<String>>,
+    pub http_url: Option<String>,
+    pub http_headers: Option<serde_json::Value>,
+    pub env_vars: Option<serde_json::Value>,
     pub scope: Option<String>,
     pub is_enabled: Option<bool>,
 }
@@ -152,7 +193,6 @@ pub struct MarketSkillListResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarketMcpServerListResponse {
     pub mcp_servers: Vec<MarketMcpServer>,
-    pub total: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,69 +211,5 @@ pub struct RepoMcpServerInstallListResponse {
 }
 
 #[cfg(test)]
-mod skill_registry_tests {
-    use super::{SkillRegistry, SkillRegistryListResponse};
-
-    const BACKEND_PAYLOAD: &str = r#"{
-        "id": 7,
-        "organization_id": 42,
-        "repository_url": "https://github.com/agentsmesh/skills-bundle",
-        "branch": "main",
-        "source_type": "auto",
-        "detected_type": "collection",
-        "compatible_agents": ["claude-code", "codex"],
-        "auth_type": "github_pat",
-        "last_synced_at": "2026-05-09T00:00:00Z",
-        "last_commit_sha": "abc123def456",
-        "sync_status": "success",
-        "skill_count": 12,
-        "is_active": true,
-        "created_at": "2026-05-08T00:00:00Z",
-        "updated_at": "2026-05-09T00:00:00Z"
-    }"#;
-
-    #[test]
-    fn skill_registry_decodes_backend_payload() {
-        let r: SkillRegistry = serde_json::from_str(BACKEND_PAYLOAD).unwrap();
-        assert_eq!(r.id, 7);
-        assert_eq!(r.sync_status.as_deref(), Some("success"));
-        assert_eq!(r.skill_count, Some(12));
-        assert_eq!(r.auth_type.as_deref(), Some("github_pat"));
-        assert_eq!(r.is_active, Some(true));
-    }
-
-    #[test]
-    fn skill_registry_wasm_relay_preserves_ui_fields() {
-        let typed: SkillRegistry = serde_json::from_str(BACKEND_PAYLOAD).unwrap();
-        let relayed = serde_json::to_string(&typed).unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&relayed).unwrap();
-        for key in ["sync_status", "auth_type", "skill_count", "is_active",
-                    "last_commit_sha", "detected_type"] {
-            assert!(!parsed[key].is_null(), "field `{key}` dropped by relay");
-        }
-    }
-
-    // Regression for #341: backend wire wrapper is `skill_registries`, but PR #349
-    // used `#[serde(alias)]` on a Rust field named `registries`. Serde's `alias`
-    // only affects deserialization; re-serializing for the wasm relay emitted
-    // `{"registries": ...}` instead, so the TS layer (which reads
-    // `.skill_registries`) always saw `undefined` and rendered an empty list.
-    // This test pins the round-trip key.
-    #[test]
-    fn skill_registry_list_response_relay_key_matches_backend_wire() {
-        let backend_wire = format!(r#"{{"skill_registries":[{BACKEND_PAYLOAD}]}}"#);
-        let typed: SkillRegistryListResponse = serde_json::from_str(&backend_wire).unwrap();
-        assert_eq!(typed.skill_registries.len(), 1);
-
-        let relayed = serde_json::to_string(&typed).unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&relayed).unwrap();
-        assert!(
-            parsed.get("skill_registries").is_some(),
-            "wasm relay must emit `skill_registries`, got: {relayed}"
-        );
-        assert!(
-            parsed.get("registries").is_none(),
-            "legacy `registries` key must not leak through: {relayed}"
-        );
-    }
-}
+#[path = "extension_relay_tests.rs"]
+mod extension_relay_tests;
