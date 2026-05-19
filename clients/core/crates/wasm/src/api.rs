@@ -168,10 +168,6 @@ impl WasmApiClient {
         crate::service_binding::WasmBindingService::new(self.client.clone())
     }
 
-    pub fn create_message_service(&self) -> crate::service_message::WasmMessageService {
-        crate::service_message::WasmMessageService::new(self.client.clone())
-    }
-
     pub fn create_notification_service(
         &self,
     ) -> crate::service_notification::WasmNotificationService {

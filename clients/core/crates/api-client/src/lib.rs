@@ -12,8 +12,6 @@ mod api_core_tests;
 #[cfg(test)]
 mod api_agent_billing_tests;
 #[cfg(test)]
-mod api_message_org_tests;
-#[cfg(test)]
 mod api_pod_runner_tests;
 
 pub use client::ApiClient;

@@ -13,7 +13,6 @@ pub mod invitation;
 pub mod local_runner;
 pub mod loop_service;
 pub mod mesh;
-pub mod message;
 pub mod pod;
 pub mod promocode;
 pub mod runner;

@@ -15,7 +15,6 @@ pub mod invitation_connect;
 pub mod license;
 pub mod loop_connect;
 pub mod mesh_connect;
-pub mod message;
 pub mod notification_connect;
 pub mod organization;
 pub mod pod;

@@ -10,7 +10,6 @@ mod channel;
 mod channel_messages;
 mod channel_proto_convert;
 mod loop_service;
-mod message;
 mod misc;
 mod pod;
 mod repository;

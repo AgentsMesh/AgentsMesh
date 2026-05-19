@@ -96,28 +96,7 @@ mod api_core_tests {
     // REST surface dropped; covered by invitation_connect.rs.
 
     // ── message ─────────────────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn get_mesh_messages() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/messages"))
-            .and(query_param("unread_only", "true")).and(query_param("limit", "20"))
-            .respond_with(ok(json!({"messages":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let _ = c.get_mesh_messages(Some(true), Some(20), None).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_mesh_unread_count() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/orgs/acme/messages/unread-count"))
-            .respond_with(ok(json!({"count":5})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::with_org("acme"));
-        let r = c.get_mesh_unread_count().await.unwrap();
-        assert_eq!(r.count, 5);
-    }
+    // REST surface dropped; mesh messaging has no Connect counterpart yet.
 
     // ── notification ────────────────────────────────────────────────────
     // REST surface dropped; covered by notification_connect.rs.
