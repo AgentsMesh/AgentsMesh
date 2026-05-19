@@ -199,82 +199,11 @@ mod api_core_tests {
     // REST surface dropped; covered by token_usage_connect.rs.
 
     // ── user_agent_credential ───────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_user_agent_credentials() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/agent-credentials"))
-            .respond_with(ok(json!({"profiles":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_user_agent_credentials().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn set_default_agent_credential() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/api/v1/users/agent-credentials/profiles/3/set-default"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.set_default_agent_credential(3).await.unwrap();
-    }
+    // REST surface dropped; covered by user_agent_credential_connect.rs.
 
     // ── user_git_credential ─────────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_user_git_credentials() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/git-credentials"))
-            .respond_with(ok(json!({"credentials":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_user_git_credentials().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_default_git_credential() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/git-credentials/default"))
-            .respond_with(ok(json!({"id":1,"name":"default"})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.get_default_git_credential().await.unwrap();
-    }
+    // REST surface dropped; covered by user_git_credential_connect.rs.
 
     // ── user_repository_provider ────────────────────────────────────────
-
-    #[tokio::test]
-    async fn list_user_repository_providers() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET")).and(path("/api/v1/users/repository-providers"))
-            .respond_with(ok(json!({"providers":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_user_repository_providers().await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_repository_provider_connection() {
-        let s = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/api/v1/users/repository-providers/2/test"))
-            .respond_with(ok(json!({})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.test_repository_provider_connection(2).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn list_provider_repositories() {
-        let s = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/v1/users/repository-providers/2/repositories"))
-            .and(query_param("search", "demo"))
-            .respond_with(ok(json!({"repositories":[]})))
-            .expect(1).mount(&s).await;
-        let c = ApiClient::new(s.uri(), MockTokenStore::no_org());
-        let _ = c.list_provider_repositories(2, None, None, Some("demo")).await.unwrap();
-    }
+    // REST surface dropped; covered by user_repository_provider_connect.rs.
 }
