@@ -13,7 +13,6 @@ go_library(
         "//backend/internal/api/rest/ws",
         "//backend/internal/config",
         "//backend/internal/infra/database",
-        "//backend/internal/infra/email",
         "//backend/internal/middleware",
         "//backend/internal/service/admin",
         "//backend/pkg/apierr",

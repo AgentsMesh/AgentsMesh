@@ -29,11 +29,16 @@ go_test(
     srcs = ["grant_test.go"],
     embed = [":grant"],
     deps = [
-        "//backend/internal/middleware",
         "//backend/internal/service/grant",
         "//proto/grant/v1:grant_go_proto",
         "@com_connectrpc_connect//:connect",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":grant",
+    visibility = ["//backend:__subpackages__"],
 )

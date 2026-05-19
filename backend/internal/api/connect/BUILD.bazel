@@ -9,7 +9,10 @@ go_library(
     srcs = ["doc.go"],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect",
     visibility = ["//backend:__subpackages__"],
-    deps = [
-        "@com_connectrpc_connect//:connect",
-    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":connect",
+    visibility = ["//backend:__subpackages__"],
 )

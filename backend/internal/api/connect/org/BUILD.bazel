@@ -28,7 +28,6 @@ go_test(
     srcs = ["org_test.go"],
     embed = [":org"],
     deps = [
-        "//backend/internal/api/connect/interceptors",
         "//backend/internal/domain/organization",
         "//backend/internal/middleware",
         "//backend/internal/service/organization",
@@ -37,4 +36,10 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":org",
+    visibility = ["//backend:__subpackages__"],
 )

@@ -22,3 +22,9 @@ go_library(
         "@com_connectrpc_connect//:connect",
     ],
 )
+
+alias(
+    name = "go_default_library",
+    actual = ":user_credential",
+    visibility = ["//backend:__subpackages__"],
+)

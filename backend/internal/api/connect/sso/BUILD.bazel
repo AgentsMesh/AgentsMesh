@@ -23,12 +23,15 @@ go_test(
     srcs = ["sso_test.go"],
     embed = [":sso"],
     deps = [
-        "//backend/internal/domain/sso",
         "//backend/internal/domain/user",
-        "//backend/internal/service/auth",
-        "//backend/internal/service/sso",
         "//proto/sso/v1:sso_go_proto",
         "@com_connectrpc_connect//:connect",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":sso",
+    visibility = ["//backend:__subpackages__"],
 )

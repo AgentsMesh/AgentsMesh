@@ -28,11 +28,15 @@ go_test(
     deps = [
         "//backend/internal/domain/user",
         "//backend/internal/middleware",
-        "//backend/internal/service/organization",
-        "//backend/internal/service/user",
         "//proto/user/v1:user_go_proto",
         "@com_connectrpc_connect//:connect",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":user",
+    visibility = ["//backend:__subpackages__"],
 )
