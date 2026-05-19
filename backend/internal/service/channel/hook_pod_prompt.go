@@ -78,5 +78,11 @@ func stripPodMentions(content string, podKeys []string) string {
 
 func buildPodPrompt(content, channelName string, channelID int64, podKeys []string) string {
 	rawPrompt := stripPodMentions(content, podKeys)
-	return fmt.Sprintf("Message from channel(#%s, channel_id=%d): %s\n\nIf you finish it, please reply to this channel using send_channel_message(channel_id=%d).", channelName, channelID, rawPrompt, channelID)
+	// PTY submits via runner.OnSendPrompt's trailing \r write; any embedded
+	// \n/\r in the body either pre-submits a partial prompt or sinks the
+	// final \r into the TUI's paste buffer. Flatten to a single line.
+	rawPrompt = ptyPromptFlattener.Replace(rawPrompt)
+	return fmt.Sprintf("Message from channel(#%s, channel_id=%d): %s. If you finish it, please reply to this channel using send_channel_message(channel_id=%d).", channelName, channelID, rawPrompt, channelID)
 }
+
+var ptyPromptFlattener = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ")

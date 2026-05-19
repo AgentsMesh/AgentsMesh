@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -80,7 +81,7 @@ func TestBuildPodPrompt(t *testing.T) {
 			channelName: "dev-team",
 			channelID:   42,
 			podKeys:     []string{"abcd1234efgh5678"},
-			want:        "Message from channel(#dev-team, channel_id=42): fix the login bug\n\nIf you finish it, please reply to this channel using send_channel_message(channel_id=42).",
+			want:        "Message from channel(#dev-team, channel_id=42): fix the login bug. If you finish it, please reply to this channel using send_channel_message(channel_id=42).",
 		},
 		{
 			name:        "no mentions to strip",
@@ -88,7 +89,7 @@ func TestBuildPodPrompt(t *testing.T) {
 			channelName: "ops",
 			channelID:   7,
 			podKeys:     []string{"abcd1234efgh5678"},
-			want:        "Message from channel(#ops, channel_id=7): deploy to staging\n\nIf you finish it, please reply to this channel using send_channel_message(channel_id=7).",
+			want:        "Message from channel(#ops, channel_id=7): deploy to staging. If you finish it, please reply to this channel using send_channel_message(channel_id=7).",
 		},
 		{
 			name:        "multiple mentions stripped",
@@ -96,7 +97,7 @@ func TestBuildPodPrompt(t *testing.T) {
 			channelName: "code-review",
 			channelID:   100,
 			podKeys:     []string{"aabbccddxxxxxxxx", "eeffgghhyyyyyyyy"},
-			want:        "Message from channel(#code-review, channel_id=100): review PR #42\n\nIf you finish it, please reply to this channel using send_channel_message(channel_id=100).",
+			want:        "Message from channel(#code-review, channel_id=100): review PR #42. If you finish it, please reply to this channel using send_channel_message(channel_id=100).",
 		},
 	}
 
@@ -106,4 +107,32 @@ func TestBuildPodPrompt(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+// PTY pods submit prompts with a single trailing Enter (\r) inside the
+// runner; any embedded \n/\r in the body breaks that. The hook is the only
+// place we control the body, so this invariant lives here.
+func TestBuildPodPrompt_NeverContainsNewlines(t *testing.T) {
+	cases := []string{
+		"single line",
+		"line1\nline2",
+		"line1\r\nline2",
+		"trailing\n",
+		"mixed\n\rstuff\r\nhere",
+		"@abcd1234 multi\nline\nmention",
+	}
+	for _, content := range cases {
+		t.Run(content, func(t *testing.T) {
+			got := buildPodPrompt(content, "ch", 1, []string{"abcd1234efgh5678"})
+			if strings.ContainsAny(got, "\n\r") {
+				t.Fatalf("buildPodPrompt must not emit \\n or \\r (breaks PTY Enter submit); got %q", got)
+			}
+		})
+	}
+}
+
+func TestBuildPodPrompt_FlattensUserNewlines(t *testing.T) {
+	got := buildPodPrompt("first line\nsecond line", "dev", 1, []string{"k"})
+	want := "Message from channel(#dev, channel_id=1): first line second line. If you finish it, please reply to this channel using send_channel_message(channel_id=1)."
+	assert.Equal(t, want, got)
 }
