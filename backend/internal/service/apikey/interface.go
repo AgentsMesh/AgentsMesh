@@ -61,6 +61,7 @@ type Interface interface {
 	ValidateKey(ctx context.Context, rawKey string) (*ValidateResult, error)
 	ListAPIKeys(ctx context.Context, filter *ListAPIKeysFilter) ([]apikey.APIKey, int64, error)
 	GetAPIKey(ctx context.Context, id int64, orgID int64) (*apikey.APIKey, error)
+	GetAPIKeyBySlug(ctx context.Context, orgID int64, slug string) (*apikey.APIKey, error)
 	UpdateAPIKey(ctx context.Context, id int64, orgID int64, req *UpdateAPIKeyRequest) (*apikey.APIKey, error)
 	RevokeAPIKey(ctx context.Context, id int64, orgID int64) error
 	DeleteAPIKey(ctx context.Context, id int64, orgID int64) error

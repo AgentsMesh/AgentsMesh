@@ -1,0 +1,5 @@
+sh_binary(
+    name = "identifier-lint",
+    srcs = ["lint.sh"],
+    visibility = ["//visibility:public"],
+)

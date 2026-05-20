@@ -67,6 +67,13 @@ func (s *Service) CreateAPIKey(ctx context.Context, req *CreateAPIKeyRequest) (*
 		expiresAt = &t
 	}
 
+	slug, err := s.EnsureUniqueSlug(ctx, req.OrganizationID, req.Name)
+	if err != nil {
+		// Non-fatal: leave slug NULL, backfill picks it up. Logs surface to
+		// flag callers passing names that sanitize to nothing.
+		slug = ""
+	}
+
 	key := &apikeyDomain.APIKey{
 		OrganizationID: req.OrganizationID,
 		Name:           req.Name,
@@ -77,6 +84,9 @@ func (s *Service) CreateAPIKey(ctx context.Context, req *CreateAPIKeyRequest) (*
 		IsEnabled:      true,
 		ExpiresAt:      expiresAt,
 		CreatedBy:      req.CreatedBy,
+	}
+	if slug != "" {
+		key.Slug = &slug
 	}
 
 	if err := s.repo.Create(ctx, key); err != nil {

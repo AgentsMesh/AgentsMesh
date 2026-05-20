@@ -7,6 +7,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/pkg/displaykit"
 )
 
 var (
@@ -56,6 +57,15 @@ type CreateChannelRequest struct {
 }
 
 func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) (*channel.Channel, error) {
+	// Service-layer accepts min=1 — REST binding adds a stricter min=2
+	// (gin `binding:"min=2"` tag) so the API contract still requires 2+.
+	// Internal callers / fixtures get to use single-char fixtures.
+	cleanName, err := displaykit.SanitizeAndValidate(req.Name, channel.NameMinLen, channel.NameMaxLen)
+	if err != nil {
+		return nil, ErrEmptyContent
+	}
+	req.Name = cleanName
+
 	existing, err := s.repo.GetByOrgAndName(ctx, req.OrganizationID, req.Name)
 	if err != nil {
 		return nil, err
@@ -69,6 +79,11 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 		visibility = channel.VisibilityPublic
 	}
 
+	slug, err := s.EnsureUniqueSlug(ctx, req.OrganizationID, req.Name)
+	if err != nil {
+		slog.WarnContext(ctx, "channel slug derivation failed; leaving slug NULL", "org_id", req.OrganizationID, "name", req.Name, "error", err)
+	}
+
 	ch := &channel.Channel{
 		OrganizationID:  req.OrganizationID,
 		Name:            req.Name,
@@ -79,6 +94,9 @@ func (s *Service) CreateChannel(ctx context.Context, req *CreateChannelRequest) 
 		CreatedByUserID: req.CreatedByUserID,
 		Visibility:      visibility,
 		IsArchived:      false,
+	}
+	if slug != "" {
+		ch.Slug = &slug
 	}
 
 	if err := s.repo.Create(ctx, ch); err != nil {
@@ -125,6 +143,20 @@ func (s *Service) GetChannelForUser(ctx context.Context, channelID, userID int64
 
 func (s *Service) GetChannelByName(ctx context.Context, orgID int64, name string) (*channel.Channel, error) {
 	ch, err := s.repo.GetByOrgAndName(ctx, orgID, name)
+	if err != nil {
+		return nil, err
+	}
+	if ch == nil {
+		return nil, ErrChannelNotFound
+	}
+	return ch, nil
+}
+
+// GetChannelBySlug is the post-Phase-4 lookup-by-identifier path. Prefer this
+// over GetChannelByName for new code; name remains for backward compat with
+// older callers but is the wrong semantic primitive (display, not identifier).
+func (s *Service) GetChannelBySlug(ctx context.Context, orgID int64, slug string) (*channel.Channel, error) {
+	ch, err := s.repo.GetByOrgAndSlug(ctx, orgID, slug)
 	if err != nil {
 		return nil, err
 	}

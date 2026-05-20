@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agent"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
+	"github.com/anthropics/agentsmesh/backend/pkg/slugkit"
 	"github.com/anthropics/agentsmesh/agentfile/extract"
 	"github.com/anthropics/agentsmesh/agentfile/parser"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,14 @@ func (h *AgentHandler) CreateCustomAgent(c *gin.Context) {
 	var req CreateCustomAgentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apierr.ValidationError(c, err.Error())
+		return
+	}
+
+	if err := slugkit.Validate(req.Slug); err != nil {
+		suggestion, _ := slugkit.SanitizeAndValidate(req.Slug)
+		apierr.RespondWithExtra(c, http.StatusBadRequest, apierr.VALIDATION_FAILED,
+			"Slug must contain only lowercase letters, numbers, and hyphens, and must start and end with alphanumeric characters",
+			gin.H{"field": "slug", "suggestion": suggestion})
 		return
 	}
 

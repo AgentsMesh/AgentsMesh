@@ -3,8 +3,10 @@ package grpc
 import (
 	"context"
 
+	ticketDomain "github.com/anthropics/agentsmesh/backend/internal/domain/ticket"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/ticket"
+	"github.com/anthropics/agentsmesh/backend/pkg/displaykit"
 )
 
 func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.TenantContext, payload []byte) (interface{}, *mcpError) {
@@ -22,6 +24,11 @@ func (a *GRPCRunnerAdapter) mcpCreateTicket(ctx context.Context, tc *middleware.
 	if params.Title == "" {
 		return nil, newMcpError(400, "title is required")
 	}
+	sanitizedTitle, err := displaykit.SanitizeAndValidate(params.Title, ticketDomain.TitleMinLen, ticketDomain.TitleMaxLen)
+	if err != nil {
+		return nil, newMcpError(400, "ticket title: "+err.Error())
+	}
+	params.Title = sanitizedTitle
 	if params.Priority == "" {
 		params.Priority = "medium"
 	}

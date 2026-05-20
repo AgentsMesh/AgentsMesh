@@ -157,6 +157,24 @@ mod api_message_org_tests {
     }
 
     #[tokio::test]
+    async fn create_personal_organization_no_slug_in_body() {
+        // Phase 5: caller MUST NOT send a slug; server derives from
+        // users.username via slugkit.Sanitize. Body should be empty {}.
+        let s = MockServer::start().await;
+        Mock::given(method("POST")).and(path("/api/v1/orgs/personal"))
+            .and(body_json(json!({})))
+            .respond_with(ok(json!({
+                "id": 1,
+                "slug": "kudin-private-workspace",
+                "name": "Roman Kudin's Workspace"
+            })))
+            .expect(1).mount(&s).await;
+        let c = ApiClient::new(s.uri(), Tok::none());
+        let r = c.create_personal_organization().await.unwrap();
+        assert_eq!(r.slug, "kudin-private-workspace");
+    }
+
+    #[tokio::test]
     async fn update_organization() {
         let s = MockServer::start().await;
         Mock::given(method("PUT")).and(path("/api/v1/orgs/acme"))

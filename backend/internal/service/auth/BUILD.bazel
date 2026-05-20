@@ -54,6 +54,7 @@ go_test(
         "//backend/internal/infra",
         "//backend/internal/service/user",
         "//backend/internal/testkit",
+        "//backend/pkg/slugkit",
         "@com_github_alicebob_miniredis_v2//:miniredis",
         "@com_github_golang_jwt_jwt_v5//:jwt",
         "@com_github_redis_go_redis_v9//:go-redis",

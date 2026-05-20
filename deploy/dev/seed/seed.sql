@@ -347,8 +347,9 @@ BEGIN
     BEGIN
 
     -- 9.1 General 频道
-    INSERT INTO channels (organization_id, name, description, visibility, created_by_user_id)
-    SELECT v_org_id, 'general', 'General discussion channel', 'public', v_user_id
+    -- slug 必须显式提供（Phase 4 收尾 migration 000143 让 channels.slug NOT NULL）
+    INSERT INTO channels (organization_id, name, slug, description, visibility, created_by_user_id)
+    SELECT v_org_id, 'general', 'general', 'General discussion channel', 'public', v_user_id
     WHERE NOT EXISTS (SELECT 1 FROM channels WHERE organization_id = v_org_id AND name = 'general')
     RETURNING id INTO v_ch_general_id;
 
@@ -357,8 +358,8 @@ BEGIN
     END IF;
 
     -- 9.2 Dev Discussion 频道
-    INSERT INTO channels (organization_id, name, description, visibility, created_by_user_id)
-    SELECT v_org_id, 'dev-discussion', 'Development team discussion', 'public', v_user_id
+    INSERT INTO channels (organization_id, name, slug, description, visibility, created_by_user_id)
+    SELECT v_org_id, 'dev-discussion', 'dev-discussion', 'Development team discussion', 'public', v_user_id
     WHERE NOT EXISTS (SELECT 1 FROM channels WHERE organization_id = v_org_id AND name = 'dev-discussion')
     RETURNING id INTO v_ch_dev_id;
 

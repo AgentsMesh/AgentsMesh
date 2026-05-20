@@ -75,7 +75,8 @@ func supportTableDDLs() []string {
 		)`,
 		`CREATE TABLE IF NOT EXISTS api_keys (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT,
+			organization_id INTEGER NOT NULL, name TEXT NOT NULL, slug TEXT,
+			description TEXT,
 			key_prefix TEXT NOT NULL, key_hash TEXT NOT NULL UNIQUE,
 			scopes TEXT NOT NULL DEFAULT '[]',
 			is_enabled INTEGER NOT NULL DEFAULT 1,

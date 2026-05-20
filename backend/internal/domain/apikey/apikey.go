@@ -94,6 +94,7 @@ type APIKey struct {
 	ID             int64      `gorm:"primaryKey" json:"id"`
 	OrganizationID int64      `gorm:"not null;index" json:"organization_id"`
 	Name           string     `gorm:"size:255;not null" json:"name"`
+	Slug           *string    `gorm:"size:100;column:slug" json:"slug,omitempty"`
 	Description    *string    `gorm:"type:text" json:"description,omitempty"`
 	KeyPrefix      string     `gorm:"size:12;not null" json:"key_prefix"`
 	KeyHash        string     `gorm:"size:128;uniqueIndex;not null" json:"-"`

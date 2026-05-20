@@ -220,6 +220,7 @@ go_test(
         "agentpod_error_test.go",
         "agentpod_request_test.go",
         "agentpod_response_test.go",
+        "agents_custom_test.go",
         "auth_oauth_handler_test.go",
         "auth_oauth_redirect_test.go",
         "billing_handler_setup_test.go",

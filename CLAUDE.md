@@ -551,3 +551,28 @@ Or use an existing admin to grant privileges via the Admin Console UI.
 * **Hard limit: every file must stay under 200 lines** (excluding test files, which should stay under 400 lines). When a file approaches this limit, proactively split it by SRP — extract types, helpers, hooks, or sub-components into separate files. A 210-line file is acceptable if splitting would break cohesion; a 300+ line file is never acceptable and must be split before committing.
 * **Code is the single source of truth — comments that can be eliminated, must be eliminated.** Only comment to explain **why** something non-obvious exists (business constraints, cross-module contracts, workarounds). Never comment **what** code does — if the code isn't self-explanatory, rewrite the code. No JSDoc that restates the function signature, no `// Create X` above `CreateX()`, no section banners.
 * **File names must be specific and descriptive.** Never use generic names like `helpers`, `utils`, `common`, `misc`, `shared`. Name files after what they contain — e.g., `mesh-status-info.ts` not `mesh-helpers.ts`, `runner-display-info.ts` not `runner-utils.ts`. 
+
+## Identifier 字段契约
+
+任何 UNIQUE string 列、URL path 段、@mention key、lookup 主键 **都是 identifier**，必须满足 `backend/pkg/slugkit` 的规则：`^[a-z0-9]+(-[a-z0-9]+)*$`，长度 2-100。
+
+### 字段身份分层
+- **认证身份** (`users.email`): 用户输入凭证，合法 email 格式即可
+- **公开身份 / identifier** (`users.username`, `organizations.slug`, `channels.slug`, `pods.pod_key`...): 系统派生 + 严格 sanitize，全小写 + 数字 + 连字符
+- **呈现层** (`users.name`, `channels.name`...): 任意 Unicode，仅用于 UI 显示
+
+**`name` 字段不得当 identifier 用**。如果需要 lookup，加 `slug` 列。
+
+### 写入路径强制约束
+- 外部 raw 字符串（OAuth login / SAML attr / email local-part / AI 输出）**禁止**直接赋值到 identifier 字段
+- 必须通过对应 service helper：`userService.EnsureUniqueUsername`、`orgService.CreatePersonal`、`channelService.EnsureUniqueSlug` 等
+- helper 内部走 `slugkit.GenerateUnique(seed, dbExistsCheck)`，带 collision retry
+
+### 新增 identifier 字段 checklist
+1. migration 加 column + `CHECK (col ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND char_length(col) BETWEEN 2 AND 100)`
+2. domain model 字段类型用 `slugkit.Slug`（新代码） 或 `string`（兼容老代码）
+3. 加 `BeforeSave` hook 调 `slugkit.ValidateIdentifier("<table>.<col>", value)`
+4. service 包加 `*Registry` helper 封装 `slugkit.GenerateUnique`
+5. 单测覆盖含 `.`/`_`/uppercase/unicode 的输入，断言落库值通过 `slugkit.Validate`
+
+参见 `backend/pkg/slugkit/doc.go` 完整说明，`.claude/plans/sharded-imagining-bird.md` 重构 plan。

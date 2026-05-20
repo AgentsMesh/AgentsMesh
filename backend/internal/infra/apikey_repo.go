@@ -48,6 +48,20 @@ func (r *apikeyRepo) GetByKeyHash(ctx context.Context, keyHash string) (*apikey.
 	return &key, nil
 }
 
+func (r *apikeyRepo) GetByOrgAndSlug(ctx context.Context, orgID int64, slug string) (*apikey.APIKey, error) {
+	var key apikey.APIKey
+	err := r.db.WithContext(ctx).
+		Where("organization_id = ? AND slug = ?", orgID, slug).
+		First(&key).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, apikey.ErrNotFound
+		}
+		return nil, err
+	}
+	return &key, nil
+}
+
 func (r *apikeyRepo) List(ctx context.Context, orgID int64, isEnabled *bool, limit, offset int) ([]apikey.APIKey, int64, error) {
 	var keys []apikey.APIKey
 	var total int64
@@ -103,4 +117,12 @@ func (r *apikeyRepo) CheckDuplicateName(ctx context.Context, orgID int64, name s
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *apikeyRepo) SlugExists(ctx context.Context, orgID int64, slug string) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&apikey.APIKey{}).
+		Where("organization_id = ? AND slug = ?", orgID, slug).
+		Count(&count).Error
+	return count > 0, err
 }

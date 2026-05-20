@@ -450,6 +450,7 @@ export interface INotificationService {
 
 export interface IOrgApiService {
   create(json: string): Promise<string>;
+  create_personal(): Promise<string>;
   delete(slug: string): Promise<void>;
   get(slug: string): Promise<string>;
   invite_member(slug: string, json: string): Promise<string>;

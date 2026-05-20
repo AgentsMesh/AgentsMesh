@@ -49,3 +49,18 @@ export async function lightCreateOrganization(
   updateLightSessionOrgSlug(org.slug);
   return org;
 }
+
+// Server derives slug from users.username via slugkit.Sanitize — caller passes
+// no body. Use this for onboarding "Quick Start"; never construct the slug
+// client-side.
+export async function lightCreatePersonalOrganization(): Promise<LightOrganization> {
+  const resp = await lightFetch<CreateOrgResponse>("/api/v1/orgs/personal", {
+    method: "POST",
+    body: {},
+    authenticated: true,
+  });
+  const org = resp?.organization;
+  if (!org) throw new Error("organizations.createPersonal returned 200 with no organization payload");
+  updateLightSessionOrgSlug(org.slug);
+  return org;
+}

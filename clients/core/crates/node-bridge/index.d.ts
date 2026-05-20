@@ -272,6 +272,7 @@ export declare class AppState {
   orgList(): Promise<string>
   orgGet(slug: string): Promise<string>
   orgCreate(json: string): Promise<string>
+  orgCreatePersonal(): Promise<string>
   orgUpdate(slug: string, json: string): Promise<string>
   orgDelete(slug: string): Promise<void>
   orgListMembers(slug: string): Promise<string>

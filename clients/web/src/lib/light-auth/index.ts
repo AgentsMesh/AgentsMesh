@@ -41,6 +41,7 @@ export {
 export {
   lightListOrganizations,
   lightCreateOrganization,
+  lightCreatePersonalOrganization,
   type LightOrganization,
   type LightCreateOrgInput,
 } from "./organizations";

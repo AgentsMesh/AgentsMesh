@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gormvalidate",
+    srcs = ["plugin.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/gormvalidate",
+    visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/pkg/slugkit",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

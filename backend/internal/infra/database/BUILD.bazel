@@ -11,6 +11,7 @@ go_library(
     visibility = ["//backend:__subpackages__"],
     deps = [
         "//backend/internal/config",
+        "//backend/internal/infra/gormvalidate",
         "@com_github_uptrace_opentelemetry_go_extra_otelgorm//:otelgorm",
         "@io_gorm_driver_postgres//:postgres",
         "@io_gorm_gorm//:gorm",

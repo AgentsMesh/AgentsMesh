@@ -17,6 +17,7 @@ go_library(
     importpath = "github.com/anthropics/agentsmesh/backend/internal/testkit",
     visibility = ["//backend:__subpackages__"],
     deps = [
+        "//backend/internal/infra/gormvalidate",
         "//backend/internal/middleware",
         "@com_github_gin_gonic_gin//:gin",
         "@io_gorm_driver_sqlite//:sqlite",

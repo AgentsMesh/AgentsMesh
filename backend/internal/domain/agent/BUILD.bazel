@@ -6,6 +6,7 @@ go_library(
         "agent.go",
         "config_values.go",
         "credential_profile.go",
+        "hooks.go",
         "message.go",
         "repository.go",
         "user_config.go",
@@ -15,6 +16,7 @@ go_library(
     deps = [
         "//agentfile/extract",
         "//agentfile/parser",
+        "//backend/pkg/slugkit",
     ],
 )
 
@@ -30,6 +32,7 @@ go_test(
         "agent_test.go",
         "config_values_test.go",
         "credential_profile_test.go",
+        "hooks_test.go",
         "message_test.go",
         "user_config_test.go",
     ],

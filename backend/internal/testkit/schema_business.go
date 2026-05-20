@@ -4,7 +4,8 @@ func channelTableDDLs() []string {
 	return []string{
 		`CREATE TABLE IF NOT EXISTS channels (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			organization_id INTEGER NOT NULL, name TEXT NOT NULL, description TEXT,
+			organization_id INTEGER NOT NULL, name TEXT NOT NULL, slug TEXT,
+			description TEXT,
 			document TEXT, repository_id INTEGER, ticket_id INTEGER,
 			created_by_pod TEXT, created_by_user_id INTEGER,
 			visibility TEXT NOT NULL DEFAULT 'public',

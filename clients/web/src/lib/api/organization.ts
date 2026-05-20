@@ -10,6 +10,13 @@ export const organizationApi = {
     const json = await getOrgApiService().create(JSON.stringify(data));
     return JSON.parse(json);
   },
+  // Server derives the slug from users.username via slugkit.Sanitize.
+  // Use this for onboarding "Quick Start" instead of constructing a slug
+  // client-side (Phase 5 / onboarding bug fix).
+  createPersonal: async () => {
+    const json = await getOrgApiService().create_personal();
+    return JSON.parse(json);
+  },
   get: async (slug: string) => {
     const json = await getOrgApiService().get(slug);
     return JSON.parse(json);

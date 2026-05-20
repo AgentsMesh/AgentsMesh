@@ -17,11 +17,20 @@ const (
 	RoleMember  = "member"
 )
 
+// Name length bounds in runes — must stay in sync with the GORM `size:100`
+// byte tag below (worst case for Unicode names is 4 bytes/rune, but we cap
+// at 100 runes since the storage limit is the binding constraint anyway).
+const (
+	NameMinLen = 1
+	NameMaxLen = 100
+)
+
 type Channel struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`
 
 	Name        string  `gorm:"size:100;not null" json:"name"`
+	Slug        *string `gorm:"size:100;column:slug" json:"slug,omitempty"`
 	Description *string `gorm:"type:text" json:"description,omitempty"`
 	Document    *string `gorm:"type:text" json:"document,omitempty"` // Shared document
 

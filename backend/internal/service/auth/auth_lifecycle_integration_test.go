@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
 	userService "github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/anthropics/agentsmesh/backend/internal/testkit"
+	"github.com/anthropics/agentsmesh/backend/pkg/slugkit"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -45,9 +47,17 @@ func newTestAuthService(t *testing.T) (*Service, *userService.Service) {
 func createTestUser(t *testing.T, userSvc *userService.Service, email, password string) {
 	t.Helper()
 	ctx := context.Background()
+	// Sanitize email local-part to a slugkit-compliant username (Phase 2
+	// adds GORM BeforeSave hook that rejects raw email-as-username and
+	// usernames shorter than slugkit.MinLen).
+	local := strings.SplitN(email, "@", 2)[0]
+	username := slugkit.Sanitize(local)
+	if len(username) < slugkit.MinLen {
+		username = "testuser-" + strings.ReplaceAll(slugkit.Sanitize(email), ".", "-")
+	}
 	_, err := userSvc.Create(ctx, &userService.CreateRequest{
 		Email:    email,
-		Username: email, // reuse email as username for simplicity
+		Username: username,
 		Name:     "Test User",
 		Password: password,
 	})

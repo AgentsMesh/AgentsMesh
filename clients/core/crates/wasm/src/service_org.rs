@@ -31,6 +31,11 @@ impl WasmOrgApiService {
         serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
     }
 
+    pub async fn create_personal(&self) -> Result<String, String> {
+        let resp = self.client.create_personal_organization().await.map_err(agentsmesh_services::wire)?;
+        serde_json::to_string(&resp).map_err(agentsmesh_services::wire)
+    }
+
     pub async fn update(&self, slug: &str, json: &str) -> Result<String, String> {
         let req: UpdateOrganizationRequest = serde_json::from_str(json).map_err(agentsmesh_services::wire)?;
         let resp = self.client

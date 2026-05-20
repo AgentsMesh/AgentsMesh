@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -102,11 +101,10 @@ func fetchGoogleUserInfo(ctx context.Context, accessToken string) (*OAuthUserInf
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
 
-	username := strings.Split(googleUser.Email, "@")[0]
-
+	// Username is left empty here; user_oauth.go derives a slugkit-compliant
+	// handle via EnsureUniqueUsername from email/name once user creation runs.
 	return &OAuthUserInfo{
 		ID:          googleUser.ID,
-		Username:    username,
 		Email:       googleUser.Email,
 		Name:        googleUser.Name,
 		AvatarURL:   googleUser.Picture,

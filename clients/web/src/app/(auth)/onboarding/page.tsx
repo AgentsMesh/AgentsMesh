@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { getDefaultRoute } from "@/lib/default-route";
 import {
   lightListOrganizations,
-  lightCreateOrganization,
+  lightCreatePersonalOrganization,
   lightFetchMe,
   type LightUser,
 } from "@/lib/light-auth";
@@ -56,9 +56,7 @@ export default function OnboardingPage() {
     setError("");
 
     try {
-      const slug = `${user.username}-workspace`;
-      const name = `${user.name || user.username}'s Workspace`;
-      await lightCreateOrganization({ name, slug });
+      await lightCreatePersonalOrganization();
       router.push("/onboarding/setup-runner");
     } catch (err) {
       const msg = getLocalizedErrorMessage(err, t, t("auth.onboarding.createWorkspaceFailed"));

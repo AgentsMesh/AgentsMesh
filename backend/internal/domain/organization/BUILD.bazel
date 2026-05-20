@@ -3,12 +3,16 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "organization",
     srcs = [
+        "hooks.go",
         "organization.go",
         "repository.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/organization",
     visibility = ["//backend:__subpackages__"],
-    deps = ["//backend/internal/domain/user"],
+    deps = [
+        "//backend/internal/domain/user",
+        "//backend/pkg/slugkit",
+    ],
 )
 
 alias(
@@ -19,6 +23,9 @@ alias(
 
 go_test(
     name = "organization_test",
-    srcs = ["organization_test.go"],
+    srcs = [
+        "hooks_test.go",
+        "organization_test.go",
+    ],
     embed = [":organization"],
 )

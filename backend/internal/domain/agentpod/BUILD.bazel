@@ -6,6 +6,7 @@ go_library(
         "autopilot_commands.go",
         "autopilot_controller.go",
         "autopilot_iteration.go",
+        "hooks.go",
         "pod.go",
         "pod_commands.go",
         "pod_helpers.go",
@@ -20,6 +21,7 @@ go_library(
         "//backend/internal/domain/runner",
         "//backend/internal/domain/ticket",
         "//backend/internal/domain/user",
+        "//backend/pkg/slugkit",
     ],
 )
 
@@ -32,6 +34,7 @@ alias(
 go_test(
     name = "agentpod_test",
     srcs = [
+        "hooks_test.go",
         "pod_test.go",
         "settings_test.go",
     ],

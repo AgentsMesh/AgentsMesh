@@ -140,6 +140,23 @@ func (h *ChannelHandler) GetChannel(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"channel": enriched})
 }
 
+// GetChannelBySlug serves /channels/by-slug/:slug — the post-Phase-4
+// identifier-first lookup path. Keep alongside GetChannel-by-ID for now;
+// the legacy /:id route remains live for callers with integer references.
+func (h *ChannelHandler) GetChannelBySlug(c *gin.Context) {
+	ch, ok := h.requireChannelAccessBySlug(c)
+	if !ok {
+		return
+	}
+	tenant := middleware.GetTenant(c)
+	enriched, err := h.channelService.GetChannelForUser(c.Request.Context(), ch.ID, tenant.UserID)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"channel": ch})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"channel": enriched})
+}
+
 type UpdateChannelRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`

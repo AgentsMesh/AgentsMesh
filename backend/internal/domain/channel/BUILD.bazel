@@ -6,6 +6,7 @@ go_library(
         "binding_model.go",
         "binding_repository.go",
         "channel.go",
+        "hooks.go",
         "member.go",
         "message_content.go",
         "message_content_validation.go",
@@ -18,6 +19,7 @@ go_library(
     deps = [
         "//backend/internal/domain/agentpod",
         "//backend/internal/domain/user",
+        "//backend/pkg/slugkit",
         "@com_github_lib_pq//:pq",
     ],
 )
@@ -35,6 +37,7 @@ go_test(
         "channel_binding_test.go",
         "channel_message_test.go",
         "channel_permission_test.go",
+        "hooks_test.go",
         "message_content_validation_test.go",
     ],
     embed = [":channel"],

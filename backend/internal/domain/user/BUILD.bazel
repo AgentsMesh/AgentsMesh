@@ -4,6 +4,7 @@ go_library(
     name = "user",
     srcs = [
         "git_credential.go",
+        "hooks.go",
         "repository.go",
         "repository_provider.go",
         "user.go",
@@ -11,6 +12,9 @@ go_library(
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/user",
     visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/pkg/slugkit",
+    ],
 )
 
 alias(
@@ -22,6 +26,7 @@ alias(
 go_test(
     name = "user_test",
     srcs = [
+        "hooks_test.go",
         "repository_provider_test.go",
         "user_test.go",
         "validation_test.go",
