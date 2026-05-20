@@ -14,7 +14,7 @@
   <a href="https://agentsmesh.ai/docs">Docs</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="https://discord.gg/3RcX7VBbH9">Discord</a> ·
-  <a href="https://x.com/agentsmeshai">X</a> ·
+  <a href="https://x.com/agentsmeshai">X</a> · <a href="https://x.com/stone0dong">X (founder)</a> ·
   <a href="https://www.linkedin.com/company/agentsmesh">LinkedIn</a>
 </p>
 
