@@ -217,8 +217,18 @@ jobs:
     if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-uswest.result == 'success'
     runs-on: [self-hosted, deploy]
     steps:
-      - run: |
-          ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --direction up"
+      # Pre-flight: scan for identifier blockers (dirty migration state,
+      # users.username / channels.slug / api_keys.slug / agents.slug
+      # violations). Failing fast here beats partial-state migrate up:
+      # PR #403 shipped 0141..0144 VALIDATE migrations that hit a 0141
+      # failure on both regions because the backfill hadn't run; that
+      # left schema_migrations dirty at 0141 with the CHECK still
+      # NOT VALID. --check exits non-zero with a checklist before any
+      # writes happen, so the operator runs the backfill SQL and retries.
+      - name: Pre-flight check
+        run: ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --check"
+      - name: Apply migrations
+        run: ssh aliyun-us-west-001 "cd /opt/agentsmesh && ./migrate.sh uswest-prod --direction up"
 
   # ===========================================================================
   # Deploy China production — same single-full-stack model as us-west.
@@ -249,5 +259,7 @@ jobs:
     if: always() && needs.changes.outputs.migrations == 'true' && needs.deploy-cn.result == 'success'
     runs-on: [self-hosted, deploy]
     steps:
-      - run: |
-          ssh aliyun-s001 "cd /opt/agentsmesh && ./migrate.sh cn-prod --direction up"
+      - name: Pre-flight check
+        run: ssh aliyun-s001 "cd /opt/agentsmesh && ./migrate.sh cn-prod --check"
+      - name: Apply migrations
+        run: ssh aliyun-s001 "cd /opt/agentsmesh && ./migrate.sh cn-prod --direction up"
