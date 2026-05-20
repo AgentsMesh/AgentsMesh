@@ -76,10 +76,11 @@ func TestCreateChannel_DisplaykitSanitizesName(t *testing.T) {
 	svc := newTestService(db)
 	ctx := context.Background()
 
-	// Zero-width and BOM should be stripped from display name.
+	// Zero-width space () and BOM () embedded as escapes —
+	// Go source files cannot contain literal U+FEFF mid-file.
 	ch, err := svc.CreateChannel(ctx, &CreateChannelRequest{
 		OrganizationID: 1,
-		Name:           "  ali​ce-room﻿  ",
+		Name:           "  ali\u200bce-room\ufeff  ",
 	})
 	if err != nil {
 		t.Fatalf("err = %v", err)
