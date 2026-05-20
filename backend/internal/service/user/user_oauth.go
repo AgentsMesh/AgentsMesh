@@ -44,16 +44,11 @@ func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, provider
 			userEmail = fmt.Sprintf("%s_%s@noemail.agentsmesh.placeholder", provider, providerUserID)
 		}
 
-		username := providerUsername
-		if username == "" {
-			username = email
-		}
-
-		for i := 0; i < 100; i++ {
-			if _, err := s.GetByUsername(ctx, username); err != nil {
-				break
-			}
-			username = fmt.Sprintf("%s_%d", providerUsername, i)
+		username, err := s.EnsureUniqueUsername(ctx, usernameSeeds(providerUsername, email, name))
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to derive unique username",
+				"provider", provider, "provider_user_id", providerUserID, "error", err)
+			return nil, false, err
 		}
 
 		u = &user.User{
@@ -114,6 +109,26 @@ func isConflictError(err error) bool {
 	return strings.Contains(msg, "duplicate key value") ||
 		strings.Contains(msg, "UNIQUE constraint failed") ||
 		strings.Contains(msg, "Duplicate entry")
+}
+
+// usernameSeeds builds the priority-ordered seed list for EnsureUniqueUsername:
+// provider's own username first (most identity-preserving), then email
+// local-part, then human name. Empty/garbage seeds are dropped silently and
+// EnsureUniqueUsername falls back to a random user-{hex} handle.
+func usernameSeeds(providerUsername, email, name string) []string {
+	seeds := make([]string, 0, 3)
+	if providerUsername != "" {
+		seeds = append(seeds, providerUsername)
+	}
+	if email != "" {
+		if local := strings.SplitN(email, "@", 2)[0]; local != "" {
+			seeds = append(seeds, local)
+		}
+	}
+	if name != "" {
+		seeds = append(seeds, name)
+	}
+	return seeds
 }
 
 func (s *Service) UpdateIdentityTokens(ctx context.Context, userID int64, provider, accessToken, refreshToken string, expiresAt *time.Time) error {

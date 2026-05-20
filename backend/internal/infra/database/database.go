@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/gormvalidate"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -25,6 +26,13 @@ func New(cfg config.DatabaseConfig) (*gorm.DB, error) {
 
 	if err := db.Use(otelgorm.NewPlugin()); err != nil {
 		slog.Warn("failed to enable GORM OpenTelemetry tracing", "error", err)
+	}
+
+	// Layer 2 of identifier contract defense: every domain model
+	// implementing slugkit.IdentifierValidator gets its identifier fields
+	// checked before Create/Update. See backend/pkg/slugkit/doc.go.
+	if err := db.Use(&gormvalidate.Plugin{}); err != nil {
+		return nil, fmt.Errorf("failed to register identifier validator plugin: %w", err)
 	}
 
 	sqlDB, err := db.DB()

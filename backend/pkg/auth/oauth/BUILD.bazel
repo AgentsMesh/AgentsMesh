@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "oauth",
@@ -14,4 +14,10 @@ alias(
     name = "go_default_library",
     actual = ":oauth",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "oauth_test",
+    srcs = ["oauth_providers_test.go"],
+    embed = [":oauth"],
 )

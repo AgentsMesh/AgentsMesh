@@ -186,7 +186,7 @@ func TestOrg_RemoveMemberThenIsMember(t *testing.T) {
 	ownerID := addUser("o@example.com", "o")
 	memberID := addUser("m@example.com", "m")
 
-	org, err := svc.Create(ctx, ownerID, &CreateRequest{Name: "R", Slug: "r"})
+	org, err := svc.Create(ctx, ownerID, &CreateRequest{Name: "R", Slug: "test-org"})
 	require.NoError(t, err)
 
 	err = svc.AddMember(ctx, org.ID, memberID, orgDomain.RoleMember)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 )
 
 func fetchGitHubPrimaryEmail(ctx context.Context, accessToken string) (string, error) {
@@ -82,10 +81,10 @@ func parseGoogleUserInfo(body []byte) (*UserInfo, error) {
 	if !data.VerifiedEmail {
 		return nil, fmt.Errorf("google email %s is not verified", data.Email)
 	}
-	username := strings.Split(data.Email, "@")[0]
+	// Google has no native username; downstream user_oauth derives one via
+	// EnsureUniqueUsername from email/name.
 	return &UserInfo{
 		ID:        data.ID,
-		Username:  username,
 		Email:     data.Email,
 		Name:      data.Name,
 		AvatarURL: data.Picture,

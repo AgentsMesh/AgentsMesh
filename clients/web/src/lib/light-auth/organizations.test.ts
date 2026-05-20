@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { lightListOrganizations, lightCreateOrganization } from "./organizations";
+import {
+  lightListOrganizations,
+  lightCreateOrganization,
+  lightCreatePersonalOrganization,
+} from "./organizations";
 import { ApiError } from "@/lib/api/api-types";
 import {
   writeLightSession,
@@ -154,5 +158,69 @@ describe("lightCreateOrganization", () => {
     expect(caught).toBeInstanceOf(ApiError);
     expect((caught as ApiError).status).toBe(409);
     expect(readBlob().current_org_slug).toBeNull();
+  });
+});
+
+describe("lightCreatePersonalOrganization", () => {
+  let originalFetch: typeof fetch;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    window.localStorage.clear();
+    primeAuth();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    window.localStorage.clear();
+  });
+
+  it("POSTs to /api/v1/orgs/personal with empty body and no slug", async () => {
+    const fetchSpy = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          organization: { id: 1, name: "kudin-private's Workspace", slug: "kudin-private-workspace" },
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    globalThis.fetch = fetchSpy as typeof fetch;
+
+    const org = await lightCreatePersonalOrganization();
+
+    expect(org.slug).toBe("kudin-private-workspace");
+    const [url, init] = fetchSpy.mock.calls[0];
+    expect(String(url)).toBe(`${ORIGIN}/api/v1/orgs/personal`);
+    expect((init as RequestInit).method).toBe("POST");
+    // Body is empty {} — caller does NOT send slug; server derives it.
+    expect((init as RequestInit).body).toBe("{}");
+    expect(readBlob().current_org_slug).toBe("kudin-private-workspace");
+  });
+
+  it("throws when 200 response has no organization payload", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      new Response("{}", { status: 200 }),
+    ) as typeof fetch;
+    await expect(lightCreatePersonalOrganization()).rejects.toThrow(
+      "organizations.createPersonal returned 200 with no organization payload",
+    );
+  });
+
+  it("propagates ApiError on rate limit (429)", async () => {
+    globalThis.fetch = vi.fn(async () =>
+      new Response(JSON.stringify({ code: "RATE_LIMITED" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      }),
+    ) as typeof fetch;
+
+    let caught: unknown = null;
+    try {
+      await lightCreatePersonalOrganization();
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ApiError);
+    expect((caught as ApiError).status).toBe(429);
   });
 });

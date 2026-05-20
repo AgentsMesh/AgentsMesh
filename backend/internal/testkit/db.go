@@ -6,6 +6,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/anthropics/agentsmesh/backend/internal/infra/gormvalidate"
 )
 
 func SetupTestDB(t *testing.T) *gorm.DB {
@@ -20,6 +22,13 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	}
 	if sqlDB, err := db.DB(); err == nil {
 		sqlDB.SetMaxOpenConns(1)
+	}
+
+	// Mirror production wiring — Layer 2 identifier validator must run in
+	// tests too, otherwise service-test green doesn't reflect real
+	// runtime behavior.
+	if err := db.Use(&gormvalidate.Plugin{}); err != nil {
+		t.Fatalf("testkit: failed to register identifier validator plugin: %v", err)
 	}
 
 	for _, ddl := range allTableDDLs() {

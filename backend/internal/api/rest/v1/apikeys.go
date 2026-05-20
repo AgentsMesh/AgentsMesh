@@ -93,6 +93,18 @@ func (h *APIKeyHandler) GetAPIKey(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"api_key": key})
 }
 
+// GetAPIKeyBySlug serves /api-keys/by-slug/:slug — identifier-first lookup
+// added in Phase 5. /:id integer route stays live for back-compat.
+func (h *APIKeyHandler) GetAPIKeyBySlug(c *gin.Context) {
+	tenant := middleware.GetTenant(c)
+	key, err := h.apiKeyService.GetAPIKeyBySlug(c.Request.Context(), tenant.OrganizationID, c.Param("slug"))
+	if err != nil {
+		handleAPIKeyServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"api_key": key})
+}
+
 func (h *APIKeyHandler) UpdateAPIKey(c *gin.Context) {
 	tenant := middleware.GetTenant(c)
 

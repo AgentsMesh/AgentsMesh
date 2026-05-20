@@ -48,7 +48,10 @@ func (p *compositeProvider) ResolveCredentialsByName(ctx context.Context, userID
 }
 
 type CreateCustomAgentRequest struct {
-	Slug          string `json:"slug" binding:"required,min=2,max=50,alphanum"`
+	// Slug format is enforced by slugkit.Validate in CreateCustomAgent
+	// (handler entry). Drop the `alphanum` binding tag — it rejects
+	// hyphens which slugkit permits as the canonical word separator.
+	Slug          string `json:"slug" binding:"required,min=2,max=50"`
 	Name          string `json:"name" binding:"required,min=2,max=100"`
 	Description   string `json:"description"`
 	AgentfileSource string `json:"agentfile_source"`

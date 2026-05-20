@@ -16,6 +16,7 @@ func registerAPIKeyManagementRoutes(rg *gin.RouterGroup, svc *Services) {
 	{
 		apiKeys.POST("", apiKeyHandler.CreateAPIKey)
 		apiKeys.GET("", apiKeyHandler.ListAPIKeys)
+		apiKeys.GET("/by-slug/:slug", apiKeyHandler.GetAPIKeyBySlug)
 		apiKeys.GET("/:id", apiKeyHandler.GetAPIKey)
 		apiKeys.PUT("/:id", apiKeyHandler.UpdateAPIKey)
 		apiKeys.DELETE("/:id", apiKeyHandler.DeleteAPIKey)

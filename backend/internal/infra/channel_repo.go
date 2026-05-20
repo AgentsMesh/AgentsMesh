@@ -63,6 +63,28 @@ func (r *channelRepository) GetByOrgAndName(ctx context.Context, orgID int64, na
 	return &ch, nil
 }
 
+func (r *channelRepository) SlugExists(ctx context.Context, orgID int64, slug string) (bool, error) {
+	var n int64
+	err := r.db.WithContext(ctx).Model(&channel.Channel{}).
+		Where("organization_id = ? AND slug = ?", orgID, slug).
+		Count(&n).Error
+	return n > 0, err
+}
+
+func (r *channelRepository) GetByOrgAndSlug(ctx context.Context, orgID int64, slug string) (*channel.Channel, error) {
+	var ch channel.Channel
+	err := r.db.WithContext(ctx).
+		Where("organization_id = ? AND slug = ?", orgID, slug).
+		First(&ch).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &ch, nil
+}
+
 func (r *channelRepository) Create(ctx context.Context, ch *channel.Channel) error {
 	return r.db.WithContext(ctx).Create(ch).Error
 }

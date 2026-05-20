@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "apikey_create.go",
         "apikey_query.go",
+        "apikey_registry.go",
         "apikey_update.go",
         "apikey_validate.go",
         "interface.go",
@@ -16,6 +17,7 @@ go_library(
     deps = [
         "//backend/internal/domain/apikey",
         "//backend/internal/middleware",
+        "//backend/pkg/slugkit",
         "@com_github_redis_go_redis_v9//:go-redis",
     ],
 )
@@ -33,6 +35,7 @@ go_test(
         "apikey_db_error_test.go",
         "apikey_integration_test.go",
         "apikey_query_test.go",
+        "apikey_registry_test.go",
         "apikey_update_test.go",
         "apikey_validate_redis_test.go",
         "apikey_validate_test.go",
@@ -45,6 +48,7 @@ go_test(
         "//backend/internal/infra",
         "//backend/internal/middleware",
         "//backend/internal/testkit",
+        "//backend/pkg/slugkit",
         "@com_github_alicebob_miniredis_v2//:miniredis",
         "@com_github_redis_go_redis_v9//:go-redis",
         "@com_github_stretchr_testify//assert",

@@ -64,6 +64,8 @@ go_library(
         "//backend/internal/service/ticket",
         "//backend/pkg/audit",
         "//backend/pkg/blocknote",
+        "//backend/pkg/displaykit",
+        "//backend/pkg/slugkit",
         "//proto/runner/v1:runner_go_proto",
         "@com_github_google_uuid//:uuid",
         "@io_gorm_gorm//:gorm",
@@ -95,6 +97,7 @@ go_test(
     srcs = [
         "command_sender_adapter_test.go",
         "mcp_channel_msg_test.go",
+        "mcp_validate_test.go",
         "runner_adapter_connect_cert_test.go",
         "runner_adapter_connect_test.go",
         "runner_adapter_helpers_test.go",

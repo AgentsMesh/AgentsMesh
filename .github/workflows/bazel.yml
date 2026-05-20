@@ -43,6 +43,8 @@ jobs:
           repository-cache: true
       - run: bazel info workspace
       - run: bazel run //:buildifier_check
+      - name: Identifier contract lint
+        run: bash tools/identifier-lint/lint.sh
       - name: Verify desktop-only crate isolation
         run: |
           set -euo pipefail

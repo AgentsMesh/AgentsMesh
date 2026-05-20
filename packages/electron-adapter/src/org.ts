@@ -14,6 +14,10 @@ export class ElectronOrgService implements IOrgApiService {
     return invoke<string>("orgCreate", json);
   }
 
+  async create_personal(): Promise<string> {
+    return invoke<string>("orgCreatePersonal");
+  }
+
   async update(slug: string, json: string): Promise<string> {
     return invoke<string>("orgUpdate", slug, json);
   }

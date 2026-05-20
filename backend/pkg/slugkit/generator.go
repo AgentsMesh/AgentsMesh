@@ -54,3 +54,19 @@ func GenerateUnique(ctx context.Context, raw string, check UniquenessChecker) (s
 	}
 	return "", ErrCollisionExhausted
 }
+
+// TrySeeds walks the seed list in order, returning the first that
+// GenerateUnique can place. Empty seeds are skipped. Returns ("", false)
+// when every seed exhausts retries — callers apply their own fallback
+// (random handle, hard error, etc.).
+func TrySeeds(ctx context.Context, seeds []string, check UniquenessChecker) (string, bool) {
+	for _, seed := range seeds {
+		if seed == "" {
+			continue
+		}
+		if s, err := GenerateUnique(ctx, seed, check); err == nil {
+			return s, true
+		}
+	}
+	return "", false
+}

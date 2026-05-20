@@ -9,6 +9,7 @@ func registerChannelRoutes(rg *gin.RouterGroup, svc *Services) {
 		channels.GET("", channelHandler.ListChannels)
 		channels.POST("", channelHandler.CreateChannel)
 		channels.GET("/unread", channelHandler.GetUnreadCounts)
+		channels.GET("/by-slug/:slug", channelHandler.GetChannelBySlug)
 		channels.GET("/:id", channelHandler.GetChannel)
 		channels.PUT("/:id", channelHandler.UpdateChannel)
 		channels.POST("/:id/archive", channelHandler.ArchiveChannel)

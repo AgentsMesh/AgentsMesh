@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log/slog"
-	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/dns"
+	"github.com/anthropics/agentsmesh/backend/pkg/slugkit"
 )
 
 type DNSService struct {
@@ -48,7 +48,7 @@ func (s *DNSService) IsEnabled() bool {
 }
 
 func (s *DNSService) GenerateRelayDomain(relayName string) string {
-	name := sanitizeRelayName(relayName)
+	name := slugkit.SanitizeDNS(relayName)
 	if name == "" {
 		h := fnv.New32a()
 		h.Write([]byte(relayName))
@@ -131,36 +131,4 @@ func (s *DNSService) GetRecord(ctx context.Context, relayName string) (string, e
 
 	domain := s.GenerateRelayDomain(relayName)
 	return s.provider.GetRecord(ctx, domain)
-}
-
-// sanitizeRelayName produces a valid DNS label (lowercase, alnum+hyphen, no leading hyphen, ≤63 chars).
-func sanitizeRelayName(name string) string {
-	var result strings.Builder
-	lastWasHyphen := true
-
-	for _, r := range name {
-		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
-			result.WriteRune(r)
-			lastWasHyphen = false
-		} else if r >= 'A' && r <= 'Z' {
-			result.WriteRune(r - 'A' + 'a')
-			lastWasHyphen = false
-		} else if r == '-' || r == '_' || r == '.' {
-			if !lastWasHyphen {
-				result.WriteRune('-')
-				lastWasHyphen = true
-			}
-		}
-	}
-
-	s := result.String()
-
-	s = strings.TrimRight(s, "-")
-
-	if len(s) > 63 {
-		s = s[:63]
-		s = strings.TrimRight(s, "-")
-	}
-
-	return s
 }

@@ -18,6 +18,13 @@ impl ApiClient {
         self.post_resource("/api/v1/orgs", data, "organization").await
     }
 
+    // Personal workspace: server derives slug from users.username via
+    // slugkit.Sanitize; callers MUST NOT construct the slug client-side.
+    // Use this for onboarding "Quick Start" instead of create_organization.
+    pub async fn create_personal_organization(&self) -> Result<Organization, ApiError> {
+        self.post_resource("/api/v1/orgs/personal", &serde_json::json!({}), "organization").await
+    }
+
     pub async fn update_organization(
         &self,
         slug: &str,

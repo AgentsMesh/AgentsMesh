@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "displaykit",
+    srcs = ["displaykit.go"],
+    importpath = "github.com/anthropics/agentsmesh/backend/pkg/displaykit",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":displaykit",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "displaykit_test",
+    srcs = ["displaykit_test.go"],
+    embed = [":displaykit"],
+)

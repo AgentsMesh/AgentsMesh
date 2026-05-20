@@ -19,6 +19,8 @@ type ChannelListFilter struct {
 type ChannelStore interface {
 	GetByID(ctx context.Context, channelID int64) (*Channel, error)
 	GetByOrgAndName(ctx context.Context, orgID int64, name string) (*Channel, error)
+	GetByOrgAndSlug(ctx context.Context, orgID int64, slug string) (*Channel, error)
+	SlugExists(ctx context.Context, orgID int64, slug string) (bool, error)
 	Create(ctx context.Context, ch *Channel) error
 	ListByOrg(ctx context.Context, orgID int64, filter *ChannelListFilter) ([]*Channel, int64, error)
 	ListVisibleForUser(ctx context.Context, orgID, userID int64, filter *ChannelListFilter) ([]*Channel, int64, error)

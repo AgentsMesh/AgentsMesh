@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "backfill-identifiers_lib",
+    srcs = [
+        "audit.go",
+        "main.go",
+        "org_scoped.go",
+        "users.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/backend/cmd/backfill-identifiers",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//backend/pkg/slugkit",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+        "@io_gorm_gorm//logger",
+    ],
+)
+
+go_binary(
+    name = "backfill-identifiers",
+    embed = [":backfill-identifiers_lib"],
+    visibility = ["//visibility:public"],
+)

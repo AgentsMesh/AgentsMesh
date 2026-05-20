@@ -7,6 +7,7 @@ import (
 	channelDomain "github.com/anthropics/agentsmesh/backend/internal/domain/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/channel"
+	"github.com/anthropics/agentsmesh/backend/pkg/displaykit"
 )
 
 type mcpChannelResponse struct {
@@ -103,6 +104,11 @@ func (a *GRPCRunnerAdapter) mcpCreateChannel(ctx context.Context, tc *middleware
 	if params.Name == "" {
 		return nil, newMcpError(400, "name is required")
 	}
+	sanitizedName, err := displaykit.SanitizeAndValidate(params.Name, channelDomain.NameMinLen, channelDomain.NameMaxLen)
+	if err != nil {
+		return nil, newMcpError(400, "channel name: "+err.Error())
+	}
+	params.Name = sanitizedName
 
 	var desc *string
 	if params.Description != "" {

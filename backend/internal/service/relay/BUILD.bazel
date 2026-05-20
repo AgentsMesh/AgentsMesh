@@ -24,6 +24,7 @@ go_library(
         "//backend/internal/infra/cache",
         "//backend/internal/infra/dns",
         "//backend/internal/service/geo",
+        "//backend/pkg/slugkit",
         "@com_github_golang_jwt_jwt_v5//:jwt",
         "@com_github_redis_go_redis_v9//:go-redis",
     ],

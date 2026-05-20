@@ -4,10 +4,14 @@ go_library(
     name = "apikey",
     srcs = [
         "apikey.go",
+        "hooks.go",
         "repository.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/apikey",
     visibility = ["//backend:__subpackages__"],
+    deps = [
+        "//backend/pkg/slugkit",
+    ],
 )
 
 alias(
@@ -18,7 +22,10 @@ alias(
 
 go_test(
     name = "apikey_test",
-    srcs = ["apikey_test.go"],
+    srcs = [
+        "apikey_test.go",
+        "hooks_test.go",
+    ],
     embed = [":apikey"],
     deps = [
         "@com_github_stretchr_testify//assert",

@@ -31,6 +31,12 @@ const (
 
 var ValidEstimates = []int{1, 2, 3, 5, 8, 13, 21}
 
+// Title length bounds in runes — keep in sync with the GORM `size:500` tag.
+const (
+	TitleMinLen = 1
+	TitleMaxLen = 500
+)
+
 type Ticket struct {
 	ID             int64 `gorm:"primaryKey" json:"id"`
 	OrganizationID int64 `gorm:"not null;index" json:"organization_id"`

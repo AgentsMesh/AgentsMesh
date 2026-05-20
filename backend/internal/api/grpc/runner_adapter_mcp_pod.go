@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
+	"github.com/anthropics/agentsmesh/backend/pkg/slugkit"
 )
 
 // AgentFile SSOT: agentfile_layer carries MODE/CONFIG/REPO/etc.
@@ -26,6 +27,10 @@ func (a *GRPCRunnerAdapter) mcpCreatePod(ctx context.Context, tc *middleware.Ten
 	}
 	if err := unmarshalPayload(payload, &params); err != nil {
 		return nil, err
+	}
+
+	if err := slugkit.Validate(params.AgentSlug); err != nil {
+		return nil, newMcpError(400, "agent_slug: "+err.Error())
 	}
 
 	result, err := a.podOrchestrator.CreatePod(ctx, &agentpod.OrchestrateCreatePodRequest{

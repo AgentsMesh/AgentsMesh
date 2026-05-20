@@ -22,6 +22,12 @@ impl AppState {
     }
 
     #[napi]
+    pub async fn org_create_personal(&self) -> napi::Result<String> {
+        let svc = self.org.lock().await;
+            svc.create_personal().await.map_err(err)
+    }
+
+    #[napi]
     pub async fn org_update(&self, slug: String, json: String) -> napi::Result<String> {
         let svc = self.org.lock().await;
             svc.update(&slug, &json).await.map_err(err)
