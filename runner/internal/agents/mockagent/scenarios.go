@@ -29,9 +29,7 @@ func registerScenarios() map[string]scenario {
 		{name: "thinking_then_answer", handlePrompt: scenarioThinkingThenAnswer},
 		{name: "tool_call_edit", handlePrompt: scenarioToolCallEdit},
 		{name: "permission_request_edit", handlePrompt: scenarioPermissionRequestEdit},
-		// config_change_plan deferred to Phase 3 — needs ACPTransport
-		// SendControlRequest implemented (currently returns
-		// ErrControlNotSupported, blocking the full round-trip).
+		{name: "config_change_plan", handlePrompt: scenarioConfigChangePlan},
 	} {
 		scenarios[s.name] = s
 	}

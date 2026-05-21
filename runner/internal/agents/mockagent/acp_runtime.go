@@ -68,6 +68,8 @@ func dispatchACPRequest(msg *acp.JSONRPCMessage, state *runtimeState, scn scenar
 		return state.writer.WriteResponse(id, initializeResult(), nil)
 	case "session/new":
 		return state.writer.WriteResponse(id, sessionNewResult(), nil)
+	case "session/control_request":
+		return handleControlRequest(state, id, msg.Params, logger)
 	case "session/prompt":
 		// Scenarios run in a goroutine so they can block on
 		// awaitResponse without starving the stdin reader loop. The
@@ -89,6 +91,38 @@ func dispatchACPRequest(msg *acp.JSONRPCMessage, state *runtimeState, scn scenar
 	}
 }
 
+// handleControlRequest implements the server end of the AgentsMesh ACP
+// extension defined in //runner/internal/acp/transport_acp.go:SendControlRequest.
+// Each subtype mutates runtime state (so subsequent get_* queries reflect it)
+// and answers with `{ok: true}` so the runner's OnConfigChange callback fires.
+func handleControlRequest(state *runtimeState, id int64, raw json.RawMessage, logger *slog.Logger) error {
+	var req struct {
+		SessionID string         `json:"sessionId"`
+		Subtype   string         `json:"subtype"`
+		Params    map[string]any `json:"params"`
+	}
+	if err := json.Unmarshal(raw, &req); err != nil {
+		return state.writer.WriteResponse(id, nil, &acp.JSONRPCError{
+			Code: acp.ErrCodeInvalidParams, Message: err.Error(),
+		})
+	}
+	switch req.Subtype {
+	case "set_permission_mode":
+		mode, _ := req.Params["mode"].(string)
+		state.setPermissionMode(mode)
+		logger.Info("mock set_permission_mode", "mode", mode)
+	case "set_model":
+		model, _ := req.Params["model"].(string)
+		state.setModel(model)
+		logger.Info("mock set_model", "model", model)
+	default:
+		return state.writer.WriteResponse(id, nil, &acp.JSONRPCError{
+			Code: acp.ErrCodeMethodNotFound, Message: "unknown subtype: " + req.Subtype,
+		})
+	}
+	return state.writer.WriteResponse(id, map[string]any{"ok": true}, nil)
+}
+
 func initializeResult() map[string]any {
 	return map[string]any{
 		"protocol_version": "2025-01-01",
@@ -102,13 +136,17 @@ func sessionNewResult() map[string]any {
 
 // runtimeState carries the shared state scenarios need: the writer (for
 // emitting notifications/requests), a registry of pending outgoing requests
-// (e.g. session/request_permission round-trip), and a WaitGroup so
-// runACPWithIO can drain in-flight scenario goroutines on EOF.
+// (e.g. session/request_permission round-trip), a WaitGroup so
+// runACPWithIO can drain in-flight scenario goroutines on EOF, and the
+// current configuration (settable via session/control_request).
 type runtimeState struct {
 	writer    *acp.Writer
 	wg        sync.WaitGroup
 	pendingMu sync.Mutex
 	pending   map[int64]chan *acp.JSONRPCMessage
+	configMu  sync.RWMutex
+	mode      string
+	model     string
 }
 
 func newRuntimeState(writer *acp.Writer) *runtimeState {
@@ -153,6 +191,24 @@ func (s *runtimeState) deliverResponse(msg *acp.JSONRPCMessage) {
 	case ch <- msg:
 	default:
 	}
+}
+
+func (s *runtimeState) setPermissionMode(mode string) {
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
+	s.mode = mode
+}
+
+func (s *runtimeState) setModel(model string) {
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
+	s.model = model
+}
+
+func (s *runtimeState) permissionMode() string {
+	s.configMu.RLock()
+	defer s.configMu.RUnlock()
+	return s.mode
 }
 
 // extractPromptText pulls the user-visible text out of a session/prompt params
