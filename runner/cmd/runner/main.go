@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 
 	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 )
 
 var (
@@ -15,6 +16,16 @@ var (
 )
 
 func main() {
+	// processmgr launcher must run before any other initialization. When
+	// ModeDaemon re-execs the runner with this argv pattern, RunLauncher
+	// spawns the real daemon and exits — which is the move that flips the
+	// daemon's ppid to init(1) and prevents the zombie leak that 9 months
+	// of bare os.StartProcess + Release left behind.
+	if len(os.Args) > 1 && os.Args[1] == processmgr.LauncherSubcommand {
+		processmgr.RunLauncher()
+		return
+	}
+
 	// Pod Daemon mode: when re-exec'd as a daemon subprocess, run the daemon
 	// main loop instead of the normal CLI. The daemon holds the PTY fd and
 	// accepts IPC connections from the Runner for I/O forwarding.

@@ -193,3 +193,12 @@ go_test(
         "@io_opentelemetry_go_otel_sdk//trace",
     ],
 )
+
+# NOTE: //runner/internal/runner has 9 *_integration_test.go files behind the
+# `integration` build tag. They are NOT wired as a Bazel target because they
+# depend on backend-side AgentFile evaluation (Pod creation expects backend
+# to populate launch_command) — a fixture this package alone cannot provide.
+# acp_pod_e2e_mock_test.go was updated to initialize processmgr in its
+# TestMain so that if the suite is ever wired up, it will not crash with
+# ErrManagerNotInitialized. Wiring the target plus a backend fixture is a
+# separate follow-up; tracked outside this PR.

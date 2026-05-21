@@ -1,0 +1,58 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "processmgr",
+    srcs = [
+        "cmd_process.go",
+        "debug.go",
+        "launcher.go",
+        "launcher_unix.go",
+        "launcher_windows.go",
+        "manager.go",
+        "manager_impl.go",
+        "metrics.go",
+        "options.go",
+        "process.go",
+        "process_daemon.go",
+        "process_daemon_ops.go",
+        "process_daemon_unix.go",
+        "process_daemon_windows.go",
+        "process_normal.go",
+        "process_pty_unix.go",
+        "process_pty_windows.go",
+        "process_signal_unix.go",
+        "process_signal_windows.go",
+        "reaper.go",
+        "reaper_unix.go",
+        "reaper_windows.go",
+        "spec.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/processmgr",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/logger",
+        "//runner/internal/safego",
+        "@com_github_creack_pty//:pty",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":processmgr",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "processmgr_test",
+    srcs = [
+        "assert_reaped_unix_test.go",
+        "assert_reaped_windows_test.go",
+        "e2e_zombies_test.go",
+        "e2e_zombies_windows_test.go",
+        "manager_test.go",
+        "options_and_pipes_test.go",
+        "process_daemon_unix_test.go",
+    ],
+    embed = [":processmgr"],
+    deps = ["@com_github_creack_pty//:pty"],
+)

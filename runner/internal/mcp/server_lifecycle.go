@@ -8,10 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/process"
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 )
 
 // Server represents an MCP server instance
@@ -20,7 +21,7 @@ type Server struct {
 	command    string
 	args       []string
 	env        map[string]string
-	cmd        *exec.Cmd
+	proc       processmgr.Handle
 	stdin      io.WriteCloser
 	stdout     io.ReadCloser
 	mu         sync.Mutex
@@ -64,38 +65,29 @@ func (s *Server) Start(ctx context.Context) error {
 		return fmt.Errorf("server already running")
 	}
 
-	// Build command
-	s.cmd = exec.CommandContext(ctx, s.command, s.args...)
-
-	// Set environment — filter Runner-internal vars to prevent leakage
-	s.cmd.Env = envfilter.FilterEnv(os.Environ())
+	env := envfilter.FilterEnv(os.Environ())
 	for k, v := range s.env {
-		s.cmd.Env = append(s.cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	// Set up pipes
-	var err error
-	s.stdin, err = s.cmd.StdinPipe()
+	proc, err := processmgr.Global().Start(ctx, processmgr.Spec{
+		Owner:      "mcp:" + s.name,
+		Command:    s.command,
+		Args:       s.args,
+		Env:        env,
+		Mode:       processmgr.ModeNormal,
+		PipeStdin:  true,
+		PipeStdout: true,
+	})
 	if err != nil {
-		s.mu.Unlock()
-		log.Error("Failed to create stdin pipe", "name", s.name, "error", err)
-		return fmt.Errorf("failed to create stdin pipe: %w", err)
-	}
-
-	s.stdout, err = s.cmd.StdoutPipe()
-	if err != nil {
-		s.mu.Unlock()
-		log.Error("Failed to create stdout pipe", "name", s.name, "error", err)
-		return fmt.Errorf("failed to create stdout pipe: %w", err)
-	}
-
-	// Start process
-	if err := s.cmd.Start(); err != nil {
 		s.mu.Unlock()
 		log.Error("Failed to start MCP server process", "name", s.name, "command", s.command, "error", err)
 		return fmt.Errorf("failed to start MCP server: %w", err)
 	}
 
+	s.proc = proc
+	s.stdin = proc.StdinWriter()
+	s.stdout = proc.StdoutReader()
 	s.running = true
 
 	// Start reading responses
@@ -116,7 +108,9 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops the MCP server
+// Stop stops the MCP server. processmgr.Handle.Stop owns the SIGTERM →
+// SIGKILL escalation and the reapLoop; this function only closes the JSON-RPC
+// pipes (which unblocks readResponses) and drains pending request channels.
 func (s *Server) Stop() error {
 	s.mu.Lock()
 
@@ -124,35 +118,34 @@ func (s *Server) Stop() error {
 		s.mu.Unlock()
 		return nil
 	}
-
 	s.running = false
 
-	// Close stdin to signal server to exit
+	// Close stdin to signal server to exit.
 	if s.stdin != nil {
-		s.stdin.Close()
+		_ = s.stdin.Close()
 	}
-
-	// Close stdout BEFORE cmd.Wait() to unblock readResponses goroutine.
-	// Go's cmd.Wait() waits for all StdoutPipe readers to finish, so if
-	// readResponses is still blocking on decoder.Decode, Wait() deadlocks.
+	// Close stdout BEFORE proc.Stop so readResponses' decoder.Decode unblocks
+	// and the reapLoop inside processmgr can complete cmd.Wait — otherwise
+	// pipe readers hold cmd.Wait open.
 	if s.stdout != nil {
-		s.stdout.Close()
+		_ = s.stdout.Close()
 	}
 
-	// Kill process tree if still running.
-	// On Windows, child processes are NOT killed when the parent dies,
-	// so we must walk the tree and kill each descendant.
-	if s.cmd != nil && s.cmd.Process != nil {
-		_ = process.KillProcessTree(s.cmd.Process.Pid)
-		s.cmd.Wait()
-	}
-
-	// Release the lock and wait for readResponses goroutine to exit
-	// before closing pending channels — this prevents send-on-closed-channel.
+	proc := s.proc
 	s.mu.Unlock()
+
+	if proc != nil {
+		stopCtx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+		defer cancel()
+		if err := proc.Stop(stopCtx); err != nil {
+			logger.MCP().Warn("MCP server stop reported error", "name", s.name, "err", err)
+		}
+	}
+
+	// Wait for readResponses goroutine to exit before draining pending
+	// channels — this prevents send-on-closed-channel.
 	s.readerDone.Wait()
 
-	// Now safe to close pending channels — readResponses has exited
 	s.mu.Lock()
 	for _, ch := range s.pending {
 		close(ch)

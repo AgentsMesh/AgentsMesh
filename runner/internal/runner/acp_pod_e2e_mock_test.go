@@ -3,21 +3,33 @@
 package runner
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 )
 
-// TestMain acts as a mock ACP agent when ACP_MOCK_AGENT=1,
-// otherwise it runs the normal test suite.
-// This mirrors the pattern from internal/acp/client_integration_mock_test.go.
+// TestMain acts as a mock ACP agent when ACP_MOCK_AGENT=1, as the processmgr
+// launcher subprocess when invoked with LauncherSubcommand argv, otherwise it
+// runs the normal test suite. The processmgr.Init call is required because
+// integration tests in this package may create Pods that flow into
+// PodDaemonManager.CreateSession → startDaemon → processmgr.Global().Start.
+// Without Init the chain would crash with ErrManagerNotInitialized.
 func TestMain(m *testing.M) {
 	if os.Getenv("ACP_MOCK_AGENT") == "1" {
 		runMockACPAgent()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == processmgr.LauncherSubcommand {
+		processmgr.RunLauncher()
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	processmgr.Init(ctx, processmgr.Options{})
 	os.Exit(m.Run())
 }
 

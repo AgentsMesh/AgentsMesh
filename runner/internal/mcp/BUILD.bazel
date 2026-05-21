@@ -46,7 +46,7 @@ go_library(
         "//runner/internal/envfilter",
         "//runner/internal/logger",
         "//runner/internal/mcp/tools",
-        "//runner/internal/process",
+        "//runner/internal/processmgr",
         "//runner/internal/safego",
     ],
 )
@@ -92,10 +92,12 @@ go_test(
         "mcp_types_test.go",
         "mock_server_error_test.go",
         "mock_server_test.go",
+        "testmain_test.go",
     ],
     embed = [":mcp"],
     deps = [
         "//runner/internal/mcp/tools",
+        "//runner/internal/processmgr",
         "//runner/internal/testutil",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",

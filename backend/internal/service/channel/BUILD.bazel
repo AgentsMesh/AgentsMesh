@@ -51,6 +51,7 @@ go_test(
         "access_test.go",
         "binding_test.go",
         "channel_integration_test.go",
+        "channel_registry_test.go",
         "channel_test.go",
         "channel_update_test.go",
         "edge_cases_test.go",

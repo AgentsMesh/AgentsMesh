@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//runner/internal/config",
         "//runner/internal/logger",
+        "//runner/internal/processmgr",
         "//runner/internal/safego",
     ],
 )

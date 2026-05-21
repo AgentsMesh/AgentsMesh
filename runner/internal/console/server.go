@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
+
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
@@ -88,6 +90,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/config", s.handleConfig)
 	mux.HandleFunc("/api/actions/restart", s.handleRestart)
 	mux.HandleFunc("/api/actions/stop", s.handleStop)
+	mux.Handle("/debug/processes", processmgr.HTTPHandler(processmgr.Global()))
 
 	// Static files (embedded)
 	staticFS, err := fs.Sub(staticFiles, "static")

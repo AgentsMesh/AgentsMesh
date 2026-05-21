@@ -11,8 +11,7 @@ go_library(
         "daemon_process_windows.go",
         "daemon_pty.go",
         "daemon_pty_io.go",
-        "daemon_start_unix.go",
-        "daemon_start_windows.go",
+        "daemon_start.go",
         "doc.go",
         "ipc.go",
         "manager.go",
@@ -24,6 +23,7 @@ go_library(
     deps = [
         "//runner/internal/envfilter",
         "//runner/internal/process",
+        "//runner/internal/processmgr",
         "//runner/internal/safego",
     ] + select({
         "@rules_go//go/platform:aix": [
@@ -114,4 +114,50 @@ go_test(
         ],
         "//conditions:default": [],
     }),
+)
+
+# Integration tests behind the `integration` build tag — gazelle does not
+# pick these up automatically because their tag is non-default. Unit test
+# sources are included as well so the integration suite can reuse helpers
+# like testAuthToken without duplicating them. The runner binary is wired
+# as a data dependency so helpers_integration_test.go's buildTestRunner can
+# resolve it via the runfiles layout. Marked `manual` so `bazel test //...`
+# skips it by default; CI opts in via target name or tag filter.
+go_test(
+    name = "poddaemon_integration_test",
+    srcs = [
+        # shared helpers from the unit suite
+        "cmdline_test.go",
+        "daemon_connect_test.go",
+        # integration-tag files
+        "daemon_edge_cases_integration_test.go",
+        "daemon_io_error_test.go",
+        "daemon_io_test.go",
+        "daemon_orphan_test.go",
+        "daemon_pty_io_test.go",
+        "daemon_pty_race_test.go",
+        "daemon_pty_test.go",
+        "daemon_runner_recovery_integration_test.go",
+        "daemon_test.go",
+        "helpers_integration_test.go",
+        "helpers_test.go",
+        "ipc_test.go",
+        "manager_test.go",
+        "poddaemon_integration_test.go",
+        "poddaemon_session_integration_test.go",
+        "protocol_test.go",
+        "state_test.go",
+    ],
+    data = ["//runner/cmd/runner"],
+    embed = [":poddaemon"],
+    gotags = ["integration"],
+    tags = [
+        "integration",
+        "manual",
+    ],
+    deps = [
+        "//runner/internal/processmgr",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

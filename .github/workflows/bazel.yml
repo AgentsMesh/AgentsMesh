@@ -77,6 +77,13 @@ jobs:
       # CI load. The timeout is 2s; local runs are consistently green.
       - run: bazel test --flaky_test_attempts=3 //backend/... //runner/... //relay/... //agentfile/... //proto/...
 
+      # Integration tests (build tag `integration`) — opt-in targets that
+      # spawn real runner binaries to exercise PodDaemon detach + recovery
+      # end-to-end. Tagged `manual` so they don't run via //runner/...; we
+      # invoke them explicitly here. Failures here mean a real fork/exec
+      # path regressed.
+      - run: bazel test --flaky_test_attempts=2 //runner/internal/poddaemon:poddaemon_integration_test
+
   rust:
     name: Rust Core (clients/core)
     runs-on: ubuntu-latest

@@ -61,7 +61,10 @@ Note: The runner must be running ('agentsmesh-runner run') for the web console t
 	}
 }
 
-// openBrowser opens the specified URL in the default browser.
+// openBrowser opens the specified URL in the default browser. The helper
+// commands (open / xdg-open / rundll32) exit within milliseconds after handing
+// the URL off to the OS, so a synchronous Run is the right shape — it pairs
+// Start with Wait automatically and leaves no zombie behind.
 func openBrowser(url string) error {
 	var cmd *exec.Cmd
 
@@ -76,5 +79,5 @@ func openBrowser(url string) error {
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
-	return cmd.Start()
+	return cmd.Run()
 }

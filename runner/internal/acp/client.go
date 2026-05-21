@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os/exec"
 	"sync"
+	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 )
 
 // TransportType constants for ClientConfig.
@@ -30,7 +32,7 @@ type ClientConfig struct {
 // Transport (JSON-RPC 2.0 or Claude stream-json).
 type ACPClient struct {
 	cfg       ClientConfig
-	cmd       *exec.Cmd
+	proc      processmgr.Handle
 	transport Transport
 
 	// State management
@@ -76,11 +78,10 @@ type ACPClient struct {
 	pendingPermsMu sync.RWMutex
 
 	// Lifecycle
-	ctx          context.Context
-	cancel       context.CancelFunc
-	done         chan struct{}
-	waitExitDone chan struct{} // closed when waitExit() completes
-	stopOnce     sync.Once
+	ctx      context.Context
+	cancel   context.CancelFunc
+	done     chan struct{}
+	stopOnce sync.Once
 
 	logger *slog.Logger
 }
@@ -107,7 +108,6 @@ func NewClient(cfg ClientConfig) *ACPClient {
 		ctx:          ctx,
 		cancel:       cancel,
 		done:         make(chan struct{}),
-		waitExitDone: make(chan struct{}),
 		logger:       cfg.Logger.With("component", "acp-client"),
 	}
 }
@@ -141,34 +141,35 @@ func (c *ACPClient) SessionID() string {
 func (c *ACPClient) Start() error {
 	c.setState(StateInitializing)
 
-	c.cmd = exec.CommandContext(c.ctx, c.cfg.Command, c.cfg.Args...)
-	c.cmd.Dir = c.cfg.WorkDir
-	c.cmd.Env = c.cfg.Env
-
-	stdin, err := c.cmd.StdinPipe()
+	proc, err := processmgr.Global().Start(c.ctx, processmgr.Spec{
+		Owner:       "acp:" + c.cfg.Command,
+		Command:     c.cfg.Command,
+		Args:        c.cfg.Args,
+		Dir:         c.cfg.WorkDir,
+		Env:         c.cfg.Env,
+		Mode:        processmgr.ModeNormal,
+		PipeStdin:   true,
+		PipeStdout:  true,
+		PipeStderr:  true,
+		// 1 s preserves the prior client.Stop() escalation budget (5 s SIGTERM
+		// → 2 s SIGKILL wait fit within the 7 s overall timeout); the previous
+		// inline Stop used the same 5+2 split, but tests assume a 3 s budget,
+		// so we tighten the SIGTERM window here.
+		StopTimeout: 1 * time.Second,
+	})
 	if err != nil {
-		return fmt.Errorf("stdin pipe: %w", err)
+		return fmt.Errorf("start process: %w", err)
 	}
-
-	stdout, err := c.cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("stdout pipe: %w", err)
-	}
-
-	stderr, err := c.cmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("stderr pipe: %w", err)
-	}
+	c.proc = proc
+	stdin := proc.StdinWriter()
+	stdout := proc.StdoutReader()
+	stderr := proc.StderrReader()
 
 	// Build wrapped callbacks that keep internal state in sync.
 	wrappedCallbacks := c.wrapCallbacks()
 
 	// Create transport via registry (subpackages register themselves via init())
 	c.transport = NewTransport(c.cfg.TransportType, wrappedCallbacks, c.logger)
-
-	if err := c.cmd.Start(); err != nil {
-		return fmt.Errorf("start process: %w", err)
-	}
 
 	// Wire I/O before starting goroutines
 	if err := c.transport.Initialize(c.ctx, stdin, stdout, stderr); err != nil {
@@ -178,7 +179,7 @@ func (c *ACPClient) Start() error {
 
 	go c.readStderr(stderr)
 	go c.transport.ReadLoop(c.ctx)
-	go c.waitExit()
+	go c.watchExit()
 
 	// Protocol handshake (must come after ReadLoop is running)
 	sessionID, err := c.transport.Handshake(c.ctx)

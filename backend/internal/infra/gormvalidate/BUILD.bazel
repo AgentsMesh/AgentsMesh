@@ -10,3 +10,9 @@ go_library(
         "@io_gorm_gorm//:gorm",
     ],
 )
+
+alias(
+    name = "go_default_library",
+    actual = ":gormvalidate",
+    visibility = ["//backend:__subpackages__"],
+)

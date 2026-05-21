@@ -30,6 +30,7 @@ go_library(
         "//runner/internal/otel",
         "//runner/internal/pidfile",
         "//runner/internal/poddaemon",
+        "//runner/internal/processmgr",
         "//runner/internal/runner",
         "//runner/internal/service",
         "//runner/internal/updater",

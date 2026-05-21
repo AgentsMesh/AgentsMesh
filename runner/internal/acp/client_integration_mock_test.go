@@ -1,11 +1,14 @@
 package acp
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 )
 
 // Mock agent modes (selected via ACP_MOCK_MODE env var).
@@ -28,6 +31,13 @@ func TestMain(m *testing.M) {
 		runMockAgent()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == processmgr.LauncherSubcommand {
+		processmgr.RunLauncher()
+		return
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	processmgr.Init(ctx, processmgr.Options{})
 	os.Exit(m.Run())
 }
 

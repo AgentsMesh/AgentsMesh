@@ -2,12 +2,14 @@ package acp
 
 import (
 	"bufio"
+	"context"
 	"io"
-	"os/exec"
 	"time"
 )
 
-// Stop gracefully shuts down the client and subprocess.
+// Stop gracefully shuts down the client and subprocess. processmgr.Handle.Stop
+// implements the SIGTERM → wait → SIGKILL escalation that this function used
+// to inline; the reapLoop inside processmgr is the single Wait point.
 func (c *ACPClient) Stop() {
 	c.stopOnce.Do(func() {
 		c.cancel()
@@ -16,15 +18,11 @@ func (c *ACPClient) Stop() {
 			c.transport.Close()
 		}
 
-		if c.cmd != nil && c.cmd.Process != nil {
-			select {
-			case <-c.waitExitDone:
-			case <-time.After(5 * time.Second):
-				_ = c.cmd.Process.Kill()
-				select {
-				case <-c.waitExitDone:
-				case <-time.After(2 * time.Second):
-				}
+		if c.proc != nil {
+			stopCtx, cancel := context.WithTimeout(context.Background(), 7*time.Second)
+			defer cancel()
+			if err := c.proc.Stop(stopCtx); err != nil {
+				c.logger.Warn("ACP subprocess stop reported error", "err", err)
 			}
 		}
 
@@ -38,27 +36,25 @@ func (c *ACPClient) Done() <-chan struct{} {
 	return c.done
 }
 
-// waitExit waits for the subprocess to exit and fires the OnExit callback.
-// This is the sole owner of cmd.Wait() — Stop() must not call cmd.Wait().
-func (c *ACPClient) waitExit() {
-	defer close(c.waitExitDone)
-
-	if c.cmd == nil || c.cmd.Process == nil {
+// watchExit fires the OnExit callback after the subprocess has been reaped by
+// processmgr. cmd.Wait() is no longer called here — processmgr owns it — but
+// the OnExit semantic (only on non-graceful exits) is preserved by checking
+// the client's context.
+func (c *ACPClient) watchExit() {
+	if c.proc == nil {
 		return
 	}
-	err := c.cmd.Wait()
+	<-c.proc.Done()
+
 	select {
 	case <-c.ctx.Done():
-		return // Normal shutdown via Stop(), don't fire OnExit
+		return
 	default:
 	}
+
 	exitCode := 0
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-		} else {
-			exitCode = -1
-		}
+	if info, ok := c.proc.ExitInfo(); ok {
+		exitCode = info.Code
 	}
 	c.logger.Info("ACP subprocess exited", "exit_code", exitCode)
 	if c.cfg.Callbacks.OnExit != nil {

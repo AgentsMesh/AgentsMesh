@@ -5,12 +5,14 @@ go_library(
     srcs = [
         "agent.go",
         "config_values.go",
+        "hooks.go",
         "message.go",
         "repository.go",
         "user_config.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/agent",
     visibility = ["//backend:__subpackages__"],
+    deps = ["//backend/pkg/slugkit"],
 )
 
 alias(
@@ -24,6 +26,7 @@ go_test(
     srcs = [
         "agent_test.go",
         "config_values_test.go",
+        "hooks_test.go",
         "message_test.go",
         "user_config_test.go",
     ],

@@ -115,6 +115,12 @@ func (g *GracefulUpdater) rollbackUpdate(backupPath string) error {
 // stale path after a self-upgrade (the old binary is renamed to .old then deleted,
 // but /proc/self/exe still references it). Use a restart function that receives
 // the executable path resolved at startup instead. See execRestartFunc in cmd/runner.
+//
+// The cmd.Start() below intentionally has no paired Wait — this code path is
+// not used in production (cmd/runner wires execRestartFunc, which uses
+// syscall.Exec to replace the current process in place). It exists only for
+// the test suite and any external embeddings. The orphaned child is reaped
+// by init(1) after the test/embedding process exits.
 func DefaultRestartFunc() RestartFunc {
 	return func() (int, error) {
 		execPath, err := os.Executable()

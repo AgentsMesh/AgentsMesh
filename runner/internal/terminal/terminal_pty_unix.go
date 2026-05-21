@@ -14,6 +14,13 @@ import (
 )
 
 // unixPTY wraps creack/pty and exec.Cmd for Unix platforms.
+//
+// Note on processmgr: terminal/* deliberately does not go through
+// processmgr.ModePTY because the Windows PTY path uses ConPTY (not creack/pty),
+// and ConPTY's read/write surface is not an *os.File — incompatible with the
+// processmgr.Handle.PTY() return type. The Wait() call below is already the
+// single ownership point, and Setpgid below ensures kills reach grandchildren,
+// so the zombie-leak class that processmgr fixes does not apply here.
 type unixPTY struct {
 	cmd     *exec.Cmd
 	ptyFile *os.File
@@ -24,6 +31,13 @@ func startPTY(command string, args []string, workDir string, env []string, cols,
 	cmd := exec.Command(command, args...)
 	cmd.Dir = workDir
 	cmd.Env = env
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		// pty.StartWithSize sets Setsid for us, which already makes this
+		// process its own session and group leader. We keep this field
+		// reachable so future changes that drop Setsid still get a process
+		// group. Setting both is harmless.
+		Setsid: true,
+	}
 
 	winSize := &pty.Winsize{
 		Rows: uint16(rows),
@@ -88,15 +102,23 @@ func (p *unixPTY) Wait() (int, error) {
 }
 
 func (p *unixPTY) Kill() error {
-	if p.cmd.Process != nil {
-		return p.cmd.Process.Kill()
+	if p.cmd.Process == nil {
+		return nil
 	}
-	return nil
+	// Negative PID targets the whole process group so shells that fork their
+	// own children (claude, aider, etc.) get cleaned up too.
+	if err := syscall.Kill(-p.cmd.Process.Pid, syscall.SIGKILL); err == nil {
+		return nil
+	}
+	return p.cmd.Process.Kill()
 }
 
 func (p *unixPTY) GracefulStop() error {
-	if p.cmd.Process != nil {
-		return p.cmd.Process.Signal(syscall.SIGTERM)
+	if p.cmd.Process == nil {
+		return fmt.Errorf("process not started")
 	}
-	return fmt.Errorf("process not started")
+	if err := syscall.Kill(-p.cmd.Process.Pid, syscall.SIGTERM); err == nil {
+		return nil
+	}
+	return p.cmd.Process.Signal(syscall.SIGTERM)
 }

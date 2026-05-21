@@ -107,25 +107,45 @@ func TestACPClient_RespondToPermission_WrongState(t *testing.T) {
 	}
 }
 
+// TestACPClient_StopTimeout exercises Stop while the child is stuck in the
+// initialize handshake (mockModeSlowInit). It guards three properties that
+// processmgr's own tests do not cover end-to-end:
+//
+//  1. ACPClient.Stop returns within the SIGTERM grace window even when Start
+//     is still blocked in transport.Handshake.
+//  2. State transitions to StateStopped regardless of where Start was.
+//  3. Start unwinds (returns) once Stop cancels the context — no goroutine
+//     leak across the test boundary.
 func TestACPClient_StopTimeout(t *testing.T) {
-	cmd := exec.Command(mockAgentCmd(), mockAgentArgs()...)
-	cmd.Env = mockAgentEnvWithMode(mockModeSlowInit)
-	if err := cmd.Start(); err != nil {
-		t.Skipf("cannot start: %v", err)
-	}
+	client := NewClient(ClientConfig{
+		Command: mockAgentCmd(),
+		Args:    mockAgentArgs(),
+		Env:     mockAgentEnvWithMode(mockModeSlowInit),
+		Logger:  slog.Default(),
+	})
 
-	client := NewClient(ClientConfig{Logger: slog.Default()})
-	client.cmd = cmd
+	startDone := make(chan error, 1)
+	go func() { startDone <- client.Start() }()
+
+	// Give the mock agent time to spawn the child + open its pipes; Stop
+	// before this point would race with Start's cmd.Start.
+	time.Sleep(200 * time.Millisecond)
 
 	start := time.Now()
 	client.Stop()
 	elapsed := time.Since(start)
 
+	select {
+	case <-startDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Start did not unwind within 2s after Stop — likely goroutine leak")
+	}
+
 	if client.State() != StateStopped {
 		t.Errorf("expected stopped, got %s", client.State())
 	}
-
-	if elapsed > 10*time.Second {
+	// 1 s SIGTERM (set in client.go) + slack for transport/IPC teardown.
+	if elapsed > 3*time.Second {
 		t.Errorf("Stop took too long: %v", elapsed)
 	}
 }

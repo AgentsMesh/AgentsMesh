@@ -1,10 +1,22 @@
 version: "2"
 
 linters:
+  enable:
+    - forbidigo
+
   settings:
     errcheck:
       check-type-assertions: false
       check-blank: false
+
+    forbidigo:
+      # Catch the patterns that historically leaked zombies: Start without a
+      # paired Wait, and os.StartProcess + Release. New long-lived children
+      # must go through processmgr.Start so the manager owns the lifecycle.
+      forbid:
+        - pattern: '^os\.StartProcess$'
+          msg: "use processmgr.Start(processmgr.ModeDaemon) instead of os.StartProcess + Release; the latter leaves zombies on the runner process tree"
+      analyze-types: true
 
   exclusions:
     rules:
@@ -75,3 +87,10 @@ linters:
       - path: "internal/terminal/vt/(serialize_handler|vt_snapshot)\\.go"
         linters:
           - unused
+
+      # processmgr is the only place allowed to call os.StartProcess directly
+      # (inside the launcher subcommand, which is itself the fix for the
+      # zombie problem). All other packages must go through processmgr.Start.
+      - path: "internal/processmgr/"
+        linters:
+          - forbidigo

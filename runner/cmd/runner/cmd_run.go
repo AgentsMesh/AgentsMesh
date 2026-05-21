@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"syscall"
+	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/console"
@@ -19,6 +20,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/mcp"
 	otelinit "github.com/anthropics/agentsmesh/runner/internal/otel"
 	"github.com/anthropics/agentsmesh/runner/internal/pidfile"
+	"github.com/anthropics/agentsmesh/runner/internal/processmgr"
 	"github.com/anthropics/agentsmesh/runner/internal/runner"
 	"github.com/anthropics/agentsmesh/runner/internal/updater"
 )
@@ -212,6 +214,19 @@ func startRunner(cfg *config.Config) (ok bool) {
 	// Setup context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Initialize processmgr — single source of truth for every child process
+	// the runner spawns. StopAll on shutdown reaps non-daemon children;
+	// daemons (PodDaemon) intentionally survive runner restart, so they are
+	// left alone unless we explicitly StopDaemons.
+	processmgr.Init(ctx, processmgr.Options{})
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer shutdownCancel()
+		if err := processmgr.Global().StopAll(shutdownCtx); err != nil {
+			log.Warn("processmgr: StopAll on shutdown returned errors", "err", err)
+		}
+	}()
 
 	// Handle shutdown signals
 	sigChan := make(chan os.Signal, 1)

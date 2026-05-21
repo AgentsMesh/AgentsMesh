@@ -21,6 +21,7 @@ go_library(
     ],
     importpath = "github.com/anthropics/agentsmesh/runner/internal/acp",
     visibility = ["//runner:__subpackages__"],
+    deps = ["//runner/internal/processmgr"],
 )
 
 alias(
@@ -57,5 +58,8 @@ go_test(
         "writer_test.go",
     ],
     embed = [":acp"],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "//runner/internal/processmgr",
+        "@com_github_stretchr_testify//assert",
+    ],
 )
