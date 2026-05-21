@@ -32,6 +32,7 @@ alias(
 go_test(
     name = "mockagent_test",
     srcs = [
+        "acp_control_test.go",
         "acp_runtime_test.go",
         "env_dump_test.go",
         "pty_runtime_test.go",

@@ -13,13 +13,14 @@ import (
 // runACPWithIO can drain in-flight scenario goroutines on EOF, and the
 // current configuration (settable via session/control_request).
 type runtimeState struct {
-	writer    *acp.Writer
-	wg        sync.WaitGroup
-	pendingMu sync.Mutex
-	pending   map[int64]chan *acp.JSONRPCMessage
-	configMu  sync.RWMutex
-	mode      string
-	model     string
+	writer        *acp.Writer
+	wg            sync.WaitGroup
+	pendingMu     sync.Mutex
+	pending       map[int64]chan *acp.JSONRPCMessage
+	configMu      sync.RWMutex
+	mode          string
+	model         string
+	thinkingLevel string
 }
 
 func newRuntimeState(writer *acp.Writer) *runtimeState {
@@ -76,6 +77,12 @@ func (s *runtimeState) setModel(model string) {
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 	s.model = model
+}
+
+func (s *runtimeState) setThinkingLevel(level string) {
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
+	s.thinkingLevel = level
 }
 
 func (s *runtimeState) permissionMode() string {
