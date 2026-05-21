@@ -3,6 +3,8 @@ package mockagent
 import (
 	"encoding/json"
 	"log/slog"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -18,9 +20,24 @@ func scenarioEcho(state *runtimeState, id int64, params json.RawMessage, _ *slog
 }
 
 // streamingChunkDelay is the gap between chunks in scenarios that test the
-// frontend's streaming/in-progress render path. Short enough that tests don't
-// slow down, long enough that React render cycles observe intermediate state.
-var streamingChunkDelay = 80 * time.Millisecond
+// frontend's streaming/in-progress render path. The default (80ms) is short
+// enough that tests don't slow down but long enough that React render cycles
+// observe intermediate state. Override via E2E_MOCK_CHUNK_DELAY_MS so timing-
+// sensitive specs (slow CI, fast local) can dial it without recompiling.
+var streamingChunkDelay = resolveChunkDelay()
+
+func resolveChunkDelay() time.Duration {
+	const fallback = 80 * time.Millisecond
+	raw := os.Getenv("E2E_MOCK_CHUNK_DELAY_MS")
+	if raw == "" {
+		return fallback
+	}
+	ms, err := strconv.Atoi(raw)
+	if err != nil || ms < 0 {
+		return fallback
+	}
+	return time.Duration(ms) * time.Millisecond
+}
 
 // scenarioStreaming3 emits the prompt response as three separate chunks
 // (so consumers see assistant `complete=false` → `complete=true` transition).
