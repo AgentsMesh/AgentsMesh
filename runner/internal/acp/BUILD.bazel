@@ -14,6 +14,8 @@ go_library(
         "request_tracker.go",
         "transport.go",
         "transport_acp.go",
+        "transport_acp_control.go",
+        "transport_acp_session.go",
         "types.go",
         "writer.go",
     ],

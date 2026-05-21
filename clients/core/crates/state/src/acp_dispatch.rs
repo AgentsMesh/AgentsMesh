@@ -91,6 +91,12 @@ pub fn dispatch_event(
                 },
             );
         }
+        "configChangeFailed" => {
+            // Surfaced in the UI as a log entry by the TS dispatcher (the wasm
+            // session manager has no log-channel mutator for this case); the
+            // Rust side just acknowledges the event so unknown-event-type warn
+            // noise doesn't appear in console.
+        }
         _ => {
             tracing::warn!("[ACP] Unknown event type: {}", event_type);
         }
