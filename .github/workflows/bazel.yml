@@ -842,12 +842,30 @@ jobs:
         # cleanup once before bring-up so this run starts on a clean
         # host. Idempotent on a clean box.
         #
+        # Order matters: kill detached binaries + the Bazel JVM daemon
+        # FIRST via shell, then let `dev:clean` tear down docker/runtime.
+        # The previous version called `bazel run` first, which paradoxically
+        # spawned a fresh daemon to clean up the prior daemon's residue.
+        #
         # `--output_base` pins this job to its own bazel server so it
         # never blocks on the GitLab CI server that shares the default
         # `/Users/stone/.bazel` output base on macmini-03 (those two
         # workloads previously serialized through the same lock, burning
         # 55+ min waiting and busting the 60-min job timeout).
         run: |
+          # 1. Kill detached backend/relay/runner binaries from prior runs.
+          #    They reparent to init (ppid=1) once ibazel exits, so pkill
+          #    by command-line path is the only reliable identifier.
+          pkill -f "bazel-bin/backend/cmd/server" 2>/dev/null || true
+          pkill -f "bazel-bin/relay/cmd/relay" 2>/dev/null || true
+          pkill -f "bazel-bin/runner/cmd/runner" 2>/dev/null || true
+          # 2. Kill the Bazel JVM daemon pinned to this job's output_base.
+          #    `bazel shutdown` is the polite path, pkill is the hammer.
+          bazel --output_base="$HOME/.bazel-github" shutdown 2>/dev/null || true
+          pkill -f "$HOME/.bazel-github" 2>/dev/null || true
+          sleep 2
+          # 3. Host is clean now — let dev:clean tear down docker volumes
+          #    and runtime/ directory.
           bazel --output_base="$HOME/.bazel-github" run //deploy/dev:clean || true
 
       - name: Bring up dev backend stack
@@ -918,9 +936,23 @@ jobs:
         # //deploy/dev:clean` runs the dev.sh `clean` lifecycle which
         # calls `stop_host_services` (kills ibazel + group-kills children)
         # before tearing the docker stack down.
+        #
+        # `bazel shutdown` + the pkill belt-and-suspenders below are the
+        # change that actually evicts the Bazel JVM daemon from the host.
+        # Without these, the daemon (`build --java_runtime_version=remotejdk_21`)
+        # lives for its default 3h idle timeout, accumulates on macmini-04
+        # job-by-job, and pushes load avg to ~8 — which is what was
+        # blowing the Electron `firstWindow` 90s timeout in desktop-e2e.
         if: always()
         run: |
-          bazel run //deploy/dev:clean || true
+          bazel --output_base="$HOME/.bazel-github" run //deploy/dev:clean || true
+          bazel --output_base="$HOME/.bazel-github" shutdown 2>/dev/null || true
+          # Belt-and-suspenders: `bazel shutdown` occasionally hangs on a
+          # busy host; the pkill guarantees the daemon is gone before the
+          # next job lands on this runner.
+          pkill -f "$HOME/.bazel-github" 2>/dev/null || true
+          pkill -f "bazel-bin/backend/cmd/server" 2>/dev/null || true
+          pkill -f "bazel-bin/relay/cmd/relay" 2>/dev/null || true
 
   # =========================================================================
   # TODO: Bazel-native replacements tracked below. Each jobs above

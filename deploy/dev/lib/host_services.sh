@@ -28,12 +28,28 @@ _launch_ibazel() {
     rt_dir="$(_runtime_dir)/$name"
     mkdir -p "$rt_dir"
     local pid_file="$rt_dir/$name.pid"
+    local pgid_file="$rt_dir/$name.pgid"
     local log_file="$rt_dir/$name.log"
 
+    # Process-group-kill any leftover from a prior run. With setsid below the
+    # whole tree (ibazel + the bazel-spawned binary) shares one pgid, so
+    # `kill -- -PGID` reaps every descendant; without it, ibazel's
+    # detached bazel-spawned server stays alive after the recorded PID dies
+    # and holds the worktree-allocated port.
+    if [[ -f "$pgid_file" ]]; then
+        local old_pgid
+        old_pgid=$(cat "$pgid_file" 2>/dev/null || true)
+        if [[ -n "$old_pgid" ]]; then
+            kill -TERM -- "-$old_pgid" 2>/dev/null || true
+            sleep 1
+            kill -KILL -- "-$old_pgid" 2>/dev/null || true
+        fi
+        rm -f "$pgid_file"
+    fi
     if [[ -f "$pid_file" ]]; then
         local old
-        old=$(cat "$pid_file")
-        if kill -0 "$old" 2>/dev/null; then
+        old=$(cat "$pid_file" 2>/dev/null || true)
+        if [[ -n "$old" ]] && kill -0 "$old" 2>/dev/null; then
             kill -TERM "$old" 2>/dev/null || true
             sleep 1
         fi
@@ -42,10 +58,16 @@ _launch_ibazel() {
 
     info "启动 host service: $name (target: $target)"
     local repo_root="$SCRIPT_DIR/../.."
+    # Use python3 to `setsid()` then `execvp(ibazel ...)`. Portable across
+    # macOS (no GNU `setsid` cmd by default) and Linux. `os.execvp` replaces
+    # the python interpreter with ibazel, so $! captures the pgid leader's
+    # PID (== its PGID after setsid).
     (
         cd "$repo_root"
-        nohup ibazel run "$target" "$@" > "$log_file" 2>&1 &
+        python3 -c "import os, sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])" \
+            ibazel run "$target" "$@" > "$log_file" 2>&1 &
         echo $! > "$pid_file"
+        echo $! > "$pgid_file"
         disown
     )
 }
@@ -203,25 +225,34 @@ start_relay_host() {
 }
 
 # Stop host backend / relay. Runner stays in docker, so `clean` handles
-# it via `docker compose down`.
+# it via `docker compose down`. Process-group-kill is the central trick:
+# `_launch_ibazel` records the pgid (== ibazel's PID under setsid), so a
+# single `kill -- -PGID` reaps ibazel + the bazel-spawned binary in one
+# shot, even though the binary detached from ibazel's direct parent
+# relationship.
 stop_host_services() {
     local rt_root
     rt_root="$(_runtime_dir)"
     [[ -d "$rt_root" ]] || return 0
     for svc in backend relay; do
+        local pgid_file="$rt_root/$svc/$svc.pgid"
         local pid_file="$rt_root/$svc/$svc.pid"
-        if [[ -f "$pid_file" ]]; then
-            local pid
-            pid=$(cat "$pid_file")
-            if kill -0 "$pid" 2>/dev/null; then
-                info "停止 host $svc (pid: $pid)..."
-                # ibazel spawns a child process; group-kill catches both.
-                kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
-                pkill -P "$pid" 2>/dev/null || true
+        if [[ -f "$pgid_file" ]]; then
+            local pgid
+            pgid=$(cat "$pgid_file" 2>/dev/null || true)
+            if [[ -n "$pgid" ]]; then
+                info "停止 host $svc (pgid: $pgid)..."
+                kill -TERM -- "-$pgid" 2>/dev/null || true
+                sleep 1
+                kill -KILL -- "-$pgid" 2>/dev/null || true
             fi
-            rm -f "$pid_file"
+            rm -f "$pgid_file"
         fi
+        rm -f "$pid_file" 2>/dev/null || true
     done
-    pkill -f 'ibazel run //backend/cmd/server' 2>/dev/null || true
-    pkill -f 'ibazel run //relay/cmd/relay' 2>/dev/null || true
+    # Belt-and-suspenders: kill anything still hanging on the bazel-bin
+    # path (e.g. a server that survived the pgid window because it forked
+    # between recording and our TERM).
+    pkill -f "bazel-bin/backend/cmd/server" 2>/dev/null || true
+    pkill -f "bazel-bin/relay/cmd/relay" 2>/dev/null || true
 }
