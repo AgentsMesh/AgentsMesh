@@ -40,7 +40,7 @@ func RunLauncher() {
 	// runner did not provide one we still want to exit cleanly — the daemon
 	// is up and the runner just won't know its real PID until next discovery.
 	if pipe := os.NewFile(launcherPIDFd, "processmgr-pid-pipe"); pipe != nil {
-		fmt.Fprintln(pipe, cmd.Process.Pid)
+		_, _ = fmt.Fprintln(pipe, cmd.Process.Pid)
 		_ = pipe.Close()
 	}
 

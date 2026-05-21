@@ -21,7 +21,7 @@ func (p *daemonProcess) Alive() bool {
 		return false
 	default:
 	}
-	return daemonProcessAlive(p.baseProcess.PID())
+	return daemonProcessAlive(p.PID())
 }
 
 func (p *daemonProcess) Signal(sig os.Signal) error {

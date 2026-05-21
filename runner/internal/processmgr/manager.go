@@ -57,15 +57,6 @@ func Global() Manager {
 	return global
 }
 
-// resetForTest disposes the current singleton without StopAll, so the caller
-// is responsible for cleanup. Only the export_test.go shim exposes this to
-// outside packages; production code has no reason to reset.
-func resetForTest() {
-	globalMu.Lock()
-	defer globalMu.Unlock()
-	global = nil
-}
-
 // uninitializedManager makes the "forgot to call Init" failure explicit at the
 // first Start call instead of crashing on nil deref.
 type uninitializedManager struct{}
