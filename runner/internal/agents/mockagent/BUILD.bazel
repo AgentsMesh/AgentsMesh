@@ -1,0 +1,40 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "mockagent",
+    srcs = [
+        "acp_runtime.go",
+        "emit.go",
+        "env_dump.go",
+        "pty_runtime.go",
+        "scenario_basic.go",
+        "scenario_permission.go",
+        "scenario_tool.go",
+        "scenarios.go",
+    ],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/agents/mockagent",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/acp",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":mockagent",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "mockagent_test",
+    srcs = [
+        "acp_runtime_test.go",
+        "env_dump_test.go",
+        "pty_runtime_test.go",
+        "scenarios_test.go",
+    ],
+    embed = [":mockagent"],
+    deps = [
+        "//runner/internal/acp",
+    ],
+)

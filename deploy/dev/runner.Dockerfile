@@ -44,6 +44,13 @@ RUN useradd --create-home --uid 1000 --shell /bin/bash runner \
 # context is `deploy/dev`.
 COPY --chmod=0755 runner-binary /usr/local/bin/agentsmesh-runner
 
+# Bazel-built e2e-mock-agent — drives the `e2e-echo` AgentFile in both PTY
+# and ACP modes. Required for mcp-e2e / envbundle-e2e / acp-ui-e2e suites
+# that create pods without depending on real LLM CLIs. See
+# //runner/internal/agents/mockagent for the implementation, and
+# build_mock_agent_binary in lib/host_services.sh for the cross-compile.
+COPY --chmod=0755 e2e-mock-agent-binary /usr/local/bin/e2e-mock-agent
+
 USER runner
 WORKDIR /app
 ENTRYPOINT ["/usr/local/bin/runner-entrypoint.sh"]

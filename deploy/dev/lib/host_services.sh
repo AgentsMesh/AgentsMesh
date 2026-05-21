@@ -72,6 +72,29 @@ build_runner_binary() {
     success "Runner binary 已编译并复制到 build context"
 }
 
+# Cross-compile the e2e-mock-agent (sibling to build_runner_binary) so the
+# Dockerfile can COPY it into the runner image. The mock agent is the
+# executable behind the `e2e-echo` AgentFile (PTY+ACP modes), used by
+# mcp-e2e / envbundle-e2e / acp-ui-e2e — i.e. the runtime under test in
+# every harness that creates a pod without a real LLM CLI.
+build_mock_agent_binary() {
+    info "Bazel build e2e-mock-agent binary (linux/amd64)..."
+    local repo_root="$SCRIPT_DIR/../.."
+    (
+        cd "$repo_root"
+        bazel build //runner/internal/agents/mockagent/cmd/e2e-mock-agent:e2e-mock-agent \
+            --platforms=@rules_go//go/toolchain:linux_amd64
+    ) || {
+        error "bazel build e2e-mock-agent 失败"
+        return 1
+    }
+    rm -f "$SCRIPT_DIR/e2e-mock-agent-binary"
+    cp -L "$repo_root/bazel-bin/runner/internal/agents/mockagent/cmd/e2e-mock-agent/e2e-mock-agent_/e2e-mock-agent" \
+        "$SCRIPT_DIR/e2e-mock-agent-binary"
+    chmod +x "$SCRIPT_DIR/e2e-mock-agent-binary"
+    success "e2e-mock-agent binary 已编译并复制到 build context"
+}
+
 # Pre-build the binary (no health budget pressure), then ibazel run for
 # the actual launch — the launcher's `bazel run` reuses the cached binary
 # so `_wait_http` only waits on real startup time, not Bazel compile.

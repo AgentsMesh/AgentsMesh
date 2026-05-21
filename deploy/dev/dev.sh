@@ -79,6 +79,11 @@ main() {
     # Phase 2: bazel-build the runner binary so docker compose's runner
     # service can COPY it during image build (build context = deploy/dev).
     build_runner_binary
+    # Cross-compile the e2e-mock-agent alongside the runner — same build
+    # context, same image. Required for mcp-e2e / envbundle-e2e / acp-ui-e2e
+    # which depend on the `e2e-echo` AgentFile resolving `EXECUTABLE
+    # e2e-mock-agent` to a real binary on the runner's PATH.
+    build_mock_agent_binary
 
     # Phase 3: docker infrastructure + DB bootstrap.
     docker_compose_up

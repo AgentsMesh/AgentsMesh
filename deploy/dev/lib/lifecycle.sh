@@ -98,6 +98,7 @@ reset_runners() {
     fi
 
     build_runner_binary || return 1
+    build_mock_agent_binary || return 1
 
     cd "$SCRIPT_DIR"
     info "重建并重启 runner 容器..."
