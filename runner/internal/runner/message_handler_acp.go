@@ -95,11 +95,20 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 					"level": level, "message": message,
 				})
 			},
+			OnConfigChange: func(sessionID string, update acp.ConfigUpdate) {
+				sendAcpViaRelay(pod, "configChanged", sessionID, update)
+			},
 			OnExit: func(exitCode int) {
 				h.handleACPExit(podKey, exitCode)
 			},
 		},
 	})
+
+	// Seed configuration from launch_args so the first snapshot reflects the
+	// resolved AgentFile values (e.g. --permission-mode bypassPermissions),
+	// not an empty placeholder. Falls back silently when args don't carry
+	// these flags (codex/gemini variants).
+	acpClient.SeedConfiguration(parseInitialConfigFromArgs(pod.LaunchArgs))
 
 	// Wire client into pod
 	pod.IO = NewACPPodIO(acpClient, podKey)
@@ -121,6 +130,15 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	}
 
 	pod.SetStatus(PodStatusRunning)
+
+	// Broadcast seeded configuration so late-joining subscribers (and the
+	// snapshot path) see the initial mode/model rather than empty defaults.
+	if initialCfg := acpClient.Configuration(); initialCfg.PermissionMode != "" || initialCfg.Model != "" {
+		sendAcpViaRelay(pod, "configChanged", "", acp.ConfigUpdate{
+			PermissionMode: initialCfg.PermissionMode,
+			Model:          initialCfg.Model,
+		})
+	}
 
 	// Create a new ACP session with MCP servers config
 	mcpPort := h.runner.GetConfig().GetMCPPort()

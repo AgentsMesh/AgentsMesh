@@ -4,14 +4,19 @@ export interface AcpPlanStep { title: string; status: string }
 export interface AcpThinking { text: string; timestamp: number; complete?: boolean }
 export interface AcpPermissionRequest { requestId: string; toolName: string; argumentsJson: string; description: string }
 export interface AcpLog { level: string; message: string; timestamp: number }
+export interface AcpConfiguration { permissionMode: string; model: string }
 
 export interface AcpSessionState {
   messages: AcpContentChunk[]; toolCalls: Record<string, AcpToolCall>; plan: AcpPlanStep[];
   thinkings: AcpThinking[]; logs: AcpLog[]; state: string; pendingPermissions: AcpPermissionRequest[];
+  configuration: AcpConfiguration;
 }
+
+export const EMPTY_CONFIGURATION: AcpConfiguration = { permissionMode: "", model: "" };
 
 export const EMPTY_SESSION: AcpSessionState = {
   messages: [], toolCalls: {}, plan: [], thinkings: [], logs: [], state: "idle", pendingPermissions: [],
+  configuration: EMPTY_CONFIGURATION,
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -46,6 +51,20 @@ function permReqFromWasm(p: any): AcpPermissionRequest {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function configurationFromWasm(raw: any): AcpConfiguration {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_CONFIGURATION };
+  return {
+    permissionMode: typeof raw.permission_mode === "string" ? raw.permission_mode : "",
+    model: typeof raw.model === "string" ? raw.model : "",
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function configurationToWasmObj(c: AcpConfiguration): Record<string, any> {
+  return { permission_mode: c.permissionMode, model: c.model };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function sessionFromWasm(raw: any): AcpSessionState {
   const tcEntries = Object.entries(raw.tool_calls || {});
   const toolCalls: Record<string, AcpToolCall> = {};
@@ -58,6 +77,7 @@ export function sessionFromWasm(raw: any): AcpSessionState {
     logs: raw.logs || [],
     state: mapState(raw.state),
     pendingPermissions: (raw.pending_permissions || []).map(permReqFromWasm),
+    configuration: configurationFromWasm(raw.configuration),
   };
 }
 
@@ -120,5 +140,6 @@ export function wasmFromSession(s: AcpSessionState): Record<string, any> {
     logs: s.logs,
     state: s.state,
     pending_permissions: s.pendingPermissions.map(permReqToWasmObj),
+    configuration: configurationToWasmObj(s.configuration),
   };
 }

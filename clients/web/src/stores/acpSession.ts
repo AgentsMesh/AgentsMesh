@@ -2,11 +2,11 @@ import { create } from "zustand";
 import { useMemo } from "react";
 import { getAcpManager } from "@/lib/wasm-core";
 import type {
-  AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking, AcpLog,
+  AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking, AcpLog, AcpConfiguration,
 } from "./acpSessionTypes";
 import { EMPTY_SESSION, sessionFromWasm, toolCallToWasm, permReqToWasm, wasmFromSession } from "./acpSessionTypes";
 
-export type { AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking, AcpLog };
+export type { AcpToolCall, AcpPlanStep, AcpPermissionRequest, AcpSessionState, AcpThinking, AcpLog, AcpConfiguration };
 
 interface AcpSessionStore {
   _tick: number;
@@ -21,6 +21,7 @@ interface AcpSessionStore {
   removePermissionRequest: (podKey: string, requestId: string) => void;
   updateSessionState: (podKey: string, sessionId: string, state: string) => void;
   addLog: (podKey: string, level: string, message: string) => void;
+  updateConfiguration: (podKey: string, configuration: Partial<AcpConfiguration>) => void;
   clearSession: (podKey: string) => void;
 }
 
@@ -113,6 +114,17 @@ export const useAcpSessionStore = create<AcpSessionStore>(() => ({
 
   addLog: (podKey, level, message) => {
     mgr().add_log(podKey, level, message);
+    refreshCache(podKey);
+  },
+
+  updateConfiguration: (podKey, configuration) => {
+    mgr().update_configuration(
+      podKey,
+      JSON.stringify({
+        permission_mode: configuration.permissionMode ?? "",
+        model: configuration.model ?? "",
+      }),
+    );
     refreshCache(podKey);
   },
 

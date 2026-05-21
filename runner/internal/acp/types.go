@@ -66,6 +66,21 @@ type PermissionRequest struct {
 	Description   string `json:"description"`
 }
 
+// Configuration captures the live control-plane state of an ACP session.
+// Empty string means "unset / unknown" — consumers should treat absent fields
+// as not-yet-known rather than defaulting to a hardcoded value.
+type Configuration struct {
+	PermissionMode string `json:"permissionMode,omitempty"`
+	Model          string `json:"model,omitempty"`
+}
+
+// ConfigUpdate carries a delta of configuration fields. Empty fields mean
+// "unchanged" — callers must merge into the existing Configuration, not replace.
+type ConfigUpdate struct {
+	PermissionMode string `json:"permissionMode,omitempty"`
+	Model          string `json:"model,omitempty"`
+}
+
 // EventCallbacks defines the event handlers for ACP client events.
 type EventCallbacks struct {
 	OnContentChunk      func(sessionID string, chunk ContentChunk)
@@ -75,6 +90,7 @@ type EventCallbacks struct {
 	OnThinkingUpdate    func(sessionID string, update ThinkingUpdate)
 	OnPermissionRequest func(req PermissionRequest)
 	OnStateChange       func(newState string)
+	OnConfigChange      func(sessionID string, update ConfigUpdate)
 	OnLog               func(level, message string)
 	OnExit              func(exitCode int)
 }
@@ -87,7 +103,16 @@ type AcpSessionSnapshot struct {
 	Messages           []ContentChunk      `json:"messages"`
 	ToolCalls          []ToolCallSnapshot  `json:"toolCalls,omitempty"`
 	Plan               []PlanStep          `json:"plan,omitempty"`
+	Thinkings          []ThinkingUpdate    `json:"thinkings,omitempty"`
+	Logs               []LogEntry          `json:"logs,omitempty"`
 	PendingPermissions []PermissionRequest `json:"pendingPermissions"`
+	Configuration      Configuration       `json:"configuration"`
+}
+
+// LogEntry is a single log message captured in a snapshot.
+type LogEntry struct {
+	Level   string `json:"level"`
+	Message string `json:"message"`
 }
 
 // ToolCallSnapshot is the merged view of a tool call for snapshots,

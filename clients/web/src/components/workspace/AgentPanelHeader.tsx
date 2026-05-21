@@ -46,6 +46,10 @@ export function AgentPanelHeader({
         return "text-blue-500 dark:text-blue-400 animate-pulse";
       case "waiting_permission":
         return "text-amber-500 dark:text-amber-400 animate-pulse";
+      case "initializing":
+        return "text-blue-300 dark:text-blue-300 animate-pulse";
+      case "stopped":
+        return "text-muted-foreground";
       default:
         return "text-green-500 dark:text-green-400";
     }

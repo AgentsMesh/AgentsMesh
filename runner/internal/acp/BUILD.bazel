@@ -4,6 +4,7 @@ go_library(
     name = "acp",
     srcs = [
         "client.go",
+        "client_callbacks.go",
         "client_internal.go",
         "client_session.go",
         "handler.go",

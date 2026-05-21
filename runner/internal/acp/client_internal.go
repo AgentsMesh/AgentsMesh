@@ -144,3 +144,60 @@ func (c *ACPClient) setPlan(steps []PlanStep) {
 	defer c.planMu.Unlock()
 	c.plan = steps
 }
+
+// addThinking appends a thinking chunk to the snapshot history, trimming
+// oldest entries when the cap is exceeded. The frontend tracks a finer-grained
+// "complete" flag via incremental events; the snapshot only carries raw text.
+func (c *ACPClient) addThinking(update ThinkingUpdate) {
+	c.thinkingsMu.Lock()
+	defer c.thinkingsMu.Unlock()
+	c.thinkings = append(c.thinkings, update)
+	if len(c.thinkings) > c.maxThinkings {
+		c.thinkings = c.thinkings[len(c.thinkings)-c.maxThinkings:]
+	}
+}
+
+// addLog appends a log entry to the snapshot history (warn/error only — info
+// is discarded to avoid log-flood polluting late subscribers).
+func (c *ACPClient) addLog(entry LogEntry) {
+	if entry.Level != "warn" && entry.Level != "error" {
+		return
+	}
+	c.logsMu.Lock()
+	defer c.logsMu.Unlock()
+	c.logs = append(c.logs, entry)
+	if len(c.logs) > c.maxLogs {
+		c.logs = c.logs[len(c.logs)-c.maxLogs:]
+	}
+}
+
+// applyConfiguration merges a ConfigUpdate into the internal Configuration,
+// returning the merged result for broadcast. Empty fields in the update are
+// treated as "no change"; non-empty fields replace the existing value.
+func (c *ACPClient) applyConfiguration(update ConfigUpdate) Configuration {
+	c.configMu.Lock()
+	defer c.configMu.Unlock()
+	if update.PermissionMode != "" {
+		c.configuration.PermissionMode = update.PermissionMode
+	}
+	if update.Model != "" {
+		c.configuration.Model = update.Model
+	}
+	return c.configuration
+}
+
+// Configuration returns a snapshot of the current configuration.
+func (c *ACPClient) Configuration() Configuration {
+	c.configMu.RLock()
+	defer c.configMu.RUnlock()
+	return c.configuration
+}
+
+// SeedConfiguration sets the initial configuration captured at pod creation,
+// before any control_request flows. Callers must invoke OnConfigChange
+// themselves to broadcast the seeded values; this method only writes state.
+func (c *ACPClient) SeedConfiguration(cfg Configuration) {
+	c.configMu.Lock()
+	defer c.configMu.Unlock()
+	c.configuration = cfg
+}

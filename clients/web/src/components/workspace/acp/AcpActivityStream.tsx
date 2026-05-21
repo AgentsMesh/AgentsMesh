@@ -12,7 +12,7 @@ interface AcpActivityStreamProps {
 }
 
 type TimelineItem =
-  | { kind: "message"; key: string; timestamp: number; role: string; text: string }
+  | { kind: "message"; key: string; timestamp: number; role: string; text: string; complete: boolean }
   | { kind: "tool"; key: string; timestamp: number; data: AcpToolCall }
   | { kind: "thinking"; key: string; timestamp: number; data: AcpThinking }
   | { kind: "log"; key: string; timestamp: number; data: AcpLog };
@@ -33,6 +33,7 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
         timestamp: msg.timestamp,
         role: msg.role,
         text: msg.text,
+        complete: msg.complete ?? true,
       });
     }
 
@@ -59,9 +60,22 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   const thinkingCount = session?.thinkings.length ?? 0;
   const logCount = session?.logs.length ?? 0;
 
+  const hasActiveSpinner = useMemo(() => {
+    if (!session) return false;
+    const lastThinking = session.thinkings[session.thinkings.length - 1];
+    if (lastThinking && !lastThinking.complete) return true;
+    for (const tc of Object.values(session.toolCalls)) {
+      if (tc.status !== "completed") return true;
+    }
+    return false;
+  }, [session]);
+
+  const showWorkingPlaceholder =
+    session?.state === "processing" && !hasActiveSpinner;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messageCount, toolCallCount, thinkingCount, logCount]);
+  }, [messageCount, toolCallCount, thinkingCount, logCount, showWorkingPlaceholder]);
 
   if (!session) {
     return (
@@ -79,7 +93,7 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
             return item.role === "user" ? (
               <UserInstruction key={item.key} text={item.text} />
             ) : (
-              <AssistantOutput key={item.key} text={item.text} />
+              <AssistantOutput key={item.key} text={item.text} complete={item.complete} />
             );
           case "tool":
             return <AcpToolCallCard key={item.key} toolCall={item.data} />;
@@ -89,7 +103,17 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
             return <LogEntry key={item.key} log={item.data} />;
         }
       })}
+      {showWorkingPlaceholder && <WorkingPlaceholder />}
       <div ref={bottomRef} />
+    </div>
+  );
+}
+
+function WorkingPlaceholder() {
+  return (
+    <div className="flex items-center gap-2 py-1 text-muted-foreground text-sm italic">
+      <span className="inline-block h-3 w-3 border-2 border-muted-foreground/40 border-t-muted-foreground rounded-full animate-spin" />
+      <span>Agent is working...</span>
     </div>
   );
 }
@@ -112,11 +136,21 @@ function UserInstruction({ text }: { text: string }) {
   );
 }
 
-function AssistantOutput({ text }: { text: string }) {
+function AssistantOutput({ text, complete }: { text: string; complete: boolean }) {
   return (
     <div className="py-1">
       <Markdown content={text} compact />
+      {!complete && <StreamingCaret />}
     </div>
+  );
+}
+
+function StreamingCaret() {
+  return (
+    <span
+      aria-hidden
+      className="inline-block w-[7px] h-[14px] ml-0.5 align-text-bottom bg-foreground/70 animate-pulse"
+    />
   );
 }
 

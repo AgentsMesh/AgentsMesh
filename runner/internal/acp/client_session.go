@@ -67,19 +67,34 @@ func (c *ACPClient) Interrupt() error {
 }
 
 // SetPermissionMode dynamically changes the permission mode at runtime.
+// On success, fires OnConfigChange so the wrapped state and downstream
+// subscribers learn the new value via the same path as data-plane updates.
 func (c *ACPClient) SetPermissionMode(mode string) error {
 	_, err := c.transport.SendControlRequest(c.SessionID(), "set_permission_mode", map[string]any{
 		"mode": mode,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if c.cfg.Callbacks.OnConfigChange != nil {
+		c.cfg.Callbacks.OnConfigChange(c.SessionID(), ConfigUpdate{PermissionMode: mode})
+	}
+	return nil
 }
 
 // SetModel dynamically changes the AI model at runtime.
+// On success, fires OnConfigChange (see SetPermissionMode for rationale).
 func (c *ACPClient) SetModel(model string) error {
 	_, err := c.transport.SendControlRequest(c.SessionID(), "set_model", map[string]any{
 		"model": model,
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if c.cfg.Callbacks.OnConfigChange != nil {
+		c.cfg.Callbacks.OnConfigChange(c.SessionID(), ConfigUpdate{Model: model})
+	}
+	return nil
 }
 
 // GetContextUsage queries the current context window usage.
@@ -158,12 +173,25 @@ func (c *ACPClient) GetSessionSnapshot() *AcpSessionSnapshot {
 	copy(perms, c.pendingPerms)
 	c.pendingPermsMu.RUnlock()
 
+	c.thinkingsMu.RLock()
+	thinkings := make([]ThinkingUpdate, len(c.thinkings))
+	copy(thinkings, c.thinkings)
+	c.thinkingsMu.RUnlock()
+
+	c.logsMu.RLock()
+	logs := make([]LogEntry, len(c.logs))
+	copy(logs, c.logs)
+	c.logsMu.RUnlock()
+
 	return &AcpSessionSnapshot{
 		SessionID:          c.SessionID(),
 		State:              c.State(),
 		Messages:           msgs,
 		ToolCalls:          toolCalls,
 		Plan:               plan,
+		Thinkings:          thinkings,
+		Logs:               logs,
 		PendingPermissions: perms,
+		Configuration:      c.Configuration(),
 	}
 }

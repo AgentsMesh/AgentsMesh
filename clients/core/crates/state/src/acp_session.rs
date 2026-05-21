@@ -184,6 +184,16 @@ impl AcpSessionManager {
         cap_vec(&mut session.logs, MAX_LOGS);
     }
 
+    pub fn update_configuration(&mut self, pod_key: &str, update: AcpConfiguration) {
+        let session = self.get_or_create_session(pod_key);
+        if !update.permission_mode.is_empty() {
+            session.configuration.permission_mode = update.permission_mode;
+        }
+        if !update.model.is_empty() {
+            session.configuration.model = update.model;
+        }
+    }
+
     pub fn clear_session(&mut self, pod_key: &str) {
         self.sessions.remove(pod_key);
     }

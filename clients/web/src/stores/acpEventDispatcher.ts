@@ -70,6 +70,12 @@ function dispatchEvent(
         store.addLog(podKey, data.level as string, data.message as string);
       }
       break;
+    case "configChanged":
+      store.updateConfiguration(podKey, {
+        permissionMode: data.permissionMode as string | undefined,
+        model: data.model as string | undefined,
+      });
+      break;
     default:
       console.warn("[ACP] Unknown event type:", eventType);
   }
@@ -116,6 +122,18 @@ function dispatchSnapshot(
       store.addContentChunk(podKey, sessionId, msg.text, msg.role);
     }
   }
+  if (Array.isArray(data.thinkings)) {
+    for (const t of data.thinkings as Array<{ text?: string }>) {
+      if (t.text) store.addThinking(podKey, sessionId, t.text);
+    }
+  }
+  if (Array.isArray(data.logs)) {
+    for (const log of data.logs as Array<{ level?: string; message?: string }>) {
+      if (log.level && log.message) {
+        store.addLog(podKey, log.level, log.message);
+      }
+    }
+  }
   if (Array.isArray(data.pendingPermissions)) {
     for (const perm of data.pendingPermissions as Array<{
       requestId: string;
@@ -125,5 +143,12 @@ function dispatchSnapshot(
     }>) {
       store.addPermissionRequest(podKey, perm);
     }
+  }
+  if (data.configuration && typeof data.configuration === "object") {
+    const cfg = data.configuration as { permissionMode?: string; model?: string };
+    store.updateConfiguration(podKey, {
+      permissionMode: cfg.permissionMode,
+      model: cfg.model,
+    });
   }
 }

@@ -79,6 +79,18 @@ pub fn dispatch_event(
                 manager.add_log(pod_key, level, message);
             }
         }
+        "configChanged" => {
+            manager.update_configuration(
+                pod_key,
+                AcpConfiguration {
+                    permission_mode: data["permissionMode"]
+                        .as_str()
+                        .unwrap_or("")
+                        .to_string(),
+                    model: data["model"].as_str().unwrap_or("").to_string(),
+                },
+            );
+        }
         _ => {
             tracing::warn!("[ACP] Unknown event type: {}", event_type);
         }
@@ -145,6 +157,25 @@ pub fn dispatch_snapshot(
         }
     }
 
+    if let Some(thinkings) = snapshot["thinkings"].as_array() {
+        for t in thinkings {
+            let text = t["text"].as_str().unwrap_or("");
+            if !text.is_empty() {
+                manager.add_thinking(pod_key, text);
+            }
+        }
+    }
+
+    if let Some(logs) = snapshot["logs"].as_array() {
+        for log in logs {
+            let level = log["level"].as_str().unwrap_or("");
+            let message = log["message"].as_str().unwrap_or("");
+            if !level.is_empty() && !message.is_empty() {
+                manager.add_log(pod_key, level, message);
+            }
+        }
+    }
+
     if let Some(permissions) = snapshot["pendingPermissions"].as_array() {
         for perm in permissions {
             let req = AcpPermissionRequest {
@@ -155,6 +186,16 @@ pub fn dispatch_snapshot(
             };
             manager.add_permission_request(pod_key, req);
         }
+    }
+
+    if let Some(cfg) = snapshot.get("configuration") {
+        manager.update_configuration(
+            pod_key,
+            AcpConfiguration {
+                permission_mode: cfg["permissionMode"].as_str().unwrap_or("").to_string(),
+                model: cfg["model"].as_str().unwrap_or("").to_string(),
+            },
+        );
     }
     let _ = session_id;
 }

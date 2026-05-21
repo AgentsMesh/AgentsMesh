@@ -82,6 +82,14 @@ pub struct AcpPermissionRequest {
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AcpConfiguration {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub permission_mode: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub model: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AcpSession {
     pub messages: Vec<AcpContentChunk>,
     pub tool_calls: HashMap<String, AcpToolCall>,
@@ -90,6 +98,8 @@ pub struct AcpSession {
     pub logs: Vec<AcpLog>,
     pub state: AcpState,
     pub pending_permissions: Vec<AcpPermissionRequest>,
+    #[serde(default)]
+    pub configuration: AcpConfiguration,
 }
 
 pub const MAX_MESSAGES: usize = 500;

@@ -102,6 +102,12 @@ impl WasmAcpSessionManager {
         self.inner.add_log(pod_key, level, message);
     }
 
+    pub fn update_configuration(&mut self, pod_key: &str, config_json: &str) {
+        if let Ok(cfg) = serde_json::from_str::<AcpConfiguration>(config_json) {
+            self.inner.update_configuration(pod_key, cfg);
+        }
+    }
+
     pub fn clear_session(&mut self, pod_key: &str) {
         self.inner.clear_session(pod_key);
     }

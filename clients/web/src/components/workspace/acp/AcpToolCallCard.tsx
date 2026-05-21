@@ -19,9 +19,10 @@ function ToolStatusIcon({ toolCall }: { toolCall: AcpToolCall }) {
 
 export function AcpToolCallCard({ toolCall }: { toolCall: AcpToolCall }) {
   const [expanded, setExpanded] = useState(false);
+  const inProgress = toolCall.status !== "completed";
 
   return (
-    <div className="py-0.5">
+    <div className={inProgress ? "py-0.5 rounded bg-blue-500/5 animate-pulse" : "py-0.5"}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1.5 w-full text-left hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors"

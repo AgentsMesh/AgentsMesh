@@ -54,6 +54,23 @@ type ACPClient struct {
 	plan   []PlanStep
 	planMu sync.RWMutex
 
+	// Thinking history for snapshots (accumulator parallel to message history,
+	// so late subscribers see prior thinking blocks, not just future incremental
+	// events).
+	thinkings   []ThinkingUpdate
+	thinkingsMu sync.RWMutex
+	maxThinkings int
+
+	// Log history for snapshots.
+	logs    []LogEntry
+	logsMu  sync.RWMutex
+	maxLogs int
+
+	// Current configuration (permission_mode, model) for snapshots and broadcast.
+	// Writes go through applyConfiguration (callback-wrap) or SeedConfiguration (init).
+	configuration Configuration
+	configMu      sync.RWMutex
+
 	// Pending permission requests for snapshots
 	pendingPerms   []PermissionRequest
 	pendingPermsMu sync.RWMutex
@@ -82,6 +99,10 @@ func NewClient(cfg ClientConfig) *ACPClient {
 		state:        StateUninitialized,
 		messages:     make([]ContentChunk, 0, 256),
 		maxMessages:  1000,
+		thinkings:    make([]ThinkingUpdate, 0, 64),
+		maxThinkings: 200,
+		logs:         make([]LogEntry, 0, 64),
+		maxLogs:      200,
 		toolCalls:    make(map[string]*ToolCallSnapshot),
 		ctx:          ctx,
 		cancel:       cancel,
@@ -140,40 +161,7 @@ func (c *ACPClient) Start() error {
 	}
 
 	// Build wrapped callbacks that keep internal state in sync.
-	wrappedCallbacks := c.cfg.Callbacks
-	originalOnContent := wrappedCallbacks.OnContentChunk
-	wrappedCallbacks.OnContentChunk = func(sessionID string, chunk ContentChunk) {
-		c.addMessage(chunk)
-		if originalOnContent != nil {
-			originalOnContent(sessionID, chunk)
-		}
-	}
-	originalOnToolCallUpdate := wrappedCallbacks.OnToolCallUpdate
-	wrappedCallbacks.OnToolCallUpdate = func(sessionID string, update ToolCallUpdate) {
-		c.upsertToolCall(update)
-		if originalOnToolCallUpdate != nil {
-			originalOnToolCallUpdate(sessionID, update)
-		}
-	}
-	originalOnToolCallResult := wrappedCallbacks.OnToolCallResult
-	wrappedCallbacks.OnToolCallResult = func(sessionID string, result ToolCallResult) {
-		c.applyToolCallResult(result)
-		if originalOnToolCallResult != nil {
-			originalOnToolCallResult(sessionID, result)
-		}
-	}
-	originalOnPlanUpdate := wrappedCallbacks.OnPlanUpdate
-	wrappedCallbacks.OnPlanUpdate = func(sessionID string, update PlanUpdate) {
-		c.setPlan(update.Steps)
-		if originalOnPlanUpdate != nil {
-			originalOnPlanUpdate(sessionID, update)
-		}
-	}
-	// setState() already fires c.cfg.Callbacks.OnStateChange, so the wrapped
-	// callback must NOT call originalOnStateChange again (would double-fire).
-	wrappedCallbacks.OnStateChange = func(newState string) {
-		c.setState(newState)
-	}
+	wrappedCallbacks := c.wrapCallbacks()
 
 	// Create transport via registry (subpackages register themselves via init())
 	c.transport = NewTransport(c.cfg.TransportType, wrappedCallbacks, c.logger)

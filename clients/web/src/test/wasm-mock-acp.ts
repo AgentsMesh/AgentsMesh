@@ -8,9 +8,11 @@ interface AcpTC { id: string; name: string; status: string; args: unknown; resul
 interface AcpThink { text: string; timestamp: number; complete?: boolean }
 interface AcpPerm { id: string; tool_name: string; args: unknown; description: string }
 interface AcpLog { level: string; message: string; timestamp: number }
+interface AcpConfig { permission_mode: string; model: string }
 interface AcpSession {
   messages: AcpMsg[]; tool_calls: Record<string, AcpTC>; plan: unknown[];
   thinkings: AcpThink[]; logs: AcpLog[]; state: string; pending_permissions: AcpPerm[];
+  configuration: AcpConfig;
 }
 
 const MAX_MESSAGES = 500;
@@ -23,7 +25,7 @@ export function createAcpManager() {
   function getOrCreate(key: string): AcpSession {
     let s = sessions.get(key);
     if (!s) {
-      s = { messages: [], tool_calls: {}, plan: [], thinkings: [], logs: [], state: 'idle', pending_permissions: [] };
+      s = { messages: [], tool_calls: {}, plan: [], thinkings: [], logs: [], state: 'idle', pending_permissions: [], configuration: { permission_mode: '', model: '' } };
       sessions.set(key, s);
     }
     return s;
@@ -137,6 +139,13 @@ export function createAcpManager() {
       s.logs.push({ level, message, timestamp: Date.now() });
     },
 
+    update_configuration: (podKey: string, json: string) => {
+      const s = getOrCreate(podKey);
+      const cfg = JSON.parse(json) as Partial<AcpConfig>;
+      if (cfg.permission_mode) s.configuration.permission_mode = cfg.permission_mode;
+      if (cfg.model) s.configuration.model = cfg.model;
+    },
+
     clear_session: (podKey: string) => { sessions.delete(podKey); },
 
     get_session_json: (podKey: string) => {
@@ -154,6 +163,7 @@ export function createAcpManager() {
         logs: partial.logs ?? [],
         state: partial.state ?? 'idle',
         pending_permissions: partial.pending_permissions ?? [],
+        configuration: partial.configuration ?? { permission_mode: '', model: '' },
       };
       sessions.set(podKey, merged);
     },
