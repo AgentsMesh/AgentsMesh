@@ -54,6 +54,7 @@ mod tests {
             visibility: None,
             is_member: false,
             member_count: None,
+            agent_count: None,
             organization_id: None,
             document: None,
             repository_id: None,

@@ -15,8 +15,20 @@ export class ChannelLocalState {
   _messagesCache = new Map<string, MessageCacheEntry>();
   _unreadCountsCache = "{}";
   _mentionCountsCache = "{}";
+  // Per-channel pod array JSON — mirrors Rust ChannelState.pods_by_channel.
+  // Populated by ElectronChannelService.get_channel_pods (after IPC fetch) and
+  // by join/leave once they call get_channel_pods to refresh. Synchronous
+  // readers (useChannelPods.readPodsFromRust) need this to surface joined pods
+  // in the RightRail without an additional async round trip.
+  _podsByChannel = new Map<string, string>();
 
   channels_json(): string { return this._channelsCache; }
+  channel_pods_json(channelId: bigint): string {
+    return this._podsByChannel.get(String(channelId)) ?? "[]";
+  }
+  set_channel_pods(channelId: bigint, json: string): void {
+    this._podsByChannel.set(String(channelId), json);
+  }
   current_channel_json(): unknown {
     if (this._currentChannelId == null) return null;
     const chs = JSON.parse(this._channelsCache) as { id: number }[];

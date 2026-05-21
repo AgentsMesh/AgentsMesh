@@ -19,7 +19,7 @@ interface UseChannelChatReturn {
   messagesLoading: boolean;
   loadingMore: boolean;
   messagesError: string | null;
-  podCount: number;
+  agentCount: number;
   channelName: string;
   transformedMessages: TransformedMessage[];
   hasMore: boolean;
@@ -99,7 +99,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   }, [channelId]);
 
   const channelInfo = topology?.channels.find((c: { id: number }) => c.id === channelId);
-  const podCount = channelInfo?.pod_keys.length || currentChannel?.pods?.length || 0;
+  const agentCount = currentChannel?.agent_count ?? channelInfo?.pod_keys.length ?? 0;
   const channelName = currentChannel?.name || channelInfo?.name || "Channel";
 
   const handlePodsChanged = useCallback(() => {
@@ -152,7 +152,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     messagesLoading,
     loadingMore,
     messagesError,
-    podCount,
+    agentCount,
     channelName,
     transformedMessages,
     hasMore,

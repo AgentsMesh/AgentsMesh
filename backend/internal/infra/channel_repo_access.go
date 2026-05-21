@@ -81,6 +81,14 @@ func (r *channelRepository) RemovePodFromChannel(ctx context.Context, channelID 
 		Delete(&channelPod{}).Error
 }
 
+func (r *channelRepository) GetChannelPodCount(ctx context.Context, channelID int64) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&channelPod{}).
+		Where("channel_id = ?", channelID).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *channelRepository) GetChannelPods(ctx context.Context, channelID int64) ([]*agentpod.Pod, error) {
 	var cps []channelPod
 	if err := r.db.WithContext(ctx).Where("channel_id = ?", channelID).Find(&cps).Error; err != nil {

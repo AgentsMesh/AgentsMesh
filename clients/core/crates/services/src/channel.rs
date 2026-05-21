@@ -262,7 +262,14 @@ impl ChannelService {
         let ch: Channel = self.client
             .get_channel(channel_id)
             .await.map_err(crate::wire)?;
-        self.state.write().unwrap().update_channel(channel_id, ch.clone());
+        let pods_resp = self.client
+            .get_channel_pods(channel_id)
+            .await.map_err(crate::wire)?;
+        {
+            let mut state = self.state.write().unwrap();
+            state.update_channel(channel_id, ch.clone());
+            state.set_channel_pods(channel_id, pods_resp.pods);
+        }
         serde_json::to_string(&ch).map_err(crate::wire)
     }
 
@@ -271,7 +278,14 @@ impl ChannelService {
         let ch: Channel = self.client
             .get_channel(channel_id)
             .await.map_err(crate::wire)?;
-        self.state.write().unwrap().update_channel(channel_id, ch.clone());
+        let pods_resp = self.client
+            .get_channel_pods(channel_id)
+            .await.map_err(crate::wire)?;
+        {
+            let mut state = self.state.write().unwrap();
+            state.update_channel(channel_id, ch.clone());
+            state.set_channel_pods(channel_id, pods_resp.pods);
+        }
         serde_json::to_string(&ch).map_err(crate::wire)
     }
 

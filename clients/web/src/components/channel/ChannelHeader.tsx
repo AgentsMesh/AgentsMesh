@@ -12,7 +12,7 @@ interface ChannelHeaderProps {
   channelId: number;
   visibility?: "public" | "private";
   isMember?: boolean;
-  podCount: number;
+  agentCount: number;
   memberCount?: number;
   ticket?: Channel["ticket"];
   repository?: Channel["repository"];
@@ -27,7 +27,7 @@ export function ChannelHeader({
   channelId,
   visibility = "public",
   isMember = true,
-  podCount,
+  agentCount,
   memberCount = 0,
   ticket,
   repository,
@@ -76,7 +76,7 @@ export function ChannelHeader({
         <div className="flex min-w-0 flex-col">
           <h2 className="truncate text-base font-semibold text-foreground">{name}</h2>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span>{t("channels.header.podsCount", { count: podCount })}</span>
+            <span>{t("channels.header.agentsCount", { count: agentCount })}</span>
             <Dot />
             <span>{t("channels.header.membersCount", { count: memberCount })}</span>
             {ticket && (

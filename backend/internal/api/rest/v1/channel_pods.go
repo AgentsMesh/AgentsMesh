@@ -3,6 +3,7 @@ package v1
 import (
 	"net/http"
 
+	"github.com/anthropics/agentsmesh/backend/internal/middleware"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,13 @@ func (h *ChannelHandler) JoinPod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Pod joined channel"})
+	tenant := middleware.GetTenant(c)
+	enriched, err := h.channelService.GetChannelForUser(c.Request.Context(), ch.ID, tenant.UserID)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "Pod joined channel"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Pod joined channel", "channel": enriched})
 }
 
 func (h *ChannelHandler) LeavePod(c *gin.Context) {
@@ -41,7 +48,13 @@ func (h *ChannelHandler) LeavePod(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Pod left channel"})
+	tenant := middleware.GetTenant(c)
+	enriched, err := h.channelService.GetChannelForUser(c.Request.Context(), ch.ID, tenant.UserID)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "Pod left channel"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Pod left channel", "channel": enriched})
 }
 
 func (h *ChannelHandler) ListChannelPods(c *gin.Context) {

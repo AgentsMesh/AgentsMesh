@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use crate::channel_state::{ChannelSortMode, ChannelState};
 use agentsmesh_types::*;
 
-fn ch(id: i64, name: &str) -> Channel { Channel { id, name: name.into(), description: None, is_archived: false, visibility: None, is_member: false, member_count: None, organization_id: None, document: None, repository_id: None, ticket_id: None, ticket_slug: None, created_by_pod: None, created_by_user_id: None, created_at: None, updated_at: None } }
+fn ch(id: i64, name: &str) -> Channel { Channel { id, name: name.into(), description: None, is_archived: false, visibility: None, is_member: false, member_count: None, agent_count: None, organization_id: None, document: None, repository_id: None, ticket_id: None, ticket_slug: None, created_by_pod: None, created_by_user_id: None, created_at: None, updated_at: None } }
 fn msg(id: i64, ch: i64, content: &str) -> ChannelMessage { ChannelMessage { id, channel_id: ch, body: content.into(), content: None, mentions: None, reply_to: None, sender_user: None, sender_user_id: None, sender_pod: None, sender_pod_info: None, message_type: None, pod_key: None, metadata: None, edited_at: None, is_deleted: None, created_at: None } }
 fn msg_with_sender(id: i64, ch: i64, content: &str, user_id: i64, username: &str) -> ChannelMessage {
     let mut m = msg(id, ch, content);

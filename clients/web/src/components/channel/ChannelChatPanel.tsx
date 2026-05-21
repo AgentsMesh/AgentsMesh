@@ -46,7 +46,7 @@ export function ChannelChatPanel({ channelId }: ChannelChatPanelProps) {
         channelId={channelId}
         visibility={visibility}
         isMember={isMember}
-        podCount={chat.podCount}
+        agentCount={chat.agentCount}
         memberCount={chat.currentChannel?.member_count}
         ticket={chat.currentChannel?.ticket}
         repository={chat.currentChannel?.repository}

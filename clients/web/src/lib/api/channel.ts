@@ -19,6 +19,7 @@ export interface ChannelData {
   is_archived: boolean;
   is_member: boolean;
   member_count: number;
+  agent_count: number;
   created_at: string;
   updated_at: string;
 }

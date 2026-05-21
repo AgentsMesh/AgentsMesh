@@ -48,6 +48,7 @@ type Channel struct {
 
 	IsMember    bool  `gorm:"-" json:"is_member"`
 	MemberCount int64 `gorm:"-" json:"member_count"`
+	AgentCount  int64 `gorm:"-" json:"agent_count"`
 
 	Messages []Message `gorm:"foreignKey:ChannelID" json:"messages,omitempty"`
 }

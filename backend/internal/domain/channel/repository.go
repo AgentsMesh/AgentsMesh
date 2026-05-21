@@ -67,6 +67,7 @@ type AccessStore interface {
 	AddPodToChannel(ctx context.Context, channelID int64, podKey string) error
 	RemovePodFromChannel(ctx context.Context, channelID int64, podKey string) error
 	GetChannelPods(ctx context.Context, channelID int64) ([]*agentpod.Pod, error)
+	GetChannelPodCount(ctx context.Context, channelID int64) (int64, error)
 	CreateBinding(ctx context.Context, binding *PodBinding) error
 	GetBindingByID(ctx context.Context, bindingID int64) (*PodBinding, error)
 	GetBindingByPods(ctx context.Context, initiator, target string) (*PodBinding, error)

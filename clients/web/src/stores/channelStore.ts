@@ -9,6 +9,7 @@ export interface Channel {
   visibility?: "public" | "private";
   is_member?: boolean;
   member_count: number;
+  agent_count: number;
   created_at?: string; updated_at?: string;
   repository?: { id: number; name: string };
   ticket?: { id: number; slug: string; title: string };

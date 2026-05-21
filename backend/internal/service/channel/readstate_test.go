@@ -100,6 +100,9 @@ func TestGetChannelForUser(t *testing.T) {
 		if result.MemberCount != 2 {
 			t.Errorf("Expected member_count=2, got %d", result.MemberCount)
 		}
+		if result.AgentCount != 0 {
+			t.Errorf("Expected agent_count=0 (no pods joined), got %d", result.AgentCount)
+		}
 	})
 
 	t.Run("non-member gets is_member=false", func(t *testing.T) {
@@ -111,6 +114,52 @@ func TestGetChannelForUser(t *testing.T) {
 			t.Error("Non-member should have is_member=false")
 		}
 	})
+}
+
+func TestGetChannelForUser_AgentCount(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestService(db)
+	ctx := context.Background()
+	creator := int64(10)
+
+	ch, _ := svc.CreateChannel(ctx, &CreateChannelRequest{
+		OrganizationID: 1, Name: "agent-count", CreatedByUserID: &creator,
+	})
+
+	// Channel starts with 1 member (creator) and 0 agents.
+	result, _ := svc.GetChannelForUser(ctx, ch.ID, creator)
+	if result.MemberCount != 1 {
+		t.Errorf("Expected member_count=1, got %d", result.MemberCount)
+	}
+	if result.AgentCount != 0 {
+		t.Errorf("Expected agent_count=0, got %d", result.AgentCount)
+	}
+
+	// Join two pods (pod table absent is fine; channel_pods row gets created
+	// regardless — ensurePodCreatorIsMember silently no-ops on missing pods).
+	if err := svc.JoinChannel(ctx, ch.ID, "pod-1"); err != nil {
+		t.Fatalf("JoinChannel pod-1 failed: %v", err)
+	}
+	if err := svc.JoinChannel(ctx, ch.ID, "pod-2"); err != nil {
+		t.Fatalf("JoinChannel pod-2 failed: %v", err)
+	}
+
+	result, _ = svc.GetChannelForUser(ctx, ch.ID, creator)
+	if result.AgentCount != 2 {
+		t.Errorf("After 2 JoinChannel calls, expected agent_count=2, got %d", result.AgentCount)
+	}
+	if result.MemberCount != 1 {
+		t.Errorf("member_count must stay user-only (=1) after agent joins, got %d", result.MemberCount)
+	}
+
+	// Leave one pod, agent_count should drop to 1.
+	if err := svc.LeaveChannel(ctx, ch.ID, "pod-1"); err != nil {
+		t.Fatalf("LeaveChannel pod-1 failed: %v", err)
+	}
+	result, _ = svc.GetChannelForUser(ctx, ch.ID, creator)
+	if result.AgentCount != 1 {
+		t.Errorf("After leave, expected agent_count=1, got %d", result.AgentCount)
+	}
 }
 
 func TestGetUnreadCounts(t *testing.T) {

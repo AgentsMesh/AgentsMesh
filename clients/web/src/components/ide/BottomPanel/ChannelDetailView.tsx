@@ -46,7 +46,7 @@ export function ChannelDetailView({
         <div className="flex-1 min-w-0">
           <ChannelHeader
             name={chat.channelName}
-            podCount={chat.podCount}
+            agentCount={chat.agentCount}
             channelId={channelId}
             visibility={visibility}
             isMember={isMember}

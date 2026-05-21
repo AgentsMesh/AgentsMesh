@@ -99,14 +99,32 @@ export class ElectronChannelService extends ChannelLocalState implements IChanne
   }
 
   async join_channel(channelId: bigint, podKey: string): Promise<string> {
-    return invoke<string>("channelJoinChannel", Number(channelId), podKey);
+    const result = await invoke<string>("channelJoinChannel", Number(channelId), podKey);
+    // Rust ChannelService.join_channel already refreshed pods_by_channel on
+    // the main side; refresh the renderer mirror so the synchronous
+    // channel_pods_json reader (useChannelPods.readPodsFromRust) sees the
+    // joined pod immediately without waiting for the next get_channel_pods.
+    await this.get_channel_pods(channelId).catch(() => undefined);
+    return result;
   }
 
   async leave_channel(channelId: bigint, podKey: string): Promise<string> {
-    return invoke<string>("channelLeaveChannel", Number(channelId), podKey);
+    const result = await invoke<string>("channelLeaveChannel", Number(channelId), podKey);
+    await this.get_channel_pods(channelId).catch(() => undefined);
+    return result;
   }
 
   async get_channel_pods(id: bigint): Promise<string> {
-    return invoke<string>("channelGetChannelPods", Number(id));
+    const result = await invoke<string>("channelGetChannelPods", Number(id));
+    // Backend envelope: `{ pods: [...], total: N }`. Mirror into the
+    // renderer-side pods cache so subsequent channel_pods_json reads
+    // are synchronous (matches WASM behaviour).
+    try {
+      const parsed = JSON.parse(result) as { pods?: unknown[] };
+      this.set_channel_pods(id, JSON.stringify(Array.isArray(parsed.pods) ? parsed.pods : []));
+    } catch {
+      this.set_channel_pods(id, "[]");
+    }
+    return result;
   }
 }

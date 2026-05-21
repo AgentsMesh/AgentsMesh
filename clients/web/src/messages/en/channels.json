@@ -38,6 +38,7 @@
     },
     "header": {
       "podsCount": "{count} pods",
+      "agentsCount": "{count} agents",
       "membersCount": "{count} members",
       "linkedTo": "Linked to",
       "search": "Search messages",
@@ -47,10 +48,12 @@
     },
     "rightRail": {
       "pods": "PODS",
+      "agents": "AGENTS",
       "members": "MEMBERS",
       "linked": "LINKED",
       "document": "DOCUMENT",
       "podsEmpty": "No pods yet",
+      "agentsEmpty": "No agents yet",
       "documentEmpty": "No document yet"
     },
     "composer": {

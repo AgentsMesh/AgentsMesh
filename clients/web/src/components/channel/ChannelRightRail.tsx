@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCurrentOrg, useAuthStore } from "@/stores/auth";
 import type { Channel } from "@/stores/channel";
+import { useChannelPods } from "@/hooks/useChannelPods";
 import { cn } from "@/lib/utils";
 import { FileText, FolderGit2, Settings, Ticket } from "lucide-react";
 import { ChannelPodManager } from "./ChannelPodManager";
@@ -24,8 +25,8 @@ export function ChannelRightRail({
 }: ChannelRightRailProps) {
   const t = useTranslations();
   const currentOrg = useCurrentOrg();
-  const pods = channel?.pods ?? [];
-  const podCount = pods.length;
+  const { pods } = useChannelPods(channelId);
+  const agentCount = channel?.agent_count ?? pods.length;
   const memberCount = channel?.member_count ?? 0;
   const document = channel?.document?.trim();
 
@@ -36,15 +37,15 @@ export function ChannelRightRail({
     >
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <SectionTitle>{`${t("channels.rightRail.pods")} · ${podCount}`}</SectionTitle>
+          <SectionTitle>{`${t("channels.rightRail.agents")} · ${agentCount}`}</SectionTitle>
           <ChannelPodManager
             channelId={channelId}
-            podCount={podCount}
+            podCount={agentCount}
             onPodsChanged={onPodsChanged}
           />
         </div>
         {pods.length === 0 ? (
-          <EmptyRail>{t("channels.rightRail.podsEmpty")}</EmptyRail>
+          <EmptyRail>{t("channels.rightRail.agentsEmpty")}</EmptyRail>
         ) : (
           <ul className="flex flex-col gap-1">
             {pods.map((pod) => (
@@ -60,11 +61,6 @@ export function ChannelRightRail({
                   <span className="truncate font-mono text-[12px] text-foreground">
                     {pod.alias ?? pod.pod_key}
                   </span>
-                  {pod.agent?.name && (
-                    <span className="truncate font-mono text-[10px] text-muted-foreground">
-                      {pod.agent.name}
-                    </span>
-                  )}
                 </span>
                 <StatusDot status={pod.status} />
               </li>

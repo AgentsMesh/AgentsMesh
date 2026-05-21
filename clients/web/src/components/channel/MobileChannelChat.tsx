@@ -80,7 +80,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
             {isMember && (
               <ChannelPodManager
                 channelId={channelId}
-                podCount={chat.podCount}
+                podCount={chat.agentCount}
                 onPodsChanged={chat.handlePodsChanged}
               />
             )}

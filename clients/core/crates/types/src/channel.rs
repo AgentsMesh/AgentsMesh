@@ -19,6 +19,8 @@ pub struct Channel {
     #[serde(default)]
     pub member_count: Option<i64>,
     #[serde(default)]
+    pub agent_count: Option<i64>,
+    #[serde(default)]
     pub organization_id: Option<i64>,
     #[serde(default)]
     pub document: Option<String>,
@@ -195,7 +197,7 @@ mod tests {
         let ch = Channel {
             id: 1, name: "general".into(), description: Some("General channel".into()),
             is_archived: false, visibility: Some("public".into()),
-            is_member: true, member_count: Some(3),
+            is_member: true, member_count: Some(3), agent_count: Some(2),
             organization_id: Some(10), document: None,
             repository_id: Some(42), ticket_id: None, ticket_slug: None,
             created_by_pod: None, created_by_user_id: None,
@@ -206,6 +208,16 @@ mod tests {
         assert_eq!(decoded.name, "general");
         assert!(!decoded.is_archived);
         assert_eq!(decoded.organization_id, Some(10));
+        assert_eq!(decoded.member_count, Some(3));
+        assert_eq!(decoded.agent_count, Some(2));
+    }
+
+    #[test]
+    fn channel_agent_count_defaults_when_missing() {
+        let json = r#"{"id":1,"name":"ch","is_archived":false,"member_count":2}"#;
+        let ch: Channel = serde_json::from_str(json).unwrap();
+        assert_eq!(ch.member_count, Some(2));
+        assert!(ch.agent_count.is_none(), "missing agent_count should deserialize as None");
     }
 
     #[test]

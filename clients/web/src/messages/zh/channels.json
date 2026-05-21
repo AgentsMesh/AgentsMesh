@@ -38,6 +38,7 @@
     },
     "header": {
       "podsCount": "{count} 个 Pod",
+      "agentsCount": "{count} 个 Agent",
       "membersCount": "{count} 位成员",
       "linkedTo": "关联",
       "search": "搜索消息",
@@ -47,10 +48,12 @@
     },
     "rightRail": {
       "pods": "PODS",
+      "agents": "AGENTS",
       "members": "MEMBERS",
       "linked": "LINKED",
       "document": "DOCUMENT",
       "podsEmpty": "暂无 Pod",
+      "agentsEmpty": "暂无 Agent",
       "documentEmpty": "暂无文档"
     },
     "composer": {
