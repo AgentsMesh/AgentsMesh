@@ -6,7 +6,7 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
 
-func TestParseInitialConfigFromArgs(t *testing.T) {
+func TestParseClaudeInitialConfig(t *testing.T) {
 	tests := []struct {
 		name string
 		args []string
@@ -40,7 +40,7 @@ func TestParseInitialConfigFromArgs(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := parseInitialConfigFromArgs(tc.args)
+			got := parseClaudeInitialConfig(tc.args)
 			if got != tc.want {
 				t.Errorf("got %+v, want %+v", got, tc.want)
 			}

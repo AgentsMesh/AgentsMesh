@@ -3,9 +3,9 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "runner",
     srcs = [
-        "acp_initial_config.go",
         "agents_import.go",
         "autopilot_store.go",
+        "claude_initial_config.go",
         "handler_autopilot.go",
         "handler_events.go",
         "handler_events_osc.go",
@@ -112,8 +112,8 @@ alias(
 go_test(
     name = "runner_test",
     srcs = [
-        "acp_initial_config_test.go",
         "autopilot_store_test.go",
+        "claude_initial_config_test.go",
         "copy_dir_selective_test.go",
         "log_collector_test.go",
         "managed_state_detector_test.go",

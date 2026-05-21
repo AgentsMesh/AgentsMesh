@@ -108,7 +108,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// resolved AgentFile values (e.g. --permission-mode bypassPermissions),
 	// not an empty placeholder. Falls back silently when args don't carry
 	// these flags (codex/gemini variants).
-	acpClient.SeedConfiguration(parseInitialConfigFromArgs(pod.LaunchArgs))
+	acpClient.SeedConfiguration(parseClaudeInitialConfig(pod.LaunchArgs))
 
 	// Wire client into pod
 	pod.IO = NewACPPodIO(acpClient, podKey)
