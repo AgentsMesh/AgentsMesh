@@ -25,6 +25,13 @@ type ACPTransport struct {
 	reader  *Reader
 	handler *Handler
 
+	// supportsControlRequest captures whether the agent advertised the
+	// `agentsmeshExtensions.controlRequest` capability in its initialize
+	// response. When false (codex/gemini/opencode + any other standard
+	// ACP agent), SendControlRequest fails fast with ErrControlNotSupported
+	// instead of waiting on a 10-second JSON-RPC timeout.
+	supportsControlRequest bool
+
 	ctx    context.Context
 	logger *slog.Logger
 }
@@ -73,8 +80,25 @@ func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 			resp.Error.Code, resp.Error.Message)
 	}
 
-	t.logger.Info("ACP initialize succeeded")
+	t.supportsControlRequest = parseControlRequestCapability(resp.Result)
+	t.logger.Info("ACP initialize succeeded",
+		"supports_control_request", t.supportsControlRequest)
 	return "", nil // ACP doesn't auto-discover session IDs
+}
+
+// parseControlRequestCapability reads the agentsmeshExtensions block from an
+// initialize response. Agents that don't ship this extension simply omit it,
+// which (correctly) leaves the runner in "no control_request" mode.
+func parseControlRequestCapability(raw json.RawMessage) bool {
+	var body struct {
+		AgentsmeshExtensions struct {
+			ControlRequest bool `json:"controlRequest"`
+		} `json:"agentsmeshExtensions"`
+	}
+	if err := json.Unmarshal(raw, &body); err != nil {
+		return false
+	}
+	return body.AgentsmeshExtensions.ControlRequest
 }
 
 // NewSession sends a session/new RPC and returns the session ID.
@@ -193,10 +217,19 @@ func (t *ACPTransport) CancelSession(sessionID string) error {
 // degrade gracefully. The mock agent (e2e-mock-agent) and any future agent
 // that opts into control-plane round-trips should accept this method.
 //
+// Capability check up-front: if the agent didn't advertise
+// agentsmeshExtensions.controlRequest in its initialize response, we
+// short-circuit to ErrControlNotSupported instead of waiting on the
+// 10-second JSON-RPC timeout. This keeps the Selector responsive on agents
+// that simply don't implement the extension.
+//
 // Payload schema: { sessionId, subtype, params? }. The subtype is the
 // runner-side action name (e.g. "set_permission_mode", "set_model"),
 // kept stable so agents can dispatch by literal match.
 func (t *ACPTransport) SendControlRequest(sessionID string, subtype string, payload map[string]any) (map[string]any, error) {
+	if !t.supportsControlRequest {
+		return nil, ErrControlNotSupported
+	}
 	params := map[string]any{
 		"sessionId": sessionID,
 		"subtype":   subtype,

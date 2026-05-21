@@ -93,6 +93,10 @@ func initializeResult() map[string]any {
 	return map[string]any{
 		"protocol_version": "2025-01-01",
 		"capabilities":     map[string]any{"permissions": true, "streaming": true},
+		// AgentsMesh-specific capability advertisement. ACPTransport reads
+		// this to decide whether to attempt session/control_request at all;
+		// other agents that don't ship the extension simply omit the field.
+		"agentsmeshExtensions": map[string]any{"controlRequest": true},
 	}
 }
 
