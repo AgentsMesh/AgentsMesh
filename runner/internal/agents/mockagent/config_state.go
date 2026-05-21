@@ -33,9 +33,3 @@ func (c *configState) setThinkingLevel(level string) {
 	defer c.mu.Unlock()
 	c.thinkingLevel = level
 }
-
-func (c *configState) permissionMode() string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	return c.mode
-}

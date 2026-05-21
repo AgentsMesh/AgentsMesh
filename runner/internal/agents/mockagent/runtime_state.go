@@ -1,7 +1,6 @@
 package mockagent
 
 import (
-	"context"
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
@@ -31,20 +30,8 @@ func newRuntimeState(writer *acp.Writer) *runtimeState {
 	}
 }
 
-// awaitResponse is the high-level scenario API: reserve a slot, return a
-// `(channel, cleanup)` pair, and let the scenario emit the outgoing request
-// AFTER calling reserve. Existing scenarios that emit-then-await keep
-// working because reserve is also fine after the emit (the inbound reader
-// loop only drops responses for unreserved ids).
-func (s *runtimeState) awaitResponse(ctx context.Context, id int64) (*acp.JSONRPCMessage, error) {
-	ch, cleanup := s.pending.reserve(id)
-	defer cleanup()
-	return awaitWith(ctx, ch)
-}
-
 func (s *runtimeState) deliverResponse(msg *acp.JSONRPCMessage) { s.pending.deliver(msg) }
 
 func (s *runtimeState) setPermissionMode(mode string) { s.config.setPermissionMode(mode) }
 func (s *runtimeState) setModel(model string)         { s.config.setModel(model) }
 func (s *runtimeState) setThinkingLevel(level string) { s.config.setThinkingLevel(level) }
-func (s *runtimeState) permissionMode() string        { return s.config.permissionMode() }

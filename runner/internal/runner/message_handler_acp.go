@@ -134,10 +134,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// Broadcast seeded configuration so late-joining subscribers (and the
 	// snapshot path) see the initial mode/model rather than empty defaults.
 	if initialCfg := acpClient.Configuration(); initialCfg.PermissionMode != "" || initialCfg.Model != "" {
-		sendAcpViaRelay(pod, "configChanged", "", acp.ConfigUpdate{
-			PermissionMode: initialCfg.PermissionMode,
-			Model:          initialCfg.Model,
-		})
+		sendAcpViaRelay(pod, "configChanged", "", acp.ConfigUpdate(initialCfg))
 	}
 
 	// Create a new ACP session with MCP servers config

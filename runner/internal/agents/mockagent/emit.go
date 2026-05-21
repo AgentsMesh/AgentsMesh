@@ -67,24 +67,6 @@ func emitToolCallUpdate(w *acp.Writer, id, title, status, resultText, errorMessa
 	})
 }
 
-func emitPlanUpdate(w *acp.Writer, steps []map[string]string) error {
-	entries := make([]map[string]string, 0, len(steps))
-	for _, s := range steps {
-		entries = append(entries, map[string]string{
-			"content":  s["content"],
-			"priority": s["priority"],
-			"status":   s["status"],
-		})
-	}
-	return w.WriteNotification("session/update", map[string]any{
-		"sessionId": mockSessionID,
-		"update": map[string]any{
-			"sessionUpdate": "plan",
-			"entries":       entries,
-		},
-	})
-}
-
 // emitPermissionRequest sends an out-of-band JSON-RPC *request* (not a
 // notification) per the ACP spec: the runner expects a control flow where
 // permission decisions echo back through session/request_permission.

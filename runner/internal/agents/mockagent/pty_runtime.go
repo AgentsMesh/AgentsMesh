@@ -25,12 +25,12 @@ func RunPTY(scenario string, logger *slog.Logger) int {
 func runPTYWithIO(scenario string, in io.Reader, out io.Writer, env []string, logger *slog.Logger) int {
 	switch scenario {
 	case "", "echo":
-		fmt.Fprintln(out, "ready")
+		_, _ = fmt.Fprintln(out, "ready")
 		writeEnvDump(env)
 		echoLoop(in, out)
 		return 0
 	default:
-		fmt.Fprintf(out, "unknown PTY scenario: %s\n", scenario)
+		_, _ = fmt.Fprintf(out, "unknown PTY scenario: %s\n", scenario)
 		logger.Error("unknown PTY scenario", "scenario", scenario)
 		return 2
 	}

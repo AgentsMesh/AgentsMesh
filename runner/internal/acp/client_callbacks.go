@@ -63,10 +63,7 @@ func (c *ACPClient) wrapCallbacks() EventCallbacks {
 	wrapped.OnConfigChange = func(sessionID string, update ConfigUpdate) {
 		merged := c.applyConfiguration(update)
 		if originalOnConfigChange != nil {
-			originalOnConfigChange(sessionID, ConfigUpdate{
-				PermissionMode: merged.PermissionMode,
-				Model:          merged.Model,
-			})
+			originalOnConfigChange(sessionID, ConfigUpdate(merged))
 		}
 	}
 
