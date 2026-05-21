@@ -76,6 +76,12 @@ function dispatchEvent(
         model: data.model as string | undefined,
       });
       break;
+    case "configChangeFailed":
+      // Surface as a warn log so AcpActivityStream's LogEntry renders it.
+      // No retry / rollback — the wasm session still holds the old value,
+      // so the Selector simply stays on the previous label after error.
+      store.addLog(podKey, "warn", `Config change failed (${data.field}=${data.value}): ${data.message}`);
+      break;
     default:
       console.warn("[ACP] Unknown event type:", eventType);
   }

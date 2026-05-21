@@ -77,6 +77,14 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 		}
 		if err := sa.SetPermissionMode(cmd.Mode); err != nil {
 			log.Error("Failed to set permission mode", "pod_key", pod.PodKey, "mode", cmd.Mode, "error", err)
+			// Tell the UI the change did NOT take effect. Without this, the
+			// post-Phase-D Selector waits forever for a configChanged
+			// broadcast that will never arrive and looks frozen.
+			sendAcpViaRelay(pod, "configChangeFailed", "", map[string]string{
+				"field":   "permissionMode",
+				"value":   cmd.Mode,
+				"message": err.Error(),
+			})
 		}
 
 	case "set_model":
@@ -86,6 +94,11 @@ func (h *RunnerMessageHandler) handleAcpRelayCommand(pod *Pod, payload []byte) {
 		}
 		if err := sa.SetModel(cmd.Model); err != nil {
 			log.Error("Failed to set model", "pod_key", pod.PodKey, "model", cmd.Model, "error", err)
+			sendAcpViaRelay(pod, "configChangeFailed", "", map[string]string{
+				"field":   "model",
+				"value":   cmd.Model,
+				"message": err.Error(),
+			})
 		}
 
 	case "control_request":
