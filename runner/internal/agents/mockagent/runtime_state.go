@@ -7,86 +7,44 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
 
-// runtimeState carries the shared state scenarios need: the writer (for
-// emitting notifications/requests), a registry of pending outgoing requests
-// (e.g. session/request_permission round-trip), a WaitGroup so
-// runACPWithIO can drain in-flight scenario goroutines on EOF, and the
-// current configuration (settable via session/control_request).
+// runtimeState is the per-process composition root: it owns the writer
+// (single source of outbound JSON-RPC), a WaitGroup so EOF can drain
+// in-flight scenario goroutines, and two narrow sub-aggregates that
+// carry the actually-stateful pieces (pendingRegistry for IPC round-trips,
+// configState for AgentsMesh control plane).
+//
+// Keeping the sub-aggregates separate means new scenarios reach for
+// exactly the surface they need (state.pending vs state.config) and the
+// runtime entrypoint stays thin.
 type runtimeState struct {
-	writer        *acp.Writer
-	wg            sync.WaitGroup
-	pendingMu     sync.Mutex
-	pending       map[int64]chan *acp.JSONRPCMessage
-	configMu      sync.RWMutex
-	mode          string
-	model         string
-	thinkingLevel string
+	writer  *acp.Writer
+	wg      sync.WaitGroup
+	pending *pendingRegistry
+	config  *configState
 }
 
 func newRuntimeState(writer *acp.Writer) *runtimeState {
 	return &runtimeState{
 		writer:  writer,
-		pending: make(map[int64]chan *acp.JSONRPCMessage),
+		pending: newPendingRegistry(),
+		config:  newConfigState(),
 	}
 }
 
-// awaitResponse registers a channel for the given outgoing request id and
-// blocks until the matching JSON-RPC response arrives (or ctx is done).
+// awaitResponse is the high-level scenario API: reserve a slot, return a
+// `(channel, cleanup)` pair, and let the scenario emit the outgoing request
+// AFTER calling reserve. Existing scenarios that emit-then-await keep
+// working because reserve is also fine after the emit (the inbound reader
+// loop only drops responses for unreserved ids).
 func (s *runtimeState) awaitResponse(ctx context.Context, id int64) (*acp.JSONRPCMessage, error) {
-	ch := make(chan *acp.JSONRPCMessage, 1)
-	s.pendingMu.Lock()
-	s.pending[id] = ch
-	s.pendingMu.Unlock()
-	defer func() {
-		s.pendingMu.Lock()
-		delete(s.pending, id)
-		s.pendingMu.Unlock()
-	}()
-	select {
-	case resp := <-ch:
-		return resp, nil
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	}
+	ch, cleanup := s.pending.reserve(id)
+	defer cleanup()
+	return awaitWith(ctx, ch)
 }
 
-func (s *runtimeState) deliverResponse(msg *acp.JSONRPCMessage) {
-	id, ok := msg.GetID()
-	if !ok {
-		return
-	}
-	s.pendingMu.Lock()
-	ch, found := s.pending[id]
-	s.pendingMu.Unlock()
-	if !found {
-		return
-	}
-	select {
-	case ch <- msg:
-	default:
-	}
-}
+func (s *runtimeState) deliverResponse(msg *acp.JSONRPCMessage) { s.pending.deliver(msg) }
 
-func (s *runtimeState) setPermissionMode(mode string) {
-	s.configMu.Lock()
-	defer s.configMu.Unlock()
-	s.mode = mode
-}
-
-func (s *runtimeState) setModel(model string) {
-	s.configMu.Lock()
-	defer s.configMu.Unlock()
-	s.model = model
-}
-
-func (s *runtimeState) setThinkingLevel(level string) {
-	s.configMu.Lock()
-	defer s.configMu.Unlock()
-	s.thinkingLevel = level
-}
-
-func (s *runtimeState) permissionMode() string {
-	s.configMu.RLock()
-	defer s.configMu.RUnlock()
-	return s.mode
-}
+func (s *runtimeState) setPermissionMode(mode string) { s.config.setPermissionMode(mode) }
+func (s *runtimeState) setModel(model string)         { s.config.setModel(model) }
+func (s *runtimeState) setThinkingLevel(level string) { s.config.setThinkingLevel(level) }
+func (s *runtimeState) permissionMode() string        { return s.config.permissionMode() }

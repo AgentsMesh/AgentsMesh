@@ -5,8 +5,10 @@ go_library(
     srcs = [
         "acp_control.go",
         "acp_runtime.go",
+        "config_state.go",
         "emit.go",
         "env_dump.go",
+        "pending_registry.go",
         "pty_runtime.go",
         "runtime_state.go",
         "scenario_basic.go",

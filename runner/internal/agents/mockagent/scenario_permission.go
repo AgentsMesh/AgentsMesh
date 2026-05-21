@@ -14,9 +14,15 @@ const permissionWaitTimeout = 10 * time.Second
 // returns a response. On approve the scenario emits a successful tool_result;
 // on deny it emits a failure result with an explanatory message. End-to-end
 // regression for the AcpPermissionDialog full flow.
+//
+// Critical ordering: we reserve the response channel BEFORE writing the
+// request to stdout. Without that, the runner could in principle reply
+// faster than we can register the channel, causing pendingRegistry.deliver
+// to drop the response.
 func scenarioPermissionRequestEdit(state *runtimeState, id int64, params json.RawMessage, logger *slog.Logger) error {
 	prompt := extractPromptText(params)
 	const tcID = "tc-mock-edit-perm-1"
+	const permReqID int64 = 9001
 
 	if err := emitContentChunk(state.writer, "Will edit (with confirm): "+prompt, "assistant"); err != nil {
 		return err
@@ -25,14 +31,15 @@ func scenarioPermissionRequestEdit(state *runtimeState, id int64, params json.Ra
 		return err
 	}
 
-	const permReqID = 9001
+	ch, cleanup := state.pending.reserve(permReqID)
+	defer cleanup()
 	if _, err := emitPermissionRequest(state.writer, permReqID, tcID, "Edit"); err != nil {
 		return err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), permissionWaitTimeout)
 	defer cancel()
-	resp, err := state.awaitResponse(ctx, permReqID)
+	resp, err := awaitWith(ctx, ch)
 	if err != nil {
 		logger.Warn("permission request timed out", "error", err)
 		_ = emitToolCallUpdate(state.writer, tcID, "Edit", "failed", "", "permission request timed out")
