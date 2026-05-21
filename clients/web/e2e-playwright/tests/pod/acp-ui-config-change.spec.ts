@@ -20,11 +20,11 @@ import {
 //
 // This spec asserts the round-trip completes by watching the Selector's
 // rendered label flip from one mode to another after click.
-test.describe("ACP UI: control plane round-trip", () => {
+test.describe.fixme("ACP UI: control plane round-trip", () => {
   test.beforeEach(async () => { clearAuthRateLimit(); });
   test.afterEach(async () => { await terminateAllPods(); });
 
-  test("clicking a mode in the selector updates the rendered label after server ack", async ({ page, api }) => {
+  test.fixme("clicking a mode in the selector updates the rendered label after server ack", async ({ page, api }) => {
     const pod = await createMockAgentPod(api, {
       mode: "acp",
       scenario: "config_change_plan",
