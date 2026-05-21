@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent } from "@/test/test-utils";
 import { AcpPromptInput } from "@/components/workspace/acp/AcpPromptInput";
 import {
   __seedAcpSessionForTests,

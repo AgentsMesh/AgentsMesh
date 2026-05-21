@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { Shield, ChevronDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { relayPool } from "@/stores/relayConnection";
 import { useAcpSessionField } from "@/stores/acpSession";
 import {
@@ -11,16 +12,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const MODES = [
-  { value: "bypassPermissions", label: "Bypass", desc: "Auto-approve all" },
-  { value: "acceptEdits", label: "Accept Edits", desc: "Auto-approve file edits" },
-  { value: "default", label: "Default", desc: "Approve each tool" },
-  { value: "dontAsk", label: "Don't Ask", desc: "Deny unless allowlisted" },
-] as const;
+const MODE_VALUES = ["bypassPermissions", "acceptEdits", "default", "dontAsk"] as const;
+type ModeValue = (typeof MODE_VALUES)[number];
 
-const UNKNOWN_MODE = { value: "", label: "—", desc: "Mode not yet reported by runner" } as const;
+// modeKey maps the wire value (kept stable across runner/backend) to the
+// i18n key under acp.modeSelector. Diverged purely so the JSON keys read
+// naturally (e.g. "bypass" instead of "bypassPermissions").
+const modeKey: Record<ModeValue, string> = {
+  bypassPermissions: "bypass",
+  acceptEdits: "acceptEdits",
+  default: "default",
+  dontAsk: "dontAsk",
+};
 
 export function AcpPermissionModeSelector({ podKey }: { podKey: string }) {
+  const t = useTranslations("acp.modeSelector");
   const mode = useAcpSessionField(podKey, (s) => s.configuration.permissionMode);
 
   const handleSelect = useCallback((value: string) => {
@@ -28,28 +34,30 @@ export function AcpPermissionModeSelector({ podKey }: { podKey: string }) {
     relayPool.sendAcpCommand(podKey, { type: "set_permission_mode", mode: value });
   }, [podKey]);
 
-  const current = MODES.find((m) => m.value === mode) ?? UNKNOWN_MODE;
+  const currentKey = (MODE_VALUES as readonly string[]).includes(mode) ? modeKey[mode as ModeValue] : "unknown";
+  const currentLabel = t(`${currentKey}.label`);
+  const currentDesc = t(`${currentKey}.desc`);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         className="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-muted transition-colors outline-none focus:bg-muted"
-        title={current.desc}
+        title={currentDesc}
       >
         <Shield className="h-3 w-3 text-muted-foreground" />
-        <span className="text-muted-foreground">{current.label}</span>
+        <span className="text-muted-foreground">{currentLabel}</span>
         <ChevronDown className="h-3 w-3 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-48">
-        {MODES.map((m) => (
+        {MODE_VALUES.map((value) => (
           <DropdownMenuItem
-            key={m.value}
-            onSelect={() => handleSelect(m.value)}
-            className={mode === m.value ? "bg-muted font-medium" : ""}
+            key={value}
+            onSelect={() => handleSelect(value)}
+            className={mode === value ? "bg-muted font-medium" : ""}
           >
             <div className="flex flex-col gap-0.5">
-              <div className="text-xs">{m.label}</div>
-              <div className="text-muted-foreground text-[10px]">{m.desc}</div>
+              <div className="text-xs">{t(`${modeKey[value]}.label`)}</div>
+              <div className="text-muted-foreground text-[10px]">{t(`${modeKey[value]}.desc`)}</div>
             </div>
           </DropdownMenuItem>
         ))}

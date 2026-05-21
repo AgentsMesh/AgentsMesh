@@ -1,4 +1,32 @@
 {
+  "acp": {
+    "modeSelector": {
+      "bypass": { "label": "全允许", "desc": "自动通过所有工具" },
+      "acceptEdits": { "label": "允许编辑", "desc": "自动允许文件编辑" },
+      "default": { "label": "默认", "desc": "逐工具确认" },
+      "dontAsk": { "label": "不询问", "desc": "未在白名单则拒绝" },
+      "unknown": { "label": "—", "desc": "运行器尚未同步当前模式" }
+    },
+    "activityStream": {
+      "waitingSession": "等待 ACP 会话…",
+      "agentWorking": "智能体执行中…",
+      "thinking": "思考中…"
+    },
+    "promptInput": {
+      "placeholder": "发送指令…",
+      "notConnected": "未连接",
+      "cancel": "取消"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay 未连接，请稍后再试。"
+    },
+    "permissionCard": {
+      "title": "需要授权",
+      "approve": "同意",
+      "alwaysAllow": "始终允许",
+      "deny": "拒绝"
+    }
+  },
   "agentpod": {
     "title": "AgentPod",
     "pods": "Pod",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { relayPool } from "@/stores/relayConnection";
 import { useAcpSessionStore } from "@/stores/acpSession";
 import type { AcpPermissionRequest } from "@/stores/acpSession";
@@ -14,12 +15,13 @@ interface AcpPermissionDialogProps {
 }
 
 export function AcpPermissionDialog({ podKey, permissions }: AcpPermissionDialogProps) {
+  const t = useTranslations("acp.permissionDialog");
   const removePermission = useAcpSessionStore((s) => s.removePermissionRequest);
   const [sendError, setSendError] = useState<string | null>(null);
 
   const handleRespond = useCallback((requestId: string, approved: boolean, updatedInput?: Record<string, unknown>) => {
     if (!relayPool.isConnected(podKey)) {
-      setSendError("Relay not connected. Please wait and try again.");
+      setSendError(t("relayNotConnected"));
       return;
     }
     const command: Record<string, unknown> = {
@@ -33,7 +35,7 @@ export function AcpPermissionDialog({ podKey, permissions }: AcpPermissionDialog
     relayPool.sendAcpCommand(podKey, command);
     removePermission(podKey, requestId);
     setSendError(null);
-  }, [podKey, removePermission]);
+  }, [podKey, removePermission, t]);
 
   return (
     <div className="border-t bg-amber-50 dark:bg-amber-950/30 p-3 space-y-2">

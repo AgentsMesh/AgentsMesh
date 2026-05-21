@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { ShieldAlert, ShieldCheck, Timer } from "lucide-react";
 import type { AcpPermissionRequest } from "@/stores/acpSession";
 
@@ -12,6 +13,7 @@ interface AcpToolPermissionCardProps {
 }
 
 export function AcpToolPermissionCard({ permission, onRespond }: AcpToolPermissionCardProps) {
+  const t = useTranslations("acp.permissionCard");
   const [remaining, setRemaining] = useState(PERMISSION_TIMEOUT_SEC);
   const onRespondRef = useRef(onRespond);
   const deniedRef = useRef(false);
@@ -41,7 +43,7 @@ export function AcpToolPermissionCard({ permission, onRespond }: AcpToolPermissi
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-amber-600" />
-          <span className="text-sm font-medium">Permission Required</span>
+          <span className="text-sm font-medium">{t("title")}</span>
         </div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <Timer className="h-3 w-3" />
@@ -57,7 +59,7 @@ export function AcpToolPermissionCard({ permission, onRespond }: AcpToolPermissi
           onClick={() => onRespond(permission.requestId, true)}
           className="rounded bg-green-600 px-3 py-1 text-xs text-white hover:bg-green-700"
         >
-          Approve
+          {t("approve")}
         </button>
         <button
           onClick={() => onRespond(permission.requestId, true, {
@@ -70,13 +72,13 @@ export function AcpToolPermissionCard({ permission, onRespond }: AcpToolPermissi
           className="rounded border border-green-600 px-3 py-1 text-xs text-green-600 hover:bg-green-50 dark:hover:bg-green-950 flex items-center gap-1"
         >
           <ShieldCheck className="h-3 w-3" />
-          Always Allow
+          {t("alwaysAllow")}
         </button>
         <button
           onClick={() => onRespond(permission.requestId, false)}
           className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700"
         >
-          Deny
+          {t("deny")}
         </button>
       </div>
     </div>

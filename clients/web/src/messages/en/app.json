@@ -1,4 +1,32 @@
 {
+  "acp": {
+    "modeSelector": {
+      "bypass": { "label": "Bypass", "desc": "Auto-approve all" },
+      "acceptEdits": { "label": "Accept Edits", "desc": "Auto-approve file edits" },
+      "default": { "label": "Default", "desc": "Approve each tool" },
+      "dontAsk": { "label": "Don't Ask", "desc": "Deny unless allowlisted" },
+      "unknown": { "label": "—", "desc": "Mode not yet reported by runner" }
+    },
+    "activityStream": {
+      "waitingSession": "Waiting for ACP session...",
+      "agentWorking": "Agent is working...",
+      "thinking": "Thinking..."
+    },
+    "promptInput": {
+      "placeholder": "Send instruction...",
+      "notConnected": "Not connected",
+      "cancel": "Cancel"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay not connected. Please wait and try again."
+    },
+    "permissionCard": {
+      "title": "Permission Required",
+      "approve": "Approve",
+      "alwaysAllow": "Always Allow",
+      "deny": "Deny"
+    }
+  },
   "agentpod": {
     "title": "AgentPod",
     "pods": "Pods",

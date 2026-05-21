@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useAcpSession } from "@/stores/acpSession";
 import type { AcpToolCall, AcpThinking, AcpLog } from "@/stores/acpSession";
 import { AcpToolCallCard } from "./AcpToolCallCard";
@@ -18,6 +19,7 @@ type TimelineItem =
   | { kind: "log"; key: string; timestamp: number; data: AcpLog };
 
 export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
+  const t = useTranslations("acp.activityStream");
   const session = useAcpSession(podKey);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +82,7 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
   if (!session) {
     return (
       <div className="text-muted-foreground text-center py-8">
-        Waiting for ACP session...
+        {t("waitingSession")}
       </div>
     );
   }
@@ -103,17 +105,17 @@ export function AcpActivityStream({ podKey }: AcpActivityStreamProps) {
             return <LogEntry key={item.key} log={item.data} />;
         }
       })}
-      {showWorkingPlaceholder && <WorkingPlaceholder />}
+      {showWorkingPlaceholder && <WorkingPlaceholder label={t("agentWorking")} />}
       <div ref={bottomRef} />
     </div>
   );
 }
 
-function WorkingPlaceholder() {
+function WorkingPlaceholder({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 py-1 text-muted-foreground text-sm italic">
       <span className="inline-block h-3 w-3 border-2 border-muted-foreground/40 border-t-muted-foreground rounded-full animate-spin" />
-      <span>Agent is working...</span>
+      <span>{label}</span>
     </div>
   );
 }
@@ -155,6 +157,7 @@ function StreamingCaret() {
 }
 
 function ThinkingIndicator({ thinking }: { thinking: AcpThinking }) {
+  const t = useTranslations("acp.activityStream");
   return (
     <details className="py-1 group">
       <summary className="text-muted-foreground text-sm italic cursor-pointer select-none list-none flex items-center gap-1.5">
@@ -163,7 +166,7 @@ function ThinkingIndicator({ thinking }: { thinking: AcpThinking }) {
         ) : (
           <span className="inline-block h-3 w-3 border-2 border-muted-foreground/40 border-t-muted-foreground rounded-full animate-spin" />
         )}
-        <span>Thinking...</span>
+        <span>{t("thinking")}</span>
       </summary>
       <div className="mt-1 ml-[18px] text-muted-foreground text-xs whitespace-pre-wrap">
         {thinking.text}

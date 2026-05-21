@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Send, StopCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { relayPool } from "@/stores/relayConnection";
 import { useAcpSessionField } from "@/stores/acpSession";
 import { AcpPermissionModeSelector } from "./AcpPermissionModeSelector";
@@ -11,6 +12,7 @@ interface AcpPromptInputProps {
 }
 
 export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
+  const t = useTranslations("acp.promptInput");
   const [prompt, setPrompt] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
   const handleSend = useCallback(() => {
     if (!prompt.trim() || sending) return;
     if (!relayPool.isConnected(podKey)) {
-      setError("Not connected");
+      setError(t("notConnected"));
       return;
     }
     setSending(true);
@@ -31,16 +33,16 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
     } finally {
       setSending(false);
     }
-  }, [prompt, podKey, sending]);
+  }, [prompt, podKey, sending, t]);
 
   const handleCancel = useCallback(() => {
     if (!relayPool.isConnected(podKey)) {
-      setError("Not connected");
+      setError(t("notConnected"));
       return;
     }
     setError(null);
     relayPool.sendAcpCommand(podKey, { type: "interrupt" });
-  }, [podKey]);
+  }, [podKey, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -60,7 +62,7 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
           value={prompt}
           onChange={(e) => { setPrompt(e.target.value); setError(null); }}
           onKeyDown={handleKeyDown}
-          placeholder="Send instruction..."
+          placeholder={t("placeholder")}
           disabled={sending}
           className="flex-1 resize-none rounded-md border bg-background px-3 py-1.5 text-sm min-h-[36px] max-h-[120px] leading-[20px]"
           rows={1}
@@ -69,7 +71,7 @@ export function AcpPromptInput({ podKey }: AcpPromptInputProps) {
           <button
             onClick={handleCancel}
             className="shrink-0 rounded-md bg-red-600 h-[36px] w-[36px] flex items-center justify-center text-white hover:bg-red-700"
-            title="Cancel"
+            title={t("cancel")}
           >
             <StopCircle className="h-4 w-4" />
           </button>
