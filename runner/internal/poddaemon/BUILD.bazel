@@ -103,6 +103,7 @@ go_test(
         "manager_test.go",
         "protocol_test.go",
         "state_test.go",
+        "testmain_windows_test.go",
     ],
     embed = [":poddaemon"],
     deps = [
@@ -111,6 +112,7 @@ go_test(
     ] + select({
         "@rules_go//go/platform:windows": [
             "//runner/internal/process",
+            "//runner/internal/processmgr",
         ],
         "//conditions:default": [],
     }),

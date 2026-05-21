@@ -64,25 +64,47 @@ func configureLauncherSysProcAttr(cmd *exec.Cmd) {
 	cmd.SysProcAttr.CreationFlags |= syscall.CREATE_NEW_PROCESS_GROUP | detachedProcess
 }
 
+// daemonProcessAlive probes a detached daemon on Windows. proc.Signal(0)
+// returns "not supported by windows" — that error is not "process gone", so
+// using it as a liveness probe (as the Unix path does) would make this
+// function always return false and break daemon Stop. The Win32-correct
+// probe is OpenProcess + GetExitCodeProcess: exit code 259 (STILL_ACTIVE)
+// means the process is running; anything else means it has exited.
 func daemonProcessAlive(pid int) bool {
 	if pid <= 0 {
 		return false
 	}
-	proc, err := os.FindProcess(pid)
+	const processQueryLimitedInformation = 0x1000
+	const stillActive = 259
+	h, err := syscall.OpenProcess(processQueryLimitedInformation, false, uint32(pid))
 	if err != nil {
 		return false
 	}
-	// On Windows, signal 0 is not supported; instead test via OpenProcess
-	// inside FindProcess. A successful FindProcess does not guarantee
-	// liveness, so we additionally call Signal(syscall.Signal(0)) which
-	// returns ErrFinished if the process is gone.
-	return proc.Signal(syscall.Signal(0)) == nil
+	defer syscall.CloseHandle(h)
+	var code uint32
+	if err := syscall.GetExitCodeProcess(h, &code); err != nil {
+		return false
+	}
+	return code == stillActive
 }
 
+// signalDaemon translates Unix-style termination signals to their Win32
+// equivalents. syscall.SIGTERM is not deliverable through os.Process.Signal
+// on Windows (returns "not supported by windows"), but the caller's intent
+// is "terminate this process" — so we map both SIGTERM and SIGKILL to
+// TerminateProcess via proc.Kill(). Signal(0) is unsupported too, but
+// liveness probing flows through daemonProcessAlive (OpenProcess) above,
+// so we never reach this function with sig == Signal(0).
 func signalDaemon(pid int, sig os.Signal) error {
 	proc, err := os.FindProcess(pid)
 	if err != nil {
 		return err
+	}
+	if sysSig, ok := sig.(syscall.Signal); ok {
+		switch sysSig {
+		case syscall.SIGTERM, syscall.SIGKILL:
+			return proc.Kill()
+		}
 	}
 	return proc.Signal(sig)
 }
