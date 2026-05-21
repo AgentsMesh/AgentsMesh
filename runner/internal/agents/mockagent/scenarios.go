@@ -30,6 +30,10 @@ func registerScenarios() map[string]scenario {
 		{name: "tool_call_edit", handlePrompt: scenarioToolCallEdit},
 		{name: "permission_request_edit", handlePrompt: scenarioPermissionRequestEdit},
 		{name: "config_change_plan", handlePrompt: scenarioConfigChangePlan},
+		{name: "fail_after_1s", handlePrompt: scenarioFailAfter1s},
+		{name: "malformed_json", handlePrompt: scenarioMalformedJSON},
+		{name: "tool_call_failed", handlePrompt: scenarioToolCallFailed},
+		{name: "log_warnings", handlePrompt: scenarioLogWarnings},
 	} {
 		scenarios[s.name] = s
 	}

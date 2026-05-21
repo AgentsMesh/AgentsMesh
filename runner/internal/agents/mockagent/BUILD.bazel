@@ -9,6 +9,7 @@ go_library(
         "pty_runtime.go",
         "scenario_basic.go",
         "scenario_config.go",
+        "scenario_errors.go",
         "scenario_permission.go",
         "scenario_tool.go",
         "scenarios.go",

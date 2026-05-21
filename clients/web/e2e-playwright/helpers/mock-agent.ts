@@ -9,14 +9,18 @@ const PODS_BASE = `/api/v1/orgs/${TEST_ORG_SLUG}/pods`;
 export type MockAgentMode = "pty" | "acp";
 
 // Scenario names registered in //runner/internal/agents/mockagent/scenarios.go.
-// Keep in sync with that file and backend/migrations/000151+152.
+// Keep in sync with that file and backend/migrations/000151..000153.
 export type MockAgentScenario =
   | "echo"
   | "streaming_3"
   | "thinking_then_answer"
   | "tool_call_edit"
   | "permission_request_edit"
-  | "config_change_plan";
+  | "config_change_plan"
+  | "fail_after_1s"
+  | "malformed_json"
+  | "tool_call_failed"
+  | "log_warnings";
 
 export interface CreateMockPodOptions {
   mode: MockAgentMode;
