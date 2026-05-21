@@ -1,7 +1,7 @@
 {
   "acp": {
     "modeSelector": {
-      "bypass": { "label": "全允许", "desc": "自动通过所有工具" },
+      "bypassPermissions": { "label": "全允许", "desc": "自动通过所有工具" },
       "acceptEdits": { "label": "允许编辑", "desc": "自动允许文件编辑" },
       "default": { "label": "默认", "desc": "逐工具确认" },
       "dontAsk": { "label": "不询问", "desc": "未在白名单则拒绝" },

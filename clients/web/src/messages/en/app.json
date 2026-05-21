@@ -1,7 +1,7 @@
 {
   "acp": {
     "modeSelector": {
-      "bypass": { "label": "Bypass", "desc": "Auto-approve all" },
+      "bypassPermissions": { "label": "Bypass", "desc": "Auto-approve all" },
       "acceptEdits": { "label": "Accept Edits", "desc": "Auto-approve file edits" },
       "default": { "label": "Default", "desc": "Approve each tool" },
       "dontAsk": { "label": "Don't Ask", "desc": "Deny unless allowlisted" },
