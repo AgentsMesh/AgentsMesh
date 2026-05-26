@@ -241,3 +241,87 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - **Change License:** GPL-2.0-or-later
 
 The BSL allows you to use, copy, and modify the software for non-production purposes. Production use requires a commercial license until the change date, after which the software becomes available under GPL-2.0-or-later. See [LICENSE](LICENSE) for the full terms and additional use grant.
+
+## ❓ FAQ
+
+### What is AgentsMesh?
+
+AgentsMesh is The AI Agent Workforce Platform where teams scale beyond headcount. It provides remote AI workstations (AgentPods), multi-agent collaboration, and integrated task management.
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **AgentPods** | Remote AI workstations with web terminal |
+| **Multi-Agent Collaboration** | Coordinate agents through channels |
+| **Task Management** | Kanban with ticket-pod binding |
+| **Self-Hosted Runners** | Deploy on your own infrastructure |
+| **Multi-Agent Support** | Claude Code, Codex, Gemini, Aider, OpenCode |
+| **Multi-Git Provider** | GitLab, GitHub, Gitee integration |
+| **Multi-Tenant** | Organization > Team > User hierarchy |
+| **Enterprise Ready** | SSO, RBAC, audit logs, air-gapped |
+
+### Getting Started
+
+```bash
+# Install runner
+curl -fsSL https://agentsmesh.ai/install.sh | sh
+
+# Login (interactive)
+agentsmesh-runner login
+
+# Login (headless/SSH)
+agentsmesh-runner login --headless
+
+# For self-hosted
+agentsmesh-runner login --server https://your-server.com
+```
+
+### Supported AI Agents
+
+| Agent | Integration | Features |
+|-------|-------------|----------|
+| **Claude Code** | Full support | Terminal-based |
+| **Codex CLI** | Full support | OpenAI agent |
+| **Gemini CLI** | Full support | Google agent |
+| **Aider** | Full support | Git-aware coding |
+| **OpenCode** | Full support | Open-source |
+| **Custom** | Configurable | Any terminal agent |
+
+### Deployment Options
+
+| Option | Description | Use Case |
+|--------|-------------|----------|
+| **Hosted** | agentsmesh.ai | Quick start |
+| **Self-Hosted** | Your infrastructure | Enterprise |
+| **Hybrid** | Mix of both | Flexibility |
+
+### Why AgentsMesh?
+
+- **BYOK**: Bring Your Own Key - full cost control
+- **Code Stays Local**: Your code never leaves your environment
+- **Organizational Scale**: From solo to team workforce
+- **Visual Collaboration**: Real-time topology visualization
+
+### Supported Git Providers
+
+| Provider | Integration | Features |
+|----------|-------------|----------|
+| **GitHub** | Full support | MR/PR binding |
+| **GitLab** | Full support | Issue tracking |
+| **Gitee** | Full support | Chinese platform |
+
+### Requirements
+
+- Docker (for self-hosted)
+- Git provider account
+- AI API keys (BYOK)
+
+### License & Resources
+
+- **License**: BSL-1.1
+- **Website**: [agentsmesh.ai](https://agentsmesh.ai)
+- **Docs**: [agentsmesh.ai/docs](https://agentsmesh.ai/docs)
+- **Discord**: [Join Community](https://discord.gg/3RcX7VBbH9)
+- **X**: [@agentsmeshai](https://x.com/agentsmeshai)
+- **LinkedIn**: [AgentsMesh](https://www.linkedin.com/company/agentsmesh)
