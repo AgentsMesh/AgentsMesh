@@ -18,10 +18,11 @@ test.describe("Loop run · multi-tab UI propagation", () => {
     const cc = await api.connect();
 
     const stamp = Date.now().toString(36);
+    const loopName = `e2e-rt-loop-${stamp}`;
     const loop = (await cc.loop.createLoop({
       orgSlug: TEST_ORG_SLUG,
-      name: `e2e-rt-loop-${stamp}`,
-      slug: `e2e-rt-loop-${stamp}`,
+      name: loopName,
+      slug: loopName,
       agentSlug: "e2e-echo",
       promptTemplate: "echo hi",
       executionMode: "direct",
@@ -35,15 +36,22 @@ test.describe("Loop run · multi-tab UI propagation", () => {
       tabB.goto(`/${TEST_ORG_SLUG}/loops/${loop.slug}`),
     ]);
 
+    // Wait until the LoopHeader's h1 renders the loop name in BOTH tabs —
+    // that means fetchLoop resolved, currentLoop is set in WASM, and the
+    // realtime handler (which reads currentLoop synchronously) will route
+    // the upcoming loop_run:started event correctly. The previous flat
+    // 1500ms wait was insufficient under CI load.
+    await Promise.all([
+      expect(tabA.getByRole("heading", { level: 1, name: loopName })).toBeVisible({ timeout: 30_000 }),
+      expect(tabB.getByRole("heading", { level: 1, name: loopName })).toBeVisible({ timeout: 30_000 }),
+    ]);
+
     const runCard = `[data-testid="loop-run-card"]`;
     // Loop just created: no runs yet — assert no cards mounted.
     await Promise.all([
-      expect(tabA.locator(runCard)).toHaveCount(0, { timeout: 15_000 }),
-      expect(tabB.locator(runCard)).toHaveCount(0, { timeout: 15_000 }),
+      expect(tabA.locator(runCard)).toHaveCount(0),
+      expect(tabB.locator(runCard)).toHaveCount(0),
     ]);
-
-    // EventSubscriptionManager + 500ms handler-debounce settle window.
-    await tabA.waitForTimeout(1500);
 
     await cc.loop.triggerLoop({
       orgSlug: TEST_ORG_SLUG, loopSlug: loop.slug,
@@ -52,8 +60,8 @@ test.describe("Loop run · multi-tab UI propagation", () => {
     // loop_run:started → debounced refetch (500ms) → fetchRuns. Both tabs
     // should observe at least 1 run-card within the window.
     await Promise.all([
-      expect(tabA.locator(runCard)).toHaveCount(1, { timeout: 15_000 }),
-      expect(tabB.locator(runCard)).toHaveCount(1, { timeout: 15_000 }),
+      expect(tabA.locator(runCard)).toHaveCount(1, { timeout: 30_000 }),
+      expect(tabB.locator(runCard)).toHaveCount(1, { timeout: 30_000 }),
     ]);
 
     await tabA.close();
