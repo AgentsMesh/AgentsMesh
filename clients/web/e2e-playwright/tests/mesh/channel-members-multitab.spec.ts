@@ -55,13 +55,15 @@ test.describe("Channel members · multi-tab UI propagation", () => {
       expect(tabA.locator(memberBadge)).toContainText("1", { timeout: 15_000 }),
       expect(tabB.locator(memberBadge)).toContainText("1", { timeout: 15_000 }),
     ]);
-    await Promise.all([
-      expect(tabA.locator(memberBadge)).toContainText("1", { timeout: 15_000 }),
-      expect(tabB.locator(memberBadge)).toContainText("1", { timeout: 15_000 }),
-    ]);
 
-    // EventSubscriptionManager bootstrap settle window before publish.
-    await tabA.waitForTimeout(1500);
+    // Wait for the WebSocket subscription to be live in BOTH tabs. Events
+    // published before subscribeAll registers are dropped (no per-tab replay),
+    // so triggering `inviteChannelMembers` before this is racy. The
+    // RealtimeProvider mirrors connectionState onto <html data-realtime>.
+    await Promise.all([
+      expect(tabA.locator("html[data-realtime='connected']")).toBeAttached({ timeout: 30_000 }),
+      expect(tabB.locator("html[data-realtime='connected']")).toBeAttached({ timeout: 30_000 }),
+    ]);
 
     await cc.channel.inviteChannelMembers({
       orgSlug: TEST_ORG_SLUG, id: channelId, userIds: [inviteeId],
