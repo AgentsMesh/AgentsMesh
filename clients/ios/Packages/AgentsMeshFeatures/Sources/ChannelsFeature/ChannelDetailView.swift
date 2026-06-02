@@ -96,7 +96,7 @@ public struct ChannelDetailView: View {
 
     @ViewBuilder
     private func senderHeader(_ msg: ChannelMessageDto) -> some View {
-        let name = msg.senderUser?.name ?? msg.senderUser?.username ?? "User"
+        let name = senderDisplayName(msg)
         let initial = String(name.prefix(1).uppercased())
         HStack(alignment: .top, spacing: 10) {
             AMAvatar(initial, size: .sm, bg: AMColors.primary)
@@ -109,6 +109,19 @@ public struct ChannelDetailView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 2)
+    }
+
+    private func senderDisplayName(_ msg: ChannelMessageDto) -> String {
+        if let user = msg.senderUser {
+            return user.name ?? user.username
+        }
+        if let info = msg.senderPodInfo {
+            return PodDisplayName.of(info)
+        }
+        if let key = msg.senderPod {
+            return PodDisplayName.ofPodKey(key)
+        }
+        return "Unknown"
     }
 
     private var composer: some View {

@@ -69,6 +69,14 @@ func (s *Service) SendMessage(ctx context.Context, channelID int64, senderPod *s
 		return nil, err
 	}
 
+	// Reload with preloaded SenderUser + SenderPodInfo.Agent so the immediate
+	// RPC response and downstream event broadcast carry the same shape as
+	// list endpoints (which all preload). Falling back on error preserves
+	// the message create — losing the join is bad, losing the message worse.
+	if loaded, err := s.repo.GetMessageByID(ctx, msg.ID); err == nil && loaded != nil {
+		msg = loaded
+	}
+
 	_ = s.repo.TouchChannel(ctx, channelID)
 
 	if len(s.postSendHooks) > 0 {

@@ -7,7 +7,7 @@ import { MessageBubble } from "./MessageBubble";
 import { ToolCallCard } from "./ToolCallCard";
 import { AttachmentCard } from "./AttachmentCard";
 import { useMessageListScroll } from "./useMessageListScroll";
-import { getPodDisplayName, getShortPodKey } from "@/lib/pod-display-name";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { usePods, type Pod } from "@/stores/pod";
 import { cn } from "@/lib/utils";
 import type { TransformedMessage } from "./types";
@@ -147,8 +147,8 @@ export function MessageList({
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             {isPod ? (
               <>
-                <span className="font-mono text-[13px] font-semibold text-foreground">
-                  {getShortPodKey(message.pod!.podKey)}
+                <span className="text-[13px] font-semibold text-foreground">
+                  {senderName}
                 </span>
                 {message.pod?.agent?.name && (
                   <span className="rounded border border-border bg-muted px-1.5 py-[1px] font-mono text-[10px] text-muted-foreground">

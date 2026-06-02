@@ -1,5 +1,5 @@
 use super::{ChannelState, PREVIEW_MAX_CHARS};
-use crate::channel_types::{ChannelMessage, MessagePreview};
+use crate::channel_types::{ChannelMessage, MessagePreview, SenderPodInfo};
 
 impl ChannelState {
     pub fn get_last_message(&self, channel_id: i64) -> Option<&MessagePreview> {
@@ -40,14 +40,7 @@ impl ChannelState {
             .sender_user
             .as_ref()
             .map(|u| u.name.as_deref().unwrap_or(&u.username).to_string())
-            .or_else(|| {
-                msg.sender_pod_info.as_ref().map(|p| {
-                    p.agent
-                        .as_ref()
-                        .map(|a| a.name.clone())
-                        .unwrap_or_else(|| p.alias.clone().unwrap_or_else(|| p.pod_key.clone()))
-                })
-            })
+            .or_else(|| msg.sender_pod_info.as_ref().map(pod_sender_name))
             .unwrap_or_default();
 
         let preview = match msg.message_type.as_deref() {
@@ -64,6 +57,24 @@ impl ChannelState {
             timestamp: msg.created_at.clone().unwrap_or_default(),
         }
     }
+}
+
+/// Pod sender priority matches `clients/web/src/lib/pod-display-name.ts`:
+/// alias (user-defined) > agent.name > pod_key prefix. Whitespace-only
+/// alias/agent values fall through to the next tier.
+fn pod_sender_name(p: &SenderPodInfo) -> String {
+    if let Some(alias) = p.alias.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        return alias.to_string();
+    }
+    if let Some(name) = p
+        .agent
+        .as_ref()
+        .map(|a| a.name.trim())
+        .filter(|s| !s.is_empty())
+    {
+        return name.to_string();
+    }
+    p.pod_key.clone()
 }
 
 fn truncate_str(s: &str, max_chars: usize) -> String {

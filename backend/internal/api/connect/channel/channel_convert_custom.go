@@ -47,14 +47,20 @@ func senderUserToProto(u *user.User) *channelv1.ChannelMessageSenderUser {
 }
 
 // senderPodToProto projects the preloaded agentpod.Pod row into the wire shape.
+// Agent is preloaded by channelRepository (Preload("SenderPodInfo.Agent")) so the
+// client can render "ClaudeCode (abc12345)" when no alias is set.
 func senderPodToProto(p *agentpod.Pod) *channelv1.ChannelMessageSenderPod {
 	if p == nil {
 		return nil
 	}
-	return &channelv1.ChannelMessageSenderPod{
+	out := &channelv1.ChannelMessageSenderPod{
 		PodKey: p.PodKey,
 		Alias:  protoconv.StringPtr(p.Alias),
 	}
+	if p.Agent != nil {
+		out.Agent = &channelv1.ChannelMessageSenderAgent{Name: p.Agent.Name}
+	}
+	return out
 }
 
 func toProtoChannelPod(p *agentpod.Pod) *channelv1.ChannelPod {

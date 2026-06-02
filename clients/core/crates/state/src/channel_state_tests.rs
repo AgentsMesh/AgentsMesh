@@ -278,6 +278,18 @@ fn preview_sender_from_pod_info() {
         agent: Some(SenderAgentInfo { name: "claude".into(), ..Default::default() }),
     });
     let preview = ChannelState::make_preview(&m);
+    assert_eq!(preview.sender_name, "my-agent");
+}
+
+#[test]
+fn preview_sender_from_pod_agent_when_no_alias() {
+    let mut m = msg(1, 1, "hi");
+    m.sender_pod_info = Some(SenderPodInfo {
+        pod_key: "pod-abc".into(),
+        alias: None,
+        agent: Some(SenderAgentInfo { name: "claude".into(), ..Default::default() }),
+    });
+    let preview = ChannelState::make_preview(&m);
     assert_eq!(preview.sender_name, "claude");
 }
 

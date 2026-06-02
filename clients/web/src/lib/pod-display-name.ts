@@ -34,35 +34,39 @@ export function getPodDisplayName(
   pod: PodDisplayInfo,
   maxLength: number = 20
 ): string {
-  if (pod.alias) {
-    if (pod.alias.length > maxLength) {
-      return pod.alias.substring(0, maxLength - 3) + "...";
+  const alias = pod.alias?.trim();
+  if (alias) {
+    if (alias.length > maxLength) {
+      return alias.substring(0, maxLength - 3) + "...";
     }
-    return pod.alias;
+    return alias;
   }
 
   // Priority 2: Ticket title
   // This takes precedence over OSC title because agents (e.g., Claude Code)
   // overwrite the terminal title with their own name, losing the ticket context.
-  if (pod.ticket?.title) {
-    if (pod.ticket.title.length > maxLength) {
-      return pod.ticket.title.substring(0, maxLength - 3) + "...";
+  const ticketTitle = pod.ticket?.title?.trim();
+  if (ticketTitle) {
+    if (ticketTitle.length > maxLength) {
+      return ticketTitle.substring(0, maxLength - 3) + "...";
     }
-    return pod.ticket.title;
+    return ticketTitle;
   }
 
-  if (pod.loop?.name) {
-    if (pod.loop.name.length > maxLength) {
-      return pod.loop.name.substring(0, maxLength - 3) + "...";
+  const loopName = pod.loop?.name?.trim();
+  if (loopName) {
+    if (loopName.length > maxLength) {
+      return loopName.substring(0, maxLength - 3) + "...";
     }
-    return pod.loop.name;
+    return loopName;
   }
 
-  if (pod.title) {
-    if (pod.title.length > maxLength) {
-      return pod.title.substring(0, maxLength - 3) + "...";
+  const title = pod.title?.trim();
+  if (title) {
+    if (title.length > maxLength) {
+      return title.substring(0, maxLength - 3) + "...";
     }
-    return pod.title;
+    return title;
   }
 
   // Priority 5: Ticket slug fallback
@@ -72,8 +76,9 @@ export function getPodDisplayName(
 
   // Priority 6: Agent name + truncated pod_key
   const keyPrefix = getShortPodKey(pod.pod_key);
-  if (pod.agent?.name) {
-    return `${pod.agent.name} (${keyPrefix})`;
+  const agentName = pod.agent?.name?.trim();
+  if (agentName) {
+    return `${agentName} (${keyPrefix})`;
   }
 
   // Priority 7: Fallback to truncated pod_key

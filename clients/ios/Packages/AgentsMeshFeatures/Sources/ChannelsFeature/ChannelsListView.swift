@@ -137,13 +137,23 @@ struct ChannelRow: View {
     /// {sender}: {body} 截断到 1 行；缺消息时回退到 channel.description；都没有就空。
     private var preview: String {
         if let m = lastMessage {
-            let sender = m.senderUser?.name
-                ?? m.senderUser?.username
-                ?? m.senderPod
-                ?? "User"
+            let sender = senderName(of: m)
             return "\(sender): \(m.body)"
         }
         return channel.description ?? ""
+    }
+
+    private func senderName(of m: ChannelMessageDto) -> String {
+        if let user = m.senderUser {
+            return user.name ?? user.username
+        }
+        if let info = m.senderPodInfo {
+            return PodDisplayName.of(info)
+        }
+        if let key = m.senderPod {
+            return PodDisplayName.ofPodKey(key)
+        }
+        return "Unknown"
     }
 
     private var timestamp: String {

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Loader2, MessageSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { channelApi, type ChannelMessage } from "@/lib/api/facade/channel";
+import { getPodDisplayName } from "@/lib/pod-display-name";
 import { cn } from "@/lib/utils";
 
 interface MessageSearchModalProps {
@@ -122,7 +123,10 @@ export function MessageSearchModal({
               >
                 <div className="flex items-baseline gap-2 text-[11px] text-muted-foreground">
                   <span className="font-medium text-foreground">
-                    {msg.sender_user?.name ?? msg.sender_user?.username ?? msg.sender_pod ?? "Unknown"}
+                    {msg.sender_user?.name
+                      ?? msg.sender_user?.username
+                      ?? (msg.sender_pod_info ? getPodDisplayName(msg.sender_pod_info) : msg.sender_pod)
+                      ?? "Unknown"}
                   </span>
                   <span>{new Date(msg.created_at).toLocaleString()}</span>
                 </div>
