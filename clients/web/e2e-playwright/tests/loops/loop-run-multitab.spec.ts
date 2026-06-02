@@ -39,18 +39,16 @@ test.describe("Loop run · multi-tab UI propagation", () => {
     // Wait until the LoopHeader's h1 renders the loop name in BOTH tabs —
     // that means fetchLoop resolved, currentLoop is set in WASM, and the
     // realtime handler (which reads currentLoop synchronously) will route
-    // the upcoming loop_run:started event correctly. The previous flat
-    // 1500ms wait was insufficient under CI load.
+    // the upcoming loop_run:started event correctly.
     await Promise.all([
       expect(tabA.getByRole("heading", { level: 1, name: loopName })).toBeVisible({ timeout: 30_000 }),
       expect(tabB.getByRole("heading", { level: 1, name: loopName })).toBeVisible({ timeout: 30_000 }),
     ]);
 
-    // EventSubscriptionManager bootstrap: even after the page renders,
-    // the WASM-side Connect-RPC stream needs time to handshake before
-    // subscribeAll is live. Events published earlier have no replay
-    // buffer. 5000ms covers the slowest CI runners we've observed.
-    await tabA.waitForTimeout(5000);
+    // EventSubscriptionManager bootstrap window so both tabs are subscribed
+    // before publish. Events published before subscribeAll registers have
+    // no replay buffer.
+    await tabA.waitForTimeout(2000);
 
     const runCard = `[data-testid="loop-run-card"]`;
     // Loop just created: no runs yet — assert no cards mounted.
@@ -66,8 +64,8 @@ test.describe("Loop run · multi-tab UI propagation", () => {
     // loop_run:started → debounced refetch (500ms) → fetchRuns. Both tabs
     // should observe at least 1 run-card within the window.
     await Promise.all([
-      expect(tabA.locator(runCard)).toHaveCount(1, { timeout: 30_000 }),
-      expect(tabB.locator(runCard)).toHaveCount(1, { timeout: 30_000 }),
+      expect(tabA.locator(runCard)).toHaveCount(1, { timeout: 15_000 }),
+      expect(tabB.locator(runCard)).toHaveCount(1, { timeout: 15_000 }),
     ]);
 
     await tabA.close();
