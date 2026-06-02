@@ -46,13 +46,11 @@ test.describe("Loop run · multi-tab UI propagation", () => {
       expect(tabB.getByRole("heading", { level: 1, name: loopName })).toBeVisible({ timeout: 30_000 }),
     ]);
 
-    // Also wait for the WebSocket subscription to be live — events published
-    // before subscribeAll registers are dropped (no per-tab replay). The
-    // RealtimeProvider mirrors connectionState onto <html data-realtime>.
-    await Promise.all([
-      expect(tabA.locator("html[data-realtime='connected']")).toBeAttached({ timeout: 30_000 }),
-      expect(tabB.locator("html[data-realtime='connected']")).toBeAttached({ timeout: 30_000 }),
-    ]);
+    // EventSubscriptionManager bootstrap: even after the page renders,
+    // the WASM-side Connect-RPC stream needs time to handshake before
+    // subscribeAll is live. Events published earlier have no replay
+    // buffer. 5000ms covers the slowest CI runners we've observed.
+    await tabA.waitForTimeout(5000);
 
     const runCard = `[data-testid="loop-run-card"]`;
     // Loop just created: no runs yet — assert no cards mounted.

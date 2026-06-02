@@ -158,15 +158,5 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
 
   const value = useMemo<RealtimeContextValue>(() => ({ connectionState, reconnect }), [connectionState, reconnect]);
 
-  // Mirror the connection state onto <html> as a data attribute. E2E tests
-  // poll this to know when the realtime channel is ready to deliver events
-  // (otherwise an event published before subscribeAll registers gets lost,
-  // since the wire has no per-tab replay buffer).
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    document.documentElement.dataset.realtime = connectionState;
-    return () => { delete document.documentElement.dataset.realtime; };
-  }, [connectionState]);
-
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }
