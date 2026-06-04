@@ -22,6 +22,13 @@ AgentsMesh Runner is a lightweight agent that connects to the AgentsMesh server 
 curl -fsSL https://agentsmesh.ai/install.sh | sh
 ```
 
+### macOS (binary)
+
+On macOS, you can also install the AgentsMesh binary using [Homebrew](https://brew.sh/):
+```bash
+brew install --cask agentsmesh
+```
+
 ### Windows (PowerShell)
 
 ```powershell
