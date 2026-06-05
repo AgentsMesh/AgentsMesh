@@ -8,7 +8,7 @@ import {
 import { ResponsiveShell } from "@/components/layout";
 import { Spinner } from "@/components/ui/spinner";
 import { RealtimeProvider } from "@/providers/RealtimeProvider";
-import { useBrowserNotification } from "@/hooks";
+import { useBrowserNotification, useSessionKeepAlive } from "@/hooks";
 import { handleNotificationEvent } from "@/stores/notificationHandler";
 import type { RealtimeEvent } from "@/lib/realtime";
 
@@ -25,12 +25,19 @@ export function DashboardShell({
   const organizations = useAuthOrganizations();
   const currentOrg = useCurrentOrg();
   const { permission, showNotification, requestPermission } = useBrowserNotification();
+  useSessionKeepAlive();
+
+  // Evaluate per-render so token expiry (a time-driven flip with no store
+  // event) becomes an effect-dependency change. Calling isAuthenticated
+  // directly in the effect dep list keeps a stable fn ref, so the redirect
+  // would never re-run and the shell would sit blank on an expired session.
+  const authed = isAuthenticated();
 
   useEffect(() => {
-    if (_hasHydrated && !isAuthenticated()) {
+    if (_hasHydrated && !authed) {
       router.push("/login");
     }
-  }, [_hasHydrated, isAuthenticated, router]);
+  }, [_hasHydrated, authed, router]);
 
   useEffect(() => {
     const orgSlug = params.org;
@@ -69,16 +76,14 @@ export function DashboardShell({
     [showNotification, router, currentOrg]
   );
 
-  if (!_hasHydrated) {
+  // Not-hydrated and expired-session both park on a spinner; the redirect
+  // effect above carries an expired session on to /login.
+  if (!_hasHydrated || !authed) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Spinner />
       </div>
     );
-  }
-
-  if (!isAuthenticated()) {
-    return null;
   }
 
   return (

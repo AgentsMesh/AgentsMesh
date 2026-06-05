@@ -16,5 +16,7 @@ export { useTouchScroll } from './useTouchScroll';
 export { useBrowserNotification } from './useBrowserNotification';
 export type { BrowserNotificationOptions } from './useBrowserNotification';
 
+export { useSessionKeepAlive } from './useSessionKeepAlive';
+
 export { useMentionCandidates } from './useMentionCandidates';
 export type { MentionItem } from './useMentionCandidates';

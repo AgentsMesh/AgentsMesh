@@ -9,6 +9,7 @@ import { acquireSingleInstance } from "./single_instance";
 import { IPC_ALLOWLIST, IPC_ALLOWLIST_SET } from "./ipc-allowlist.generated";
 import { setupRealtimeBridge, type RealtimeBridge } from "./realtime";
 import { setupRelayBridge, type RelayBridge } from "./relay";
+import { connectFetch } from "./connect-fetch";
 import {
   registerProtocol,
   attachSecondInstanceUrlHandler,
@@ -275,7 +276,7 @@ function registerLegacyApiAliases() {
       "Connect-Protocol-Version": "1",
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(url, {
+    const res = await connectFetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(payload),
@@ -556,7 +557,7 @@ function registerLegacyApiAliases() {
       "Connect-Protocol-Version": "1",
     };
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(url, {
+    const res = await connectFetch(url, {
       method: "POST",
       headers,
       body: Uint8Array.from(bodyArr),

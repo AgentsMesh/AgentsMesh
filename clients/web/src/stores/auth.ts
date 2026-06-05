@@ -178,8 +178,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     await initWasmCore();
     try {
       await mgr().refresh_token();
+      bump();
     } catch (e) {
       set({ error: getErrorMessage(e, "Session refresh failed") });
+      // Bump even on failure: keepalive callers swallow the throw, so this
+      // tick is what lets DashboardShell re-evaluate is_authenticated and
+      // redirect once the refresh token is also dead.
+      bump();
       throw e;
     }
   },
