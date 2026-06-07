@@ -20,6 +20,7 @@ impl ChannelState {
     /// last_message) that wire-side ListChannels won't carry — these are
     /// maintained by `on_new_message` and friends.
     pub fn set_channels(&mut self, channels: Vec<Channel>) {
+        tracing::debug!(target: "channel", count = channels.len(), "set channels (baseline)");
         let mut prev: HashMap<i64, (u32, u32, Option<MessagePreview>, Option<String>)> =
             HashMap::with_capacity(self.channels.len());
         for c in &self.channels {
@@ -49,6 +50,7 @@ impl ChannelState {
     }
 
     pub fn add_channel(&mut self, channel: Channel) {
+        tracing::info!(target: "channel", channel_id = channel.id, "add channel");
         if self.channels.iter().any(|c| c.id == channel.id) {
             return;
         }
@@ -59,6 +61,7 @@ impl ChannelState {
     }
 
     pub fn update_channel(&mut self, id: i64, channel: Channel) {
+        tracing::info!(target: "channel", channel_id = id, "update channel");
         if let Some(existing) = self.channels.iter_mut().find(|c| c.id == id) {
             *existing = channel.clone();
             if let Some(repo) = &self.channel_repo {
@@ -71,6 +74,7 @@ impl ChannelState {
     }
 
     pub fn remove_channel(&mut self, id: i64) {
+        tracing::info!(target: "channel", channel_id = id, "remove channel");
         self.channels.retain(|c| c.id != id);
         if self.current_channel.as_ref().is_some_and(|c| c.id == id) {
             self.current_channel = None;
@@ -93,6 +97,7 @@ impl ChannelState {
 
     /// Atomically: set current channel + clear unread + clear mentions.
     pub fn select_channel(&mut self, id: Option<i64>) -> Option<&Channel> {
+        tracing::debug!(target: "channel", channel_id = ?id, "select channel");
         self.set_current_channel(id);
         if let Some(id) = id {
             self.clear_channel_unread(id);

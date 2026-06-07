@@ -72,6 +72,7 @@ impl<R: Runtime> RelayConnectionPool<R> {
         relay_token: &str,
         callback: OutputCallback,
     ) -> ConnectionHandle {
+        tracing::info!(target: "relay", pod_key, %subscription_id, "subscribe");
         let cmd_tx = {
             let mut router = self.inner.write();
             if let Some(handle) = router.pods.get(pod_key) {
@@ -98,6 +99,7 @@ impl<R: Runtime> RelayConnectionPool<R> {
                         snapshot: Arc::clone(&snapshot),
                     },
                 );
+                tracing::debug!(target: "relay", pod_key, "no live driver — spawning");
                 Driver::spawn(
                     self.runtime.clone(),
                     Arc::clone(&self.inner),
@@ -166,6 +168,7 @@ impl<R: Runtime> RelayConnectionPool<R> {
     }
 
     pub async fn disconnect(&self, pod_key: &str) {
+        tracing::info!(target: "relay", pod_key, "disconnect");
         self.send_command(pod_key, Command::Disconnect);
     }
 

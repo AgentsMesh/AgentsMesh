@@ -7,8 +7,19 @@
 // hang. Shared by both main-process Connect callers (connectCall + the legacy
 // JSON aliases) so the retry/timeout policy can't drift between them.
 
+import { logEvent } from "@agentsmesh/node-bridge";
+
 const DEFAULT_TIMEOUT_MS = 30_000;
 const RETRY_BACKOFF_MS = 300;
+
+// Path only — strips host/query so a stray token in a query string never reaches the log.
+function rpcPath(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "?";
+  }
+}
 
 // HTTP 4xx/5xx never reach here — callers check `res.ok` and throw themselves —
 // so a TypeError (undici transport failure) or AbortError is the only thing
@@ -31,10 +42,13 @@ export async function connectFetch(
       return await fetch(url, { ...init, signal: controller.signal });
     } catch (err) {
       lastErr = err;
+      const name = err instanceof Error ? err.name : "Error";
       if (attempt === 0 && isTransientNetworkError(err)) {
+        logEvent("warn", "net", `${rpcPath(url)}: ${name} — retry`);
         await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS));
         continue;
       }
+      logEvent("warn", "net", `${rpcPath(url)}: ${name} — give up`);
       throw err;
     } finally {
       clearTimeout(timer);

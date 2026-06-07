@@ -70,6 +70,7 @@ impl AutopilotState {
     }
 
     pub fn set_controllers(&mut self, controllers: Vec<AutopilotController>) {
+        tracing::debug!(target: "autopilot", count = controllers.len(), "set controllers (baseline)");
         self.controllers = controllers;
     }
 
@@ -78,10 +79,24 @@ impl AutopilotState {
     }
 
     pub fn add_controller(&mut self, controller: AutopilotController) {
+        tracing::info!(
+            target: "autopilot",
+            controller_key = %controller.autopilot_controller_key,
+            pod_key = %controller.pod_key,
+            status = ?controller.status,
+            "add controller"
+        );
         self.controllers.push(controller);
     }
 
     pub fn update_controller(&mut self, key: &str, controller: AutopilotController) {
+        tracing::info!(
+            target: "autopilot",
+            controller_key = key,
+            status = ?controller.status,
+            circuit_breaker_state = ?controller.circuit_breaker_state,
+            "update controller"
+        );
         for c in &mut self.controllers {
             if c.autopilot_controller_key == key {
                 *c = controller.clone();
@@ -95,6 +110,7 @@ impl AutopilotState {
     }
 
     pub fn remove_controller(&mut self, key: &str) {
+        tracing::info!(target: "autopilot", controller_key = key, "remove controller");
         self.controllers.retain(|c| c.autopilot_controller_key != key);
         if self.current_controller
             .as_ref()
@@ -109,10 +125,18 @@ impl AutopilotState {
     }
 
     pub fn set_iterations(&mut self, key: String, iters: Vec<AutopilotIteration>) {
+        tracing::debug!(target: "autopilot", controller_key = %key, count = iters.len(), "set iterations (baseline)");
         self.iterations.insert(key, iters);
     }
 
     pub fn add_iteration(&mut self, key: String, iteration: AutopilotIteration) {
+        tracing::info!(
+            target: "autopilot",
+            controller_key = %key,
+            iteration_id = iteration.id,
+            status = ?iteration.status,
+            "add iteration"
+        );
         let iters = self.iterations.entry(key).or_default();
         iters.push(iteration);
         if iters.len() > MAX_ITERATIONS {
@@ -130,6 +154,7 @@ impl AutopilotState {
     }
 
     pub fn update_thinking(&mut self, key: String, thinking: Value) {
+        tracing::debug!(target: "autopilot", controller_key = %key, "update thinking");
         self.thinking.insert(key.clone(), Some(thinking.clone()));
         let history = self.thinking_history.entry(key).or_default();
         history.push(thinking);

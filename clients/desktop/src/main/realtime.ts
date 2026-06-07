@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain, app, powerMonitor } from "electron";
-import type { AppState } from "@agentsmesh/node-bridge";
+import { logEvent, type AppState } from "@agentsmesh/node-bridge";
 
 // Bridges the backend EventBus realtime stream into the Electron renderer.
 //
@@ -205,17 +205,21 @@ export async function setupRealtimeBridge(
     pushRunnerSnapshot(appState, eventJson, send);
     pushAutopilotSnapshot(appState, eventJson, send);
   });
+  logEvent("info", "realtime", "bridge subscribed");
   const stateSubId = await appState.eventsOnConnectionStateChange((_err: unknown, next: string) => {
     if (typeof next === "string" && next.length > 0) {
+      if (next !== state) logEvent("info", "realtime", `state ${state} → ${next}`);
       state = next as RealtimeState;
     }
     send("realtime:state", next);
   });
 
   const connectHandler = async (): Promise<void> => {
+    logEvent("info", "realtime", "connect requested");
     await appState.eventsConnect();
   };
   const disconnectHandler = async (): Promise<void> => {
+    logEvent("info", "realtime", "disconnect requested");
     await appState.eventsDisconnect();
   };
   const getStateHandler = (): RealtimeState => state;
@@ -229,6 +233,7 @@ export async function setupRealtimeBridge(
   // retry now. nudge() is a no-op when already connected, so firing it on every
   // focus is harmless. powerMonitor covers system resume the renderer can't see.
   const reArm = () => {
+    logEvent("debug", "realtime", "re-arm (resume/focus) → nudge");
     void appState.eventsNudge();
   };
   powerMonitor.on("resume", reArm);
@@ -237,6 +242,7 @@ export async function setupRealtimeBridge(
   return {
     currentState: () => state,
     dispose: async () => {
+      logEvent("info", "realtime", "bridge disposed");
       ipcMain.removeHandler("realtime:connect");
       ipcMain.removeHandler("realtime:disconnect");
       ipcMain.removeHandler("realtime:nudge");

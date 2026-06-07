@@ -33,6 +33,7 @@ impl AuthConnectService {
     pub async fn login_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::LoginRequest::decode(request_bytes)
             .map_err(|e| format!("decode login request: {e}"))?;
+        tracing::info!(target: "auth", "login");
         let resp = self.client.auth_login_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -40,6 +41,7 @@ impl AuthConnectService {
     pub async fn register_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::RegisterRequest::decode(request_bytes)
             .map_err(|e| format!("decode register request: {e}"))?;
+        tracing::info!(target: "auth", "register");
         let resp = self.client.auth_register_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -47,6 +49,7 @@ impl AuthConnectService {
     pub async fn refresh_token_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::RefreshTokenRequest::decode(request_bytes)
             .map_err(|e| format!("decode refresh_token request: {e}"))?;
+        tracing::debug!(target: "auth", "refresh token");
         let resp = self
             .client
             .auth_refresh_token_connect(&req)
@@ -58,6 +61,7 @@ impl AuthConnectService {
     pub async fn verify_email_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::VerifyEmailRequest::decode(request_bytes)
             .map_err(|e| format!("decode verify_email request: {e}"))?;
+        tracing::info!(target: "auth", "verify email");
         let resp = self
             .client
             .auth_verify_email_connect(&req)
@@ -72,6 +76,7 @@ impl AuthConnectService {
     ) -> Result<Vec<u8>, String> {
         let req = auth_proto::ResendVerificationRequest::decode(request_bytes)
             .map_err(|e| format!("decode resend_verification request: {e}"))?;
+        tracing::info!(target: "auth", "resend verification");
         let resp = self
             .client
             .auth_resend_verification_connect(&req)
@@ -83,6 +88,7 @@ impl AuthConnectService {
     pub async fn forgot_password_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::ForgotPasswordRequest::decode(request_bytes)
             .map_err(|e| format!("decode forgot_password request: {e}"))?;
+        tracing::info!(target: "auth", "forgot password");
         let resp = self
             .client
             .auth_forgot_password_connect(&req)
@@ -94,6 +100,7 @@ impl AuthConnectService {
     pub async fn reset_password_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::ResetPasswordRequest::decode(request_bytes)
             .map_err(|e| format!("decode reset_password request: {e}"))?;
+        tracing::info!(target: "auth", "reset password");
         let resp = self
             .client
             .auth_reset_password_connect(&req)
@@ -105,6 +112,7 @@ impl AuthConnectService {
     pub async fn oauth_redirect_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::OAuthRedirectRequest::decode(request_bytes)
             .map_err(|e| format!("decode oauth_redirect request: {e}"))?;
+        tracing::info!(target: "auth", provider = %req.provider, "oauth redirect");
         let resp = self
             .client
             .auth_oauth_redirect_connect(&req)
@@ -116,6 +124,7 @@ impl AuthConnectService {
     pub async fn oauth_callback_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::OAuthCallbackRequest::decode(request_bytes)
             .map_err(|e| format!("decode oauth_callback request: {e}"))?;
+        tracing::info!(target: "auth", provider = %req.provider, "oauth callback");
         let resp = self
             .client
             .auth_oauth_callback_connect(&req)
@@ -127,6 +136,7 @@ impl AuthConnectService {
     pub async fn logout_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = auth_proto::LogoutRequest::decode(request_bytes)
             .map_err(|e| format!("decode logout request: {e}"))?;
+        tracing::info!(target: "auth", "logout");
         let resp = self.client.auth_logout_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }

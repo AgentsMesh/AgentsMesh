@@ -5,6 +5,7 @@ use crate::channel_types::ChannelMessage;
 
 impl ChannelState {
     pub fn add_message(&mut self, channel_id: i64, message: ChannelMessage) -> bool {
+        tracing::debug!(target: "channel", channel_id, msg_id = message.id, "add message");
         let cache = self
             .message_cache
             .entry(channel_id)
@@ -40,6 +41,7 @@ impl ChannelState {
     /// Returns true when the message was newly added (false on dup id).
     pub fn on_new_message(&mut self, mut msg: ChannelMessage) -> bool {
         let channel_id = msg.channel_id;
+        tracing::debug!(target: "channel", channel_id, msg_id = msg.id, "on new message");
         self.enrich_sender(&mut msg);
         let preview = Self::make_preview(&msg);
         self.set_last_message(channel_id, preview);
@@ -78,6 +80,7 @@ impl ChannelState {
     }
 
     pub fn update_message(&mut self, channel_id: i64, message: ChannelMessage) {
+        tracing::debug!(target: "channel", channel_id, msg_id = message.id, "update message");
         if let Some(cache) = self.message_cache.get_mut(&channel_id) {
             if let Some(m) = cache.messages.iter_mut().find(|m| m.id == message.id) {
                 if !message.body.is_empty() { m.body = message.body; }
@@ -98,6 +101,7 @@ impl ChannelState {
     }
 
     pub fn remove_message(&mut self, channel_id: i64, message_id: i64) {
+        tracing::debug!(target: "channel", channel_id, msg_id = message_id, "remove message");
         if let Some(cache) = self.message_cache.get_mut(&channel_id) {
             cache.messages.retain(|m| m.id != message_id);
             if let Some(repo) = &self.message_repo {
@@ -111,6 +115,7 @@ impl ChannelState {
     }
 
     pub fn set_messages(&mut self, channel_id: i64, messages: Vec<ChannelMessage>, has_more: bool) {
+        tracing::debug!(target: "channel", channel_id, count = messages.len(), has_more, "set messages (baseline)");
         if let Some(repo) = &self.message_repo {
             for msg in &messages {
                 let _ = repo.save_message(msg);
@@ -134,6 +139,7 @@ impl ChannelState {
     }
 
     pub fn prepend_messages(&mut self, channel_id: i64, older: Vec<ChannelMessage>, has_more: bool) {
+        tracing::debug!(target: "channel", channel_id, count = older.len(), has_more, "prepend messages");
         let cache = self
             .message_cache
             .entry(channel_id)

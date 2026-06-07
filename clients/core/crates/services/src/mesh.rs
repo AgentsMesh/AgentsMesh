@@ -28,6 +28,7 @@ impl MeshService {
         let req = mp::GetMeshTopologyRequest {
             org_slug: self.client.current_org_slug(),
         };
+        tracing::debug!(target: "mesh", org_slug = %req.org_slug, "fetch topology");
         let topo = self.client
             .get_mesh_topology_connect(&req)
             .await.map_err(crate::wire)?;
@@ -46,6 +47,7 @@ macro_rules! connect_bridge {
         pub async fn $name(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
             let req = mp::$req::decode(request_bytes)
                 .map_err(|e| format!("decode {}: {e}", stringify!($req)))?;
+            tracing::debug!(target: "mesh", rpc = stringify!($req));
             let resp = self.client_ref().$client_call(&req).await.map_err(crate::wire)?;
             Ok(resp.encode_to_vec())
         }

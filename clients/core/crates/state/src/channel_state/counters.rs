@@ -10,6 +10,7 @@ use super::ChannelState;
 
 impl ChannelState {
     pub fn set_unread_counts(&mut self, counts: HashMap<i64, u32>) {
+        tracing::debug!(target: "channel", count = counts.len(), "set unread counts (baseline)");
         for c in self.channels.iter_mut() {
             c.unread_count = counts.get(&c.id).copied().unwrap_or(0);
         }
@@ -17,6 +18,7 @@ impl ChannelState {
     }
 
     pub fn increment_unread(&mut self, channel_id: i64) {
+        tracing::debug!(target: "channel", channel_id, "increment unread");
         if let Some(c) = self.channels.iter_mut().find(|c| c.id == channel_id) {
             c.unread_count = c.unread_count.saturating_add(1);
         }
@@ -24,6 +26,7 @@ impl ChannelState {
     }
 
     pub fn clear_channel_unread(&mut self, channel_id: i64) {
+        tracing::debug!(target: "channel", channel_id, "clear unread");
         if let Some(c) = self.channels.iter_mut().find(|c| c.id == channel_id) {
             c.unread_count = 0;
         }
@@ -47,6 +50,7 @@ impl ChannelState {
     }
 
     pub fn set_mention_counts(&mut self, counts: HashMap<i64, u32>) {
+        tracing::debug!(target: "channel", count = counts.len(), "set mention counts (baseline)");
         for c in self.channels.iter_mut() {
             c.mention_count = counts.get(&c.id).copied().unwrap_or(0);
         }
@@ -54,6 +58,7 @@ impl ChannelState {
     }
 
     pub fn increment_mention(&mut self, channel_id: i64) {
+        tracing::debug!(target: "channel", channel_id, "increment mention");
         if let Some(c) = self.channels.iter_mut().find(|c| c.id == channel_id) {
             c.mention_count = c.mention_count.saturating_add(1);
         }
@@ -61,6 +66,7 @@ impl ChannelState {
     }
 
     pub fn clear_channel_mentions(&mut self, channel_id: i64) {
+        tracing::debug!(target: "channel", channel_id, "clear mentions");
         if let Some(c) = self.channels.iter_mut().find(|c| c.id == channel_id) {
             c.mention_count = 0;
         }

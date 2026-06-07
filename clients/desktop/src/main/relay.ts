@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import type { AppState } from "@agentsmesh/node-bridge";
+import { logEvent, type AppState } from "@agentsmesh/node-bridge";
 
 // Bridges the Rust `RelayConnectionPool` (terminal data plane SSOT, owned by the
 // main process) to the renderer. Renderer → main: `relay:*` invoke handlers map
@@ -60,9 +60,11 @@ export function setupRelayBridge(
       const subs = rendererSubs.get(podKey);
       if (subs) {
         subs.add(subId);
+        logEvent("debug", "relay", `subscribe ${podKey} (reuse, ${subs.size} subs)`);
         return;
       }
       rendererSubs.set(podKey, new Set([subId]));
+      logEvent("info", "relay", `subscribe ${podKey} (new link)`);
       await appState.relaySubscribe(podKey, BRIDGE_SUB, url, token, onOutput(podKey));
       if (!listenersWired.has(podKey)) {
         listenersWired.add(podKey);
@@ -78,8 +80,12 @@ export function setupRelayBridge(
       const subs = rendererSubs.get(podKey);
       if (!subs) return undefined;
       subs.delete(subId);
-      if (subs.size > 0) return undefined;
+      if (subs.size > 0) {
+        logEvent("debug", "relay", `unsubscribe ${podKey} (${subs.size} left)`);
+        return undefined;
+      }
       rendererSubs.delete(podKey);
+      logEvent("info", "relay", `unsubscribe ${podKey} (last, dropping link)`);
       return appState.relayUnsubscribe(podKey, BRIDGE_SUB);
     },
     "relay:send": (podKey: string, data: string) => appState.relaySend(podKey, data),
@@ -103,6 +109,7 @@ export function setupRelayBridge(
   // tell the renderer's mirror to drop its guards too.
   void appState.relayOnPodDisconnected((_e: unknown, podKey: string) => {
     listenersWired.delete(podKey);
+    logEvent("info", "relay", `pod disconnected ${podKey}`);
     send("relay:pod-disconnected", { podKey });
   });
 

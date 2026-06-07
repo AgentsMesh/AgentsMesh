@@ -104,11 +104,20 @@ export function installRealtimeMirror(): void {
     try {
       snap = JSON.parse(json) as { domain?: string };
     } catch {
+      // eslint-disable-next-line no-console
+      console.warn("realtime-mirror: malformed snapshot — dropped");
       return;
     }
-    if (snap.domain === "channel") applyChannelSnapshot(snap as ChannelSnapshot);
-    else if (snap.domain === "pod") applyPodSnapshot(snap as PodSnapshot);
-    else if (snap.domain === "runner") applyRunnerSnapshot(snap as RunnerSnapshot);
-    else if (snap.domain === "autopilot") applyAutopilotSnapshot(snap as AutopilotSnapshot);
+    try {
+      if (snap.domain === "channel") applyChannelSnapshot(snap as ChannelSnapshot);
+      else if (snap.domain === "pod") applyPodSnapshot(snap as PodSnapshot);
+      else if (snap.domain === "runner") applyRunnerSnapshot(snap as RunnerSnapshot);
+      else if (snap.domain === "autopilot") applyAutopilotSnapshot(snap as AutopilotSnapshot);
+    } catch {
+      // Apply failure = renderer view silently stops tracking the SSOT. Log the
+      // domain (never the payload) so the stuck view is diagnosable.
+      // eslint-disable-next-line no-console
+      console.warn(`realtime-mirror: apply failed for domain=${snap.domain ?? "?"}`);
+    }
   });
 }

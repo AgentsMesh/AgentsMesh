@@ -1,6 +1,6 @@
 use prost::Message;
 use reqwest::header::{HeaderName, HeaderValue};
-use tracing::warn;
+use tracing::{debug, info, warn};
 
 use crate::client::ApiClient;
 use agentsmesh_types::proto_auth_v1 as auth_proto;
@@ -24,6 +24,7 @@ impl ApiClient {
         // `/api/v1/auth/refresh` handler is gone. Proto.auth.v1 owns the
         // refresh data plane (see backend/internal/api/connect/auth).
         let req = auth_proto::RefreshTokenRequest { refresh_token };
+        debug!(target: "auth", "refreshing access token");
         let url = format!(
             "{}/proto.auth.v1.AuthService/RefreshToken",
             self.base_url
@@ -47,6 +48,7 @@ impl ApiClient {
             Ok(resp) if resp.status().is_success() => match resp.bytes().await {
                 Ok(body) => match auth_proto::RefreshTokenResponse::decode(body) {
                     Ok(data) => {
+                        info!(target: "auth", expires_in = data.expires_in, "access token refreshed");
                         self.auth_store.set_tokens(
                             data.token,
                             data.refresh_token,

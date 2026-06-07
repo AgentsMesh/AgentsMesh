@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "path";
+import { logEvent } from "@agentsmesh/node-bridge";
 
 const PROTOCOL = "agentsmesh";
 const PROTOCOL_PREFIX = `${PROTOCOL}://`;
@@ -54,16 +55,20 @@ export function flushPendingUrl(getWindow: () => BrowserWindow | null): void {
 }
 
 function deliver(win: BrowserWindow | null, url: string): void {
+  // Never log `url` — the OAuth callback carries an authorization code (credential).
   if (!win) {
+    logEvent("info", "oauth", "deep-link received, window not ready — queued");
     pendingUrl = url;
     return;
   }
   // Cold-launch race: webContents may still be loading; wait for did-finish-load once.
   if (win.webContents.isLoading()) {
+    logEvent("info", "oauth", "deep-link received, deferring to did-finish-load");
     win.webContents.once("did-finish-load", () => {
       win.webContents.send(CALLBACK_CHANNEL, url);
     });
   } else {
+    logEvent("info", "oauth", "deep-link delivered to renderer");
     win.webContents.send(CALLBACK_CHANNEL, url);
   }
 }

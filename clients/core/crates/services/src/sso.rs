@@ -22,6 +22,7 @@ impl SSOService {
     pub async fn discover_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = sso_proto::DiscoverRequest::decode(request_bytes)
             .map_err(|e| format!("decode discover request: {e}"))?;
+        tracing::debug!(target: "sso", "discover");
         let resp = self.client.sso_discover_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -29,6 +30,7 @@ impl SSOService {
     pub async fn ldap_auth_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = sso_proto::LdapAuthRequest::decode(request_bytes)
             .map_err(|e| format!("decode ldap_auth request: {e}"))?;
+        tracing::info!(target: "sso", domain = %req.domain, "ldap auth");
         let resp = self.client.sso_ldap_auth_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }

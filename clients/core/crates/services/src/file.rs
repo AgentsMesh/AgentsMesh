@@ -25,6 +25,7 @@ impl FileService {
             content_type: content_type.to_string(),
             size: file_data.len() as i64,
         };
+        tracing::info!(target: "file", org_slug = %req.org_slug, content_type = %req.content_type, size = req.size, "upload file");
         let resp = self.client.presign_upload_connect(&req).await.map_err(crate::wire)?;
 
         self.client.put_raw_bytes(&resp.put_url, content_type, file_data)
@@ -35,6 +36,7 @@ impl FileService {
     pub async fn presign_upload_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = fp::PresignUploadRequest::decode(request_bytes)
             .map_err(|e| format!("decode presign_upload request: {e}"))?;
+        tracing::info!(target: "file", org_slug = %req.org_slug, content_type = %req.content_type, size = req.size, "presign upload");
         let resp = self.client.presign_upload_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }

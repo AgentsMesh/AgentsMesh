@@ -33,6 +33,7 @@ rust_library(
         "@crates//:serde",
         "@crates//:serde_json",
         "@crates//:tokio",
+        "@crates//:tracing",
     ],
 )
 
@@ -69,6 +70,7 @@ napi_rust_library(
         "@crates//:serde",
         "@crates//:serde_json",
         "@crates//:tokio",
+        "@crates//:tracing",
     ],
 )
 

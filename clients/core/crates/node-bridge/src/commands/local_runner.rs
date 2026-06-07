@@ -34,6 +34,7 @@ impl AppState {
         release_url: String,
         expected_sha256: Option<String>,
     ) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", %release_url, "install binary");
         self.local_runner
             .install_binary(&release_url, expected_sha256.as_deref())
             .await
@@ -52,26 +53,31 @@ impl AppState {
 
     #[napi]
     pub async fn local_runner_register(&self, token: String) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", "register");
         self.local_runner.register(&token).await.map_err(err)
     }
 
     #[napi]
     pub async fn local_runner_service_install(&self) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", "service install");
         self.local_runner.service_install().await.map_err(err)
     }
 
     #[napi]
     pub async fn local_runner_service_uninstall(&self) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", "service uninstall");
         self.local_runner.service_uninstall().await.map_err(err)
     }
 
     #[napi]
     pub async fn local_runner_service_start(&self) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", "service start");
         self.local_runner.service_start().await.map_err(err)
     }
 
     #[napi]
     pub async fn local_runner_service_stop(&self) -> napi::Result<()> {
+        tracing::info!(target: "local-runner", "service stop");
         self.local_runner.service_stop().await.map_err(err)
     }
 

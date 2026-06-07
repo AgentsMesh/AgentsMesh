@@ -14,6 +14,7 @@ impl ChannelState {
     /// renders read directly from `Channel.last_message` — no side-channel
     /// HashMap needed.
     pub fn set_last_message(&mut self, channel_id: i64, preview: MessagePreview) {
+        tracing::debug!(target: "channel", channel_id, msg_id = preview.message_id, "set last message");
         let ts = preview.timestamp.clone();
         if let Some(c) = self.channels.iter_mut().find(|c| c.id == channel_id) {
             c.last_activity_at = Some(ts.clone());

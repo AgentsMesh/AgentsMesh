@@ -29,6 +29,7 @@ macro_rules! connect_bridge {
         pub async fn $name(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
             let req = bp::$req::decode(request_bytes)
                 .map_err(|e| format!("decode {}: {e}", stringify!($req)))?;
+            tracing::debug!(target: "binding", rpc = stringify!($req));
             let resp = self.client().$client_call(&req).await.map_err(wire)?;
             Ok(resp.encode_to_vec())
         }

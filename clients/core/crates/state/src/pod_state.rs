@@ -64,6 +64,7 @@ impl PodState {
     }
 
     pub fn upsert_pod(&mut self, pod: Pod, timestamp: Option<i64>) {
+        tracing::info!(target: "pod", pod_key = %pod.pod_key, status = %pod.status, "upsert pod");
         if let Some(ts) = timestamp {
             if !self.should_update(&pod.pod_key, ts) { return; }
             self.pod_timestamps.insert(pod.pod_key.clone(), ts);
@@ -83,6 +84,7 @@ impl PodState {
         &mut self, pod_key: &str, status: &str, agent_status: Option<&str>,
         error_code: Option<&str>, error_message: Option<&str>, timestamp: Option<i64>,
     ) {
+        tracing::info!(target: "pod", pod_key, status, "status changed");
         if let Some(ts) = timestamp {
             if !self.should_update(pod_key, ts) { return; }
             self.pod_timestamps.insert(pod_key.to_string(), ts);
@@ -107,6 +109,7 @@ impl PodState {
     }
 
     pub fn update_pod_title(&mut self, pod_key: &str, title: &str, timestamp: Option<i64>) {
+        tracing::debug!(target: "pod", pod_key, "title changed");
         if let Some(ts) = timestamp {
             if !self.should_update(pod_key, ts) { return; }
             self.pod_timestamps.insert(pod_key.to_string(), ts);
@@ -121,6 +124,7 @@ impl PodState {
     }
 
     pub fn update_agent_status(&mut self, pod_key: &str, agent_status: &str) {
+        tracing::info!(target: "pod", pod_key, agent_status, "agent status changed");
         if let Some(p) = self.pods.iter_mut().find(|p| p.pod_key == pod_key) {
             p.agent_status = agent_status.to_string();
             if let Some(ref mut cur) = self.current_pod {
@@ -131,6 +135,7 @@ impl PodState {
     }
 
     pub fn update_pod_alias(&mut self, pod_key: &str, alias: &str) {
+        tracing::info!(target: "pod", pod_key, "alias changed");
         if let Some(p) = self.pods.iter_mut().find(|p| p.pod_key == pod_key) {
             p.alias = Some(alias.to_string());
             if let Some(ref mut cur) = self.current_pod {
@@ -141,6 +146,7 @@ impl PodState {
     }
 
     pub fn update_init_progress(&mut self, pod_key: &str, phase: &str, progress: f64, message: Option<&str>) {
+        tracing::debug!(target: "pod", pod_key, phase, progress, "init progress");
         self.init_progress.insert(pod_key.to_string(), PodInitProgress {
             phase: phase.to_string(), progress, message: message.map(String::from),
         });
@@ -150,6 +156,7 @@ impl PodState {
     pub fn get_init_progress(&self, pod_key: &str) -> Option<&PodInitProgress> { self.init_progress.get(pod_key) }
 
     pub fn remove_pod(&mut self, pod_key: &str) {
+        tracing::info!(target: "pod", pod_key, "remove pod");
         self.pods.retain(|p| p.pod_key != pod_key);
         self.pod_timestamps.remove(pod_key);
         self.init_progress.remove(pod_key);
@@ -165,6 +172,7 @@ impl PodState {
     /// SRP patch — only the perpetual flag of an existing pod. No-op if
     /// pod not in cache (it'll arrive via a later upsert).
     pub fn patch_perpetual(&mut self, pod_key: &str, perpetual: bool) {
+        tracing::info!(target: "pod", pod_key, perpetual, "patch perpetual");
         if let Some(pos) = self.pods.iter().position(|p| p.pod_key == pod_key) {
             self.pods[pos].perpetual = perpetual;
             if let Some(repo) = &self.repo {
@@ -174,6 +182,7 @@ impl PodState {
     }
 
     pub fn set_pods(&mut self, pods: Vec<Pod>) {
+        tracing::debug!(target: "pod", count = pods.len(), "set pods (baseline)");
         self.pods = pods;
         if let Some(repo) = &self.repo {
             let _ = repo.clear();

@@ -35,14 +35,28 @@ export class ElectronRelayManager {
       if (m) for (const cb of m.values()) cb(data);
     });
     api.onRelayStatus(({ podKey, json }) => {
-      const info = JSON.parse(json) as { status: string; runnerDisconnected: boolean };
+      let info: { status: string; runnerDisconnected: boolean };
+      try {
+        info = JSON.parse(json) as { status: string; runnerDisconnected: boolean };
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn(`relay: malformed status frame for pod ${podKey}`);
+        return;
+      }
       const s = this.statusCbs.get(podKey);
       if (s) for (const cb of s) cb(info);
     });
     api.onRelayAcp(({ podKey, json }) => {
-      const { msgType, payload } = JSON.parse(json) as { msgType: number; payload: unknown };
+      let parsed: { msgType: number; payload: unknown };
+      try {
+        parsed = JSON.parse(json) as { msgType: number; payload: unknown };
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn(`relay: malformed acp frame for pod ${podKey}`);
+        return;
+      }
       const s = this.acpCbs.get(podKey);
-      if (s) for (const cb of s) cb(msgType, payload);
+      if (s) for (const cb of s) cb(parsed.msgType, parsed.payload);
     });
     api.onRelayPodDisconnected?.(({ podKey }) => {
       // Pool tore the pod down + cleared its Rust listeners. Drop our mirror's

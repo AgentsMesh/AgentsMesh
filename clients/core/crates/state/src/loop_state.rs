@@ -141,6 +141,7 @@ impl LoopState {
     }
 
     pub fn set_loops(&mut self, loops: Vec<LoopData>) {
+        tracing::debug!(target: "loop", count = loops.len(), "set loops (baseline)");
         self.loops = loops;
         if let Some(repo) = &self.repo {
             for l in &self.loops { let _ = repo.save_loop(l); }
@@ -152,6 +153,7 @@ impl LoopState {
     }
 
     pub fn update_loop(&mut self, slug: &str, loop_data: LoopData) {
+        tracing::info!(target: "loop", slug, status = ?loop_data.status, "update loop");
         if let Some(l) = self.loops.iter_mut().find(|l| l.slug == slug) {
             *l = loop_data.clone();
             if let Some(repo) = &self.repo { let _ = repo.save_loop(l); }
@@ -162,19 +164,23 @@ impl LoopState {
     }
 
     pub fn add_run(&mut self, run: LoopRunData) {
+        tracing::info!(target: "loop", run_id = run.id, loop_slug = %run.loop_slug, status = %run.status, "add run");
         if let Some(repo) = &self.repo { let _ = repo.save_run(&run); }
         self.runs.push(run);
     }
 
     pub fn set_runs(&mut self, runs: Vec<LoopRunData>) {
+        tracing::debug!(target: "loop", count = runs.len(), "set runs (baseline)");
         self.runs = runs;
     }
 
     pub fn append_runs(&mut self, runs: Vec<LoopRunData>) {
+        tracing::debug!(target: "loop", count = runs.len(), "append runs");
         self.runs.extend(runs);
     }
 
     pub fn update_run_status(&mut self, run_id: i64, status: &str) {
+        tracing::info!(target: "loop", run_id, status, "run status changed");
         if let Some(run) = self.runs.iter_mut().find(|r| r.id == run_id) {
             run.status = status.to_string();
             if let Some(repo) = &self.repo { let _ = repo.save_run(run); }
@@ -182,6 +188,7 @@ impl LoopState {
     }
 
     pub fn clear_runs(&mut self) {
+        tracing::debug!(target: "loop", "clear runs");
         self.runs.clear();
     }
 }

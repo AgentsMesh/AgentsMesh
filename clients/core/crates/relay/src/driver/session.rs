@@ -59,6 +59,7 @@ impl<R: Runtime> Driver<R> {
                 if resync_count > retry::SNAPSHOT_GIVEUP_ATTEMPTS {
                     // Connected but data never arrived: rebuild the link so it
                     // self-heals once relay/runner recovers, not blank-forever.
+                    tracing::warn!(target: "relay", pod_key = %self.pod_key, attempts = resync_count, "snapshot never arrived — rebuilding link");
                     return SessionEnd::Closed;
                 }
                 let _ = sender.send_binary(encode_message(MsgType::Resync, &[]));
@@ -118,6 +119,7 @@ impl<R: Runtime> Driver<R> {
                 // green on real data-ready, not the bare WS handshake (kills the
                 // "green but blank" gap).
                 self.set_status(RelayStatus::Connected);
+                tracing::info!(target: "relay", pod_key = %self.pod_key, "data ready → connected");
             }
             DispatchAction::PodResized { cols, rows } => {
                 self.pod_size = Some((cols, rows));
@@ -125,11 +127,13 @@ impl<R: Runtime> Driver<R> {
             }
             DispatchAction::RunnerDisconnected => {
                 self.runner_disconnected = true;
+                tracing::warn!(target: "relay", pod_key = %self.pod_key, "runner disconnected");
                 self.write_snapshot();
                 self.notify_status();
             }
             DispatchAction::RunnerReconnected => {
                 self.runner_disconnected = false;
+                tracing::info!(target: "relay", pod_key = %self.pod_key, "runner reconnected");
                 self.write_snapshot();
                 self.notify_status();
             }

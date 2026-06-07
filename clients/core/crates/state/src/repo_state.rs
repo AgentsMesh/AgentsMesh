@@ -28,6 +28,7 @@ impl RepoState {
     pub fn branches(&self) -> &[Branch] { &self.branches }
 
     pub fn set_repositories(&mut self, repos: Vec<Repository>) {
+        tracing::debug!(target: "repo", count = repos.len(), "set repositories (baseline)");
         self.repositories = repos;
         if let Some(store) = &self.store { store.replace_all(&self.repositories, |r| r.id.to_string()); }
     }
@@ -36,6 +37,7 @@ impl RepoState {
     pub fn set_branches(&mut self, branches: Vec<Branch>) { self.branches = branches; }
 
     pub fn add_repository(&mut self, repo: Repository) {
+        tracing::info!(target: "repo", repo_id = repo.id, "add repository");
         if let Some(store) = &self.store {
             store.save(&repo.id.to_string(), &repo);
         }
@@ -43,6 +45,7 @@ impl RepoState {
     }
 
     pub fn update_repository(&mut self, id: &str, repo: Repository) {
+        tracing::info!(target: "repo", repo_id = id, "update repository");
         if let Some(r) = self.repositories.iter_mut().find(|r| r.id.to_string() == id) {
             *r = repo.clone();
             if let Some(store) = &self.store { store.save(id, r); }
@@ -53,6 +56,7 @@ impl RepoState {
     }
 
     pub fn remove_repository(&mut self, id: &str) {
+        tracing::info!(target: "repo", repo_id = id, "remove repository");
         self.repositories.retain(|r| r.id.to_string() != id);
         if self.current_repo.as_ref().is_some_and(|r| r.id.to_string() == id) {
             self.current_repo = None;

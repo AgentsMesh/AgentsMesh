@@ -22,6 +22,7 @@ impl RepositoryService {
     pub async fn list_repositories_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::ListRepositoriesRequest::decode(request_bytes)
             .map_err(|e| format!("decode list_repositories request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, "list repositories");
         let resp = self.client.list_repositories_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -29,6 +30,7 @@ impl RepositoryService {
     pub async fn get_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::GetRepositoryRequest::decode(request_bytes)
             .map_err(|e| format!("decode get_repository request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "get repository");
         let resp = self.client.get_repository_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -36,6 +38,7 @@ impl RepositoryService {
     pub async fn create_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::CreateRepositoryRequest::decode(request_bytes)
             .map_err(|e| format!("decode create_repository request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, slug = %req.slug, provider_type = %req.provider_type, "create repository");
         let resp = self.client.create_repository_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -43,6 +46,7 @@ impl RepositoryService {
     pub async fn update_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::UpdateRepositoryRequest::decode(request_bytes)
             .map_err(|e| format!("decode update_repository request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "update repository");
         let resp = self.client.update_repository_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -50,6 +54,7 @@ impl RepositoryService {
     pub async fn delete_repository_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::DeleteRepositoryRequest::decode(request_bytes)
             .map_err(|e| format!("decode delete_repository request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "delete repository");
         let resp = self.client.delete_repository_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -57,6 +62,7 @@ impl RepositoryService {
     pub async fn list_repository_branches_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::ListRepositoryBranchesRequest::decode(request_bytes)
             .map_err(|e| format!("decode list_repository_branches request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "list repository branches");
         let resp = self.client.list_repository_branches_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -64,6 +70,7 @@ impl RepositoryService {
     pub async fn sync_repository_branches_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::SyncRepositoryBranchesRequest::decode(request_bytes)
             .map_err(|e| format!("decode sync_repository_branches request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "sync repository branches");
         let resp = self.client.sync_repository_branches_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -71,6 +78,7 @@ impl RepositoryService {
     pub async fn list_repository_merge_requests_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::ListRepositoryMergeRequestsRequest::decode(request_bytes)
             .map_err(|e| format!("decode list_repository_merge_requests request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "list repository merge requests");
         let resp = self.client.list_repository_merge_requests_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -78,6 +86,7 @@ impl RepositoryService {
     pub async fn register_repository_webhook_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::RegisterRepositoryWebhookRequest::decode(request_bytes)
             .map_err(|e| format!("decode register_repository_webhook request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "register repository webhook");
         let resp = self.client.register_repository_webhook_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -85,6 +94,7 @@ impl RepositoryService {
     pub async fn delete_repository_webhook_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::DeleteRepositoryWebhookRequest::decode(request_bytes)
             .map_err(|e| format!("decode delete_repository_webhook request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "delete repository webhook");
         let resp = self.client.delete_repository_webhook_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -92,6 +102,7 @@ impl RepositoryService {
     pub async fn get_repository_webhook_status_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::GetRepositoryWebhookStatusRequest::decode(request_bytes)
             .map_err(|e| format!("decode get_repository_webhook_status request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "get repository webhook status");
         let resp = self.client.get_repository_webhook_status_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -99,6 +110,7 @@ impl RepositoryService {
     pub async fn get_repository_webhook_secret_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::GetRepositoryWebhookSecretRequest::decode(request_bytes)
             .map_err(|e| format!("decode get_repository_webhook_secret request: {e}"))?;
+        tracing::debug!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "get repository webhook secret");
         let resp = self.client.get_repository_webhook_secret_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -106,6 +118,7 @@ impl RepositoryService {
     pub async fn mark_repository_webhook_configured_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = repo_proto::MarkRepositoryWebhookConfiguredRequest::decode(request_bytes)
             .map_err(|e| format!("decode mark_repository_webhook_configured request: {e}"))?;
+        tracing::info!(target: "repository", org_slug = %req.org_slug, repository_id = req.id, "mark repository webhook configured");
         let resp = self.client.mark_repository_webhook_configured_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }

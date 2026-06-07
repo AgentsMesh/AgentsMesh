@@ -28,6 +28,7 @@ impl ApiKeyService {
     pub async fn list_api_keys_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::ListApiKeysRequest::decode(request_bytes)
             .map_err(|e| format!("decode list_api_keys request: {e}"))?;
+        tracing::debug!(target: "apikey", org_slug = %req.org_slug, "list api keys");
         let resp = self.client.list_api_keys_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -35,6 +36,7 @@ impl ApiKeyService {
     pub async fn get_api_key_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::GetApiKeyRequest::decode(request_bytes)
             .map_err(|e| format!("decode get_api_key request: {e}"))?;
+        tracing::debug!(target: "apikey", org_slug = %req.org_slug, api_key_id = req.id, "get api key");
         let resp = self.client.get_api_key_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -42,6 +44,7 @@ impl ApiKeyService {
     pub async fn create_api_key_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::CreateApiKeyRequest::decode(request_bytes)
             .map_err(|e| format!("decode create_api_key request: {e}"))?;
+        tracing::info!(target: "apikey", org_slug = %req.org_slug, "create api key");
         let resp = self.client.create_api_key_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -49,6 +52,7 @@ impl ApiKeyService {
     pub async fn update_api_key_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::UpdateApiKeyRequest::decode(request_bytes)
             .map_err(|e| format!("decode update_api_key request: {e}"))?;
+        tracing::info!(target: "apikey", org_slug = %req.org_slug, api_key_id = req.id, "update api key");
         let resp = self.client.update_api_key_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -56,6 +60,7 @@ impl ApiKeyService {
     pub async fn revoke_api_key_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::RevokeApiKeyRequest::decode(request_bytes)
             .map_err(|e| format!("decode revoke_api_key request: {e}"))?;
+        tracing::info!(target: "apikey", org_slug = %req.org_slug, api_key_id = req.id, "revoke api key");
         let resp = self.client.revoke_api_key_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }
@@ -63,6 +68,7 @@ impl ApiKeyService {
     pub async fn delete_api_key_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = apikey_proto::DeleteApiKeyRequest::decode(request_bytes)
             .map_err(|e| format!("decode delete_api_key request: {e}"))?;
+        tracing::info!(target: "apikey", org_slug = %req.org_slug, api_key_id = req.id, "delete api key");
         let resp = self.client.delete_api_key_connect(&req).await.map_err(crate::wire)?;
         Ok(resp.encode_to_vec())
     }

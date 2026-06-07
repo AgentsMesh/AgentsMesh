@@ -37,6 +37,7 @@ impl RunnerState {
     pub fn current_runner(&self) -> Option<&Runner> { self.current_runner.as_ref() }
 
     pub fn set_runners(&mut self, runners: Vec<Runner>) {
+        tracing::debug!(target: "runner", count = runners.len(), "set runners (baseline)");
         self.runners = runners;
         if let Some(repo) = &self.repo {
             for r in &self.runners { let _ = repo.save(r); }
@@ -44,6 +45,7 @@ impl RunnerState {
     }
 
     pub fn set_available_runners(&mut self, runners: Vec<Runner>) {
+        tracing::debug!(target: "runner", count = runners.len(), "set available runners");
         self.available_runners = runners;
     }
 
@@ -56,6 +58,7 @@ impl RunnerState {
     }
 
     pub fn update_runner(&mut self, id: i64, runner: Runner) {
+        tracing::info!(target: "runner", runner_id = id, status = %runner.status, "update runner");
         if let Some(r) = self.runners.iter_mut().find(|r| r.id == id) {
             *r = runner.clone();
             if let Some(repo) = &self.repo { let _ = repo.save(r); }
@@ -71,6 +74,7 @@ impl RunnerState {
     /// Update in place if present, else append. Used by the realtime/fetch
     /// patch path (a runner can arrive before its first list fetch).
     pub fn upsert_runner(&mut self, runner: Runner) {
+        tracing::info!(target: "runner", runner_id = runner.id, status = %runner.status, "upsert runner");
         if self.runners.iter().any(|r| r.id == runner.id) {
             self.update_runner(runner.id, runner);
         } else {
@@ -80,6 +84,7 @@ impl RunnerState {
     }
 
     pub fn update_runner_status(&mut self, id: i64, status: &str) {
+        tracing::info!(target: "runner", runner_id = id, status, "status changed");
         for r in &mut self.runners {
             if r.id == id {
                 r.status = status.to_string();
@@ -106,6 +111,7 @@ impl RunnerState {
     }
 
     pub fn remove_runner(&mut self, id: i64) {
+        tracing::info!(target: "runner", runner_id = id, "remove runner");
         self.runners.retain(|r| r.id != id);
         self.available_runners.retain(|r| r.id != id);
         if let Some(ref cur) = self.current_runner {

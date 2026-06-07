@@ -34,9 +34,11 @@ export class ElectronEventsManager {
     const api = (globalThis as { window?: { electronAPI?: RealtimeBridgeApi } }).window
       ?.electronAPI;
     if (!api?.onRealtimeEvent || !api?.onRealtimeState) {
-      // Preload didn't expose realtime IPC channels — running outside
-      // Electron or with a stale preload bundle. Stay silent; subscribers
-      // will register but no events will be dispatched.
+      // Preload didn't expose realtime IPC channels — stale preload bundle or
+      // non-Electron host. Subscribers still register but nothing dispatches;
+      // warn so a dead realtime stream is diagnosable from the log file.
+      // eslint-disable-next-line no-console
+      console.warn("realtime: IPC channels unavailable — preload stale? events will not dispatch");
       return;
     }
     this.unsubFns.push(

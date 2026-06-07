@@ -95,7 +95,9 @@ function createWindow() {
   }
 
   mainWindow = win;
+  logEvent("info", "electron-main", "window created");
   win.on("closed", () => {
+    logEvent("info", "electron-main", "window closed");
     if (mainWindow === win) mainWindow = null;
   });
   flushPendingUrl(getMainWindow);
@@ -137,11 +139,13 @@ function bindAppStateHandlers() {
     if (!IPC_ALLOWLIST_SET.has(name)) missingFromAllowlist.push(name);
   }
   if (missingFromBinary.length > 0) {
+    logEvent("warn", "ipc", `allowlist drift: ${missingFromBinary.length} listed but missing from binary`);
     console.warn(
       `[electron] IPC allowlist drift: ${missingFromBinary.length} methods listed but not in AppState.prototype — regenerate with \`pnpm --filter desktop e2e:gen\``,
     );
   }
   if (missingFromAllowlist.length > 0) {
+    logEvent("warn", "ipc", `allowlist drift: ${missingFromAllowlist.length} methods denied (not in allowlist)`);
     console.warn(
       `[electron] IPC allowlist drift: ${missingFromAllowlist.length} AppState methods not in allowlist (denied to renderer) — regenerate with \`pnpm --filter desktop e2e:gen\``,
     );
@@ -157,18 +161,22 @@ function bindAppStateHandlers() {
         }
         return await (appState as any)[m](...args);
       } catch (err) {
+        const msg = typeof err === "string" ? err : ((err as Error)?.message ?? String(err));
+        logEvent("warn", "ipc", `${m} failed: ${msg}`);
         throw typeof err === "string" ? new Error(err) : err;
       }
     });
     appStateHandlers.add(m);
     registered++;
   }
+  logEvent("info", "ipc", `registered ${registered} handlers (allowlist ${IPC_ALLOWLIST.length}, methods ${protoMethods.size})`);
   console.log(`[electron] Registered ${registered} IPC handlers (allowlist: ${IPC_ALLOWLIST.length}, AppState methods: ${protoMethods.size})`);
 }
 
 // Known leak: LocalRunnerManager / RelayManager have no shutdown hook, so their tokio
 // tasks may outlive the rebind. Rare in practice (server switches are uncommon).
 function rebindAppState(newApiUrl: string) {
+  logEvent("info", "electron-main", `rebind AppState → ${newApiUrl}`);
   console.log(`[electron] Rebinding AppState: ${currentApiUrl} → ${newApiUrl}`);
   // Dispose old realtime bridge before swapping AppState — its NAPI
   // callbacks would otherwise keep firing into a stale Rust handle.
@@ -283,6 +291,7 @@ function registerLegacyApiAliases() {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
+      logEvent("warn", "ipc-rpc", `${service}/${method} → ${res.status}`);
       // Surface the standard `auth_expired` token the desktop renderer +
       // e2e specs key off when the backend returned an Unauthorized.
       // The Connect-JSON error envelope is `{"code":"unauthenticated", ...}`
@@ -557,6 +566,10 @@ function registerLegacyApiAliases() {
       "Connect-Protocol-Version": "1",
     };
     if (token) headers.Authorization = `Bearer ${token}`;
+    // Desktop's renderer has no wasm, so ElectronXxxService RPCs egress HERE,
+    // bypassing the Rust api-client connect_call sink — this is the only place
+    // these calls are observable. Log method + byte count, never headers/body.
+    logEvent("debug", "ipc-rpc", `${service}/${method} (${bodyArr.length}B)`);
     const res = await connectFetch(url, {
       method: "POST",
       headers,
@@ -564,6 +577,7 @@ function registerLegacyApiAliases() {
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
+      logEvent("warn", "ipc-rpc", `${service}/${method} → ${res.status}`);
       throw new Error(`${res.status} ${res.statusText} ${url} ${text}`.trim());
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
@@ -596,7 +610,9 @@ function buildMenu() {
 
 app.whenReady().then(() => {
   try {
-    initLogger(logsDir, process.env.AGENTSMESH_LOG_LEVEL ?? "info");
+    // Default debug; the logging crate scopes third-party crates to info
+    // (clients/core/crates/logging/src/init.rs) so business logs stay readable.
+    initLogger(logsDir, process.env.AGENTSMESH_LOG_LEVEL ?? "debug");
     logEvent("info", "electron-main", `Starting, API: ${currentApiUrl}`);
   } catch (e) {
     console.warn("[electron] initLogger failed:", e);
@@ -613,6 +629,7 @@ app.whenReady().then(() => {
     pendingStartupErrorMsg = null;
   }
   appState = new AppState(currentApiUrl, storageDir);
+  logEvent("info", "electron-main", "AppState ready");
   if (isHeadlessTest) {
     stubs = createLocalRunnerStubs();
   }

@@ -104,6 +104,7 @@ impl<R: Runtime> Driver<R> {
             .await;
             let stop = match connect {
                 Ok(Ok((sender, mut receiver))) => {
+                    tracing::info!(target: "relay", pod_key = %self.pod_key, "ws connected");
                     self.snapshot_received = false;
                     // Fresh connection: assume the runner is up until a
                     // RunnerDisconnected frame says otherwise, and don't let input

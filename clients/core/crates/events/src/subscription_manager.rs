@@ -236,6 +236,7 @@ pub(crate) fn set_state(inner: &Arc<RwLock<Inner>>, state: ConnectionState) {
 }
 
 pub(crate) fn dispatch_event(inner: &Arc<RwLock<Inner>>, event: &RealtimeEvent) {
+    tracing::debug!(target: "events", event_type = ?event.event_type, "dispatch");
     // Step 1: Rust-SSOT dispatch hook applies event to AppState. We clone
     // the Arc out under read lock, then drop the events-side lock before
     // calling the hook — the hook will acquire its own AppState write

@@ -69,6 +69,7 @@ impl TicketState {
     }
 
     pub fn set_tickets(&mut self, tickets: Vec<Ticket>) {
+        tracing::debug!(target: "ticket", count = tickets.len(), "set tickets (baseline)");
         self.tickets = tickets;
         if let Some(repo) = &self.repo {
             let _ = repo.clear();
@@ -77,11 +78,13 @@ impl TicketState {
     }
 
     pub fn add_ticket(&mut self, ticket: Ticket) {
+        tracing::info!(target: "ticket", slug = %ticket.slug, status = %ticket.status, "add ticket");
         if let Some(repo) = &self.repo { save_ticket(repo, &ticket); }
         self.tickets.push(ticket);
     }
 
     pub fn update_ticket(&mut self, slug: &str, updated: Ticket) {
+        tracing::info!(target: "ticket", slug, "update ticket");
         if let Some(t) = self.tickets.iter_mut().find(|t| t.slug == slug) {
             *t = updated.clone();
             if let Some(repo) = &self.repo { save_ticket(repo, t); }
@@ -97,6 +100,7 @@ impl TicketState {
     }
 
     pub fn update_ticket_status(&mut self, slug: &str, status: &str) {
+        tracing::info!(target: "ticket", slug, status, "status changed");
         if let Some(t) = self.tickets.iter_mut().find(|t| t.slug == slug) {
             t.status = status.to_string();
             if let Some(repo) = &self.repo { save_ticket(repo, t); }
@@ -109,6 +113,7 @@ impl TicketState {
     }
 
     pub fn remove_ticket(&mut self, slug: &str) {
+        tracing::info!(target: "ticket", slug, "remove ticket");
         self.tickets.retain(|t| t.slug != slug);
         for col in &mut self.board_columns {
             col.tickets.retain(|t| t.slug != slug);
@@ -148,6 +153,7 @@ impl TicketState {
     // --- Board columns ---
 
     pub fn set_board_columns(&mut self, columns: Vec<BoardColumn>) {
+        tracing::debug!(target: "ticket", count = columns.len(), "set board columns (baseline)");
         self.tickets = columns.iter().flat_map(|c| c.tickets.clone()).collect();
         if let Some(repo) = &self.repo {
             let _ = repo.clear();
@@ -159,6 +165,7 @@ impl TicketState {
     pub fn get_board_columns(&self) -> &[BoardColumn] { &self.board_columns }
 
     pub fn append_column_tickets(&mut self, status: &str, tickets: Vec<Ticket>) {
+        tracing::debug!(target: "ticket", status, count = tickets.len(), "append column tickets");
         if let Some(col) = self.board_columns.iter_mut().find(|c| c.status == status) {
             for t in &tickets {
                 if let Some(repo) = &self.repo { save_ticket(repo, t); }
@@ -177,15 +184,22 @@ impl TicketState {
 
     pub fn get_labels(&self) -> &[Label] { &self.labels }
     pub fn set_labels(&mut self, labels: Vec<Label>) { self.labels = labels; }
-    pub fn add_label(&mut self, label: Label) { self.labels.push(label); }
+    pub fn add_label(&mut self, label: Label) {
+        tracing::info!(target: "ticket", label_id = label.id, "add label");
+        self.labels.push(label);
+    }
 
     pub fn update_label(&mut self, updated: Label) {
+        tracing::info!(target: "ticket", label_id = updated.id, "update label");
         if let Some(l) = self.labels.iter_mut().find(|l| l.id == updated.id) {
             *l = updated;
         }
     }
 
-    pub fn remove_label(&mut self, id: i64) { self.labels.retain(|l| l.id != id); }
+    pub fn remove_label(&mut self, id: i64) {
+        tracing::info!(target: "ticket", label_id = id, "remove label");
+        self.labels.retain(|l| l.id != id);
+    }
 
     // --- Current ticket ---
 
@@ -195,6 +209,7 @@ impl TicketState {
     // --- Pods per ticket cache ---
 
     pub fn set_ticket_pods(&mut self, slug: &str, pods: Vec<Pod>) {
+        tracing::debug!(target: "ticket", slug, count = pods.len(), "set ticket pods");
         self.pods_by_ticket_slug.insert(slug.to_string(), pods);
     }
 
@@ -203,6 +218,7 @@ impl TicketState {
     }
 
     pub fn clear_ticket_pods(&mut self, slug: &str) {
+        tracing::debug!(target: "ticket", slug, "clear ticket pods");
         self.pods_by_ticket_slug.remove(slug);
     }
 }

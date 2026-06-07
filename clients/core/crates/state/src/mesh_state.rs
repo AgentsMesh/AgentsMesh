@@ -20,10 +20,12 @@ impl MeshState {
     }
 
     pub fn set_topology(&mut self, topology: MeshTopology) {
+        tracing::debug!(target: "mesh", nodes = topology.nodes.len(), edges = topology.edges.len(), "set topology");
         self.topology = Some(topology);
     }
 
     pub fn clear_topology(&mut self) {
+        tracing::debug!(target: "mesh", "clear topology");
         self.topology = None;
     }
 

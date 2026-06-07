@@ -29,6 +29,7 @@ where
 {
     let url = format!("{}{}", client.base_url, procedure);
     let payload = body.encode_to_vec();
+    tracing::debug!(target: "api", procedure, bytes = payload.len(), "connect_call →");
 
     let mut builder = client
         .http
@@ -60,6 +61,7 @@ where
     if !status.is_success() {
         let status_code = status.as_u16();
         if status_code == 401 {
+            tracing::warn!(target: "api", procedure, "connect_call ← 401 auth expired");
             return Err(ApiError::AuthExpired);
         }
         let status_text = status
@@ -78,6 +80,13 @@ where
             .and_then(|b| std::str::from_utf8(b).ok())
             .filter(|s| !s.is_empty())
             .map(String::from);
+        tracing::warn!(
+            target: "api",
+            procedure,
+            status = status_code,
+            message = server_message.as_deref().unwrap_or(""),
+            "connect_call ← error"
+        );
         return Err(ApiError::Http {
             status: status_code,
             status_text,
@@ -89,5 +98,6 @@ where
     }
 
     let resp_bytes = resp.bytes().await?;
+    tracing::debug!(target: "api", procedure, status = status.as_u16(), bytes = resp_bytes.len(), "connect_call ← ok");
     Res::decode(resp_bytes).map_err(|e| ApiError::Decode(format!("prost decode: {e}")))
 }

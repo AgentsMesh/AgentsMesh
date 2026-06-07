@@ -53,6 +53,7 @@ impl BlockstoreService {
 
     pub async fn list_workspaces(&self) -> Result<String, String> {
         let req = blockstore_proto::ListWorkspacesRequest { org_slug: self.org_slug() };
+        tracing::debug!(target: "blockstore", org_slug = %req.org_slug, "list workspaces");
         let resp = self.client.blockstore_list_workspaces_connect(&req).await
             .map_err(crate::wire)?;
         let list: Vec<Workspace> = resp.items.into_iter().map(workspace_from_proto).collect();
@@ -63,6 +64,7 @@ impl BlockstoreService {
 
     pub async fn ensure_default_workspace(&self) -> Result<String, String> {
         let req = blockstore_proto::EnsureDefaultWorkspaceRequest { org_slug: self.org_slug() };
+        tracing::info!(target: "blockstore", org_slug = %req.org_slug, "ensure default workspace");
         let resp = self.client.blockstore_ensure_default_workspace_connect(&req).await
             .map_err(crate::wire)?;
         let ws = workspace_from_proto(resp);
@@ -77,6 +79,7 @@ impl BlockstoreService {
             root_id: root_id.to_string(),
             max_depth: Some(64),
         };
+        tracing::debug!(target: "blockstore", workspace_id, root_id, "load subtree");
         let resp = self.client.blockstore_get_subtree_connect(&req).await
             .map_err(crate::wire)?;
         let mut state = self.state.write().unwrap();
@@ -94,6 +97,7 @@ impl BlockstoreService {
             org_slug: self.org_slug(),
             workspace_id: workspace_id.to_string(),
         };
+        tracing::debug!(target: "blockstore", workspace_id, "load type defs");
         let resp = self.client.blockstore_list_type_defs_connect(&req).await
             .map_err(crate::wire)?;
         let mut state = self.state.write().unwrap();
@@ -109,6 +113,7 @@ impl BlockstoreService {
             after: Some(after),
             limit: Some(500),
         };
+        tracing::debug!(target: "blockstore", workspace_id, after, "catchup ops");
         let resp = self.client.blockstore_stream_ops_connect(&req).await
             .map_err(crate::wire)?;
         let mut state = self.state.write().unwrap();
@@ -254,6 +259,7 @@ macro_rules! connect_bridge {
         pub async fn $name(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
             let req = blockstore_proto::$req::decode(request_bytes)
                 .map_err(|e| format!("decode {}: {e}", stringify!($req)))?;
+            tracing::debug!(target: "blockstore", rpc = stringify!($req));
             let resp = self.client().$client_call(&req).await.map_err(crate::wire)?;
             Ok(resp.encode_to_vec())
         }
