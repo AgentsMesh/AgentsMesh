@@ -9,7 +9,7 @@ use parking_lot::RwLock;
 use tracing::{debug, error, info, warn};
 
 use crate::reconnect::ReconnectPolicy;
-use crate::stream_source::EventStreamSource;
+use crate::stream_source::{EventStreamSource, StreamFrame};
 use crate::subscription_manager::{dispatch_event, set_state, Inner};
 use crate::types::{ConnectionState, EventSubscriptionManagerOptions};
 
@@ -141,7 +141,7 @@ async fn run_session<R: Runtime>(
 
         futures::select! {
             item = next_fut => match item {
-                Some(Ok(evt)) => {
+                Some(Ok(frame)) => {
                     if !data_ready {
                         data_ready = true;
                         // First real frame proves the link is alive: reset
@@ -151,7 +151,11 @@ async fn run_session<R: Runtime>(
                         policy.reset();
                         set_state(inner, ConnectionState::Connected);
                     }
-                    dispatch_event(inner, &evt);
+                    // Keepalive sentinels only prove liveness — Connected + idle
+                    // reset are both handled above. Only business events dispatch.
+                    if let StreamFrame::Event(evt) = frame {
+                        dispatch_event(inner, &evt);
+                    }
                 }
                 Some(Err(e)) => {
                     warn!("events: stream error: {:?}", e);

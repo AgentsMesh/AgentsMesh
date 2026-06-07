@@ -14,11 +14,11 @@ use agentsmesh_transport::runtime::PlatformRuntime;
 use futures::channel::mpsc::{self, UnboundedSender};
 use parking_lot::Mutex;
 
-use crate::stream_source::{BoxEventStream, EventStreamSource, SubscribeFuture};
+use crate::stream_source::{BoxEventStream, EventStreamSource, StreamFrame, SubscribeFuture};
 use crate::types::{ConnectionState, EventSubscriptionManagerOptions, RealtimeEvent};
 use crate::{EventHandler, EventSubscriptionManager, EventType};
 
-type EvResult = Result<RealtimeEvent, ApiError>;
+type EvResult = Result<StreamFrame, ApiError>;
 type Mgr = EventSubscriptionManager<PlatformRuntime>;
 
 /// Scriptable source. `subscribe()` hands back a fresh channel whose sender the
@@ -47,7 +47,12 @@ impl Shared {
     }
     fn push_event(&self) {
         if let Some(tx) = self.senders.lock().last() {
-            let _ = tx.unbounded_send(Ok(make_event()));
+            let _ = tx.unbounded_send(Ok(StreamFrame::Event(make_event())));
+        }
+    }
+    fn push_keepalive(&self) {
+        if let Some(tx) = self.senders.lock().last() {
+            let _ = tx.unbounded_send(Ok(StreamFrame::Keepalive));
         }
     }
     fn close_last(&self) {
@@ -289,5 +294,42 @@ async fn nudge_skips_backoff() {
         wait_count(&shared, before + 1, Duration::from_secs(2)).await,
         "nudge did not interrupt the 10s backoff to reconnect",
     );
+    mgr.disconnect().await;
+}
+
+#[tokio::test]
+async fn keepalive_sentinels_flip_connected_without_dispatch() {
+    // backend 订阅建立后发 liveness 哨兵帧(keepalive=true)+ 周期保活。它们让
+    // 链路翻 Connected / 刷新 idle,但绝不能进业务 handler——否则每次心跳都
+    // bump tick / 污染 AppState。connection_loop 按 StreamFrame::Keepalive 跳过。
+    let shared = Shared::new(0, 0);
+    let mgr = manager(&shared, opts(5, 2000, 200));
+    let got = Arc::new(AtomicU32::new(0));
+    let g = Arc::clone(&got);
+    let h: EventHandler = Arc::new(move |_| {
+        g.fetch_add(1, SeqCst);
+    });
+    mgr.subscribe_all(h).await;
+    mgr.connect().await;
+    assert!(wait_count(&shared, 1, Duration::from_secs(2)).await, "never subscribed");
+
+    // keepalive 哨兵:翻 Connected(链路活着),但不是业务 event。
+    shared.push_keepalive();
+    assert!(
+        wait_state(&mgr, ConnectionState::Connected, Duration::from_secs(2)).await,
+        "keepalive sentinel must flip the link to Connected",
+    );
+    shared.push_keepalive();
+    tokio::time::sleep(Duration::from_millis(40)).await;
+    assert_eq!(got.load(SeqCst), 0, "sentinels must not reach business handlers");
+
+    // 真实 event 才派发。
+    shared.push_event();
+    let start = Instant::now();
+    while got.load(SeqCst) == 0 {
+        assert!(start.elapsed() < Duration::from_secs(2), "real event not delivered");
+        tokio::time::sleep(Duration::from_millis(5)).await;
+    }
+    assert_eq!(got.load(SeqCst), 1, "exactly one business event dispatched");
     mgr.disconnect().await;
 }

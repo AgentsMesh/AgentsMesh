@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -37,12 +38,28 @@ func (s *Server) Subscribe(
 	client := websocket.NewConnectEventsClient(s.hub, tenant.UserID, tenant.OrganizationID)
 	s.hub.Register(client)
 	defer s.hub.Unregister(client)
+	slog.InfoContext(ctx, "events stream opened",
+		"user_id", tenant.UserID, "org_id", tenant.OrganizationID)
+	defer slog.InfoContext(ctx, "events stream closed", "user_id", tenant.UserID)
+
+	// 立即发 liveness 帧强制 flush HTTP header + 让客户端 data-ready 翻 Connected;
+	// 否则静默 org 下客户端枯等 header 到 15s connect timeout 后死循环重连。
+	if err := stream.Send(sentinelFrame()); err != nil {
+		return nil
+	}
+
+	ticker := time.NewTicker(keepaliveInterval)
+	defer ticker.Stop()
 
 	outbound := client.Outbound()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-ticker.C:
+			if err := stream.Send(sentinelFrame()); err != nil {
+				return nil
+			}
 		case raw, ok := <-outbound:
 			if !ok {
 				return nil
@@ -54,9 +71,11 @@ func (s *Server) Subscribe(
 				continue
 			}
 			if err := stream.Send(evt); err != nil {
-				// Client disconnect — exit cleanly.
 				return nil
 			}
+			// 业务帧本身已刷新客户端 idle;重置 ticker 推迟下次 keepalive,
+			// 让 keepalive 只在真正静默时发,不在活跃流上发多余哨兵。
+			ticker.Reset(keepaliveInterval)
 		}
 	}
 }

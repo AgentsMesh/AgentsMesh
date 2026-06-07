@@ -17,9 +17,13 @@
 // leaked into proxy logs. Connect Server Streaming uses HTTP semantics
 // like every other RPC, so the auth interceptor pipeline applies as-is.
 //
-// Heartbeat: HTTP/2 PING frames + stream-idle timeout on the client
-// side. No application-level ping/pong (the legacy `ping`/`pong` event
-// types are dropped — Event payloads now only carry domain events).
+// Liveness: the handler sends a keepalive sentinel frame (Event.keepalive=true,
+// no business payload) the instant the stream opens — connect-go only flushes
+// the HTTP 200 header on the first Send, so without it a silent org leaves the
+// client blocked until its 15s connect timeout, then reconnect-storms — and one
+// every 25s thereafter to keep the link warm under client idle + gateway idle
+// reaping. The events crate connection_loop flips Connected / refreshes idle on
+// these but skips dispatch. See backend/internal/api/connect/events/sentinel_frames.go.
 //
 // Payload schema: 35+ heterogeneous event types (pod / channel / ticket
 // / runner / autopilot / mr / pipeline / loop_run / blockstore /
@@ -67,4 +71,10 @@ message Event {
   string data_json = 8;
   // Unix milliseconds.
   int64 timestamp = 9;
+  // Liveness sentinel marker: the server's ready/keepalive frames set this and
+  // carry no business payload. A dedicated field (not a reserved `type` value)
+  // keeps liveness orthogonal to the business type namespace, so no business
+  // event can collide with a sentinel; the client flips Connected / refreshes
+  // idle on these frames but never dispatches them.
+  bool keepalive = 10;
 }

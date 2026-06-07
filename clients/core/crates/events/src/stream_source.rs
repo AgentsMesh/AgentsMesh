@@ -17,10 +17,19 @@ use tracing::debug;
 use crate::event_types::EventType;
 use crate::types::{EventCategory, RealtimeEvent};
 
+/// One item off the realtime stream: a business event to dispatch, or a liveness
+/// sentinel (server keepalive, `Event.keepalive=true`) that only proves the link
+/// is alive. Distinct at the type level so a sentinel can never be dispatched as
+/// a business event.
+pub enum StreamFrame {
+    Event(RealtimeEvent),
+    Keepalive,
+}
+
 #[cfg(not(target_arch = "wasm32"))]
-pub type BoxEventStream = Pin<Box<dyn Stream<Item = Result<RealtimeEvent, ApiError>> + Send>>;
+pub type BoxEventStream = Pin<Box<dyn Stream<Item = Result<StreamFrame, ApiError>> + Send>>;
 #[cfg(target_arch = "wasm32")]
-pub type BoxEventStream = Pin<Box<dyn Stream<Item = Result<RealtimeEvent, ApiError>>>>;
+pub type BoxEventStream = Pin<Box<dyn Stream<Item = Result<StreamFrame, ApiError>>>>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) type SubscribeFuture = Pin<Box<dyn Future<Output = Result<BoxEventStream, ApiError>> + Send>>;
@@ -90,9 +99,10 @@ impl EventStreamSource for ApiClientStreamSource {
     }
 }
 
-async fn map_proto(item: Result<ProtoEvent, ApiError>) -> Option<Result<RealtimeEvent, ApiError>> {
+async fn map_proto(item: Result<ProtoEvent, ApiError>) -> Option<Result<StreamFrame, ApiError>> {
     match item {
-        Ok(evt) => proto_to_realtime(evt).map(Ok),
+        Ok(p) if p.keepalive => Some(Ok(StreamFrame::Keepalive)),
+        Ok(p) => proto_to_realtime(p).map(|e| Ok(StreamFrame::Event(e))),
         Err(e) => Some(Err(e)),
     }
 }

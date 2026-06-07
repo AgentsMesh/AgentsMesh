@@ -1,9 +1,10 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "events",
     srcs = [
         "events.go",
+        "sentinel_frames.go",
         "subscribe.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/events",
@@ -15,6 +16,20 @@ go_library(
         "//backend/internal/middleware",
         "//proto/events/v1:events_go_proto",
         "@com_connectrpc_connect//:connect",
+    ],
+)
+
+go_test(
+    name = "events_test",
+    srcs = ["subscribe_test.go"],
+    embed = [":events"],
+    deps = [
+        "//backend/internal/infra/websocket",
+        "//backend/internal/middleware",
+        "//proto/events/v1:events_go_proto",
+        "@com_connectrpc_connect//:connect",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
 
