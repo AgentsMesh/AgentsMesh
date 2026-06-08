@@ -328,6 +328,9 @@
     "select": "선택",
     "toOpen": "열기"
   },
+  "reminders": {
+    "dismiss": "닫기"
+  },
   "relayStatus": {
     "web": "Web",
     "relay": "Relay",

@@ -328,6 +328,9 @@
     "select": "選択",
     "toOpen": "で開く"
   },
+  "reminders": {
+    "dismiss": "閉じる"
+  },
   "relayStatus": {
     "web": "Web",
     "relay": "Relay",

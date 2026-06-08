@@ -328,6 +328,9 @@
     "select": "Selecionar",
     "toOpen": "para abrir"
   },
+  "reminders": {
+    "dismiss": "Dispensar"
+  },
   "relayStatus": {
     "web": "Web",
     "relay": "Relay",

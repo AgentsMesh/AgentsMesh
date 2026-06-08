@@ -16,7 +16,7 @@ import {
 } from "@/lib/wasm-core";
 import { usePodStore } from "@/stores/pod";
 import { useTicketStore } from "@/stores/ticket";
-import { EventsConnectionBanner } from "@/components/realtime/EventsConnectionBanner";
+import { useReminderStore } from "@/stores/reminders";
 
 interface RealtimeContextValue {
   connectionState: ConnectionState;
@@ -71,6 +71,8 @@ function drainPendingSideEffects(): PendingSideEffects {
 export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const { connectionState, reconnect } = useRealtimeConnection();
   const t = useTranslations();
+  const setReminder = useReminderStore((s) => s.setReminder);
+  const clearReminder = useReminderStore((s) => s.clearReminder);
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ticketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -157,11 +159,29 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
     return cancel;
   }, [connectionState]);
 
+  // Surface the global events-stream health as a dismissible reminder in the
+  // ActivityBar. Only warn after 5s of (re)connecting to skip the normal
+  // reconnect flicker; "connected"/"disconnected" clear it (clearing also
+  // resets dismiss so the next disconnect episode resurfaces).
+  useEffect(() => {
+    const recovering = connectionState === "connecting" || connectionState === "reconnecting";
+    if (!recovering) {
+      clearReminder("events-disconnected");
+      return;
+    }
+    const timer = setTimeout(() => {
+      setReminder(
+        { id: "events-disconnected", tone: "warning", message: t("relayStatus.eventsReconnecting"), onAction: reconnect },
+        "recovering",
+      );
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [connectionState, reconnect, setReminder, clearReminder, t]);
+
   const value = useMemo<RealtimeContextValue>(() => ({ connectionState, reconnect }), [connectionState, reconnect]);
 
   return (
     <RealtimeContext.Provider value={value}>
-      <EventsConnectionBanner connectionState={connectionState} />
       {children}
     </RealtimeContext.Provider>
   );

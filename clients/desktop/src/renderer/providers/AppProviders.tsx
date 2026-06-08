@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { DesktopIntlProvider } from "./IntlProvider";
 import { Toaster } from "sonner";
 import { UpdaterProvider } from "@updater";
-import { UpdateReadyBanner } from "../components/UpdateReadyBanner";
+import { UpdateReminder } from "../components/UpdateReminder";
 import { ensurePlatformReady } from "@agentsmesh/service-runtime";
 import { useAuthStore } from "@/stores/auth";
 
@@ -39,7 +39,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
             {children}
           </PlatformGate>
           <Toaster richColors position="top-right" />
-          <UpdateReadyBanner />
+          <UpdateReminder />
         </UpdaterProvider>
       </DesktopIntlProvider>
     </ThemeProvider>

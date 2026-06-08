@@ -430,6 +430,9 @@
     "select": "选择",
     "toOpen": "打开"
   },
+  "reminders": {
+    "dismiss": "关闭"
+  },
   "relayStatus": {
     "web": "Web",
     "relay": "Relay",

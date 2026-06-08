@@ -63,6 +63,15 @@ asarUnpack:
 # electron-builder to skip its electron-rebuild pass.
 npmRebuild: false
 
+# The node-bridge .node/.js land read-only (Bazel marks build outputs 0555).
+# macOS removexattr — Squirrel.Mac's quarantine strip during auto-update
+# install — needs write permission, so a read-only file aborts the update.
+# Restore owner-write on the unpacked tree post-pack (runs before signing).
+# electron-builder resolves afterPack relative to cwd, which under the Bazel
+# macro is the parent of the `dist_staging` projectDir — hence the staging-dir
+# prefix to reach the hook copied into <staging>/scripts/.
+afterPack: dist_staging/scripts/ensure-writable-unpacked.cjs
+
 mac:
   category: public.app-category.developer-tools
   target:

@@ -30,6 +30,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { OrgSwitcher } from "@/components/ide/OrgSwitcher";
+import { ReminderArea } from "@/components/ide/ReminderArea";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   terminal: Terminal,
@@ -168,6 +169,8 @@ export function ActivityBar({ className }: ActivityBarProps) {
             );
           })}
         </nav>
+
+        <ReminderArea />
 
         <nav className="flex flex-col items-stretch py-2 gap-0.5 px-2 border-t border-border">
           <Tooltip>

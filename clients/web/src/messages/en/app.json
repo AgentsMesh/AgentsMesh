@@ -430,6 +430,9 @@
     "select": "Select",
     "toOpen": "to open"
   },
+  "reminders": {
+    "dismiss": "Dismiss"
+  },
   "relayStatus": {
     "web": "Web",
     "relay": "Relay",

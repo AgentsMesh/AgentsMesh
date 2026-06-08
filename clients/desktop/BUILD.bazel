@@ -90,7 +90,13 @@ electron_builder_app(
     # points at the same `build/` directory. Without this in extra_srcs
     # the icon never lands in the Bazel staging sandbox and installers
     # fall back to the generic Electron diamond.
-    extra_srcs = ["build/icon.png"],
+    # `ensure-writable-unpacked.cjs` is the afterPack hook (referenced from
+    # electron-builder.yml); it must be staged into the sandbox projectDir
+    # so electron-builder can require it at pack time.
+    extra_srcs = [
+        "build/icon.png",
+        "scripts/ensure-writable-unpacked.cjs",
+    ],
     # release.yml stamps this on tag builds via sed; the marker comment
     # above lets the sed pattern key off semantics, not the literal
     # number, so bumping the dev placeholder doesn't break stamping.
@@ -152,6 +158,7 @@ vitest_test(
         [
             "src/shared/**/*.ts",
             "scripts/**/*.mjs",
+            "scripts/**/*.cjs",
         ],
         allow_empty = True,
         exclude = ["src/**/*.test.ts"],
