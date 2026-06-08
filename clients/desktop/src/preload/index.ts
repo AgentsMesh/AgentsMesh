@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { type ServerConfig } from "../shared/server-config-types";
+import { type UpdaterSnapshot } from "../shared/updater-reducer";
 
 // Sync IPC by design: renderer code (env.ts, OAuth URL builders, WS connect) is synchronous.
 // Reading at preload (before any renderer code runs) blocks no UI thread; mainWindow.reload()
@@ -30,6 +31,11 @@ const api = {
     const listener = (_e: IpcRendererEvent, eventJson: string) => handler(eventJson);
     ipcRenderer.on("realtime:event", listener);
     return () => ipcRenderer.removeListener("realtime:event", listener);
+  },
+  onUpdaterSnapshot: (handler: (snap: UpdaterSnapshot) => void) => {
+    const listener = (_e: IpcRendererEvent, snap: UpdaterSnapshot) => handler(snap);
+    ipcRenderer.on("updater:snapshot", listener);
+    return () => ipcRenderer.removeListener("updater:snapshot", listener);
   },
   onRealtimeState: (handler: (state: string) => void) => {
     const listener = (_e: IpcRendererEvent, state: string) => handler(state);

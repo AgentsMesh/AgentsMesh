@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore, useCurrentUser } from "@/stores/auth";
 import { useTranslations } from "next-intl";
 import { LogOut, User, Mail } from "lucide-react";
+import { AppUpdateSection } from "./AppUpdateSection";
 
 export function GeneralSettingsPage() {
   const router = useRouter();
@@ -58,7 +59,7 @@ export function GeneralSettingsPage() {
         </div>
       </div>
 
-      <div className="border border-border rounded-lg p-6">
+      <div className="border border-border rounded-lg p-6 mb-6">
         <h2 className="text-lg font-semibold mb-2">
           {t("settings.personal.general.session")}
         </h2>
@@ -75,6 +76,8 @@ export function GeneralSettingsPage() {
           {t("settings.personal.general.logout")}
         </Button>
       </div>
+
+      <AppUpdateSection />
     </div>
   );
 }

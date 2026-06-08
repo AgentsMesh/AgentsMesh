@@ -1,5 +1,17 @@
 {
   "settings": {
+    "updater": {
+      "sectionTitle": "Application Updates",
+      "currentVersion": "Current version",
+      "checkButton": "Check for Updates",
+      "restart": "Restart to Update",
+      "checking": "Checking for updates…",
+      "upToDate": "You're on the latest version.",
+      "downloading": "Downloading update… {percent}%",
+      "ready": "Update ready — restart to apply.",
+      "error": "Update check failed.",
+      "bannerReady": "A new version (v{version}) is ready · Click to restart and update"
+    },
     "title": "Paramètres",
     "backToSettings": "Retour aux paramètres",
     "general": "Général",

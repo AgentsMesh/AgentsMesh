@@ -1,5 +1,17 @@
 {
   "settings": {
+    "updater": {
+      "sectionTitle": "应用更新",
+      "currentVersion": "当前版本",
+      "checkButton": "检查更新",
+      "restart": "重启以更新",
+      "checking": "正在检查更新…",
+      "upToDate": "已是最新版本。",
+      "downloading": "正在下载更新… {percent}%",
+      "ready": "更新已就绪 — 重启即可应用。",
+      "error": "检查更新失败。",
+      "bannerReady": "新版本 (v{version}) 已就绪 · 点击重启更新"
+    },
     "title": "设置",
     "backToSettings": "返回设置",
     "general": "通用",

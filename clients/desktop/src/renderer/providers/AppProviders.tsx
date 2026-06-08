@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { DesktopIntlProvider } from "./IntlProvider";
 import { Toaster } from "sonner";
+import { UpdaterProvider } from "@updater";
+import { UpdateReadyBanner } from "../components/UpdateReadyBanner";
 import { ensurePlatformReady } from "@agentsmesh/service-runtime";
 import { useAuthStore } from "@/stores/auth";
 
@@ -32,10 +34,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider defaultTheme="system" attribute="class">
       <DesktopIntlProvider>
-        <PlatformGate>
-          {children}
-        </PlatformGate>
-        <Toaster richColors position="top-right" />
+        <UpdaterProvider>
+          <PlatformGate>
+            {children}
+          </PlatformGate>
+          <Toaster richColors position="top-right" />
+          <UpdateReadyBanner />
+        </UpdaterProvider>
       </DesktopIntlProvider>
     </ThemeProvider>
   );

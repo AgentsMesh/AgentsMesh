@@ -231,14 +231,15 @@ jobs:
         os:
           - label: macOS
             runner: macos-14
-            # Only the .dmg is shipped today. `.zip` + `latest-mac.yml`
-            # drive electron-updater autoupdate, but the `.app` inside
-            # the zip is NOT yet stapled (notarization re-pack pipeline
-            # is dmg-only). Re-enable once the zip-restaple flow lands
-            # — until then autoupdate stays disabled to avoid shipping
-            # un-notarized .app over the update channel.
+            # Ships .dmg (manual download) + .zip + latest-mac.yml
+            # (electron-updater feed). The "Notarize macOS zip" step below
+            # staples the notarization ticket into the .app inside each zip and
+            # rewrites latest-mac.yml's sha512/size, so Squirrel.Mac accepts the
+            # repacked archive offline during an autoupdate.
             installers: |
               AgentsMesh-*.dmg
+              AgentsMesh-*.zip
+              latest-mac.yml
           - label: Windows
             runner: windows-latest
             installers: |
@@ -502,6 +503,81 @@ jobs:
             echo "Stapling ticket to $dmg..."
             xcrun stapler staple "$dmg"
           done
+
+      # electron-updater downloads the .zip (never the .dmg) and Squirrel.Mac
+      # verifies the .app's notarization offline, so the .app inside each zip
+      # must carry a stapled ticket. electron-builder signs that .app but never
+      # staples it. We notarize each zip, staple the extracted .app, repack, and
+      # then rewrite latest-mac.yml's sha512/size — the repack changes the bytes
+      # and a hash mismatch makes electron-updater silently reject the update.
+      - name: Notarize macOS zip + refresh latest-mac.yml (autoupdate)
+        if: matrix.os.runner == 'macos-14'
+        shell: bash
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_ISSUER_ID: ${{ secrets.APPLE_API_KEY_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${APPLE_API_KEY:-}" ]]; then
+            echo "::error::APPLE_API_KEY unset — refuse to ship un-notarized zip." >&2
+            exit 1
+          fi
+          STAGE="$RUNNER_TEMP/installers"
+          MAC_YML="$STAGE/latest-mac.yml"
+          if [[ ! -f "$MAC_YML" ]]; then
+            echo "::error::latest-mac.yml missing — electron-updater mac feed can't ship." >&2
+            exit 1
+          fi
+
+          # Pull zip names from latest-mac.yml's files[].url — never guess
+          # electron-builder's arch-suffixed naming.
+          zips=$(node -e "const y=require('fs').readFileSync(process.argv[1],'utf8');const m=[...y.matchAll(/url:\s*(\S+\.zip)/g)];console.log([...new Set(m.map(x=>x[1]))].join('\n'))" "$MAC_YML")
+          if [[ -z "$zips" ]]; then
+            echo "::error::no .zip entries in latest-mac.yml." >&2
+            exit 1
+          fi
+
+          while IFS= read -r zipname; do
+            [[ -z "$zipname" ]] && continue
+            zippath="$STAGE/$zipname"
+            [[ -f "$zippath" ]] || { echo "::error::$zipname in latest-mac.yml not on disk." >&2; exit 1; }
+
+            echo "Submitting $zipname to Apple Notary..."
+            xcrun notarytool submit "$zippath" \
+              --key "$APPLE_API_KEY" \
+              --key-id "$APPLE_API_KEY_ID" \
+              --issuer "$APPLE_API_KEY_ISSUER_ID" \
+              --wait --timeout 30m
+
+            work="$(mktemp -d)"
+            ditto -x -k "$zippath" "$work"
+            app="$(find "$work" -maxdepth 1 -name '*.app' | head -1)"
+            [[ -n "$app" ]] || { echo "::error::no .app inside $zipname." >&2; exit 1; }
+            xcrun stapler staple "$app"
+            xcrun stapler validate "$app"
+            spctl -a -t exec -vv "$app"
+            rm -f "$zippath"
+            # `ditto -c -k --keepParent` is the archive shape Squirrel.Mac expects.
+            ditto -c -k --keepParent "$app" "$zippath"
+            rm -rf "$work"
+            echo "OK: $zipname notarized + stapled + repacked."
+          done <<< "$zips"
+
+          node "$GITHUB_WORKSPACE/clients/desktop/scripts/rewrite-latest-mac.mjs" "$MAC_YML" "$STAGE"
+
+          # Guard: every .zip on disk must be one we just notarized + stapled
+          # (i.e. listed in latest-mac.yml). An un-listed zip would be shipped
+          # un-stapled by the upload glob and rejected by Squirrel/Gatekeeper.
+          for diskzip in "$STAGE"/AgentsMesh-*.zip; do
+            base="$(basename "$diskzip")"
+            echo "$zips" | grep -qxF "$base" || {
+              echo "::error::$base on disk but absent from latest-mac.yml — would ship un-notarized." >&2
+              exit 1
+            }
+          done
+
+          echo "--- latest-mac.yml ---"
+          cat "$MAC_YML"
 
       # Fail-fast assertion: every prior release silently shipped
       # ad-hoc-signed dmgs because electron-builder's logs are

@@ -9,6 +9,7 @@ import { acquireSingleInstance } from "./single_instance";
 import { IPC_ALLOWLIST, IPC_ALLOWLIST_SET } from "./ipc-allowlist.generated";
 import { setupRealtimeBridge, type RealtimeBridge } from "./realtime";
 import { setupRelayBridge, type RelayBridge } from "./relay";
+import { setupAutoUpdater } from "./auto_updater";
 import { connectFetch } from "./connect-fetch";
 import {
   registerProtocol,
@@ -643,6 +644,7 @@ app.whenReady().then(() => {
     realtimeBridge = bridge;
   });
   relayBridge = setupRelayBridge(appState, getMainWindow);
+  setupAutoUpdater(getMainWindow);
   buildMenu();
   installOpenUrlHandler(getMainWindow);
   createWindow();

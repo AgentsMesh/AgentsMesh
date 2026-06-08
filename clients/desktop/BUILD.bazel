@@ -2,6 +2,7 @@ load("//build_defs/web:electron.bzl", "electron_builder_app", "electron_vite_bui
 load("//build_defs/web:eslint.bzl", "eslint_test")
 load("//build_defs/web:playwright.bzl", "playwright_test")
 load("//build_defs/web:ts.bzl", "ts_project")
+load("//build_defs/web:vitest.bzl", "vitest_test")
 
 # `bazel build //clients/desktop:out` — Bazel-native electron-vite
 # build. Produces `out/main/index.js`, `out/preload/index.js`,
@@ -80,6 +81,7 @@ electron_builder_app(
     # node_modules link tree at staging time.
     dependencies = {
         "@agentsmesh/node-bridge": "*",
+        "electron-updater": "^6.8.9",
     },
     electron_main = "./out/main/index.js",
     # `build/icon.png` is the source of truth for the macOS .icns,
@@ -127,6 +129,33 @@ ts_project(
     tags = ["manual"],
     tsconfig = "tsconfig.json",
     deps = ["//:node_modules"],
+)
+
+# `bazel test //clients/desktop:unit` — vitest over pure-logic units
+# (shared reducer + the latest-mac.yml rewrite script). Node env, no
+# renderer/React/wasm closure; tests import their targets relatively.
+vitest_test(
+    name = "unit",
+    size = "small",
+    srcs = glob(
+        [
+            "src/**/*.test.ts",
+            "scripts/**/*.test.ts",
+        ],
+        allow_empty = True,
+    ),
+    config = "vitest.config.ts",
+    data = [
+        "tsconfig.json",
+        "//:node_modules",
+    ] + glob(
+        [
+            "src/shared/**/*.ts",
+            "scripts/**/*.mjs",
+        ],
+        allow_empty = True,
+        exclude = ["src/**/*.test.ts"],
+    ),
 )
 
 # `bazel test //clients/desktop:lint` — ESLint over main + preload +

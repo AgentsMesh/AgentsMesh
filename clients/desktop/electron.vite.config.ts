@@ -29,7 +29,7 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        external: ["@agentsmesh/node-bridge"],
+        external: ["@agentsmesh/node-bridge", "electron-updater"],
       },
     },
   },
@@ -85,6 +85,12 @@ export default defineConfig({
         // route file. Fall back to the web source tree so those imports resolve.
         { find: "@/app", replacement: resolve(webSrc, "app") },
         { find: "@/providers", replacement: resolve(webSrc, "providers") },
+        // Pin UpdaterProvider to one resolved path. Bazel stages desktop sources
+        // through symlink trees, so a relative `../../../providers/UpdaterProvider`
+        // from a route page resolves to a different absolute path than `./Updater
+        // Provider` from AppProviders — two module IDs, two React contexts, and
+        // useUpdater throws "must be used within UpdaterProvider" in the route.
+        { find: "@updater", replacement: resolve(desktopSrc, "providers/UpdaterProvider") },
         { find: "@", replacement: desktopSrc },
         { find: "next/navigation", replacement: resolve(desktopSrc, "shims/next-navigation") },
         { find: "next/link", replacement: resolve(desktopSrc, "shims/next-link") },
