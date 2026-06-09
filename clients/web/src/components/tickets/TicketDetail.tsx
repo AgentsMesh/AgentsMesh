@@ -11,7 +11,6 @@ import { useTicketExtraData } from "./hooks";
 import { LabelsList, CommentsList, SubTicketsList, RelationsList, CommitsList } from "./shared";
 import { TicketDetailSidebar } from "./TicketDetailSidebar";
 import { InlineEditableText } from "./InlineEditableText";
-import { SpawnPodButton } from "./SpawnPodButton";
 import { StatusSelect } from "./StatusSelect";
 
 const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
@@ -192,38 +191,27 @@ export function TicketDetail({ slug }: TicketDetailProps) {
               )}
             </div>
 
-            <div className="flex shrink-0 flex-col items-end gap-2 w-[260px]">
-              <SpawnPodButton
-                ticket={currentTicket}
-                ticketSlug={slug}
-                size="lg"
-                className="h-11 w-full gap-2 text-sm font-semibold shadow-sm"
-              />
-              <p className="text-right text-[11px] text-muted-foreground">
-                {currentTicket.repository?.name ?? "—"} · {t("tickets.detail.lastUsedAgent")}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                  {t("common.edit")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => handleStatusChange("done" as TicketStatus)}
-                >
-                  {t("tickets.detail.markDone")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={handleDelete}
-                  aria-label={t("common.more")}
-                >
-                  ⋯
-                </Button>
-              </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
+                {t("common.edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-3 text-xs"
+                onClick={() => handleStatusChange("done" as TicketStatus)}
+              >
+                {t("tickets.detail.markDone")}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={handleDelete}
+                aria-label={t("common.more")}
+              >
+                ⋯
+              </Button>
             </div>
           </div>
         </div>

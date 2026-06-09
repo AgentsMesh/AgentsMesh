@@ -11,6 +11,7 @@ import { useTicketPods } from "@/hooks/useTicketPods";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { getShortPodKey } from "@/lib/pod-display-name";
 import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
+import { SpawnPodButton } from "./SpawnPodButton";
 
 interface TicketDetailSidebarProps {
   ticket: Ticket;
@@ -52,6 +53,18 @@ export function TicketDetailSidebar({
 
   return (
     <aside className="lg:w-80 shrink-0 space-y-4">
+      <div className="space-y-1.5">
+        <SpawnPodButton
+          ticket={ticket}
+          ticketSlug={ticketSlug}
+          size="lg"
+          className="h-11 w-full gap-2 text-sm font-semibold shadow-sm"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          {ticket.repository?.name ?? "—"} · {t("tickets.detail.lastUsedAgent")}
+        </p>
+      </div>
+
       <RailSection title={t("tickets.rail.workingPods")} count={activePods.length}>
         {podsLoading ? (
           <RailEmpty icon={<Terminal className="h-4 w-4" />} text={t("common.loading")} />
