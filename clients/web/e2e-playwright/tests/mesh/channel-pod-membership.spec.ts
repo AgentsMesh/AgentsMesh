@@ -22,6 +22,7 @@ type ChannelPod = { podKey: string };
 
 const SECOND_USER = { email: "dev2@agentsmesh.local", password: "devpass123" };
 const RAIL = '[data-testid="channel-right-rail"]';
+const POD_ROW = '[data-testid="channel-rail-pod"]';
 
 interface CreatedPod { podKey: string }
 interface CreatedChannel { id: bigint; name: string; memberCount: number; agentCount: number }
@@ -104,7 +105,7 @@ test.describe("Channel × Pod membership (issue #400 regression)", () => {
       await selectInUI(page, ch.name);
       const rail = page.locator(RAIL);
       await expect(rail).toContainText("1");
-      await expect(rail.locator("ul li")).toHaveCount(1);
+      await expect(rail.locator(POD_ROW)).toHaveCount(1);
     } finally {
       await leavePod(cc, ch.id, pod.podKey);
       await terminatePod(cc, pod.podKey);
@@ -152,7 +153,7 @@ test.describe("Channel × Pod membership (issue #400 regression)", () => {
       expect(fresh.agentCount).toBe(1);
 
       await selectInUI(page, ch.name);
-      await expect(page.locator(`${RAIL} ul li`)).toHaveCount(1);
+      await expect(page.locator(`${RAIL} ${POD_ROW}`)).toHaveCount(1);
     } finally {
       await leavePod(cc, ch.id, p2.podKey);
       for (const k of [p1.podKey, p2.podKey]) await terminatePod(cc, k);
@@ -250,15 +251,15 @@ test.describe("Channel × Pod membership (issue #400 regression)", () => {
       await joinPod(cc, chB.id, podB.podKey);
 
       await selectInUI(page, chA.name);
-      await expect(page.locator(`${RAIL} ul li`)).toHaveCount(1);
+      await expect(page.locator(`${RAIL} ${POD_ROW}`)).toHaveCount(1);
 
       await selectInUI(page, chB.name);
-      await expect(page.locator(`${RAIL} ul li`)).toHaveCount(1);
+      await expect(page.locator(`${RAIL} ${POD_ROW}`)).toHaveCount(1);
 
       // Back to A — must show A's pod, not B's stale data
       await selectInUI(page, chA.name);
       const rail = page.locator(RAIL);
-      await expect(rail.locator("ul li")).toHaveCount(1);
+      await expect(rail.locator(POD_ROW)).toHaveCount(1);
       await expect(rail).not.toContainText(podB.podKey);
     } finally {
       for (const [chId, key] of [[chA.id, podA.podKey], [chB.id, podB.podKey]] as const) {

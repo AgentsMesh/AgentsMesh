@@ -54,7 +54,8 @@
       "document": "DOCUMENT",
       "podsEmpty": "No pods yet",
       "agentsEmpty": "No agents yet",
-      "documentEmpty": "No document yet"
+      "documentEmpty": "No document yet",
+      "destroyed": "Destroyed"
     },
     "composer": {
       "placeholder": "Message #{channel} — use @ to mention a pod or member",

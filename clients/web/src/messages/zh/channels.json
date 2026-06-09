@@ -54,7 +54,8 @@
       "document": "DOCUMENT",
       "podsEmpty": "暂无 Pod",
       "agentsEmpty": "暂无 Agent",
-      "documentEmpty": "暂无文档"
+      "documentEmpty": "暂无文档",
+      "destroyed": "已销毁"
     },
     "composer": {
       "placeholder": "发送消息到 #{channel} — 使用 @ 提及 Pod 或成员",
