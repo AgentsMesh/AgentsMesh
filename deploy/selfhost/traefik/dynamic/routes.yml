@@ -12,6 +12,14 @@ http:
       service: backend
       priority: 100
 
+    # Connect-RPC procedures; the web image proxies /proto.* only in dev
+    connect:
+      rule: "HeaderRegexp(`Connect-Protocol-Version`, `.+`)"
+      entryPoints:
+        - web
+      service: backend
+      priority: 95
+
     # Relay (WebSocket for terminal streaming)
     relay:
       rule: "PathPrefix(`/relay`)"
