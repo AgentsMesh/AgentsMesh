@@ -280,7 +280,10 @@
       "credentialMethodApiKey": "API Key",
       "credentialMethodAuthToken": "Auth Token",
       "noBundleLabel": "에이전트 기본 인증 사용",
-      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. 에이전트의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다."
+      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. 에이전트의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다.",
+      "removeSecret": "이 자격 증명 제거",
+      "willRemove": "저장 시 제거됩니다",
+      "baseUrlSecurityHint": "URL에 토큰을 넣지 마세요. 평문으로 저장되며 편집 시 여기에 표시됩니다."
     },
     "sshKeys": {
       "title": "SSH Keys",

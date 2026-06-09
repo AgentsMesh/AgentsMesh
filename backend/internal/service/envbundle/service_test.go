@@ -180,9 +180,12 @@ func TestService_Update_NonEmptyData_Replaces(t *testing.T) {
 	svc, _ := newTestService(t)
 	ctx := context.Background()
 
+	// Runtime (non-encrypted) kind keeps the plain replace contract: non-empty
+	// Data wholesale replaces stored keys. Credential merge semantics (preserve
+	// untouched secrets) are covered separately below.
 	b, _ := svc.Create(ctx, &CreateParams{
 		OwnerScope: envbundle.OwnerScopeUser, OwnerID: 1,
-		Name: "n", Kind: envbundle.KindCredential,
+		Name: "n", Kind: envbundle.KindRuntime,
 		Data: map[string]string{"OLD_KEY": "v"},
 	})
 
@@ -196,6 +199,67 @@ func TestService_Update_NonEmptyData_Replaces(t *testing.T) {
 	dec, _ := svc.decryptData(got.Kind, got.Data)
 	assert.NotContains(t, dec, "OLD_KEY")
 	assert.Equal(t, "x", dec["NEW_KEY"])
+}
+
+func TestService_Update_Credential_PreservesUnsubmittedSecrets(t *testing.T) {
+	svc, _ := newTestService(t)
+	ctx := context.Background()
+
+	// Editing a credential profile: the auth token is left blank to keep its
+	// current value, only the non-secret base URL is resubmitted. The token
+	// must survive — wiping it is the bug this guards.
+	b, _ := svc.Create(ctx, &CreateParams{
+		OwnerScope: envbundle.OwnerScopeUser, OwnerID: 1,
+		Name: "creds", Kind: envbundle.KindCredential,
+		Data: map[string]string{
+			"ANTHROPIC_AUTH_TOKEN": "tok-secret",
+			"ANTHROPIC_BASE_URL":   "https://old.example.com",
+		},
+	})
+
+	newData := map[string]string{"ANTHROPIC_BASE_URL": "https://new.example.com"}
+	_, err := svc.Update(ctx, envbundle.OwnerScopeUser, 1, b.ID, &UpdateParams{
+		Data: &newData,
+	})
+	require.NoError(t, err)
+
+	got, _ := svc.Get(ctx, envbundle.OwnerScopeUser, 1, b.ID)
+	dec, _ := svc.decryptData(got.Kind, got.Data)
+	assert.Equal(t, "tok-secret", dec["ANTHROPIC_AUTH_TOKEN"],
+		"unsubmitted secret must be preserved, not wiped")
+	assert.Equal(t, "https://new.example.com", dec["ANTHROPIC_BASE_URL"],
+		"resubmitted non-secret takes the new value")
+}
+
+func TestService_Update_KindSwitch_ReplacesInsteadOfPreserving(t *testing.T) {
+	svc, _ := newTestService(t)
+	ctx := context.Background()
+
+	// A runtime bundle stores plaintext. Switching it to credential while
+	// resubmitting only one key must NOT carry the old plaintext keys over as
+	// if they were ciphertext — that would corrupt the bundle so every later
+	// decrypt fails. A kind switch replaces; only a same-kind edit merges.
+	b, _ := svc.Create(ctx, &CreateParams{
+		OwnerScope: envbundle.OwnerScopeUser, OwnerID: 1,
+		Name: "switch", Kind: envbundle.KindRuntime,
+		Data: map[string]string{"OLD_PLAINTEXT": "bar"},
+	})
+
+	newData := map[string]string{"ANTHROPIC_API_KEY": "sk-new"}
+	_, err := svc.Update(ctx, envbundle.OwnerScopeUser, 1, b.ID, &UpdateParams{
+		Kind: strPtr(envbundle.KindCredential),
+		Data: &newData,
+	})
+	require.NoError(t, err)
+
+	got, _ := svc.Get(ctx, envbundle.OwnerScopeUser, 1, b.ID)
+	require.Equal(t, envbundle.KindCredential, got.Kind)
+
+	dec, err := svc.decryptData(got.Kind, got.Data)
+	require.NoError(t, err, "bundle must decrypt cleanly after a kind switch")
+	assert.NotContains(t, dec, "OLD_PLAINTEXT",
+		"old plaintext key must not survive as bogus ciphertext")
+	assert.Equal(t, "sk-new", dec["ANTHROPIC_API_KEY"])
 }
 
 func TestService_Update_KindPrimary_TogglesPrimary(t *testing.T) {

@@ -113,14 +113,30 @@ func (s *Service) Update(ctx context.Context, ownerScope string, ownerID, id int
 		updates["is_active"] = *params.IsActive
 	}
 	if params.Data != nil {
-		// nil = "no change"; non-nil (incl. empty) = "replace" — empty map
-		// means "explicitly clear all keys" so the bundle row stays alive
-		// but its data becomes {}.
+		// nil = "no change"; non-nil = "replace". An empty map explicitly
+		// clears all keys. A non-empty credential update preserves untouched
+		// secrets rather than wiping them — see
+		// buildCredentialDataPreservingSecrets.
 		effectiveKind := bundle.Kind
 		if params.Kind != nil {
 			effectiveKind = *params.Kind
 		}
-		data, err := s.encryptData(effectiveKind, *params.Data)
+		var data envbundle.BundleData
+		var err error
+		// Preserving untouched secrets reuses bundle.Data's stored ciphertext,
+		// which is only sound when the kind is unchanged and already encrypted.
+		// On a kind switch (e.g. runtime→credential) bundle.Data holds the old
+		// kind's plaintext; preserving it would store plaintext where ciphertext
+		// is expected and corrupt the bundle (every later decrypt fails). A
+		// switch therefore replaces rather than merges.
+		preserveSecrets := envbundle.IsEncryptedKind(effectiveKind) &&
+			bundle.Kind == effectiveKind &&
+			len(*params.Data) > 0
+		if preserveSecrets {
+			data, err = s.buildCredentialDataPreservingSecrets(bundle.Data, *params.Data)
+		} else {
+			data, err = s.encryptData(effectiveKind, *params.Data)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -195,35 +211,6 @@ func (s *Service) SetPrimary(ctx context.Context, ownerScope string, ownerID, id
 // List returns bundles owned by (scope, ownerID), optionally filtered.
 func (s *Service) List(ctx context.Context, f envbundle.OwnerFilter) ([]*envbundle.EnvBundle, error) {
 	return s.repo.List(ctx, f)
-}
-
-// ResponseWithValues builds a Response and fills exactly one of
-// ConfiguredFields / ConfiguredValues:
-//   - encrypted kinds (credential): ConfiguredFields = key names, no values
-//   - plaintext kinds (runtime/shared): ConfiguredValues = decrypted KV map
-//
-// The two slots are disjoint by construction; callers never need to reconcile
-// "fields == keys(values)" duplication.
-func (s *Service) ResponseWithValues(bundle *envbundle.EnvBundle) (*envbundle.Response, error) {
-	resp := bundle.ToResponse()
-	if envbundle.IsEncryptedKind(bundle.Kind) {
-		if len(bundle.Data) > 0 {
-			fields := make([]string, 0, len(bundle.Data))
-			for k := range bundle.Data {
-				fields = append(fields, k)
-			}
-			resp.ConfiguredFields = fields
-		}
-		return resp, nil
-	}
-	dec, err := s.decryptData(bundle.Kind, bundle.Data)
-	if err != nil {
-		return resp, err
-	}
-	if len(dec) > 0 {
-		resp.ConfiguredValues = dec
-	}
-	return resp, nil
 }
 
 func validScope(s string) bool {

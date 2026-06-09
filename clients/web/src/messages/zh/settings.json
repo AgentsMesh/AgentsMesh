@@ -414,7 +414,10 @@
       "secretPlaceholder": "留空保持现有值",
       "secretEditHint": "留空保持现有值不变",
       "noBundleLabel": "使用 Agent 默认认证",
-      "noBundleHint": "不注入额外凭据；Agent 走自带的登录方式（OAuth、CLI 已登录的账号等）。"
+      "noBundleHint": "不注入额外凭据；Agent 走自带的登录方式（OAuth、CLI 已登录的账号等）。",
+      "removeSecret": "移除此凭据",
+      "willRemove": "保存后将被移除",
+      "baseUrlSecurityHint": "请勿在 URL 中嵌入令牌——它以明文存储，并会在编辑时显示在此处。"
     },
     "credentialForm": {
       "anthropic": {

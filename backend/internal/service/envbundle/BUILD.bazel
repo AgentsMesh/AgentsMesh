@@ -6,6 +6,7 @@ go_library(
         "crud.go",
         "decrypt.go",
         "effective.go",
+        "response.go",
         "service.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/service/envbundle",
@@ -24,7 +25,10 @@ alias(
 
 go_test(
     name = "envbundle_test",
-    srcs = ["service_test.go"],
+    srcs = [
+        "response_test.go",
+        "service_test.go",
+    ],
     embed = [":envbundle"],
     deps = [
         "//backend/internal/domain/envbundle",

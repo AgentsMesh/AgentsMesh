@@ -280,7 +280,10 @@
       "credentialMethodApiKey": "API Key",
       "credentialMethodAuthToken": "Auth Token",
       "noBundleLabel": "エージェントの既定認証を使用",
-      "noBundleHint": "追加の認証情報を注入しません。エージェントの組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。"
+      "noBundleHint": "追加の認証情報を注入しません。エージェントの組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。",
+      "removeSecret": "この認証情報を削除",
+      "willRemove": "保存時に削除されます",
+      "baseUrlSecurityHint": "URL にトークンを埋め込まないでください。平文で保存され、編集時にここに表示されます。"
     },
     "sshKeys": {
       "title": "SSH Keys",

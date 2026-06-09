@@ -7,10 +7,11 @@
 // TenantContext.UserID and that's the only scope each RPC enforces, no
 // org_slug = 1 (would have been a no-op).
 //
-// SENSITIVE DATA: credential-kind bundle values are encrypted server-side
-// and never echoed back on the wire. The convert helpers populate
-// configured_fields (key names) for secret kinds and configured_values
-// (plaintext) for non-secret kinds — disjoint by construction.
+// SENSITIVE DATA: credential-kind bundle values are encrypted server-side.
+// Secret keys are never echoed back — only their names land in
+// configured_fields. Non-secret keys (per envbundle.IsNonSecretKey, e.g. a
+// base URL) round-trip their plaintext in configured_values. The split is
+// per-key, not per-kind; the two slots never share a key.
 package envbundleconnect
 
 import (
@@ -24,12 +25,12 @@ import (
 const (
 	ServiceName = "proto.env_bundle.v1.EnvBundleService"
 
-	ListEnvBundlesProcedure       = "/" + ServiceName + "/ListEnvBundles"
-	GetEnvBundleProcedure         = "/" + ServiceName + "/GetEnvBundle"
-	CreateEnvBundleProcedure      = "/" + ServiceName + "/CreateEnvBundle"
-	UpdateEnvBundleProcedure      = "/" + ServiceName + "/UpdateEnvBundle"
-	DeleteEnvBundleProcedure      = "/" + ServiceName + "/DeleteEnvBundle"
-	SetPrimaryEnvBundleProcedure  = "/" + ServiceName + "/SetPrimaryEnvBundle"
+	ListEnvBundlesProcedure      = "/" + ServiceName + "/ListEnvBundles"
+	GetEnvBundleProcedure        = "/" + ServiceName + "/GetEnvBundle"
+	CreateEnvBundleProcedure     = "/" + ServiceName + "/CreateEnvBundle"
+	UpdateEnvBundleProcedure     = "/" + ServiceName + "/UpdateEnvBundle"
+	DeleteEnvBundleProcedure     = "/" + ServiceName + "/DeleteEnvBundle"
+	SetPrimaryEnvBundleProcedure = "/" + ServiceName + "/SetPrimaryEnvBundle"
 )
 
 // Server implements EnvBundleService. Delegates business logic to

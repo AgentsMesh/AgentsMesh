@@ -11,7 +11,7 @@ import { useAgentConfig } from "./useAgentConfig";
 import { CredentialsSection } from "./CredentialsSection";
 import { RuntimeConfigSection } from "./RuntimeConfigSection";
 import { RuntimeBundlesSection } from "./RuntimeBundlesSection";
-import { CredentialDialog } from "./CredentialDialog";
+import { CredentialFormDialog } from "../CredentialFormDialog";
 import { RuntimeBundleDialog } from "./RuntimeBundleDialog";
 import type {
   AgentConfigPageProps,
@@ -189,7 +189,7 @@ export function AgentConfigPage({ agentSlug }: AgentConfigPageProps) {
       />
 
       {/* Add/Edit Credential Dialog */}
-      <CredentialDialog
+      <CredentialFormDialog
         open={showCredentialDialog}
         onOpenChange={setShowCredentialDialog}
         agentSlug={agentSlug}

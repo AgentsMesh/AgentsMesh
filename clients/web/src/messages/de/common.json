@@ -26,7 +26,8 @@
     "connected": "Connected",
     "disconnected": "Disconnected",
     "pageNotFound": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
-    "backToHome": "Zurück zur Startseite"
+    "backToHome": "Zurück zur Startseite",
+    "undo": "Rückgängig"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",

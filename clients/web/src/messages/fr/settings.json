@@ -280,7 +280,10 @@
       "credentialMethodApiKey": "API Key",
       "credentialMethodAuthToken": "Auth Token",
       "noBundleLabel": "Utiliser l'auth par défaut de l'agent",
-      "noBundleHint": "Aucun identifiant personnalisé injecté ; l'agent utilise son flux d'authentification intégré (OAuth, CLI connecté, etc.)."
+      "noBundleHint": "Aucun identifiant personnalisé injecté ; l'agent utilise son flux d'authentification intégré (OAuth, CLI connecté, etc.).",
+      "removeSecret": "Supprimer cet identifiant",
+      "willRemove": "Sera supprimé lors de l'enregistrement",
+      "baseUrlSecurityHint": "N'intégrez pas de jeton dans l'URL : elle est stockée en clair et affichée ici lors de la modification."
     },
     "sshKeys": {
       "title": "SSH Keys",

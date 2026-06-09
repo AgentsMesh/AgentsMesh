@@ -1,5 +1,9 @@
 import type { ConfigField, AgentData } from "@/lib/api";
 import type { CredentialProfileViewModel } from "../_shared/credentialViewModel";
+import type { CredentialFormData } from "../AgentCredentialsSettings/credentialForms/types";
+
+// Re-export: CredentialFormData is defined once in credentialForms/types.
+export type { CredentialFormData };
 
 /**
  * Props for AgentConfigPage component
@@ -56,16 +60,6 @@ export interface AgentConfigActions {
 }
 
 /**
- * Credential form data for add/edit dialog.
- * credentials key = full ENV name (e.g. "ANTHROPIC_API_KEY"), value = user input.
- */
-export interface CredentialFormData {
-  name: string;
-  description: string;
-  credentials: Record<string, string>;
-}
-
-/**
  * Runtime-kind EnvBundle as the per-agent settings page sees it. Plaintext
  * values round-trip via `configured_values` (the backend doesn't strip them
  * the way it does for credential kind).
@@ -119,17 +113,5 @@ export interface RuntimeConfigSectionProps {
   saving: boolean;
   onChange: (fieldName: string, value: unknown) => void;
   onSave: () => Promise<void>;
-  t: (key: string) => string;
-}
-
-/**
- * Props for CredentialDialog component
- */
-export interface CredentialDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  agentSlug: string;
-  editingProfile: CredentialProfileViewModel | null;
-  onSubmit: (data: CredentialFormData, editingProfile: CredentialProfileViewModel | null) => Promise<void>;
   t: (key: string) => string;
 }

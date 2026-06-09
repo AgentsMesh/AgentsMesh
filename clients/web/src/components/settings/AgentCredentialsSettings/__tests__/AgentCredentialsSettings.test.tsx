@@ -37,8 +37,8 @@ vi.mock("../AgentItem", () => ({
   ),
 }));
 
-vi.mock("../CredentialProfileDialog", () => ({
-  CredentialProfileDialog: ({
+vi.mock("../../CredentialFormDialog", () => ({
+  CredentialFormDialog: ({
     open,
     onSubmit,
     onOpenChange,
@@ -58,7 +58,7 @@ vi.mock("../CredentialProfileDialog", () => ({
               credentials: { ANTHROPIC_API_KEY: "sk-test" },
             });
           } catch {
-            // Simulate CredentialProfileDialog's catch behavior
+            // swallowed — the real dialog swallows submit rejections
           }
         }}
       >
@@ -116,11 +116,8 @@ describe("AgentCredentialsSettings - handleDialogSubmit", () => {
     // Open add dialog
     fireEvent.click(screen.getByTestId("add-profile"));
 
-    // Submit - the error should propagate up to CredentialProfileDialog's handleSubmit catch
     fireEvent.click(screen.getByTestId("dialog-submit"));
 
-    // The dialog's onSubmit rejects, CredentialProfileDialog's try-catch handles it
-    // handleSaveProfile should have been called and failed
     await waitFor(() => {
       expect(mockHandleSaveProfile).toHaveBeenCalledTimes(1);
     });

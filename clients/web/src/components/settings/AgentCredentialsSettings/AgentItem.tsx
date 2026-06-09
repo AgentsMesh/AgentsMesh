@@ -5,16 +5,13 @@ import {
   Bot,
   Plus,
   Check,
-  Trash2,
-  Edit2,
   Server,
-  Key,
   ChevronDown,
   ChevronRight,
   Star,
 } from "lucide-react";
 import type { AgentItemProps } from "./types";
-import { getEnvKeyLabel } from "./credentialForms";
+import { CredentialProfileRow } from "../CredentialProfileRow";
 
 /**
  * AgentIcon - Returns an icon based on agent slug
@@ -120,52 +117,14 @@ export function AgentItem({
                   key={profile.id}
                   className="px-4 py-3 flex items-center justify-between hover:bg-muted/50"
                 >
-                  <div className="flex items-center gap-3">
-                    <Key className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{profile.name}</span>
-                        {profile.is_default && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary">
-                            <Star className="w-3 h-3 mr-0.5" />
-                            {t("settings.agentCredentials.default")}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {profile.configured_fields?.length
-                          ? `${t("settings.agentCredentials.configured")}: ${profile.configured_fields.map((f) => getEnvKeyLabel(agent.slug, f, t)).join(", ")}`
-                          : t("settings.agentCredentials.notConfigured")}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {!profile.is_default && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onSetDefault(profile.id)}
-                        title={t("settings.agentCredentials.setAsDefault")}
-                      >
-                        <Check className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(profile)}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(profile.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <CredentialProfileRow
+                    profile={profile}
+                    agentSlug={agent.slug}
+                    onSetDefault={onSetDefault}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    t={t}
+                  />
                 </div>
               ))}
             </div>

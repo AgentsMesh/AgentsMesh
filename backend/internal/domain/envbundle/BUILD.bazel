@@ -1,4 +1,4 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "envbundle",
@@ -6,6 +6,7 @@ go_library(
         "bundle.go",
         "kind.go",
         "repository.go",
+        "secret_key.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/domain/envbundle",
     visibility = ["//backend:__subpackages__"],
@@ -15,4 +16,10 @@ alias(
     name = "go_default_library",
     actual = ":envbundle",
     visibility = ["//backend:__subpackages__"],
+)
+
+go_test(
+    name = "envbundle_test",
+    srcs = ["secret_key_test.go"],
+    embed = [":envbundle"],
 )

@@ -1,9 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Server, Key, Star, Check, Edit2, Trash2, Plus } from "lucide-react";
+import { Server, Key, Star, Check, Plus } from "lucide-react";
 import type { CredentialsSectionProps } from "./types";
-import { getEnvKeyLabel } from "../AgentCredentialsSettings/credentialForms";
+import { CredentialProfileRow } from "../CredentialProfileRow";
 
 /**
  * CredentialsSection - Displays and manages credential bundles for an agent
@@ -73,52 +73,14 @@ export function CredentialsSection({
             key={profile.id}
             className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50"
           >
-            <div className="flex items-center gap-3">
-              <Key className="w-4 h-4 text-muted-foreground" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{profile.name}</span>
-                  {profile.is_default && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-primary/10 text-primary">
-                      <Star className="w-3 h-3 mr-0.5" />
-                      {t("settings.agentCredentials.default")}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {profile.configured_fields?.length
-                    ? `${t("settings.agentCredentials.configured")}: ${profile.configured_fields.map((f) => getEnvKeyLabel(agentSlug, f, t)).join(", ")}`
-                    : t("settings.agentCredentials.notConfigured")}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              {!profile.is_default && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onSetDefault(profile.id)}
-                  title={t("settings.agentCredentials.setAsDefault")}
-                >
-                  <Check className="w-4 h-4" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEdit(profile)}
-              >
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(profile.id)}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+            <CredentialProfileRow
+              profile={profile}
+              agentSlug={agentSlug}
+              onSetDefault={onSetDefault}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              t={t}
+            />
           </div>
         ))}
 

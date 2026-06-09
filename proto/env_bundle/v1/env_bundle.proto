@@ -11,9 +11,10 @@
 //   * timestamps as string ISO-8601 (no google.protobuf.Timestamp)
 //   * list response = {items, total, limit, offset} uniform envelope
 //
-// SENSITIVE DATA: credential-kind values are encrypted server-side and never
-// echo back on the wire. `configured_fields` lists the key names; values
-// arrive only for non-secret kinds (runtime/shared) via `configured_values`.
+// SENSITIVE DATA: credential-kind values are encrypted server-side. Secret
+// keys never echo back — only their names go in `configured_fields`.
+// Non-secret keys round-trip plaintext in `configured_values`. The split is
+// per-key, not per-kind (see envbundle.IsNonSecretKey).
 
 syntax = "proto3";
 
@@ -41,8 +42,9 @@ service EnvBundleService {
 }
 
 // EnvBundle mirrors backend/internal/domain/envbundle.EnvBundle.ToResponse().
-// `configured_fields` and `configured_values` are disjoint by construction —
-// secret kinds populate fields only, non-secret kinds populate values only.
+// `configured_fields` (secret key names) and `configured_values` (non-secret
+// plaintext) are disjoint by key — an encrypted bundle may populate both, but
+// never the same key.
 message EnvBundle {
   option (amesh.codegen.v1.go_domain) = {
     type: "github.com/anthropics/agentsmesh/backend/internal/domain/envbundle.Response"
@@ -57,11 +59,10 @@ message EnvBundle {
   string kind = 7;
   bool kind_primary = 8;
   bool is_active = 9;
-  // Field names whose values were stored. Always populated for secret kinds;
-  // for non-secret kinds matches keys(configured_values).
+  // Names of secret keys whose values were stored but not echoed back.
   repeated string configured_fields = 10;
-  // Plaintext KV map — populated only for non-secret kinds. Empty for
-  // credential kind (values stay server-side).
+  // Plaintext KV map of non-secret keys (per envbundle.IsNonSecretKey).
+  // Secret keys are omitted — their names appear in configured_fields only.
   map<string, string> configured_values = 11;
   string created_at = 12;
   string updated_at = 13;

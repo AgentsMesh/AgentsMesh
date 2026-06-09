@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import type { CredentialProfileViewModel } from "../_shared/credentialViewModel";
 import { useAgentCredentials } from "./useAgentCredentials";
 import { AgentItem } from "./AgentItem";
-import { CredentialProfileDialog } from "./CredentialProfileDialog";
+import { CredentialFormDialog } from "../CredentialFormDialog";
 import type { CredentialFormData } from "./types";
 
 /**
@@ -135,7 +135,7 @@ export function AgentCredentialsSettings() {
       </div>
 
       {/* Add/Edit Dialog */}
-      <CredentialProfileDialog
+      <CredentialFormDialog
         open={showDialog}
         onOpenChange={setShowDialog}
         agentSlug={selectedAgentSlug ?? ""}

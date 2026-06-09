@@ -12,6 +12,7 @@ export const claudeCodeFormSpec: CredentialFormSpec = {
       envKey: "ANTHROPIC_BASE_URL",
       label: "settings.credentialForm.anthropic.baseUrl",
       placeholder: "https://api.anthropic.com",
+      securityHint: "settings.agentCredentials.baseUrlSecurityHint",
     },
     {
       kind: "oneof",

@@ -61,11 +61,11 @@ func (EnvBundle) TableName() string {
 	return "env_bundles"
 }
 
-// Response is the safe-to-serialize API shape. For encrypted kinds only
-// ConfiguredFields is populated (key names but no values); for plaintext
-// kinds only ConfiguredValues is populated. The two slots never overlap —
-// the wire shape stays minimal and disjoint, no "fields == keys(values)"
-// duplication.
+// Response is the safe-to-serialize API shape. ConfiguredFields holds the
+// names of secret keys (never their values); ConfiguredValues holds the
+// plaintext of non-secret keys. The split is per-key (see IsNonSecretKey), so
+// an encrypted credential bundle can surface a non-secret field's value while
+// keeping API keys/tokens hidden. The two slots never share a key.
 type Response struct {
 	ID          int64   `json:"id"`
 	OwnerScope  string  `json:"owner_scope"`

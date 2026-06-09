@@ -1,5 +1,9 @@
 import type { AgentData } from "@/lib/api";
 import type { CredentialProfileViewModel, CredentialProfilesByAgent } from "../_shared/credentialViewModel";
+import type { CredentialFormData } from "./credentialForms/types";
+
+// Re-export: CredentialFormData is defined once in credentialForms/types.
+export type { CredentialFormData };
 
 export interface AgentCredentialsState {
   loading: boolean;
@@ -26,13 +30,6 @@ export interface AgentCredentialsActions {
   setSuccess: (success: string | null) => void;
 }
 
-// credentials key = full ENV name, value = user input
-export interface CredentialFormData {
-  name: string;
-  description: string;
-  credentials: Record<string, string>;
-}
-
 export interface AgentItemProps {
   agent: AgentData;
   profiles: CredentialProfileViewModel[];
@@ -44,14 +41,5 @@ export interface AgentItemProps {
   onEdit: (profile: CredentialProfileViewModel) => void;
   onDelete: (profileId: number) => Promise<void>;
   onAdd: () => void;
-  t: (key: string) => string;
-}
-
-export interface CredentialProfileDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  agentSlug: string;
-  editingProfile: CredentialProfileViewModel | null;
-  onSubmit: (data: CredentialFormData) => Promise<void>;
   t: (key: string) => string;
 }

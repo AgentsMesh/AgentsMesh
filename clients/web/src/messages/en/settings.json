@@ -414,7 +414,10 @@
       "secretPlaceholder": "Leave empty to keep existing",
       "secretEditHint": "Leave empty to keep the existing value",
       "noBundleLabel": "Use agent's default auth",
-      "noBundleHint": "No custom credentials injected; the agent uses its built-in auth flow (OAuth, signed-in CLI, etc.)."
+      "noBundleHint": "No custom credentials injected; the agent uses its built-in auth flow (OAuth, signed-in CLI, etc.).",
+      "removeSecret": "Remove this credential",
+      "willRemove": "Will be removed on save",
+      "baseUrlSecurityHint": "Don't put a token in the URL — it is stored in plaintext and shown here when you edit."
     },
     "credentialForm": {
       "anthropic": {
