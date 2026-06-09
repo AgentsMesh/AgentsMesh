@@ -255,8 +255,10 @@ fi
 # =============================================================================
 info "[5/6] Running database migrations..."
 
-DB_URL="postgres://agentsmesh:${DB_PASSWORD}@postgres:5432/agentsmesh?sslmode=disable"
-docker compose exec -T backend migrate -path /app/migrations -database "${DB_URL}" up 2>&1 | tail -5
+if ! docker compose exec -T backend /app/server migrate up; then
+    error "Database migration failed. Check: docker compose logs backend"
+    exit 1
+fi
 
 success "Migrations complete"
 
@@ -265,7 +267,10 @@ success "Migrations complete"
 # =============================================================================
 info "[6/6] Importing seed data..."
 
-docker compose exec -T postgres psql -U agentsmesh -d agentsmesh < "${SEED_FILE}" 2>&1 | grep -v "^$" | tail -5
+if ! docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U agentsmesh -d agentsmesh < "${SEED_FILE}"; then
+    error "Seed import failed. Check: docker compose logs postgres"
+    exit 1
+fi
 
 success "Seed data imported"
 
