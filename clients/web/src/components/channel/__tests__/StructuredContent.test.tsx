@@ -12,6 +12,7 @@ vi.mock("@/stores/pod", () => ({
   usePodStore: (selector: (s: { pods: typeof mockPods }) => unknown) =>
     selector({ pods: mockPods }),
   usePods: () => mockPods,
+  usePod: (podKey?: string) => mockPods.find((p) => p.pod_key === podKey),
 }));
 
 vi.mock("@/lib/pod-display-name", () => ({
@@ -85,6 +86,30 @@ describe("StructuredContent", () => {
     const link = screen.getByText("click here");
     expect(link.tagName).toBe("A");
     expect(link.getAttribute("href")).toBe("https://example.com");
+  });
+
+  it("renders a table with header, body, and a cell mention", () => {
+    const content: MessageContent = {
+      kind: "text",
+      blocks: [{
+        type: "table",
+        rows: [
+          { header: true, cells: [
+            { elements: [{ type: "text", text: "App" }] },
+            { elements: [{ type: "text", text: "Owner" }] },
+          ] },
+          { cells: [
+            { elements: [{ type: "text", text: "Claude" }] },
+            { elements: [{ type: "mention", entity_type: "pod", entity_key: "pk-bot", display: "bot" }] },
+          ] },
+        ],
+      }],
+    };
+    render(<StructuredContent content={content} />);
+    expect(screen.getByText("App").tagName).toBe("TH");
+    expect(screen.getByText("Owner").tagName).toBe("TH");
+    expect(screen.getByText("Claude").tagName).toBe("TD");
+    expect(screen.getByText("@MyBot")).toBeDefined();
   });
 
   it("renders bold and italic text", () => {

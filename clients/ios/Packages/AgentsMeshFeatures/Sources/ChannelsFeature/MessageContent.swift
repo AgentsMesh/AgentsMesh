@@ -28,6 +28,17 @@ public struct Block: Codable, Equatable, Sendable {
     public var text: String?
     public var ordered: Bool?
     public var items: [[Block]]?
+    public var rows: [TableRow]?
+}
+
+public struct TableRow: Codable, Equatable, Sendable {
+    public var header: Bool?
+    public var cells: [TableCell]?
+}
+
+public struct TableCell: Codable, Equatable, Sendable {
+    public var elements: [InlineElement]?
+    public var align: String?
 }
 
 public struct InlineStyle: Codable, Equatable, Sendable {

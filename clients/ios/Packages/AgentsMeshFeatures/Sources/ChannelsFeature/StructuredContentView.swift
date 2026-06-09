@@ -36,6 +36,8 @@ struct BlockView: View {
             quoteBlock
         case "list":
             listBlock
+        case "table":
+            StructuredTableView(block: block)
         default:
             EmptyView()
         }

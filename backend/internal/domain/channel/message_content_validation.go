@@ -13,10 +13,12 @@ const (
 	MaxCodeBlockLength  = 50000
 	MaxContentSize      = 100 * 1024 // 100KB
 	MaxNestingDepth     = 3
+	MaxTableRows        = 100
+	MaxTableColumns     = 32
 )
 
 var validBlockTypes = map[string]bool{
-	"paragraph": true, "heading": true, "code_block": true, "quote": true, "list": true,
+	"paragraph": true, "heading": true, "code_block": true, "quote": true, "list": true, "table": true,
 }
 
 var validElementTypes = map[string]bool{
@@ -86,6 +88,12 @@ func (b *Block) validate(depth int) error {
 			return fmt.Errorf("child[%d]: %w", i, err)
 		}
 	}
+	if b.Type == "table" {
+		return validateTableRows(b.Rows)
+	}
+	if len(b.Rows) > 0 {
+		return fmt.Errorf("rows not allowed on %q block", b.Type)
+	}
 	return nil
 }
 
@@ -113,4 +121,52 @@ func isAllowedURLScheme(rawURL string) bool {
 		return false
 	}
 	return allowedURLSchemes[u.Scheme]
+}
+
+var validTableAligns = map[string]bool{"": true, "left": true, "center": true, "right": true}
+
+func validateTableRows(rows []TableRow) error {
+	if len(rows) > MaxTableRows {
+		return fmt.Errorf("too many table rows: %d (max %d)", len(rows), MaxTableRows)
+	}
+	sawBody := false
+	cols := -1
+	for i := range rows {
+		if rows[i].Header {
+			if sawBody {
+				return fmt.Errorf("header row[%d] after body row", i)
+			}
+		} else {
+			sawBody = true
+		}
+		if len(rows[i].Cells) > MaxTableColumns {
+			return fmt.Errorf("too many table columns: %d (max %d)", len(rows[i].Cells), MaxTableColumns)
+		}
+		if cols < 0 {
+			cols = len(rows[i].Cells)
+		} else if len(rows[i].Cells) != cols {
+			return fmt.Errorf("row[%d] has %d cells, want %d", i, len(rows[i].Cells), cols)
+		}
+		for j := range rows[i].Cells {
+			if err := validateTableCell(rows[i].Cells[j], i, j); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validateTableCell(cell TableCell, i, j int) error {
+	if !validTableAligns[cell.Align] {
+		return fmt.Errorf("row[%d].cell[%d]: invalid align %q", i, j, cell.Align)
+	}
+	if len(cell.Elements) > MaxElementsPerBlock {
+		return fmt.Errorf("row[%d].cell[%d]: too many elements: %d (max %d)", i, j, len(cell.Elements), MaxElementsPerBlock)
+	}
+	for k := range cell.Elements {
+		if err := cell.Elements[k].validate(); err != nil {
+			return fmt.Errorf("row[%d].cell[%d].element[%d]: %w", i, j, k, err)
+		}
+	}
+	return nil
 }

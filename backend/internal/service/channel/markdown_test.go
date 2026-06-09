@@ -268,10 +268,10 @@ func TestParseMarkdown_MentionWordBoundary(t *testing.T) {
 		"bob":   {EntityType: channel.EntityPod, EntityKey: "pod-bob"},
 	}
 	cases := []struct {
-		name      string
-		src       string
-		wantKeys  []string // entity_keys, in order
-		wantText  []string // text fragments that must survive
+		name     string
+		src      string
+		wantKeys []string // entity_keys, in order
+		wantText []string // text fragments that must survive
 	}{
 		{
 			name:     "email is not a mention",
@@ -344,4 +344,47 @@ func equalSlices(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestParseMarkdown_Table(t *testing.T) {
+	src := "| L | C | R |\n|:---|:---:|---:|\n| **a** | b | c |"
+	c, err := ParseMarkdown(src, nil)
+	if err != nil {
+		t.Fatalf("ParseMarkdown: %v", err)
+	}
+	if len(c.Blocks) != 1 || c.Blocks[0].Type != "table" {
+		t.Fatalf("got %+v, want one table block", c.Blocks)
+	}
+	tbl := c.Blocks[0]
+	if len(tbl.Rows) != 2 {
+		t.Fatalf("rows=%d, want 2 (1 header + 1 body)", len(tbl.Rows))
+	}
+	if !tbl.Rows[0].Header {
+		t.Error("first row should be header=true")
+	}
+	if tbl.Rows[1].Header {
+		t.Error("body row should be header=false")
+	}
+	if len(tbl.Rows[0].Cells) != 3 {
+		t.Fatalf("header cells=%d, want 3", len(tbl.Rows[0].Cells))
+	}
+	body := tbl.Rows[1].Cells
+	if len(body) != 3 {
+		t.Fatalf("body cells=%d, want 3", len(body))
+	}
+	wantAlign := []string{"left", "center", "right"}
+	for i, want := range wantAlign {
+		if body[i].Align != want {
+			t.Errorf("body col%d align=%q, want %q", i, body[i].Align, want)
+		}
+	}
+	if len(body[0].Elements) == 0 || body[0].Elements[0].Text != "a" {
+		t.Fatalf("body cell[0] elements=%+v, want text 'a'", body[0].Elements)
+	}
+	if body[0].Elements[0].Style == nil || !body[0].Elements[0].Style.Bold {
+		t.Errorf("body cell[0] should be bold, got %+v", body[0].Elements[0].Style)
+	}
+	if err := c.Validate(); err != nil {
+		t.Errorf("table content failed validation: %v", err)
+	}
 }

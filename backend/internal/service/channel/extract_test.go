@@ -192,6 +192,52 @@ func TestExtractBody(t *testing.T) {
 			t.Errorf("got %q, want %q", got, "outer\ninner")
 		}
 	})
+
+	t.Run("table rows become one body line each", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "table", Rows: []channel.TableRow{
+				{Header: true, Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "App"}}},
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "定位"}}},
+				}},
+				{Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "Claude"}}},
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "IDE"}}},
+				}},
+			}},
+		}}
+		if got := extractBody(c); got != "App 定位\nClaude IDE" {
+			t.Errorf("got %q, want %q", got, "App 定位\nClaude IDE")
+		}
+	})
+
+	t.Run("table cell inline mention and link contribute to body", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "table", Rows: []channel.TableRow{
+				{Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk", Display: "Bot"}}},
+					{Elements: []channel.InlineElement{{Type: channel.InlineLink, Text: "docs", URL: "https://docs.com"}}},
+				}},
+			}},
+		}}
+		if got := extractBody(c); got != "@Bot docs" {
+			t.Errorf("got %q, want %q", got, "@Bot docs")
+		}
+	})
+
+	t.Run("table empty cell skipped in row text", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "table", Rows: []channel.TableRow{
+				{Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "only"}}},
+					{Elements: nil},
+				}},
+			}},
+		}}
+		if got := extractBody(c); got != "only" {
+			t.Errorf("got %q, want %q", got, "only")
+		}
+	})
 }
 
 func TestExtractMentions(t *testing.T) {
@@ -316,6 +362,27 @@ func TestExtractMentions(t *testing.T) {
 		m := extractMentions(c)
 		if len(m.Users) != 1 || m.Users[0] != 77 {
 			t.Errorf("got users=%v, want [77]", m.Users)
+		}
+	})
+
+	t.Run("mentions in table cells", func(t *testing.T) {
+		c := &channel.MessageContent{Kind: "text", Blocks: []channel.Block{
+			{Type: "table", Rows: []channel.TableRow{
+				{Header: true, Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineText, Text: "Owner"}}},
+				}},
+				{Cells: []channel.TableCell{
+					{Elements: []channel.InlineElement{{Type: channel.InlineMention, EntityType: channel.EntityPod, EntityKey: "pk-cell"}}},
+					{Elements: []channel.InlineElement{{Type: channel.InlineMention, EntityType: channel.EntityUser, EntityKey: "88"}}},
+				}},
+			}},
+		}}
+		m := extractMentions(c)
+		if len(m.Pods) != 1 || m.Pods[0] != "pk-cell" {
+			t.Errorf("got pods=%v, want [pk-cell]", m.Pods)
+		}
+		if len(m.Users) != 1 || m.Users[0] != 88 {
+			t.Errorf("got users=%v, want [88]", m.Users)
 		}
 	})
 }

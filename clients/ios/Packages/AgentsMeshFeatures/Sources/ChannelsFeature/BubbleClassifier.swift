@@ -2,7 +2,9 @@ import Foundation
 import AgentsMeshCore
 
 /// 把 ChannelMessageDto 派发到合适 bubble variant。优先级：
-///   tool_call > file 附件 > 引用 (reply_to) > 代码块 > mention > link > text
+///   tool_call > file 附件 > 引用 (reply_to) > 结构化内容 > 代码块 > mention > link > text
+/// 富结构(表格/列表/标题/多块)须先于 body 正则拦截：正则只认拍平后的 body，含
+/// URL/@/``` 会被误判成单一气泡、丢失结构;仅单段落简单消息才走 body 正则。
 enum BubbleVariant {
     case text
     case code(intro: String, code: String)
@@ -26,6 +28,9 @@ enum BubbleClassifier {
         if msg.replyTo != nil, let quoted = parseQuote(msg.contentJson) {
             return .quote(sender: quoted.sender, body: quoted.body, reply: msg.body)
         }
+        if isStructuredContent(msg.contentJson) {
+            return .text
+        }
         if let code = parseFencedCode(msg.body) {
             return .code(intro: code.intro, code: code.code)
         }
@@ -37,6 +42,16 @@ enum BubbleClassifier {
         }
         return .text
     }
+}
+
+private func isStructuredContent(_ json: String?) -> Bool {
+    guard let blocks = MessageContentDecoder.decode(json)?.blocks, !blocks.isEmpty else {
+        return false
+    }
+    if blocks.count == 1, blocks[0].type == "paragraph" {
+        return false
+    }
+    return true
 }
 
 private func parseFencedCode(_ body: String) -> (intro: String, code: String)? {

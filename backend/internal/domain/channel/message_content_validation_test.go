@@ -148,6 +148,108 @@ func TestValidateMessageContent(t *testing.T) {
 			t.Error("expected error for oversized content")
 		}
 	})
+
+	t.Run("valid table passes", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{
+				{Header: true, Cells: []TableCell{
+					{Elements: []InlineElement{{Type: InlineText, Text: "H"}}, Align: "left"},
+				}},
+				{Cells: []TableCell{
+					{Elements: []InlineElement{{Type: InlineText, Text: "v"}}},
+				}},
+			}},
+		}}
+		if err := c.Validate(); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("too many table rows rejected", func(t *testing.T) {
+		rows := make([]TableRow, MaxTableRows+1)
+		for i := range rows {
+			rows[i] = TableRow{Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "x"}}}}}
+		}
+		c := MessageContent{Kind: "text", Blocks: []Block{{Type: "table", Rows: rows}}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for too many table rows")
+		}
+	})
+
+	t.Run("too many table columns rejected", func(t *testing.T) {
+		cells := make([]TableCell, MaxTableColumns+1)
+		for i := range cells {
+			cells[i] = TableCell{Elements: []InlineElement{{Type: InlineText, Text: "x"}}}
+		}
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{{Cells: cells}}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for too many table columns")
+		}
+	})
+
+	t.Run("table cell javascript URL rejected", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{
+				{Cells: []TableCell{
+					{Elements: []InlineElement{{Type: InlineLink, Text: "x", URL: "javascript:alert(1)"}}},
+				}},
+			}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for javascript URL in table cell")
+		}
+	})
+
+	t.Run("rows on non-table block rejected", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "paragraph", Rows: []TableRow{
+				{Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "x"}}}}},
+			}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for rows on non-table block")
+		}
+	})
+
+	t.Run("invalid table cell align rejected", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{
+				{Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "x"}}, Align: "justify"}}},
+			}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for invalid align")
+		}
+	})
+
+	t.Run("ragged table rows rejected", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{
+				{Header: true, Cells: []TableCell{
+					{Elements: []InlineElement{{Type: InlineText, Text: "a"}}},
+					{Elements: []InlineElement{{Type: InlineText, Text: "b"}}},
+				}},
+				{Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "c"}}}}},
+			}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for ragged table (2-cell header, 1-cell body)")
+		}
+	})
+
+	t.Run("header row after body rejected", func(t *testing.T) {
+		c := MessageContent{Kind: "text", Blocks: []Block{
+			{Type: "table", Rows: []TableRow{
+				{Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "b"}}}}},
+				{Header: true, Cells: []TableCell{{Elements: []InlineElement{{Type: InlineText, Text: "h"}}}}},
+			}},
+		}}
+		if err := c.Validate(); err == nil {
+			t.Error("expected error for header row after body row")
+		}
+	})
 }
 
 func TestIsAllowedURLScheme(t *testing.T) {

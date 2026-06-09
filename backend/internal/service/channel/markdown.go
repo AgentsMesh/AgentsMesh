@@ -8,6 +8,7 @@ import (
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
+	east "github.com/yuin/goldmark/extension/ast"
 	"github.com/yuin/goldmark/text"
 )
 
@@ -20,6 +21,7 @@ var mdParser = goldmark.New(
 	goldmark.WithExtensions(
 		extension.Strikethrough,
 		extension.Linkify,
+		extension.Table,
 	),
 ).Parser()
 
@@ -69,6 +71,8 @@ func (w *mdWalker) block(node ast.Node) (channel.Block, bool) {
 		return channel.Block{Type: "quote", Children: w.blockChildren(n)}, true
 	case *ast.List:
 		return channel.Block{Type: "list", Ordered: n.IsOrdered(), Items: w.listItems(n)}, true
+	case *east.Table:
+		return channel.Block{Type: "table", Rows: w.tableRows(n)}, true
 	}
 	return channel.Block{}, false
 }

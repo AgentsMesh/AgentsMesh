@@ -20,8 +20,18 @@ export interface InlineElement {
   url?: string;
 }
 
+export interface TableCell {
+  elements?: InlineElement[];
+  align?: "left" | "center" | "right";
+}
+
+export interface TableRow {
+  header?: boolean;
+  cells?: TableCell[];
+}
+
 export interface Block {
-  type: "paragraph" | "heading" | "code_block" | "quote" | "list";
+  type: "paragraph" | "heading" | "code_block" | "quote" | "list" | "table";
   elements?: InlineElement[];
   children?: Block[];
   level?: number;
@@ -29,6 +39,7 @@ export interface Block {
   text?: string;
   ordered?: boolean;
   items?: Block[][];
+  rows?: TableRow[];
 }
 
 export interface MessageContent {

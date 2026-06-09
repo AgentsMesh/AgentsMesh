@@ -86,7 +86,8 @@ type Block struct {
 	Language string          `json:"language,omitempty"`
 	Text     string          `json:"text,omitempty"`
 	Ordered  bool            `json:"ordered,omitempty"`
-	Items [][]Block `json:"items,omitempty"`
+	Items    [][]Block       `json:"items,omitempty"`
+	Rows     []TableRow      `json:"rows,omitempty"`
 }
 
 // blockRaw is the on-wire shape used during decoding so we can intercept the
@@ -103,10 +104,7 @@ type blockRaw struct {
 	Text     string            `json:"text,omitempty"`
 	Ordered  bool              `json:"ordered,omitempty"`
 	Items    []json.RawMessage `json:"items,omitempty"`
-}
-
-var legacyBlockTypes = map[string]bool{
-	"paragraph": true, "heading": true, "code_block": true, "quote": true, "list": true,
+	Rows     []TableRow        `json:"rows,omitempty"`
 }
 
 func (b *Block) UnmarshalJSON(data []byte) error {
@@ -121,6 +119,7 @@ func (b *Block) UnmarshalJSON(data []byte) error {
 	b.Language = raw.Language
 	b.Text = raw.Text
 	b.Ordered = raw.Ordered
+	b.Rows = raw.Rows
 	if len(raw.Items) == 0 {
 		b.Items = nil
 		return nil
@@ -150,7 +149,7 @@ func decodeItem(raw json.RawMessage) ([]Block, error) {
 	if err := json.Unmarshal(probe[0], &first); err != nil {
 		return nil, err
 	}
-	if legacyBlockTypes[first.Type] {
+	if validBlockTypes[first.Type] {
 		var blocks []Block
 		if err := json.Unmarshal(raw, &blocks); err != nil {
 			return nil, err
@@ -190,31 +189,4 @@ func (mc *MessageContent) Scan(value interface{}) error {
 
 func (mc MessageContent) Value() (driver.Value, error) {
 	return json.Marshal(mc)
-}
-
-type MessageMentions struct {
-	Pods    []string `json:"pods,omitempty"`
-	Users   []int64  `json:"users,omitempty"`
-	Channel bool     `json:"channel,omitempty"`
-}
-
-func (mm *MessageMentions) Scan(value interface{}) error {
-	if value == nil {
-		*mm = MessageMentions{}
-		return nil
-	}
-	var bytes []byte
-	switch v := value.(type) {
-	case []byte:
-		bytes = v
-	case string:
-		bytes = []byte(v)
-	default:
-		return errors.New("unsupported type for MessageMentions.Scan")
-	}
-	return json.Unmarshal(bytes, mm)
-}
-
-func (mm MessageMentions) Value() (driver.Value, error) {
-	return json.Marshal(mm)
 }
