@@ -139,7 +139,12 @@ async fn run_session<R: Runtime>(
         let sleep_fut = runtime.sleep(idle).fuse();
         futures::pin_mut!(next_fut, sleep_fut);
 
-        futures::select! {
+        // Biased: a pending shutdown must win even when the stream closes in
+        // the same poll. Plain select! picks a ready branch at random, so a
+        // server close racing disconnect() could be read as ServerClosed and
+        // reconnect after shutdown — breaking disconnect terminality.
+        futures::select_biased! {
+            _ = shutdown_rx.next() => return SessionClose::Shutdown,
             item = next_fut => match item {
                 Some(Ok(frame)) => {
                     if !data_ready {
@@ -170,7 +175,6 @@ async fn run_session<R: Runtime>(
                 warn!("events: idle timeout ({}ms) — reconnecting", opts.idle_timeout_ms);
                 return SessionClose::IdleTimeout;
             }
-            _ = shutdown_rx.next() => return SessionClose::Shutdown,
         }
     }
 }
@@ -189,15 +193,17 @@ async fn backoff_interrupted<R: Runtime>(
     info!("events: reconnecting in {:?}", delay);
     let sleep_fut = runtime.sleep(delay).fuse();
     futures::pin_mut!(sleep_fut);
-    futures::select! {
-        _ = sleep_fut => false,
-        _ = nudge_rx.next() => {
-            debug!("events: nudge — skipping backoff, reconnecting now");
-            false
-        }
+    // Biased: a shutdown during backoff must win over both the nudge and the
+    // elapsing sleep so disconnect() terminates the loop deterministically.
+    futures::select_biased! {
         _ = shutdown_rx.next() => {
             set_state(inner, ConnectionState::Disconnected);
             true
         }
+        _ = nudge_rx.next() => {
+            debug!("events: nudge — skipping backoff, reconnecting now");
+            false
+        }
+        _ = sleep_fut => false,
     }
 }
