@@ -21,7 +21,7 @@ func (s *WebhookService) RegisterWebhookForRepository(ctx context.Context, repo 
 		return s.saveManualSetupConfig(ctx, repo, result, webhookURL, webhookSecret, "Webhook requires manual setup: "+err.Error())
 	}
 
-	webhookID, err := provider.RegisterWebhook(ctx, repo.ExternalID, &git.WebhookConfig{
+	webhookID, err := provider.RegisterWebhook(ctx, webhookProjectID(repo), &git.WebhookConfig{
 		URL:    webhookURL,
 		Secret: webhookSecret,
 		Events: []string{"merge_request", "pipeline"},
@@ -108,7 +108,7 @@ func (s *WebhookService) DeleteWebhookForRepository(ctx context.Context, repo *g
 		return s.repo.Save(ctx, repo)
 	}
 
-	if err := provider.DeleteWebhook(ctx, repo.ExternalID, repo.WebhookConfig.ID); err != nil {
+	if err := provider.DeleteWebhook(ctx, webhookProjectID(repo), repo.WebhookConfig.ID); err != nil {
 		if s.logger != nil {
 			s.logger.Warn("Failed to delete webhook from provider",
 				"repo_id", repo.ID,
@@ -119,6 +119,13 @@ func (s *WebhookService) DeleteWebhookForRepository(ctx context.Context, repo *g
 
 	repo.WebhookConfig = nil
 	return s.repo.Save(ctx, repo)
+}
+
+func webhookProjectID(repo *gitprovider.Repository) string {
+	if repo.ProviderType == "gitlab" {
+		return repo.ExternalID
+	}
+	return repo.Slug
 }
 
 func (s *WebhookService) buildWebhookURL(orgSlug string, repo *gitprovider.Repository) string {
