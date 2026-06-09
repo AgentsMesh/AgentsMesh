@@ -79,17 +79,17 @@ BEGIN
     -- =========================================================================
     -- 5. Create Runner Registration Token
     -- =========================================================================
-    -- Token: selfhost-runner-token (bcrypt hash, cost=10)
-
+    -- Token: selfhost-runner-token (token_hash is its sha256 hex digest)
     INSERT INTO runner_grpc_registration_tokens (
-        organization_id, token_hash, description, created_by_id, is_active, max_uses
+        organization_id, token_hash, description, created_by_id, is_active, max_uses, expires_at
     )
     SELECT v_org_id,
-           '$2a$10$l2GZ7jRNQQHFXixCYoGB6eSMHGBMqf9mVwaq36ty5YVBxdBsSyGAq',
+           'af525cf5146bd40521e23661dd84b6e611022ef5ef351d0e828a5278214720c4',
            'Self-Hosted Runner Registration Token',
            v_admin_id,
            TRUE,
-           NULL
+           1000000,
+           NOW() + INTERVAL '10 years'
     WHERE NOT EXISTS (
         SELECT 1 FROM runner_grpc_registration_tokens
         WHERE organization_id = v_org_id
