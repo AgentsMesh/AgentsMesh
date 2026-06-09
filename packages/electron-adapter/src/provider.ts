@@ -19,6 +19,7 @@ import { ElectronEnvBundleService } from './env_bundle';
 import { ElectronAgentService } from './agent';
 import { ElectronSSOService } from './sso';
 import { ElectronFileService } from './file';
+import { ElectronGrantService } from './grant';
 import { ElectronSupportTicketService } from './support_ticket';
 import { ElectronTicketRelationsService } from './ticket_relations';
 import { ElectronTokenUsageService } from './token_usage';
@@ -28,7 +29,17 @@ import { ElectronAuthConnectService } from './auth_connect';
 import { ElectronBlockstoreService } from './blockstore';
 import { ElectronLocalRunnerService } from './local_runner';
 import { ElectronEventsManager } from './realtime';
-import { invoke } from './invoke';
+import {
+  withConnectFallback,
+  USER_CREDENTIAL_METHOD_OVERRIDES,
+  USER_CREDENTIAL_NAME_OVERRIDES,
+  BILLING_SERVICE_OVERRIDES,
+  BILLING_NAME_OVERRIDES,
+  AUTOPILOT_METHOD_NAMES,
+  AGENT_USER_CONFIG_OVERRIDES,
+  EXTENSION_SERVICE_OVERRIDES,
+  EXTENSION_NAME_OVERRIDES,
+} from "./connect-fallback";
 import {
   ElectronAcpManager, ElectronRelayManager, ElectronTicketState,
 } from './state_adapters';
@@ -55,28 +66,6 @@ class ElectronApiClientProxy {
     return new ElectronEventsManager();
   }
 }
-
-// user_credential proto bundles three backend services (git credential, agent
-// credential, repository provider) under a single wasm-side facade. Map each
-// method to the Connect service that actually owns it so calls land in the
-// right backend handler.
-const USER_CREDENTIAL_METHOD_OVERRIDES: Record<string, string> = {
-  listGitCredentials: "proto.user_credential.v1.UserGitCredentialService",
-  getGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  createGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  updateGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  deleteGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  getDefaultGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  setDefaultGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  clearDefaultGitCredential: "proto.user_credential.v1.UserGitCredentialService",
-  listAgentCredentialProfiles: "proto.user_credential.v1.UserAgentCredentialService",
-  listAgentCredentialProfilesForAgent: "proto.user_credential.v1.UserAgentCredentialService",
-  getAgentCredentialProfile: "proto.user_credential.v1.UserAgentCredentialService",
-  createAgentCredentialProfile: "proto.user_credential.v1.UserAgentCredentialService",
-  updateAgentCredentialProfile: "proto.user_credential.v1.UserAgentCredentialService",
-  deleteAgentCredentialProfile: "proto.user_credential.v1.UserAgentCredentialService",
-  setDefaultAgentCredentialProfile: "proto.user_credential.v1.UserAgentCredentialService",
-};
 
 export function createElectronServiceProvider(baseUrl = '') {
   // Services carry the full state (each IXxxService is a superset of IXxxState).
@@ -105,10 +94,10 @@ export function createElectronServiceProvider(baseUrl = '') {
     ticketService: withConnectFallback(ticketService, "proto.ticket.v1.TicketService"),
     channelService: withConnectFallback(channelService, "proto.channel.v1.ChannelService"),
     loopService: withConnectFallback(loopService, "proto.loop.v1.LoopService"),
-    autopilotService: withConnectFallback(autopilotService, "proto.autopilot.v1.AutopilotControllerService"),
+    autopilotService: withConnectFallback(autopilotService, "proto.autopilot.v1.AutopilotControllerService", undefined, AUTOPILOT_METHOD_NAMES),
     meshService: withConnectFallback(meshService, "proto.mesh.v1.MeshService"),
-    billingService: withConnectFallback(new ElectronBillingService(), "proto.billing.v1.BillingService"),
-    extensionService: withConnectFallback(new ElectronExtensionService(), "proto.extension.v1.SkillRegistryService"),
+    billingService: withConnectFallback(new ElectronBillingService(), "proto.billing.v1.BillingService", BILLING_SERVICE_OVERRIDES, BILLING_NAME_OVERRIDES),
+    extensionService: withConnectFallback(new ElectronExtensionService(), "proto.extension.v1.SkillRegistryService", EXTENSION_SERVICE_OVERRIDES, EXTENSION_NAME_OVERRIDES),
     repositoryService: withConnectFallback(repositoryService, "proto.repository.v1.RepositoryService"),
     invitationService: withConnectFallback(new ElectronInvitationConnectService(), "proto.invitation.v1.InvitationService"),
     apiKeyService: withConnectFallback(new ElectronApiKeyService(), "proto.apikey.v1.ApiKeyService"),
@@ -120,11 +109,13 @@ export function createElectronServiceProvider(baseUrl = '') {
       new ElectronUserCredentialService(),
       "proto.user_credential.v1.UserRepositoryProviderService",
       USER_CREDENTIAL_METHOD_OVERRIDES,
+      USER_CREDENTIAL_NAME_OVERRIDES,
     ),
     envBundleService: withConnectFallback(new ElectronEnvBundleService(), "proto.env_bundle.v1.EnvBundleService"),
-    agentService: withConnectFallback(new ElectronAgentService(), "proto.agent.v1.AgentService"),
+    agentService: withConnectFallback(new ElectronAgentService(), "proto.agent.v1.AgentService", AGENT_USER_CONFIG_OVERRIDES),
     ssoService: withConnectFallback(new ElectronSSOService(), "proto.sso.v1.SSOService"),
     fileService: withConnectFallback(new ElectronFileService(), "proto.file.v1.FileService"),
+    grantService: withConnectFallback(new ElectronGrantService(), "proto.grant.v1.GrantService"),
     supportTicketService: withConnectFallback(new ElectronSupportTicketService(), "proto.support_ticket.v1.SupportTicketService"),
     ticketRelationsService: withConnectFallback(new ElectronTicketRelationsService(), "proto.ticket_relations.v1.TicketRelationsService"),
     tokenUsageService: withConnectFallback(new ElectronTokenUsageService(), "proto.token_usage.v1.TokenUsageService"),
@@ -146,53 +137,3 @@ export function createElectronServiceProvider(baseUrl = '') {
   };
 }
 
-// Web's wasm-side services expose `<verb>Connect(Uint8Array) -> Uint8Array`
-// methods generated from the proto schema. Most ElectronXxxService classes
-// still only carry the legacy JSON-shaped surface, so renderer code that
-// reaches for the proto wire (e.g. `lib/api/channelConnect.ts`) hits
-// `<method> is not a function`. This wrapper auto-forwards any
-// `*Connect` lookup that the service doesn't implement onto the generic
-// `connectCall` IPC handler in main/index.ts, deriving the proto
-// method name from the camelCased TS name.
-//
-// `methodOverrides` lets a single TS-facing service span multiple backend
-// Connect services (e.g. user_credential bundles UserGitCredentialService,
-// UserAgentCredentialService, and UserRepositoryProviderService — wasm
-// dispatches per method but the TS facade is one object).
-function withConnectFallback<T extends object>(
-  service: T,
-  protoPath: string,
-  methodOverrides?: Record<string, string>,
-): T {
-  return new Proxy(service, {
-    get(target, prop) {
-      const value = Reflect.get(target, prop);
-      if (value !== undefined) return value;
-      if (typeof prop !== "string") return undefined;
-
-      // Two naming styles for the binary-Connect surface — both originate
-      // from the same wasm-bindgen impl. Webpack ESM consumers see
-      // camelCase (`listAgentsConnect`); the Connect-RPC adapters in
-      // clients/web/src/lib/api/*Connect.ts use snake_case
-      // (`list_agents_connect`) since that's what the autogenerated
-      // wasm.d.ts emits. Route both shapes through the same proxy.
-      let camel: string;
-      if (prop.endsWith("Connect")) {
-        camel = prop.slice(0, -"Connect".length);
-      } else if (prop.endsWith("_connect")) {
-        const snake = prop.slice(0, -"_connect".length);
-        camel = snake.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
-      } else {
-        return undefined;
-      }
-      const protoMethod = camel.charAt(0).toUpperCase() + camel.slice(1);
-      const targetService = methodOverrides?.[camel] ?? protoPath;
-      return async (request: Uint8Array): Promise<Uint8Array> => {
-        const resp = await invoke<number[] | Uint8Array>(
-          "connectCall", targetService, protoMethod, Array.from(request),
-        );
-        return resp instanceof Uint8Array ? resp : new Uint8Array(resp);
-      };
-    },
-  });
-}

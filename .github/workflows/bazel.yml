@@ -287,6 +287,14 @@ jobs:
       # Lint, type-check + Vitest all run via Bazel.
       - name: Lint + Type-check + Vitest (Bazel)
         run: bazel test //clients/web:lint //clients/web:unit && bazel build //clients/web:src //clients/web-admin:src
+      # Desktop renderer reuses clients/web but routes Connect RPCs through the
+      # electron-adapter proxy. Enforce its type-check + unit tests, and the
+      # fail-closed routing guard that catches a desktop-only 404 (a wasm verb
+      # diverging from its proto name with no override map) at CI instead of prod.
+      - name: Desktop adapter (type-check + unit + connect-routing guard)
+        run: |
+          bazel test //packages/electron-adapter:unit //packages/electron-adapter:electron_adapter_typecheck_test
+          python3 packages/electron-adapter/scripts/check-connect-routing.py
 
   web-admin:
     name: Web-Admin (lint + vitest)
