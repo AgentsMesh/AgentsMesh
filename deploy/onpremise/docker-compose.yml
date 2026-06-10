@@ -196,7 +196,7 @@ services:
       - POSTHOG_KEY=${POSTHOG_KEY:-}
       - POSTHOG_HOST=${POSTHOG_HOST:-}
     healthcheck:
-      test: ["CMD", "node", "/app/healthcheck.mjs"]
+      test: ["CMD", "/nodejs/bin/node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -220,7 +220,7 @@ services:
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     healthcheck:
-      test: ["CMD", "node", "/app/healthcheck.mjs"]
+      test: ["CMD", "/nodejs/bin/node", "/app/healthcheck.mjs"]
       interval: 30s
       timeout: 10s
       retries: 3
