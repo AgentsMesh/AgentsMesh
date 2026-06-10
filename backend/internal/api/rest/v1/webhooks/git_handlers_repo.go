@@ -122,6 +122,10 @@ func (r *WebhookRouter) processWebhookWithRepo(c *gin.Context, provider, orgSlug
 		objectKind = "job"
 	}
 
+	if provider == "github" && objectKind == "merge_request" {
+		normalizeGitHubMRPayload(payload)
+	}
+
 	r.logger.Info("received webhook with repo context",
 		"provider", provider,
 		"object_kind", objectKind,
