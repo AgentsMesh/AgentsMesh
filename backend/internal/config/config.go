@@ -69,6 +69,7 @@ func Load() (*Config, error) {
 
 		OAuth: OAuthConfig{
 			DefaultRedirectURL: getEnv("OAUTH_DEFAULT_REDIRECT_URL", "/"),
+			DisableSignup:      getEnvBool("DISABLE_OAUTH_SIGNUP", false),
 			GitHub: OAuthProviderConfig{
 				ClientID:     getEnv("GITHUB_CLIENT_ID", ""),
 				ClientSecret: getEnv("GITHUB_CLIENT_SECRET", ""),

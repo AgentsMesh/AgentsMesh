@@ -20,12 +20,14 @@ var (
 	ErrInvalidVerificationToken = errors.New("invalid or expired verification token")
 	ErrInvalidResetToken        = errors.New("invalid or expired reset token")
 	ErrEmailAlreadyVerified     = errors.New("email already verified")
+	ErrOAuthSignupDisabled      = errors.New("oauth signup is disabled")
 )
 
 type Service struct {
-	repo           user.Repository
-	encryptionKey  string
-	preDeleteHooks []func(ctx context.Context, userID int64) error
+	repo               user.Repository
+	encryptionKey      string
+	disableOAuthSignup bool
+	preDeleteHooks     []func(ctx context.Context, userID int64) error
 }
 
 func NewService(repo user.Repository) *Service {
@@ -41,6 +43,10 @@ func NewServiceWithEncryption(repo user.Repository, encryptionKey string) *Servi
 
 func (s *Service) SetEncryptionKey(key string) {
 	s.encryptionKey = key
+}
+
+func (s *Service) SetDisableOAuthSignup(v bool) {
+	s.disableOAuthSignup = v
 }
 
 type CreateRequest struct {

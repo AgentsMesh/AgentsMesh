@@ -39,6 +39,10 @@ func (s *Service) getOrCreateByOAuthOnce(ctx context.Context, provider, provider
 	}
 
 	if u == nil {
+		if s.disableOAuthSignup {
+			return nil, false, ErrOAuthSignupDisabled
+		}
+
 		userEmail := email
 		if userEmail == "" || emailTaken {
 			userEmail = fmt.Sprintf("%s_%s@noemail.agentsmesh.placeholder", provider, providerUserID)

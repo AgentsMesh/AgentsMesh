@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/service/auth"
+	userservice "github.com/anthropics/agentsmesh/backend/internal/service/user"
 	"github.com/anthropics/agentsmesh/backend/pkg/apierr"
 	"github.com/gin-gonic/gin"
 )
@@ -108,6 +110,10 @@ func (h *AuthHandler) OAuthCallback(provider string) gin.HandlerFunc {
 			ExpiresAt:      &token.ExpiresAt,
 		})
 		if err != nil {
+			if errors.Is(err, userservice.ErrOAuthSignupDisabled) {
+				apierr.BadRequest(c, apierr.VALIDATION_FAILED, "Registration is disabled; this account does not exist")
+				return
+			}
 			apierr.InternalError(c, "OAuth authentication failed")
 			return
 		}

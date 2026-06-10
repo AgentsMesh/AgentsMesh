@@ -108,6 +108,7 @@ func (s *serviceContainer) Close() {
 func initializeServices(cfg *config.Config, db *gorm.DB, redisClient *redis.Client) *serviceContainer {
 	userRepo := infra.NewUserRepository(db)
 	userSvc := user.NewServiceWithEncryption(userRepo, cfg.JWT.Secret)
+	userSvc.SetDisableOAuthSignup(cfg.OAuth.DisableSignup)
 	authCfg := &auth.Config{
 		JWTSecret:         cfg.JWT.Secret,
 		JWTExpiration:     time.Duration(cfg.JWT.ExpirationHours) * time.Hour,
