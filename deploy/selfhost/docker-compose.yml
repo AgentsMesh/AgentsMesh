@@ -84,7 +84,11 @@ services:
     environment:
       # Domain Configuration
       - PRIMARY_DOMAIN=${PRIMARY_DOMAIN}
-      - USE_HTTPS=false
+      - USE_HTTPS=${USE_HTTPS:-false}
+      # OAuth providers (empty -> provider disabled)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - DISABLE_OAUTH_SIGNUP=${DISABLE_OAUTH_SIGNUP:-false}
       # Database
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -109,7 +113,8 @@ services:
       - EMAIL_PROVIDER=${EMAIL_PROVIDER:-console}
       # Storage (MinIO/S3)
       - STORAGE_ENDPOINT=minio:9000
-      - STORAGE_PUBLIC_ENDPOINT=${SERVER_HOST}:${MINIO_API_PORT:-9000}
+      - STORAGE_PUBLIC_ENDPOINT=${STORAGE_PUBLIC_ENDPOINT:-${SERVER_HOST}:${MINIO_API_PORT:-9000}}
+      - STORAGE_PUBLIC_USE_SSL=${STORAGE_PUBLIC_USE_SSL:-false}
       - STORAGE_REGION=us-east-1
       - STORAGE_BUCKET=agentsmesh
       - STORAGE_ACCESS_KEY=minioadmin

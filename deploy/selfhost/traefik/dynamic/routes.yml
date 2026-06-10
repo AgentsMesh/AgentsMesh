@@ -4,6 +4,17 @@
 
 http:
   routers:
+    # Self-registration lock: deny the public Register entrypoints (Connect-RPC
+    # procedure + REST mirror). Login and all other auth flows stay open.
+    block-register:
+      rule: "PathPrefix(`/proto.auth.v1.AuthService/Register`) || Path(`/api/v1/auth/register`)"
+      entryPoints:
+        - web
+      service: backend
+      middlewares:
+        - deny-all
+      priority: 110
+
     # Backend API
     api:
       rule: "PathPrefix(`/api`) || PathPrefix(`/health`)"
@@ -59,3 +70,9 @@ http:
       stripPrefix:
         prefixes:
           - "/relay"
+
+    # Unsatisfiable source range -> traefik returns 403 for every request.
+    deny-all:
+      ipAllowList:
+        sourceRange:
+          - "192.0.2.1/32"
