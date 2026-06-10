@@ -6,11 +6,9 @@
 // the entire backend ↔ Rust core surface is unified.
 //
 // The Connect handler reuses `infra/websocket.Hub` (64-shard sharded
-// fanout) and only swaps the transport: instead of a gorilla websocket
-// `Client.WritePump`, the Connect handler drains `Client.Outbound()`
-// and forwards bytes through `stream.Send`. The hub doesn't know which
-// transport is on the other end — only that the outbound channel is
-// being drained.
+// fanout): it drains `Client.Outbound()` and forwards bytes through
+// `stream.Send`. The hub fans org/user broadcasts into the client's
+// send channel; the handler is the sole drainer.
 //
 // Auth: standard Bearer JWT via the auth interceptor + ResolveOrgScope.
 // The legacy WS handler took the token from `?token=` query string
@@ -31,9 +29,8 @@ const (
 	SubscribeProcedure = "/" + ServiceName + "/Subscribe"
 )
 
-// Server implements proto.events.v1.EventsService. Holds the websocket
-// hub (shared with the legacy ws handler while both exist; the legacy
-// handler is removed in Phase F) and the org-scope resolver.
+// Server implements proto.events.v1.EventsService. Holds the shared
+// 64-shard websocket.Hub and the org-scope resolver.
 type Server struct {
 	hub    *websocket.Hub
 	orgSvc middleware.OrganizationService

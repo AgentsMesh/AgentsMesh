@@ -1,4 +1,5 @@
 import { invoke } from "./invoke";
+import { coerceConnectResponse } from "./connect-response";
 import type { IRepositoryService, IRepoState } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
@@ -25,7 +26,7 @@ async function connectCall(method: string, request: Uint8Array): Promise<Uint8Ar
     method,
     Array.from(request),
   );
-  return resp instanceof Uint8Array ? resp : new Uint8Array(resp);
+  return coerceConnectResponse(resp);
 }
 
 function repositoryToCache(r: ProtoRepository): Record<string, unknown> {

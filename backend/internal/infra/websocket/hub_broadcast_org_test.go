@@ -1,19 +1,20 @@
 package websocket
 
 import (
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHubBroadcastToOrg(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 
-	client1 := mockClient(1, 100, "", 0, true) // Events channel
-	client2 := mockClient(2, 100, "", 0, true) // Events channel
-	client3 := mockClient(3, 200, "", 0, true) // Different org
+	client1 := mockClient(1, 100) // Events channel
+	client2 := mockClient(2, 100) // Events channel
+	client3 := mockClient(3, 200) // Different org
 
 	hub.Register(client1)
 	hub.Register(client2)
@@ -47,9 +48,9 @@ func TestHubSendToUser(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 
-	client1 := mockClient(123, 1, "", 0, true) // Events for user 123
-	client2 := mockClient(123, 1, "", 0, true) // Same user
-	client3 := mockClient(456, 1, "", 0, true) // Different user
+	client1 := mockClient(123, 1) // Events for user 123
+	client2 := mockClient(123, 1) // Same user
+	client3 := mockClient(456, 1) // Different user
 
 	hub.Register(client1)
 	hub.Register(client2)
@@ -79,52 +80,6 @@ func TestHubSendToUser(t *testing.T) {
 	}
 }
 
-func TestHubBroadcastToOrgJSON(t *testing.T) {
-	hub := NewHub()
-	defer hub.Close()
-
-	client := mockClient(1, 100, "", 0, true)
-	hub.Register(client)
-	time.Sleep(10 * time.Millisecond)
-
-	msg := map[string]interface{}{
-		"type": "notification",
-		"data": "hello",
-	}
-	err := hub.BroadcastToOrgJSON(100, msg)
-	assert.NoError(t, err)
-
-	select {
-	case data := <-client.send:
-		assert.Contains(t, string(data), "notification")
-	case <-time.After(100 * time.Millisecond):
-		t.Error("client didn't receive message")
-	}
-}
-
-func TestHubSendToUserJSON(t *testing.T) {
-	hub := NewHub()
-	defer hub.Close()
-
-	client := mockClient(123, 1, "", 0, true)
-	hub.Register(client)
-	time.Sleep(10 * time.Millisecond)
-
-	msg := map[string]interface{}{
-		"type": "alert",
-		"data": "important",
-	}
-	err := hub.SendToUserJSON(123, msg)
-	assert.NoError(t, err)
-
-	select {
-	case data := <-client.send:
-		assert.Contains(t, string(data), "alert")
-	case <-time.After(100 * time.Millisecond):
-		t.Error("client didn't receive message")
-	}
-}
-
 func TestHubBroadcastToOrgEmptyOrg(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
@@ -141,22 +96,55 @@ func TestHubSendToUserEmptyUser(t *testing.T) {
 	hub.SendToUser(99999, []byte(`{"test":"data"}`))
 }
 
-func TestHubBroadcastToOrgJSONError(t *testing.T) {
+// Regression: broadcasting to an org while clients are concurrently
+// unregistered must not panic. Pre-fix, BroadcastToOrg sent to client.send
+// AFTER releasing the read lock, racing handleUnregister's close(client.send)
+// → "send on closed channel". The fix sends under the read lock so the RWMutex
+// serializes send-vs-close. No panic (which would crash the test binary) is the
+// core assertion; the count check confirms the teardown actually ran.
+func TestHubBroadcastToOrgConcurrentUnregisterNoPanic(t *testing.T) {
 	hub := NewHub()
 	defer hub.Close()
 
-	// Test with invalid JSON data (channel that cannot be serialized)
-	invalidData := make(chan int)
-	err := hub.BroadcastToOrgJSON(1, invalidData)
-	assert.Error(t, err)
-}
+	const orgID int64 = 777
+	const n = 50
+	clients := make([]*Client, 0, n)
+	for i := 0; i < n; i++ {
+		c := mockClient(int64(i+1), orgID)
+		hub.Register(c)
+		clients = append(clients, c)
+		// Drain like the Connect server-stream so the 256-slot send buffer never
+		// fills. This keeps `client.send <- data` actually executing (instead of
+		// falling to the unregister default branch), maximizing the window where
+		// a broadcast send races handleUnregister's close — i.e. it genuinely
+		// exercises the bug the fix targets. range exits when the channel closes.
+		go func(cl *Client) {
+			for range cl.Outbound() { //nolint:revive // intentional drain
+			}
+		}(c)
+	}
+	require.Eventually(t, func() bool { return hub.GetOrgClientCount(orgID) == n },
+		2*time.Second, time.Millisecond, "clients did not all register")
 
-func TestHubSendToUserJSONError(t *testing.T) {
-	hub := NewHub()
-	defer hub.Close()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 2000; i++ {
+			hub.BroadcastToOrg(orgID, []byte(`{"event":"x"}`))
+		}
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, c := range clients {
+			hub.Unregister(c)
+			time.Sleep(50 * time.Microsecond)
+		}
+	}()
+	wg.Wait()
 
-	// Test with invalid JSON data
-	invalidData := make(chan int)
-	err := hub.SendToUserJSON(1, invalidData)
-	assert.Error(t, err)
+	// No panic reached here. Confirm the async teardown drained every client.
+	require.Eventually(t, func() bool { return hub.GetOrgClientCount(orgID) == 0 },
+		2*time.Second, time.Millisecond, "clients were not all unregistered")
 }

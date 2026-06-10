@@ -24,6 +24,7 @@ go_library(
         "server.go",
         "services_init.go",
         "services_init_helpers.go",
+        "streaming_writer.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/cmd/server",
     visibility = ["//visibility:private"],
@@ -153,6 +154,7 @@ go_test(
     srcs = [
         "grpc_init_test.go",
         "notif_dedup_test.go",
+        "streaming_writer_test.go",
     ],
     embed = [":server_lib"],
     deps = [

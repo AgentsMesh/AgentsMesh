@@ -1,5 +1,6 @@
 load("//build_defs/web:internal_package.bzl", "internal_npm_package")
 load("//build_defs/web:ts.bzl", "ts_project")
+load("//build_defs/web:vitest.bzl", "vitest_test")
 
 # Electron adapter — thin glue that lets the desktop renderer talk to
 # the N-API addon via typed IPC. Consumed by clients/desktop.
@@ -40,4 +41,21 @@ internal_npm_package(
         "@bufbuild/protobuf": "*",
     },
     main = "src/index.ts",
+)
+
+vitest_test(
+    name = "unit",
+    size = "small",
+    srcs = glob(
+        ["src/**/*.test.ts"],
+        allow_empty = True,
+    ),
+    config = "vitest.config.ts",
+    data = [
+        "tsconfig.json",
+        "//:node_modules",
+    ] + glob(
+        ["src/**/*.ts"],
+        exclude = ["src/**/*.test.ts"],
+    ),
 )

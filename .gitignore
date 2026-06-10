@@ -12,6 +12,10 @@
 *.swo
 *~
 
+# Python bytecode (packages/electron-adapter/scripts guard + generators)
+__pycache__/
+*.pyc
+
 # IDE
 .idea/
 .vscode/

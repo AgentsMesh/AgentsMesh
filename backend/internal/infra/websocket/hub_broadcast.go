@@ -1,76 +1,24 @@
 package websocket
 
-import (
-	"encoding/json"
-	"sync"
-)
+import "sync"
 
-func (h *Hub) BroadcastToPod(podKey string, msg *Message) {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return
-	}
-
-	var wg sync.WaitGroup
-	for i := 0; i < hubShards; i++ {
-		wg.Add(1)
-		go func(shard *hubShard) {
-			defer wg.Done()
-			shard.mu.RLock()
-			clients := shard.podClients[podKey]
-			clientList := make([]*Client, 0, len(clients))
-			for c := range clients {
-				clientList = append(clientList, c)
+// sendToClients delivers data to every client in the set. The caller MUST hold
+// s.mu (read lock): handleUnregister closes client.send under s.mu (write lock),
+// so holding the read lock across the send serializes close-vs-send and prevents
+// a "send on closed channel" panic (select does NOT make a send to a closed
+// channel safe). Non-blocking — a full send buffer enqueues an unregister rather
+// than dropping the slow client silently.
+func (s *hubShard) sendToClients(clients map[*Client]bool, data []byte) {
+	for client := range clients {
+		select {
+		case client.send <- data:
+		default:
+			select {
+			case s.unregister <- client:
+			default:
 			}
-			shard.mu.RUnlock()
-
-			for _, client := range clientList {
-				select {
-				case client.send <- data:
-				default:
-					select {
-					case shard.unregister <- client:
-					default:
-					}
-				}
-			}
-		}(h.shards[i])
+		}
 	}
-	wg.Wait()
-}
-
-func (h *Hub) BroadcastToChannel(channelID int64, msg *Message) {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return
-	}
-
-	var wg sync.WaitGroup
-	for i := 0; i < hubShards; i++ {
-		wg.Add(1)
-		go func(shard *hubShard) {
-			defer wg.Done()
-			shard.mu.RLock()
-			clients := shard.channelClients[channelID]
-			clientList := make([]*Client, 0, len(clients))
-			for c := range clients {
-				clientList = append(clientList, c)
-			}
-			shard.mu.RUnlock()
-
-			for _, client := range clientList {
-				select {
-				case client.send <- data:
-				default:
-					select {
-					case shard.unregister <- client:
-					default:
-					}
-				}
-			}
-		}(h.shards[i])
-	}
-	wg.Wait()
 }
 
 func (h *Hub) BroadcastToOrg(orgID int64, data []byte) {
@@ -80,65 +28,16 @@ func (h *Hub) BroadcastToOrg(orgID int64, data []byte) {
 		go func(shard *hubShard) {
 			defer wg.Done()
 			shard.mu.RLock()
-			clients := shard.orgClients[orgID]
-			clientList := make([]*Client, 0, len(clients))
-			for c := range clients {
-				clientList = append(clientList, c)
-			}
-			shard.mu.RUnlock()
-
-			for _, client := range clientList {
-				select {
-				case client.send <- data:
-				default:
-					select {
-					case shard.unregister <- client:
-					default:
-					}
-				}
-			}
+			defer shard.mu.RUnlock()
+			shard.sendToClients(shard.orgClients[orgID], data)
 		}(h.shards[i])
 	}
 	wg.Wait()
 }
 
-func (h *Hub) BroadcastToOrgJSON(orgID int64, msg interface{}) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	h.BroadcastToOrg(orgID, data)
-	return nil
-}
-
 func (h *Hub) SendToUser(userID int64, data []byte) {
 	shard := h.shards[h.getShardByUser(userID)]
-
 	shard.mu.RLock()
-	clients := shard.userClients[userID]
-	clientList := make([]*Client, 0, len(clients))
-	for c := range clients {
-		clientList = append(clientList, c)
-	}
-	shard.mu.RUnlock()
-
-	for _, client := range clientList {
-		select {
-		case client.send <- data:
-		default:
-			select {
-			case shard.unregister <- client:
-			default:
-			}
-		}
-	}
-}
-
-func (h *Hub) SendToUserJSON(userID int64, msg interface{}) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	h.SendToUser(userID, data)
-	return nil
+	defer shard.mu.RUnlock()
+	shard.sendToClients(shard.userClients[userID], data)
 }

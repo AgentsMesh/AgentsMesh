@@ -41,8 +41,9 @@ export interface CreatePodForTicketRequest {
   permission_mode?: string;
 }
 
-// mesh has no realtime → runtime.state.mesh (getMeshState) is the read/write
-// SSOT; getMeshService is networking-only (fetch_topology).
+// runtime.state.mesh (getMeshState) is the read/write SSOT; getMeshService is
+// networking-only. Node status/agent patch in via Rust event_dispatch (see
+// realtimePodHandlers); structure (nodes/edges/channels) still needs a full fetch.
 const svc = getMeshState;
 const net = getMeshService;
 const bump = () => useMeshStore.setState((s) => ({ _tick: s._tick + 1 }));

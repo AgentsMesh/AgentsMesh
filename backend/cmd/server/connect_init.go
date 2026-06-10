@@ -42,6 +42,23 @@ import (
 // additive against the existing REST surface.
 const connectPathPrefix = "/proto."
 
+// routeConnectOrREST is the top handler: `/proto.*` goes to Connect, everything
+// else to the Gin REST router. Connect responses are wrapped so a server-stream
+// gets a per-write sliding deadline and survives the server's WriteTimeout; the
+// wrapper auto-detects streaming from the response Content-Type
+// (streaming_writer.go), so unary RPCs keep the tighter WriteTimeout and a
+// newly-added server-stream is protected with no per-procedure allowlist to
+// maintain.
+func routeConnectOrREST(connectHandler, restHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, connectPathPrefix) {
+			connectHandler.ServeHTTP(newStreamingResponseWriter(w), r)
+			return
+		}
+		restHandler.ServeHTTP(w, r)
+	})
+}
+
 // defaultConnectHandlerOptions returns the HandlerOption set applied to
 // every Connect handler. The auth interceptor mirrors REST's
 // `middleware.AuthMiddleware`: it parses `Authorization: Bearer …`,
@@ -81,13 +98,7 @@ func wrapWithConnect(cfg *config.Config, svc *serviceContainer, rest *v1.Service
 
 	mountConnectServices(connectMux, svc, rest, cfg, opts)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, connectPathPrefix) {
-			connectMux.ServeHTTP(w, r)
-			return
-		}
-		restHandler.ServeHTTP(w, r)
-	})
+	return routeConnectOrREST(connectMux, restHandler)
 }
 
 // mountConnectServices is the seam each per-service migration PR adds

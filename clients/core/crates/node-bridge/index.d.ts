@@ -56,6 +56,7 @@ export class AppState {
   appChannelsJson(): string
   appChannelUnreadCountsJson(): string
   appCurrentRunnerJson(): string
+  appGetMeshNodeJson(podKey: string): string
   appGetPodJson(podKey: string): string
   appLoopAppendCachedRuns(reqBytes: Array<number>): void
   appLoopClearCurrentLoop(reqBytes: Array<number>): void

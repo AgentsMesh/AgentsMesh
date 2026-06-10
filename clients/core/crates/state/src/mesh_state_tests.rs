@@ -30,3 +30,8 @@ fn sample_topology() -> MeshTopology {
 #[test] fn get_nodes_by_runner() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert_eq!(s.get_nodes_by_runner(1).len(), 2); assert!(s.get_nodes_by_runner(99).is_empty()); }
 #[test] fn get_active_nodes() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert_eq!(s.get_active_nodes().len(), 2); }
 #[test] fn get_runner_info() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert_eq!(s.get_runner_info(1).unwrap().node_id, "r1"); assert!(s.get_runner_info(99).is_none()); }
+#[test] fn update_node_status_patches_existing() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert!(s.update_node_status("p2", "running", Some("executing"))); let n = s.get_node_by_key("p2").unwrap(); assert_eq!(n.status, "running"); assert_eq!(n.agent_status, "executing"); }
+#[test] fn update_node_status_missing_node() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert!(!s.update_node_status("nope", "running", None)); }
+#[test] fn update_node_status_no_topo() { let mut s = MeshState::new(); assert!(!s.update_node_status("p1", "running", None)); }
+#[test] fn update_node_status_empty_status_keeps_old() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert!(s.update_node_status("p1", "", Some("executing"))); let n = s.get_node_by_key("p1").unwrap(); assert_eq!(n.status, "running"); assert_eq!(n.agent_status, "executing"); }
+#[test] fn update_node_status_agent_none_keeps_old() { let mut s = MeshState::new(); s.set_topology(sample_topology()); assert!(s.update_node_status("p1", "paused", None)); let n = s.get_node_by_key("p1").unwrap(); assert_eq!(n.status, "paused"); assert_eq!(n.agent_status, "idle"); }

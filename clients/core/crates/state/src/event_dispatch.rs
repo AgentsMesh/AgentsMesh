@@ -101,6 +101,8 @@ pub fn dispatch(state: &mut AppState, event: &RealtimeEvent) {
                     // subscriber connected) — refetch the pod by key.
                     state.pending_refetch_pod_keys.push(key.to_string());
                 }
+                // Keep the mesh graph node in sync (no-op if not a topology node).
+                state.mesh.update_node_status(key, status, agent);
             }
         }
         EventType::PodAgentStatusChanged => {
@@ -108,11 +110,13 @@ pub fn dispatch(state: &mut AppState, event: &RealtimeEvent) {
                 let status = event.data.get("status").and_then(|v| v.as_str()).unwrap_or("");
                 let agent = event.data.get("agent_status").and_then(|v| v.as_str());
                 state.pods.update_pod_status(key, status, agent, None, None, Some(event.timestamp));
+                state.mesh.update_node_status(key, status, agent);
             }
         }
         EventType::PodTerminated => {
             if let Some(key) = event.data.get("pod_key").and_then(|v| v.as_str()) {
                 state.pods.update_pod_status(key, "terminated", None, None, None, Some(event.timestamp));
+                state.mesh.update_node_status(key, "terminated", None);
             }
         }
         EventType::PodTitleChanged => {
@@ -532,6 +536,33 @@ mod tests {
         let mut s = AppState::new();
         dispatch(&mut s, &make_event(EventType::LoopRunStarted, json!({"id":1,"loop_slug":"l-1","status":"running"})));
         assert_eq!(s.loops.get_runs().len(), 1);
+    }
+
+    #[test]
+    fn pod_status_changed_syncs_mesh_node() {
+        use agentsmesh_types::proto_mesh_v1::{MeshNode, MeshTopology};
+        let mut s = AppState::new();
+        s.mesh.set_topology(MeshTopology {
+            nodes: vec![MeshNode {
+                pod_key: "p1".into(),
+                status: "initializing".into(),
+                agent_status: "idle".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
+        // status_changed patches the mesh node even when the pod isn't cached.
+        dispatch(&mut s, &make_event(EventType::PodStatusChanged, json!({"pod_key":"p1","status":"running"})));
+        assert_eq!(s.mesh.get_node_by_key("p1").unwrap().status, "running");
+        // agent_status_changed (no status field) patches agent_status only,
+        // keeping the node status intact.
+        dispatch(&mut s, &make_event(EventType::PodAgentStatusChanged, json!({"pod_key":"p1","agent_status":"executing"})));
+        let n = s.mesh.get_node_by_key("p1").unwrap();
+        assert_eq!(n.agent_status, "executing");
+        assert_eq!(n.status, "running");
+        // terminated flips the mesh node status too.
+        dispatch(&mut s, &make_event(EventType::PodTerminated, json!({"pod_key":"p1"})));
+        assert_eq!(s.mesh.get_node_by_key("p1").unwrap().status, "terminated");
     }
 
     #[test]

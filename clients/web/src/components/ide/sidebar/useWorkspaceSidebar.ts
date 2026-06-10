@@ -50,7 +50,7 @@ export function useWorkspaceSidebar(
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    try { await Promise.all([fetchSidebarPods(filter), fetchRunners()]); } finally { setRefreshing(false); }
+    try { await Promise.all([fetchSidebarPods(filter, { silent: true }), fetchRunners()]); } finally { setRefreshing(false); }
   }, [fetchSidebarPods, filter, fetchRunners]);
 
   const filteredPods = useMemo(() => {

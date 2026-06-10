@@ -57,7 +57,8 @@ export class ElectronMeshService implements IMeshService {
   get_active_nodes_json(): string {
     if (!this._topologyCache) return "[]";
     const topo = JSON.parse(this._topologyCache) as { nodes?: { status?: string }[] };
-    return JSON.stringify((topo.nodes ?? []).filter(n => n.status === "active"));
+    // Match Rust MeshState::get_active_nodes (running || creating), not "active".
+    return JSON.stringify((topo.nodes ?? []).filter(n => n.status === "running" || n.status === "creating"));
   }
 
   get_edges_for_node_json(podKey: string): string {
@@ -95,6 +96,25 @@ export class ElectronMeshService implements IMeshService {
   }
 
   clear_topology(): void { this._topologyCache = null; }
+
+  // status/agent_status only: a full-node Object.assign would revert
+  // meshTopologyToCache's 0→undefined projection and drift this node's shape.
+  update_node(json: string): void {
+    if (!this._topologyCache) return;
+    let patch: { pod_key?: string; status?: string; agent_status?: string };
+    try {
+      patch = JSON.parse(json) as { pod_key?: string; status?: string; agent_status?: string };
+    } catch {
+      return;
+    }
+    if (!patch.pod_key) return;
+    const topo = JSON.parse(this._topologyCache) as { nodes?: Record<string, unknown>[] };
+    const node = topo.nodes?.find((n) => (n as { pod_key?: string }).pod_key === patch.pod_key);
+    if (!node) return;
+    if (patch.status !== undefined) node.status = patch.status;
+    if (patch.agent_status !== undefined) node.agent_status = patch.agent_status;
+    this._topologyCache = JSON.stringify(topo);
+  }
 
   select_node(podKey?: string | null): void {
     this._selectedNode = podKey ?? null;

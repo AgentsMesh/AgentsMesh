@@ -1,8 +1,9 @@
-import { getChannelState, getPodState, getRunnerState, getAutopilotState } from "@agentsmesh/service-runtime";
+import { getChannelState, getPodState, getRunnerState, getAutopilotState, getMeshState } from "@agentsmesh/service-runtime";
 import { useChannelStore, useChannelMessageStore } from "@/stores/channel";
 import { usePodStore } from "@/stores/pod";
 import { useRunnerStore } from "@/stores/runner";
 import { useAutopilotStore } from "@/stores/autopilot";
+import { useMeshStore } from "@/stores/mesh";
 
 interface ChannelSnapshot {
   domain: string;
@@ -36,6 +37,13 @@ interface AutopilotSnapshot {
   iterations: string;
   thinking: string;
   thinkingHistory: string;
+}
+
+interface MeshNodeSnapshot {
+  domain: string;
+  podKey: string;
+  // Rust-computed single mesh node JSON (status/agent patched), or "".
+  node: string;
 }
 
 interface ChannelMirror {
@@ -91,6 +99,14 @@ function applyAutopilotSnapshot(snap: AutopilotSnapshot): void {
   useAutopilotStore.setState((s) => ({ _tick: s._tick + 1 }));
 }
 
+// Patch the mesh node in the renderer's topology cache (no-op if not cached).
+function applyMeshNodeSnapshot(snap: MeshNodeSnapshot): void {
+  if (!snap.node) return;
+  const svc = getMeshState() as unknown as { update_node?: (json: string) => void };
+  svc.update_node?.(snap.node);
+  useMeshStore.setState((s) => ({ _tick: s._tick + 1 }));
+}
+
 // Desktop renderer has no in-process Rust — main owns the SSOT runtime.state
 // and pushes a Rust-computed snapshot after each EventBus dispatch. This mirror
 // projects that snapshot into the renderer-local ElectronChannelService cache,
@@ -113,6 +129,7 @@ export function installRealtimeMirror(): void {
       else if (snap.domain === "pod") applyPodSnapshot(snap as PodSnapshot);
       else if (snap.domain === "runner") applyRunnerSnapshot(snap as RunnerSnapshot);
       else if (snap.domain === "autopilot") applyAutopilotSnapshot(snap as AutopilotSnapshot);
+      else if (snap.domain === "mesh") applyMeshNodeSnapshot(snap as MeshNodeSnapshot);
     } catch {
       // Apply failure = renderer view silently stops tracking the SSOT. Log the
       // domain (never the payload) so the stuck view is diagnosable.

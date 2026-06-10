@@ -93,6 +93,7 @@ export function resetPodStore() {
     podHasMore: false,
     loadingMore: false,
     currentSidebarFilter: "mine",
+    sidebarLoadedCount: 0,
   });
 }
 

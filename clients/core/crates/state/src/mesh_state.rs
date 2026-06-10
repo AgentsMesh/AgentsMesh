@@ -33,6 +33,25 @@ impl MeshState {
         self.selected_node = pod_key;
     }
 
+    /// Patch an existing topology node's status/agent_status in place (no-op if
+    /// the pod_key isn't a node). Empty `status` is ignored so an agent-only
+    /// event can't blank the node status.
+    pub fn update_node_status(&mut self, pod_key: &str, status: &str, agent_status: Option<&str>) -> bool {
+        let Some(topology) = self.topology.as_mut() else {
+            return false;
+        };
+        let Some(node) = topology.nodes.iter_mut().find(|n| n.pod_key == pod_key) else {
+            return false;
+        };
+        if !status.is_empty() {
+            node.status = status.to_string();
+        }
+        if let Some(agent) = agent_status {
+            node.agent_status = agent.to_string();
+        }
+        true
+    }
+
     pub fn get_node_by_key(&self, pod_key: &str) -> Option<&MeshNode> {
         self.topology
             .as_ref()

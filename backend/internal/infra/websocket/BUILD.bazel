@@ -11,14 +11,12 @@ go_library(
         "hub_registration.go",
         "hub_shard.go",
         "notification_relay.go",
-        "types.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/infra/websocket",
     visibility = ["//backend:__subpackages__"],
     deps = [
         "//backend/internal/infra/eventbus",
         "@com_github_google_uuid//:uuid",
-        "@com_github_gorilla_websocket//:websocket",
         "@com_github_redis_go_redis_v9//:go-redis",
     ],
 )
@@ -35,7 +33,6 @@ go_test(
         "hub_advanced_test.go",
         "hub_basic_test.go",
         "hub_broadcast_org_test.go",
-        "hub_broadcast_pod_test.go",
         "hub_event_subscriber_test.go",
         "notification_relay_test.go",
     ],

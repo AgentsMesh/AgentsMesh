@@ -1,82 +1,60 @@
 import { usePodStore } from "@/stores/pod";
+import { useMeshStore } from "@/stores/mesh";
 import { getPodState } from "@/lib/wasm-core";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { useMeshStore } from "@/stores/mesh";
-import type { DebounceRef } from "./realtimeEventHandlers";
 import {
   type RealtimeEvent,
   decodeEventData,
   PodStatusChangedEventDataSchema,
-  PodCreatedEventDataSchema,
   PodInitProgressEventDataSchema,
-  PodRestartingEventDataSchema,
 } from "@/lib/realtime";
 
-function debouncedSidebarRefresh(ref?: DebounceRef) {
-  if (!ref) {
-    const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
-    fetchSidebarPods?.(currentSidebarFilter);
-    return;
-  }
-  if (ref.current) clearTimeout(ref.current);
-  ref.current = setTimeout(() => {
-    ref.current = null;
-    const { currentSidebarFilter, fetchSidebarPods } = usePodStore.getState();
-    fetchSidebarPods?.(currentSidebarFilter);
-  }, 500);
-}
-
-let topologyTimer: ReturnType<typeof setTimeout> | null = null;
-function debouncedFetchTopology() {
-  if (topologyTimer) clearTimeout(topologyTimer);
-  topologyTimer = setTimeout(() => {
-    topologyTimer = null;
-    useMeshStore.getState().fetchTopology?.();
-  }, 500);
-}
-
-// Rust event_dispatch owns the pod state mutation (status/agent/title/alias/
-// perpetual) in runtime.state; this bump triggers the React selectors to
-// re-read it. On web getPodState() IS runtime.state; on desktop the main→
-// renderer snapshot mirror (realtime-mirror.ts) has already upserted the
-// renderer cache and bumped — this extra bump is a harmless no-op there.
+// A created/restarting pod must enter the filtered sidebar; the server filter is
+// authoritative, so refetch the active filter (silent = no spinner). Status-only
+// changes never refetch — they patch in place.
+const refreshSidebar = () => {
+  const s = usePodStore.getState();
+  s.fetchSidebarPods?.(s.currentSidebarFilter, { silent: true });
+};
 const bumpPods = () => usePodStore.setState((s) => ({ _tick: s._tick + 1 }));
+const bumpMesh = () => useMeshStore.setState((s) => ({ _tick: s._tick + 1 }));
+const refreshMeshTopology = () => useMeshStore.getState().fetchTopology?.();
 
-export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: DebounceRef) {
+export function handlePodEvent(event: RealtimeEvent) {
   switch (event.type) {
-    case "pod:created": {
-      const data = decodeEventData(PodCreatedEventDataSchema, event.data);
-      usePodStore.getState().fetchPod?.(data.podKey);
-      debouncedSidebarRefresh(sidebarDebounceRef);
-      debouncedFetchTopology();
+    case "pod:created":
+    case "pod:restarting": {
+      refreshSidebar();
+      refreshMeshTopology();
       break;
     }
     case "pod:status_changed": {
       const data = decodeEventData(PodStatusChangedEventDataSchema, event.data);
-      // Rust dispatch patches a cached pod; a not-yet-cached pod needs the
-      // full entity from the server, which dispatch can't synthesize.
+      // not-cached pod needs the full entity from the server (dispatch only patches cached).
       if (!getPodState().get_pod_json(data.podKey)) {
         usePodStore.getState().fetchPod?.(data.podKey);
       } else {
         bumpPods();
       }
+      // failed/error arrive here, not as pod:terminated (backend cmd/server/eventbus_pod.go).
       if (data.status === "terminated" || data.status === "failed" || data.status === "error") {
         useWorkspaceStore.getState().removePaneByPodKey(data.podKey);
+        refreshMeshTopology();
+      } else {
+        bumpMesh();
       }
-      debouncedSidebarRefresh(sidebarDebounceRef);
-      debouncedFetchTopology();
       break;
     }
     case "pod:agent_status_changed": {
       bumpPods();
+      bumpMesh();
       break;
     }
     case "pod:terminated": {
       const data = decodeEventData(PodStatusChangedEventDataSchema, event.data);
       useWorkspaceStore.getState().removePaneByPodKey(data.podKey);
       bumpPods();
-      debouncedSidebarRefresh(sidebarDebounceRef);
-      debouncedFetchTopology();
+      refreshMeshTopology();
       break;
     }
     case "pod:title_changed":
@@ -90,12 +68,6 @@ export function handlePodEvent(event: RealtimeEvent, sidebarDebounceRef?: Deboun
       // pod list — keep the explicit apply path.
       const data = decodeEventData(PodInitProgressEventDataSchema, event.data);
       usePodStore.getState().updatePodInitProgress(data.podKey, data.phase, data.progress, data.message);
-      break;
-    }
-    case "pod:restarting": {
-      const data = decodeEventData(PodRestartingEventDataSchema, event.data);
-      usePodStore.getState().fetchPod?.(data.podKey);
-      debouncedSidebarRefresh(sidebarDebounceRef);
       break;
     }
   }

@@ -19,6 +19,7 @@ export { ElectronEnvBundleService } from './env_bundle';
 export { ElectronAgentService } from './agent';
 export { ElectronSSOService } from './sso';
 export { ElectronFileService } from './file';
+export { ElectronGrantService } from './grant';
 export { ElectronSupportTicketService } from './support_ticket';
 export { ElectronTicketRelationsService } from './ticket_relations';
 export { ElectronTokenUsageService } from './token_usage';

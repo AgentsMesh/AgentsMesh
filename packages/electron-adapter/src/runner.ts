@@ -1,4 +1,5 @@
 import { invoke } from "./invoke";
+import { coerceConnectResponse } from "./connect-response";
 import type { IRunnerService } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
@@ -159,7 +160,7 @@ export class ElectronRunnerService implements IRunnerService {
       "runnerAuthorizeRunner",
       Array.from(reqBytes),
     );
-    return result instanceof Uint8Array ? result : new Uint8Array(result);
+    return coerceConnectResponse(result);
   }
 
   async get_auth_status(reqBytes: Uint8Array): Promise<Uint8Array> {
@@ -167,7 +168,7 @@ export class ElectronRunnerService implements IRunnerService {
       "runnerGetAuthStatus",
       Array.from(reqBytes),
     );
-    return result instanceof Uint8Array ? result : new Uint8Array(result);
+    return coerceConnectResponse(result);
   }
 
   async list_runner_logs(id: bigint): Promise<string> {

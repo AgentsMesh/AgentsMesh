@@ -60,9 +60,18 @@ export function useCurrentPod(): Pod | null {
 const fetchPodInflight = new Map<string, Promise<void>>();
 const bump = () => usePodStore.setState((s) => ({ _tick: s._tick + 1 }));
 
+// Monotonic id so an out-of-order sidebar fetch can't clobber a newer one. Both
+// the cold-load (non-silent) and reconnect/manual (silent) paths bump it on
+// entry; a response whose id is no longer the latest is discarded before it
+// writes the cache/total. sidebarLoadingSeq tracks the latest NON-silent call
+// (the spinner's owner) separately, so a superseding silent refresh — which
+// never touches loading — can't strand a stale non-silent call's spinner.
+let sidebarRequestSeq = 0;
+let sidebarLoadingSeq = 0;
+
 export const usePodStore = create<PodState>((set, get) => ({
   _tick: 0, loading: false, error: null, initProgress: {},
-  podTotal: 0, podHasMore: false, loadingMore: false, currentSidebarFilter: "mine",
+  podTotal: 0, podHasMore: false, loadingMore: false, currentSidebarFilter: "mine", sidebarLoadedCount: 0,
 
   fetchPods: async (filters) => {
     await initWasmCore();
@@ -98,9 +107,15 @@ export const usePodStore = create<PodState>((set, get) => ({
     return promise;
   },
 
-  fetchSidebarPods: async (statusFilter) => {
+  fetchSidebarPods: async (statusFilter, opts) => {
+    const silent = opts?.silent ?? false;
+    const mySeq = ++sidebarRequestSeq;
+    // Only a non-silent call owns the spinner; record it so the seq guard below
+    // discarding a superseded response (esp. when the superseder is a SILENT
+    // refresh that never touches loading) can't leave the spinner stuck.
+    if (!silent) sidebarLoadingSeq = mySeq;
     await initWasmCore();
-    set({ loading: true, error: null, currentSidebarFilter: statusFilter });
+    if (!silent) set({ error: null, currentSidebarFilter: statusFilter, loading: true });
     try {
       const uid = statusFilter === "mine" ? readCurrentUser()?.id ?? null : null;
       const { items, total } = await listPodsConnect(orgSlug(), {
@@ -108,36 +123,62 @@ export const usePodStore = create<PodState>((set, get) => ({
         created_by_id: uid ?? undefined,
         limit: SIDEBAR_PAGE_SIZE, offset: 0,
       });
-      const req = protoCreate(ReplaceCachedPodsRequestSchema, { pods: items.map(podToProtoPod) });
-      getPodState().replace_cached_pods(toBinary(ReplaceCachedPodsRequestSchema, req));
-      const hasMore = items.length < total;
-      set({ podTotal: total, podHasMore: hasMore, loading: false, _tick: get()._tick + 1 });
+      // Write the cache + counters only if this is still the latest request for
+      // the active filter: a concurrent tab switch, or a newer fetch (silent
+      // reconnect vs cold load) superseding this one, must not clobber fresher
+      // data. loadMorePods guards the same way before it appends.
+      if (get().currentSidebarFilter === statusFilter && sidebarRequestSeq === mySeq) {
+        const req = protoCreate(ReplaceCachedPodsRequestSchema, { pods: items.map(podToProtoPod) });
+        getPodState().replace_cached_pods(toBinary(ReplaceCachedPodsRequestSchema, req));
+        set({
+          podTotal: total, podHasMore: items.length < total,
+          sidebarLoadedCount: items.length, _tick: get()._tick + 1,
+        });
+      }
     } catch (error: unknown) {
-      set({ error: getErrorMessage(error, "Failed to fetch pods"), loading: false });
+      if (!silent) set({ error: getErrorMessage(error, "Failed to fetch pods") });
+    } finally {
+      // Clear the spinner iff this call still owns it (no newer non-silent call
+      // took over). Decoupled from the seq/data guard above so a superseding
+      // SILENT refresh can't leave loading stuck true.
+      if (!silent && sidebarLoadingSeq === mySeq) set({ loading: false });
     }
   },
 
   loadMorePods: async () => {
-    const { podHasMore, loadingMore, currentSidebarFilter } = get();
+    const { podHasMore, loadingMore, currentSidebarFilter, sidebarLoadedCount } = get();
     if (!podHasMore || loadingMore) return;
-    await initWasmCore();
+    // Baseline seq (loadMore appends, it doesn't bump): if a fetchSidebarPods
+    // replaces the cache + resets the offset mid-flight, our page would append at
+    // a stale offset (gap/duplicate rows), so discard it then.
+    const mySeq = sidebarRequestSeq;
     set({ loadingMore: true });
+    await initWasmCore();
     try {
       const uid = currentSidebarFilter === "mine" ? readCurrentUser()?.id ?? null : null;
-      const existing: Pod[] = JSON.parse(getPodState().pods_json());
+      // Page from how many we've actually pulled for THIS filter, not the cache
+      // length: realtime insert_created_pod upserts org-wide pods (incl. ones the
+      // active filter hides) into the shared cache, so cache length drifts from
+      // the server's filtered offset and would skip or duplicate rows.
       const { items: newPods, total } = await listPodsConnect(orgSlug(), {
         status: sidebarStatusParam(currentSidebarFilter),
         created_by_id: uid ?? undefined,
-        limit: SIDEBAR_PAGE_SIZE, offset: existing.length,
+        limit: SIDEBAR_PAGE_SIZE, offset: sidebarLoadedCount,
       });
+      // Discard if superseded: filter changed, a newer fetch bumped the seq, or
+      // a fetchSidebarPods already in flight when we started reset the offset
+      // (same seq baseline, so the seq check alone misses it — catch it via the
+      // loaded-count change).
+      if (get().currentSidebarFilter !== currentSidebarFilter
+          || sidebarRequestSeq !== mySeq
+          || get().sidebarLoadedCount !== sidebarLoadedCount) {
+        set({ loadingMore: false });
+        return;
+      }
       const req = protoCreate(AppendCachedPodsRequestSchema, { pods: newPods.map(podToProtoPod) });
       getPodState().append_cached_pods(toBinary(AppendCachedPodsRequestSchema, req));
-      const allCount = (JSON.parse(getPodState().pods_json()) as Pod[]).length;
-      const hasMore = allCount < total;
-      set((s) => {
-        if (s.currentSidebarFilter !== currentSidebarFilter) return { loadingMore: false };
-        return { podTotal: total, podHasMore: hasMore, loadingMore: false, _tick: s._tick + 1 };
-      });
+      const loaded = sidebarLoadedCount + newPods.length;
+      set({ podTotal: total, podHasMore: loaded < total, loadingMore: false, sidebarLoadedCount: loaded, _tick: get()._tick + 1 });
     } catch (error: unknown) {
       set({ error: getErrorMessage(error, "Failed to load more pods"), loadingMore: false });
     }
@@ -276,7 +317,7 @@ reconnectRegistry.register({
   name: "pod:sidebar",
   fn: () => {
     const s = usePodStore.getState();
-    s.fetchSidebarPods?.(s.currentSidebarFilter);
+    s.fetchSidebarPods?.(s.currentSidebarFilter, { silent: true });
   },
   priority: "immediate",
 });

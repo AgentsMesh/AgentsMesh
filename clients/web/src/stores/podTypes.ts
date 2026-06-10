@@ -24,10 +24,11 @@ export interface PodState {
   podHasMore: boolean;
   loadingMore: boolean;
   currentSidebarFilter: string;
+  sidebarLoadedCount: number;
 
   fetchPods: (filters?: { status?: string; runnerId?: number }) => Promise<void>;
   fetchPod: (podKey: string) => Promise<void>;
-  fetchSidebarPods: (statusFilter: string) => Promise<void>;
+  fetchSidebarPods: (statusFilter: string, opts?: { silent?: boolean }) => Promise<void>;
   loadMorePods: () => Promise<void>;
   terminatePod: (podKey: string) => Promise<void>;
   setCurrentPod: (pod: Pod | null) => void;

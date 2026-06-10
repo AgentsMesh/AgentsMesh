@@ -10,12 +10,10 @@
 // mounts fresh."
 //
 // Post-bridge: the realtime event flows main → renderer, and the sidebar
-// store's handlePodEvent("pod:created") triggers debouncedSidebarRefresh.
-// No reload needed.
-//
-// FIXME: realtime sidebar refresh on pod:created depends on
-// usePodStore.fetchSidebarPods which is debounced 500ms. We wait for
-// the pod-list-item to appear without forcing page.reload().
+// store's handlePodEvent("pod:created") pulls the single new entity via
+// fetchPod (IPC → app_pod_insert_created → upsert + tick bump). The pod
+// lands in the SSOT cache and the client-side filter renders it — no full
+// list refetch, no reload.
 import { test, expect } from "../../fixtures";
 import { TEST_ORG_SLUG } from "../../helpers/env";
 import { gotoHash } from "../../helpers/nav";
@@ -47,8 +45,8 @@ test.describe("Desktop sidebar · realtime pod refresh (no reload)", () => {
     const { pod } = JSON.parse(created) as { pod: { pod_key: string } };
 
     try {
-      // Sidebar should grow without manual reload. The 500ms debounce
-      // means we wait up to ~3s for the event → fetchSidebarPods cycle.
+      // Sidebar should grow without manual reload. fetchPod resolves the new
+      // entity into the SSOT cache; we wait for the event → upsert → render.
       const newPodSelector = `${sidebarSelector}[data-pod-key="${pod.pod_key}"]`;
       await expect(page.locator(newPodSelector)).toBeVisible({ timeout: 8_000 });
       const afterCount = await page.locator(sidebarSelector).count();

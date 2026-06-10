@@ -51,6 +51,13 @@ const AUTOPILOT_EVENTS = new Set([
   "autopilot:terminated",
 ]);
 
+// status/agent patch a mesh node in place; structural changes (created/terminated)
+// go through the renderer's fetchTopology, not here.
+const MESH_NODE_EVENTS = new Set([
+  "pod:status_changed",
+  "pod:agent_status_changed",
+]);
+
 // After a channel message event, read the post-dispatch runtime.state channel
 // snapshot (messages + unread + mention, all Rust-computed) and push it to the
 // renderer over a dedicated IPC channel. The renderer mirrors it into its
@@ -171,6 +178,30 @@ function pushAutopilotSnapshot(
   }
 }
 
+// Read the Rust-patched mesh node and push it for the renderer to patch its
+// topology cache in place. Empty node → not a topology node, skip.
+function pushMeshNodeSnapshot(
+  appState: AppState,
+  eventJson: string,
+  send: (channel: string, payload: unknown) => void,
+): void {
+  let ev: { type?: string; data?: Record<string, unknown> };
+  try {
+    ev = JSON.parse(eventJson) as { type?: string; data?: Record<string, unknown> };
+  } catch {
+    return;
+  }
+  if (!ev.type || !MESH_NODE_EVENTS.has(ev.type)) return;
+  const rawKey = ev.data?.pod_key ?? ev.data?.podKey;
+  if (typeof rawKey !== "string" || rawKey.length === 0) return;
+  try {
+    const node = appState.appGetMeshNodeJson(rawKey);
+    if (node) send("realtime:state-sync", JSON.stringify({ domain: "mesh", podKey: rawKey, node }));
+  } catch {
+    /* best-effort */
+  }
+}
+
 export interface RealtimeBridge {
   // Tear down the subscription, forwarder, and IPC handlers. Required
   // before swapping AppState (server-switch flow) so the old stream's
@@ -204,6 +235,7 @@ export async function setupRealtimeBridge(
     pushPodSnapshot(appState, eventJson, send);
     pushRunnerSnapshot(appState, eventJson, send);
     pushAutopilotSnapshot(appState, eventJson, send);
+    pushMeshNodeSnapshot(appState, eventJson, send);
   });
   logEvent("info", "realtime", "bridge subscribed");
   const stateSubId = await appState.eventsOnConnectionStateChange((_err: unknown, next: string) => {

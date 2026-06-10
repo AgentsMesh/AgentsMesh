@@ -76,7 +76,6 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   const loopDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ticketDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const podSidebarDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickPollRef = useRef<number>(0);
 
   const handleEvent = useCallback(
@@ -88,7 +87,7 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
       //   2. Sidebar refresh / org-scoped refetch on member events
       // Pure state writes (e.g. patchChannelMemberCount) are no-ops now
       // — Rust dispatch already applied them — but harmless to retry.
-      if (event.type.startsWith("pod:")) { handlePodEvent(event, podSidebarDebounceRef); return; }
+      if (event.type.startsWith("pod:")) { handlePodEvent(event); return; }
       if (event.type.startsWith("channel:")) { handleChannelEvent(event, channelDebounceRef); return; }
       if (event.type.startsWith("autopilot:")) { handleAutopilotEvent(event); return; }
       if (event.type.startsWith("loop_run:")) {
@@ -149,7 +148,7 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
   );
 
   useEffect(() => {
-    const refs: DebounceRef[] = [loopDebounceRef, ticketDebounceRef, channelDebounceRef, podSidebarDebounceRef];
+    const refs: DebounceRef[] = [loopDebounceRef, ticketDebounceRef, channelDebounceRef];
     return () => { refs.forEach((r) => { if (r.current) clearTimeout(r.current); }); };
   }, []);
 

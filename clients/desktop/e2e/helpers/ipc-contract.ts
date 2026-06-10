@@ -30,6 +30,8 @@ const WIRE_FAULT_PATTERNS = [
   /No such IPC handler/i,
   /No handler registered/i,
   /Handler did not respond/i,
+  // ServeMux 404 for an unregistered route — distinct from a connect not_found.
+  /\bpage not found\b/i,
 ];
 
 function isWireFault(msg: string): boolean {

@@ -227,6 +227,7 @@ export const IPC_ALLOWLIST: ReadonlyArray<string> = [
   "appChannelsJson",
   "appChannelUnreadCountsJson",
   "appCurrentRunnerJson",
+  "appGetMeshNodeJson",
   "appGetPodJson",
   "appLoopAppendCachedRuns",
   "appLoopClearCurrentLoop",

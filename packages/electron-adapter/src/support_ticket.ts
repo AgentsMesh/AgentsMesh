@@ -1,4 +1,5 @@
 import { invoke } from "./invoke";
+import { coerceConnectResponse } from "./connect-response";
 import type { ISupportTicketService } from "@agentsmesh/service-interface";
 
 export class ElectronSupportTicketService implements ISupportTicketService {
@@ -14,20 +15,20 @@ export class ElectronSupportTicketService implements ISupportTicketService {
     const bytes = await invoke<number[] | Uint8Array>(
       "supportTicketListSupportTicketsConnect", Array.from(request),
     );
-    return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    return coerceConnectResponse(bytes);
   }
 
   async getSupportTicketConnect(request: Uint8Array): Promise<Uint8Array> {
     const bytes = await invoke<number[] | Uint8Array>(
       "supportTicketGetSupportTicketConnect", Array.from(request),
     );
-    return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    return coerceConnectResponse(bytes);
   }
 
   async getAttachmentUrlConnect(request: Uint8Array): Promise<Uint8Array> {
     const bytes = await invoke<number[] | Uint8Array>(
       "supportTicketGetAttachmentUrlConnect", Array.from(request),
     );
-    return bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    return coerceConnectResponse(bytes);
   }
 }
