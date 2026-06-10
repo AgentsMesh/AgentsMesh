@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/test-utils'
+import userEvent from '@testing-library/user-event'
 import { TicketDetail } from '../TicketDetail'
 import { getApiClient } from '@/lib/wasm-core'
 import * as ticketRelations from '@/lib/api/facade/ticketRelations'
@@ -162,6 +163,51 @@ describe('TicketDetail - Editing, Status & Delete', () => {
   //   - status selector
   //   - delete action (now inside the More dropdown menu)
   // Those assertions should migrate to TicketDetailSidebar tests.
+
+  describe('header actions', () => {
+    it('opens a menu from the more button instead of deleting directly', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('Implement new feature')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup({ pointerEventsCheck: 0 })
+      await user.click(screen.getByRole('button', { name: 'More actions' }))
+
+      expect(mockDeleteTicket).not.toHaveBeenCalled()
+      expect(await screen.findByRole('menuitem', { name: /Delete Ticket/ })).toBeInTheDocument()
+    })
+
+    it('deletes only after confirming from the more menu', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('Implement new feature')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup({ pointerEventsCheck: 0 })
+      await user.click(screen.getByRole('button', { name: 'More actions' }))
+      await user.click(await screen.findByRole('menuitem', { name: /Delete Ticket/ }))
+
+      expect(mockDeleteTicket).not.toHaveBeenCalled()
+      await user.click(await screen.findByRole('button', { name: 'Delete' }))
+
+      await waitFor(() => {
+        expect(mockDeleteTicket).toHaveBeenCalledWith('PROJ-42')
+      })
+    })
+
+    it('starts title editing from the Edit button', async () => {
+      render(<TicketDetail slug="PROJ-42" />)
+      await waitFor(() => {
+        expect(screen.getByText('Implement new feature')).toBeInTheDocument()
+      })
+
+      const user = userEvent.setup({ pointerEventsCheck: 0 })
+      await user.click(screen.getByRole('button', { name: 'Edit' }))
+
+      expect(screen.getByDisplayValue('Implement new feature')).toBeInTheDocument()
+    })
+  })
 
   describe('inline editing (Linear-style)', () => {
     it('should render inline editable title', async () => {

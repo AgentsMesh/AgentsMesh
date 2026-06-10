@@ -10,7 +10,8 @@ import { useTicketStore, useCurrentTicket, TicketStatus } from "@/stores/ticket"
 import { useTicketExtraData } from "./hooks";
 import { LabelsList, CommentsList, SubTicketsList, RelationsList, CommitsList } from "./shared";
 import { TicketDetailSidebar } from "./TicketDetailSidebar";
-import { InlineEditableText } from "./InlineEditableText";
+import { TicketHeaderActions } from "./TicketHeaderActions";
+import { InlineEditableText, InlineEditableTextHandle } from "./InlineEditableText";
 import { StatusSelect } from "./StatusSelect";
 
 const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
@@ -39,6 +40,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
   const { subTickets, relations, commits, comments, addComment, updateComment, deleteComment } = useTicketExtraData(slug, !!currentTicket);
 
   const contentSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const titleEditRef = useRef<InlineEditableTextHandle>(null);
 
   useEffect(() => {
     return () => {
@@ -144,6 +146,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
                 <StatusSelect value={currentTicket.status} onChange={handleStatusChange} showLabel size="sm" />
               </div>
               <InlineEditableText
+                ref={titleEditRef}
                 value={currentTicket.title}
                 onSave={handleTitleSave}
                 placeholder={t("tickets.createDialog.titlePlaceholder")}
@@ -191,28 +194,11 @@ export function TicketDetail({ slug }: TicketDetailProps) {
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5">
-              <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                {t("common.edit")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => handleStatusChange("done" as TicketStatus)}
-              >
-                {t("tickets.detail.markDone")}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                onClick={handleDelete}
-                aria-label={t("common.more")}
-              >
-                ⋯
-              </Button>
-            </div>
+            <TicketHeaderActions
+              onEdit={() => titleEditRef.current?.startEditing()}
+              onMarkDone={() => handleStatusChange("done" as TicketStatus)}
+              onDelete={handleDelete}
+            />
           </div>
         </div>
 

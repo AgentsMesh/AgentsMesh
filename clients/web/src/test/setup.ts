@@ -1078,6 +1078,9 @@ Object.defineProperty(window, 'sessionStorage', { value: createLocalStorageMock(
 global.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver
 global.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof IntersectionObserver
 Element.prototype.scrollIntoView = vi.fn()
+Element.prototype.hasPointerCapture = Element.prototype.hasPointerCapture ?? (() => false)
+Element.prototype.setPointerCapture = Element.prototype.setPointerCapture ?? (() => {})
+Element.prototype.releasePointerCapture = Element.prototype.releasePointerCapture ?? (() => {})
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useImperativeHandle,
+  forwardRef,
+  KeyboardEvent,
+} from "react";
 import { cn } from "@/lib/utils";
 import { Check, X, Loader2 } from "lucide-react";
 
@@ -16,7 +24,12 @@ export interface InlineEditableTextProps {
   autoSave?: boolean;
 }
 
-export function InlineEditableText({
+export interface InlineEditableTextHandle {
+  startEditing: () => void;
+}
+
+export const InlineEditableText = forwardRef<InlineEditableTextHandle, InlineEditableTextProps>(
+  function InlineEditableText({
   value,
   onSave,
   placeholder = "Click to edit...",
@@ -26,13 +39,15 @@ export function InlineEditableText({
   disabled = false,
   debounceMs = 500,
   autoSave = false,
-}: InlineEditableTextProps) {
+}, ref) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useImperativeHandle(ref, () => ({ startEditing: () => setIsEditing(true) }), []);
 
   useEffect(() => {
     if (!isEditing) {
@@ -196,6 +211,6 @@ export function InlineEditableText({
       )}
     </div>
   );
-}
+});
 
 export default InlineEditableText;
