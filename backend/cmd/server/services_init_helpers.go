@@ -31,6 +31,7 @@ func initializeFileService(cfg *config.Config) *fileservice.Service {
 		AccessKey:      cfg.Storage.AccessKey,
 		SecretKey:      cfg.Storage.SecretKey,
 		UseSSL:         cfg.Storage.UseSSL,
+		PublicUseSSL:   cfg.Storage.PublicUseSSL,
 		UsePathStyle:   cfg.Storage.UsePathStyle,
 	})
 	if err != nil {
@@ -76,6 +77,7 @@ func initializeExtensionServices(cfg *config.Config, db *gorm.DB) (*extensionser
 		AccessKey:      cfg.Storage.AccessKey,
 		SecretKey:      cfg.Storage.SecretKey,
 		UseSSL:         cfg.Storage.UseSSL,
+		PublicUseSSL:   cfg.Storage.PublicUseSSL,
 		UsePathStyle:   cfg.Storage.UsePathStyle,
 	})
 	if err != nil {
@@ -126,6 +128,7 @@ func initializeSupportTicketService(cfg *config.Config, db *gorm.DB) *supporttic
 		AccessKey:      cfg.Storage.AccessKey,
 		SecretKey:      cfg.Storage.SecretKey,
 		UseSSL:         cfg.Storage.UseSSL,
+		PublicUseSSL:   cfg.Storage.PublicUseSSL,
 		UsePathStyle:   cfg.Storage.UsePathStyle,
 	})
 	if err != nil {
@@ -146,6 +149,7 @@ func initializeLogUploadStorage(cfg *config.Config) storage.Storage {
 		AccessKey:      cfg.Storage.AccessKey,
 		SecretKey:      cfg.Storage.SecretKey,
 		UseSSL:         cfg.Storage.UseSSL,
+		PublicUseSSL:   cfg.Storage.PublicUseSSL,
 		UsePathStyle:   cfg.Storage.UsePathStyle,
 	})
 	if err != nil {

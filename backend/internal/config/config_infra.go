@@ -31,6 +31,7 @@ type StorageConfig struct {
 	AccessKey      string   // Access key ID
 	SecretKey      string   // Secret access key
 	UseSSL         bool     // Use HTTPS
+	PublicUseSSL   bool     // Use HTTPS in presigned public URLs
 	UsePathStyle   bool     // Use path-style URLs (required for MinIO)
 	MaxFileSize    int64    // Max file size in MB
 	AllowedTypes   []string // Allowed MIME types

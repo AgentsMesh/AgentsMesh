@@ -219,3 +219,53 @@ func BenchmarkNewS3Storage(b *testing.B) {
 		_, _ = NewS3Storage(cfg)
 	}
 }
+
+func TestNewS3Storage_PublicUseSSLSplit(t *testing.T) {
+	cfg := S3Config{
+		Endpoint:       "minio:9000",
+		PublicEndpoint: "storage.example.com:8443",
+		Region:         "us-east-1",
+		Bucket:         "test-bucket",
+		AccessKey:      "key",
+		SecretKey:      "secret",
+		UseSSL:         false,
+		PublicUseSSL:   true,
+		UsePathStyle:   true,
+	}
+
+	storage, err := NewS3Storage(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if storage.endpoint != "http://minio:9000" {
+		t.Errorf("expected internal endpoint 'http://minio:9000', got %s", storage.endpoint)
+	}
+	if storage.publicEndpoint != "https://storage.example.com:8443" {
+		t.Errorf("expected public endpoint 'https://storage.example.com:8443', got %s", storage.publicEndpoint)
+	}
+	if storage.publicPresign == nil {
+		t.Error("expected dedicated public presign client for differing endpoints")
+	}
+}
+
+func TestNewS3Storage_PublicUseSSLDefaultsOff(t *testing.T) {
+	cfg := S3Config{
+		Endpoint:       "minio:9000",
+		PublicEndpoint: "192.0.2.10:9000",
+		Region:         "us-east-1",
+		Bucket:         "test-bucket",
+		AccessKey:      "key",
+		SecretKey:      "secret",
+		UseSSL:         false,
+		PublicUseSSL:   false,
+		UsePathStyle:   true,
+	}
+
+	storage, err := NewS3Storage(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if storage.publicEndpoint != "http://192.0.2.10:9000" {
+		t.Errorf("expected public endpoint 'http://192.0.2.10:9000', got %s", storage.publicEndpoint)
+	}
+}

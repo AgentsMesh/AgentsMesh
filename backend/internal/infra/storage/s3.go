@@ -18,6 +18,7 @@ type S3Config struct {
 	AccessKey      string
 	SecretKey      string
 	UseSSL         bool
+	PublicUseSSL   bool // Scheme for presigned public URLs (may differ from UseSSL when only the public hop is TLS-terminated)
 	UsePathStyle   bool // Use path-style URLs (required for MinIO)
 }
 
@@ -108,7 +109,7 @@ func buildPublicPresign(cfg S3Config, endpointURL string) (string, string, *s3.P
 	}
 
 	scheme := "http"
-	if cfg.UseSSL {
+	if cfg.PublicUseSSL {
 		scheme = "https"
 	}
 	publicEndpointURL = fmt.Sprintf("%s://%s", scheme, cfg.PublicEndpoint)

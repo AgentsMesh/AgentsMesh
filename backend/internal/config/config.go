@@ -117,6 +117,7 @@ func Load() (*Config, error) {
 			AccessKey:      getEnv("STORAGE_ACCESS_KEY", ""),
 			SecretKey:      getEnv("STORAGE_SECRET_KEY", ""),
 			UseSSL:         getEnvBool("STORAGE_USE_SSL", true),
+			PublicUseSSL:   getEnvBool("STORAGE_PUBLIC_USE_SSL", getEnvBool("STORAGE_USE_SSL", true)),
 			UsePathStyle:   getEnvBool("STORAGE_USE_PATH_STYLE", false),
 			MaxFileSize:    int64(getEnvInt("STORAGE_MAX_FILE_SIZE", 10)),
 			AllowedTypes:   getEnvList("STORAGE_ALLOWED_TYPES", []string{"image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"}),
