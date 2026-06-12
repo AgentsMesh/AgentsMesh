@@ -26,11 +26,11 @@ export function ProgressTab({ thinking }: ProgressTabProps) {
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">{progress.summary || "Task Progress"}</span>
-          {progress.percent > 0 && (
+          {(progress.percent ?? 0) > 0 && (
             <span className="text-sm font-medium">{progress.percent}%</span>
           )}
         </div>
-        {progress.percent > 0 && <Progress value={progress.percent} className="h-2" />}
+        {(progress.percent ?? 0) > 0 && <Progress value={progress.percent} className="h-2" />}
       </div>
 
       {/* Completed Steps */}

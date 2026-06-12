@@ -63,7 +63,7 @@ func dispatchACPRequest(msg *acp.JSONRPCMessage, state *runtimeState, scn scenar
 	}
 	switch msg.Method {
 	case "initialize":
-		return state.writer.WriteResponse(id, initializeResult(), nil)
+		return state.writer.WriteResponse(id, initializeResult(scn), nil)
 	case "session/new":
 		return state.writer.WriteResponse(id, sessionNewResult(), nil)
 	case "session/control_request":
@@ -89,14 +89,18 @@ func dispatchACPRequest(msg *acp.JSONRPCMessage, state *runtimeState, scn scenar
 	}
 }
 
-func initializeResult() map[string]any {
+func initializeResult(scn scenario) map[string]any {
+	// AgentsMesh-specific capability advertisement. ACPTransport reads
+	// agentsmeshExtensions to decide control_request support + permission modes;
+	// other agents that don't ship the extension simply omit the field.
+	ext := map[string]any{"controlRequest": true}
+	if len(scn.permissionModes) > 0 {
+		ext["permissionModes"] = scn.permissionModes
+	}
 	return map[string]any{
-		"protocol_version": "2025-01-01",
-		"capabilities":     map[string]any{"permissions": true, "streaming": true},
-		// AgentsMesh-specific capability advertisement. ACPTransport reads
-		// this to decide whether to attempt session/control_request at all;
-		// other agents that don't ship the extension simply omit the field.
-		"agentsmeshExtensions": map[string]any{"controlRequest": true},
+		"protocol_version":     "2025-01-01",
+		"capabilities":         map[string]any{"permissions": true, "streaming": true},
+		"agentsmeshExtensions": ext,
 	}
 }
 

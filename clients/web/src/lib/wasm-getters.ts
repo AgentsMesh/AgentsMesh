@@ -65,6 +65,7 @@ export function registerAll(client: WasmApiClient, authManager: WasmAuthManager)
     channelState: client.get_channel_state(),
     loopState: client.get_loop_state(),
     acpManager: client.get_acp_manager(),
+    loopalManager: client.get_loopal_manager(),
     repoState: client.get_repo_state(),
     autopilotState: client.get_autopilot_state(),
     relayManager: new WasmRelayManager(),
@@ -86,7 +87,7 @@ export {
   getUserCredentialService, getEnvBundleService, getOrgApiService, getAgentService,
   getTicketRelationsService, getFileService, getSupportTicketService,
   getAuthConnectService, getRunnerState, getMeshState, getTicketState,
-  getChannelState, getLoopState, getAcpManager,
+  getChannelState, getLoopState, getAcpManager, getLoopalManager,
   getRepoState,
   getAutopilotState, getRelayManager, getBlockstoreService,
 } from "@agentsmesh/service-runtime";

@@ -10,6 +10,7 @@ use crate::autopilot_state::AutopilotState;
 use crate::channel_state::ChannelState;
 use crate::event_dispatch;
 use crate::loop_state::LoopState;
+use crate::loopal_session::LoopalSessionManager;
 use crate::mesh_state::MeshState;
 use crate::pod_state::PodState;
 use crate::repo_state::RepoState;
@@ -54,6 +55,7 @@ pub struct AppState {
     pub mesh: MeshState,
     pub autopilot: AutopilotState,
     pub acp: AcpSessionManager,
+    pub loopal: LoopalSessionManager,
     pub repo: RepoState,
 
     /// Toast notifications queued by dispatch (loop_run:warning,
@@ -89,6 +91,7 @@ impl AppState {
             mesh: MeshState::default(),
             autopilot: AutopilotState::default(),
             acp: AcpSessionManager::new(),
+            loopal: LoopalSessionManager::new(),
             repo: RepoState::new(),
             pending_toasts: Vec::new(),
             pending_browser_notifications: Vec::new(),
@@ -109,6 +112,7 @@ impl AppState {
             mesh: MeshState::default(),
             autopilot: AutopilotState::default(),
             acp: AcpSessionManager::new(),
+            loopal: LoopalSessionManager::new(),
             repo: RepoState::with_storage(backend),
             pending_toasts: Vec::new(),
             pending_browser_notifications: Vec::new(),

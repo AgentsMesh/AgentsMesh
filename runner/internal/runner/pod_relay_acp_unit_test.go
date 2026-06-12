@@ -2,8 +2,11 @@ package runner
 
 import (
 	"encoding/json"
+	"io"
+	"log/slog"
 	"testing"
 
+	"github.com/anthropics/agentsmesh/runner/internal/acp"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/aggregator"
 )
@@ -124,6 +127,51 @@ func TestSendAcpViaRelay_MarshalError(t *testing.T) {
 	sendAcpViaRelay(pod, "bad", "", make(chan int))
 	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 0 {
 		t.Error("should not send when marshal fails")
+	}
+}
+
+// TestLoopalExtToRelay_EndToEnd wires the OnLoopalExt callback exactly as
+// wireAndStartACPPod does, then drives a `_loopal/bgTask.spawned` notification
+// through the real ACP handler. It asserts the relay carries a flat
+// `loopal.bgTask.spawned` event — i.e. the L1→L2 path (Loopal extension →
+// runner transparent forward → relay) holds at runtime, not just at compile.
+func TestLoopalExtToRelay_EndToEnd(t *testing.T) {
+	pod := &Pod{PodKey: "pod-loopal"}
+	pod.Relay = NewACPPodRelay("pod-loopal", nil, nil, nil)
+	mc := relay.NewMockClient("wss://relay.example.com")
+	mc.SetConnected(true)
+	pod.SetRelayClient(mc)
+
+	callbacks := acp.EventCallbacks{
+		OnLoopalExt: func(sessionID, kind string, data json.RawMessage) {
+			sendAcpViaRelay(pod, "loopal."+kind, sessionID, data)
+		},
+	}
+	h := acp.NewHandler(callbacks, slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	params, _ := json.Marshal(map[string]any{
+		"sessionId": "sess-1",
+		"data": map[string]any{
+			"id": "bg1", "description": "npm test", "created_at_unix_ms": 1,
+		},
+	})
+	h.HandleNotification("_loopal/bgTask.spawned", params)
+
+	if mc.CountSentByType(relay.MsgTypeAcpEvent) != 1 {
+		t.Fatalf("expected 1 relay event, got %d", mc.CountSentByType(relay.MsgTypeAcpEvent))
+	}
+	var envelope map[string]any
+	if err := json.Unmarshal(mc.SentMessages[0].Payload, &envelope); err != nil {
+		t.Fatalf("payload not valid JSON: %v", err)
+	}
+	if envelope["type"] != "loopal.bgTask.spawned" {
+		t.Errorf("type = %v, want loopal.bgTask.spawned", envelope["type"])
+	}
+	if envelope["id"] != "bg1" {
+		t.Errorf("id = %v, want bg1 (flattened to top level)", envelope["id"])
+	}
+	if envelope["sessionId"] != "sess-1" {
+		t.Errorf("sessionId = %v, want sess-1", envelope["sessionId"])
 	}
 }
 

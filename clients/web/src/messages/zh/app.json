@@ -5,6 +5,9 @@
       "acceptEdits": { "label": "允许编辑", "desc": "自动允许文件编辑" },
       "default": { "label": "默认", "desc": "逐工具确认" },
       "dontAsk": { "label": "不询问", "desc": "未在白名单则拒绝" },
+      "bypass": { "label": "全自动", "desc": "自动通过所有操作" },
+      "ask_dangerous": { "label": "危险确认", "desc": "仅危险操作需确认" },
+      "ask_any_write": { "label": "写入确认", "desc": "任何写操作均需确认" },
       "unknown": { "label": "—", "desc": "运行器尚未同步当前模式" }
     },
     "activityStream": {
@@ -545,5 +548,39 @@
     "goBack": "返回",
     "reload": "刷新",
     "home": "回到首页"
+  },
+  "loopal": {
+    "activity": { "heading": "活动" },
+    "status": {
+      "title": "Loopal",
+      "thinking": "思考：{value}",
+      "topology": "拓扑",
+      "mode": { "act": "执行", "plan": "计划" },
+      "goal": { "pause": "暂停", "resume": "继续", "complete": "完成", "reopen": "重新打开", "clear": "清除" }
+    },
+    "thinking": { "auto": "自动", "off": "关闭", "low": "低", "med": "中", "high": "高", "max": "最高" },
+    "dock": {
+      "tabs": { "bgShell": "后台 Shell", "cron": "Cron", "tasks": "任务", "agents": "智能体", "mcp": "MCP" },
+      "agents": { "expand": "展开拓扑" },
+      "bgShell": { "kill": "终止", "killConfirmTitle": "终止后台任务？" },
+      "cron": { "due": "已到期", "inMinutes": "{m} 分钟后", "inHours": "{h} 小时后", "inDays": "{d} 天后", "recurring": "周期", "once": "单次", "durable": "持久", "delete": "删除", "deleteConfirmTitle": "删除 Cron 任务？" },
+      "tasks": { "blockedBy": "被 {count} 项阻塞" },
+      "mcp": { "refresh": "刷新", "toolCount": "{count} 个工具", "reconnect": "重新连接", "disconnect": "断开", "disconnectConfirmTitle": "断开 MCP 服务器？" }
+    },
+    "prompt": {
+      "placeholder": "向 Loopal 发送消息，或输入 / 调用命令",
+      "interrupt": "中断",
+      "rewindTitle": "回退到指定轮次", "rewindPlaceholder": "轮次 #",
+      "resumeTitle": "恢复会话", "resumePlaceholder": "会话 ID",
+      "model": "模型", "thinking": "思考"
+    },
+    "commands": {
+      "act": "切换到执行模式", "plan": "切换到计划模式", "model": "模型与思考强度", "thinking": "思考强度",
+      "compact": "压缩会话上下文", "clear": "清除所有会话历史", "rewind": "回退到较早的轮次",
+      "resume": "按 ID 恢复会话", "suspend": "挂起 Cron / 唤醒", "unsuspend": "恢复 Cron / 唤醒",
+      "goal": "设定线程目标（/goal <目标>）", "mcpRefresh": "刷新 MCP 状态",
+      "goalPause": "暂停目标", "goalResume": "继续目标", "goalComplete": "将目标标记为完成", "goalReopen": "重新打开目标", "goalClear": "清除目标"
+    },
+    "topology": { "sheetTitle": "智能体拓扑", "root": "根" }
   }
 }

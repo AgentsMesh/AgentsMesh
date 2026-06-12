@@ -49,9 +49,9 @@ export function ThinkingTab({ thinking }: ThinkingTabProps) {
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">Confidence:</span>
         <div className="flex-1 max-w-[120px]">
-          <Progress value={thinking.confidence * 100} className="h-1.5" />
+          <Progress value={(thinking.confidence ?? 0) * 100} className="h-1.5" />
         </div>
-        <span className="text-xs font-medium">{Math.round(thinking.confidence * 100)}%</span>
+        <span className="text-xs font-medium">{Math.round((thinking.confidence ?? 0) * 100)}%</span>
       </div>
 
       {/* Action */}

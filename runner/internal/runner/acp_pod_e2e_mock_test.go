@@ -51,21 +51,28 @@ func runMockACPAgent() {
 		switch msg.Method {
 		case "initialize":
 			writer.WriteResponse(id, map[string]any{
-				"protocol_version": "2025-01-01",
-				"capabilities":     map[string]any{"permissions": true},
+				"protocol_version":     "2025-01-01",
+				"capabilities":         map[string]any{"permissions": true},
+				"agentsmeshExtensions": map[string]any{"controlRequest": true},
 			}, nil)
 		case "session/new":
 			writer.WriteResponse(id, map[string]any{
 				"sessionId": "mock-session-001",
 			}, nil)
+		case "session/control_request":
+			handleMockLoopalControl(writer, id, msg.Params)
 		case "session/prompt":
-			writer.WriteNotification("session/update", map[string]any{
-				"sessionId": "mock-session-001",
-				"update": map[string]any{
-					"sessionUpdate": "agent_message_chunk",
-					"content":       map[string]any{"type": "text", "text": "Hello from runner mock"},
-				},
-			})
+			if os.Getenv("ACP_MOCK_LOOPAL") == "1" {
+				emitLoopalSignals(writer)
+			} else {
+				writer.WriteNotification("session/update", map[string]any{
+					"sessionId": "mock-session-001",
+					"update": map[string]any{
+						"sessionUpdate": "agent_message_chunk",
+						"content":       map[string]any{"type": "text", "text": "Hello from runner mock"},
+					},
+				})
+			}
 			writer.WriteResponse(id, map[string]any{"stopReason": "end_turn"}, nil)
 		default:
 			writer.WriteResponse(id, nil, &acp.JSONRPCError{

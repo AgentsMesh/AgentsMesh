@@ -37,6 +37,51 @@ fn clear_session_removes_data() {
     assert!(mgr.get_session("pod1").is_none());
 }
 
+#[test]
+fn configuration_serde_roundtrip_preserves_capability() {
+    let json = r#"{"permission_mode":"bypass","model":"","supported_permission_modes":["bypass","ask_dangerous","ask_any_write"]}"#;
+    let cfg: AcpConfiguration = serde_json::from_str(json).unwrap();
+    assert_eq!(
+        cfg.supported_permission_modes,
+        vec!["bypass", "ask_dangerous", "ask_any_write"]
+    );
+    let out = serde_json::to_string(&cfg).unwrap();
+    assert!(out.contains("supported_permission_modes"), "got: {out}");
+}
+
+#[test]
+fn update_configuration_preserves_capability_across_delta() {
+    let mut mgr = AcpSessionManager::new();
+    // Snapshot seeds capability + initial mode.
+    mgr.update_configuration(
+        "p",
+        AcpConfiguration {
+            permission_mode: "bypass".into(),
+            model: String::new(),
+            supported_permission_modes: vec![
+                "bypass".into(),
+                "ask_dangerous".into(),
+                "ask_any_write".into(),
+            ],
+        },
+    );
+    // A configChanged delta (mode only, empty capability) must not wipe it.
+    mgr.update_configuration(
+        "p",
+        AcpConfiguration {
+            permission_mode: "ask_dangerous".into(),
+            model: String::new(),
+            supported_permission_modes: Vec::new(),
+        },
+    );
+    let cfg = &mgr.get_session("p").unwrap().configuration;
+    assert_eq!(cfg.permission_mode, "ask_dangerous");
+    assert_eq!(
+        cfg.supported_permission_modes,
+        vec!["bypass", "ask_dangerous", "ask_any_write"]
+    );
+}
+
 // --- Content chunk streaming ---
 
 #[test]

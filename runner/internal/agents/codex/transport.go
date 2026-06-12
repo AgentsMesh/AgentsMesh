@@ -163,6 +163,8 @@ func (t *transport) SendControlRequest(_ string, _ string, _ map[string]any) (ma
 	return nil, acp.ErrControlNotSupported
 }
 
+func (t *transport) SupportedPermissionModes() []string { return nil }
+
 func (t *transport) ReadLoop(ctx context.Context) {
 	for {
 		msg, err := t.reader.ReadMessage()

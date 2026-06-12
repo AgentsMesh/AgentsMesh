@@ -121,7 +121,7 @@ export function RealtimeProvider({ children, onEvent }: RealtimeProviderProps) {
           : spec.kind === "error" ? toast.error
           : spec.kind === "success" ? toast.success
           : toast.info;
-        const params = (spec.title_params as Record<string, unknown>) ?? {};
+        const params = (spec.title_params as Record<string, string | number | Date>) ?? {};
         fn(t(spec.title_key as Parameters<typeof t>[0], params), {
           description: spec.description,
           duration: spec.duration_ms > 0 ? spec.duration_ms : undefined,

@@ -26,7 +26,7 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 		return
 	}
 	var flat map[string]any
-	if err := json.Unmarshal(dataBytes, &flat); err != nil {
+	if err := json.Unmarshal(dataBytes, &flat); err != nil || flat == nil {
 		flat = map[string]any{}
 	}
 	flat["type"] = eventType
@@ -98,6 +98,9 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 			OnConfigChange: func(sessionID string, update acp.ConfigUpdate) {
 				sendAcpViaRelay(pod, "configChanged", sessionID, update)
 			},
+			OnLoopalExt: func(sessionID, kind string, data json.RawMessage) {
+				sendAcpViaRelay(pod, "loopal."+kind, sessionID, data)
+			},
 			OnExit: func(exitCode int) {
 				h.handleACPExit(podKey, exitCode)
 			},
@@ -134,7 +137,10 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// Broadcast seeded configuration so late-joining subscribers (and the
 	// snapshot path) see the initial mode/model rather than empty defaults.
 	if initialCfg := acpClient.Configuration(); initialCfg.PermissionMode != "" || initialCfg.Model != "" {
-		sendAcpViaRelay(pod, "configChanged", "", acp.ConfigUpdate(initialCfg))
+		sendAcpViaRelay(pod, "configChanged", "", acp.ConfigUpdate{
+			PermissionMode: initialCfg.PermissionMode,
+			Model:          initialCfg.Model,
+		})
 	}
 
 	// Create a new ACP session with MCP servers config

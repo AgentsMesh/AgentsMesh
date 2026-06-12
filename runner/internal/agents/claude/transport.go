@@ -146,4 +146,6 @@ func (t *transport) SendControlRequest(_ string, subtype string, payload map[str
 	return t.outgoing.sendAndWait(subtype, payload, t.writeStdin)
 }
 
+func (t *transport) SupportedPermissionModes() []string { return nil }
+
 func (t *transport) Close() {}

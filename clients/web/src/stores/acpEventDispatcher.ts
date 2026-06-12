@@ -151,10 +151,17 @@ function dispatchSnapshot(
     }
   }
   if (data.configuration && typeof data.configuration === "object") {
-    const cfg = data.configuration as { permissionMode?: string; model?: string };
+    const cfg = data.configuration as {
+      permissionMode?: string;
+      model?: string;
+      supportedPermissionModes?: string[];
+    };
     store.updateConfiguration(podKey, {
       permissionMode: cfg.permissionMode,
       model: cfg.model,
+      supportedPermissionModes: Array.isArray(cfg.supportedPermissionModes)
+        ? cfg.supportedPermissionModes
+        : [],
     });
   }
 }

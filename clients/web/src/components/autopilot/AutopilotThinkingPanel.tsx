@@ -127,9 +127,9 @@ export function AutopilotThinkingPanel({
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">Confidence:</span>
             <div className="flex-1 max-w-[100px]">
-              <Progress value={thinking.confidence * 100} className="h-1.5" />
+              <Progress value={(thinking.confidence ?? 0) * 100} className="h-1.5" />
             </div>
-            <span className="font-medium">{Math.round(thinking.confidence * 100)}%</span>
+            <span className="font-medium">{Math.round((thinking.confidence ?? 0) * 100)}%</span>
           </div>
 
           {/* Action */}
@@ -157,16 +157,16 @@ export function AutopilotThinkingPanel({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">{thinking.progress.summary}</span>
-                {thinking.progress.percent > 0 && (
+                {(thinking.progress.percent ?? 0) > 0 && (
                   <span className="font-medium">{thinking.progress.percent}%</span>
                 )}
               </div>
-              {thinking.progress.percent > 0 && (
+              {(thinking.progress.percent ?? 0) > 0 && (
                 <Progress value={thinking.progress.percent} className="h-1.5" />
               )}
 
               {/* Completed Steps */}
-              {thinking.progress.completed_steps.length > 0 && (
+              {thinking.progress.completed_steps && thinking.progress.completed_steps.length > 0 && (
                 <div className="text-xs space-y-1">
                   <span className="text-muted-foreground">Completed:</span>
                   <ul className="list-disc list-inside text-green-600">
@@ -178,7 +178,7 @@ export function AutopilotThinkingPanel({
               )}
 
               {/* Remaining Steps */}
-              {thinking.progress.remaining_steps.length > 0 && (
+              {thinking.progress.remaining_steps && thinking.progress.remaining_steps.length > 0 && (
                 <div className="text-xs space-y-1">
                   <span className="text-muted-foreground">Remaining:</span>
                   <ul className="list-disc list-inside text-muted-foreground">

@@ -51,6 +51,12 @@ COPY --chmod=0755 runner-binary /usr/local/bin/agentsmesh-runner
 # build_mock_agent_binary in lib/host_services.sh for the cross-compile.
 COPY --chmod=0755 e2e-mock-agent-binary /usr/local/bin/e2e-mock-agent
 
+# Cross-compiled real Loopal (linux/amd64) for hands-on Loopal control-console
+# experience — `EXECUTABLE loopal` in the loopal builtin AgentFile resolves to
+# this. Built locally via `bazel build //:loopal --config=linux-x86` in the
+# Loopal repo, copied to deploy/dev/loopal-binary.
+COPY --chmod=0755 loopal-binary /usr/local/bin/loopal
+
 USER runner
 WORKDIR /app
 ENTRYPOINT ["/usr/local/bin/runner-entrypoint.sh"]

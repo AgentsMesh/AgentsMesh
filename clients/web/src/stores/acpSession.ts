@@ -140,6 +140,11 @@ export const useAcpSessionStore = create<AcpSessionStore>(() => ({
       configJson: JSON.stringify({
         permission_mode: configuration.permissionMode ?? "",
         model: configuration.model ?? "",
+        // Capability flows via snapshot only; configChanged omits it so core's
+        // merge guard preserves the seeded value (empty = "unchanged").
+        ...(configuration.supportedPermissionModes !== undefined
+          ? { supported_permission_modes: configuration.supportedPermissionModes }
+          : {}),
       }),
     });
     mgr().update_configuration(toBinary(UpdateConfigurationRequestSchema, req));

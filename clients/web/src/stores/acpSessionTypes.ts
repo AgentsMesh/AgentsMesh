@@ -4,7 +4,7 @@ export interface AcpPlanStep { title: string; status: string }
 export interface AcpThinking { text: string; timestamp: number; complete?: boolean }
 export interface AcpPermissionRequest { requestId: string; toolName: string; argumentsJson: string; description: string }
 export interface AcpLog { level: string; message: string; timestamp: number }
-export interface AcpConfiguration { permissionMode: string; model: string }
+export interface AcpConfiguration { permissionMode: string; model: string; supportedPermissionModes: string[] }
 
 export interface AcpSessionState {
   messages: AcpContentChunk[]; toolCalls: Record<string, AcpToolCall>; plan: AcpPlanStep[];
@@ -12,7 +12,7 @@ export interface AcpSessionState {
   configuration: AcpConfiguration;
 }
 
-export const EMPTY_CONFIGURATION: AcpConfiguration = { permissionMode: "", model: "" };
+export const EMPTY_CONFIGURATION: AcpConfiguration = { permissionMode: "", model: "", supportedPermissionModes: [] };
 
 export const EMPTY_SESSION: AcpSessionState = {
   messages: [], toolCalls: {}, plan: [], thinkings: [], logs: [], state: "idle", pendingPermissions: [],
@@ -56,12 +56,13 @@ function configurationFromWasm(raw: any): AcpConfiguration {
   return {
     permissionMode: typeof raw.permission_mode === "string" ? raw.permission_mode : "",
     model: typeof raw.model === "string" ? raw.model : "",
+    supportedPermissionModes: Array.isArray(raw.supported_permission_modes) ? raw.supported_permission_modes : [],
   };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function configurationToWasmObj(c: AcpConfiguration): Record<string, any> {
-  return { permission_mode: c.permissionMode, model: c.model };
+  return { permission_mode: c.permissionMode, model: c.model, supported_permission_modes: c.supportedPermissionModes };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

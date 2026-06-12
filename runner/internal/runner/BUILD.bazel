@@ -201,5 +201,25 @@ go_test(
 # to populate launch_command) — a fixture this package alone cannot provide.
 # acp_pod_e2e_mock_test.go was updated to initialize processmgr in its
 # TestMain so that if the suite is ever wired up, it will not crash with
-# ErrManagerNotInitialized. Wiring the target plus a backend fixture is a
+# ErrManagerNotInitialized. Wiring the full suite plus a backend fixture is a
 # separate follow-up; tracked outside this PR.
+#
+# Exception: the Loopal control-panel e2e (mock agent → ACPClient → OnLoopalExt
+# / control round-trip) needs NO backend fixture — it wires ACPClient directly
+# — so it IS wired here as a `manual` target. It execs the test binary as the
+# mock agent, hence opt-in rather than part of `bazel test //...`.
+go_test(
+    name = "acp_loopal_e2e_test",
+    srcs = [
+        "acp_pod_e2e_loopal_test.go",
+        "acp_pod_e2e_mock_test.go",
+    ],
+    embed = [":runner"],
+    embedsrcs = ["testdata/loopal_panel_signals.json"],
+    gotags = ["integration"],
+    tags = ["manual"],
+    deps = [
+        "//runner/internal/acp",
+        "//runner/internal/processmgr",
+    ],
+)

@@ -212,11 +212,30 @@ func (c *ACPClient) Configuration() Configuration {
 	return c.configuration
 }
 
-// SeedConfiguration sets the initial configuration captured at pod creation,
-// before any control_request flows. Callers must invoke OnConfigChange
-// themselves to broadcast the seeded values; this method only writes state.
+// SupportedPermissionModes returns the permission-mode wire values the agent
+// advertised at initialize (nil if none). pod_io_acp validates
+// set_permission_mode against this instead of a hardcoded Claude allowlist.
+func (c *ACPClient) SupportedPermissionModes() []string {
+	c.configMu.RLock()
+	defer c.configMu.RUnlock()
+	return c.configuration.SupportedPermissionModes
+}
+
+// SeedConfiguration merges the initial configuration captured at pod creation
+// into the live Configuration, before any control_request flows. Field-level
+// (empty = unchanged) so a later capture (client.go Start writing
+// SupportedPermissionModes) isn't clobbered regardless of call ordering.
+// Callers must invoke OnConfigChange themselves to broadcast the seeded values.
 func (c *ACPClient) SeedConfiguration(cfg Configuration) {
 	c.configMu.Lock()
 	defer c.configMu.Unlock()
-	c.configuration = cfg
+	if cfg.PermissionMode != "" {
+		c.configuration.PermissionMode = cfg.PermissionMode
+	}
+	if cfg.Model != "" {
+		c.configuration.Model = cfg.Model
+	}
+	if len(cfg.SupportedPermissionModes) > 0 {
+		c.configuration.SupportedPermissionModes = cfg.SupportedPermissionModes
+	}
 }

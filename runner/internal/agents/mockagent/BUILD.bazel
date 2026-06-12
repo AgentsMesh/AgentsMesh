@@ -17,6 +17,7 @@ go_library(
         "scenario_basic.go",
         "scenario_config.go",
         "scenario_errors.go",
+        "scenario_loopal.go",
         "scenario_permission.go",
         "scenario_tool.go",
         "scenarios.go",

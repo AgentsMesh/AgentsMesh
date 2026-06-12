@@ -68,6 +68,9 @@ type ACPClient struct {
 	logsMu  sync.RWMutex
 	maxLogs int
 
+	// Loopal control-panel accumulator for loopal.snapshot on resubscribe.
+	loopal *loopalState
+
 	// Current configuration (permission_mode, model) for snapshots and broadcast.
 	// Writes go through applyConfiguration (callback-wrap) or SeedConfiguration (init).
 	configuration Configuration
@@ -104,6 +107,7 @@ func NewClient(cfg ClientConfig) *ACPClient {
 		maxThinkings: 200,
 		logs:         make([]LogEntry, 0, 64),
 		maxLogs:      200,
+		loopal:       newLoopalState(),
 		toolCalls:    make(map[string]*ToolCallSnapshot),
 		ctx:          ctx,
 		cancel:       cancel,
@@ -193,6 +197,15 @@ func (c *ACPClient) Start() error {
 		c.sessionMu.Lock()
 		c.sessionID = sessionID
 		c.sessionMu.Unlock()
+	}
+
+	// Capture the agent's advertised permission-mode capability so snapshots
+	// carry it to the frontend selector. SeedConfiguration ran before Start and
+	// writes different fields, so this addition isn't clobbered.
+	if modes := c.transport.SupportedPermissionModes(); len(modes) > 0 {
+		c.configMu.Lock()
+		c.configuration.SupportedPermissionModes = modes
+		c.configMu.Unlock()
 	}
 
 	c.setState(StateIdle)

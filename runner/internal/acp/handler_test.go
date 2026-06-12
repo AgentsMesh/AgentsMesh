@@ -54,6 +54,121 @@ func TestHandler_ContentUpdate(t *testing.T) {
 	}
 }
 
+func TestHandler_LoopalExtStripsPrefix(t *testing.T) {
+	var gotSession, gotKind string
+	var gotData json.RawMessage
+	h := NewHandler(EventCallbacks{
+		OnLoopalExt: func(sessionID, kind string, data json.RawMessage) {
+			gotSession, gotKind, gotData = sessionID, kind, data
+		},
+	}, testLogger())
+
+	params := mustMarshal(t, map[string]any{
+		"sessionId": "sess-1",
+		"data":      map[string]any{"id": "bg1", "description": "npm test"},
+	})
+	h.HandleNotification("_loopal/bgTask.spawned", params)
+
+	if gotKind != "bgTask.spawned" {
+		t.Errorf("kind = %q, want bgTask.spawned", gotKind)
+	}
+	if gotSession != "sess-1" {
+		t.Errorf("sessionID = %q, want sess-1", gotSession)
+	}
+	var d struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(gotData, &d); err != nil || d.ID != "bg1" {
+		t.Errorf("data = %s, want id=bg1", gotData)
+	}
+}
+
+func TestHandler_UnknownNotificationDropped(t *testing.T) {
+	called := false
+	h := NewHandler(EventCallbacks{
+		OnLoopalExt: func(_, _ string, _ json.RawMessage) { called = true },
+	}, testLogger())
+	h.HandleNotification("some/unknown", mustMarshal(t, map[string]any{}))
+	if called {
+		t.Error("OnLoopalExt should not fire for non-_loopal notifications")
+	}
+}
+
+func TestHandler_LoopalExtDropsSessionLevel(t *testing.T) {
+	called := false
+	h := NewHandler(EventCallbacks{
+		OnLoopalExt: func(_, _ string, _ json.RawMessage) { called = true },
+	}, testLogger())
+	// permission_resolved carries no `data` field; forwarding it would push a
+	// nil RawMessage into sendAcpViaRelay and panic on the nil-map flatten.
+	// It must be dropped by the panel-kind allowlist.
+	h.HandleNotification("_loopal/permission_resolved", mustMarshal(t, map[string]any{
+		"sessionId": "s1", "toolCallId": "tc1",
+	}))
+	if called {
+		t.Error("session-level _loopal extension must not reach OnLoopalExt")
+	}
+}
+
+func TestLoopalPanelKinds_MatchesProtocol(t *testing.T) {
+	// Pin the allowlist to Loopal's panel.rs emitters. A typo here (or a drift
+	// from panel.rs) would silently drop a control-panel signal with no error
+	// log, so guard the exact set.
+	expected := []string{
+		"bgTask.spawned", "bgTask.output", "bgTask.completed",
+		"crons", "tasks", "mcp", "topology.spawn", "goal",
+		"mode", "thinking", "model",
+	}
+	for _, k := range expected {
+		if !loopalPanelKinds[k] {
+			t.Errorf("loopalPanelKinds missing %q — Loopal panel signal would be silently dropped", k)
+		}
+	}
+	if len(loopalPanelKinds) != len(expected) {
+		t.Errorf("loopalPanelKinds has %d entries, want %d — an extra entry would forward a non-panel signal", len(loopalPanelKinds), len(expected))
+	}
+}
+
+func TestHandler_PermissionModeRoutesToConfigChange(t *testing.T) {
+	var gotSession string
+	var gotUpdate ConfigUpdate
+	loopalExtCalled := false
+	h := NewHandler(EventCallbacks{
+		OnConfigChange: func(sessionID string, update ConfigUpdate) {
+			gotSession, gotUpdate = sessionID, update
+		},
+		OnLoopalExt: func(_, _ string, _ json.RawMessage) { loopalExtCalled = true },
+	}, testLogger())
+
+	h.HandleNotification("_loopal/permission_mode", mustMarshal(t, map[string]any{
+		"sessionId": "sess-1",
+		"data":      map[string]any{"permission_mode": "ask_dangerous"},
+	}))
+
+	if gotSession != "sess-1" {
+		t.Errorf("sessionID = %q, want sess-1", gotSession)
+	}
+	if gotUpdate.PermissionMode != "ask_dangerous" {
+		t.Errorf("PermissionMode = %q, want ask_dangerous", gotUpdate.PermissionMode)
+	}
+	if loopalExtCalled {
+		t.Error("permission_mode must route to OnConfigChange, not OnLoopalExt")
+	}
+}
+
+func TestHandler_PermissionModeEmptyIgnored(t *testing.T) {
+	called := false
+	h := NewHandler(EventCallbacks{
+		OnConfigChange: func(_ string, _ ConfigUpdate) { called = true },
+	}, testLogger())
+	h.HandleNotification("_loopal/permission_mode", mustMarshal(t, map[string]any{
+		"sessionId": "s1", "data": map[string]any{},
+	}))
+	if called {
+		t.Error("empty permission_mode must not fire OnConfigChange")
+	}
+}
+
 func TestHandler_ContentUpdate_UserMessage(t *testing.T) {
 	var received []ContentChunk
 	h := NewHandler(EventCallbacks{

@@ -434,5 +434,39 @@
     "error": {
       "createFailed": "Impossible de créer le ticket. Veuillez réessayer."
     }
+  },
+  "loopal": {
+    "activity": { "heading": "Activité" },
+    "status": {
+      "title": "Loopal",
+      "thinking": "Réflexion : {value}",
+      "topology": "Topologie",
+      "mode": { "act": "Agir", "plan": "Planifier" },
+      "goal": { "pause": "Mettre en pause", "resume": "Reprendre", "complete": "Terminer", "reopen": "Rouvrir", "clear": "Effacer" }
+    },
+    "thinking": { "auto": "Auto", "off": "Désactivé", "low": "Faible", "med": "Moyen", "high": "Élevé", "max": "Max" },
+    "dock": {
+      "tabs": { "bgShell": "Shell en arrière-plan", "cron": "Cron", "tasks": "Tâches", "agents": "Agents", "mcp": "MCP" },
+      "agents": { "expand": "Développer la topologie" },
+      "bgShell": { "kill": "Arrêter", "killConfirmTitle": "Arrêter la tâche en arrière-plan ?" },
+      "cron": { "due": "échue", "inMinutes": "dans {m} min", "inHours": "dans {h} h", "inDays": "dans {d} j", "recurring": "récurrente", "once": "unique", "durable": "persistante", "delete": "Supprimer", "deleteConfirmTitle": "Supprimer la tâche cron ?" },
+      "tasks": { "blockedBy": "bloquée par {count}" },
+      "mcp": { "refresh": "actualiser", "toolCount": "{count} outils", "reconnect": "Reconnecter", "disconnect": "Déconnecter", "disconnectConfirmTitle": "Déconnecter le serveur MCP ?" }
+    },
+    "prompt": {
+      "placeholder": "Écrivez à Loopal, ou / pour les commandes",
+      "interrupt": "Interrompre",
+      "rewindTitle": "Revenir au tour", "rewindPlaceholder": "tour #",
+      "resumeTitle": "Reprendre la session", "resumePlaceholder": "id de session",
+      "model": "Modèle", "thinking": "Réflexion"
+    },
+    "commands": {
+      "act": "Passer en mode Agir", "plan": "Passer en mode Planifier", "model": "Modèle et niveau de réflexion", "thinking": "Niveau d'effort de réflexion",
+      "compact": "Compacter le contexte de la conversation", "clear": "Effacer tout l'historique de la conversation", "rewind": "Revenir à un tour antérieur",
+      "resume": "Reprendre une session par id", "suspend": "Suspendre cron / réveil", "unsuspend": "Reprendre cron / réveil",
+      "goal": "Définir un objectif de fil (/goal <objectif>)", "mcpRefresh": "Actualiser le statut MCP",
+      "goalPause": "Mettre l'objectif en pause", "goalResume": "Reprendre l'objectif", "goalComplete": "Marquer l'objectif comme terminé", "goalReopen": "Rouvrir l'objectif", "goalClear": "Effacer l'objectif"
+    },
+    "topology": { "sheetTitle": "Topologie des agents", "root": "racine" }
   }
 }

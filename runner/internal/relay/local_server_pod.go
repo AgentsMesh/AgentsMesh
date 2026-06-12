@@ -23,6 +23,7 @@ func (s *LocalServer) RegisterPod(podKey, expectedToken string) {
 		lane = &localPodLane{
 			expectedTokens: make(map[string]struct{}),
 			handlers:       make(map[byte]func([]byte)),
+			reqHandlers:    make(map[byte]RequestHandler),
 			conns:          make(map[*websocket.Conn]struct{}),
 		}
 		s.pods[podKey] = lane
@@ -53,6 +54,7 @@ func (s *LocalServer) UnregisterPod(podKey string) {
 	}
 	lane.conns = nil
 	lane.handlers = nil
+	lane.reqHandlers = nil
 	lane.expectedTokens = nil
 	lane.mu.Unlock()
 }
@@ -73,20 +75,54 @@ func (s *LocalServer) SetMessageHandler(podKey string, msgType byte, handler fun
 	lane.handlers[msgType] = handler
 }
 
-// Send broadcasts an encoded message to every browser connected for this pod.
-// Returns nil even when there are no listeners — output drops are expected.
-// On per-conn write error we close the conn so the read loop drops it from
-// lane.conns immediately rather than waiting for the next read attempt.
+// SetRequestHandler registers a request/response handler for a message type.
+// Unlike SetMessageHandler (fire-and-forget broadcast), the handler is given a
+// reply func bound to the originating connection, so it answers only that
+// browser. Used for snapshot-on-resubscribe: a late joiner's request must not
+// re-deliver state to already-synced browsers (which would double-apply
+// append-style Loopal bg-task output).
+func (s *LocalServer) SetRequestHandler(podKey string, msgType byte, handler RequestHandler) {
+	lane := s.lookupLane(podKey)
+	if lane == nil {
+		return
+	}
+	lane.mu.Lock()
+	defer lane.mu.Unlock()
+	if lane.reqHandlers == nil {
+		return
+	}
+	lane.reqHandlers[msgType] = handler
+}
+
+// writeFrame writes one pre-encoded frame to a single browser connection,
+// serialized by the lane's writeMu so concurrent Send / reply goroutines never
+// call WriteMessage on the same conn at once (gorilla forbids it).
+func (l *localPodLane) writeFrame(conn *websocket.Conn, frame []byte) error {
+	l.writeMu.Lock()
+	defer l.writeMu.Unlock()
+	_ = conn.SetWriteDeadline(time.Now().Add(localWriteTimeout))
+	return conn.WriteMessage(websocket.BinaryMessage, frame)
+}
+
+// writeConn frames then writes one message to a single connection. Used by the
+// per-connection reply path; broadcast (Send) encodes once and calls writeFrame.
+func (l *localPodLane) writeConn(conn *websocket.Conn, msgType byte, payload []byte) error {
+	return l.writeFrame(conn, EncodeMessage(msgType, payload))
+}
+
+// Send broadcasts a message to every browser connected for this pod. The frame
+// is encoded once and shared (read-only) across conns, avoiding a per-conn
+// re-encode on the hot PTY-output fanout path. Returns nil even when there are
+// no listeners — output drops are expected. On per-conn write error we close the
+// conn so the read loop drops it from lane.conns immediately.
 func (s *LocalServer) Send(podKey string, msgType byte, payload []byte) error {
 	lane := s.lookupLane(podKey)
 	if lane == nil {
 		return nil
 	}
-	encoded := EncodeMessage(msgType, payload)
-	conns := lane.snapshotConns()
-	for _, c := range conns {
-		_ = c.SetWriteDeadline(time.Now().Add(localWriteTimeout))
-		if err := c.WriteMessage(websocket.BinaryMessage, encoded); err != nil {
+	frame := EncodeMessage(msgType, payload)
+	for _, c := range lane.snapshotConns() {
+		if err := lane.writeFrame(c, frame); err != nil {
 			_ = c.Close()
 		}
 	}
@@ -180,9 +216,16 @@ func (s *LocalServer) readLoop(podKey string, lane *localPodLane, conn *websocke
 		msgType := data[0]
 		payload := data[1:]
 		lane.mu.RLock()
+		reqHandler := lane.reqHandlers[msgType]
 		handler := lane.handlers[msgType]
 		lane.mu.RUnlock()
-		if handler != nil {
+		if reqHandler != nil {
+			reqHandler(payload, func(mt byte, p []byte) {
+				if err := lane.writeConn(conn, mt, p); err != nil {
+					_ = conn.Close()
+				}
+			})
+		} else if handler != nil {
 			handler(payload)
 		}
 	}

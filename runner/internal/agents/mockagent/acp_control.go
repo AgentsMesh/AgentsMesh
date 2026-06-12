@@ -3,6 +3,7 @@ package mockagent
 import (
 	"encoding/json"
 	"log/slog"
+	"strings"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
@@ -57,6 +58,10 @@ func handleControlRequest(state *runtimeState, id int64, raw json.RawMessage, lo
 	case "get_context_usage":
 		return state.writer.WriteResponse(id, mockContextUsage(), nil)
 	default:
+		if strings.HasPrefix(req.Subtype, "loopal.") {
+			logger.Info("mock loopal control", "subtype", req.Subtype)
+			return state.writer.WriteResponse(id, map[string]any{"ok": true}, nil)
+		}
 		return state.writer.WriteResponse(id, nil, &acp.JSONRPCError{
 			Code: acp.ErrCodeMethodNotFound, Message: "unknown subtype: " + req.Subtype,
 		})

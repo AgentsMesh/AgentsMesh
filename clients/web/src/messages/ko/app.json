@@ -434,5 +434,39 @@
     "error": {
       "createFailed": "티켓 생성에 실패했습니다. 다시 시도해 주세요."
     }
+  },
+  "loopal": {
+    "activity": { "heading": "활동" },
+    "status": {
+      "title": "Loopal",
+      "thinking": "사고: {value}",
+      "topology": "토폴로지",
+      "mode": { "act": "실행", "plan": "계획" },
+      "goal": { "pause": "일시정지", "resume": "재개", "complete": "완료", "reopen": "다시 열기", "clear": "지우기" }
+    },
+    "thinking": { "auto": "자동", "off": "끄기", "low": "낮음", "med": "중간", "high": "높음", "max": "최대" },
+    "dock": {
+      "tabs": { "bgShell": "백그라운드 셸", "cron": "Cron", "tasks": "작업", "agents": "에이전트", "mcp": "MCP" },
+      "agents": { "expand": "토폴로지 확장" },
+      "bgShell": { "kill": "종료", "killConfirmTitle": "백그라운드 작업을 종료할까요?" },
+      "cron": { "due": "기한 도래", "inMinutes": "{m}분 후", "inHours": "{h}시간 후", "inDays": "{d}일 후", "recurring": "반복", "once": "한 번", "durable": "영구", "delete": "삭제", "deleteConfirmTitle": "Cron 작업을 삭제할까요?" },
+      "tasks": { "blockedBy": "{count}개에 의해 차단됨" },
+      "mcp": { "refresh": "새로고침", "toolCount": "도구 {count}개", "reconnect": "다시 연결", "disconnect": "연결 해제", "disconnectConfirmTitle": "MCP 서버 연결을 해제할까요?" }
+    },
+    "prompt": {
+      "placeholder": "Loopal에 메시지를 보내거나 / 로 명령",
+      "interrupt": "중단",
+      "rewindTitle": "해당 턴으로 되감기", "rewindPlaceholder": "턴 #",
+      "resumeTitle": "세션 재개", "resumePlaceholder": "세션 ID",
+      "model": "모델", "thinking": "사고"
+    },
+    "commands": {
+      "act": "실행 모드로 전환", "plan": "계획 모드로 전환", "model": "모델 및 사고 수준", "thinking": "사고 강도 수준",
+      "compact": "대화 컨텍스트 압축", "clear": "모든 대화 기록 지우기", "rewind": "이전 턴으로 되감기",
+      "resume": "ID로 세션 재개", "suspend": "Cron / 재기동 일시중단", "unsuspend": "Cron / 재기동 재개",
+      "goal": "스레드 목표 설정 (/goal <목표>)", "mcpRefresh": "MCP 상태 새로고침",
+      "goalPause": "목표 일시정지", "goalResume": "목표 재개", "goalComplete": "목표를 완료로 표시", "goalReopen": "목표 다시 열기", "goalClear": "목표 지우기"
+    },
+    "topology": { "sheetTitle": "에이전트 토폴로지", "root": "루트" }
   }
 }

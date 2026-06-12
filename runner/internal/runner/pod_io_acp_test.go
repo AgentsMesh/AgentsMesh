@@ -194,3 +194,27 @@ func TestACPPodIO_ImplementsPodIO(t *testing.T) {
 	var _ PodIO = (*ACPPodIO)(nil)
 	var _ SessionAccess = (*ACPPodIO)(nil)
 }
+
+// SetPermissionMode validates against the agent's advertised capability,
+// falling back to the Claude allowlist when the agent advertises none. Only the
+// reject paths are unit-testable here — the accept path delegates to
+// client.SetPermissionMode, which needs a live transport (integration test).
+func TestACPPodIO_SetPermissionMode_ValidatesAgainstCapability(t *testing.T) {
+	t.Run("advertised modes reject values outside the set", func(t *testing.T) {
+		client := newTestACPClient()
+		client.SeedConfiguration(acp.Configuration{
+			SupportedPermissionModes: []string{"bypass", "ask_dangerous", "ask_any_write"},
+		})
+		io := NewACPPodIO(client, "test-pod")
+		if err := io.SetPermissionMode("acceptEdits"); err == nil {
+			t.Error("expected rejection of Claude value when agent advertises loopal modes")
+		}
+	})
+	t.Run("no advertisement falls back to Claude allowlist", func(t *testing.T) {
+		client := newTestACPClient() // unstarted → no advertised modes
+		io := NewACPPodIO(client, "test-pod")
+		if err := io.SetPermissionMode("bypass"); err == nil {
+			t.Error("expected rejection of loopal value under Claude fallback allowlist")
+		}
+	})
+}

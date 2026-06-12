@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 )
 
@@ -76,11 +77,76 @@ func (h *Handler) SelectOptionID(requestID string, approved bool) string {
 
 // HandleNotification processes an inbound notification from the agent.
 func (h *Handler) HandleNotification(method string, params json.RawMessage) {
-	switch method {
-	case "session/update":
+	switch {
+	case method == "session/update":
 		h.handleSessionUpdate(params)
+	case strings.HasPrefix(method, "_loopal/"):
+		h.handleLoopalExt(method, params)
 	default:
 		h.logger.Debug("unhandled notification", "method", method)
+	}
+}
+
+// handleLoopalExt forwards Loopal control-panel `_loopal/*` extension
+// notifications (bg shell / cron / task / topology) to OnLoopalExt. The
+// `_loopal/` prefix is stripped so downstream relay event types read
+// `loopal.<kind>`.
+// loopalPanelKinds are the only _loopal/* extensions the runner forwards as
+// control-panel events. Session-level extensions (permission_resolved,
+// question_resolved, retryError, tokenUsage, inbox.*, cleared, ...) are dropped
+// — they carry no `data` field (which would crash sendAcpViaRelay's flatten on
+// a nil map) and the GUI's Loopal store has no consumer for them.
+var loopalPanelKinds = map[string]bool{
+	"bgTask.spawned": true, "bgTask.output": true, "bgTask.completed": true,
+	"crons": true, "tasks": true, "mcp": true, "topology.spawn": true, "goal": true,
+	"mode": true, "thinking": true, "model": true,
+}
+
+func (h *Handler) handleLoopalExt(method string, params json.RawMessage) {
+	kind := strings.TrimPrefix(method, "_loopal/")
+	// permission_mode is an ACP configuration concept, not a control-panel
+	// signal — route it to OnConfigChange so it lands in the session's
+	// Configuration (the permission selector's source), not loopalState.
+	if kind == "permission_mode" {
+		h.handleLoopalPermissionMode(params)
+		return
+	}
+	if h.callbacks.OnLoopalExt == nil {
+		return
+	}
+	if !loopalPanelKinds[kind] {
+		return
+	}
+	var p struct {
+		SessionID string          `json:"sessionId"`
+		Data      json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		h.logger.Warn("failed to parse _loopal notification", "method", method, "error", err)
+		return
+	}
+	h.callbacks.OnLoopalExt(p.SessionID, kind, p.Data)
+}
+
+// handleLoopalPermissionMode routes _loopal/permission_mode to OnConfigChange so
+// the agent's current permission mode lands in the session Configuration (where
+// the permission selector reads it). loopal emits this on cold-start + switch.
+func (h *Handler) handleLoopalPermissionMode(params json.RawMessage) {
+	if h.callbacks.OnConfigChange == nil {
+		return
+	}
+	var p struct {
+		SessionID string `json:"sessionId"`
+		Data      struct {
+			PermissionMode string `json:"permission_mode"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(params, &p); err != nil {
+		h.logger.Warn("failed to parse _loopal/permission_mode", "error", err)
+		return
+	}
+	if p.Data.PermissionMode != "" {
+		h.callbacks.OnConfigChange(p.SessionID, ConfigUpdate{PermissionMode: p.Data.PermissionMode})
 	}
 }
 

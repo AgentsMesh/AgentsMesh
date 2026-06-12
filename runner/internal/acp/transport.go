@@ -43,6 +43,11 @@ type Transport interface {
 	// (e.g., Claude stream-json). Others return ErrControlNotSupported.
 	SendControlRequest(sessionID string, subtype string, payload map[string]any) (map[string]any, error)
 
+	// SupportedPermissionModes returns the permission-mode wire values the agent
+	// advertised via agentsmeshExtensions.permissionModes, or nil if it advertised
+	// none (caller falls back to the Claude default set).
+	SupportedPermissionModes() []string
+
 	// ReadLoop continuously reads messages from stdout and dispatches via callbacks.
 	// Blocks until EOF or ctx cancellation.
 	ReadLoop(ctx context.Context)

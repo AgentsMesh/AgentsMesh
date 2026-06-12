@@ -6,20 +6,21 @@ import (
 	"time"
 )
 
-// parseControlRequestCapability reads the agentsmeshExtensions block from an
-// initialize response. Agents that don't ship this extension simply omit it,
-// which (correctly) leaves the runner in "no control_request" mode and trips
-// the fast-fail path in SendControlRequest below.
-func parseControlRequestCapability(raw json.RawMessage) bool {
+// parseAgentsmeshExtensions reads the agentsmeshExtensions block from an
+// initialize response: controlRequest (gates SendControlRequest's fast-fail
+// below) and permissionModes (the wire values this agent accepts for
+// set_permission_mode). Agents that omit the extension leave both at zero.
+func parseAgentsmeshExtensions(raw json.RawMessage) (controlRequest bool, permissionModes []string) {
 	var body struct {
 		AgentsmeshExtensions struct {
-			ControlRequest bool `json:"controlRequest"`
+			ControlRequest  bool     `json:"controlRequest"`
+			PermissionModes []string `json:"permissionModes"`
 		} `json:"agentsmeshExtensions"`
 	}
 	if err := json.Unmarshal(raw, &body); err != nil {
-		return false
+		return false, nil
 	}
-	return body.AgentsmeshExtensions.ControlRequest
+	return body.AgentsmeshExtensions.ControlRequest, body.AgentsmeshExtensions.PermissionModes
 }
 
 // SendControlRequest issues a `session/control_request` JSON-RPC and waits

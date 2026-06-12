@@ -38,9 +38,9 @@ export function ThinkingTab({ thinking }: ThinkingTabProps) {
           <span>{decisionInfo.label}</span>
         </Badge>
         <span className="text-xs text-muted-foreground">Iteration #{thinking.iteration}</span>
-        {thinking.confidence > 0 && (
+        {(thinking.confidence ?? 0) > 0 && (
           <span className="text-xs text-muted-foreground ml-auto">
-            Confidence: {Math.round(thinking.confidence * 100)}%
+            Confidence: {Math.round((thinking.confidence ?? 0) * 100)}%
           </span>
         )}
       </div>

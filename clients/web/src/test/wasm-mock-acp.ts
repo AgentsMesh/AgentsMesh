@@ -16,7 +16,7 @@ interface AcpTC { id: string; name: string; status: string; args: unknown; resul
 interface AcpThink { text: string; timestamp: number; complete?: boolean }
 interface AcpPerm { id: string; tool_name: string; args: unknown; description: string }
 interface AcpLog { level: string; message: string; timestamp: number }
-interface AcpConfig { permission_mode: string; model: string }
+interface AcpConfig { permission_mode: string; model: string; supported_permission_modes: string[] }
 interface AcpSession {
   messages: AcpMsg[]; tool_calls: Record<string, AcpTC>; plan: unknown[];
   thinkings: AcpThink[]; logs: AcpLog[]; state: string; pending_permissions: AcpPerm[];
@@ -33,7 +33,7 @@ export function createAcpManager() {
   function getOrCreate(key: string): AcpSession {
     let s = sessions.get(key);
     if (!s) {
-      s = { messages: [], tool_calls: {}, plan: [], thinkings: [], logs: [], state: 'idle', pending_permissions: [], configuration: { permission_mode: '', model: '' } };
+      s = { messages: [], tool_calls: {}, plan: [], thinkings: [], logs: [], state: 'idle', pending_permissions: [], configuration: { permission_mode: '', model: '', supported_permission_modes: [] } };
       sessions.set(key, s);
     }
     return s;
@@ -156,6 +156,10 @@ export function createAcpManager() {
       const cfg = JSON.parse(req.configJson) as Partial<AcpConfig>;
       if (cfg.permission_mode) s.configuration.permission_mode = cfg.permission_mode;
       if (cfg.model) s.configuration.model = cfg.model;
+      // Mirror Rust merge: empty slice = "unchanged" (protects snapshot-seeded capability).
+      if (cfg.supported_permission_modes && cfg.supported_permission_modes.length > 0) {
+        s.configuration.supported_permission_modes = cfg.supported_permission_modes;
+      }
     },
 
     clear_session: (podKey: string) => { sessions.delete(podKey); },
@@ -175,7 +179,7 @@ export function createAcpManager() {
         logs: partial.logs ?? [],
         state: partial.state ?? 'idle',
         pending_permissions: partial.pending_permissions ?? [],
-        configuration: partial.configuration ?? { permission_mode: '', model: '' },
+        configuration: partial.configuration ?? { permission_mode: '', model: '', supported_permission_modes: [] },
       };
       sessions.set(podKey, merged);
     },

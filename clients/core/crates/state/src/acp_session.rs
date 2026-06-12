@@ -192,6 +192,11 @@ impl AcpSessionManager {
         if !update.model.is_empty() {
             session.configuration.model = update.model;
         }
+        // Empty slice = "unchanged" — protects capability seeded by snapshot from
+        // being wiped by a configChanged delta (which never carries it).
+        if !update.supported_permission_modes.is_empty() {
+            session.configuration.supported_permission_modes = update.supported_permission_modes;
+        }
     }
 
     pub fn clear_session(&mut self, pod_key: &str) {

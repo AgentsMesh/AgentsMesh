@@ -1,5 +1,7 @@
 package acp
 
+import "encoding/json"
+
 // wrapCallbacks decorates the user-provided EventCallbacks with internal
 // state-keeping (message/tool/plan/thinking/log/config accumulators) so that
 // GetSessionSnapshot reflects the latest state. The wrapped callback chain
@@ -63,12 +65,22 @@ func (c *ACPClient) wrapCallbacks() EventCallbacks {
 	wrapped.OnConfigChange = func(sessionID string, update ConfigUpdate) {
 		merged := c.applyConfiguration(update)
 		if originalOnConfigChange != nil {
-			originalOnConfigChange(sessionID, ConfigUpdate(merged))
+			// configChanged delta carries only mutable fields; capability
+			// (SupportedPermissionModes) flows via snapshot, never the delta.
+			originalOnConfigChange(sessionID, configDelta(merged))
 		}
 	}
 
 	wrapped.OnStateChange = func(newState string) {
 		c.setState(newState)
+	}
+
+	originalOnLoopalExt := wrapped.OnLoopalExt
+	wrapped.OnLoopalExt = func(sessionID, kind string, data json.RawMessage) {
+		c.applyLoopal(kind, data)
+		if originalOnLoopalExt != nil {
+			originalOnLoopalExt(sessionID, kind, data)
+		}
 	}
 
 	return wrapped

@@ -129,3 +129,49 @@ export {
   LoopRunWarningEventDataSchema,
   NotificationPayloadEventDataSchema,
 } from "@proto/events/v1/event_data_pb";
+
+// Autopilot thinking — snake_case wasm-state shapes returned by
+// AutopilotState.get_thinking_json (Rust serde serializes the prost struct with
+// snake_case keys). Distinct from the camelCase proto event types above
+// (AutopilotThinkingEventData), which carry the realtime wire payload. Mirrors
+// proto/events/v1/event_data.proto AutopilotThinkingEventData field-for-field.
+//
+// Fields the backend omits under EmitUnpopulated:false (empty repeated fields,
+// zero/empty scalars) are absent at runtime, so they are `?`-optional here —
+// the type forces every consumer to guard rather than crash on `.map`/`.length`
+// or render `NaN%` from `undefined * 100`.
+export interface AutopilotActionData {
+  type: string;
+  content: string;
+  reason: string;
+}
+
+export interface AutopilotProgressData {
+  summary?: string;
+  completed_steps?: string[];
+  remaining_steps?: string[];
+  percent?: number;
+}
+
+export interface AutopilotHelpSuggestionData {
+  action: string;
+  label: string;
+}
+
+export interface AutopilotHelpRequestData {
+  reason: string;
+  context: string;
+  terminal_excerpt: string;
+  suggestions?: AutopilotHelpSuggestionData[];
+}
+
+export interface AutopilotThinkingData {
+  autopilot_controller_key: string;
+  iteration: number;
+  decision_type: string;
+  reasoning: string;
+  confidence?: number;
+  action?: AutopilotActionData;
+  progress?: AutopilotProgressData;
+  help_request?: AutopilotHelpRequestData;
+}

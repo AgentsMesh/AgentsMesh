@@ -55,4 +55,25 @@ test.describe("ACP UI: control plane round-trip", () => {
       page.locator('button:has-text("Default")').first()
     ).toBeVisible({ timeout: 10_000 });
   });
+
+  test("loopal-advertised modes render in the selector dropdown (capability path)", async ({ page, api }) => {
+    // Mock advertises agentsmeshExtensions.permissionModes (loopal's 3 modes);
+    // exercises the full advertise → parse → snapshot → selector render path.
+    const pod = await createMockAgentPod(api, {
+      mode: "acp",
+      scenario: "permission_modes_loopal",
+      prompt: "ready",
+    });
+
+    await page.goto(workspaceUrlForPod(pod.podKey));
+    await page.waitForLoadState("load");
+    await expect(page.getByText("Ready for mode switches", { exact: false })).toBeVisible({ timeout: 15_000 });
+
+    await page.locator('button[title*="Mode" i], button[title*="Approve" i], button[title*="Auto-approve" i]').first().click();
+
+    // loopal's advertised modes render (en labels); the Claude-only set does not.
+    await expect(page.getByText("Ask Risky", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Ask Writes", { exact: true })).toBeVisible();
+    await expect(page.getByText("Accept Edits", { exact: true })).toHaveCount(0);
+  });
 });

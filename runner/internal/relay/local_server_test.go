@@ -168,6 +168,47 @@ func TestLocalServer_BroadcastsToMultipleClients(t *testing.T) {
 	wg.Wait()
 }
 
+func TestLocalServer_RequestHandlerRepliesToRequesterOnly(t *testing.T) {
+	srv := startTestServer(t)
+	srv.RegisterPod("pod-1", "tok")
+	srv.SetRequestHandler("pod-1", MsgTypeSnapshotRequest, func(_ []byte, reply ReplyFunc) {
+		reply(MsgTypeAcpSnapshot, []byte("snap"))
+	})
+
+	c1, _ := dialClient(t, srv, "pod-1", "tok")
+	defer c1.Close()
+	c2, _ := dialClient(t, srv, "pod-1", "tok")
+	defer c2.Close()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		if connCount(srv, "pod-1") == 2 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	if err := c1.WriteMessage(websocket.BinaryMessage, EncodeMessage(MsgTypeSnapshotRequest, nil)); err != nil {
+		t.Fatalf("WriteMessage: %v", err)
+	}
+
+	// The requester receives the reply...
+	c1.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_, payload, err := c1.ReadMessage()
+	if err != nil {
+		t.Fatalf("requester read: %v", err)
+	}
+	if len(payload) < 1 || payload[0] != MsgTypeAcpSnapshot || string(payload[1:]) != "snap" {
+		t.Fatalf("requester got %v, want snapshot 'snap'", payload)
+	}
+
+	// ...and the already-synced peer must NOT — the reply is per-connection, so a
+	// late joiner's request can't re-apply state to browsers already in sync.
+	c2.SetReadDeadline(time.Now().Add(300 * time.Millisecond))
+	if _, _, err := c2.ReadMessage(); err == nil {
+		t.Fatal("non-requesting browser received the snapshot reply (must be per-connection)")
+	}
+}
+
 func waitFor(srv *LocalServer, podKey string) bool {
 	deadline := time.Now().Add(time.Second)
 	for time.Now().Before(deadline) {

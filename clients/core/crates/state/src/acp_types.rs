@@ -91,6 +91,11 @@ pub struct AcpConfiguration {
     pub permission_mode: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub model: String,
+    // Static agent capability (advertised at initialize), not live state. Flows
+    // via snapshot only; the configChanged delta path leaves it empty so
+    // update_configuration's merge guard preserves it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_permission_modes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

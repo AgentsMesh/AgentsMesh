@@ -11,6 +11,7 @@ type LocalRelayBroker interface {
 	RegisterPod(podKey, expectedToken string)
 	UnregisterPod(podKey string)
 	SetMessageHandler(podKey string, msgType byte, handler func([]byte))
+	SetRequestHandler(podKey string, msgType byte, handler relay.RequestHandler)
 	Send(podKey string, msgType byte, payload []byte) error
 	IsPodConnected(podKey string) bool
 	URL() string

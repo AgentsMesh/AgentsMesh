@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { relayPool } from "@/stores/relayConnection";
 import { dispatchAcpRelayEvent } from "@/stores/acpEventDispatcher";
+import { dispatchLoopalRelayEvent } from "@/stores/loopalDispatcher";
 import { isResourceNotFound, isPodNotConnectable } from "@/lib/errors/serviceError";
 
 export function useAcpRelay(podKey: string, paneId: string, active: boolean): void {
@@ -21,6 +22,7 @@ export function useAcpRelay(podKey: string, paneId: string, active: boolean): vo
     });
 
     const unsubAcp = relayPool.onAcpMessage(podKey, (msgType, payload) => {
+      if (dispatchLoopalRelayEvent(podKey, msgType, payload)) return;
       dispatchAcpRelayEvent(podKey, msgType, payload);
     });
 

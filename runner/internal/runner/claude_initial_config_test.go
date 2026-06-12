@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
@@ -41,7 +42,7 @@ func TestParseClaudeInitialConfig(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			got := parseClaudeInitialConfig(tc.args)
-			if got != tc.want {
+			if !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("got %+v, want %+v", got, tc.want)
 			}
 		})

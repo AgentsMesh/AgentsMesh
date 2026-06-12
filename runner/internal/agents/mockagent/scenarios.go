@@ -17,6 +17,10 @@ import (
 type scenario struct {
 	name         string
 	handlePrompt func(state *runtimeState, id int64, params json.RawMessage, logger *slog.Logger) error
+	// permissionModes, when non-empty, is advertised as
+	// agentsmeshExtensions.permissionModes at initialize — drives the frontend
+	// permission selector. Empty → selector falls back to the Claude set.
+	permissionModes []string
 }
 
 var registeredScenarios = registerScenarios()
@@ -34,6 +38,12 @@ func registerScenarios() map[string]scenario {
 		{name: "malformed_json", handlePrompt: scenarioMalformedJSON},
 		{name: "tool_call_failed", handlePrompt: scenarioToolCallFailed},
 		{name: "log_warnings", handlePrompt: scenarioLogWarnings},
+		{name: "loopal_panels", handlePrompt: scenarioLoopalPanels},
+		{
+			name:            "permission_modes_loopal",
+			handlePrompt:    scenarioConfigChangePlan,
+			permissionModes: []string{"bypass", "ask_dangerous", "ask_any_write"},
+		},
 	} {
 		scenarios[s.name] = s
 	}

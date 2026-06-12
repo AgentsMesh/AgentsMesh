@@ -33,6 +33,12 @@ type ACPTransport struct {
 	// instead of waiting on a 10-second JSON-RPC timeout.
 	supportsControlRequest bool
 
+	// supportedPermissionModes captures agentsmeshExtensions.permissionModes from
+	// the initialize response — the wire values this agent accepts for
+	// set_permission_mode. Empty means the agent didn't advertise (frontend falls
+	// back to the Claude default set).
+	supportedPermissionModes []string
+
 	ctx    context.Context
 	logger *slog.Logger
 }
@@ -81,9 +87,10 @@ func (t *ACPTransport) Handshake(_ context.Context) (string, error) {
 			resp.Error.Code, resp.Error.Message)
 	}
 
-	t.supportsControlRequest = parseControlRequestCapability(resp.Result)
+	t.supportsControlRequest, t.supportedPermissionModes = parseAgentsmeshExtensions(resp.Result)
 	t.logger.Info("ACP initialize succeeded",
-		"supports_control_request", t.supportsControlRequest)
+		"supports_control_request", t.supportsControlRequest,
+		"permission_modes", t.supportedPermissionModes)
 	return "", nil // ACP doesn't auto-discover session IDs
 }
 
@@ -110,6 +117,12 @@ func (t *ACPTransport) ReadLoop(ctx context.Context) {
 
 // Close is a no-op for ACPTransport (resources owned by ACPClient).
 func (t *ACPTransport) Close() {}
+
+// SupportedPermissionModes returns the permission-mode wire values advertised in
+// the initialize response (nil if none).
+func (t *ACPTransport) SupportedPermissionModes() []string {
+	return t.supportedPermissionModes
+}
 
 func (t *ACPTransport) dispatchMessage(msg *JSONRPCMessage) {
 	switch {

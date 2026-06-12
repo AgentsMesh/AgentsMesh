@@ -111,8 +111,14 @@ impl WasmAcpSessionManager {
 
     pub fn update_configuration(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
         let req = UpdateConfigurationRequest::decode(req_bytes).map_err(decode_err)?;
-        if let Ok(cfg) = serde_json::from_str::<AcpConfiguration>(&req.config_json) {
-            self.state.write().acp.update_configuration(&req.pod_key, cfg);
+        match serde_json::from_str::<AcpConfiguration>(&req.config_json) {
+            Ok(cfg) => self.state.write().acp.update_configuration(&req.pod_key, cfg),
+            Err(e) => tracing::warn!(
+                target: "acp",
+                pod_key = %req.pod_key,
+                error = %e,
+                "update_configuration: failed to parse config_json"
+            ),
         }
         Ok(())
     }

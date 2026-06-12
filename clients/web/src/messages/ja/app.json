@@ -434,5 +434,39 @@
     "error": {
       "createFailed": "チケットの作成に失敗し��した。もう一度お試しください。"
     }
+  },
+  "loopal": {
+    "activity": { "heading": "アクティビティ" },
+    "status": {
+      "title": "Loopal",
+      "thinking": "思考: {value}",
+      "topology": "トポロジー",
+      "mode": { "act": "実行", "plan": "計画" },
+      "goal": { "pause": "一時停止", "resume": "再開", "complete": "完了", "reopen": "再オープン", "clear": "クリア" }
+    },
+    "thinking": { "auto": "自動", "off": "オフ", "low": "低", "med": "中", "high": "高", "max": "最大" },
+    "dock": {
+      "tabs": { "bgShell": "バックグラウンドシェル", "cron": "Cron", "tasks": "タスク", "agents": "エージェント", "mcp": "MCP" },
+      "agents": { "expand": "トポロジーを展開" },
+      "bgShell": { "kill": "停止", "killConfirmTitle": "バックグラウンドタスクを停止しますか？" },
+      "cron": { "due": "期限到来", "inMinutes": "{m}分後", "inHours": "{h}時間後", "inDays": "{d}日後", "recurring": "繰り返し", "once": "一度のみ", "durable": "永続", "delete": "削除", "deleteConfirmTitle": "Cronジョブを削除しますか？" },
+      "tasks": { "blockedBy": "{count}件によりブロック中" },
+      "mcp": { "refresh": "更新", "toolCount": "{count}個のツール", "reconnect": "再接続", "disconnect": "切断", "disconnectConfirmTitle": "MCPサーバーを切断しますか？" }
+    },
+    "prompt": {
+      "placeholder": "Loopalにメッセージを送信、または / でコマンド",
+      "interrupt": "中断",
+      "rewindTitle": "指定ターンへ巻き戻し", "rewindPlaceholder": "ターン #",
+      "resumeTitle": "セッションを再開", "resumePlaceholder": "セッションID",
+      "model": "モデル", "thinking": "思考"
+    },
+    "commands": {
+      "act": "実行モードに切り替え", "plan": "計画モードに切り替え", "model": "モデルと思考レベル", "thinking": "思考の強度レベル",
+      "compact": "会話コンテキストを圧縮", "clear": "すべての会話履歴をクリア", "rewind": "以前のターンへ巻き戻し",
+      "resume": "IDでセッションを再開", "suspend": "Cron / 再起動を一時停止", "unsuspend": "Cron / 再起動を再開",
+      "goal": "スレッドの目標を設定 (/goal <目標>)", "mcpRefresh": "MCPステータスを更新",
+      "goalPause": "目標を一時停止", "goalResume": "目標を再開", "goalComplete": "目標を完了にする", "goalReopen": "目標を再オープン", "goalClear": "目標をクリア"
+    },
+    "topology": { "sheetTitle": "エージェントトポロジー", "root": "ルート" }
   }
 }

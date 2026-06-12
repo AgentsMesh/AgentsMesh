@@ -1,6 +1,9 @@
 package acp
 
-import "errors"
+import (
+	"encoding/json"
+	"errors"
+)
 
 // Errors for control request operations.
 var (
@@ -72,6 +75,10 @@ type PermissionRequest struct {
 type Configuration struct {
 	PermissionMode string `json:"permissionMode,omitempty"`
 	Model          string `json:"model,omitempty"`
+	// SupportedPermissionModes is the agent's static capability (advertised at
+	// initialize), not live state. The set_*/configChanged delta path must never
+	// carry it — core merge treats an empty slice as "unchanged" to protect it.
+	SupportedPermissionModes []string `json:"supportedPermissionModes,omitempty"`
 }
 
 // ConfigUpdate carries a delta of configuration fields. Empty fields mean
@@ -79,6 +86,14 @@ type Configuration struct {
 type ConfigUpdate struct {
 	PermissionMode string `json:"permissionMode,omitempty"`
 	Model          string `json:"model,omitempty"`
+}
+
+// configDelta projects a full Configuration into a ConfigUpdate, dropping the
+// static SupportedPermissionModes capability (which flows via snapshot, never a
+// delta). Use this for broadcasting config changes so capability can't leak into
+// a delta and trip core's empty-slice merge guard.
+func configDelta(cfg Configuration) ConfigUpdate {
+	return ConfigUpdate{PermissionMode: cfg.PermissionMode, Model: cfg.Model}
 }
 
 // EventCallbacks defines the event handlers for ACP client events.
@@ -92,6 +107,7 @@ type EventCallbacks struct {
 	OnStateChange       func(newState string)
 	OnConfigChange      func(sessionID string, update ConfigUpdate)
 	OnLog               func(level, message string)
+	OnLoopalExt         func(sessionID, kind string, data json.RawMessage)
 	OnExit              func(exitCode int)
 }
 

@@ -34,32 +34,38 @@ func (r *ACPPodRelay) SetupHandlers(rc relay.RelayClient) {
 	})
 	if r.localServer != nil {
 		r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeAcpCommand, r.onCommand)
-		r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeSnapshotRequest, func(_ []byte) {
-			r.broadcastSnapshot()
+		r.localServer.SetRequestHandler(r.podKey, relay.MsgTypeSnapshotRequest, func(_ []byte, reply relay.ReplyFunc) {
+			r.replySnapshot(reply)
 		})
 	}
 }
 
 func (r *ACPPodRelay) SendSnapshot(rc relay.RelayClient) {
-	data := r.materializeSnapshot()
-	if data == nil {
-		return
+	if data := r.materializeSnapshot(); data != nil {
+		if err := rc.Send(relay.MsgTypeAcpSnapshot, data); err != nil {
+			logger.Pod().Warn("Failed to send ACP snapshot via relay", "pod_key", r.podKey, "error", err)
+		}
 	}
-	if err := rc.Send(relay.MsgTypeAcpSnapshot, data); err != nil {
-		logger.Pod().Warn("Failed to send ACP snapshot via relay", "pod_key", r.podKey, "error", err)
+	if r.acpClient != nil {
+		if loopalData := r.acpClient.LoopalSnapshot(); loopalData != nil {
+			_ = rc.Send(relay.MsgTypeAcpEvent, loopalData)
+		}
 	}
 }
 
-// broadcastSnapshot pushes the ACP session snapshot to all local browsers.
-func (r *ACPPodRelay) broadcastSnapshot() {
-	if r.localServer == nil {
-		return
+// replySnapshot answers a single browser's snapshot request (ACP session +
+// Loopal panel snapshot) on its own connection — not a pod-wide broadcast — so a
+// late joiner cannot re-deliver state to already-synced browsers, which would
+// double-apply append-style Loopal bg-task output.
+func (r *ACPPodRelay) replySnapshot(reply relay.ReplyFunc) {
+	if data := r.materializeSnapshot(); data != nil {
+		reply(relay.MsgTypeAcpSnapshot, data)
 	}
-	data := r.materializeSnapshot()
-	if data == nil {
-		return
+	if r.acpClient != nil {
+		if loopalData := r.acpClient.LoopalSnapshot(); loopalData != nil {
+			reply(relay.MsgTypeAcpEvent, loopalData)
+		}
 	}
-	_ = r.localServer.Send(r.podKey, relay.MsgTypeAcpSnapshot, data)
 }
 
 func (r *ACPPodRelay) materializeSnapshot() []byte {

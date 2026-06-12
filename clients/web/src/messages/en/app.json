@@ -5,6 +5,9 @@
       "acceptEdits": { "label": "Accept Edits", "desc": "Auto-approve file edits" },
       "default": { "label": "Default", "desc": "Approve each tool" },
       "dontAsk": { "label": "Don't Ask", "desc": "Deny unless allowlisted" },
+      "bypass": { "label": "Bypass", "desc": "Auto-approve everything" },
+      "ask_dangerous": { "label": "Ask Risky", "desc": "Confirm only dangerous ops" },
+      "ask_any_write": { "label": "Ask Writes", "desc": "Confirm any write operation" },
       "unknown": { "label": "—", "desc": "Mode not yet reported by runner" }
     },
     "activityStream": {
@@ -545,5 +548,39 @@
     "goBack": "Go back",
     "reload": "Reload",
     "home": "Home"
+  },
+  "loopal": {
+    "activity": { "heading": "Activity" },
+    "status": {
+      "title": "Loopal",
+      "thinking": "Thinking: {value}",
+      "topology": "Topology",
+      "mode": { "act": "Act", "plan": "Plan" },
+      "goal": { "pause": "Pause", "resume": "Resume", "complete": "Complete", "reopen": "Reopen", "clear": "Clear" }
+    },
+    "thinking": { "auto": "Auto", "off": "Off", "low": "Low", "med": "Med", "high": "High", "max": "Max" },
+    "dock": {
+      "tabs": { "bgShell": "Background Shell", "cron": "Cron", "tasks": "Tasks", "agents": "Agents", "mcp": "MCP" },
+      "agents": { "expand": "Expand topology" },
+      "bgShell": { "kill": "Kill", "killConfirmTitle": "Kill background task?" },
+      "cron": { "due": "due", "inMinutes": "in {m}m", "inHours": "in {h}h", "inDays": "in {d}d", "recurring": "recurring", "once": "once", "durable": "durable", "delete": "Delete", "deleteConfirmTitle": "Delete cron job?" },
+      "tasks": { "blockedBy": "blocked by {count}" },
+      "mcp": { "refresh": "refresh", "toolCount": "{count} tools", "reconnect": "Reconnect", "disconnect": "Disconnect", "disconnectConfirmTitle": "Disconnect MCP server?" }
+    },
+    "prompt": {
+      "placeholder": "Message Loopal, or / for commands",
+      "interrupt": "Interrupt",
+      "rewindTitle": "Rewind to turn", "rewindPlaceholder": "turn #",
+      "resumeTitle": "Resume session", "resumePlaceholder": "session id",
+      "model": "Model", "thinking": "Thinking"
+    },
+    "commands": {
+      "act": "Switch to Act mode", "plan": "Switch to Plan mode", "model": "Model & thinking level", "thinking": "Thinking effort level",
+      "compact": "Compact conversation context", "clear": "Clear all conversation history", "rewind": "Rewind to an earlier turn",
+      "resume": "Resume a session by id", "suspend": "Suspend cron / rewake", "unsuspend": "Resume cron / rewake",
+      "goal": "Set a thread goal (/goal <objective>)", "mcpRefresh": "Refresh MCP status",
+      "goalPause": "Pause the goal", "goalResume": "Resume the goal", "goalComplete": "Mark the goal complete", "goalReopen": "Reopen the goal", "goalClear": "Clear the goal"
+    },
+    "topology": { "sheetTitle": "Agent Topology", "root": "root" }
   }
 }

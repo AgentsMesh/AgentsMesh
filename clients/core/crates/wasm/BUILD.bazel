@@ -26,6 +26,7 @@ _WASM_DEPS = [
     "@crates//:reqwest",
     "@crates//:serde",
     "@crates//:serde_json",
+    "@crates//:tracing",
     "@crates//:wasm-bindgen",
     "@crates//:wasm-bindgen-futures",
     "@crates//:web-sys",

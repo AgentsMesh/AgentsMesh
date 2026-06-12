@@ -236,6 +236,43 @@ describe("acpEventDispatcher", () => {
       expect(s.messages).toHaveLength(0);
       expect(s.thinkings).toHaveLength(0);
     });
+
+    it("replays supportedPermissionModes capability from snapshot", () => {
+      dispatchAcpRelayEvent(POD, MsgType.AcpSnapshot, {
+        sessionId: "s1",
+        state: "idle",
+        configuration: {
+          permissionMode: "bypass",
+          supportedPermissionModes: ["bypass", "ask_dangerous", "ask_any_write"],
+        },
+      });
+
+      const cfg = getSession().configuration;
+      expect(cfg.permissionMode).toBe("bypass");
+      expect(cfg.supportedPermissionModes).toEqual(["bypass", "ask_dangerous", "ask_any_write"]);
+    });
+
+    it("configChanged delta preserves capability seeded by snapshot", () => {
+      // Snapshot seeds capability (the only path that carries it).
+      dispatchAcpRelayEvent(POD, MsgType.AcpSnapshot, {
+        sessionId: "s1",
+        state: "idle",
+        configuration: {
+          permissionMode: "bypass",
+          supportedPermissionModes: ["bypass", "ask_dangerous", "ask_any_write"],
+        },
+      });
+      // A mode-only delta must not wipe the seeded capability (merge guard).
+      dispatchAcpRelayEvent(POD, MsgType.AcpEvent, {
+        type: "configChanged",
+        sessionId: "s1",
+        permissionMode: "ask_dangerous",
+      });
+
+      const cfg = getSession().configuration;
+      expect(cfg.permissionMode).toBe("ask_dangerous");
+      expect(cfg.supportedPermissionModes).toEqual(["bypass", "ask_dangerous", "ask_any_write"]);
+    });
   });
 
 });

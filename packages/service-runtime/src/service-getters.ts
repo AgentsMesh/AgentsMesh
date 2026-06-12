@@ -11,7 +11,7 @@ import type {
   WasmAgentService, WasmTicketRelationsService, WasmFileService,
   WasmSupportTicketService, WasmAuthConnectService, WasmBlockstoreService,
   WasmRunnerState, WasmMeshState, WasmTicketState, WasmChannelState,
-  WasmLoopState, WasmAcpSessionManager, WasmRepoState,
+  WasmLoopState, WasmAcpSessionManager, WasmLoopalManager, WasmRepoState,
   WasmAutopilotState, WasmRelayManager,
 } from "agentsmesh-wasm";
 import type { ILocalRunnerService } from "@agentsmesh/service-interface";
@@ -73,6 +73,9 @@ export interface ServiceRegistry {
   channelState: WasmChannelState;
   loopState: WasmLoopState;
   acpManager: WasmAcpSessionManager;
+  // Loopal control-panel state. Optional — only the web build registers it;
+  // desktop falls back to NOOP_PROXY (Loopal console shows empty panels).
+  loopalManager?: WasmLoopalManager;
   repoState: WasmRepoState;
   autopilotState: WasmAutopilotState;
   relayManager: WasmRelayManager;
@@ -172,6 +175,10 @@ export const getTicketState = () => g("ticketState");
 export const getChannelState = () => g("channelState");
 export const getLoopState = () => g("loopState");
 export const getAcpManager = () => g("acpManager");
+export const getLoopalManager = (): WasmLoopalManager => {
+  const reg = registry();
+  return (reg.ready ? reg.instances.loopalManager ?? NOOP_PROXY : NOOP_PROXY) as WasmLoopalManager;
+};
 export const getRepoState = () => g("repoState");
 export const getAutopilotState = () => g("autopilotState");
 export const getRelayManager = () => g("relayManager");

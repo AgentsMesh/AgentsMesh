@@ -2,6 +2,7 @@ package runner
 
 import (
 	"fmt"
+	"slices"
 	"sync"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
@@ -112,14 +113,19 @@ func (a *ACPPodIO) Interrupt() error {
 	return a.client.Interrupt()
 }
 
-// validPermissionModes lists the modes accepted by Claude Code CLI.
+// validPermissionModes is the fallback allowlist for agents that don't advertise
+// permissionModes at initialize (Claude Code CLI's set).
 var validPermissionModes = map[string]bool{
 	"default": true, "plan": true, "acceptEdits": true,
 	"dontAsk": true, "bypassPermissions": true,
 }
 
 func (a *ACPPodIO) SetPermissionMode(mode string) error {
-	if !validPermissionModes[mode] {
+	if allowed := a.client.SupportedPermissionModes(); len(allowed) > 0 {
+		if !slices.Contains(allowed, mode) {
+			return fmt.Errorf("invalid permission mode %q (agent supports %v)", mode, allowed)
+		}
+	} else if !validPermissionModes[mode] {
 		return fmt.Errorf("invalid permission mode: %q", mode)
 	}
 	logger.Pod().Info("ACP set permission mode", "pod_key", a.podKey, "mode", mode)

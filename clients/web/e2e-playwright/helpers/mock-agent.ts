@@ -27,7 +27,9 @@ export type MockAgentScenario =
   | "fail_after_1s"
   | "malformed_json"
   | "tool_call_failed"
-  | "log_warnings";
+  | "log_warnings"
+  | "loopal_panels"
+  | "permission_modes_loopal";
 
 export interface CreateMockPodOptions {
   mode: MockAgentMode;
@@ -133,6 +135,13 @@ function buildAgentfileLayer(opts: CreateMockPodOptions): string {
 // store hydrates.
 export function workspaceUrlForPod(podKey: string): string {
   return `/${TEST_ORG_SLUG}/workspace?pod=${encodeURIComponent(podKey)}`;
+}
+
+// Returns the standalone Loopal control-console URL for a pod, which renders
+// the bg-shell / cron / task / topology / mcp / goal panels and control bars
+// (distinct from the workspace route — this is /[org]/loopal/[podKey]).
+export function loopalConsoleUrlForPod(podKey: string): string {
+  return `/${TEST_ORG_SLUG}/loopal/${encodeURIComponent(podKey)}`;
 }
 
 // getApiBaseUrl re-export for tests that need it without an extra import.

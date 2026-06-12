@@ -34,7 +34,7 @@ export function AutopilotProgressTracker({
         <span className="text-xs text-muted-foreground truncate">
           {progress.summary || "In progress..."}
         </span>
-        {progress.percent > 0 && (
+        {(progress.percent ?? 0) > 0 && (
           <span className="text-xs font-medium text-muted-foreground">
             {progress.percent}%
           </span>
@@ -52,11 +52,11 @@ export function AutopilotProgressTracker({
             <ListChecks className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">Task Progress</span>
           </div>
-          {progress.percent > 0 && (
+          {(progress.percent ?? 0) > 0 && (
             <span className="text-sm font-medium">{progress.percent}%</span>
           )}
         </div>
-        {progress.percent > 0 && (
+        {(progress.percent ?? 0) > 0 && (
           <Progress value={progress.percent} className="h-2" />
         )}
       </div>

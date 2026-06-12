@@ -32,12 +32,25 @@ type LocalServer struct {
 	url     string
 }
 
+// ReplyFunc writes one framed message back to a single browser connection.
+type ReplyFunc func(msgType byte, payload []byte)
+
+// RequestHandler handles an inbound message that must be answered on the
+// originating connection only, rather than broadcast to every browser on the
+// pod (see SetRequestHandler).
+type RequestHandler func(payload []byte, reply ReplyFunc)
+
 // localPodLane holds per-pod state for the local server.
 type localPodLane struct {
 	expectedTokens map[string]struct{}
 	handlers       map[byte]func([]byte)
+	reqHandlers    map[byte]RequestHandler
 	conns          map[*websocket.Conn]struct{}
 	mu             sync.RWMutex
+	// writeMu serializes WriteMessage: Send (event/aggregator goroutine) and
+	// SetRequestHandler replies (readLoop goroutine) can target the same conn,
+	// and gorilla/websocket forbids concurrent writers on one connection.
+	writeMu sync.Mutex
 }
 
 const (
