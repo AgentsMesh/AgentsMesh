@@ -578,7 +578,7 @@
       "act": "Switch to Act mode", "plan": "Switch to Plan mode", "model": "Model & thinking level", "thinking": "Thinking effort level",
       "compact": "Compact conversation context", "clear": "Clear all conversation history", "rewind": "Rewind to an earlier turn",
       "resume": "Resume a session by id", "suspend": "Suspend cron / rewake", "unsuspend": "Resume cron / rewake",
-      "goal": "Set a thread goal (/goal <objective>)", "mcpRefresh": "Refresh MCP status",
+      "goal": "Set a thread goal (/goal [objective])", "mcpRefresh": "Refresh MCP status",
       "goalPause": "Pause the goal", "goalResume": "Resume the goal", "goalComplete": "Mark the goal complete", "goalReopen": "Reopen the goal", "goalClear": "Clear the goal"
     },
     "topology": { "sheetTitle": "Agent Topology", "root": "root" }

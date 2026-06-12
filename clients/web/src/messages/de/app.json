@@ -464,7 +464,7 @@
       "act": "In den Ausführen-Modus wechseln", "plan": "In den Planen-Modus wechseln", "model": "Modell & Denkstufe", "thinking": "Denkaufwand-Stufe",
       "compact": "Konversationskontext verdichten", "clear": "Gesamten Konversationsverlauf löschen", "rewind": "Zu einer früheren Runde zurückspulen",
       "resume": "Eine Sitzung per ID fortsetzen", "suspend": "Cron / Aufwecken aussetzen", "unsuspend": "Cron / Aufwecken fortsetzen",
-      "goal": "Thread-Ziel festlegen (/goal <Ziel>)", "mcpRefresh": "MCP-Status aktualisieren",
+      "goal": "Thread-Ziel festlegen (/goal [Ziel])", "mcpRefresh": "MCP-Status aktualisieren",
       "goalPause": "Ziel pausieren", "goalResume": "Ziel fortsetzen", "goalComplete": "Ziel als abgeschlossen markieren", "goalReopen": "Ziel erneut öffnen", "goalClear": "Ziel löschen"
     },
     "topology": { "sheetTitle": "Agenten-Topologie", "root": "Wurzel" }

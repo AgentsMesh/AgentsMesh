@@ -464,7 +464,7 @@
       "act": "Cambiar al modo Actuar", "plan": "Cambiar al modo Planificar", "model": "Modelo y nivel de pensamiento", "thinking": "Nivel de esfuerzo de pensamiento",
       "compact": "Compactar el contexto de la conversación", "clear": "Borrar todo el historial de conversación", "rewind": "Retroceder a un turno anterior",
       "resume": "Reanudar una sesión por id", "suspend": "Suspender cron / reactivación", "unsuspend": "Reanudar cron / reactivación",
-      "goal": "Definir un objetivo de hilo (/goal <objetivo>)", "mcpRefresh": "Actualizar el estado de MCP",
+      "goal": "Definir un objetivo de hilo (/goal [objetivo])", "mcpRefresh": "Actualizar el estado de MCP",
       "goalPause": "Pausar el objetivo", "goalResume": "Reanudar el objetivo", "goalComplete": "Marcar el objetivo como completado", "goalReopen": "Reabrir el objetivo", "goalClear": "Borrar el objetivo"
     },
     "topology": { "sheetTitle": "Topología de agentes", "root": "raíz" }

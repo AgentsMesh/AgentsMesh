@@ -464,7 +464,7 @@
       "act": "실행 모드로 전환", "plan": "계획 모드로 전환", "model": "모델 및 사고 수준", "thinking": "사고 강도 수준",
       "compact": "대화 컨텍스트 압축", "clear": "모든 대화 기록 지우기", "rewind": "이전 턴으로 되감기",
       "resume": "ID로 세션 재개", "suspend": "Cron / 재기동 일시중단", "unsuspend": "Cron / 재기동 재개",
-      "goal": "스레드 목표 설정 (/goal <목표>)", "mcpRefresh": "MCP 상태 새로고침",
+      "goal": "스레드 목표 설정 (/goal [목표])", "mcpRefresh": "MCP 상태 새로고침",
       "goalPause": "목표 일시정지", "goalResume": "목표 재개", "goalComplete": "목표를 완료로 표시", "goalReopen": "목표 다시 열기", "goalClear": "목표 지우기"
     },
     "topology": { "sheetTitle": "에이전트 토폴로지", "root": "루트" }

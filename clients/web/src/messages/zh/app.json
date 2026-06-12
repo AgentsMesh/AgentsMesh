@@ -578,7 +578,7 @@
       "act": "切换到执行模式", "plan": "切换到计划模式", "model": "模型与思考强度", "thinking": "思考强度",
       "compact": "压缩会话上下文", "clear": "清除所有会话历史", "rewind": "回退到较早的轮次",
       "resume": "按 ID 恢复会话", "suspend": "挂起 Cron / 唤醒", "unsuspend": "恢复 Cron / 唤醒",
-      "goal": "设定线程目标（/goal <目标>）", "mcpRefresh": "刷新 MCP 状态",
+      "goal": "设定线程目标（/goal [目标]）", "mcpRefresh": "刷新 MCP 状态",
       "goalPause": "暂停目标", "goalResume": "继续目标", "goalComplete": "将目标标记为完成", "goalReopen": "重新打开目标", "goalClear": "清除目标"
     },
     "topology": { "sheetTitle": "智能体拓扑", "root": "根" }

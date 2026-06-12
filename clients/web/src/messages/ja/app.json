@@ -464,7 +464,7 @@
       "act": "実行モードに切り替え", "plan": "計画モードに切り替え", "model": "モデルと思考レベル", "thinking": "思考の強度レベル",
       "compact": "会話コンテキストを圧縮", "clear": "すべての会話履歴をクリア", "rewind": "以前のターンへ巻き戻し",
       "resume": "IDでセッションを再開", "suspend": "Cron / 再起動を一時停止", "unsuspend": "Cron / 再起動を再開",
-      "goal": "スレッドの目標を設定 (/goal <目標>)", "mcpRefresh": "MCPステータスを更新",
+      "goal": "スレッドの目標を設定 (/goal [目標])", "mcpRefresh": "MCPステータスを更新",
       "goalPause": "目標を一時停止", "goalResume": "目標を再開", "goalComplete": "目標を完了にする", "goalReopen": "目標を再オープン", "goalClear": "目標をクリア"
     },
     "topology": { "sheetTitle": "エージェントトポロジー", "root": "ルート" }

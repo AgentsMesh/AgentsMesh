@@ -464,7 +464,7 @@
       "act": "Passer en mode Agir", "plan": "Passer en mode Planifier", "model": "Modèle et niveau de réflexion", "thinking": "Niveau d'effort de réflexion",
       "compact": "Compacter le contexte de la conversation", "clear": "Effacer tout l'historique de la conversation", "rewind": "Revenir à un tour antérieur",
       "resume": "Reprendre une session par id", "suspend": "Suspendre cron / réveil", "unsuspend": "Reprendre cron / réveil",
-      "goal": "Définir un objectif de fil (/goal <objectif>)", "mcpRefresh": "Actualiser le statut MCP",
+      "goal": "Définir un objectif de fil (/goal [objectif])", "mcpRefresh": "Actualiser le statut MCP",
       "goalPause": "Mettre l'objectif en pause", "goalResume": "Reprendre l'objectif", "goalComplete": "Marquer l'objectif comme terminé", "goalReopen": "Rouvrir l'objectif", "goalClear": "Effacer l'objectif"
     },
     "topology": { "sheetTitle": "Topologie des agents", "root": "racine" }
