@@ -63,7 +63,11 @@
     "INTERNAL_ERROR": "发生内部错误，请稍后重试。",
     "AUTH_REQUIRED": "需要登录认证，请先登录。",
     "INVALID_TOKEN": "无效或已过期的认证令牌",
-    "TOKEN_EXPIRED": "会话已过期，请重新登录。"
+    "TOKEN_EXPIRED": "会话已过期，请重新登录。",
+    "RESOURCE_EXHAUSTED": "资源配额已达上限，请稍后重试或升级计划。",
+    "FAILED_PRECONDITION": "当前状态不允许执行此操作。",
+    "UNAVAILABLE": "服务暂时不可用，请稍后重试。",
+    "DEADLINE_EXCEEDED": "操作超时，请重试。"
   },
   "nav": {
     "agentpod": "AgentPod",

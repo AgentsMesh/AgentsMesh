@@ -63,7 +63,11 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "TOKEN_EXPIRED": "Your session has expired. Please log in again."
+    "TOKEN_EXPIRED": "Your session has expired. Please log in again.",
+    "RESOURCE_EXHAUSTED": "Resource quota exceeded. Try again later or upgrade your plan.",
+    "FAILED_PRECONDITION": "The current state does not allow this operation.",
+    "UNAVAILABLE": "Service temporarily unavailable. Please try again later.",
+    "DEADLINE_EXCEEDED": "The operation timed out. Please try again."
   },
   "share": {
     "title": "Share",

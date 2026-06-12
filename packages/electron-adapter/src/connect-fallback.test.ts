@@ -124,4 +124,34 @@ describe("connect fallback routing", () => {
     const svc = withConnectFallback({}, "proto.pod.v1.PodService") as Record<string, (b: Uint8Array) => Promise<unknown>>;
     await expect(svc.listPodsConnect(new Uint8Array())).rejects.toThrow(/not binary/);
   });
+
+  it("unwraps the Electron IPC prefix from ServiceError-shaped failures", async () => {
+    const wire = JSON.stringify({
+      kind: "http", status: 409, code: "already_exists", message: "source pod already resumed",
+    });
+    (globalThis as { window?: unknown }).window = {
+      electronAPI: {
+        invoke: async () => {
+          throw new Error(`Error invoking remote method 'connectCall': Error: ${wire}`);
+        },
+      },
+    };
+    const pod = withConnectFallback({}, "proto.pod.v1.PodService") as Record<string, (b: Uint8Array) => Promise<unknown>>;
+    const err = await pod.createPodConnect(new Uint8Array()).catch((e: unknown) => e);
+    // Message must START with `{` — serviceError.ts tryParseJson rejects prefixed strings.
+    expect((err as Error).message).toBe(wire);
+  });
+
+  it("keeps non-ServiceError failures untouched", async () => {
+    (globalThis as { window?: unknown }).window = {
+      electronAPI: {
+        invoke: async () => {
+          throw new Error("Error invoking remote method 'connectCall': Error: socket hang up");
+        },
+      },
+    };
+    const pod = withConnectFallback({}, "proto.pod.v1.PodService") as Record<string, (b: Uint8Array) => Promise<unknown>>;
+    const err = await pod.createPodConnect(new Uint8Array()).catch((e: unknown) => e);
+    expect((err as Error).message).toContain("socket hang up");
+  });
 });

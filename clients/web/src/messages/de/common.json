@@ -56,7 +56,11 @@
     "INVALID_TOKEN": "Invalid or expired authentication token",
     "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings."
+    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
+    "RESOURCE_EXHAUSTED": "Ressourcenkontingent überschritten. Versuchen Sie es später erneut oder upgraden Sie Ihren Plan.",
+    "FAILED_PRECONDITION": "Der aktuelle Zustand erlaubt diese Operation nicht.",
+    "UNAVAILABLE": "Dienst vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
+    "DEADLINE_EXCEEDED": "Zeitüberschreitung der Operation. Bitte erneut versuchen."
   },
   "nav": {
     "agentpod": "AgentPod",

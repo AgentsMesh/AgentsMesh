@@ -10,7 +10,7 @@ import {
   DialogBody,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { RefreshCw, RotateCcw } from "lucide-react";
+import { RefreshCw, RotateCcw, AlertCircle } from "lucide-react";
 import type { RunnerPodData } from "@/lib/api";
 import { useTranslations } from "next-intl";
 
@@ -19,6 +19,7 @@ interface ResumeDialogProps {
   onOpenChange: (open: boolean) => void;
   pod: RunnerPodData | null;
   loading: boolean;
+  error?: string | null;
   onConfirm: () => void;
 }
 
@@ -27,6 +28,7 @@ export function ResumeDialog({
   onOpenChange,
   pod,
   loading,
+  error,
   onConfirm,
 }: ResumeDialogProps) {
   const t = useTranslations();
@@ -46,6 +48,16 @@ export function ResumeDialog({
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {t("runners.detail.resumeDialogInfo")}
           </p>
+          {error && (
+            <div
+              role="alert"
+              data-testid="resume-error"
+              className="mt-3 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </DialogBody>
         <DialogFooter>
           <Button

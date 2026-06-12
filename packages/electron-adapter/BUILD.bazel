@@ -54,6 +54,7 @@ vitest_test(
     data = [
         "tsconfig.json",
         "//:node_modules",
+        "//:node_modules/@agentsmesh/service-interface",
     ] + glob(
         ["src/**/*.ts"],
         exclude = ["src/**/*.test.ts"],

@@ -148,7 +148,8 @@
         "description": "Are you sure you want to delete this runner? This action cannot be undone."
       },
       "confirmResume": "Resume a new pod from sandbox of \"{podKey}\"? This will create a new pod using the existing workspace.",
-      "resumeFailed": "Failed to resume pod. Please try again.",
+      "resumeFailed": "Échec de la reprise du pod. Veuillez réessayer.",
+      "alreadyResumedBadge": "Repris → {podKey}",
       "tabs": {
         "overview": "Overview",
         "pods": "Pods"
@@ -250,6 +251,9 @@
       "cancel": "Annuler",
       "creating": "Création...",
       "create": "Créer"
+    },
+    "resume": {
+      "ALREADY_EXISTS": "Ce pod a déjà été repris — ouvrez le pod repris dans l'espace de travail."
     }
   },
   "agent": {

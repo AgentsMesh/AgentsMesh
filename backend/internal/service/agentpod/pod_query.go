@@ -84,6 +84,10 @@ func (s *PodService) GetActivePodBySourcePodKey(ctx context.Context, sourcePodKe
 	return s.repo.GetActivePodBySourcePodKey(ctx, sourcePodKey)
 }
 
+func (s *PodService) ListActiveResumedBy(ctx context.Context, sourcePodKeys []string) (map[string]string, error) {
+	return s.repo.ListActiveResumedBy(ctx, sourcePodKeys)
+}
+
 func (s *PodService) FindByBranchAndRepo(ctx context.Context, orgID, repoID int64, branchName string) (*agentpod.Pod, error) {
 	return s.repo.FindByBranchAndRepo(ctx, orgID, repoID, branchName)
 }

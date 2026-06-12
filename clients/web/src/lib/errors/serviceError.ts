@@ -7,6 +7,8 @@
  * both and always returns a typed object so callers can discriminate on `kind`
  * instead of regex-matching error messages.
  */
+import { SERVICE_ERROR_KIND_SET } from "@agentsmesh/service-interface";
+
 export type ServiceError =
   | { kind: "http"; status: number; code?: string; message: string }
   | { kind: "auth_expired" }
@@ -14,15 +16,6 @@ export type ServiceError =
   | { kind: "invalid_json"; message: string }
   | { kind: "resource_not_found"; resource: string; id?: string }
   | { kind: "unknown"; message: string };
-
-const KNOWN_KINDS = new Set([
-  "http",
-  "auth_expired",
-  "network",
-  "invalid_json",
-  "resource_not_found",
-  "unknown",
-]);
 
 function extractMessage(err: unknown): string {
   if (err == null) return "";
@@ -44,7 +37,7 @@ function tryParseJson(msg: string): ServiceError | null {
   if (!trimmed.startsWith("{")) return null;
   try {
     const parsed = JSON.parse(trimmed) as { kind?: unknown };
-    if (typeof parsed?.kind === "string" && KNOWN_KINDS.has(parsed.kind)) {
+    if (typeof parsed?.kind === "string" && SERVICE_ERROR_KIND_SET.has(parsed.kind)) {
       return parsed as ServiceError;
     }
   } catch {

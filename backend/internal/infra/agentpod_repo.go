@@ -11,6 +11,10 @@ import (
 
 var _ agentpod.PodRepository = (*podRepo)(nil)
 
+// Statuses counted as "occupying" a source pod's resume slot — must stay in
+// lockstep with idx_pods_source_pod_key_active_unique (partial unique index).
+var activePodStatuses = agentpod.ActiveStatuses()
+
 type podRepo struct{ db *gorm.DB }
 
 func NewPodRepository(db *gorm.DB) agentpod.PodRepository {
@@ -153,10 +157,8 @@ func (r *podRepo) ListByRunnerPaginated(ctx context.Context, runnerID int64, q a
 func (r *podRepo) ListActive(ctx context.Context, runnerID int64) ([]*agentpod.Pod, error) {
 	var pods []*agentpod.Pod
 	err := r.db.WithContext(ctx).
-		Where("runner_id = ? AND status IN ?", runnerID, []string{
-			agentpod.StatusInitializing, agentpod.StatusRunning,
-			agentpod.StatusPaused, agentpod.StatusDisconnected,
-		}).Find(&pods).Error
+		Where("runner_id = ? AND status IN ?", runnerID, activePodStatuses).
+		Find(&pods).Error
 	return pods, err
 }
 
@@ -164,14 +166,35 @@ func (r *podRepo) GetActivePodBySourcePodKey(ctx context.Context, sourcePodKey s
 	var pod agentpod.Pod
 	err := r.db.WithContext(ctx).
 		Where("source_pod_key = ?", sourcePodKey).
-		Where("status IN ?", []string{
-			agentpod.StatusInitializing, agentpod.StatusRunning,
-			agentpod.StatusPaused, agentpod.StatusDisconnected,
-		}).First(&pod).Error
+		Where("status IN ?", activePodStatuses).
+		First(&pod).Error
 	if err != nil {
 		return nil, err
 	}
 	return &pod, nil
+}
+
+func (r *podRepo) ListActiveResumedBy(ctx context.Context, sourcePodKeys []string) (map[string]string, error) {
+	if len(sourcePodKeys) == 0 {
+		return map[string]string{}, nil
+	}
+	var rows []struct {
+		PodKey       string `gorm:"column:pod_key"`
+		SourcePodKey string `gorm:"column:source_pod_key"`
+	}
+	err := r.db.WithContext(ctx).Model(&agentpod.Pod{}).
+		Select("pod_key, source_pod_key").
+		Where("source_pod_key IN ?", sourcePodKeys).
+		Where("status IN ?", activePodStatuses).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	resumedBy := make(map[string]string, len(rows))
+	for _, row := range rows {
+		resumedBy[row.SourcePodKey] = row.PodKey
+	}
+	return resumedBy, nil
 }
 
 func (r *podRepo) FindByBranchAndRepo(ctx context.Context, orgID, repoID int64, branchName string) (*agentpod.Pod, error) {

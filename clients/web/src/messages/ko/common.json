@@ -56,7 +56,11 @@
     "INVALID_TOKEN": "Invalid or expired authentication token",
     "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings."
+    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
+    "RESOURCE_EXHAUSTED": "리소스 할당량이 초과되었습니다. 나중에 다시 시도하거나 플랜을 업그레이드하세요.",
+    "FAILED_PRECONDITION": "현재 상태에서는 이 작업을 수행할 수 없습니다.",
+    "UNAVAILABLE": "서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    "DEADLINE_EXCEEDED": "작업 시간이 초과되었습니다. 다시 시도해 주세요."
   },
   "nav": {
     "agentpod": "AgentPod",

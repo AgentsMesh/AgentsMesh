@@ -38,24 +38,48 @@ export function isApiStatus(error: unknown, status: number): boolean {
   return getServiceErrorStatus(error) === status;
 }
 
+// Connect protocol codes whose meaning maps onto an existing backend business
+// code — one apiErrors table serves both vocabularies after uppercasing.
+const CONNECT_CODE_ALIASES: Record<string, string> = {
+  NOT_FOUND: "RESOURCE_NOT_FOUND",
+  INVALID_ARGUMENT: "INVALID_INPUT",
+  INTERNAL: "INTERNAL_ERROR",
+  UNAUTHENTICATED: "AUTH_REQUIRED",
+  PERMISSION_DENIED: "ACCESS_DENIED",
+};
+
 /**
  * Get a localized error message, falling back through: i18n code translation
- * → server message → service-error message → Error.message → `fallback`.
+ * (context-scoped, then global) → server message → service-error message →
+ * Error.message → `fallback`.
+ *
+ * `contextPrefix` lets a call site provide flow-specific wording per code:
+ * lookup tries `<contextPrefix>.<CODE>` before `apiErrors.<CODE>` (e.g.
+ * "runners.resume" → runners.resume.ALREADY_EXISTS).
  */
 export function getLocalizedErrorMessage(
   error: unknown,
   t: (key: string, values?: Record<string, string>) => string,
-  fallback: string
+  fallback: string,
+  opts?: { contextPrefix?: string }
 ): string {
   const code = getApiErrorCode(error);
   if (code) {
-    const key = `apiErrors.${code}`;
-    try {
-      const translated = t(key);
-      if (translated && translated !== key) {
-        return translated;
+    // Backend business codes are UPPER_SNAKE; Connect protocol codes arrive
+    // lowercase (already_exists) — one apiErrors table serves both.
+    const upper = code.toUpperCase();
+    const canonical = CONNECT_CODE_ALIASES[upper] ?? upper;
+    const keys = opts?.contextPrefix
+      ? [`${opts.contextPrefix}.${canonical}`, `apiErrors.${canonical}`]
+      : [`apiErrors.${canonical}`];
+    for (const key of keys) {
+      try {
+        const translated = t(key);
+        if (translated && translated !== key) {
+          return translated;
+        }
+      } catch {
       }
-    } catch {
     }
   }
   if (error instanceof ApiError) {

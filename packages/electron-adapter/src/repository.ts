@@ -1,5 +1,6 @@
 import { invoke } from "./invoke";
 import { coerceConnectResponse } from "./connect-response";
+import { unwrapIpcServiceError } from "./connect-ipc-error";
 import type { IRepositoryService, IRepoState } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
@@ -20,13 +21,17 @@ import type { Repository as ProtoRepository, Branch as ProtoBranch } from "@agen
 // would be form symmetry without functional gain, so we go directly to the
 // backend Connect endpoint through main process.
 async function connectCall(method: string, request: Uint8Array): Promise<Uint8Array> {
-  const resp = await invoke<number[] | Uint8Array>(
-    "connectCall",
-    "proto.repository.v1.RepositoryService",
-    method,
-    Array.from(request),
-  );
-  return coerceConnectResponse(resp);
+  try {
+    const resp = await invoke<number[] | Uint8Array>(
+      "connectCall",
+      "proto.repository.v1.RepositoryService",
+      method,
+      Array.from(request),
+    );
+    return coerceConnectResponse(resp);
+  } catch (e) {
+    throw unwrapIpcServiceError(e);
+  }
 }
 
 function repositoryToCache(r: ProtoRepository): Record<string, unknown> {

@@ -11,6 +11,7 @@ import { setupRealtimeBridge, type RealtimeBridge } from "./realtime";
 import { setupRelayBridge, type RelayBridge } from "./relay";
 import { setupAutoUpdater } from "./auto_updater";
 import { connectFetch } from "./connect-fetch";
+import { connectErrorFromResponse, connectNetworkError } from "./connect-error";
 import {
   registerProtocol,
   attachSecondInstanceUrlHandler,
@@ -571,15 +572,20 @@ function registerLegacyApiAliases() {
     // bypassing the Rust api-client connect_call sink — this is the only place
     // these calls are observable. Log method + byte count, never headers/body.
     logEvent("debug", "ipc-rpc", `${service}/${method} (${bodyArr.length}B)`);
-    const res = await connectFetch(url, {
-      method: "POST",
-      headers,
-      body: Uint8Array.from(bodyArr),
-    });
+    let res: Response;
+    try {
+      res = await connectFetch(url, {
+        method: "POST",
+        headers,
+        body: Uint8Array.from(bodyArr),
+      });
+    } catch (err) {
+      logEvent("warn", "ipc-rpc", `${service}/${method} → network error`);
+      throw connectNetworkError(err);
+    }
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
       logEvent("warn", "ipc-rpc", `${service}/${method} → ${res.status}`);
-      throw new Error(`${res.status} ${res.statusText} ${url} ${text}`.trim());
+      throw await connectErrorFromResponse(res);
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
     return Array.from(bytes);

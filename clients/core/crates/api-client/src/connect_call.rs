@@ -68,29 +68,24 @@ where
             .canonical_reason()
             .unwrap_or("Unknown")
             .to_string();
-        // Connect-RPC error body is JSON `{"code":"...","message":"..."}`
-        // when content-negotiated with the server-side default; for protobuf
-        // we can't reliably parse it here without pulling Connect's typed
-        // errors. Fall back to status-only mapping — the upstream service
-        // layer surface (`ServiceError::Http`) treats the message field as
-        // opaque already.
         let body_bytes = resp.bytes().await.ok();
-        let server_message = body_bytes
+        let body_text = body_bytes
             .as_ref()
             .and_then(|b| std::str::from_utf8(b).ok())
-            .filter(|s| !s.is_empty())
-            .map(String::from);
+            .filter(|s| !s.is_empty());
+        let (code, server_message) = parse_connect_error(body_text);
         tracing::warn!(
             target: "api",
             procedure,
             status = status_code,
+            code = code.as_deref().unwrap_or(""),
             message = server_message.as_deref().unwrap_or(""),
             "connect_call ← error"
         );
         return Err(ApiError::Http {
             status: status_code,
             status_text,
-            code: None,
+            code,
             server_message,
             data: None,
             url: Some(url),
@@ -100,4 +95,54 @@ where
     let resp_bytes = resp.bytes().await?;
     tracing::debug!(target: "api", procedure, status = status.as_u16(), bytes = resp_bytes.len(), "connect_call ← ok");
     Res::decode(resp_bytes).map_err(|e| ApiError::Decode(format!("prost decode: {e}")))
+}
+
+// Connect encodes unary errors as JSON `{"code":"...","message":"..."}` even
+// on the proto lane — the protocol's error envelope is always JSON. Carrying
+// the code through ApiError::Http lets clients map it to i18n instead of
+// regex-matching messages; non-Connect bodies (proxy HTML) pass through raw.
+fn parse_connect_error(body: Option<&str>) -> (Option<String>, Option<String>) {
+    let Some(text) = body else {
+        return (None, None);
+    };
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(text) {
+        let code = v.get("code").and_then(|c| c.as_str()).map(String::from);
+        let message = v.get("message").and_then(|m| m.as_str()).map(String::from);
+        if code.is_some() || message.is_some() {
+            return (code, message.or_else(|| Some(text.to_string())));
+        }
+    }
+    (None, Some(text.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_connect_error;
+
+    #[test]
+    fn connect_envelope_yields_code_and_message() {
+        let (code, msg) =
+            parse_connect_error(Some(r#"{"code":"already_exists","message":"source pod already resumed"}"#));
+        assert_eq!(code.as_deref(), Some("already_exists"));
+        assert_eq!(msg.as_deref(), Some("source pod already resumed"));
+    }
+
+    #[test]
+    fn non_json_body_passes_through_raw() {
+        let (code, msg) = parse_connect_error(Some("<html>502 Bad Gateway</html>"));
+        assert_eq!(code, None);
+        assert_eq!(msg.as_deref(), Some("<html>502 Bad Gateway</html>"));
+    }
+
+    #[test]
+    fn json_without_envelope_fields_passes_through_raw() {
+        let (code, msg) = parse_connect_error(Some(r#"{"error":"boom"}"#));
+        assert_eq!(code, None);
+        assert_eq!(msg.as_deref(), Some(r#"{"error":"boom"}"#));
+    }
+
+    #[test]
+    fn empty_body_yields_nothing() {
+        assert_eq!(parse_connect_error(None), (None, None));
+    }
 }

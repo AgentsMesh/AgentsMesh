@@ -692,3 +692,9 @@ export interface IUserCredentialService {
   update_git_credential(id: bigint, json: string): Promise<string>;
   update_repo_provider(id: bigint, json: string): Promise<string>;
 }
+
+export {
+  SERVICE_ERROR_KINDS,
+  SERVICE_ERROR_KIND_SET,
+  type ServiceErrorKind,
+} from "./service-error-kinds";

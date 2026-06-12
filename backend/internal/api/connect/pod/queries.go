@@ -3,6 +3,7 @@ package podconnect
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -57,12 +58,41 @@ func (s *Server) ListPods(
 		return nil, mapServiceError(err)
 	}
 
+	items := toProtoPods(pods)
+	s.applyResumedBy(ctx, items)
+
 	return connect.NewResponse(&podv1.ListPodsResponse{
-		Items:  toProtoPods(pods),
+		Items:  items,
 		Total:  total,
 		Limit:  int32(limit),
 		Offset: int32(offset),
 	}), nil
+}
+
+// applyResumedBy fills the query-derived resumed_by_pod_key on terminated /
+// completed / orphaned items — the only statuses resume accepts as a source.
+// Failure is non-fatal: the field is an affordance hint, not list data.
+func (s *Server) applyResumedBy(ctx context.Context, items []*podv1.Pod) {
+	keys := make([]string, 0, len(items))
+	for _, p := range items {
+		switch p.GetStatus() {
+		case poddom.StatusTerminated, poddom.StatusCompleted, poddom.StatusOrphaned:
+			keys = append(keys, p.GetPodKey())
+		}
+	}
+	if len(keys) == 0 {
+		return
+	}
+	resumedBy, err := s.podSvc.ListActiveResumedBy(ctx, keys)
+	if err != nil {
+		slog.WarnContext(ctx, "resumed-by lookup failed", "error", err)
+		return
+	}
+	for _, p := range items {
+		if key, ok := resumedBy[p.GetPodKey()]; ok {
+			p.ResumedByPodKey = &key
+		}
+	}
 }
 
 // GetPod — REST analogue: GET /api/v1/organizations/:slug/pods/:key.

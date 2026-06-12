@@ -31,6 +31,7 @@ type PodRepository interface {
 	ListByRunnerPaginated(ctx context.Context, runnerID int64, q PodListQuery) ([]*Pod, int64, error)
 	ListActive(ctx context.Context, runnerID int64) ([]*Pod, error)
 	GetActivePodBySourcePodKey(ctx context.Context, sourcePodKey string) (*Pod, error)
+	ListActiveResumedBy(ctx context.Context, sourcePodKeys []string) (map[string]string, error)
 	FindByBranchAndRepo(ctx context.Context, orgID, repoID int64, branchName string) (*Pod, error)
 	UpdateByKey(ctx context.Context, podKey string, updates map[string]interface{}) (int64, error)
 	UpdateByKeyAndStatus(ctx context.Context, podKey, status string, updates map[string]interface{}) error

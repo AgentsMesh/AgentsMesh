@@ -114,4 +114,53 @@ describe("getLocalizedErrorMessage", () => {
     const err = apiErr({ code: "ANY", error: "server msg" });
     expect(getLocalizedErrorMessage(err, tThrows, fallback)).toBe("server msg");
   });
+
+  // Desktop/wasm Connect lane: errors arrive as ServiceError wire JSON in
+  // Error.message with lowercase protocol codes.
+  const connectErr = (code: string, status = 409) =>
+    new Error(JSON.stringify({ kind: "http", status, code, message: "server raw" }));
+
+  it("uppercases lowercase Connect codes for i18n lookup", () => {
+    const t = (k: string) => (k === "apiErrors.ALREADY_EXISTS" ? "已存在" : k);
+    expect(getLocalizedErrorMessage(connectErr("already_exists"), t, fallback)).toBe("已存在");
+  });
+
+  it("aliases Connect protocol codes onto existing backend keys", () => {
+    const translations: Record<string, string> = {
+      "apiErrors.RESOURCE_NOT_FOUND": "资源未找到",
+      "apiErrors.INVALID_INPUT": "输入无效",
+      "apiErrors.INTERNAL_ERROR": "内部错误",
+      "apiErrors.AUTH_REQUIRED": "需要登录",
+      "apiErrors.ACCESS_DENIED": "访问被拒绝",
+    };
+    const t = (k: string) => translations[k] ?? k;
+    expect(getLocalizedErrorMessage(connectErr("not_found", 404), t, fallback)).toBe("资源未找到");
+    expect(getLocalizedErrorMessage(connectErr("invalid_argument", 400), t, fallback)).toBe("输入无效");
+    expect(getLocalizedErrorMessage(connectErr("internal", 500), t, fallback)).toBe("内部错误");
+    expect(getLocalizedErrorMessage(connectErr("unauthenticated", 401), t, fallback)).toBe("需要登录");
+    expect(getLocalizedErrorMessage(connectErr("permission_denied", 403), t, fallback)).toBe("访问被拒绝");
+  });
+
+  it("prefers contextPrefix key over the global apiErrors key", () => {
+    const t = (k: string) =>
+      k === "runners.resume.ALREADY_EXISTS"
+        ? "该 Pod 已被恢复过"
+        : k === "apiErrors.ALREADY_EXISTS"
+          ? "已存在"
+          : k;
+    expect(
+      getLocalizedErrorMessage(connectErr("already_exists"), t, fallback, {
+        contextPrefix: "runners.resume",
+      }),
+    ).toBe("该 Pod 已被恢复过");
+  });
+
+  it("falls back to the global key when the contextPrefix key is missing", () => {
+    const t = (k: string) => (k === "apiErrors.ALREADY_EXISTS" ? "已存在" : k);
+    expect(
+      getLocalizedErrorMessage(connectErr("already_exists"), t, fallback, {
+        contextPrefix: "runners.resume",
+      }),
+    ).toBe("已存在");
+  });
 });

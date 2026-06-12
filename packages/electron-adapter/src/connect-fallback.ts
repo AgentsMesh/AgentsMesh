@@ -1,5 +1,6 @@
 import { invoke } from "./invoke";
 import { coerceConnectResponse } from "./connect-response";
+import { unwrapIpcServiceError } from "./connect-ipc-error";
 
 // Connect-RPC routing config + fallback proxy for the desktop renderer.
 // Kept separate from provider.ts (which imports every ElectronXxxService,
@@ -143,12 +144,17 @@ export function withConnectFallback<T extends object>(
         throw new Error(`connect-fallback: cannot derive a proto method from "${prop}"`);
       }
       const targetService = methodOverrides?.[camel] ?? protoPath;
-      return async (request: Uint8Array): Promise<Uint8Array> =>
-        coerceConnectResponse(
-          await invoke<number[] | Uint8Array>(
-            "connectCall", targetService, protoMethod, Array.from(request),
-          ),
-        );
+      return async (request: Uint8Array): Promise<Uint8Array> => {
+        try {
+          return coerceConnectResponse(
+            await invoke<number[] | Uint8Array>(
+              "connectCall", targetService, protoMethod, Array.from(request),
+            ),
+          );
+        } catch (e) {
+          throw unwrapIpcServiceError(e);
+        }
+      };
     },
   });
 }

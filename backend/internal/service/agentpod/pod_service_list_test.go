@@ -247,3 +247,57 @@ func TestGetPodsByTicket(t *testing.T) {
 		t.Errorf("Pods count = %d, want 3", len(pods))
 	}
 }
+
+func TestListActiveResumedBy(t *testing.T) {
+	db := setupTestDB(t)
+	svc := newTestPodService(db)
+	ctx := context.Background()
+
+	source, err := svc.CreatePod(ctx, &CreatePodRequest{OrganizationID: 1, RunnerID: 1, CreatedByID: 1})
+	if err != nil {
+		t.Fatalf("CreatePod(source) failed: %v", err)
+	}
+	if err := svc.UpdatePodStatus(ctx, source.PodKey, agentpod.StatusTerminated); err != nil {
+		t.Fatalf("UpdatePodStatus failed: %v", err)
+	}
+
+	resumed, err := svc.CreatePod(ctx, &CreatePodRequest{
+		OrganizationID: 1, RunnerID: 1, CreatedByID: 1, SourcePodKey: source.PodKey,
+	})
+	if err != nil {
+		t.Fatalf("CreatePod(resume) failed: %v", err)
+	}
+
+	t.Run("active resume pod is reported against its source", func(t *testing.T) {
+		m, err := svc.ListActiveResumedBy(ctx, []string{source.PodKey})
+		if err != nil {
+			t.Fatalf("ListActiveResumedBy failed: %v", err)
+		}
+		if m[source.PodKey] != resumed.PodKey {
+			t.Errorf("resumed_by = %q, want %q", m[source.PodKey], resumed.PodKey)
+		}
+	})
+
+	t.Run("terminated resume pod frees the slot", func(t *testing.T) {
+		if err := svc.UpdatePodStatus(ctx, resumed.PodKey, agentpod.StatusTerminated); err != nil {
+			t.Fatalf("UpdatePodStatus failed: %v", err)
+		}
+		m, err := svc.ListActiveResumedBy(ctx, []string{source.PodKey})
+		if err != nil {
+			t.Fatalf("ListActiveResumedBy failed: %v", err)
+		}
+		if len(m) != 0 {
+			t.Errorf("map = %v, want empty", m)
+		}
+	})
+
+	t.Run("empty input short-circuits", func(t *testing.T) {
+		m, err := svc.ListActiveResumedBy(ctx, nil)
+		if err != nil {
+			t.Fatalf("ListActiveResumedBy failed: %v", err)
+		}
+		if len(m) != 0 {
+			t.Errorf("map = %v, want empty", m)
+		}
+	})
+}

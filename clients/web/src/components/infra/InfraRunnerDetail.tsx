@@ -155,6 +155,7 @@ export function InfraRunnerDetail({ runnerId, onBack }: Props) {
           onRefreshSandbox={state.handleRefreshSandboxStatus}
           onResume={(pod) => {
             state.setResumingPod(pod);
+            state.setResumeError(null);
             state.setResumeDialogOpen(true);
           }}
         />
@@ -164,10 +165,14 @@ export function InfraRunnerDetail({ runnerId, onBack }: Props) {
         open={state.resumeDialogOpen}
         onOpenChange={(open) => {
           state.setResumeDialogOpen(open);
-          if (!open) state.setResumingPod(null);
+          if (!open) {
+            state.setResumingPod(null);
+            state.setResumeError(null);
+          }
         }}
         pod={state.resumingPod}
         loading={state.resumeLoading}
+        error={state.resumeError}
         onConfirm={state.handleConfirmResume}
       />
       <ConfirmDialog {...state.deleteDialog.dialogProps} />

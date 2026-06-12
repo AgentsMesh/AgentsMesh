@@ -94,6 +94,7 @@ export function fromProtoPod(p: ProtoPod): PodData {
     created_at: p.createdAt,
     error_code: p.errorCode,
     error_message: p.errorMessage,
+    resumed_by_pod_key: p.resumedByPodKey,
   };
 }
 

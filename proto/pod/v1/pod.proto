@@ -164,6 +164,12 @@ message Pod {
     (amesh.codegen.v1.field_rename) = "SessionID",
     (amesh.codegen.v1.field_convert) = "string_ptr"
   ];
+
+  // Reverse resume linkage — the active pod resumed FROM this pod, if any.
+  // Query-derived (not a domain column); only ListPods populates it so
+  // clients can suppress the resume affordance instead of surfacing the
+  // backend's one-active-resume-per-source 409.
+  optional string resumed_by_pod_key = 32 [(amesh.codegen.v1.field_skip) = true];
 }
 
 message PodConnectionInfo {

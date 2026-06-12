@@ -117,6 +117,7 @@
       },
       "confirmResume": "要从「{podKey}」的 Sandbox 恢复一个新 Pod 吗？这将使用现有工作区创建新 Pod。",
       "resumeFailed": "恢复 Pod 失败，请重试。",
+      "alreadyResumedBadge": "已恢复 → {podKey}",
       "tabs": {
         "overview": "概览",
         "pods": "Pod 列表"
@@ -216,6 +217,9 @@
       "authorizeFailed": "授权失败，请重试。",
       "quotaExceeded": "Runner 配额已满。请升级您的套餐或移除不再使用的 Runner。",
       "expiresAt": "此链接将于 {time} 过期"
+    },
+    "resume": {
+      "ALREADY_EXISTS": "该 Pod 已被恢复过，请在工作区查看恢复出的 Pod。"
     }
   },
   "agent": {

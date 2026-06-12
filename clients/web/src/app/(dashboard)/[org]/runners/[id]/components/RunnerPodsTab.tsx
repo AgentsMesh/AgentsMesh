@@ -141,7 +141,8 @@ export function RunnerPodsTab({
             {pods.map((pod) => {
               const sandboxStatus = sandboxStatuses.get(pod.pod_key);
               const isInactive = pod.status !== "running" && pod.status !== "initializing";
-              const canResume = isInactive && sandboxStatus?.can_resume;
+              const alreadyResumed = Boolean(pod.resumed_by_pod_key);
+              const canResume = isInactive && sandboxStatus?.can_resume && !alreadyResumed;
 
               return (
                 <tr key={pod.pod_key} data-testid="runner-pod-row" data-pod-key={pod.pod_key} className="hover:bg-muted/50">
@@ -228,6 +229,16 @@ export function RunnerPodsTab({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end space-x-2">
+                      {alreadyResumed && (
+                        <span
+                          className="text-xs text-muted-foreground"
+                          title={pod.resumed_by_pod_key}
+                        >
+                          {t("runners.detail.alreadyResumedBadge", {
+                            podKey: getShortPodKey(pod.resumed_by_pod_key ?? ""),
+                          })}
+                        </span>
+                      )}
                       {canResume && (
                         <Button
                           variant="outline"

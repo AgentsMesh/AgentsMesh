@@ -76,9 +76,14 @@ impl From<&ApiError> for ServiceError {
                     None => base,
                 };
                 if *status == 404 {
+                    // REST puts a resource name in `code` ("Pod"); the Connect
+                    // lane carries the protocol code "not_found" — a status
+                    // synonym, not a resource. Letting it through would render
+                    // as "not_found not found" downstream.
                     return ServiceError::ResourceNotFound {
                         resource: code
                             .clone()
+                            .filter(|c| c != "not_found")
                             .unwrap_or_else(|| "resource".to_string()),
                         id: None,
                     };
@@ -132,6 +137,23 @@ mod tests {
         assert!(matches!(
             svc,
             ServiceError::ResourceNotFound { ref resource, .. } if resource == "Pod"
+        ));
+    }
+
+    #[test]
+    fn http_404_connect_protocol_code_is_not_a_resource_name() {
+        let err = ApiError::Http {
+            status: 404,
+            status_text: "Not Found".into(),
+            code: Some("not_found".into()),
+            server_message: Some("pod not found".into()),
+            data: None,
+            url: None,
+        };
+        let svc: ServiceError = (&err).into();
+        assert!(matches!(
+            svc,
+            ServiceError::ResourceNotFound { ref resource, .. } if resource == "resource"
         ));
     }
 

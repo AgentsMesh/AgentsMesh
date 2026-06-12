@@ -26,4 +26,6 @@ export interface PodData {
   error_code?: string;
   error_message?: string;
   created_by?: { id?: number; username?: string; name?: string };
+  // Query-derived (ListPods only): the active pod resumed from this one.
+  resumed_by_pod_key?: string;
 }

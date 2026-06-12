@@ -117,6 +117,7 @@
       },
       "confirmResume": "Resume a new pod from sandbox of \"{podKey}\"? This will create a new pod using the existing workspace.",
       "resumeFailed": "Failed to resume pod. Please try again.",
+      "alreadyResumedBadge": "Resumed → {podKey}",
       "tabs": {
         "overview": "Overview",
         "pods": "Pods"
@@ -216,6 +217,9 @@
       "authorizeFailed": "Failed to authorize runner. Please try again.",
       "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
       "expiresAt": "This link expires at {time}"
+    },
+    "resume": {
+      "ALREADY_EXISTS": "This pod has already been resumed — open the resumed pod in the workspace."
     }
   },
   "agent": {

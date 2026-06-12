@@ -43,6 +43,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [resumingPod, setResumingPod] = useState<RunnerPodData | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
   const deleteDialog = useConfirmDialog({
     title: t("runners.detail.deleteDialog.title"),
@@ -109,6 +110,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
   const handleConfirmResume = async () => {
     if (!runner || !resumingPod) return;
     setResumeLoading(true);
+    setResumeError(null);
     try {
       const { pod } = await createPodConnect(orgSlug, {
         agent_slug: resumingPod.agent_slug || "",
@@ -122,7 +124,11 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
       setResumingPod(null);
       router.push(`/${params.org}/workspace?pod=${pod.pod_key}`);
     } catch (error) {
-      toast.error(getLocalizedErrorMessage(error, t, t("common.error")));
+      setResumeError(
+        getLocalizedErrorMessage(error, t, t("runners.detail.resumeFailed"), {
+          contextPrefix: "runners.resume",
+        }),
+      );
     } finally {
       setResumeLoading(false);
     }
@@ -155,6 +161,7 @@ export function useRunnerDetail(t: (key: string) => string, runnerIdArg?: number
     loading, loadingPods, loadingSandbox, activeTab, setActiveTab,
     podFilter, setPodFilter, total, offset, setOffset, limit,
     resumeDialogOpen, setResumeDialogOpen, resumingPod, setResumingPod, resumeLoading,
+    resumeError, setResumeError,
     deleteDialog, loadRunner, loadPods,
     handleRefreshSandboxStatus, handleConfirmResume, handleToggleEnabled, handleDelete,
   };
