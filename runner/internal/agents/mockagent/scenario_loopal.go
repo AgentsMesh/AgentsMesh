@@ -15,9 +15,12 @@ func scenarioLoopalPanels(state *runtimeState, id int64, _ json.RawMessage, _ *s
 		kind string
 		data map[string]any
 	}{
+		// bg1 stays Running so the dock's bg tab renders it — BgShellSection
+		// filters to Running (mirrors loopal's render_bg_tasks); a Completed
+		// shell would be hidden and the tab would collapse to count 0. The
+		// bgTask.completed reducer path is covered by loopal_snapshot_test.go.
 		{"bgTask.spawned", map[string]any{"id": "bg1", "description": "npm test", "created_at_unix_ms": 1717000000000}},
 		{"bgTask.output", map[string]any{"id": "bg1", "output_delta": "running...\n"}},
-		{"bgTask.completed", map[string]any{"id": "bg1", "status": "Completed", "exit_code": 0, "output": "done"}},
 		{"crons", map[string]any{"crons": []map[string]any{
 			{"id": "c1", "cron_expr": "0 9 * * *", "prompt": "daily", "recurring": true, "durable": true},
 		}}},

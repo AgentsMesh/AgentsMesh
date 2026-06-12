@@ -2,7 +2,6 @@
   "signals": [
     {"kind": "bgTask.spawned", "data": {"id": "bg1", "description": "npm test", "created_at_unix_ms": 1717000000000}},
     {"kind": "bgTask.output", "data": {"id": "bg1", "output_delta": "running...\n"}},
-    {"kind": "bgTask.completed", "data": {"id": "bg1", "status": "Completed", "exit_code": 0, "output": "done"}},
     {"kind": "crons", "data": {"crons": [{"id": "c1", "cron_expr": "0 9 * * *", "prompt": "daily", "recurring": true, "durable": true}]}},
     {"kind": "tasks", "data": {"tasks": [{"id": "t1", "subject": "build", "status": "in_progress", "blocked_by": []}]}},
     {"kind": "topology.spawn", "data": {"spawn": {"name": "worker", "agent_id": "a1", "parent": {"agent": "main"}, "model": "opus"}}},
