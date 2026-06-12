@@ -136,6 +136,16 @@ build_mock_agent_binary() {
         "$SCRIPT_DIR/e2e-mock-agent-binary"
     chmod +x "$SCRIPT_DIR/e2e-mock-agent-binary"
     success "e2e-mock-agent binary 已编译并复制到 build context"
+
+    # loopal-binary: the real Loopal CLI is copied in manually from the Loopal
+    # repo for hands-on console use (runner.Dockerfile COPY). CI / fresh
+    # checkouts have none — stub it with the mock-agent binary so the Dockerfile
+    # COPY resolves; loopal E2E drives the mock-agent loopal scenario, never the
+    # real binary.
+    [ -f "$SCRIPT_DIR/loopal-binary" ] || {
+        cp "$SCRIPT_DIR/e2e-mock-agent-binary" "$SCRIPT_DIR/loopal-binary"
+        chmod +x "$SCRIPT_DIR/loopal-binary"
+    }
 }
 
 # Pre-build the binary (no health budget pressure), then ibazel run for

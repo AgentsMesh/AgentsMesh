@@ -13,7 +13,7 @@ export {
   getUserCredentialService, getEnvBundleService, getOrgApiService, getAgentService,
   getTicketRelationsService, getFileService, getSupportTicketService,
   getAuthConnectService, getRunnerState, getMeshState, getTicketState,
-  getChannelState, getLoopState, getAcpManager,
+  getChannelState, getLoopState, getAcpManager, getLoopalManager,
   getRepoState,
   getAutopilotState, getRelayManager, getBlockstoreService,
 } from "@agentsmesh/service-runtime";
