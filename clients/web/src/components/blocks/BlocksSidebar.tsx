@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronRight, FileText, Search, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBlocks, useRefs, useNestChildrenIndex, useBlockstoreStore, useWorkspace } from "@/stores/blockstore";
@@ -9,6 +9,7 @@ import { useBlockTypeSpecs } from "@/lib/blockstore/useBlockTypeSpec";
 import { useBlockstoreDispatch } from "@/components/blocks/editor/useBlockstoreDispatch";
 import { BLOCK_TYPE_PAGE } from "@/lib/viewModels/blockstore";
 import { buildPageTree, countByType, colorForType, type PageNode } from "@/lib/blockstore/page-tree";
+import { useSelectPage } from "@/lib/blockstore/useSelectPage";
 import {
   ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem,
 } from "@/components/ui/context-menu";
@@ -19,7 +20,6 @@ import {
 import { useTranslations } from "next-intl";
 
 export function BlocksSidebar() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pageParam = searchParams.get("page");
   const activeWorkspaceId = useBlockstoreStore((s) => s.activeWorkspaceId);
@@ -48,13 +48,7 @@ export function BlocksSidebar() {
   const triggerCount = typeCounts["trigger_def"] ?? 0;
   const typeEntries = Object.values(typeSpecs);
 
-  const handleSelectPage = (id: string) => {
-    const next = new URLSearchParams(Array.from(searchParams.entries()));
-    if (id === rootBlockID) next.delete("page");
-    else next.set("page", id);
-    const qs = next.toString();
-    router.replace(qs ? `?${qs}` : "?");
-  };
+  const selectPage = useSelectPage();
 
   const handleAddPage = async () => {
     if (!rootBlockID) return;
@@ -64,7 +58,7 @@ export function BlocksSidebar() {
       { title: "Untitled" },
       { text: "Untitled" },
     );
-    if (newID) handleSelectPage(newID);
+    if (newID) selectPage(newID);
   };
 
   const handleOpenSearch = () => {
@@ -105,7 +99,7 @@ export function BlocksSidebar() {
               node={node}
               depth={0}
               selectedId={selectedPageID}
-              onSelect={handleSelectPage}
+              onSelect={selectPage}
               onDelete={setPendingDelete}
             />
           ))

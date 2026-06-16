@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowUpRight } from "lucide-react";
 
 import type { Block } from "@/lib/viewModels/blockstore";
+import { useJumpToBlock } from "@/lib/blockstore/useJumpToBlock";
 import { useBlock } from "@/stores/blockstore";
 
 import { BlockChrome } from "../editor/BlockChrome";
@@ -11,6 +12,7 @@ import { useBlockstoreDispatch } from "../editor/useBlockstoreDispatch";
 
 export function LinkToPageRenderer({ block }: { block: Block }) {
   const dispatch = useBlockstoreDispatch(block.workspace_id);
+  const jumpToBlock = useJumpToBlock();
   const targetID = (block.data?.target_id as string | undefined) ?? "";
   const target = useBlock(targetID || null);
 
@@ -25,11 +27,7 @@ export function LinkToPageRenderer({ block }: { block: Block }) {
     "Untitled page";
 
   const handleJump = () => {
-    if (!targetID) return;
-    const el = document.getElementById(`block-${targetID}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    el?.classList.add("ring-2", "ring-primary");
-    setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
+    if (targetID) jumpToBlock(targetID);
   };
 
   return (

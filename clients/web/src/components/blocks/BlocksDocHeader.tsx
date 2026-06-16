@@ -10,6 +10,7 @@ interface BlocksDocHeaderProps {
   currentIcon?: string;
   isRoot: boolean;
   onAddBlock: () => void;
+  onNavigateRoot?: () => void;
 }
 
 export function BlocksDocHeader({
@@ -19,16 +20,33 @@ export function BlocksDocHeader({
   currentIcon,
   isRoot,
   onAddBlock,
+  onNavigateRoot,
 }: BlocksDocHeaderProps) {
+  const rootLabel = (
+    <>
+      {rootIcon && <span className="mr-1" aria-hidden="true">{rootIcon}</span>}
+      {rootTitle}
+    </>
+  );
   return (
     <div className="flex flex-col gap-1.5 border-b border-border px-12 pb-3 pt-4">
       <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
         <span>Pages</span>
         <span className="text-border">›</span>
-        <span className={isRoot ? "font-medium text-foreground" : undefined}>
-          {rootIcon && <span className="mr-1" aria-hidden="true">{rootIcon}</span>}
-          {rootTitle}
-        </span>
+        {!isRoot && onNavigateRoot ? (
+          <button
+            type="button"
+            onClick={onNavigateRoot}
+            data-testid="blocks-breadcrumb-root"
+            className="inline-flex items-center rounded text-muted-foreground transition-colors hover:text-foreground hover:underline"
+          >
+            {rootLabel}
+          </button>
+        ) : (
+          <span className={isRoot ? "font-medium text-foreground" : "text-muted-foreground"}>
+            {rootLabel}
+          </span>
+        )}
         {!isRoot && (
           <>
             <span className="text-border">›</span>

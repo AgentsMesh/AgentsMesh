@@ -8,17 +8,12 @@ import { BlocksDocHeader } from "@/components/blocks/BlocksDocHeader";
 import { CenteredSpinner } from "@/components/ui/spinner";
 import { getErrorMessage } from "@/lib/utils";
 import { blockstoreApi } from "@/lib/api/facade/blockstoreApi";
+import { useSelectPage } from "@/lib/blockstore/useSelectPage";
+import { useJumpToBlock } from "@/lib/blockstore/useJumpToBlock";
+import { pageDisplayMeta } from "@/lib/blockstore/pageDisplayMeta";
 import type { Workspace } from "@/lib/viewModels/blockstore";
 import { useBlockstoreStore, useBlocks } from "@/stores/blockstore";
 import "@/stores/blockstoreSubscribe";
-
-function pageMeta(block: { data?: { title?: unknown; icon?: unknown }; text?: string | null } | undefined) {
-  if (!block) return { title: "Untitled", icon: undefined as string | undefined };
-  const t = block.data?.title;
-  const title = typeof t === "string" && t.trim() ? t : block.text?.trim() || "Untitled";
-  const icon = typeof block.data?.icon === "string" ? (block.data.icon as string) : undefined;
-  return { title, icon };
-}
 
 export function BlocksPage() {
   const t = useTranslations();
@@ -30,6 +25,8 @@ export function BlocksPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const blocks = useBlocks();
+  const selectPage = useSelectPage();
+  const jumpToBlock = useJumpToBlock();
 
   const hydrate = async (ws: Workspace) => {
     setWorkspace(ws);
@@ -74,9 +71,9 @@ export function BlocksPage() {
   const rootId = workspace?.root_block_id ?? null;
   const selectedPageID = pageParam ?? rootId;
 
-  const rootMeta = useMemo(() => pageMeta(rootId ? blocks[rootId] : undefined), [rootId, blocks]);
+  const rootMeta = useMemo(() => pageDisplayMeta(rootId ? blocks[rootId] : undefined), [rootId, blocks]);
   const currentMeta = useMemo(
-    () => pageMeta(selectedPageID ? blocks[selectedPageID] : undefined),
+    () => pageDisplayMeta(selectedPageID ? blocks[selectedPageID] : undefined),
     [selectedPageID, blocks],
   );
 
@@ -93,6 +90,7 @@ export function BlocksPage() {
           currentIcon={currentMeta.icon}
           isRoot={selectedPageID === rootId}
           onAddBlock={() => setMenuOpen(true)}
+          onNavigateRoot={() => selectPage(rootId)}
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <DocumentView
@@ -107,12 +105,7 @@ export function BlocksPage() {
         workspaceID={workspace.id}
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
-        onJumpToBlock={(blockID) => {
-          const el = document.getElementById(`block-${blockID}`);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-          el?.classList.add("ring-2", "ring-primary");
-          setTimeout(() => el?.classList.remove("ring-2", "ring-primary"), 1500);
-        }}
+        onJumpToBlock={jumpToBlock}
       />
     </div>
   );

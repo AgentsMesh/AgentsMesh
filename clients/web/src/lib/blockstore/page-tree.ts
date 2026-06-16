@@ -1,5 +1,7 @@
 import { BLOCK_TYPE_PAGE, type Block, type BlockRef } from "@/lib/viewModels/blockstore";
 
+import { pageDisplayMeta } from "./pageDisplayMeta";
+
 export interface PageNode {
   id: string;
   title: string;
@@ -54,24 +56,13 @@ function buildOne(
 ): PageNode | null {
   const block = blocks[id];
   if (!block || block.type !== BLOCK_TYPE_PAGE) return null;
+  const meta = pageDisplayMeta(block);
   return {
     id,
-    title: titleOf(block),
-    icon: iconOf(block),
+    title: meta.title,
+    icon: meta.icon,
     children: childPages(blocks, refs, nestChildren, id),
   };
-}
-
-function titleOf(block: Block): string {
-  const t = block.data?.title;
-  if (typeof t === "string" && t.trim()) return t;
-  if (block.text && block.text.trim()) return block.text;
-  return "Untitled";
-}
-
-function iconOf(block: Block): string | undefined {
-  const icon = block.data?.icon;
-  return typeof icon === "string" ? icon : undefined;
 }
 
 export function countByType(
