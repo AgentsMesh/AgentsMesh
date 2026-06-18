@@ -15,12 +15,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetPath(t *testing.T) {
-	path := GetPath()
+func TestGetPath_EmptyFallsBackToHome(t *testing.T) {
+	path := GetPath("")
 	assert.NotEmpty(t, path)
 	assert.True(t, filepath.IsAbs(path))
 	assert.Equal(t, "runner.pid", filepath.Base(path))
 	assert.Equal(t, ".agentsmesh", filepath.Base(filepath.Dir(path)))
+}
+
+func TestGetPath_CustomStateDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := GetPath(tmpDir)
+	assert.Equal(t, filepath.Join(tmpDir, "runner.pid"), path)
+}
+
+func TestWrite_CustomStateDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	stateDir := filepath.Join(tmpDir, "instance-a")
+
+	require.NoError(t, Write(stateDir))
+
+	pidPath := filepath.Join(stateDir, "runner.pid")
+	data, err := os.ReadFile(pidPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), strconv.Itoa(os.Getpid()))
+}
+
+func TestRemove_CustomStateDir_OnlyOwnPID(t *testing.T) {
+	tmpDir := t.TempDir()
+	stateDir := filepath.Join(tmpDir, "instance-a")
+
+	require.NoError(t, Write(stateDir))
+	Remove(stateDir)
+
+	_, err := os.Stat(filepath.Join(stateDir, "runner.pid"))
+	assert.True(t, os.IsNotExist(err), "Write+Remove with the same PID should delete the file")
+}
+
+func TestRemove_CustomStateDir_PreservesOtherPID(t *testing.T) {
+	tmpDir := t.TempDir()
+	stateDir := filepath.Join(tmpDir, "instance-a")
+	require.NoError(t, os.MkdirAll(stateDir, 0755))
+
+	pidPath := filepath.Join(stateDir, "runner.pid")
+	otherPID := os.Getpid() + 1000
+	require.NoError(t, os.WriteFile(pidPath, []byte(fmt.Sprintf("%d agentsmesh-runner\n", otherPID)), 0644))
+
+	Remove(stateDir)
+
+	_, err := os.Stat(pidPath)
+	assert.NoError(t, err, "Remove must skip PID files that belong to another process")
 }
 
 func TestWriteAndRemove(t *testing.T) {

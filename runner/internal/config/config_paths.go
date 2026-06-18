@@ -56,6 +56,37 @@ func (c *Config) GetMCPPort() int {
 	return 19000 // Default port
 }
 
+// GetConsolePort returns the web console bind port.
+func (c *Config) GetConsolePort() int {
+	if c.ConsolePort > 0 {
+		return c.ConsolePort
+	}
+	return 19080
+}
+
+// GetDataDir returns the persistent state root. Empty config falls back
+// to ~/.agentsmesh, matching the historical hardcoded default.
+func (c *Config) GetDataDir() string {
+	if c.DataDir != "" {
+		return os.ExpandEnv(c.DataDir)
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return filepath.Join(home, ".agentsmesh")
+}
+
+// GetStateDir returns the runtime state root for pid files and locks.
+// Falls back to GetDataDir when not set, which itself falls back to
+// ~/.agentsmesh — so empty config matches the historical behavior.
+func (c *Config) GetStateDir() string {
+	if c.StateDir != "" {
+		return os.ExpandEnv(c.StateDir)
+	}
+	return c.GetDataDir()
+}
+
 // GetPluginsDir returns the user plugins directory path.
 // Returns empty string if no plugins directory is configured.
 func (c *Config) GetPluginsDir() string {
