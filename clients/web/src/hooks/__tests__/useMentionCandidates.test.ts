@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { __resetChannelPodsCacheForTests } from "../useChannelPods";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useMentionCandidates } from "../useMentionCandidates";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { ReplaceChannelPodsRequestSchema } from "@proto/channel_state/v1/mutations_pb";
 
 // Mock stores
 vi.mock("@/stores/auth", () => ({
@@ -60,6 +62,13 @@ vi.mock("@/lib/wasm-core", async () => {
       return JSON.stringify({ pods: CHANNEL_PODS_FIXTURE });
     },
     channel_pods_json: (id: bigint) => JSON.stringify(channelPodsCache.get(Number(id)) ?? []),
+    channel_pods_bytes: (id: bigint) =>
+      toBinary(ReplaceChannelPodsRequestSchema, create(ReplaceChannelPodsRequestSchema, {
+        channelId: id,
+        pods: (channelPodsCache.get(Number(id)) ?? []).map((p: { pod_key: string; status?: string; alias?: string; agent_status?: string }) => ({
+          id: BigInt(0), podKey: p.pod_key, alias: p.alias, status: p.status ?? "", agentStatus: p.agent_status ?? "",
+        })),
+      })),
   };
   return {
     ...actual,

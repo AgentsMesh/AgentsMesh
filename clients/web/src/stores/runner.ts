@@ -1,28 +1,29 @@
 import { create } from "zustand";
 import { useMemo } from "react";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { create as protoCreate, toBinary, fromBinary } from "@bufbuild/protobuf";
 import type { RunnerData } from "@/lib/api";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getRunnerState } from "@/lib/wasm-core";
 import { readCurrentOrg } from "@/stores/auth";
 import {
-  listRunners as listRunnersConnect,
-  listAvailableRunners as listAvailableRunnersConnect,
-  getRunner as getRunnerConnect,
+  listRunnersRaw,
+  listAvailableRunnersRaw,
+  getRunnerRaw,
   updateRunner as updateRunnerConnect,
   deleteRunner as deleteRunnerConnect,
   createRunnerToken as createRunnerTokenConnect,
 } from "@/lib/api/facade/runnerConnect";
 import {
-  ApplyRunnerStatusEventRequestSchema,
   ReplaceCachedRunnersRequestSchema,
   ReplaceAvailableRunnersRequestSchema,
   SetCurrentRunnerRequestSchema,
   PatchCachedRunnerRequestSchema,
   RemoveCachedRunnerRequestSchema,
 } from "@proto/runner_state/v1/runner_state_pb";
+import { RunnerSchema } from "@proto/runner_api/v1/runner_pb";
 import { runnerToProtoRunner } from "@/lib/api/runnerProtoMap";
+import { runnerToCache } from "@agentsmesh/electron-adapter/projections";
 
 export type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
 export type Runner = RunnerData;
@@ -36,7 +37,6 @@ interface RunnerState {
   deleteRunner: (id: number) => Promise<void>;
   createToken: (data?: { name?: string; labels?: string[]; max_uses?: number; expires_in_days?: number }) => Promise<string>;
   setCurrentRunner: (runner: Runner | null) => void;
-  updateRunnerStatus: (runnerId: number, status: RunnerStatus) => void;
   clearError: () => void;
 }
 
@@ -50,20 +50,6 @@ const bump = () => useRunnerStore.setState((s) => ({ _tick: s._tick + 1 }));
 
 function orgSlug(): string {
   return readCurrentOrg()?.slug ?? "";
-}
-
-function dispatchReplaceCachedRunners(items: Runner[]) {
-  const req = protoCreate(ReplaceCachedRunnersRequestSchema, {
-    runners: items.map(runnerToProtoRunner),
-  });
-  svc().replace_cached_runners(toBinary(ReplaceCachedRunnersRequestSchema, req));
-}
-
-function dispatchReplaceAvailableRunners(items: Runner[]) {
-  const req = protoCreate(ReplaceAvailableRunnersRequestSchema, {
-    runners: items.map(runnerToProtoRunner),
-  });
-  svc().replace_available_runners(toBinary(ReplaceAvailableRunnersRequestSchema, req));
 }
 
 function dispatchSetCurrentRunner(runner: Runner | null) {
@@ -87,32 +73,34 @@ function dispatchRemoveCachedRunner(id: number) {
   svc().remove_cached_runner(toBinary(RemoveCachedRunnerRequestSchema, req));
 }
 
+// Read side (B, zero-JSON): decode state proto bytes via fromBinary +
+// runnerToCache (shared projection). UI is a projection of state proto bytes.
 export function useRunners(): Runner[] {
   const tick = useRunnerStore((s) => s._tick);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => JSON.parse(svc().runners_json()), [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceCachedRunnersRequestSchema, svc().runners_bytes()).runners.map(runnerToCache) as Runner[],
+    [tick],
+  );
 }
 
 export function useAvailableRunners(): Runner[] {
   const tick = useRunnerStore((s) => s._tick);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => JSON.parse(svc().available_runners_json()), [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceAvailableRunnersRequestSchema, svc().available_runners_bytes()).runners.map(runnerToCache) as Runner[],
+    [tick],
+  );
 }
 
 export function useCurrentRunner(): Runner | null {
   const tick = useRunnerStore((s) => s._tick);
   return useMemo(() => {
-    const raw = svc().current_runner_json();
-    return raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : null;
+    const bytes = svc().current_runner_bytes();
+    if (bytes.length === 0) return null;
+    return runnerToCache(fromBinary(RunnerSchema, bytes)) as Runner;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
-}
-
-export function applyRunnerStatusEvent(runnerId: number, status: string) {
-  const req = protoCreate(ApplyRunnerStatusEventRequestSchema, {
-    runnerId: BigInt(runnerId), status,
-  });
-  svc().apply_runner_status_event(toBinary(ApplyRunnerStatusEventRequestSchema, req));
 }
 
 export const useRunnerStore = create<RunnerState>((set, get) => ({
@@ -121,24 +109,24 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
   fetchRunners: async (status) => {
     set({ loading: true, error: null });
     try {
-      const { items } = await listRunnersConnect(orgSlug(), { status });
-      dispatchReplaceCachedRunners(items);
+      const respBytes = await listRunnersRaw(orgSlug(), { status });
+      svc().apply_fetched_runners(respBytes);
       set({ loading: false, fetched: true, _tick: get()._tick + 1 });
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch runners"), loading: false }); }
   },
 
   fetchAvailableRunners: async () => {
     try {
-      const { items } = await listAvailableRunnersConnect(orgSlug());
-      dispatchReplaceAvailableRunners(items);
+      const respBytes = await listAvailableRunnersRaw(orgSlug());
+      svc().apply_fetched_available_runners(respBytes);
       bump();
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch available runners") }); }
   },
 
   fetchRunner: async (id) => {
     try {
-      const { runner } = await getRunnerConnect(orgSlug(), id);
-      if (runner) dispatchSetCurrentRunner(runner);
+      const respBytes = await getRunnerRaw(orgSlug(), id);
+      svc().apply_fetched_current_runner(respBytes);
       bump();
     } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch runner") }); }
   },
@@ -169,11 +157,6 @@ export const useRunnerStore = create<RunnerState>((set, get) => ({
 
   setCurrentRunner: (runner) => {
     dispatchSetCurrentRunner(runner);
-    bump();
-  },
-
-  updateRunnerStatus: (runnerId, status) => {
-    applyRunnerStatusEvent(runnerId, status);
     bump();
   },
 

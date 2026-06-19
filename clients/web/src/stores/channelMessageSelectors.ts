@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { fromBinary } from "@bufbuild/protobuf";
+import { ReplaceChannelUnreadCountsRequestSchema } from "@proto/channel_state/v1/mutations_pb";
 import { getChannelState } from "@/lib/wasm-core";
 import { useChannelMessageStore, readMessages } from "./channelMessageStore";
 import type { ChannelMessage } from "@/lib/api/facade/channel";
@@ -27,11 +29,11 @@ export function useChannelMessages(channelId: number | null | undefined): Channe
 export function useUnreadCounts(): Record<number, number> {
   const tick = useChannelMessageStore((s) => s._unreadTick);
   return useMemo(() => {
-    try {
-      return JSON.parse(svc().unread_counts_json()) as Record<number, number>;
-    } catch {
-      return {};
-    }
+    // Read side (B, zero-JSON): decode the state proto unread map.
+    const req = fromBinary(ReplaceChannelUnreadCountsRequestSchema, svc().unread_counts_bytes());
+    const out: Record<number, number> = {};
+    for (const [k, v] of Object.entries(req.counts)) out[Number(k)] = v;
+    return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick]);
 }

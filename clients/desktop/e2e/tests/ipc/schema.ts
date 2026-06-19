@@ -1005,6 +1005,13 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "eventsNudge",
+    "group": "events",
+    "params": [],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
     "name": "eventsOnConnectionStateChange",
     "group": "events",
     "params": [
@@ -2084,10 +2091,57 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "appAutopilotApplyFetchedControllers",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appAutopilotApplyFetchedCurrentController",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appAutopilotApplyFetchedIterations",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "key",
+        "type": "string"
+      },
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
     "name": "appAutopilotControllersJson",
     "group": "uncategorized",
     "params": [],
     "returnType": "string",
+    "ipcExposable": true
+  },
+  {
+    "name": "appAutopilotControllersProto",
+    "group": "uncategorized",
+    "params": [],
+    "returnType": "Array<number>",
     "ipcExposable": true
   },
   {
@@ -2115,6 +2169,18 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "appAutopilotIterationsProto",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "key",
+        "type": "string"
+      }
+    ],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
     "name": "appAutopilotPatchController",
     "group": "uncategorized",
     "params": [
@@ -2128,30 +2194,6 @@ export const ipcSchema: IpcMethodSchema[] = [
   },
   {
     "name": "appAutopilotRemoveControllerProto",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appAutopilotReplaceCachedControllers",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appAutopilotReplaceCachedIterations",
     "group": "uncategorized",
     "params": [
       {
@@ -2215,6 +2257,101 @@ export const ipcSchema: IpcMethodSchema[] = [
     "group": "uncategorized",
     "params": [],
     "returnType": "string",
+    "ipcExposable": true
+  },
+  {
+    "name": "appAvailableRunnersProto",
+    "group": "uncategorized",
+    "params": [],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedChannel",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedChannels",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedMembers",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      },
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedMessages",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      },
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedMessagesPrepend",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      },
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelApplyFetchedPods",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      },
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
     "ipcExposable": true
   },
   {
@@ -2309,18 +2446,6 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appChannelPrependCachedMessages",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
     "name": "appChannelRemoveMember",
     "group": "uncategorized",
     "params": [
@@ -2343,30 +2468,6 @@ export const ipcSchema: IpcMethodSchema[] = [
       {
         "name": "messageId",
         "type": "number"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appChannelReplaceCachedChannels",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appChannelReplaceCachedMessages",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
       }
     ],
     "returnType": "void",
@@ -2430,6 +2531,25 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "appCurrentRunnerProto",
+    "group": "uncategorized",
+    "params": [],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
+    "name": "appGetMeshNodeJson",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "podKey",
+        "type": "string"
+      }
+    ],
+    "returnType": "string",
+    "ipcExposable": true
+  },
+  {
     "name": "appGetPodJson",
     "group": "uncategorized",
     "params": [
@@ -2442,111 +2562,15 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appLoopAppendCachedRuns",
+    "name": "appGetPodProto",
     "group": "uncategorized",
     "params": [
       {
-        "name": "reqBytes",
-        "type": "Array<number>"
+        "name": "podKey",
+        "type": "string"
       }
     ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopClearCurrentLoop",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopClearLoopRuns",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopInsertLoopRun",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopPatchLoopFromAction",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopPatchLoopRunStatus",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopReplaceCachedLoops",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopReplaceCachedRuns",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appLoopSetCurrentLoop",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
+    "returnType": "Array<number>",
     "ipcExposable": true
   },
   {
@@ -2562,11 +2586,23 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appPodAppendCachedPods",
+    "name": "appPodApplyAppendedPods",
     "group": "uncategorized",
     "params": [
       {
-        "name": "reqBytes",
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appPodApplyFetchedPods",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
         "type": "Array<number>"
       }
     ],
@@ -2622,11 +2658,18 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appPodReplaceCachedPods",
+    "name": "appPodsJson",
+    "group": "uncategorized",
+    "params": [],
+    "returnType": "string",
+    "ipcExposable": true
+  },
+  {
+    "name": "appRunnerApplyFetched",
     "group": "uncategorized",
     "params": [
       {
-        "name": "reqBytes",
+        "name": "respBytes",
         "type": "Array<number>"
       }
     ],
@@ -2634,10 +2677,27 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appPodsJson",
+    "name": "appRunnerApplyFetchedAvailable",
     "group": "uncategorized",
-    "params": [],
-    "returnType": "string",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appRunnerApplyFetchedCurrent",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "respBytes",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "void",
     "ipcExposable": true
   },
   {
@@ -2665,30 +2725,6 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "appRunnerReplaceAvailable",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
-    "name": "appRunnerReplaceCached",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "reqBytes",
-        "type": "Array<number>"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": true
-  },
-  {
     "name": "appRunnerSetCurrent",
     "group": "uncategorized",
     "params": [
@@ -2705,6 +2741,13 @@ export const ipcSchema: IpcMethodSchema[] = [
     "group": "uncategorized",
     "params": [],
     "returnType": "string",
+    "ipcExposable": true
+  },
+  {
+    "name": "appRunnersProto",
+    "group": "uncategorized",
+    "params": [],
+    "returnType": "Array<number>",
     "ipcExposable": true
   },
   {

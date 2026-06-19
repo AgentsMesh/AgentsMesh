@@ -101,12 +101,30 @@ export async function listAutopilots(orgSlug: string): Promise<AutopilotControll
   return resp.items.map(fromProtoController);
 }
 
+// Raw wire bytes for the fetch→state path: the response goes straight to Rust
+// apply_fetched_controllers (no TS fromProtoController + controllerToProto).
+export async function listAutopilotsRaw(orgSlug: string): Promise<Uint8Array> {
+  const req = create(ListAutopilotControllersRequestSchema, { orgSlug });
+  const bytes = toBinary(ListAutopilotControllersRequestSchema, req);
+  return new Uint8Array(await getAutopilotService().listAutopilotsConnect(bytes));
+}
+
 export async function getAutopilot(orgSlug: string, key: string): Promise<AutopilotControllerWire> {
   const req = create(GetAutopilotControllerRequestSchema, { orgSlug, key });
   const bytes = toBinary(GetAutopilotControllerRequestSchema, req);
   const respBytes = await getAutopilotService().getAutopilotConnect(bytes);
   const resp = fromBinary(AutopilotControllerSchema, new Uint8Array(respBytes));
   return fromProtoController(resp);
+}
+
+// Raw wire bytes for the fetch→state path: response (AutopilotController) →
+// apply_fetched_current_controller (Rust upsert + set_current via the shared
+// wire→state converter), no TS controllerSnapshotToCache round-trip.
+export async function getAutopilotRaw(orgSlug: string, key: string): Promise<Uint8Array> {
+  const req = create(GetAutopilotControllerRequestSchema, { orgSlug, key });
+  return new Uint8Array(
+    await getAutopilotService().getAutopilotConnect(toBinary(GetAutopilotControllerRequestSchema, req)),
+  );
 }
 
 export async function createAutopilot(params: CreateAutopilotParams): Promise<AutopilotControllerWire> {
@@ -184,4 +202,11 @@ export async function getAutopilotIterations(
   const respBytes = await getAutopilotService().getIterationsConnect(bytes);
   const resp = fromBinary(GetIterationsResponseSchema, new Uint8Array(respBytes));
   return resp.items.map(fromProtoIteration);
+}
+
+// Raw wire bytes for the fetch→state path → Rust apply_fetched_iterations.
+export async function getAutopilotIterationsRaw(orgSlug: string, key: string): Promise<Uint8Array> {
+  const req = create(GetIterationsRequestSchema, { orgSlug, key });
+  const bytes = toBinary(GetIterationsRequestSchema, req);
+  return new Uint8Array(await getAutopilotService().getIterationsConnect(bytes));
 }

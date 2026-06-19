@@ -19,11 +19,13 @@ import {
   unarchiveChannel as unarchiveChannelConnect,
   searchChannelMessages as searchChannelMessagesConnect,
   listChannelPods as listChannelPodsConnect,
+  listChannelPodsRaw,
   joinChannelPod as joinChannelPodConnect,
   leaveChannelPod as leaveChannelPodConnect,
   inviteChannelMembers as inviteChannelMembersConnect,
   removeChannelMember as removeChannelMemberConnect,
   listChannelMembers as listChannelMembersConnect,
+  listChannelMembersRaw,
 } from "./channelConnect";
 
 export type { MessageContent, MessageMentions } from "@/lib/viewModels/channelMessage";
@@ -111,14 +113,11 @@ export const channelApi = {
   },
 
   getPods: async (id: number) => {
-    const { pods, total } = await listChannelPodsConnect(orgSlug(), id);
-    // Fan out to Rust SSOT so useChannelPods (reads channel_pods_json) sees it.
-    const req = protoCreate(ReplaceChannelPodsRequestSchema, {
-      channelId: BigInt(id),
-      pods: pods.map(channelPodSummaryToProtoPod),
-    });
-    getChannelState().replace_channel_pods(toBinary(ReplaceChannelPodsRequestSchema, req));
-    return { pods, total };
+    const respBytes = await listChannelPodsRaw(orgSlug(), id);
+    // wire bytes → Rust apply_fetched_pods; useChannelPods reads channel_pods_json.
+    getChannelState().apply_fetched_pods(BigInt(id), respBytes);
+    const pods = JSON.parse(getChannelState().channel_pods_json(BigInt(id))) as ChannelPodSummary[];
+    return { pods, total: pods.length };
   },
 
   joinPod: async (id: number, podKey: string) => {
@@ -149,12 +148,9 @@ export const channelApi = {
   },
 
   listMembers: async (id: number) => {
-    const { members, total } = await listChannelMembersConnect(orgSlug(), id);
-    const req = protoCreate(ReplaceChannelMembersRequestSchema, {
-      channelId: BigInt(id),
-      members: members.map(channelMemberDataToProto),
-    });
-    getChannelState().replace_channel_members(toBinary(ReplaceChannelMembersRequestSchema, req));
-    return { members, total };
+    const respBytes = await listChannelMembersRaw(orgSlug(), id);
+    getChannelState().apply_fetched_members(BigInt(id), respBytes);
+    const members = JSON.parse(getChannelState().channel_members_json(BigInt(id))) as ChannelMemberData[];
+    return { members, total: members.length };
   },
 };

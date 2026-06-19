@@ -25,18 +25,28 @@ export class AppState {
   apikeyRevokeConnect(request: Array<number>): Promise<Array<number>>
   apikeyUpdateConnect(request: Array<number>): Promise<Array<number>>
   appAutopilotAppendIteration(reqBytes: Array<number>): void
+  appAutopilotApplyFetchedControllers(respBytes: Array<number>): void
+  appAutopilotApplyFetchedCurrentController(respBytes: Array<number>): void
+  appAutopilotApplyFetchedIterations(key: string, respBytes: Array<number>): void
   appAutopilotControllersJson(): string
+  appAutopilotControllersProto(): Array<number>
   appAutopilotInsertController(reqBytes: Array<number>): void
   appAutopilotIterationsJson(key: string): string
+  appAutopilotIterationsProto(key: string): Array<number>
   appAutopilotPatchController(reqBytes: Array<number>): void
   appAutopilotRemoveControllerProto(reqBytes: Array<number>): void
-  appAutopilotReplaceCachedControllers(reqBytes: Array<number>): void
-  appAutopilotReplaceCachedIterations(reqBytes: Array<number>): void
   appAutopilotSetCurrentControllerProto(reqBytes: Array<number>): void
   appAutopilotThinkingHistoryJson(key: string): string
   appAutopilotThinkingJson(key: string): string
   appAutopilotUpdateThinkingProto(reqBytes: Array<number>): void
   appAvailableRunnersJson(): string
+  appAvailableRunnersProto(): Array<number>
+  appChannelApplyFetchedChannel(respBytes: Array<number>): void
+  appChannelApplyFetchedChannels(respBytes: Array<number>): void
+  appChannelApplyFetchedMembers(channelId: number, respBytes: Array<number>): void
+  appChannelApplyFetchedMessages(channelId: number, respBytes: Array<number>): void
+  appChannelApplyFetchedMessagesPrepend(channelId: number, respBytes: Array<number>): void
+  appChannelApplyFetchedPods(channelId: number, respBytes: Array<number>): void
   appChannelApplyMessageEdited(reqBytes: Array<number>): void
   appChannelClearUnread(channelId: number): void
   appChannelInsertChannel(reqBytes: Array<number>): void
@@ -45,42 +55,34 @@ export class AppState {
   appChannelMessagesJson(channelId: number): string
   appChannelPatchMemberCount(reqBytes: Array<number>): void
   appChannelPodsJson(channelId: number): string
-  appChannelPrependCachedMessages(reqBytes: Array<number>): void
   appChannelRemoveMember(reqBytes: Array<number>): void
   appChannelRemoveMessage(channelId: number, messageId: number): void
-  appChannelReplaceCachedChannels(reqBytes: Array<number>): void
-  appChannelReplaceCachedMessages(reqBytes: Array<number>): void
   appChannelReplaceMembers(reqBytes: Array<number>): void
   appChannelReplacePods(reqBytes: Array<number>): void
   appChannelReplaceUnreadCounts(reqBytes: Array<number>): void
   appChannelsJson(): string
   appChannelUnreadCountsJson(): string
   appCurrentRunnerJson(): string
+  appCurrentRunnerProto(): Array<number>
   appGetMeshNodeJson(podKey: string): string
   appGetPodJson(podKey: string): string
-  appLoopAppendCachedRuns(reqBytes: Array<number>): void
-  appLoopClearCurrentLoop(reqBytes: Array<number>): void
-  appLoopClearLoopRuns(reqBytes: Array<number>): void
-  appLoopInsertLoopRun(reqBytes: Array<number>): void
-  appLoopPatchLoopFromAction(reqBytes: Array<number>): void
-  appLoopPatchLoopRunStatus(reqBytes: Array<number>): void
-  appLoopReplaceCachedLoops(reqBytes: Array<number>): void
-  appLoopReplaceCachedRuns(reqBytes: Array<number>): void
-  appLoopSetCurrentLoop(reqBytes: Array<number>): void
+  appGetPodProto(podKey: string): Array<number>
   appMeshReplaceTopology(reqBytes: Array<number>): void
-  appPodAppendCachedPods(reqBytes: Array<number>): void
+  appPodApplyAppendedPods(respBytes: Array<number>): void
+  appPodApplyFetchedPods(respBytes: Array<number>): void
   appPodInsertCreated(reqBytes: Array<number>): void
   appPodMarkTerminated(reqBytes: Array<number>): void
   appPodPatchPerpetual(reqBytes: Array<number>): void
   appPodRemove(podKey: string): void
-  appPodReplaceCachedPods(reqBytes: Array<number>): void
   appPodsJson(): string
+  appRunnerApplyFetched(respBytes: Array<number>): void
+  appRunnerApplyFetchedAvailable(respBytes: Array<number>): void
+  appRunnerApplyFetchedCurrent(respBytes: Array<number>): void
   appRunnerPatch(reqBytes: Array<number>): void
   appRunnerRemove(reqBytes: Array<number>): void
-  appRunnerReplaceAvailable(reqBytes: Array<number>): void
-  appRunnerReplaceCached(reqBytes: Array<number>): void
   appRunnerSetCurrent(reqBytes: Array<number>): void
   appRunnersJson(): string
+  appRunnersProto(): Array<number>
   appSelectChannel(id: number | undefined | null): void
   appSetCurrentChannel(id: number | undefined | null): void
   appSetCurrentUser(userId: number | undefined | null): void
@@ -171,6 +173,7 @@ export class AppState {
   eventsDisconnect(): Promise<void>
   eventsGetConnectionState(): Promise<string>
   eventsGetTick(): number
+  eventsNudge(): Promise<void>
   eventsOnConnectionStateChange(callback: (err: unknown, arg: string) => void): Promise<number>
   eventsSubscribeAll(callback: (err: unknown, arg: string) => void): Promise<number>
   eventsUnsubscribe(id: number): Promise<void>

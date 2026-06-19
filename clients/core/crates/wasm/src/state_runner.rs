@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use agentsmesh_state::app_state::AppState;
+use agentsmesh_types::proto_runner_api_v1::{ListAvailableRunnersResponse, ListRunnersResponse};
 use agentsmesh_types::proto_runner_state_v1::{
-    ApplyRunnerStatusEventRequest, PatchCachedRunnerRequest, RemoveCachedRunnerRequest,
-    ReplaceAvailableRunnersRequest, ReplaceCachedRunnersRequest, SetCurrentRunnerRequest,
+    PatchCachedRunnerRequest, RemoveCachedRunnerRequest, ReplaceAvailableRunnersRequest,
+    ReplaceCachedRunnersRequest, SetCurrentRunnerRequest,
 };
 use parking_lot::RwLock;
 use prost::Message;
@@ -51,27 +52,52 @@ impl WasmRunnerState {
         }
     }
 
-    pub fn apply_runner_status_event(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ApplyRunnerStatusEventRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().runners.update_runner_status(req.runner_id, &req.status);
+    // Read side (B, zero-JSON): prost-encode state into the same wrapper the
+    // mutators decode, so the shared selectors decode bytes uniformly.
+    pub fn runners_bytes(&self) -> Vec<u8> {
+        let runners = self.state.read().runners.runners().to_vec();
+        ReplaceCachedRunnersRequest { runners }.encode_to_vec()
+    }
+
+    pub fn available_runners_bytes(&self) -> Vec<u8> {
+        let runners = self.state.read().runners.available_runners().to_vec();
+        ReplaceAvailableRunnersRequest { runners }.encode_to_vec()
+    }
+
+    pub fn current_runner_bytes(&self) -> Vec<u8> {
+        match self.state.read().runners.current_runner() {
+            Some(r) => r.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
+    // Fetch→state (B): wire Runner == cache Runner, so decode the wire response
+    // and fold into state directly — no TS fromProtoRunner/xToProto.
+    pub fn apply_fetched_runners(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListRunnersResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().runners.set_runners(resp.items);
         Ok(())
     }
 
-    pub fn replace_cached_runners(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceCachedRunnersRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().runners.set_runners(req.runners);
-        Ok(())
-    }
-
-    pub fn replace_available_runners(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceAvailableRunnersRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().runners.set_available_runners(req.runners);
+    pub fn apply_fetched_available_runners(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListAvailableRunnersResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().runners.set_available_runners(resp.items);
         Ok(())
     }
 
     pub fn set_current_runner_proto(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
         let req = SetCurrentRunnerRequest::decode(req_bytes).map_err(decode_err)?;
         self.state.write().runners.set_current_runner(req.runner);
+        Ok(())
+    }
+
+    // Fetch→state (B): decode the wire GetRunnerResponse + set current from its
+    // runner field — no TS runnerToProtoRunner round-trip. relay_connections /
+    // latest_runner_version are detail-page-only (read off a separate fetch).
+    pub fn apply_fetched_current_runner(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = agentsmesh_types::proto_runner_api_v1::GetRunnerResponse::decode(resp_bytes)
+            .map_err(decode_err)?;
+        self.state.write().runners.set_current_runner(resp.runner);
         Ok(())
     }
 

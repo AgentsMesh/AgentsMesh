@@ -24,86 +24,18 @@ import {
   TriggerLoopRequestSchema,
   TriggerLoopResponseSchema,
   UpdateLoopRequestSchema,
-  type Loop as ProtoLoop,
-  type LoopRun as ProtoLoopRun,
 } from "@proto/loop/v1/loop_pb";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
+// Shared proto→LoopData projection — single SSOT, also consumed by the desktop
+// electron-adapter. Aliased to the historical fromProto* names used below.
+import { loopToCache as fromProtoLoop, loopRunToCache as fromProtoLoopRun } from "@agentsmesh/electron-adapter/projections";
 import { getLoopService } from "@/lib/wasm-core";
 import type {
   CreateLoopRequest,
   LoopData,
   LoopRunData,
-  RunStatus,
   UpdateLoopRequest,
 } from "@/lib/viewModels/loop";
-
-function parseJSONObject(s: string): Record<string, unknown> | undefined {
-  if (!s) return undefined;
-  try {
-    const v = JSON.parse(s);
-    return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function fromProtoLoop(p: ProtoLoop): LoopData {
-  return {
-    id: Number(p.id),
-    organization_id: 0,
-    name: p.name,
-    slug: p.slug,
-    description: p.description || undefined,
-    agent_slug: p.agentSlug || undefined,
-    permission_mode: p.permissionMode,
-    prompt_template: p.promptTemplate,
-    prompt_variables: parseJSONObject(p.promptVariablesJson),
-    repository_id: p.repositoryId != null ? Number(p.repositoryId) : undefined,
-    runner_id: p.runnerId != null ? Number(p.runnerId) : undefined,
-    branch_name: p.branchName || undefined,
-    ticket_id: p.ticketId != null ? Number(p.ticketId) : undefined,
-    credential_profile_id: p.credentialProfileId != null ? Number(p.credentialProfileId) : undefined,
-    used_env_bundles: p.usedEnvBundles ?? [],
-    config_overrides: parseJSONObject(p.configOverridesJson),
-    execution_mode: p.executionMode as LoopData["execution_mode"],
-    cron_expression: p.cronExpression || undefined,
-    callback_url: p.callbackUrl || undefined,
-    autopilot_config: parseJSONObject(p.autopilotConfigJson) ?? {},
-    status: p.status as LoopData["status"],
-    sandbox_strategy: p.sandboxStrategy as LoopData["sandbox_strategy"],
-    session_persistence: p.sessionPersistence,
-    concurrency_policy: p.concurrencyPolicy as LoopData["concurrency_policy"],
-    max_concurrent_runs: p.maxConcurrentRuns,
-    max_retained_runs: p.maxRetainedRuns,
-    timeout_minutes: p.timeoutMinutes,
-    created_by_id: 0,
-    total_runs: Number(p.totalRuns),
-    successful_runs: Number(p.successfulRuns),
-    failed_runs: Number(p.failedRuns),
-    active_run_count: Number(p.activeRunCount),
-    avg_duration_sec: p.avgDurationSec ?? undefined,
-    last_run_at: p.lastRunAt,
-    created_at: p.createdAt,
-    updated_at: p.updatedAt,
-  };
-}
-
-function fromProtoLoopRun(p: ProtoLoopRun): LoopRunData {
-  return {
-    id: Number(p.id),
-    organization_id: 0,
-    loop_id: Number(p.loopId),
-    run_number: Number(p.runNumber),
-    status: p.status as RunStatus,
-    pod_key: p.podKey,
-    trigger_type: "",
-    started_at: p.startedAt,
-    finished_at: p.completedAt,
-    error_message: p.errorMessage,
-    created_at: p.createdAt,
-    updated_at: p.createdAt,
-  };
-}
 
 interface ListFilters {
   status?: string;
@@ -133,11 +65,36 @@ export async function listLoops(
   return { items: resp.items.map(fromProtoLoop), total: Number(resp.total) };
 }
 
+// Raw wire bytes for the fetch→state path: response → apply_fetched_loops
+// (Rust set_loops via loop_from_proto), no TS fromProtoLoop/loopToProtoLoop.
+export async function listLoopsRaw(orgSlug: string, filters?: ListFilters): Promise<Uint8Array> {
+  const req = create(ListLoopsRequestSchema, {
+    orgSlug,
+    status: filters?.status ?? "",
+    executionMode: filters?.executionMode ?? "",
+    cronEnabled: filters?.cronEnabled,
+    query: filters?.query ?? "",
+    offset: filters?.offset,
+    limit: filters?.limit,
+  });
+  return new Uint8Array(await getLoopService().listLoopsConnect(toBinary(ListLoopsRequestSchema, req)));
+}
+
 export async function getLoop(orgSlug: string, loopSlug: string): Promise<LoopData> {
   const req = create(GetLoopRequestSchema, { orgSlug, loopSlug });
   const bytes = toBinary(GetLoopRequestSchema, req);
   const respBytes = await getLoopService().getLoopConnect(bytes);
   return fromProtoLoop(fromBinary(LoopSchema, new Uint8Array(respBytes)));
+}
+
+// Raw wire bytes for the fetch→state path: response (Loop) →
+// apply_fetched_current_loop (Rust set_current_loop). The full wire Loop carries
+// the proto-only fields the lossy loopToProtoLoop round-trip dropped.
+export async function getLoopRaw(orgSlug: string, loopSlug: string): Promise<Uint8Array> {
+  const req = create(GetLoopRequestSchema, { orgSlug, loopSlug });
+  return new Uint8Array(
+    await getLoopService().getLoopConnect(toBinary(GetLoopRequestSchema, req)),
+  );
 }
 
 function toJsonString(v: unknown): string {
@@ -286,6 +243,19 @@ export async function listLoopRuns(
   const respBytes = await getLoopService().listRunsConnect(bytes);
   const resp = fromBinary(ListRunsResponseSchema, new Uint8Array(respBytes));
   return { items: resp.items.map(fromProtoLoopRun), total: Number(resp.total) };
+}
+
+// Raw wire bytes for the runs fetch→state path: response → apply_fetched_runs /
+// apply_appended_runs (Rust set_runs/append_runs via run_from_proto).
+export async function listRunsRaw(
+  orgSlug: string,
+  loopSlug: string,
+  filters?: { status?: string; limit?: number; offset?: number },
+): Promise<Uint8Array> {
+  const req = create(ListRunsRequestSchema, {
+    orgSlug, loopSlug, status: filters?.status ?? "", offset: filters?.offset, limit: filters?.limit,
+  });
+  return new Uint8Array(await getLoopService().listRunsConnect(toBinary(ListRunsRequestSchema, req)));
 }
 
 export async function cancelLoopRun(

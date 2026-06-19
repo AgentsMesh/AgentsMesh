@@ -16,7 +16,7 @@ impl LoopService {
     // -------- Connect-RPC (binary wire) --------
     //
     // The loop + run cache is the AppState SSOT (runtime.state.loops), fed by
-    // the LoopRun* dispatch arms + the app_loop_* napi/wasm surface; this
+    // the LoopRun* dispatch arms + the wasm loop-state surface; this
     // service is networking-only.
 
     pub async fn list_loops_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {

@@ -111,8 +111,9 @@ function pushPodSnapshot(
   const rawKey = ev.data?.pod_key ?? ev.data?.podKey;
   if (typeof rawKey !== "string" || rawKey.length === 0) return;
   try {
-    const pod = appState.appGetPodJson(rawKey);
-    if (pod) send("realtime:state-sync", JSON.stringify({ domain: "pod", podKey: rawKey, pod }));
+    const podBytes = appState.appGetPodProto(rawKey);
+    if (podBytes.length)
+      send("realtime:state-sync", JSON.stringify({ domain: "pod", podKey: rawKey, pod: Array.from(podBytes) }));
   } catch {
     /* best-effort */
   }
@@ -137,9 +138,9 @@ function pushRunnerSnapshot(
   try {
     send("realtime:state-sync", JSON.stringify({
       domain: "runner",
-      runners: appState.appRunnersJson(),
-      available: appState.appAvailableRunnersJson(),
-      current: appState.appCurrentRunnerJson(),
+      runners: Array.from(appState.appRunnersProto()),
+      available: Array.from(appState.appAvailableRunnersProto()),
+      current: Array.from(appState.appCurrentRunnerProto()),
     }));
   } catch {
     /* best-effort */
@@ -168,8 +169,8 @@ function pushAutopilotSnapshot(
     send("realtime:state-sync", JSON.stringify({
       domain: "autopilot",
       key,
-      controllers: appState.appAutopilotControllersJson(),
-      iterations: key ? appState.appAutopilotIterationsJson(key) : "",
+      controllers: Array.from(appState.appAutopilotControllersProto()),
+      iterations: key ? Array.from(appState.appAutopilotIterationsProto(key)) : [],
       thinking: key ? appState.appAutopilotThinkingJson(key) : "",
       thinkingHistory: key ? appState.appAutopilotThinkingHistoryJson(key) : "",
     }));

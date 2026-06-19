@@ -35,12 +35,14 @@ import {
   UpgradeRunnerRequestSchema,
   UpgradeRunnerResponseSchema,
   type RelayConnectionInfo as ProtoRelayConn,
-  type Runner as ProtoRunner,
   type RunnerLog as ProtoRunnerLog,
   type RunnerToken as ProtoRunnerToken,
   type SandboxStatus as ProtoSandboxStatus,
 } from "@proto/runner_api/v1/runner_pb";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
+// Shared proto→RunnerData projection — single SSOT, also consumed by the
+// desktop electron-adapter. Aliased to the historical fromProtoRunner name.
+import { runnerToCache as fromProtoRunner } from "@agentsmesh/electron-adapter/projections";
 import { getRunnerService } from "@/lib/wasm-core";
 import type {
   GRPCRegistrationToken,
@@ -49,49 +51,6 @@ import type {
   RunnerLogData,
   SandboxStatus,
 } from "@/lib/viewModels/runner";
-
-type RunnerStatus = "online" | "offline" | "maintenance" | "busy";
-
-interface HostInfo {
-  os?: string;
-  arch?: string;
-  memory?: number;
-  cpu_cores?: number;
-  hostname?: string;
-}
-
-function parseHostInfo(json: string): HostInfo | undefined {
-  if (!json) return undefined;
-  try {
-    return JSON.parse(json) as HostInfo;
-  } catch {
-    return undefined;
-  }
-}
-
-function fromProtoRunner(r: ProtoRunner): RunnerData {
-  // Status comes from the server as a string; cast back to the union the UI uses.
-  // Unknown values (server-side schema drift) still satisfy the type at runtime.
-  return {
-    id: Number(r.id),
-    node_id: r.nodeId,
-    description: r.description || undefined,
-    status: r.status as RunnerStatus,
-    last_heartbeat: r.lastHeartbeat,
-    current_pods: r.currentPods,
-    max_concurrent_pods: r.maxConcurrentPods,
-    runner_version: r.runnerVersion,
-    is_enabled: r.isEnabled,
-    visibility: r.visibility as RunnerData["visibility"],
-    registered_by_user_id:
-      r.registeredByUserId === undefined ? undefined : Number(r.registeredByUserId),
-    host_info: parseHostInfo(r.hostInfoJson),
-    available_agents: r.availableAgents?.length ? r.availableAgents : undefined,
-    tags: r.tags?.length ? r.tags : undefined,
-    created_at: r.createdAt,
-    updated_at: r.updatedAt,
-  };
-}
 
 function fromProtoRelayConn(c: ProtoRelayConn): RelayConnectionInfo {
   return {
@@ -187,6 +146,23 @@ export async function listAvailableRunners(
   return { items: resp.items.map(fromProtoRunner), total: Number(resp.total) };
 }
 
+// Raw wire bytes for the fetch→state path: response → apply_fetched_runners
+// (Rust set_runners), no TS fromProtoRunner/xToProto.
+export async function listRunnersRaw(
+  orgSlug: string,
+  opts: { status?: string; offset?: number; limit?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(ListRunnersRequestSchema, {
+    orgSlug, status: opts.status, offset: opts.offset, limit: opts.limit,
+  });
+  return new Uint8Array(await getRunnerService().listRunnersConnect(toBinary(ListRunnersRequestSchema, req)));
+}
+
+export async function listAvailableRunnersRaw(orgSlug: string): Promise<Uint8Array> {
+  const req = create(ListAvailableRunnersRequestSchema, { orgSlug });
+  return new Uint8Array(await getRunnerService().listAvailableRunnersConnect(toBinary(ListAvailableRunnersRequestSchema, req)));
+}
+
 export async function getRunner(
   orgSlug: string,
   id: number,
@@ -204,6 +180,16 @@ export async function getRunner(
     relay_connections: resp.relayConnections.map(fromProtoRelayConn),
     latest_runner_version: resp.latestRunnerVersion,
   };
+}
+
+// Raw wire bytes for the fetch→state path: response (GetRunnerResponse) →
+// apply_fetched_current_runner (Rust set_current_runner), no TS
+// runnerToProtoRunner round-trip.
+export async function getRunnerRaw(orgSlug: string, id: number): Promise<Uint8Array> {
+  const req = create(GetRunnerRequestSchema, { orgSlug, id: BigInt(id) });
+  return new Uint8Array(
+    await getRunnerService().getRunnerConnect(toBinary(GetRunnerRequestSchema, req)),
+  );
 }
 
 export interface UpdateRunnerInput {

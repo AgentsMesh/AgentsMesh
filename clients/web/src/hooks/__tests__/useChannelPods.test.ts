@@ -1,5 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { ReplaceChannelPodsRequestSchema } from "@proto/channel_state/v1/mutations_pb";
 
 import {
   useChannelPods,
@@ -37,6 +39,13 @@ vi.mock("@/lib/wasm-core", async () => {
       return JSON.stringify({ pods: podsByChannel.get(Number(id)) ?? [] });
     },
     channel_pods_json: (id: bigint) => JSON.stringify(podsByChannel.get(Number(id)) ?? []),
+    channel_pods_bytes: (id: bigint) =>
+      toBinary(ReplaceChannelPodsRequestSchema, create(ReplaceChannelPodsRequestSchema, {
+        channelId: id,
+        pods: (podsByChannel.get(Number(id)) ?? []).map((p) => ({
+          id: BigInt(0), podKey: p.pod_key, alias: p.alias, status: p.status ?? "", agentStatus: "",
+        })),
+      })),
     replace_channel_pods: () => {},
   };
   return {

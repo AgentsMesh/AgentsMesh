@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { useMemo } from "react";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { fromBinary } from "@bufbuild/protobuf";
 import { getRepoState } from "@/lib/wasm-core";
 import { getErrorMessage } from "@/lib/utils";
 import { repositoryApi } from "@/lib/api/facade/repository";
-import { repositoryToProto } from "@/lib/api/repoProtoMap";
 import type { RepositoryData } from "@/lib/viewModels/repository";
 import {
   ReplaceCachedRepositoriesRequestSchema,
 } from "@proto/repo_state/v1/repo_state_pb";
+import { repositoryToCache } from "@agentsmesh/electron-adapter/projections";
 
 export type Repository = RepositoryData;
 
@@ -24,17 +24,15 @@ interface RepositoryState {
 const rs = () => getRepoState();
 const bump = () => useRepositoryStore.setState((s) => ({ _tick: s._tick + 1 }));
 
+// Read side (B, zero-JSON): UI is a projection of state proto bytes
+// (repositories_bytes) decoded via fromBinary + repositoryToCache (shared projection).
 export function useRepositories(): Repository[] {
   const tick = useRepositoryStore((s) => s._tick);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => JSON.parse(rs().repositories_json()), [tick]);
-}
-
-function dispatchReplaceCachedRepositories(items: RepositoryData[]): void {
-  const req = protoCreate(ReplaceCachedRepositoriesRequestSchema, {
-    repositories: items.map(repositoryToProto),
-  });
-  rs().replace_cached_repositories(toBinary(ReplaceCachedRepositoriesRequestSchema, req));
+  return useMemo(
+    () => fromBinary(ReplaceCachedRepositoriesRequestSchema, rs().repositories_bytes()).repositories.map(repositoryToCache),
+    [tick],
+  );
 }
 
 export const useRepositoryStore = create<RepositoryState>((set) => ({
@@ -46,8 +44,8 @@ export const useRepositoryStore = create<RepositoryState>((set) => ({
   fetchRepositories: async () => {
     set({ isLoading: true, error: null });
     try {
-      const { items } = await repositoryApi.list();
-      dispatchReplaceCachedRepositories(items);
+      const respBytes = await repositoryApi.listRaw();
+      rs().apply_fetched_repositories(respBytes);
       bump();
       set({ isLoading: false, fetched: true });
     } catch (e) {

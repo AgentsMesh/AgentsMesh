@@ -1,12 +1,11 @@
 import '@testing-library/jest-dom'
 import { vi, afterEach } from 'vitest'
-import { fromBinary } from '@bufbuild/protobuf'
+import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import {
   ReplaceCachedChannelsRequestSchema,
   InsertChannelRequestSchema,
   PatchChannelMemberCountRequestSchema,
   ReplaceCachedChannelMessagesRequestSchema,
-  PrependCachedChannelMessagesRequestSchema,
   InsertChannelMessageRequestSchema,
   ApplyIncomingChannelMessageRequestSchema,
   ApplyChannelMessageEditedEventRequestSchema,
@@ -16,10 +15,43 @@ import {
   RemoveChannelMemberRequestSchema,
 } from '@proto/channel_state/v1/mutations_pb'
 import {
+  ChannelSchema, ListChannelsResponseSchema, ListChannelMessagesResponseSchema,
+  ListChannelMembersResponseSchema, ListChannelPodsResponseSchema,
+} from '@proto/channel/v1/channel_pb'
+import { MessagePreviewSchema } from '@proto/channel_state/v1/channel_state_pb'
+import {
+  ListPodsResponseSchema, PodSchema, PodRunnerInfoSchema, PodCreatedByInfoSchema,
+} from '@proto/pod/v1/pod_pb'
+import { ReplaceCachedPodsRequestSchema } from '@proto/pod_state/v1/pod_state_pb'
+import {
+  ListRunnersResponseSchema, ListAvailableRunnersResponseSchema, RunnerSchema, GetRunnerResponseSchema,
+} from '@proto/runner_api/v1/runner_pb'
+import {
+  ReplaceCachedRunnersRequestSchema, ReplaceAvailableRunnersRequestSchema,
+} from '@proto/runner_state/v1/runner_state_pb'
+import { ListTicketsResponseSchema, ListLabelsResponseSchema, TicketSchema, BoardColumnSchema, LabelSchema } from '@proto/ticket/v1/ticket_pb'
+import { ReplaceCachedTicketsRequestSchema, SetCurrentTicketRequestSchema, ReplaceBoardColumnsRequestSchema, ReplaceCachedLabelsRequestSchema } from '@proto/ticket_state/v1/ticket_state_pb'
+import {
+  ListLoopsResponseSchema, ListRunsResponseSchema, LoopSchema, LoopRunSchema,
+} from '@proto/loop/v1/loop_pb'
+import {
+  ReplaceCachedLoopsRequestSchema, ReplaceCachedRunsRequestSchema, SetCurrentLoopRequestSchema,
+} from '@proto/loop_state/v1/loop_state_pb'
+import { ListRepositoriesResponseSchema, RepositorySchema } from '@proto/repository/v1/repository_pb'
+import { ReplaceCachedRepositoriesRequestSchema } from '@proto/repo_state/v1/repo_state_pb'
+import {
   ApplySessionRequestSchema,
   SetCurrentOrgRequestSchema,
   SetOrganizationsRequestSchema,
 } from '@proto/auth_state/v1/auth_state_pb'
+import {
+  ListAutopilotControllersResponseSchema, GetIterationsResponseSchema,
+} from '@proto/autopilot/v1/autopilot_pb'
+import {
+  ReplaceCachedControllersRequestSchema, ReplaceCachedIterationsRequestSchema,
+  SetCurrentControllerRequestSchema,
+  AutopilotControllerSnapshotSchema, AutopilotIterationSnapshotSchema,
+} from '@proto/autopilot_state/v1/autopilot_state_pb'
 import { createAcpManager } from './wasm-mock-acp'
 
 const h = vi.hoisted(() => {
@@ -35,7 +67,7 @@ const h = vi.hoisted(() => {
   };
   const ticket = { list: '[]', labels: '[]', boardCols: '[]', current: '' };
   const mesh = { topo: '', selected: undefined as string | undefined };
-  const loop = { list: '[]', current: '' };
+  const loop = { list: '[]', current: '', runs: '[]' };
   const gitProvider = mkStore();
   const repo = { list: '[]', current: '', branches: '[]' };
   const autopilot = {
@@ -51,7 +83,7 @@ const h = vi.hoisted(() => {
     channel.pods.clear(); channel.members.clear();
     ticket.list = '[]'; ticket.labels = '[]'; ticket.boardCols = '[]'; ticket.current = '';
     mesh.topo = ''; mesh.selected = undefined;
-    loop.list = '[]'; loop.current = '';
+    loop.list = '[]'; loop.current = ''; loop.runs = '[]';
     gitProvider.v = '';
     repo.list = '[]'; repo.current = ''; repo.branches = '[]';
     autopilot.controllers = '[]'; autopilot.current = '';
@@ -148,6 +180,28 @@ vi.mock('@/lib/wasm-core', () => {
   // methods here (`set_pods`, multi-arg `update_pod_status`, etc.) regressed
   // the test surface: production code stopped calling them but the mock
   // kept accepting them, hiding wasm-binding drift from vitest.
+  // Minimal cache↔proto pod mapping for the mock — covers the fields the pod
+  // store tests exercise (mockPod/mockPod2). Not the full PodData surface; the
+  // real round-trip is covered by electron-adapter pod_cache_to_bytes.test.ts.
+  type PodObj = Record<string, unknown>
+  const protoPodToCacheMin = (p: ReturnType<typeof create<typeof PodSchema>>): PodObj => ({
+    id: Number(p.id), pod_key: p.podKey, status: p.status,
+    agent_status: p.agentStatus || undefined, created_at: p.createdAt || undefined,
+    runner: p.runner ? { id: Number(p.runner.id), node_id: p.runner.nodeId, status: p.runner.status } : undefined,
+    created_by: p.createdBy ? { id: Number(p.createdBy.id), username: p.createdBy.username, name: p.createdBy.name } : undefined,
+  })
+  const cacheToProtoPodMin = (p: PodObj) => {
+    const r = p.runner as PodObj | undefined
+    const cb = p.created_by as PodObj | undefined
+    return create(PodSchema, {
+      id: p.id != null ? BigInt(p.id as number) : 0n, podKey: (p.pod_key as string) ?? '',
+      status: (p.status as string) ?? '', agentStatus: (p.agent_status as string) ?? '',
+      createdAt: (p.created_at as string) ?? '',
+      runner: r ? create(PodRunnerInfoSchema, { id: r.id != null ? BigInt(r.id as number) : undefined, nodeId: r.node_id as string, status: r.status as string }) : undefined,
+      createdBy: cb ? create(PodCreatedByInfoSchema, { id: cb.id != null ? BigInt(cb.id as number) : undefined, username: cb.username as string, name: cb.name as string }) : undefined,
+    })
+  }
+
   const podState = {
     pods_json: fn(() => h.pod.pods),
     current_pod_json: fn(() => h.pod.current || undefined),
@@ -156,19 +210,49 @@ vi.mock('@/lib/wasm-core', () => {
       const p = list.find((x) => x.pod_key === key)
       return p ? JSON.stringify(p) : undefined
     }),
-    // Proto-bytes mutators. Body is opaque (decoding would require pulling
-    // the proto schemas into the mock); the in-memory pods list is left
-    // untouched so tests that assert "the bridge was called" still pass.
-    // Tests that assert cache contents post-mutation should override
-    // `pods_json` / `get_pod_json` directly.
+    // Proto-bytes mutators. Status/title/alias/perpetual bodies stay opaque
+    // (the in-memory list is left untouched; tests assert "the bridge was
+    // called" or override pods_json). The fetch→state apply_* and the bytes
+    // readers DO model the backing store, since usePods/readPods now flow
+    // through them — a no-op there would diverge the mock from real WasmPodState.
     insert_created_pod: fn((_bytes: Uint8Array) => undefined),
     patch_pod_perpetual: fn((_bytes: Uint8Array) => undefined),
     apply_pod_status_event: fn((_bytes: Uint8Array) => undefined),
     apply_pod_title_event: fn((_bytes: Uint8Array) => undefined),
     apply_pod_alias_event: fn((_bytes: Uint8Array) => undefined),
     apply_agent_status_event: fn((_bytes: Uint8Array) => undefined),
-    replace_cached_pods: fn((_bytes: Uint8Array) => undefined),
-    append_cached_pods: fn((_bytes: Uint8Array) => undefined),
+    apply_fetched_pods: fn((bytes: Uint8Array) => {
+      try {
+        const resp = fromBinary(ListPodsResponseSchema, bytes)
+        h.pod.pods = JSON.stringify(resp.items.map(protoPodToCacheMin))
+      } catch { /* noop */ }
+    }),
+    apply_appended_pods: fn((bytes: Uint8Array) => {
+      try {
+        const resp = fromBinary(ListPodsResponseSchema, bytes)
+        const existing = JSON.parse(h.pod.pods) as { pod_key: string }[]
+        const seen = new Set(existing.map((p) => p.pod_key))
+        for (const p of resp.items) {
+          const c = protoPodToCacheMin(p)
+          if (!seen.has(c.pod_key)) existing.push(c)
+        }
+        h.pod.pods = JSON.stringify(existing)
+      } catch { /* noop */ }
+    }),
+    pods_bytes: fn(() => {
+      const list = JSON.parse(h.pod.pods) as Record<string, unknown>[]
+      return toBinary(ReplaceCachedPodsRequestSchema,
+        create(ReplaceCachedPodsRequestSchema, { pods: list.map(cacheToProtoPodMin) }))
+    }),
+    current_pod_bytes: fn(() => {
+      if (!h.pod.current) return new Uint8Array()
+      return toBinary(PodSchema, cacheToProtoPodMin(JSON.parse(h.pod.current) as Record<string, unknown>))
+    }),
+    get_pod_bytes: fn((key: string) => {
+      const list = JSON.parse(h.pod.pods) as Record<string, unknown>[]
+      const p = list.find((x) => (x.pod_key as string) === key)
+      return p ? toBinary(PodSchema, cacheToProtoPodMin(p)) : new Uint8Array()
+    }),
     mark_pod_terminated: fn((_bytes: Uint8Array) => undefined),
     remove_pod: fn((key: string) => {
       const list = JSON.parse(h.pod.pods) as { pod_key: string }[]
@@ -194,6 +278,23 @@ vi.mock('@/lib/wasm-core', () => {
     list_pods_by_ticket_connect: fn().mockResolvedValue(new Uint8Array()),
   }
 
+  // Minimal runner proto↔cache for the B fetch/read mock — covers the fields
+  // runner store tests exercise; full round-trip is in runner_cache_to_bytes.test.ts.
+  type RunnerObj = Record<string, unknown>
+  const protoRunnerToCacheMin = (r: ReturnType<typeof create<typeof RunnerSchema>>): RunnerObj => ({
+    id: Number(r.id), node_id: r.nodeId, status: r.status, is_enabled: r.isEnabled,
+    current_pods: r.currentPods, max_concurrent_pods: r.maxConcurrentPods,
+    last_heartbeat: r.lastHeartbeat || undefined, runner_version: r.runnerVersion || undefined,
+    description: r.description || undefined, visibility: r.visibility || undefined,
+    created_at: r.createdAt || undefined, updated_at: r.updatedAt || undefined,
+  })
+  const cacheToProtoRunnerMin = (r: RunnerObj) => create(RunnerSchema, {
+    id: BigInt((r.id as number) ?? 0), nodeId: (r.node_id as string) ?? '', status: (r.status as string) ?? '',
+    isEnabled: !!r.is_enabled, currentPods: (r.current_pods as number) ?? 0,
+    maxConcurrentPods: (r.max_concurrent_pods as number) ?? 0, lastHeartbeat: (r.last_heartbeat as string) ?? '',
+    runnerVersion: (r.runner_version as string) ?? '', description: (r.description as string) ?? '',
+    visibility: (r.visibility as string) ?? '', createdAt: (r.created_at as string) ?? '', updatedAt: (r.updated_at as string) ?? '',
+  })
   const runnerState = {
     set_runners: fn((j: string) => { h.runner.list = j }),
     runners_json: fn(() => h.runner.list),
@@ -201,15 +302,27 @@ vi.mock('@/lib/wasm-core', () => {
     available_runners_json: fn(() => h.runner.available),
     set_current_runner: fn((j: string) => { h.runner.current = j }),
     current_runner_json: fn(() => h.runner.current || undefined),
+    apply_fetched_runners: fn((bytes: Uint8Array) => {
+      try { h.runner.list = JSON.stringify(fromBinary(ListRunnersResponseSchema, bytes).items.map(protoRunnerToCacheMin)) } catch { /* noop */ }
+    }),
+    apply_fetched_available_runners: fn((bytes: Uint8Array) => {
+      try { h.runner.available = JSON.stringify(fromBinary(ListAvailableRunnersResponseSchema, bytes).items.map(protoRunnerToCacheMin)) } catch { /* noop */ }
+    }),
+    apply_fetched_current_runner: fn((bytes: Uint8Array) => {
+      try { const r = fromBinary(GetRunnerResponseSchema, bytes).runner; h.runner.current = r ? JSON.stringify(protoRunnerToCacheMin(r)) : '' } catch { /* noop */ }
+    }),
+    runners_bytes: fn(() => toBinary(ReplaceCachedRunnersRequestSchema,
+      create(ReplaceCachedRunnersRequestSchema, { runners: (JSON.parse(h.runner.list) as RunnerObj[]).map(cacheToProtoRunnerMin) }))),
+    available_runners_bytes: fn(() => toBinary(ReplaceAvailableRunnersRequestSchema,
+      create(ReplaceAvailableRunnersRequestSchema, { runners: (JSON.parse(h.runner.available) as RunnerObj[]).map(cacheToProtoRunnerMin) }))),
+    current_runner_bytes: fn(() => h.runner.current
+      ? toBinary(RunnerSchema, cacheToProtoRunnerMin(JSON.parse(h.runner.current) as RunnerObj)) : new Uint8Array()),
     update_runner_local: fn((id: number, json: string) => {
       const updated = JSON.parse(json) as { id: number };
       const arr = JSON.parse(h.runner.list) as { id: number }[];
       const idx = arr.findIndex((x) => x.id === id);
       if (idx >= 0) arr[idx] = updated;
       h.runner.list = JSON.stringify(arr);
-    }),
-    apply_runner_status_event: fn((_bytes: Uint8Array) => {
-      // No-op default; per-test overrides simulate state mutation when needed.
     }),
     remove_runner_local: fn((id: bigint) => {
       for (const field of ['list', 'available'] as const) {
@@ -240,6 +353,12 @@ vi.mock('@/lib/wasm-core', () => {
   const channelState = {
     set_channels: fn((j: string) => { h.channel.list = j }),
     channels_json: fn(() => h.channel.list),
+    channels_bytes: fn(() => {
+      const list = JSON.parse(h.channel.list) as Array<Record<string, unknown>>
+      return toBinary(ReplaceCachedChannelsRequestSchema, create(ReplaceCachedChannelsRequestSchema, {
+        channels: list.map(chToState),
+      }))
+    }),
     set_current_channel: fn((id: bigint | null) => { h.channel.current = id }),
     current_channel_json: fn(() => {
       if (h.channel.current === null) return undefined
@@ -247,10 +366,23 @@ vi.mock('@/lib/wasm-core', () => {
       const ch = list.find((c) => c.id === Number(h.channel.current))
       return ch ? JSON.stringify(ch) : undefined
     }),
+    current_channel_bytes: fn(() => {
+      if (h.channel.current === null) return new Uint8Array()
+      const list = JSON.parse(h.channel.list) as Array<Record<string, unknown>>
+      const ch = list.find((c) => Number(c.id) === Number(h.channel.current))
+      if (!ch) return new Uint8Array()
+      return toBinary(InsertChannelRequestSchema, create(InsertChannelRequestSchema, { channel: chToState(ch) }))
+    }),
     get_channel_json: fn((id: bigint) => {
       const list = JSON.parse(h.channel.list) as { id: number }[]
       const ch = list.find((c) => c.id === Number(id))
       return ch ? JSON.stringify(ch) : undefined
+    }),
+    get_channel_bytes: fn((id: bigint) => {
+      const list = JSON.parse(h.channel.list) as Array<Record<string, unknown>>
+      const ch = list.find((c) => Number(c.id) === Number(id))
+      if (!ch) return new Uint8Array()
+      return toBinary(InsertChannelRequestSchema, create(InsertChannelRequestSchema, { channel: chToState(ch) }))
     }),
     add_channel: fn((json: string) => {
       const ch = JSON.parse(json) as { id: number }
@@ -296,6 +428,22 @@ vi.mock('@/lib/wasm-core', () => {
       const entry = h.channel.msgs.get(cKey(chId))
       if (!entry) return undefined
       return JSON.stringify({ messages: JSON.parse(entry.json), has_more: entry.hasMore })
+    }),
+    get_messages_bytes: fn((chId: bigint) => {
+      const entry = h.channel.msgs.get(cKey(chId))
+      const messages = entry ? (JSON.parse(entry.json) as Array<Record<string, unknown>>) : []
+      return toBinary(ReplaceCachedChannelMessagesRequestSchema, create(ReplaceCachedChannelMessagesRequestSchema, {
+        channelId: chId,
+        hasMore: entry?.hasMore ?? false,
+        messages: messages.map((m) => ({
+          id: BigInt(m.id as number), channelId: BigInt(m.channel_id as number),
+          body: (m.body as string) ?? '', messageType: (m.message_type as string) ?? '',
+          senderUserId: m.sender_user_id !== undefined ? BigInt(m.sender_user_id as number) : undefined,
+          createdAt: (m.created_at as string) ?? '',
+          contentJson: m.content_json as string | undefined,
+          mentionsJson: m.mentions_json as string | undefined,
+        })),
+      }))
     }),
     prepend_messages: fn((chId: bigint, json: string, hasMore: boolean) => {
       const k = cKey(chId)
@@ -368,27 +516,45 @@ vi.mock('@/lib/wasm-core', () => {
       let total = 0; for (const v of h.channel.unread.values()) total += v; return total
     }),
     get_last_message_json: fn(() => undefined),
+    get_last_message_bytes: fn(() => new Uint8Array()),
     set_last_message: fn(),
     // Service async methods (API calls via WASM)
-    fetch_channels: fn().mockResolvedValue(JSON.stringify({ channels: [] })),
-    fetch_channel: fn().mockResolvedValue('{}'),
     create_channel: fn().mockResolvedValue('{}'),
     archive_channel: fn().mockResolvedValue(undefined),
     unarchive_channel: fn().mockResolvedValue(undefined),
     join_channel: fn().mockResolvedValue('{}'),
     leave_channel: fn().mockResolvedValue('{}'),
-    fetch_messages: fn().mockResolvedValue(JSON.stringify({ messages: [], has_more: false })),
     send_message: fn().mockResolvedValue('{}'),
     edit_message: fn().mockResolvedValue('{}'),
     delete_message: fn().mockResolvedValue(undefined),
-    fetch_unread_counts: fn().mockResolvedValue('{}'),
     mark_read: fn().mockResolvedValue(undefined),
     mute_channel: fn().mockResolvedValue(undefined),
     fetch_channel_members: fn().mockResolvedValue('{"members":[],"total":0}'),
     invite_channel_members: fn().mockResolvedValue(undefined),
     channel_members_json: fn((id: bigint) => h.channel.members.get(String(id)) ?? '[]'),
+    channel_members_bytes: fn((id: bigint) => {
+      const members = JSON.parse(h.channel.members.get(String(id)) ?? '[]') as Array<Record<string, unknown>>
+      return toBinary(ReplaceChannelMembersRequestSchema, create(ReplaceChannelMembersRequestSchema, {
+        channelId: id,
+        members: members.map((m) => ({
+          channelId: BigInt(m.channel_id as number), userId: BigInt(m.user_id as number),
+          role: m.role as string, isMuted: !!m.is_muted, joinedAt: m.joined_at as string,
+        })),
+      }))
+    }),
     get_channel_pods: fn().mockResolvedValue('{"pods":[]}'),
     channel_pods_json: fn((id: bigint) => h.channel.pods.get(String(id)) ?? '[]'),
+    channel_pods_bytes: fn((id: bigint) => {
+      const pods = JSON.parse(h.channel.pods.get(String(id)) ?? '[]') as Array<Record<string, unknown>>
+      return toBinary(ReplaceChannelPodsRequestSchema, create(ReplaceChannelPodsRequestSchema, {
+        channelId: id,
+        pods: pods.map((p) => ({
+          id: BigInt((p.id as number) ?? 0), podKey: p.pod_key as string,
+          alias: p.alias as string | undefined, status: p.status as string,
+          agentStatus: p.agent_status as string,
+        })),
+      }))
+    }),
     update_message_local: fn((chId: bigint, json: string) => {
       const k = cKey(chId); const entry = h.channel.msgs.get(k); if (!entry) return
       const msg = JSON.parse(json); const msgs = JSON.parse(entry.json) as { id: number }[]
@@ -416,10 +582,12 @@ vi.mock('@/lib/wasm-core', () => {
     // Proto-bytes mutators (channel store production path). The mocks here
     // decode the request via @bufbuild/protobuf and apply the same effect
     // as the legacy JSON helpers above, so behavioural tests don't change.
-    replace_cached_channels: fn((bytes: Uint8Array) => {
+    // Fetch→state path: decode wire ListChannelsResponse (channel/v1) directly,
+    // mirroring Rust apply_fetched_channels.
+    apply_fetched_channels: fn((bytes: Uint8Array) => {
       try {
-        const req = fromBinary(ReplaceCachedChannelsRequestSchema, bytes)
-        h.channel.list = JSON.stringify(req.channels.map((c) => decodeProtoChannel(c)))
+        const resp = fromBinary(ListChannelsResponseSchema, bytes)
+        h.channel.list = JSON.stringify(resp.items.map((c) => decodeProtoChannel(c)))
       } catch { h.channel.list = '[]' }
     }),
     insert_channel: fn((bytes: Uint8Array) => {
@@ -427,6 +595,16 @@ vi.mock('@/lib/wasm-core', () => {
         const { channel: c } = fromBinary(InsertChannelRequestSchema, bytes)
         if (!c) return
         const channel = decodeProtoChannel(c)
+        const list = JSON.parse(h.channel.list) as { id: number }[]
+        const idx = list.findIndex((x) => x.id === channel.id)
+        if (idx >= 0) list[idx] = { ...list[idx], ...channel }
+        else list.unshift(channel)
+        h.channel.list = JSON.stringify(list)
+      } catch { /* noop */ }
+    }),
+    apply_fetched_channel: fn((bytes: Uint8Array) => {
+      try {
+        const channel = decodeProtoChannel(fromBinary(ChannelSchema, bytes))
         const list = JSON.parse(h.channel.list) as { id: number }[]
         const idx = list.findIndex((x) => x.id === channel.id)
         if (idx >= 0) list[idx] = { ...list[idx], ...channel }
@@ -443,24 +621,25 @@ vi.mock('@/lib/wasm-core', () => {
         h.channel.list = JSON.stringify(list)
       } catch { /* noop */ }
     }),
-    replace_cached_channel_messages: fn((bytes: Uint8Array) => {
+    // Fetch→state path: decode wire ListChannelMessagesResponse (channel/v1).
+    apply_fetched_messages: fn((chId: bigint, bytes: Uint8Array) => {
       try {
-        const req = fromBinary(ReplaceCachedChannelMessagesRequestSchema, bytes)
-        const msgs = req.messages.map(decodeProtoMessage)
-        h.channel.msgs.set(cKey(Number(req.channelId)), { json: JSON.stringify(msgs), hasMore: req.hasMore })
+        const resp = fromBinary(ListChannelMessagesResponseSchema, bytes)
+        const msgs = resp.items.map(decodeProtoMessage)
+        h.channel.msgs.set(cKey(Number(chId)), { json: JSON.stringify(msgs), hasMore: resp.hasMore })
       } catch { /* noop */ }
     }),
-    prepend_cached_channel_messages: fn((bytes: Uint8Array) => {
+    apply_fetched_messages_prepend: fn((chId: bigint, bytes: Uint8Array) => {
       try {
-        const req = fromBinary(PrependCachedChannelMessagesRequestSchema, bytes)
-        const k = cKey(Number(req.channelId))
+        const resp = fromBinary(ListChannelMessagesResponseSchema, bytes)
+        const k = cKey(Number(chId))
         const entry = h.channel.msgs.get(k)
         const existing = entry ? JSON.parse(entry.json) as { id: number }[] : []
-        const incoming = req.messages.map(decodeProtoMessage)
+        const incoming = resp.items.map(decodeProtoMessage)
         const ids = new Set(existing.map((m) => m.id))
         const merged = [...incoming.filter((m) => !ids.has(m.id)), ...existing]
         merged.sort((a, b) => a.id - b.id)
-        h.channel.msgs.set(k, { json: JSON.stringify(merged), hasMore: req.hasMore })
+        h.channel.msgs.set(k, { json: JSON.stringify(merged), hasMore: resp.hasMore })
       } catch { /* noop */ }
     }),
     insert_channel_message: fn((bytes: Uint8Array) => {
@@ -536,6 +715,27 @@ vi.mock('@/lib/wasm-core', () => {
         h.channel.members.set(String(req.channelId), JSON.stringify(members))
       } catch { /* noop */ }
     }),
+    // Fetch→state path: decode wire ListChannelPods/MembersResponse (channel/v1).
+    apply_fetched_pods: fn((chId: bigint, bytes: Uint8Array) => {
+      try {
+        const resp = fromBinary(ListChannelPodsResponseSchema, bytes)
+        const pods = resp.items.map((p) => ({
+          id: Number(p.id), pod_key: p.podKey, alias: p.alias,
+          status: p.status, agent_status: p.agentStatus,
+        }))
+        h.channel.pods.set(String(chId), JSON.stringify(pods))
+      } catch { /* noop */ }
+    }),
+    apply_fetched_members: fn((chId: bigint, bytes: Uint8Array) => {
+      try {
+        const resp = fromBinary(ListChannelMembersResponseSchema, bytes)
+        const members = resp.items.map((m) => ({
+          channel_id: Number(m.channelId), user_id: Number(m.userId),
+          role: m.role, is_muted: m.isMuted, joined_at: m.joinedAt,
+        }))
+        h.channel.members.set(String(chId), JSON.stringify(members))
+      } catch { /* noop */ }
+    }),
     remove_channel_member: fn((bytes: Uint8Array) => {
       try {
         const req = fromBinary(RemoveChannelMemberRequestSchema, bytes)
@@ -569,6 +769,20 @@ vi.mock('@/lib/wasm-core', () => {
     return out as { id: number; name: string; is_archived: boolean; is_member: boolean; member_count: number; [k: string]: unknown }
   }
 
+  // Reverse of decodeProtoChannel: web snake_case Channel → state proto literal
+  // for prost-bytes read mocks (channels_bytes / current_channel_bytes /
+  // get_channel_bytes). Single SSOT so the three read mocks can't drift.
+  function chToState(c: Record<string, unknown>) {
+    return {
+      id: BigInt(c.id as number), name: c.name as string,
+      organizationId: c.organization_id !== undefined ? BigInt(c.organization_id as number) : undefined,
+      isArchived: !!c.is_archived, isMember: !!c.is_member,
+      memberCount: c.member_count !== undefined ? BigInt(c.member_count as number) : undefined,
+      visibility: c.visibility as string,
+      createdAt: c.created_at as string, updatedAt: c.updated_at as string,
+    }
+  }
+
   // Helper: proto.channel_state.v1.ChannelMessage (camelCase) → web wasm
   // projection (snake_case). Mirrors the renderer projection so cached
   // messages keep the same shape callers expect.
@@ -598,18 +812,62 @@ vi.mock('@/lib/wasm-core', () => {
     }
   }
 
+  // Minimal ticket proto↔cache for the B fetch/read mock — covers the fields
+  // ticket store tests exercise; full round-trip is in ticket_cache_to_bytes.test.ts.
+  type TicketObj = Record<string, unknown>
+  const protoTicketToCacheMin = (t: ReturnType<typeof create<typeof TicketSchema>>): TicketObj => ({
+    id: Number(t.id), number: t.number, slug: t.slug, title: t.title, content: t.content,
+    status: t.status, priority: t.priority, severity: t.severity, estimate: t.estimate,
+    due_date: t.dueDate, started_at: t.startedAt, completed_at: t.completedAt,
+    created_at: t.createdAt, updated_at: t.updatedAt,
+    repository_id: t.repositoryId !== undefined ? Number(t.repositoryId) : undefined,
+  })
+  const cacheToProtoTicketMin = (t: TicketObj) => create(TicketSchema, {
+    id: BigInt((t.id as number) ?? 0), number: (t.number as number) ?? 0, slug: (t.slug as string) ?? '',
+    title: (t.title as string) ?? '', content: (t.content as string) ?? '', status: (t.status as string) ?? '',
+    priority: (t.priority as string) ?? '', severity: (t.severity as string) ?? '', estimate: (t.estimate as number) ?? 0,
+    dueDate: (t.due_date as string) ?? '', startedAt: (t.started_at as string) ?? '', completedAt: (t.completed_at as string) ?? '',
+    createdAt: (t.created_at as string) ?? '', updatedAt: (t.updated_at as string) ?? '',
+    repositoryId: t.repository_id !== undefined ? BigInt(t.repository_id as number) : undefined,
+  })
+
   // ticketState now mirrors WasmTicketState (proto bytes mutators + JSON
   // reads). Tests that need to observe cache state can override these via
   // vi.mocked(...).mockImplementation; defaults are no-ops so the bridge
   // doesn't crash when store actions fire.
   const ticketState = {
     tickets_json: fn(() => h.ticket.list),
+    tickets_bytes: fn(() => toBinary(ReplaceCachedTicketsRequestSchema,
+      create(ReplaceCachedTicketsRequestSchema, { tickets: (JSON.parse(h.ticket.list) as TicketObj[]).map(cacheToProtoTicketMin) }))),
+    apply_fetched_tickets: fn((bytes: Uint8Array) => {
+      try { h.ticket.list = JSON.stringify(fromBinary(ListTicketsResponseSchema, bytes).items.map(protoTicketToCacheMin)) } catch { /* noop */ }
+    }),
     board_columns_json: fn(() => h.ticket.boardCols),
     labels_json: fn(() => h.ticket.labels),
     current_ticket_json: fn(() => h.ticket.current || undefined),
+    // Read side (B): encode helper-store JSON into the state proto wrappers.
+    current_ticket_bytes: fn(() => {
+      const cur = h.ticket.current ? JSON.parse(h.ticket.current) as TicketObj : null
+      return cur ? toBinary(SetCurrentTicketRequestSchema, create(SetCurrentTicketRequestSchema, { ticket: cacheToProtoTicketMin(cur) })) : new Uint8Array()
+    }),
+    board_columns_bytes: fn(() => toBinary(ReplaceBoardColumnsRequestSchema, create(ReplaceBoardColumnsRequestSchema, {
+      columns: (JSON.parse(h.ticket.boardCols) as { status: string; count?: number; tickets: TicketObj[] }[]).map((c) =>
+        create(BoardColumnSchema, { status: c.status, totalCount: BigInt(c.count ?? 0), tickets: c.tickets.map(cacheToProtoTicketMin) })),
+    }))),
+    labels_bytes: fn(() => toBinary(ReplaceCachedLabelsRequestSchema, create(ReplaceCachedLabelsRequestSchema, {
+      labels: (JSON.parse(h.ticket.labels) as { id: number; name: string; color: string }[]).map((l) =>
+        create(LabelSchema, { id: BigInt(l.id), name: l.name, color: l.color })),
+    }))),
     apply_ticket_status_event: fn((_b: Uint8Array) => undefined),
     apply_ticket_deleted_event: fn((_b: Uint8Array) => undefined),
-    replace_cached_tickets: fn((_b: Uint8Array) => undefined),
+    apply_fetched_current_ticket: fn((bytes: Uint8Array) => {
+      try { h.ticket.current = JSON.stringify(protoTicketToCacheMin(fromBinary(TicketSchema, bytes))) } catch { /* noop */ }
+    }),
+    apply_fetched_board_columns: fn((_b: Uint8Array) => undefined),
+    apply_appended_board_column_tickets: fn((_s: string, _b: Uint8Array) => undefined),
+    apply_fetched_labels: fn((bytes: Uint8Array) => {
+      try { h.ticket.labels = JSON.stringify(fromBinary(ListLabelsResponseSchema, bytes).items.map((l) => ({ id: Number(l.id), name: l.name, color: l.color }))) } catch { /* noop */ }
+    }),
     insert_created_ticket: fn((_b: Uint8Array) => undefined),
     patch_cached_ticket: fn((_b: Uint8Array) => undefined),
     replace_board_columns: fn((_b: Uint8Array) => undefined),
@@ -619,6 +877,8 @@ vi.mock('@/lib/wasm-core', () => {
     insert_created_label: fn((_b: Uint8Array) => undefined),
     remove_cached_label: fn((_b: Uint8Array) => undefined),
     filter_tickets: fn((_b: Uint8Array) => new Uint8Array()),
+    ticket_pods_bytes: fn((_s: string) => toBinary(ReplaceCachedPodsRequestSchema, create(ReplaceCachedPodsRequestSchema, { pods: [] }))),
+    set_ticket_pods: fn((_s: string, _j: string) => undefined),
   }
 
   // ticketService retains only the ticket-pods cache + Connect-RPC bridge.
@@ -648,16 +908,12 @@ vi.mock('@/lib/wasm-core', () => {
   }
 
   const meshState = {
-    topology_json: fn(() => h.mesh.topo || undefined),
+    // Read side (B): empty bytes = no topology (replace_topology mock is a no-op,
+    // so tests never populate real topology data through this mock).
+    topology_bytes: fn(() => new Uint8Array()),
     clear_topology: fn(() => { h.mesh.topo = '' }),
     select_node: fn((key?: string) => { h.mesh.selected = key }),
     selected_node: fn(() => h.mesh.selected),
-    get_node_json: fn(),
-    get_edges_for_node_json: fn(() => '[]'),
-    get_channels_for_node_json: fn(() => '[]'),
-    get_nodes_by_runner_json: fn(() => '[]'),
-    get_active_nodes_json: fn(() => '[]'),
-    get_runner_info_json: fn(),
     fetch_topology: fn().mockResolvedValue(JSON.stringify({ nodes: [], edges: [], channels: [], runners: [] })),
     // Proto-bytes mutator (mirror state_mesh.rs).
     replace_topology: fn((_b: Uint8Array) => undefined),
@@ -668,19 +924,78 @@ vi.mock('@/lib/wasm-core', () => {
     createPodForTicketConnect: fn().mockResolvedValue(new Uint8Array()),
   }
 
+  // Minimal loop proto↔cache for the B fetch/read mock — covers the fields loop
+  // store tests exercise; full round-trip is in loop_cache_to_bytes.test.ts.
+  type LoopObj = Record<string, unknown>
+  const protoLoopToCacheMin = (l: ReturnType<typeof create<typeof LoopSchema>>): LoopObj => ({
+    id: Number(l.id), slug: l.slug, name: l.name, status: l.status,
+    permission_mode: l.permissionMode, prompt_template: l.promptTemplate,
+    execution_mode: l.executionMode, sandbox_strategy: l.sandboxStrategy,
+    session_persistence: l.sessionPersistence, concurrency_policy: l.concurrencyPolicy,
+    max_concurrent_runs: l.maxConcurrentRuns, max_retained_runs: l.maxRetainedRuns,
+    timeout_minutes: l.timeoutMinutes, total_runs: Number(l.totalRuns),
+    successful_runs: Number(l.successfulRuns), failed_runs: Number(l.failedRuns),
+    active_run_count: Number(l.activeRunCount), used_env_bundles: l.usedEnvBundles ?? [],
+    autopilot_config: {}, created_at: l.createdAt, updated_at: l.updatedAt,
+  })
+  const cacheToProtoLoopMin = (l: LoopObj) => create(LoopSchema, {
+    id: BigInt((l.id as number) ?? 0), slug: (l.slug as string) ?? '', name: (l.name as string) ?? '',
+    status: (l.status as string) ?? '', permissionMode: (l.permission_mode as string) ?? '',
+    promptTemplate: (l.prompt_template as string) ?? '', executionMode: (l.execution_mode as string) ?? '',
+    sandboxStrategy: (l.sandbox_strategy as string) ?? '', sessionPersistence: !!l.session_persistence,
+    concurrencyPolicy: (l.concurrency_policy as string) ?? '', maxConcurrentRuns: (l.max_concurrent_runs as number) ?? 0,
+    maxRetainedRuns: (l.max_retained_runs as number) ?? 0, timeoutMinutes: (l.timeout_minutes as number) ?? 0,
+    totalRuns: BigInt((l.total_runs as number) ?? 0), successfulRuns: BigInt((l.successful_runs as number) ?? 0),
+    failedRuns: BigInt((l.failed_runs as number) ?? 0), activeRunCount: BigInt((l.active_run_count as number) ?? 0),
+    usedEnvBundles: (l.used_env_bundles as string[]) ?? [], createdAt: (l.created_at as string) ?? '', updatedAt: (l.updated_at as string) ?? '',
+  })
+  const protoRunToCacheMin = (r: ReturnType<typeof create<typeof LoopRunSchema>>): LoopObj => ({
+    id: Number(r.id), loop_id: Number(r.loopId), run_number: Number(r.runNumber), status: r.status,
+    pod_key: r.podKey, started_at: r.startedAt, finished_at: r.completedAt,
+    error_message: r.errorMessage, created_at: r.createdAt, trigger_type: '',
+  })
+  const cacheToProtoRunMin = (r: LoopObj) => create(LoopRunSchema, {
+    id: BigInt((r.id as number) ?? 0), loopId: BigInt((r.loop_id as number) ?? 0),
+    runNumber: BigInt((r.run_number as number) ?? 0), status: (r.status as string) ?? '',
+    podKey: (r.pod_key as string) ?? '', startedAt: (r.started_at as string) ?? '',
+    completedAt: (r.finished_at as string) ?? '', errorMessage: (r.error_message as string) ?? '', createdAt: (r.created_at as string) ?? '',
+  })
+
   const loopState = {
     loops_json: fn(() => h.loop.list),
     current_loop_json: fn(() => h.loop.current || undefined),
-    runs_json: fn(() => '[]'),
+    runs_json: fn(() => h.loop.runs),
     get_loop_by_slug_json: fn((slug: string) => {
       const arr = JSON.parse(h.loop.list) as { slug: string }[]
       const l = arr.find((x) => x.slug === slug)
       return l ? JSON.stringify(l) : undefined
     }),
+    // Read side (B): cache → state proto bytes; fetch→state: wire response → cache.
+    loops_bytes: fn(() => toBinary(ReplaceCachedLoopsRequestSchema,
+      create(ReplaceCachedLoopsRequestSchema, { loops: (JSON.parse(h.loop.list) as LoopObj[]).map(cacheToProtoLoopMin) }))),
+    runs_bytes: fn(() => toBinary(ReplaceCachedRunsRequestSchema,
+      create(ReplaceCachedRunsRequestSchema, { runs: (JSON.parse(h.loop.runs) as LoopObj[]).map(cacheToProtoRunMin) }))),
+    current_loop_bytes: fn(() => h.loop.current
+      ? toBinary(SetCurrentLoopRequestSchema, create(SetCurrentLoopRequestSchema, { loop: cacheToProtoLoopMin(JSON.parse(h.loop.current) as LoopObj) }))
+      : new Uint8Array()),
+    apply_fetched_loops: fn((bytes: Uint8Array) => {
+      try { h.loop.list = JSON.stringify(fromBinary(ListLoopsResponseSchema, bytes).items.map(protoLoopToCacheMin)) } catch { /* noop */ }
+    }),
+    apply_fetched_current_loop: fn((bytes: Uint8Array) => {
+      try { h.loop.current = JSON.stringify(protoLoopToCacheMin(fromBinary(LoopSchema, bytes))) } catch { /* noop */ }
+    }),
+    apply_fetched_runs: fn((bytes: Uint8Array) => {
+      try { h.loop.runs = JSON.stringify(fromBinary(ListRunsResponseSchema, bytes).items.map(protoRunToCacheMin)) } catch { /* noop */ }
+    }),
+    apply_appended_runs: fn((bytes: Uint8Array) => {
+      try {
+        const existing = JSON.parse(h.loop.runs) as LoopObj[]
+        h.loop.runs = JSON.stringify([...existing, ...fromBinary(ListRunsResponseSchema, bytes).items.map(protoRunToCacheMin)])
+      } catch { /* noop */ }
+    }),
     // Proto-state mutations (binary wire) — TS store uses these.
-    replace_cached_loops: fn(), set_current_loop: fn(), clear_current_loop: fn(),
+    set_current_loop: fn(), clear_current_loop: fn(),
     patch_loop_from_action: fn(), insert_loop_run: fn(),
-    replace_cached_runs: fn(), append_cached_runs: fn(),
     patch_loop_run_status: fn(), clear_loop_runs: fn(),
     // Connect-RPC binary lane (proto.loop.v1.LoopService).
     listLoopsConnect: fn().mockResolvedValue(new Uint8Array()),
@@ -695,13 +1010,35 @@ vi.mock('@/lib/wasm-core', () => {
     cancelRunConnect: fn().mockResolvedValue(new Uint8Array()),
   }
 
+  // Minimal repository proto↔cache for the B fetch/read mock — covers the fields
+  // repo store tests exercise; full round-trip is in repository_cache_to_bytes.test.ts.
+  type RepoObj = Record<string, unknown>
+  const protoRepoToCacheMin = (r: ReturnType<typeof create<typeof RepositorySchema>>): RepoObj => ({
+    id: Number(r.id), organization_id: Number(r.organizationId), provider_type: r.providerType,
+    provider_base_url: r.providerBaseUrl, external_id: r.externalId, name: r.name, slug: r.slug,
+    default_branch: r.defaultBranch, ticket_prefix: r.ticketPrefix, visibility: r.visibility,
+    is_active: r.isActive, created_at: r.createdAt, updated_at: r.updatedAt,
+  })
+  const cacheToProtoRepoMin = (r: RepoObj) => create(RepositorySchema, {
+    id: BigInt((r.id as number) ?? 0), organizationId: BigInt((r.organization_id as number) ?? 0),
+    providerType: (r.provider_type as string) ?? '', providerBaseUrl: (r.provider_base_url as string) ?? '',
+    externalId: (r.external_id as string) ?? '', name: (r.name as string) ?? '', slug: (r.slug as string) ?? '',
+    defaultBranch: (r.default_branch as string) ?? '', ticketPrefix: (r.ticket_prefix as string) ?? '',
+    visibility: (r.visibility as string) ?? '', isActive: !!r.is_active,
+    createdAt: (r.created_at as string) ?? '', updatedAt: (r.updated_at as string) ?? '',
+  })
+
   const repoState = {
     set_repositories: fn(), repositories_json: fn(() => h.repo.list),
     set_current_repo: fn(), current_repo_json: fn(() => h.repo.current || undefined),
     add_repository: fn(), update_repository: fn(), remove_repository: fn(),
     set_branches: fn(), branches_json: fn(() => h.repo.branches),
+    repositories_bytes: fn(() => toBinary(ReplaceCachedRepositoriesRequestSchema,
+      create(ReplaceCachedRepositoriesRequestSchema, { repositories: (JSON.parse(h.repo.list) as RepoObj[]).map(cacheToProtoRepoMin) }))),
+    apply_fetched_repositories: fn((bytes: Uint8Array) => {
+      try { h.repo.list = JSON.stringify(fromBinary(ListRepositoriesResponseSchema, bytes).items.map(protoRepoToCacheMin)) } catch { /* noop */ }
+    }),
     // Proto-bytes mutators (mirror state_repo.rs).
-    replace_cached_repositories: fn((_b: Uint8Array) => undefined),
     set_current_repo_proto: fn((_b: Uint8Array) => undefined),
     replace_branches: fn((_b: Uint8Array) => undefined),
     insert_repository: fn((_b: Uint8Array) => undefined),
@@ -711,6 +1048,7 @@ vi.mock('@/lib/wasm-core', () => {
   const autopilotState = {
     set_controllers: fn(), controllers_json: fn(() => h.autopilot.controllers),
     set_current_controller: fn(), current_controller_json: fn(() => h.autopilot.current || undefined),
+    apply_fetched_controllers: fn(), apply_fetched_current_controller: fn(), apply_fetched_iterations: fn(),
     add_controller: fn(), update_controller: fn(), remove_controller: fn(),
     add_iteration: fn(), set_iterations: fn(),
     get_iterations_json: fn(), update_thinking: fn(),

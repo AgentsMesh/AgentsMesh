@@ -1,4 +1,7 @@
 import { useEffect, useReducer } from "react";
+import { fromBinary } from "@bufbuild/protobuf";
+import { ReplaceCachedPodsRequestSchema } from "@proto/pod_state/v1/pod_state_pb";
+import { podToCache } from "@agentsmesh/electron-adapter/projections";
 import { getTicketService, getTicketState } from "@/lib/wasm-core";
 
 export interface TicketPodSummary {
@@ -60,10 +63,14 @@ async function fetchTicketPods(slug: string): Promise<TicketPodSummary[]> {
   return p;
 }
 
+// Read side (B, zero-JSON): decode the ticket→pods state proto bytes via the
+// shared podToCache projection (TicketPodSummary is a subset of PodData — the
+// UI reads pod_key/status/agent_status only).
 function readPodsFromRust(slug: string | null): TicketPodSummary[] {
   if (!slug) return [];
   try {
-    return JSON.parse(getTicketState().ticket_pods_json(slug)) as TicketPodSummary[];
+    const req = fromBinary(ReplaceCachedPodsRequestSchema, getTicketState().ticket_pods_bytes(slug));
+    return req.pods.map(podToCache) as unknown as TicketPodSummary[];
   } catch {
     return [];
   }

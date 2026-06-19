@@ -27,7 +27,8 @@
       ],
       "@agentsmesh/service-runtime": ["../../packages/service-runtime/src/index.ts"],
       "@agentsmesh/service-interface": ["../../packages/service-interface/src/index.ts"],
-      "@agentsmesh/electron-adapter": ["../../packages/electron-adapter/src/index.ts"]
+      "@agentsmesh/electron-adapter": ["../../packages/electron-adapter/src/index.ts"],
+      "@agentsmesh/electron-adapter/projections": ["../../packages/electron-adapter/src/projections/index.ts"]
     }
   },
   "include": [

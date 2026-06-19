@@ -1,21 +1,22 @@
 import { create } from "zustand";
 import { useMemo } from "react";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { create as protoCreate, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { ApiError } from "@/lib/api/api-types";
 import { reconnectRegistry } from "@/lib/realtime";
 import { readCurrentOrg, readCurrentUser } from "@/stores/auth";
 import { getErrorMessage } from "@/lib/utils";
 import { initWasmCore, getPodState } from "@/lib/wasm-core";
 import {
-  listPods as listPodsConnect,
+  listPodsRaw,
   getPod as getPodConnect,
   terminatePod as terminatePodConnect,
   updatePodAlias as updatePodAliasConnect,
   updatePodPerpetual as updatePodPerpetualConnect,
 } from "@/lib/api/facade/podConnect";
 import { fromProtoPod, podToProtoPod } from "@/lib/api/podProtoMap";
+import { ListPodsResponseSchema, PodSchema } from "@proto/pod/v1/pod_pb";
 import {
-  ReplaceCachedPodsRequestSchema, AppendCachedPodsRequestSchema,
+  ReplaceCachedPodsRequestSchema,
   InsertCreatedPodRequestSchema, PatchPodPerpetualRequestSchema,
   MarkPodTerminatedRequestSchema,
 } from "@proto/pod_state/v1/pod_state_pb";
@@ -33,27 +34,33 @@ function sidebarStatusParam(filter: string): string | undefined {
   return SIDEBAR_STATUS_MAP[filter];
 }
 
+// Read side, zero-JSON: decode state proto bytes via fromBinary + podToCache
+// (re-exported as fromProtoPod). Replaces the pods_json/get_pod_json/
+// current_pod_json serde reads — UI is now a projection of state proto bytes.
 export function usePods(): Pod[] {
   const tick = usePodStore((s) => s._tick);
-  return useMemo(() => JSON.parse(getPodState().pods_json()) as Pod[], [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceCachedPodsRequestSchema, getPodState().pods_bytes()).pods.map(fromProtoPod) as Pod[],
+    [tick],
+  );
 }
 
 export function usePod(podKey: string | undefined): Pod | undefined {
   const tick = usePodStore((s) => s._tick);
   return useMemo(() => {
     if (!podKey) return undefined;
-    const json = getPodState().get_pod_json(podKey);
-    if (!json) return undefined;
-    return JSON.parse(json as string) as Pod;
+    const bytes = getPodState().get_pod_bytes(podKey);
+    if (bytes.length === 0) return undefined;
+    return fromProtoPod(fromBinary(PodSchema, bytes)) as Pod;
   }, [tick, podKey]);
 }
 
 export function useCurrentPod(): Pod | null {
   const tick = usePodStore((s) => s._tick);
   return useMemo(() => {
-    const json = getPodState().current_pod_json();
-    if (!json) return null;
-    return JSON.parse(json as string) as Pod;
+    const bytes = getPodState().current_pod_bytes();
+    if (bytes.length === 0) return null;
+    return fromProtoPod(fromBinary(PodSchema, bytes)) as Pod;
   }, [tick]);
 }
 
@@ -77,9 +84,9 @@ export const usePodStore = create<PodState>((set, get) => ({
     await initWasmCore();
     set({ error: null });
     try {
-      const { items } = await listPodsConnect(orgSlug(), { status: filters?.status });
-      const req = protoCreate(ReplaceCachedPodsRequestSchema, { pods: items.map(podToProtoPod) });
-      getPodState().replace_cached_pods(toBinary(ReplaceCachedPodsRequestSchema, req));
+      const respBytes = await listPodsRaw(orgSlug(), { status: filters?.status });
+      // wire bytes → Rust wire→state (set_pods); no TS fromProtoPod/xToProto.
+      getPodState().apply_fetched_pods(respBytes);
       bump();
     } catch (error: unknown) {
       set({ error: getErrorMessage(error, "Failed to fetch pods") });
@@ -118,21 +125,26 @@ export const usePodStore = create<PodState>((set, get) => ({
     if (!silent) set({ error: null, currentSidebarFilter: statusFilter, loading: true });
     try {
       const uid = statusFilter === "mine" ? readCurrentUser()?.id ?? null : null;
-      const { items, total } = await listPodsConnect(orgSlug(), {
+      const respBytes = await listPodsRaw(orgSlug(), {
         status: sidebarStatusParam(statusFilter),
         created_by_id: uid ?? undefined,
         limit: SIDEBAR_PAGE_SIZE, offset: 0,
       });
+      // Decode the wire response once for the pagination counters (total /
+      // page length) — the bytes are already in hand, so this is free vs a
+      // second projection. The same bytes feed apply_fetched_pods (set_pods).
+      const resp = fromBinary(ListPodsResponseSchema, respBytes);
+      const total = Number(resp.total);
+      const pageLen = resp.items.length;
       // Write the cache + counters only if this is still the latest request for
       // the active filter: a concurrent tab switch, or a newer fetch (silent
       // reconnect vs cold load) superseding this one, must not clobber fresher
       // data. loadMorePods guards the same way before it appends.
       if (get().currentSidebarFilter === statusFilter && sidebarRequestSeq === mySeq) {
-        const req = protoCreate(ReplaceCachedPodsRequestSchema, { pods: items.map(podToProtoPod) });
-        getPodState().replace_cached_pods(toBinary(ReplaceCachedPodsRequestSchema, req));
+        getPodState().apply_fetched_pods(respBytes);
         set({
-          podTotal: total, podHasMore: items.length < total,
-          sidebarLoadedCount: items.length, _tick: get()._tick + 1,
+          podTotal: total, podHasMore: pageLen < total,
+          sidebarLoadedCount: pageLen, _tick: get()._tick + 1,
         });
       }
     } catch (error: unknown) {
@@ -160,11 +172,14 @@ export const usePodStore = create<PodState>((set, get) => ({
       // length: realtime insert_created_pod upserts org-wide pods (incl. ones the
       // active filter hides) into the shared cache, so cache length drifts from
       // the server's filtered offset and would skip or duplicate rows.
-      const { items: newPods, total } = await listPodsConnect(orgSlug(), {
+      const respBytes = await listPodsRaw(orgSlug(), {
         status: sidebarStatusParam(currentSidebarFilter),
         created_by_id: uid ?? undefined,
         limit: SIDEBAR_PAGE_SIZE, offset: sidebarLoadedCount,
       });
+      const resp = fromBinary(ListPodsResponseSchema, respBytes);
+      const total = Number(resp.total);
+      const pageLen = resp.items.length;
       // Discard if superseded: filter changed, a newer fetch bumped the seq, or
       // a fetchSidebarPods already in flight when we started reset the offset
       // (same seq baseline, so the seq check alone misses it — catch it via the
@@ -175,9 +190,8 @@ export const usePodStore = create<PodState>((set, get) => ({
         set({ loadingMore: false });
         return;
       }
-      const req = protoCreate(AppendCachedPodsRequestSchema, { pods: newPods.map(podToProtoPod) });
-      getPodState().append_cached_pods(toBinary(AppendCachedPodsRequestSchema, req));
-      const loaded = sidebarLoadedCount + newPods.length;
+      getPodState().apply_appended_pods(respBytes);
+      const loaded = sidebarLoadedCount + pageLen;
       set({ podTotal: total, podHasMore: loaded < total, loadingMore: false, sidebarLoadedCount: loaded, _tick: get()._tick + 1 });
     } catch (error: unknown) {
       set({ error: getErrorMessage(error, "Failed to load more pods"), loadingMore: false });

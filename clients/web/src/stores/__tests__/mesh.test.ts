@@ -5,12 +5,8 @@ const mockFetchTopology = vi.fn();
 const mockReplaceTopology = vi.fn();
 const mockSelectNode = vi.fn();
 const mockSelectedNode = vi.fn();
-const mockGetNodeJson = vi.fn();
-const mockGetEdgesForNodeJson = vi.fn();
-const mockGetChannelsForNodeJson = vi.fn();
-const mockGetActiveNodesJson = vi.fn();
-const mockGetNodesByRunnerJson = vi.fn();
-const mockGetRunnerInfoJson = vi.fn();
+// Read side (B): the per-node queries derive from topology_bytes in TS.
+const mockTopologyBytes = vi.fn(() => new Uint8Array());
 
 const noopSvc = new Proxy({}, {
   get: () => () => "[]",
@@ -26,24 +22,37 @@ vi.mock("@/lib/wasm-core", () => ({
     replace_topology: mockReplaceTopology,
     select_node: mockSelectNode,
     selected_node: mockSelectedNode,
-    get_node_json: mockGetNodeJson,
-    get_edges_for_node_json: mockGetEdgesForNodeJson,
-    get_channels_for_node_json: mockGetChannelsForNodeJson,
-    get_active_nodes_json: mockGetActiveNodesJson,
-    get_nodes_by_runner_json: mockGetNodesByRunnerJson,
-    get_runner_info_json: mockGetRunnerInfoJson,
+    topology_bytes: mockTopologyBytes,
   }),
   getChannelService: () => noopSvc,
   getChannelState: () => noopSvc,
 }));
 
+import { create, toBinary } from "@bufbuild/protobuf";
+import { MeshTopologySchema } from "@proto/mesh/v1/mesh_pb";
 import {
   useMeshStore,
+  __resetTopologyMemoForTests,
   MeshTopology,
   MeshNode,
   MeshEdge,
   ChannelInfo,
 } from "../mesh";
+
+// Encode a view topology → proto bytes so mockTopologyBytes feeds the same
+// fromBinary + topologyToCache path the store uses (B read side).
+function setTopo(t: MeshTopology) {
+  const proto = create(MeshTopologySchema, {
+    nodes: t.nodes.map((n) => ({
+      podKey: n.pod_key, status: n.status, agentStatus: n.agent_status ?? "",
+      agentSlug: n.agent_slug ?? "", runnerId: BigInt(n.runner_id ?? 0),
+    })),
+    edges: t.edges.map((e) => ({ source: e.source, target: e.target, status: e.status ?? "" })),
+    channels: t.channels.map((c) => ({ id: BigInt(c.id), name: c.name, podKeys: c.pod_keys })),
+    runners: t.runners.map((r) => ({ id: BigInt(r.id), status: r.status, nodeId: r.node_id ?? "" })),
+  });
+  mockTopologyBytes.mockReturnValue(toBinary(MeshTopologySchema, proto));
+}
 
 const mockNode1: MeshNode = {
   pod_key: "pod-abc",
@@ -91,6 +100,7 @@ const mockTopology: MeshTopology = {
 describe("Mesh Store", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetTopologyMemoForTests();
     useMeshStore.setState({
       _tick: 0,
       selectedNode: null,
@@ -292,56 +302,61 @@ describe("Mesh Store", () => {
     });
   });
 
+  // Read side (B): helpers derive from topology_bytes + topologyToCache, so
+  // assertions match key fields (the proto round-trip adds defaulted fields).
   describe("WASM state reader helpers", () => {
-    it("getNodeByKey returns parsed node", () => {
-      mockGetNodeJson.mockReturnValue(JSON.stringify(mockNode1));
+    it("getNodeByKey returns the matching node", () => {
+      setTopo(mockTopology);
       const result = useMeshStore.getState().getNodeByKey("pod-abc");
-      expect(result).toEqual(mockNode1);
+      expect(result).toMatchObject({ pod_key: "pod-abc", agent_slug: "claude-code", runner_id: 1 });
     });
 
     it("getNodeByKey returns undefined for missing node", () => {
-      mockGetNodeJson.mockReturnValue(null);
-      const result = useMeshStore.getState().getNodeByKey("missing");
-      expect(result).toBeUndefined();
+      setTopo(mockTopology);
+      expect(useMeshStore.getState().getNodeByKey("missing")).toBeUndefined();
     });
 
-    it("getEdgesForNode returns parsed edges", () => {
-      mockGetEdgesForNodeJson.mockReturnValue(JSON.stringify([mockEdge]));
+    it("getNodeByKey returns undefined when no topology", () => {
+      mockTopologyBytes.mockReturnValue(new Uint8Array());
+      expect(useMeshStore.getState().getNodeByKey("pod-abc")).toBeUndefined();
+    });
+
+    it("getEdgesForNode filters edges touching the node", () => {
+      setTopo(mockTopology);
       const result = useMeshStore.getState().getEdgesForNode("pod-abc");
-      expect(result).toEqual([mockEdge]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ source: "pod-abc", target: "pod-def" });
     });
 
-    it("getChannelsForNode returns parsed channels", () => {
-      mockGetChannelsForNodeJson.mockReturnValue(JSON.stringify([mockChannel]));
+    it("getChannelsForNode filters channels containing the node", () => {
+      setTopo(mockTopology);
       const result = useMeshStore.getState().getChannelsForNode("pod-abc");
-      expect(result).toEqual([mockChannel]);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({ id: 1, name: "general" });
     });
 
-    it("getActiveNodes returns parsed active nodes", () => {
-      mockGetActiveNodesJson.mockReturnValue(JSON.stringify([mockNode1, mockNode2]));
+    it("getActiveNodes returns running/creating nodes only", () => {
+      setTopo(mockTopology);
       const result = useMeshStore.getState().getActiveNodes();
-      expect(result).toEqual([mockNode1, mockNode2]);
+      // mockNode1/2 are running, mockNode3 is terminated.
+      expect(result.map((n) => n.pod_key)).toEqual(["pod-abc", "pod-def"]);
     });
 
-    it("getNodesByRunner returns parsed nodes", () => {
-      mockGetNodesByRunnerJson.mockReturnValue(JSON.stringify([mockNode1]));
+    it("getNodesByRunner filters by runner id", () => {
+      setTopo(mockTopology);
       const result = useMeshStore.getState().getNodesByRunner(1);
-      expect(mockGetNodesByRunnerJson).toHaveBeenCalledWith(BigInt(1));
-      expect(result).toEqual([mockNode1]);
+      expect(result.map((n) => n.pod_key)).toEqual(["pod-abc"]);
     });
 
-    it("getRunnerInfo returns parsed runner info", () => {
-      const runner = { id: 1, name: "r1", status: "online", pod_keys: ["pod-abc"] };
-      mockGetRunnerInfoJson.mockReturnValue(JSON.stringify(runner));
-      const result = useMeshStore.getState().getRunnerInfo(1);
-      expect(mockGetRunnerInfoJson).toHaveBeenCalledWith(BigInt(1));
-      expect(result).toEqual(runner);
+    it("getRunnerInfo returns the matching runner", () => {
+      setTopo({ ...mockTopology, runners: [{ id: 5, name: "", status: "online" }] });
+      const result = useMeshStore.getState().getRunnerInfo(5);
+      expect(result).toMatchObject({ id: 5, status: "online" });
     });
 
     it("getRunnerInfo returns undefined for missing runner", () => {
-      mockGetRunnerInfoJson.mockReturnValue(null);
-      const result = useMeshStore.getState().getRunnerInfo(999);
-      expect(result).toBeUndefined();
+      setTopo(mockTopology);
+      expect(useMeshStore.getState().getRunnerInfo(999)).toBeUndefined();
     });
   });
 });

@@ -163,7 +163,6 @@ type _RunnerSvc_replace_available    = _Sig<WasmRunnerService["replace_available
 type _RunnerSvc_set_current_proto    = _Sig<WasmRunnerService["set_current_runner_proto"]>;
 type _RunnerSvc_patch_cached         = _Sig<WasmRunnerService["patch_cached_runner"]>;
 type _RunnerSvc_remove_cached        = _Sig<WasmRunnerService["remove_cached_runner"]>;
-type _RunnerSvc_apply_status_event   = _Sig<WasmRunnerService["apply_runner_status_event"]>;
 type _RunnerSvc_proto_replace_cached    = _RequiresU8<WasmRunnerService["replace_cached_runners"]>;
 type _RunnerSvc_proto_replace_available = _RequiresU8<WasmRunnerService["replace_available_runners"]>;
 type _RunnerSvc_proto_set_current       = _RequiresU8<WasmRunnerService["set_current_runner_proto"]>;

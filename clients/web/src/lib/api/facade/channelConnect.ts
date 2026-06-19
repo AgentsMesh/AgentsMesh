@@ -9,7 +9,9 @@ export {
   channelFromProto,
   messageFromProto,
   listChannels,
+  listChannelsRaw,
   getChannel,
+  getChannelRaw,
   createChannel,
   updateChannel,
   archiveChannel,
@@ -22,6 +24,7 @@ export {
 
 export {
   listChannelMessages,
+  listChannelMessagesRaw,
   searchChannelMessages,
   sendChannelMessage,
   editChannelMessage,
@@ -34,11 +37,13 @@ export {
 
 export {
   listChannelMembers,
+  listChannelMembersRaw,
   joinChannel,
   leaveChannel,
   inviteChannelMembers,
   removeChannelMember,
   listChannelPods,
+  listChannelPodsRaw,
   joinChannelPod,
   leaveChannelPod,
   type ChannelMemberData,

@@ -30,6 +30,20 @@ export async function listLabels(
   return resp.items.map(fromProtoLabel);
 }
 
+// Raw wire bytes for the fetch→state path: response (ListLabelsResponse) →
+// apply_fetched_labels (Rust set_labels), no TS labelsToProto.
+export async function listLabelsRaw(
+  orgSlug: string, opts: { repository_id?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(ListLabelsRequestSchema, {
+    orgSlug,
+    repositoryId: opts.repository_id !== undefined ? BigInt(opts.repository_id) : undefined,
+  });
+  return new Uint8Array(
+    await getTicketService().list_labels_connect(toBinary(ListLabelsRequestSchema, req)),
+  );
+}
+
 export async function createLabel(
   orgSlug: string,
   name: string,

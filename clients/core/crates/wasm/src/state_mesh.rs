@@ -39,6 +39,16 @@ impl WasmMeshState {
         }
     }
 
+    // Read side (B, zero-JSON): prost-encode the state topology (wire==state).
+    // Web/desktop decode via fromBinary(MeshTopologySchema) + topologyToCache and
+    // derive the per-node queries in TS. Empty bytes = no topology.
+    pub fn topology_bytes(&self) -> Vec<u8> {
+        match self.state.read().mesh.topology() {
+            Some(t) => t.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
     pub fn selected_node(&self) -> JsValue {
         match self.state.read().mesh.selected_node() {
             Some(key) => JsValue::from_str(key),

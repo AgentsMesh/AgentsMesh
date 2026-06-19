@@ -1,9 +1,7 @@
 import { invoke } from "./invoke";
-import type { IPodService } from "@agentsmesh/service-interface";
+import type { IPodService, PodData } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
-  ReplaceCachedPodsRequestSchema,
-  AppendCachedPodsRequestSchema,
   InsertCreatedPodRequestSchema,
   MarkPodTerminatedRequestSchema,
   PatchPodPerpetualRequestSchema,
@@ -12,63 +10,9 @@ import {
   ApplyPodAliasEventRequestSchema,
   ApplyAgentStatusEventRequestSchema,
 } from "@agentsmesh/proto/pod_state/v1/pod_state_pb";
-import type { Pod as ProtoPod } from "@agentsmesh/proto/pod/v1/pod_pb";
-
-// ProtoPod (camelCase + BigInt) → PodData (snake_case + number). Same logic as
-// fromProtoPod in clients/web/src/lib/api/connect/podConnect.ts but inlined to
-// keep electron-adapter independent of the web/src tree.
-function podToCache(p: ProtoPod): Record<string, unknown> {
-  const ZERO = BigInt(0);
-  return {
-    id: Number(p.id),
-    pod_key: p.podKey,
-    status: p.status,
-    agent_status: p.agentStatus,
-    alias: p.alias,
-    title: p.title,
-    runner: p.runner ? {
-      id: p.runner.id === undefined || p.runner.id === ZERO ? undefined : Number(p.runner.id),
-      node_id: p.runner.nodeId,
-      status: p.runner.status,
-    } : undefined,
-    agent: p.agent ? { name: p.agent.name, slug: p.agent.slug } : undefined,
-    repository: p.repository ? {
-      id: p.repository.id === undefined || p.repository.id === ZERO ? undefined : Number(p.repository.id),
-      name: p.repository.name,
-      slug: p.repository.slug,
-      provider_type: p.repository.providerType,
-    } : undefined,
-    ticket: p.ticket ? {
-      id: p.ticket.id === undefined || p.ticket.id === ZERO ? undefined : Number(p.ticket.id),
-      slug: p.ticket.slug,
-      title: p.ticket.title,
-    } : undefined,
-    loop: p.loop ? {
-      id: p.loop.id === undefined || p.loop.id === ZERO ? undefined : Number(p.loop.id),
-      slug: p.loop.slug,
-      name: p.loop.name,
-    } : undefined,
-    created_by: p.createdBy ? {
-      id: p.createdBy.id === undefined || p.createdBy.id === ZERO ? undefined : Number(p.createdBy.id),
-      username: p.createdBy.username,
-      name: p.createdBy.name,
-    } : undefined,
-    repository_id: undefined,
-    ticket_id: undefined,
-    loop_id: undefined,
-    organization_id: undefined,
-    runner_id: p.runnerId !== undefined && p.runnerId !== ZERO ? Number(p.runnerId) : undefined,
-    interaction_mode: p.interactionMode,
-    agentfile: undefined,
-    branch: p.branchName,
-    initial_prompt: p.prompt,
-    perpetual: p.perpetual,
-    error_code: p.errorCode || undefined,
-    error_message: p.errorMessage || undefined,
-    created_at: p.createdAt,
-    updated_at: p.updatedAt,
-  };
-}
+import { PodSchema, ListPodsResponseSchema } from "@agentsmesh/proto/pod/v1/pod_pb";
+import { podToCache } from "./projections/pod";
+import { podsBytes, podBytes, currentPodBytes } from "./pod_cache_to_bytes";
 
 // Apply scalar status patch on a single cached pod. Used by the proto-bytes
 // status/title/alias/agent-status mutators below; not exposed publicly.
@@ -97,6 +41,12 @@ export class ElectronPodService implements IPodService {
     return p ? JSON.stringify(p) : null;
   }
 
+  // Read side (B, zero-JSON): re-encode the renderer cache into state proto
+  // bytes so the shared selectors decode desktop and web identically.
+  pods_bytes(): Uint8Array { return podsBytes(this._podsCache); }
+  current_pod_bytes(): Uint8Array { return currentPodBytes(this._currentPodCache); }
+  get_pod_bytes(pod_key: string): Uint8Array { return podBytes(this._podsCache, pod_key); }
+
   // ── Proto-bytes mutators (mirror clients/core/crates/wasm WasmPodState) ──
   // Decode locally so `pods_json()` reflects the mutation synchronously, AND
   // fire-and-forget the same bytes to the `app_pod_*` commands so the
@@ -104,22 +54,26 @@ export class ElectronPodService implements IPodService {
   // gets the same fetch/user-action baseline. Not awaited — IPC latency would
   // defeat the sync-cache invariant the renderer's _tick reactivity assumes.
 
-  replace_cached_pods(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedPodsRequestSchema, reqBytes);
-    this._podsCache = JSON.stringify(req.pods.map(podToCache));
-    void invoke<void>("appPodReplaceCachedPods", Array.from(reqBytes)).catch(() => undefined);
+  // Fetch→state (B): decode wire ListPodsResponse → renderer cache (sync, for
+  // reactivity) + fire the SAME wire bytes to main so runtime.state (the SSOT
+  // the realtime snapshot reads) folds the identical baseline. Wire Pod IS the
+  // cache Pod, so this mirrors the wasm apply_fetched_pods identity exactly.
+  apply_fetched_pods(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListPodsResponseSchema, respBytes);
+    this._podsCache = JSON.stringify(resp.items.map(podToCache));
+    void invoke<void>("appPodApplyFetchedPods", Array.from(respBytes)).catch(() => undefined);
   }
 
-  append_cached_pods(reqBytes: Uint8Array): void {
-    const req = fromBinary(AppendCachedPodsRequestSchema, reqBytes);
+  apply_appended_pods(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListPodsResponseSchema, respBytes);
     const existing = JSON.parse(this._podsCache) as { pod_key: string }[];
     const seen = new Set(existing.map((p) => p.pod_key));
-    for (const p of req.pods) {
+    for (const p of resp.items) {
       const c = podToCache(p);
       if (!seen.has(c.pod_key as string)) existing.push(c as { pod_key: string });
     }
     this._podsCache = JSON.stringify(existing);
-    void invoke<void>("appPodAppendCachedPods", Array.from(reqBytes)).catch(() => undefined);
+    void invoke<void>("appPodApplyAppendedPods", Array.from(respBytes)).catch(() => undefined);
   }
 
   insert_created_pod(reqBytes: Uint8Array): void {
@@ -150,10 +104,11 @@ export class ElectronPodService implements IPodService {
   // pod. Update it in place ONLY if already cached — the pod sidebar is a
   // FILTERED set, so adding an absent pod would corrupt the filtered view (a
   // brand-new pod is added by the handler's fetchPod refetch instead).
-  apply_pod_snapshot(json: string): void {
-    let pod: { pod_key?: string };
+  apply_pod_snapshot(podBytes: Uint8Array): void {
+    if (!podBytes.length) return;
+    let pod: PodData;
     try {
-      pod = JSON.parse(json) as { pod_key?: string };
+      pod = podToCache(fromBinary(PodSchema, podBytes));
     } catch {
       return;
     }

@@ -20,6 +20,7 @@ mod members;
 mod messages;
 mod preview;
 mod user;
+mod wire_convert;
 
 use std::collections::HashMap;
 use std::sync::Arc;

@@ -1,5 +1,6 @@
 use napi_derive::napi;
 
+use agentsmesh_types::proto_pod_v1::ListPodsResponse;
 use agentsmesh_types::proto_pod_state_v1::{
     AppendCachedPodsRequest, InsertCreatedPodRequest, MarkPodTerminatedRequest,
     PatchPodPerpetualRequest, ReplaceCachedPodsRequest,
@@ -37,20 +38,35 @@ impl AppState {
         }
     }
 
+    // Proto-bytes variant for the realtime snapshot mirror — the renderer decodes
+    // via fromBinary + podToCache (the fetch projection) for shape parity, not by
+    // merging prost serde JSON. app_get_pod_json stays for the e2e list/detail
+    // consistency probe.
+    #[napi]
+    pub fn app_get_pod_proto(&self, pod_key: String) -> Vec<u8> {
+        match self.runtime.state.read().pods.get_pod(&pod_key) {
+            Some(pod) => pod.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
     // ── Fetch / user-action mirror mutators → runtime.state baseline ──
 
+    // Fetch→state (desktop main): decode wire ListPodsResponse + fold into
+    // state, mirroring the wasm apply_fetched_pods. Wire Pod == cache Pod, so
+    // it's identity — the renderer fans the same wire bytes here.
     #[napi]
-    pub fn app_pod_replace_cached_pods(&self, req_bytes: Vec<u8>) -> napi::Result<()> {
-        let req = ReplaceCachedPodsRequest::decode(&req_bytes[..]).map_err(decode_err)?;
-        self.runtime.state.write().pods.set_pods(req.pods);
+    pub fn app_pod_apply_fetched_pods(&self, resp_bytes: Vec<u8>) -> napi::Result<()> {
+        let resp = ListPodsResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime.state.write().pods.set_pods(resp.items);
         Ok(())
     }
 
     #[napi]
-    pub fn app_pod_append_cached_pods(&self, req_bytes: Vec<u8>) -> napi::Result<()> {
-        let req = AppendCachedPodsRequest::decode(&req_bytes[..]).map_err(decode_err)?;
+    pub fn app_pod_apply_appended_pods(&self, resp_bytes: Vec<u8>) -> napi::Result<()> {
+        let resp = ListPodsResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
         let mut guard = self.runtime.state.write();
-        for pod in req.pods {
+        for pod in resp.items {
             guard.pods.upsert_pod(pod, None);
         }
         Ok(())

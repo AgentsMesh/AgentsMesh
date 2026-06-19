@@ -1,5 +1,8 @@
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { ReplaceCachedPodsRequestSchema } from "@proto/pod_state/v1/pod_state_pb";
+import { PodSchema } from "@proto/pod/v1/pod_pb";
 
 import {
   useTicketPods,
@@ -27,9 +30,14 @@ vi.mock("@/lib/wasm-core", async () => {
       get_ticket_pods: getTicketPodsMock,
     }),
     // ticket→pods cache now lives on runtime.state (WasmTicketState): the
-    // fetch mirrors via set_ticket_pods, the sync read goes through it.
+    // fetch mirrors via set_ticket_pods, the sync read goes through ticket_pods_bytes.
     getTicketState: () => ({
-      ticket_pods_json: (slug: string) => stateMirror.get(slug) ?? "[]",
+      ticket_pods_bytes: (slug: string) => {
+        const pods = JSON.parse(stateMirror.get(slug) ?? "[]") as { pod_key: string; status?: string }[];
+        return toBinary(ReplaceCachedPodsRequestSchema, create(ReplaceCachedPodsRequestSchema, {
+          pods: pods.map((p) => create(PodSchema, { podKey: p.pod_key, status: p.status ?? "" })),
+        }));
+      },
       set_ticket_pods: (slug: string, podsJson: string) => {
         stateMirror.set(slug, podsJson);
       },

@@ -28,3 +28,8 @@ export { ElectronAuthService } from './auth';
 export { ElectronAuthConnectService } from './auth_connect';
 export { ElectronLocalRunnerService } from './local_runner';
 export { createElectronServiceProvider } from './provider';
+
+// Proto→viewModel projections live under the `./projections` subpath (see
+// src/projections/index.ts) so web can re-use them without pulling the service
+// classes' electron-only import graph. Not re-exported from this top-level
+// entry on purpose.

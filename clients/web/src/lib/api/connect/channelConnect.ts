@@ -129,11 +129,37 @@ export async function listChannels(
   };
 }
 
+// Raw wire bytes for the fetch→state path: the ListChannelsResponse goes
+// straight to Rust apply_fetched_channels (no TS channelFromProto/xToProto).
+export async function listChannelsRaw(
+  orgSlug: string,
+  opts: { includeArchived?: boolean; repositoryId?: number; ticketSlug?: string } = {},
+): Promise<Uint8Array> {
+  const req = create(ListChannelsRequestSchema, {
+    orgSlug,
+    includeArchived: opts.includeArchived,
+    repositoryId: opts.repositoryId !== undefined ? BigInt(opts.repositoryId) : undefined,
+    ticketSlug: opts.ticketSlug,
+  });
+  const bytes = toBinary(ListChannelsRequestSchema, req);
+  return new Uint8Array(await getChannelService().listChannelsConnect(bytes));
+}
+
 export async function getChannel(orgSlug: string, id: number): Promise<ChannelData> {
   const req = create(GetChannelRequestSchema, { orgSlug, id: BigInt(id) });
   const bytes = toBinary(GetChannelRequestSchema, req);
   const respBytes = await getChannelService().getChannelConnect(bytes);
   return channelFromProto(fromBinary(ChannelSchema, new Uint8Array(respBytes)));
+}
+
+// Raw wire bytes for the fetch→state path: response (Channel) →
+// apply_fetched_channel (Rust upsert), no TS channelFromProto +
+// channelToProtoChannel round-trip.
+export async function getChannelRaw(orgSlug: string, id: number): Promise<Uint8Array> {
+  const req = create(GetChannelRequestSchema, { orgSlug, id: BigInt(id) });
+  return new Uint8Array(
+    await getChannelService().getChannelConnect(toBinary(GetChannelRequestSchema, req)),
+  );
 }
 
 export async function createChannel(

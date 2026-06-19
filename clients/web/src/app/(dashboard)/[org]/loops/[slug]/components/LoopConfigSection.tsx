@@ -27,7 +27,7 @@ function ConfigPanel({ loop, t }: { loop: LoopData; t: (key: string) => string }
         : t("loops.policyReplace");
 
   return (
-    <section>
+    <section data-testid="loop-config-panel">
       <h2 className="text-sm font-semibold mb-3">{t("loops.configuration")}</h2>
       <div className="border rounded-xl overflow-hidden h-[calc(100%-2rem)]">
         <div className="p-4 space-y-3">
@@ -37,14 +37,14 @@ function ConfigPanel({ loop, t }: { loop: LoopData; t: (key: string) => string }
             value={loop.sandbox_strategy === "persistent" ? t("loops.sandboxPersistent") : t("loops.sandboxFresh")} />
           <ConfigRow icon={<Shield className="w-3.5 h-3.5" />} label={t("loops.concurrency")} value={concurrencyLabel} />
           <ConfigRow icon={<Timer className="w-3.5 h-3.5" />} label={t("loops.timeout")}
-            value={`${loop.timeout_minutes} ${t("loops.minutes")}`} />
+            value={`${loop.timeout_minutes ?? 0} ${t("loops.minutes")}`} />
           <ConfigRow icon={<Shield className="w-3.5 h-3.5" />} label={t("loops.sessionLabel")}
             value={loop.session_persistence ? t("loops.sessionKeep") : t("loops.sessionFresh")} />
           <ConfigRow icon={<Hash className="w-3.5 h-3.5" />} label={t("loops.maxConcurrent")}
-            value={loop.max_concurrent_runs.toString()} />
-          {loop.max_retained_runs > 0 && (
+            value={String(loop.max_concurrent_runs ?? 0)} valueTestId="loop-max-concurrent" />
+          {(loop.max_retained_runs ?? 0) > 0 && (
             <ConfigRow icon={<Hash className="w-3.5 h-3.5" />} label={t("loops.maxRetainedRuns")}
-              value={loop.max_retained_runs.toString()} />
+              value={String(loop.max_retained_runs ?? 0)} />
           )}
           <ConfigRow icon={<Timer className="w-3.5 h-3.5" />} label={t("loops.triggerLabel")}
             value={loop.cron_expression ? (

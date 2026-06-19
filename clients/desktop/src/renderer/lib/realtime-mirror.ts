@@ -18,23 +18,27 @@ interface ChannelSnapshot {
 interface PodSnapshot {
   domain: string;
   podKey: string;
-  // Rust-computed single pod JSON (already enriched), or "".
-  pod: string;
+  // Rust-encoded proto Pod bytes (number[] over IPC) — decoded via fromBinary +
+  // podToCache in the renderer for shape parity with fetch. [] when absent.
+  pod: number[];
 }
 
 interface RunnerSnapshot {
   domain: string;
-  // Rust-computed runner lists from runtime.state.
-  runners: string;
-  available: string;
-  current: string;
+  // Rust-encoded proto *Request wrappers (number[] over IPC) — decoded via
+  // fromBinary + runnerToCache in the renderer for shape parity with fetch.
+  runners: number[];
+  available: number[];
+  current: number[];
 }
 
 interface AutopilotSnapshot {
   domain: string;
   key: string;
-  controllers: string;
-  iterations: string;
+  // controllers + iterations: Rust-encoded proto *Request bytes (number[] over
+  // IPC), decoded via snapshotToController/Iteration. thinking/history: JSON.
+  controllers: number[];
+  iterations: number[];
   thinking: string;
   thinkingHistory: string;
 }
@@ -75,26 +79,29 @@ function applyChannelSnapshot(snap: ChannelSnapshot): void {
 }
 
 function applyPodSnapshot(snap: PodSnapshot): void {
-  if (!snap.pod) return;
-  const svc = getPodState() as unknown as { apply_pod_snapshot?: (json: string) => void };
-  svc.apply_pod_snapshot?.(snap.pod);
+  if (!snap.pod?.length) return;
+  const svc = getPodState() as unknown as { apply_pod_snapshot?: (bytes: Uint8Array) => void };
+  svc.apply_pod_snapshot?.(new Uint8Array(snap.pod));
   usePodStore.setState((s) => ({ _tick: s._tick + 1 }));
 }
 
 function applyRunnerSnapshot(snap: RunnerSnapshot): void {
   const svc = getRunnerState() as unknown as {
-    apply_runners_snapshot?: (runners: string, available: string, current: string) => void;
+    apply_runners_snapshot?: (runners: Uint8Array, available: Uint8Array, current: Uint8Array) => void;
   };
-  svc.apply_runners_snapshot?.(snap.runners, snap.available, snap.current);
+  svc.apply_runners_snapshot?.(
+    new Uint8Array(snap.runners), new Uint8Array(snap.available), new Uint8Array(snap.current),
+  );
   useRunnerStore.setState((s) => ({ _tick: s._tick + 1 }));
 }
 
 function applyAutopilotSnapshot(snap: AutopilotSnapshot): void {
   const svc = getAutopilotState() as unknown as {
-    apply_autopilot_snapshot?: (c: string, k: string, i: string, t: string, h: string) => void;
+    apply_autopilot_snapshot?: (c: Uint8Array, k: string, i: Uint8Array, t: string, h: string) => void;
   };
   svc.apply_autopilot_snapshot?.(
-    snap.controllers, snap.key, snap.iterations, snap.thinking, snap.thinkingHistory,
+    new Uint8Array(snap.controllers), snap.key, new Uint8Array(snap.iterations),
+    snap.thinking, snap.thinkingHistory,
   );
   useAutopilotStore.setState((s) => ({ _tick: s._tick + 1 }));
 }

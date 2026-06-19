@@ -40,6 +40,14 @@ internal_npm_package(
         "@agentsmesh/service-interface": "*",
         "@bufbuild/protobuf": "*",
     },
+    # `./projections` subpath lets web re-use the proto→viewModel projections
+    # without importing the Electron service classes through the top-level entry.
+    extra = {
+        "exports": {
+            ".": "./src/index.ts",
+            "./projections": "./src/projections/index.ts",
+        },
+    },
     main = "src/index.ts",
 )
 
@@ -54,7 +62,9 @@ vitest_test(
     data = [
         "tsconfig.json",
         "//:node_modules",
+        "//:node_modules/@agentsmesh/proto",
         "//:node_modules/@agentsmesh/service-interface",
+        "//:node_modules/@bufbuild/protobuf",
     ] + glob(
         ["src/**/*.ts"],
         exclude = ["src/**/*.test.ts"],

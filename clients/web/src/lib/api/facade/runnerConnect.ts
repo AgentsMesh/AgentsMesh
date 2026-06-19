@@ -4,8 +4,11 @@
 
 export {
   listRunners,
+  listRunnersRaw,
   listAvailableRunners,
+  listAvailableRunnersRaw,
   getRunner,
+  getRunnerRaw,
   updateRunner,
   deleteRunner,
   upgradeRunner,

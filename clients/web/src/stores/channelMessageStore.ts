@@ -1,10 +1,10 @@
 import { readCurrentUser, readCurrentOrg } from "@/stores/auth";
 import { create } from "zustand";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { create as protoCreate, fromBinary, toBinary } from "@bufbuild/protobuf";
 import { getChannelState } from "@/lib/wasm-core";
 import { getErrorMessage } from "@/lib/utils";
 import {
-  listChannelMessages,
+  listChannelMessagesRaw,
   sendChannelMessage,
   editChannelMessage,
   deleteChannelMessage,
@@ -22,12 +22,12 @@ import {
 import { channelMessageToProto } from "@/lib/api/channelProtoMap";
 import {
   ReplaceCachedChannelMessagesRequestSchema,
-  PrependCachedChannelMessagesRequestSchema,
   InsertChannelMessageRequestSchema,
   ApplyIncomingChannelMessageRequestSchema,
   ApplyChannelMessageEditedEventRequestSchema,
   ReplaceChannelUnreadCountsRequestSchema,
 } from "@proto/channel_state/v1/mutations_pb";
+import type { ChannelMessage as ProtoStateMessage } from "@proto/channel_state/v1/channel_state_pb";
 import { registerOrgScopedReset } from "@/lib/org-scope/registry";
 
 export { EMPTY_CACHE, type ChannelMessageCache } from "./channelMessageTypes";
@@ -43,34 +43,41 @@ function orgSlug(): string {
   return readCurrentOrg()?.slug ?? "";
 }
 
+// state proto ChannelMessage → WasmChannelMessage (snake_case + sender nested +
+// content_json/mentions_json string). Read side, zero-JSON; fromWasmProjection
+// then parses the rich AST. Replaces the get_messages_json serde read.
+function messageToCache(m: ProtoStateMessage): WasmChannelMessage {
+  return {
+    id: Number(m.id),
+    channel_id: Number(m.channelId),
+    sender_pod: m.senderPod,
+    sender_user_id: m.senderUserId !== undefined && m.senderUserId !== BigInt(0) ? Number(m.senderUserId) : undefined,
+    sender_user: m.senderUser ? {
+      id: Number(m.senderUser.id), username: m.senderUser.username,
+      name: m.senderUser.name, avatar_url: m.senderUser.avatarUrl,
+    } : undefined,
+    sender_pod_info: m.senderPodInfo ? {
+      pod_key: m.senderPodInfo.podKey, alias: m.senderPodInfo.alias,
+      agent: m.senderPodInfo.agent ? { name: m.senderPodInfo.agent.name } : undefined,
+    } : undefined,
+    message_type: m.messageType,
+    body: m.body,
+    content_json: m.contentJson || undefined,
+    mentions_json: m.mentionsJson || undefined,
+    reply_to: m.replyTo !== undefined && m.replyTo !== BigInt(0) ? Number(m.replyTo) : undefined,
+    edited_at: m.editedAt || undefined,
+    is_deleted: m.isDeleted,
+    created_at: m.createdAt,
+  } as WasmChannelMessage;
+}
+
 export function readMessages(channelId: number): { messages: ChannelMessage[]; hasMore: boolean } {
-  const raw = svc().get_messages_json(BigInt(channelId));
-  if (!raw) return { messages: [], hasMore: false };
-  const parsed = typeof raw === "string" ? JSON.parse(raw) : (raw as { messages?: WasmChannelMessage[]; has_more?: boolean });
-  const wasmMessages = parsed.messages || [];
-  return { messages: wasmMessages.map(fromWasmProjection), hasMore: parsed.has_more ?? false };
+  const req = fromBinary(ReplaceCachedChannelMessagesRequestSchema, svc().get_messages_bytes(BigInt(channelId)));
+  return { messages: req.messages.map(messageToCache).map(fromWasmProjection), hasMore: req.hasMore };
 }
 
 const bumpMessages = () =>
   useChannelMessageStore.setState((s) => ({ _messagesTick: s._messagesTick + 1 }));
-
-function dispatchReplaceMessages(channelId: number, messages: ChannelMessage[], hasMore: boolean) {
-  const req = protoCreate(ReplaceCachedChannelMessagesRequestSchema, {
-    channelId: BigInt(channelId),
-    messages: messages.map(channelMessageToProto),
-    hasMore,
-  });
-  svc().replace_cached_channel_messages(toBinary(ReplaceCachedChannelMessagesRequestSchema, req));
-}
-
-function dispatchPrependMessages(channelId: number, messages: ChannelMessage[], hasMore: boolean) {
-  const req = protoCreate(PrependCachedChannelMessagesRequestSchema, {
-    channelId: BigInt(channelId),
-    messages: messages.map(channelMessageToProto),
-    hasMore,
-  });
-  svc().prepend_cached_channel_messages(toBinary(PrependCachedChannelMessagesRequestSchema, req));
-}
 
 function dispatchInsertMessage(channelId: number, message: ChannelMessage) {
   const req = protoCreate(InsertChannelMessageRequestSchema, {
@@ -125,14 +132,12 @@ export const useChannelMessageStore = create<ChannelMessageState>((set, get) => 
     );
 
     try {
-      const { items, has_more } = await listChannelMessages(orgSlug(), channelId, {
-        beforeId,
-        limit,
-      });
+      const respBytes = await listChannelMessagesRaw(orgSlug(), channelId, { beforeId, limit });
+      // wire bytes → Rust wire→state + set/prepend_messages business logic.
       if (isLoadMore) {
-        dispatchPrependMessages(channelId, items, has_more);
+        svc().apply_fetched_messages_prepend(BigInt(channelId), respBytes);
       } else {
-        dispatchReplaceMessages(channelId, items, has_more);
+        svc().apply_fetched_messages(BigInt(channelId), respBytes);
       }
       set((state) => updateCache(state, channelId, {
         loading: false, loadingMore: false, error: null,

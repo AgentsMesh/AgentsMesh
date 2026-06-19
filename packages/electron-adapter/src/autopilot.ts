@@ -13,6 +13,15 @@ import {
   type AutopilotControllerSnapshot,
   type AutopilotIterationSnapshot,
 } from "@agentsmesh/proto/autopilot_state/v1/autopilot_state_pb";
+import {
+  AutopilotControllerSchema,
+  ListAutopilotControllersResponseSchema,
+  GetIterationsResponseSchema,
+} from "@agentsmesh/proto/autopilot/v1/autopilot_pb";
+import { controllerToCache, iterationToCache } from "./autopilot_proto_to_cache";
+import {
+  controllersBytes, currentControllerBytes, controllerByPodKeyBytes, iterationsBytes,
+} from "./autopilot_cache_to_bytes";
 
 function snapshotToController(s: AutopilotControllerSnapshot): Record<string, unknown> {
   return {
@@ -78,12 +87,6 @@ export class ElectronAutopilotService implements IAutopilotService {
 
   // Proto-bytes mutators — decode locally + JS-cache sync, NAPI fire-and-forget.
 
-  replace_cached_controllers(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedControllersRequestSchema, reqBytes);
-    this._controllersCache = JSON.stringify(req.controllers.map(snapshotToController));
-    void invoke<void>("appAutopilotReplaceCachedControllers", Array.from(reqBytes)).catch(() => undefined);
-  }
-
   set_current_controller_proto(reqBytes: Uint8Array): void {
     const req = fromBinary(SetCurrentControllerRequestSchema, reqBytes);
     this._currentControllerCache = req.controller ? JSON.stringify(snapshotToController(req.controller)) : null;
@@ -124,15 +127,6 @@ export class ElectronAutopilotService implements IAutopilotService {
     void invoke<void>("appAutopilotRemoveControllerProto", Array.from(reqBytes)).catch(() => undefined);
   }
 
-  replace_cached_iterations(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedIterationsRequestSchema, reqBytes);
-    this._iterationsCache.set(
-      req.autopilotControllerKey,
-      JSON.stringify(req.iterations.map(snapshotToIteration)),
-    );
-    void invoke<void>("appAutopilotReplaceCachedIterations", Array.from(reqBytes)).catch(() => undefined);
-  }
-
   append_iteration(reqBytes: Uint8Array): void {
     const req = fromBinary(AppendIterationRequestSchema, reqBytes);
     if (req.iteration) {
@@ -147,6 +141,50 @@ export class ElectronAutopilotService implements IAutopilotService {
     const req = fromBinary(UpdateThinkingRequestSchema, reqBytes);
     this._thinkingCache.set(req.autopilotControllerKey, req.thinkingJson);
     void invoke<void>("appAutopilotUpdateThinkingProto", Array.from(reqBytes)).catch(() => undefined);
+  }
+
+  // Fetch→state (B): decode wire ListX response → renderer cache (sync, for
+  // reactivity) + fire the SAME wire bytes to main so runtime.state (the SSOT
+  // the realtime snapshot reads) folds the identical baseline. Mirrors the wasm
+  // apply_fetched_* methods.
+  apply_fetched_controllers(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListAutopilotControllersResponseSchema, respBytes);
+    this._controllersCache = JSON.stringify(resp.items.map(controllerToCache));
+    void invoke<void>("appAutopilotApplyFetchedControllers", Array.from(respBytes)).catch(() => undefined);
+  }
+
+  apply_fetched_iterations(key: string, respBytes: Uint8Array): void {
+    const resp = fromBinary(GetIterationsResponseSchema, respBytes);
+    this._iterationsCache.set(
+      key,
+      JSON.stringify(resp.items.map((it) => ({ ...iterationToCache(it), controller_key: key }))),
+    );
+    void invoke<void>("appAutopilotApplyFetchedIterations", key, Array.from(respBytes)).catch(() => undefined);
+  }
+
+  // Single-object fetch (B): decode wire GetAutopilotController response + upsert
+  // into the cache + set current, fan the SAME wire bytes to main.
+  apply_fetched_current_controller(respBytes: Uint8Array): void {
+    const ctrl = controllerToCache(fromBinary(AutopilotControllerSchema, respBytes));
+    const key = ctrl.autopilot_controller_key as string;
+    const list = JSON.parse(this._controllersCache) as { autopilot_controller_key: string }[];
+    const idx = list.findIndex((c) => c.autopilot_controller_key === key);
+    if (idx >= 0) list[idx] = { ...list[idx], ...ctrl };
+    else list.push(ctrl as { autopilot_controller_key: string });
+    this._controllersCache = JSON.stringify(list);
+    this._currentControllerCache = JSON.stringify(ctrl);
+    void invoke<void>("appAutopilotApplyFetchedCurrentController", Array.from(respBytes)).catch(() => undefined);
+  }
+
+  // Read side (B, zero-JSON): re-encode the renderer cache into state proto bytes
+  // so the shared selectors decode desktop and web identically.
+  controllers_bytes(): Uint8Array { return controllersBytes(this._controllersCache); }
+  current_controller_bytes(): Uint8Array { return currentControllerBytes(this._currentControllerCache); }
+  controller_by_pod_key_bytes(podKey: string): Uint8Array {
+    return controllerByPodKeyBytes(this._controllersCache, podKey);
+  }
+  iterations_bytes(key: string): Uint8Array {
+    return iterationsBytes(key, this._iterationsCache.get(key) ?? "[]");
   }
 
   async fetch_controllers(): Promise<string> {
@@ -199,19 +237,23 @@ export class ElectronAutopilotService implements IAutopilotService {
     await invoke<void>("autopilotHandbackController", key);
   }
 
-  // Realtime mirror: main pushes the Rust-computed controller list + the
-  // affected key's iterations/thinking/history after dispatch. Replace the
-  // local caches so the synchronous readers reflect the SSOT. Empty strings
-  // are ignored (nothing to mirror for that facet).
+  // Realtime mirror: main pushes the controller list + affected key's iterations
+  // as proto bytes, decoded via snapshotToController/Iteration for shape parity —
+  // fixes the snapshot's flat circuit_breaker_state drift vs the mutators' nested
+  // circuit_breaker. thinking/history stay JSON passthrough (no projection).
   apply_autopilot_snapshot(
-    controllersJson: string,
+    controllersBytes: Uint8Array,
     key: string,
-    iterationsJson: string,
+    iterationsBytes: Uint8Array,
     thinkingJson: string,
     thinkingHistoryJson: string,
   ): void {
-    if (controllersJson) this._controllersCache = controllersJson;
-    if (key && iterationsJson) this._iterationsCache.set(key, iterationsJson);
+    const cReq = fromBinary(ReplaceCachedControllersRequestSchema, controllersBytes);
+    this._controllersCache = JSON.stringify(cReq.controllers.map(snapshotToController));
+    if (key && iterationsBytes.length) {
+      const iReq = fromBinary(ReplaceCachedIterationsRequestSchema, iterationsBytes);
+      this._iterationsCache.set(key, JSON.stringify(iReq.iterations.map(snapshotToIteration)));
+    }
     if (key && thinkingJson) this._thinkingCache.set(key, thinkingJson);
     if (key && thinkingHistoryJson) this._thinkingHistoryCache.set(key, thinkingHistoryJson);
   }

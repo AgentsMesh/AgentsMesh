@@ -64,6 +64,26 @@ pub struct LoopData {
     pub created_at: Option<String>,
     #[serde(default)]
     pub updated_at: Option<String>,
+    // proto.loop.v1.Loop fields the loopToCache projection reads + the detail
+    // ConfigPanel renders (cron/webhook/repo/runner/ticket/branch/credential/
+    // avg-duration). Without these slots the fetch→state round-trip silently
+    // dropped them — cron loops showed "On Demand", webhook URL never rendered.
+    #[serde(default)]
+    pub cron_expression: Option<String>,
+    #[serde(default)]
+    pub callback_url: Option<String>,
+    #[serde(default)]
+    pub repository_id: Option<i64>,
+    #[serde(default)]
+    pub runner_id: Option<i64>,
+    #[serde(default)]
+    pub branch_name: Option<String>,
+    #[serde(default)]
+    pub ticket_id: Option<i64>,
+    #[serde(default)]
+    pub credential_profile_id: Option<i64>,
+    #[serde(default)]
+    pub avg_duration_sec: Option<f64>,
     /// Ordered list of EnvBundle names attached to this Loop. Mirrors the
     /// `proto.loop.v1.Loop.used_env_bundles` field; preserved across the
     /// serde round-trip so the edit dialog can reconcile saved bundles back

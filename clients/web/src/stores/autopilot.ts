@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { create as protoCreate, toBinary, fromBinary } from "@bufbuild/protobuf";
 import type {
   AutopilotControllerData, AutopilotIterationData,
   CreateAutopilotControllerRequest, ApproveRequest,
@@ -10,8 +10,8 @@ import { getErrorMessage } from "@/lib/utils";
 import { getAutopilotState, parseWasmAny } from "@/lib/wasm-core";
 import { readCurrentOrg } from "@/stores/auth";
 import {
-  listAutopilots as listAutopilotsConnect,
-  getAutopilot as getAutopilotConnect,
+  listAutopilotsRaw,
+  getAutopilotRaw,
   createAutopilot as createAutopilotConnect,
   pauseAutopilot as pauseAutopilotConnect,
   resumeAutopilot as resumeAutopilotConnect,
@@ -19,21 +19,20 @@ import {
   approveAutopilot as approveAutopilotConnect,
   takeoverAutopilot as takeoverAutopilotConnect,
   handbackAutopilot as handbackAutopilotConnect,
-  getAutopilotIterations as getAutopilotIterationsConnect,
+  getAutopilotIterationsRaw,
   type AutopilotControllerWire,
-  type AutopilotIterationWire,
 } from "@/lib/api/facade/autopilotConnect";
 import {
-  ReplaceCachedControllersRequestSchema,
   SetCurrentControllerRequestSchema,
   InsertControllerRequestSchema,
   PatchControllerRequestSchema,
-  ReplaceCachedIterationsRequestSchema,
   AppendIterationRequestSchema,
   UpdateThinkingRequestSchema,
   RemoveControllerRequestSchema,
+  ReplaceCachedControllersRequestSchema,
 } from "@proto/autopilot_state/v1/autopilot_state_pb";
 import { controllerToProto, iterationToProto } from "@/lib/api/autopilotProtoMap";
+import { controllerSnapshotToCache } from "./autopilotSnapshotToCache";
 
 export type AutopilotController = AutopilotControllerData;
 export type AutopilotIteration = AutopilotIterationData;
@@ -45,7 +44,7 @@ export {
 } from "./autopilotSelectors";
 
 type Ctrl = AutopilotController;
-const ACTIVE = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
+export const ACTIVE = ["initializing", "running", "paused", "user_takeover", "waiting_approval"];
 // Autopilot state SSOT is the shared AppState (runtime.state) via
 // getAutopilotState — the SAME state the EventBus dispatch + desktop snapshot
 // mirror write, so realtime controller/iteration/thinking changes flow without
@@ -54,22 +53,7 @@ const svc = () => getAutopilotState();
 const bump = () => useAutopilotStore.setState((s) => ({ _tick: s._tick + 1 }));
 const slug = () => readCurrentOrg()?.slug ?? "";
 
-function fromWireIteration(w: AutopilotIterationWire): AutopilotIterationData {
-  return {
-    id: w.id, autopilot_controller_id: 0,
-    iteration: w.iteration_number, phase: w.status, summary: w.result,
-    created_at: w.started_at ?? "",
-  };
-}
-
 const fromWireCtrl = (w: AutopilotControllerWire): Ctrl => w as unknown as Ctrl;
-
-function dispatchReplaceControllers(items: Ctrl[]) {
-  const req = protoCreate(ReplaceCachedControllersRequestSchema, {
-    controllers: items.map(controllerToProto),
-  });
-  svc().replace_cached_controllers(toBinary(ReplaceCachedControllersRequestSchema, req));
-}
 
 function dispatchSetCurrentController(c: Ctrl | null) {
   const req = protoCreate(SetCurrentControllerRequestSchema, {
@@ -89,14 +73,6 @@ function dispatchPatchController(key: string, c: Ctrl) {
     controller: controllerToProto(c),
   });
   svc().patch_controller(toBinary(PatchControllerRequestSchema, req));
-}
-
-function dispatchReplaceIterations(key: string, items: AutopilotIteration[]) {
-  const req = protoCreate(ReplaceCachedIterationsRequestSchema, {
-    autopilotControllerKey: key,
-    iterations: items.map(iterationToProto),
-  });
-  svc().replace_cached_iterations(toBinary(ReplaceCachedIterationsRequestSchema, req));
 }
 
 function dispatchAppendIteration(key: string, it: AutopilotIteration) {
@@ -121,7 +97,11 @@ function dispatchRemoveController(key: string) {
 }
 
 function patchCtrl(key: string, patch: Partial<Ctrl> | ((c: Ctrl) => Partial<Ctrl>)) {
-  const ctrls: Ctrl[] = JSON.parse(svc().controllers_json());
+  // Read the full snapshot via bytes (controllers_json is a lossy flat serde
+  // that drops nested circuit_breaker) so the optimistic patch round-trip keeps
+  // nested fields intact.
+  const ctrls = fromBinary(ReplaceCachedControllersRequestSchema, svc().controllers_bytes())
+    .controllers.map(controllerSnapshotToCache);
   const target = ctrls.find((c) => c.autopilot_controller_key === key);
   if (!target) return;
   const next = { ...target, ...(typeof patch === "function" ? patch(target) : patch) };
@@ -164,17 +144,14 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
   fetchAutopilotControllers: async () => {
     set({ loading: true, error: null });
     try {
-      const items = await listAutopilotsConnect(slug());
-      dispatchReplaceControllers(items.map(fromWireCtrl));
+      svc().apply_fetched_controllers(await listAutopilotsRaw(slug()));
       set({ loading: false, _tick: get()._tick + 1 });
     } catch (e) { set({ error: getErrorMessage(e, "Failed to fetch controllers"), loading: false }); }
   },
 
   fetchAutopilotController: async (key) => {
     try {
-      const ctrl = fromWireCtrl(await getAutopilotConnect(slug(), key));
-      dispatchInsertController(ctrl);
-      dispatchSetCurrentController(ctrl);
+      svc().apply_fetched_current_controller(await getAutopilotRaw(slug(), key));
       bump();
     } catch (e) { set({ error: getErrorMessage(e, "Failed to fetch controller") }); }
   },
@@ -214,8 +191,7 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
 
   fetchIterations: async (key) => {
     try {
-      const items = await getAutopilotIterationsConnect(slug(), key);
-      dispatchReplaceIterations(key, items.map(fromWireIteration));
+      svc().apply_fetched_iterations(key, await getAutopilotIterationsRaw(slug(), key));
       bump();
     } catch (e) { set({ error: getErrorMessage(e, "Failed to fetch iterations") }); }
   },
@@ -235,7 +211,10 @@ export const useAutopilotStore = create<AutopilotState & AutopilotActions>((set,
   clearError: () => set({ error: null }),
 
   getAutopilotControllerByPodKey: (podKey) => {
-    const val = parseWasmAny<Ctrl>(svc().get_controller_by_pod_key_json(podKey));
+    const bytes = svc().controller_by_pod_key_bytes(podKey);
+    if (!bytes.length) return undefined;
+    const c = fromBinary(SetCurrentControllerRequestSchema, bytes).controller;
+    const val = c ? controllerSnapshotToCache(c) : undefined;
     return val && ACTIVE.includes(val.phase) ? val : undefined;
   },
   };

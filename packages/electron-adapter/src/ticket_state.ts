@@ -10,9 +10,16 @@ import {
   FilterTicketsResponseSchema,
 } from "@agentsmesh/proto/ticket_state/v1/ticket_state_pb";
 import {
+  TicketSchema, BoardSchema, ListTicketsResponseSchema, ListLabelsResponseSchema,
+} from "@agentsmesh/proto/ticket/v1/ticket_pb";
+import {
   ticketToCache, boardColumnToCache, labelToCache, cacheTicketToProto,
-  type CachedTicket, type CachedBoardColumn,
-} from "./ticket_cache_map";
+  type CachedBoardColumn,
+} from "./projections/ticket";
+import {
+  ticketsBytes, currentTicketBytes, boardColumnsBytes, labelsBytes, ticketPodsBytes,
+} from "./ticket_cache_to_bytes";
+import type { TicketData } from "@agentsmesh/service-interface";
 
 // Desktop ticket-state mirror of clients/core/crates/wasm WasmTicketState
 // (proto-bytes-in / json-out) so the shared web store reads identical payloads
@@ -24,15 +31,58 @@ export class ElectronTicketState implements ITicketState {
   private _boardColumnsCache = "[]";
   private _labelsCache = "[]";
   private _currentTicket: string | null = null;
+  // ticket→pods is mirrored here (not the Service) because getTicketState() —
+  // not getTicketService() — backs useTicketPods' synchronous read/write.
+  private _ticketPodsCache: Record<string, string> = {};
 
   tickets_json(): string { return this._ticketsCache; }
   board_columns_json(): string { return this._boardColumnsCache; }
   labels_json(): string { return this._labelsCache; }
   current_ticket_json(): unknown { return this._currentTicket; }
 
-  replace_cached_tickets(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedTicketsRequestSchema, reqBytes);
-    this._ticketsCache = JSON.stringify(req.tickets.map(ticketToCache));
+  set_ticket_pods(slug: string, podsJson: string): void { this._ticketPodsCache[slug] = podsJson; }
+  ticket_pods_bytes(slug: string): Uint8Array { return ticketPodsBytes(this._ticketPodsCache[slug] ?? "[]"); }
+
+  // Read side (B, zero-JSON): re-encode renderer cache into state proto bytes
+  // (the web selector decodes these via ticketToCache for shape parity).
+  tickets_bytes(): Uint8Array { return ticketsBytes(this._ticketsCache); }
+  current_ticket_bytes(): Uint8Array { return currentTicketBytes(this._currentTicket); }
+  board_columns_bytes(): Uint8Array { return boardColumnsBytes(this._boardColumnsCache); }
+  labels_bytes(): Uint8Array { return labelsBytes(this._labelsCache); }
+
+  // Fetch→state (B): wire Ticket == cache Ticket. Renderer-local only — ticket
+  // realtime rides the generic realtime:event channel, no app_ticket_* NAPI.
+  apply_fetched_tickets(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListTicketsResponseSchema, respBytes);
+    this._ticketsCache = JSON.stringify(resp.items.map(ticketToCache));
+  }
+
+  apply_fetched_current_ticket(respBytes: Uint8Array): void {
+    this._currentTicket = JSON.stringify(ticketToCache(fromBinary(TicketSchema, respBytes)));
+  }
+
+  apply_fetched_board_columns(respBytes: Uint8Array): void {
+    const cols = fromBinary(BoardSchema, respBytes).columns.map(boardColumnToCache);
+    this._boardColumnsCache = JSON.stringify(cols);
+    this._ticketsCache = JSON.stringify(cols.flatMap((c) => c.tickets));
+  }
+
+  apply_appended_board_column_tickets(status: string, respBytes: Uint8Array): void {
+    const resp = fromBinary(ListTicketsResponseSchema, respBytes);
+    const cols = this._columns();
+    const col = cols.find((c) => c.status === status);
+    if (!col) return;
+    const add = resp.items.map(ticketToCache);
+    col.tickets.push(...add);
+    this._boardColumnsCache = JSON.stringify(cols);
+    const tickets = this._tickets();
+    tickets.push(...add);
+    this._ticketsCache = JSON.stringify(tickets);
+  }
+
+  apply_fetched_labels(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListLabelsResponseSchema, respBytes);
+    this._labelsCache = JSON.stringify(resp.items.map(labelToCache));
   }
 
   insert_created_ticket(reqBytes: Uint8Array): void {
@@ -132,14 +182,14 @@ export class ElectronTicketState implements ITicketState {
     return toBinary(FilterTicketsResponseSchema, resp);
   }
 
-  private _tickets(): CachedTicket[] { return JSON.parse(this._ticketsCache) as CachedTicket[]; }
+  private _tickets(): TicketData[] { return JSON.parse(this._ticketsCache) as TicketData[]; }
   private _columns(): CachedBoardColumn[] { return JSON.parse(this._boardColumnsCache) as CachedBoardColumn[]; }
-  private _current(): CachedTicket | null {
-    return this._currentTicket ? (JSON.parse(this._currentTicket) as CachedTicket) : null;
+  private _current(): TicketData | null {
+    return this._currentTicket ? (JSON.parse(this._currentTicket) as TicketData) : null;
   }
   private _currentSlug(): string | null { return this._current()?.slug ?? null; }
 
-  private _replaceInColumns(slug: string, updated: CachedTicket): void {
+  private _replaceInColumns(slug: string, updated: TicketData): void {
     const cols = this._columns();
     for (const c of cols) c.tickets = c.tickets.map((t) => (t.slug === slug ? updated : t));
     this._boardColumnsCache = JSON.stringify(cols);

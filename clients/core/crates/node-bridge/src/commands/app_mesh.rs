@@ -6,7 +6,7 @@ use prost::Message as _;
 use crate::AppState;
 
 // Mesh state surface over the shared `runtime.state` (SSOT), mirroring
-// app_autopilot.rs / app_loop.rs. fetch_topology fills the full topology;
+// app_autopilot.rs. fetch_topology fills the full topology;
 // pod status/agent events patch individual nodes via event_dispatch
 // (mesh_state.update_node_status), and app_get_mesh_node_json reads those
 // patched nodes for the desktop realtime mirror.

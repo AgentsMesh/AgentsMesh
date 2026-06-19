@@ -2,11 +2,10 @@ import { vi } from "vitest";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
   InsertCreatedPodRequestSchema,
-  ReplaceCachedPodsRequestSchema,
-  AppendCachedPodsRequestSchema,
   PatchPodPerpetualRequestSchema,
   MarkPodTerminatedRequestSchema,
 } from "@proto/pod_state/v1/pod_state_pb";
+import { ListPodsResponseSchema } from "@proto/pod/v1/pod_pb";
 import { usePodStore, usePods, useCurrentPod, Pod } from "../pod";
 import { getPodState } from "@/lib/wasm-core";
 import { fromProtoPod } from "@/lib/api/facade/podConnect";
@@ -64,8 +63,8 @@ interface PodStateMock {
   apply_pod_title_event: ReturnType<typeof vi.fn>;
   apply_pod_alias_event: ReturnType<typeof vi.fn>;
   apply_agent_status_event: ReturnType<typeof vi.fn>;
-  replace_cached_pods: ReturnType<typeof vi.fn>;
-  append_cached_pods: ReturnType<typeof vi.fn>;
+  apply_fetched_pods: ReturnType<typeof vi.fn>;
+  apply_appended_pods: ReturnType<typeof vi.fn>;
   mark_pod_terminated: ReturnType<typeof vi.fn>;
 }
 
@@ -108,21 +107,22 @@ export function seedPodsWithCurrent(current: Pod, ...extra: Pod[]) {
   podStateMock().current_pod_json.mockReturnValue(JSON.stringify(current));
 }
 
-// Helpers — decode the last proto-bytes call into the snake_case Pod
-// shape the store consumes. Tests assert on this instead of the opaque
-// Uint8Array bytes.
+// Helpers — decode the last fetch→state wire call (ListPodsResponse) into the
+// snake_case Pod shape the store consumes. The store now hands raw wire bytes
+// to apply_fetched_pods / apply_appended_pods (no replace/append proto), so the
+// assertion target moved from the *CachedPods request to the wire response.
 export function lastReplaceCachedPods(): Pod[] {
-  const calls = podStateMock().replace_cached_pods.mock.calls;
+  const calls = podStateMock().apply_fetched_pods.mock.calls;
   if (calls.length === 0) return [];
-  const req = fromBinary(ReplaceCachedPodsRequestSchema, calls[calls.length - 1][0] as Uint8Array);
-  return req.pods.map(fromProtoPod);
+  const resp = fromBinary(ListPodsResponseSchema, calls[calls.length - 1][0] as Uint8Array);
+  return resp.items.map(fromProtoPod);
 }
 
 export function lastAppendCachedPods(): Pod[] {
-  const calls = podStateMock().append_cached_pods.mock.calls;
+  const calls = podStateMock().apply_appended_pods.mock.calls;
   if (calls.length === 0) return [];
-  const req = fromBinary(AppendCachedPodsRequestSchema, calls[calls.length - 1][0] as Uint8Array);
-  return req.pods.map(fromProtoPod);
+  const resp = fromBinary(ListPodsResponseSchema, calls[calls.length - 1][0] as Uint8Array);
+  return resp.items.map(fromProtoPod);
 }
 
 export function lastInsertCreatedPod(): Pod | null {

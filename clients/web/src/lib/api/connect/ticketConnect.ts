@@ -23,44 +23,19 @@ import {
   TicketSchema,
   UpdateTicketRequestSchema,
   UpdateTicketStatusRequestSchema,
-  type Label as ProtoLabel,
-  type Ticket as ProtoTicket,
 } from "@proto/ticket/v1/ticket_pb";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
+// Shared proto→TicketData projection — single SSOT, also consumed by the
+// desktop electron-adapter. Aliased to the historical fromProto* names and
+// re-exported for cross-file use by ticketLabelConnect.
+import {
+  ticketToCache as fromProtoTicket,
+  labelToCache as fromProtoLabel,
+} from "@agentsmesh/electron-adapter/projections";
 import { getTicketService } from "@/lib/wasm-core";
-import type {
-  BoardColumn,
-  TicketData,
-  TicketPriority,
-  TicketStatus,
-} from "@/lib/viewModels/ticket";
+import type { BoardColumn, TicketData } from "@/lib/viewModels/ticket";
 
-// ============== Wire conversion (proto -> snake_case web shape) ==============
-// Exported for cross-file use by ticketLabelConnect.
-
-export function fromProtoTicket(t: ProtoTicket): TicketData {
-  return {
-    id: Number(t.id),
-    number: t.number,
-    slug: t.slug,
-    title: t.title,
-    content: t.content,
-    status: t.status as TicketStatus,
-    priority: t.priority as TicketPriority,
-    severity: t.severity,
-    estimate: t.estimate,
-    due_date: t.dueDate,
-    started_at: t.startedAt,
-    completed_at: t.completedAt,
-    created_at: t.createdAt,
-    updated_at: t.updatedAt,
-    repository_id: t.repositoryId !== undefined ? Number(t.repositoryId) : undefined,
-  };
-}
-
-export function fromProtoLabel(l: ProtoLabel): { id: number; name: string; color: string } {
-  return { id: Number(l.id), name: l.name, color: l.color };
-}
+export { fromProtoTicket, fromProtoLabel };
 
 // ============== Ticket CRUD ==============
 
@@ -99,11 +74,35 @@ export async function listTickets(
   };
 }
 
+// Raw wire bytes for the fetch→state path: response → apply_fetched_tickets
+// (Rust set_tickets), no TS fromProtoTicket/ticketsToProto.
+export async function listTicketsRaw(
+  orgSlug: string,
+  opts: { status?: string; offset?: number; limit?: number; repositoryId?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(ListTicketsRequestSchema, {
+    orgSlug, status: opts.status, offset: opts.offset, limit: opts.limit,
+    repositoryId: opts.repositoryId !== undefined ? BigInt(opts.repositoryId) : undefined,
+  });
+  return new Uint8Array(
+    await getTicketService().list_tickets_connect(toBinary(ListTicketsRequestSchema, req)),
+  );
+}
+
 export async function getTicket(orgSlug: string, ticketSlug: string): Promise<TicketData> {
   const req = create(GetTicketRequestSchema, { orgSlug, ticketSlug });
   const bytes = toBinary(GetTicketRequestSchema, req);
   const respBytes = await getTicketService().get_ticket_connect(bytes);
   return fromProtoTicket(fromBinary(TicketSchema, new Uint8Array(respBytes)));
+}
+
+// Raw wire bytes for the fetch→state path: response (Ticket) →
+// apply_fetched_current_ticket (Rust set_current_ticket), no TS ticketToProto.
+export async function getTicketRaw(orgSlug: string, ticketSlug: string): Promise<Uint8Array> {
+  const req = create(GetTicketRequestSchema, { orgSlug, ticketSlug });
+  return new Uint8Array(
+    await getTicketService().get_ticket_connect(toBinary(GetTicketRequestSchema, req)),
+  );
 }
 
 export interface CreateTicketInput {
@@ -230,11 +229,28 @@ export async function getBoard(
   const bytes = toBinary(GetBoardRequestSchema, req);
   const respBytes = await getTicketService().get_board_connect(bytes);
   const resp = fromBinary(BoardSchema, new Uint8Array(respBytes));
+  // Web facade shape: BoardColumn with `count` (KanbanColumn falls back to
+  // tickets.length; totalCount reduce + initPag read this `count`). The desktop
+  // board_columns_json mirrors wasm's `total_count` instead — kept separate.
   return resp.columns.map((c) => ({
     status: c.status,
     count: Number(c.totalCount),
     tickets: c.tickets.map(fromProtoTicket),
   }));
+}
+
+// Raw wire bytes for the fetch→state path: response (Board) →
+// apply_fetched_board_columns (Rust set_board_columns), no TS boardColumnsToProto.
+export async function getBoardRaw(
+  orgSlug: string, opts: { repository_id?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(GetBoardRequestSchema, {
+    orgSlug,
+    repositoryId: opts.repository_id !== undefined ? BigInt(opts.repository_id) : undefined,
+  });
+  return new Uint8Array(
+    await getTicketService().get_board_connect(toBinary(GetBoardRequestSchema, req)),
+  );
 }
 
 export async function getSubTickets(

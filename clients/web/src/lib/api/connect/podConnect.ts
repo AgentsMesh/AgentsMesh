@@ -27,76 +27,16 @@ import {
   UpdatePodAliasResponseSchema,
   UpdatePodPerpetualRequestSchema,
   UpdatePodPerpetualResponseSchema,
-  type Pod as ProtoPod,
 } from "@proto/pod/v1/pod_pb";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
+// Shared proto→PodData projection — single SSOT, also consumed by the desktop
+// electron-adapter. Aliased to the historical fromProtoPod name and re-exported
+// for cross-file use (stores/pod, podProtoMap, facade).
+import { podToCache as fromProtoPod } from "@agentsmesh/electron-adapter/projections";
 import { getPodService } from "@/lib/wasm-core";
 import type { PodData } from "@/lib/api/facade/pod";
-import type { PodMode } from "@/lib/pod-modes";
 
-// fromProtoPod converts the wire-format Pod to PodData (snake_case web shape).
-// Optional nested objects map cleanly because proto3 emits them as `| undefined`.
-export function fromProtoPod(p: ProtoPod): PodData {
-  return {
-    id: Number(p.id),
-    pod_key: p.podKey,
-    status: p.status as PodData["status"],
-    agent_status: p.agentStatus,
-    alias: p.alias,
-    title: p.title,
-    runner: p.runner
-      ? {
-          id: p.runner.id === undefined ? undefined : Number(p.runner.id),
-          node_id: p.runner.nodeId,
-          status: p.runner.status,
-        }
-      : undefined,
-    agent: p.agent ? { name: p.agent.name, slug: p.agent.slug } : undefined,
-    repository: p.repository
-      ? {
-          id: p.repository.id === undefined ? undefined : Number(p.repository.id),
-          name: p.repository.name,
-          slug: p.repository.slug,
-          provider_type: p.repository.providerType,
-        }
-      : undefined,
-    ticket: p.ticket
-      ? {
-          id: p.ticket.id === undefined ? undefined : Number(p.ticket.id),
-          slug: p.ticket.slug,
-          title: p.ticket.title,
-        }
-      : undefined,
-    loop: p.loop
-      ? {
-          id: p.loop.id === undefined ? undefined : Number(p.loop.id),
-          name: p.loop.name,
-          slug: p.loop.slug,
-        }
-      : undefined,
-    created_by: p.createdBy
-      ? {
-          id: p.createdBy.id === undefined ? undefined : Number(p.createdBy.id),
-          username: p.createdBy.username,
-          name: p.createdBy.name,
-        }
-      : undefined,
-    prompt: p.prompt,
-    branch_name: p.branchName,
-    sandbox_path: p.sandboxPath,
-    interaction_mode: p.interactionMode as PodMode,
-    perpetual: p.perpetual,
-    restart_count: p.restartCount,
-    last_restart_at: p.lastRestartAt,
-    started_at: p.startedAt,
-    finished_at: p.finishedAt,
-    last_activity: p.lastActivity,
-    created_at: p.createdAt,
-    error_code: p.errorCode,
-    error_message: p.errorMessage,
-    resumed_by_pod_key: p.resumedByPodKey,
-  };
-}
+export { fromProtoPod };
 
 export interface PodConnectionInfo {
   relay_url: string;
@@ -136,6 +76,32 @@ export async function listPods(
     limit: resp.limit,
     offset: resp.offset,
   };
+}
+
+// Raw wire bytes for the fetch→state path: the ListPodsResponse goes straight
+// to Rust apply_fetched_pods / apply_appended_pods (no TS fromProtoPod +
+// podToProtoPod). Same opts surface as listPods so the sidebar's status/limit/
+// offset/created_by/runner filters carry through unchanged.
+export async function listPodsRaw(
+  orgSlug: string,
+  opts: {
+    status?: string;
+    created_by_id?: number;
+    runner_id?: number;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<Uint8Array> {
+  const req = create(ListPodsRequestSchema, {
+    orgSlug,
+    status: opts.status,
+    createdById: opts.created_by_id === undefined ? undefined : BigInt(opts.created_by_id),
+    runnerId: opts.runner_id === undefined ? undefined : BigInt(opts.runner_id),
+    limit: opts.limit,
+    offset: opts.offset,
+  });
+  const bytes = toBinary(ListPodsRequestSchema, req);
+  return new Uint8Array(await getPodService().list_pods_connect(bytes));
 }
 
 export async function getPod(orgSlug: string, podKey: string): Promise<PodData> {

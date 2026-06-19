@@ -68,10 +68,27 @@ const mockService = {
     mockRunnersList = mockRunnersList.filter((x) => x.id !== id)
     mockAvailableRunners = mockAvailableRunners.filter((x) => x.id !== id)
   }),
-  apply_runner_status_event: vi.fn(),
+  // Fetch→state (B): decode wire response into the backing list.
+  apply_fetched_runners: vi.fn((bytes: Uint8Array) => {
+    mockRunnersList = fromBinary(ListRunnersResponseSchema, bytes).items.map(protoRunnerToData)
+  }),
+  apply_fetched_available_runners: vi.fn((bytes: Uint8Array) => {
+    mockAvailableRunners = fromBinary(ListAvailableRunnersResponseSchema, bytes).items.map(protoRunnerToData)
+  }),
+  apply_fetched_current_runner: vi.fn((bytes: Uint8Array) => {
+    const r = fromBinary(GetRunnerResponseSchema, bytes).runner
+    mockCurrentRunner = r ? protoRunnerToData(r) : null
+  }),
   runners_json: vi.fn(() => JSON.stringify(mockRunnersList)),
   available_runners_json: vi.fn(() => JSON.stringify(mockAvailableRunners)),
   current_runner_json: vi.fn(() => (mockCurrentRunner ? JSON.stringify(mockCurrentRunner) : null)),
+  // Read side (B): re-encode the backing list into state proto bytes.
+  runners_bytes: vi.fn(() => toBinary(ReplaceCachedRunnersRequestSchema,
+    create(ReplaceCachedRunnersRequestSchema, { runners: mockRunnersList.map(toProtoRunner) }))),
+  available_runners_bytes: vi.fn(() => toBinary(ReplaceAvailableRunnersRequestSchema,
+    create(ReplaceAvailableRunnersRequestSchema, { runners: mockAvailableRunners.map(toProtoRunner) }))),
+  current_runner_bytes: vi.fn(() => mockCurrentRunner
+    ? toBinary(RunnerSchema, toProtoRunner(mockCurrentRunner)) : new Uint8Array()),
   // Connect-RPC binary lane
   listRunnersConnect: vi.fn().mockResolvedValue(new Uint8Array()),
   listAvailableRunnersConnect: vi.fn().mockResolvedValue(new Uint8Array()),
@@ -319,7 +336,7 @@ describe('Runner Store Actions', () => {
     })
   })
 
-  describe('setCurrentRunner and updateRunnerStatus', () => {
+  describe('setCurrentRunner', () => {
     it('should set current runner', () => {
       const runner = createMockRunner()
       useRunnerStore.getState().setCurrentRunner(runner)
@@ -332,39 +349,6 @@ describe('Runner Store Actions', () => {
       expect(getCurrentRunner()).toBeNull()
     })
 
-    it('should update runner status to offline', async () => {
-      const runner = createMockRunner({ status: 'online' })
-      mockListRunners([runner])
-      await useRunnerStore.getState().fetchRunners()
-      mockListAvailable([runner])
-      await useRunnerStore.getState().fetchAvailableRunners()
-
-      mockService.apply_runner_status_event.mockImplementation(() => {
-        mockRunnersList = [{ ...runner, status: 'offline' }]
-        mockAvailableRunners = []
-      })
-
-      useRunnerStore.getState().updateRunnerStatus(1, 'offline')
-
-      expect(getRunners()[0].status).toBe('offline')
-      expect(getAvailableRunners()).toHaveLength(0)
-    })
-
-    it('should keep available runners when status is online', async () => {
-      const runner = createMockRunner()
-      mockListRunners([runner])
-      await useRunnerStore.getState().fetchRunners()
-      mockListAvailable([runner])
-      await useRunnerStore.getState().fetchAvailableRunners()
-
-      mockService.apply_runner_status_event.mockImplementation(() => {
-        // State stays the same since status is already online
-      })
-
-      useRunnerStore.getState().updateRunnerStatus(1, 'online')
-
-      expect(getAvailableRunners()).toHaveLength(1)
-    })
   })
 
   describe('clearError', () => {

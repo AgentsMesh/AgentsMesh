@@ -77,6 +77,18 @@ export async function listRepositories(
   };
 }
 
+// Raw wire bytes for the fetch→state path: response → apply_fetched_repositories
+// (Rust set_repositories), no TS fromProtoRepository/repositoryToProto.
+export async function listRepositoriesRaw(
+  orgSlug: string,
+  opts: { offset?: number; limit?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(ListRepositoriesRequestSchema, { orgSlug, offset: opts.offset, limit: opts.limit });
+  return new Uint8Array(
+    await getRepositoryService().listRepositoriesConnect(toBinary(ListRepositoriesRequestSchema, req)),
+  );
+}
+
 export async function getRepository(orgSlug: string, id: number): Promise<RepositoryData> {
   const req = create(GetRepositoryRequestSchema, { orgSlug, id: BigInt(id) });
   const bytes = toBinary(GetRepositoryRequestSchema, req);

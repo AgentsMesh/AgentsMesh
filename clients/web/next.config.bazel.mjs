@@ -26,6 +26,9 @@ const nextConfig = {
   transpilePackages: [
     "@agentsmesh/service-runtime",
     "@agentsmesh/service-interface",
+    // Refactor B: web reuses the shared projections (electron-adapter/projections,
+    // raw .ts) — Next must SWC-transpile them, not treat them as compiled JS.
+    "@agentsmesh/electron-adapter",
     // Internal npm package mounted by Bazel; ships .ts sources so the
     // .next/standalone build relies on Next's SWC pipeline to transpile.
     "@agentsmesh/proto",

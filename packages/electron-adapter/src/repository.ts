@@ -2,7 +2,7 @@ import { invoke } from "./invoke";
 import { coerceConnectResponse } from "./connect-response";
 import { unwrapIpcServiceError } from "./connect-ipc-error";
 import type { IRepositoryService, IRepoState } from "@agentsmesh/service-interface";
-import { fromBinary } from "@bufbuild/protobuf";
+import { fromBinary, toBinary, create } from "@bufbuild/protobuf";
 import {
   ReplaceCachedRepositoriesRequestSchema,
   SetCurrentRepoRequestSchema,
@@ -10,7 +10,9 @@ import {
   InsertRepositoryRequestSchema,
   PatchRepositoryRequestSchema,
 } from "@agentsmesh/proto/repo_state/v1/repo_state_pb";
-import type { Repository as ProtoRepository, Branch as ProtoBranch } from "@agentsmesh/proto/repository/v1/repository_pb";
+import { ListRepositoriesResponseSchema } from "@agentsmesh/proto/repository/v1/repository_pb";
+import { repositoryToCache, branchToCache } from "./projections/repository";
+import { repositoriesBytes } from "./repository_cache_to_bytes";
 
 // Web's wasm-side `WasmRepositoryService` exposes `<verb>Connect(bytes)`
 // methods. RepositoryService in Rust core is a thin proxy (no cache, no
@@ -34,45 +36,6 @@ async function connectCall(method: string, request: Uint8Array): Promise<Uint8Ar
   }
 }
 
-function repositoryToCache(r: ProtoRepository): Record<string, unknown> {
-  const ZERO = BigInt(0);
-  return {
-    id: Number(r.id),
-    organization_id: Number(r.organizationId),
-    provider_type: r.providerType,
-    provider_base_url: r.providerBaseUrl,
-    http_clone_url: r.httpCloneUrl || undefined,
-    ssh_clone_url: r.sshCloneUrl || undefined,
-    external_id: r.externalId,
-    name: r.name,
-    slug: r.slug,
-    default_branch: r.defaultBranch,
-    ticket_prefix: r.ticketPrefix,
-    visibility: r.visibility,
-    imported_by_user_id:
-      r.importedByUserId !== undefined && r.importedByUserId !== ZERO
-        ? Number(r.importedByUserId) : undefined,
-    is_active: r.isActive,
-    webhook_config: r.webhookConfig
-      ? {
-          id: r.webhookConfig.id,
-          url: r.webhookConfig.url,
-          events: r.webhookConfig.events ?? [],
-          is_active: r.webhookConfig.isActive,
-          needs_manual_setup: r.webhookConfig.needsManualSetup,
-          last_error: r.webhookConfig.lastError,
-          created_at: r.webhookConfig.createdAt,
-        }
-      : undefined,
-    created_at: r.createdAt,
-    updated_at: r.updatedAt,
-  };
-}
-
-function branchToCache(b: ProtoBranch): Record<string, unknown> {
-  return { name: b.name };
-}
-
 // Service-is-State-superset 模式（对齐 ElectronPodService）：内部 cache 由 Service 持有，
 // provider 让 repoState 别名同一实例，renderer 端 useRepositories() 读到的就是这里的 cache。
 export class ElectronRepositoryService implements IRepositoryService, IRepoState {
@@ -86,6 +49,20 @@ export class ElectronRepositoryService implements IRepositoryService, IRepoState
   current_repo_json(): unknown { return this._currentRepoCache; }
   branches_json(): string { return this._branchesCache; }
 
+  // Read side (B, zero-JSON): re-encode renderer cache into state proto bytes.
+  repositories_bytes(): Uint8Array { return repositoriesBytes(this._repositoriesCache); }
+
+  // Fetch→state (B): wire Repository == cache Repository. Decode wire response →
+  // renderer cache (sync), then fan the SAME repos to main via the existing
+  // replace_cached_repositories NAPI (best-effort; main repo state is non-authoritative).
+  apply_fetched_repositories(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListRepositoriesResponseSchema, respBytes);
+    this._repositoriesCache = JSON.stringify(resp.items.map(repositoryToCache));
+    const reqBytes = toBinary(ReplaceCachedRepositoriesRequestSchema,
+      create(ReplaceCachedRepositoriesRequestSchema, { repositories: resp.items }));
+    void invoke<void>("repoReplaceCachedRepositories", Array.from(reqBytes)).catch(() => undefined);
+  }
+
   remove_repository(id: string): void {
     const repos = JSON.parse(this._repositoriesCache) as { id: number }[];
     this._repositoriesCache = JSON.stringify(repos.filter(r => String(r.id) !== id));
@@ -93,12 +70,6 @@ export class ElectronRepositoryService implements IRepositoryService, IRepoState
 
   // Proto-bytes mutators — decode locally + update JS cache synchronously,
   // then fire-and-forget NAPI sync. Mirrors ElectronRunnerService.
-
-  replace_cached_repositories(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedRepositoriesRequestSchema, reqBytes);
-    this._repositoriesCache = JSON.stringify(req.repositories.map(repositoryToCache));
-    void invoke<void>("repoReplaceCachedRepositories", Array.from(reqBytes)).catch(() => undefined);
-  }
 
   set_current_repo_proto(reqBytes: Uint8Array): void {
     const req = fromBinary(SetCurrentRepoRequestSchema, reqBytes);
@@ -115,7 +86,7 @@ export class ElectronRepositoryService implements IRepositoryService, IRepoState
   insert_repository(reqBytes: Uint8Array): void {
     const req = fromBinary(InsertRepositoryRequestSchema, reqBytes);
     if (req.repository) {
-      const repos = JSON.parse(this._repositoriesCache) as Record<string, unknown>[];
+      const repos = JSON.parse(this._repositoriesCache) as unknown[];
       repos.push(repositoryToCache(req.repository));
       this._repositoriesCache = JSON.stringify(repos);
     }

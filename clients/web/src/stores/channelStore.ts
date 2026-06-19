@@ -4,8 +4,9 @@ import { getErrorMessage } from "@/lib/utils";
 import { getChannelState } from "@/lib/wasm-core";
 import { readCurrentOrg, readCurrentUser } from "@/stores/auth";
 import {
-  listChannels,
+  listChannelsRaw,
   getChannel as getChannelConnect,
+  getChannelRaw,
   createChannel as createChannelConnect,
   updateChannel as updateChannelConnect,
   archiveChannel as archiveChannelConnect,
@@ -18,7 +19,6 @@ import {
   listChannelMembers,
 } from "@/lib/api/facade/channelConnect";
 import {
-  ReplaceCachedChannelsRequestSchema,
   InsertChannelRequestSchema,
   PatchChannelMemberCountRequestSchema,
 } from "@proto/channel_state/v1/mutations_pb";
@@ -84,16 +84,13 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   fetchChannels: async (filters) => {
     set({ error: null });
     try {
-      const { items } = await listChannels(orgSlug(), {
+      const respBytes = await listChannelsRaw(orgSlug(), {
         includeArchived: filters?.includeArchived,
       });
-      const req = protoCreate(ReplaceCachedChannelsRequestSchema, {
-        channels: items.map(channelToProtoChannel),
-      });
-      svc().replace_cached_channels(toBinary(ReplaceCachedChannelsRequestSchema, req));
-      // Teach Rust Core who the current user is so its realtime
-      // on_new_message can compute unread/mention with the self-message
-      // rule. Without this the SSOT can't tell "my own message" apart.
+      // wire bytes → Rust wire→state + set_channels business logic; no TS projection.
+      svc().apply_fetched_channels(respBytes);
+      // Teach Rust Core who the current user is so its realtime on_new_message
+      // can compute unread/mention with the self-message rule.
       const uid = readCurrentUser()?.id;
       svc().set_current_user_id(uid != null ? BigInt(uid) : undefined);
       bump();
@@ -103,9 +100,9 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
   fetchChannel: async (id) => {
     set({ channelLoading: true, error: null });
     try {
-      const channel = await getChannelConnect(orgSlug(), id);
-      dispatchInsertChannel(channel as unknown as Channel);
-      // Re-anchor current_channel from the freshly-inserted entry. The async
+      const respBytes = await getChannelRaw(orgSlug(), id);
+      svc().apply_fetched_channel(respBytes);
+      // Re-anchor current_channel from the freshly-upserted entry. The async
       // gap between `set({channelLoading})` above and here can trigger a
       // useChannelChat cleanup that nulls current_channel; without this
       // re-anchor the header reads stale defaults (member_count=0).

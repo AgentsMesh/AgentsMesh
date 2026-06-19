@@ -9,35 +9,13 @@ import {
   PatchCachedRunnerRequestSchema,
   RemoveCachedRunnerRequestSchema,
 } from "@agentsmesh/proto/runner_state/v1/runner_state_pb";
-import type { Runner as ProtoRunner } from "@agentsmesh/proto/runner_api/v1/runner_pb";
-
-// ProtoRunner (camelCase + BigInt) → JS-cache shape (snake_case + number).
-// Inlined to keep electron-adapter independent of the web/src tree.
-function runnerToCache(r: ProtoRunner): Record<string, unknown> {
-  const ZERO = BigInt(0);
-  const host: Record<string, unknown> | undefined = r.hostInfoJson
-    ? (() => { try { return JSON.parse(r.hostInfoJson); } catch { return undefined; } })()
-    : undefined;
-  return {
-    id: Number(r.id),
-    node_id: r.nodeId,
-    description: r.description || undefined,
-    status: r.status,
-    last_heartbeat: r.lastHeartbeat,
-    current_pods: r.currentPods,
-    max_concurrent_pods: r.maxConcurrentPods,
-    runner_version: r.runnerVersion,
-    is_enabled: r.isEnabled,
-    visibility: r.visibility,
-    registered_by_user_id: r.registeredByUserId !== undefined && r.registeredByUserId !== ZERO
-      ? Number(r.registeredByUserId) : undefined,
-    host_info: host,
-    available_agents: r.availableAgents?.length ? r.availableAgents : undefined,
-    tags: r.tags?.length ? r.tags : undefined,
-    created_at: r.createdAt,
-    updated_at: r.updatedAt,
-  };
-}
+import {
+  ListRunnersResponseSchema,
+  ListAvailableRunnersResponseSchema,
+  GetRunnerResponseSchema,
+} from "@agentsmesh/proto/runner_api/v1/runner_pb";
+import { runnerToCache } from "./projections/runner";
+import { runnersBytes, availableRunnersBytes, currentRunnerBytes } from "./runner_cache_to_bytes";
 
 export class ElectronRunnerService implements IRunnerService {
   private _runnersCache = "[]";
@@ -47,6 +25,33 @@ export class ElectronRunnerService implements IRunnerService {
   runners_json(): string { return this._runnersCache; }
   available_runners_json(): string { return this._availableRunnersCache; }
   current_runner_json(): unknown { return this._currentRunnerCache; }
+
+  // Fetch→state (B): wire Runner == cache Runner; decode wire response →
+  // renderer cache (sync) + fan SAME wire bytes to main (runtime.state SSOT).
+  apply_fetched_runners(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListRunnersResponseSchema, respBytes);
+    this._runnersCache = JSON.stringify(resp.items.map(runnerToCache));
+    void invoke<void>("appRunnerApplyFetched", Array.from(respBytes)).catch(() => undefined);
+  }
+
+  apply_fetched_available_runners(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListAvailableRunnersResponseSchema, respBytes);
+    this._availableRunnersCache = JSON.stringify(resp.items.map(runnerToCache));
+    void invoke<void>("appRunnerApplyFetchedAvailable", Array.from(respBytes)).catch(() => undefined);
+  }
+
+  // Single-object fetch (B): decode wire GetRunnerResponse → current cache +
+  // fan the SAME wire bytes to main (runtime.state SSOT).
+  apply_fetched_current_runner(respBytes: Uint8Array): void {
+    const resp = fromBinary(GetRunnerResponseSchema, respBytes);
+    this._currentRunnerCache = resp.runner ? JSON.stringify(runnerToCache(resp.runner)) : null;
+    void invoke<void>("appRunnerApplyFetchedCurrent", Array.from(respBytes)).catch(() => undefined);
+  }
+
+  // Read side (B, zero-JSON): re-encode renderer cache into state proto bytes.
+  runners_bytes(): Uint8Array { return runnersBytes(this._runnersCache); }
+  available_runners_bytes(): Uint8Array { return availableRunnersBytes(this._availableRunnersCache); }
+  current_runner_bytes(): Uint8Array { return currentRunnerBytes(this._currentRunnerCache); }
 
   get_runner_json(id: bigint): unknown {
     const runners = JSON.parse(this._runnersCache) as { id: number }[];
@@ -58,18 +63,6 @@ export class ElectronRunnerService implements IRunnerService {
   // then fire-and-forget NAPI sync. Mirrors ElectronChannelService /
   // ElectronPodService pattern (renderer reads via runners_json() etc.
   // immediately after dispatch; IPC roundtrip would defeat that invariant).
-
-  replace_cached_runners(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedRunnersRequestSchema, reqBytes);
-    this._runnersCache = JSON.stringify(req.runners.map(runnerToCache));
-    void invoke<void>("appRunnerReplaceCached", Array.from(reqBytes)).catch(() => undefined);
-  }
-
-  replace_available_runners(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceAvailableRunnersRequestSchema, reqBytes);
-    this._availableRunnersCache = JSON.stringify(req.runners.map(runnerToCache));
-    void invoke<void>("appRunnerReplaceAvailable", Array.from(reqBytes)).catch(() => undefined);
-  }
 
   set_current_runner_proto(reqBytes: Uint8Array): void {
     const req = fromBinary(SetCurrentRunnerRequestSchema, reqBytes);
@@ -97,14 +90,17 @@ export class ElectronRunnerService implements IRunnerService {
     void invoke<void>("appRunnerRemove", Array.from(reqBytes)).catch(() => undefined);
   }
 
-  // Surgical realtime mirror: the main-pushed snapshot carries the Rust-computed
-  // runner lists (runners + available + current). Replace all three local caches
-  // so runners_json()/available_runners_json()/current_runner_json() reflect the
-  // SSOT. Empty string for current clears it.
-  apply_runners_snapshot(runnersJson: string, availableJson: string, currentJson: string): void {
-    if (runnersJson) this._runnersCache = runnersJson;
-    if (availableJson) this._availableRunnersCache = availableJson;
-    this._currentRunnerCache = currentJson ? currentJson : null;
+  // Surgical realtime mirror: the main-pushed snapshot carries the Rust-encoded
+  // runner lists as proto *Request bytes. Decode via fromBinary + runnerToCache
+  // (the fetch projection) so all three caches share RunnerData shape with fetch.
+  // Always decode — empty bytes mean an empty list, which must clear the cache.
+  apply_runners_snapshot(runnersBytes: Uint8Array, availableBytes: Uint8Array, currentBytes: Uint8Array): void {
+    const rReq = fromBinary(ReplaceCachedRunnersRequestSchema, runnersBytes);
+    this._runnersCache = JSON.stringify(rReq.runners.map(runnerToCache));
+    const aReq = fromBinary(ReplaceAvailableRunnersRequestSchema, availableBytes);
+    this._availableRunnersCache = JSON.stringify(aReq.runners.map(runnerToCache));
+    const cReq = fromBinary(SetCurrentRunnerRequestSchema, currentBytes);
+    this._currentRunnerCache = cReq.runner ? JSON.stringify(runnerToCache(cReq.runner)) : null;
   }
 
   update_runner_status(id: bigint, status: string): void {
@@ -112,26 +108,6 @@ export class ElectronRunnerService implements IRunnerService {
     const r = runners.find(x => x.id === Number(id));
     if (r) r.status = status;
     this._runnersCache = JSON.stringify(runners);
-  }
-
-  async fetch_runners(status?: string | null): Promise<string> {
-    const result = await invoke<string>("runnerFetchRunners", status);
-    const parsed = JSON.parse(result);
-    this._runnersCache = JSON.stringify(parsed.runners ?? []);
-    return result;
-  }
-
-  async fetch_runner(id: bigint): Promise<string> {
-    const result = await invoke<string>("runnerFetchRunner", Number(id));
-    this._currentRunnerCache = result;
-    return result;
-  }
-
-  async fetch_available_runners(): Promise<string> {
-    const result = await invoke<string>("runnerFetchAvailableRunners");
-    const parsed = JSON.parse(result);
-    this._availableRunnersCache = JSON.stringify(parsed.runners ?? []);
-    return result;
   }
 
   async create_token(json: string): Promise<string> {

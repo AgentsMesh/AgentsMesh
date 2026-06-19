@@ -4,7 +4,9 @@
 
 export {
   listLoops,
+  listLoopsRaw,
   getLoop,
+  getLoopRaw,
   createLoop,
   updateLoop,
   deleteLoop,
@@ -12,6 +14,7 @@ export {
   disableLoop,
   triggerLoop,
   listLoopRuns,
+  listRunsRaw,
   cancelLoopRun,
   type TriggerLoopResult,
 } from "../connect/loopConnect";

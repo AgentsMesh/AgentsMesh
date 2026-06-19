@@ -1,6 +1,7 @@
 import { readCurrentOrg } from "@/stores/auth";
 import {
   listRepositories,
+  listRepositoriesRaw,
   getRepository,
   createRepository,
   updateRepository,
@@ -23,6 +24,7 @@ function orgSlug(): string {
 
 export const repositoryApi = {
   list: async () => listRepositories(orgSlug()),
+  listRaw: async () => listRepositoriesRaw(orgSlug()),
   get: async (id: number) => getRepository(orgSlug(), id),
   create: async (data: CreateRepositoryInput) => createRepository(orgSlug(), data),
   update: async (id: number, data: UpdateRepositoryInput) => updateRepository(orgSlug(), id, data),

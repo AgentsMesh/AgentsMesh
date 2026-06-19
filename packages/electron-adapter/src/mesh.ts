@@ -3,6 +3,7 @@ import type { IMeshService } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import { ReplaceTopologyRequestSchema } from "@agentsmesh/proto/mesh_state/v1/mesh_state_pb";
 import type { MeshTopology as ProtoMeshTopology } from "@agentsmesh/proto/mesh/v1/mesh_pb";
+import { topologyBytes } from "./mesh_cache_to_bytes";
 
 // proto.mesh.v1.MeshTopology (camelCase + BigInt) → renderer cache shape
 // (snake_case + number). Mirrors the legacy serde-skip output so existing
@@ -44,47 +45,11 @@ export class ElectronMeshService implements IMeshService {
   private _topologyCache: string | null = null;
   private _selectedNode: string | null = null;
 
-  topology_json(): unknown { return this._topologyCache; }
+  // Read side (B, zero-JSON): re-encode the renderer cache into state proto
+  // bytes (update_node mutates the cache, so re-encode each read). The shared
+  // store decodes via fromBinary + topologyToCache and derives per-node queries.
+  topology_bytes(): Uint8Array { return topologyBytes(this._topologyCache); }
   selected_node(): unknown { return this._selectedNode; }
-
-  get_node_json(podKey: string): unknown {
-    if (!this._topologyCache) return null;
-    const topo = JSON.parse(this._topologyCache) as { nodes?: { pod_key: string }[] };
-    const n = topo.nodes?.find(x => x.pod_key === podKey);
-    return n ? JSON.stringify(n) : null;
-  }
-
-  get_active_nodes_json(): string {
-    if (!this._topologyCache) return "[]";
-    const topo = JSON.parse(this._topologyCache) as { nodes?: { status?: string }[] };
-    // Match Rust MeshState::get_active_nodes (running || creating), not "active".
-    return JSON.stringify((topo.nodes ?? []).filter(n => n.status === "running" || n.status === "creating"));
-  }
-
-  get_edges_for_node_json(podKey: string): string {
-    if (!this._topologyCache) return "[]";
-    const topo = JSON.parse(this._topologyCache) as { edges?: { source: string; target: string }[] };
-    return JSON.stringify((topo.edges ?? []).filter(e => e.source === podKey || e.target === podKey));
-  }
-
-  get_channels_for_node_json(podKey: string): string {
-    if (!this._topologyCache) return "[]";
-    const topo = JSON.parse(this._topologyCache) as { channels?: { pod_keys?: string[] }[] };
-    return JSON.stringify((topo.channels ?? []).filter(c => c.pod_keys?.includes(podKey)));
-  }
-
-  get_nodes_by_runner_json(runnerId: bigint): string {
-    if (!this._topologyCache) return "[]";
-    const topo = JSON.parse(this._topologyCache) as { nodes?: { runner_id?: number }[] };
-    return JSON.stringify((topo.nodes ?? []).filter(n => n.runner_id === Number(runnerId)));
-  }
-
-  get_runner_info_json(runnerId: bigint): unknown {
-    if (!this._topologyCache) return null;
-    const topo = JSON.parse(this._topologyCache) as { runners?: { id: number }[] };
-    const r = topo.runners?.find(x => x.id === Number(runnerId));
-    return r ? JSON.stringify(r) : null;
-  }
 
   replace_topology(reqBytes: Uint8Array): void {
     const req = fromBinary(ReplaceTopologyRequestSchema, reqBytes);

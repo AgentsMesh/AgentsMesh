@@ -10,7 +10,6 @@ import { useAuthStore } from "@/stores/auth";
 import { getAuthManager } from "@/lib/wasm-core";
 import { useChannelStore } from "@/stores/channel";
 
-const mockUpdateRunnerStatus = vi.fn();
 const mockUpdateTicketStatus = vi.fn();
 const mockRemoveTicket = vi.fn();
 const mockFetchTickets = vi.fn();
@@ -131,7 +130,7 @@ vi.mock("@/lib/wasm-core", async () => {
 vi.mock("@/stores/runner", () => ({
   useRunnerStore: {
     setState: (updater: unknown) => mockRunnerSetState(updater),
-    getState: () => ({ updateRunnerStatus: mockUpdateRunnerStatus }),
+    getState: () => ({}),
   },
 }));
 vi.mock("@/stores/ticket", () => ({
@@ -208,7 +207,6 @@ describe("handleInfraEvent", () => {
   // runtime.state); the JS handler only bumps the re-read tick.
   it("runner:online bumps tick", () => {
     handleInfraEvent({ type: "runner:online", data: { runner_id: 1, node_id: "n1", status: "online" }, ...baseEvent });
-    expect(mockUpdateRunnerStatus).not.toHaveBeenCalled();
     expect(mockRunnerSetState).toHaveBeenCalled();
   });
 

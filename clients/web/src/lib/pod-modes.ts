@@ -5,4 +5,6 @@
 export const POD_MODE_PTY = "pty" as const;
 export const POD_MODE_ACP = "acp" as const;
 
-export type PodMode = typeof POD_MODE_PTY | typeof POD_MODE_ACP;
+// PodMode moved to @agentsmesh/service-interface (used by the shared PodData
+// view-model); re-exported here to keep `@/lib/pod-modes` import paths.
+export type { PodMode } from "@agentsmesh/service-interface";

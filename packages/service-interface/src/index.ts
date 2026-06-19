@@ -129,14 +129,21 @@ export interface IAutopilotService {
   stop_controller(key: string): Promise<void>;
   takeover_controller(key: string): Promise<void>;
   // Proto-bytes mutators (mirror state_autopilot.rs).
-  replace_cached_controllers(req_bytes: Uint8Array): void;
   set_current_controller_proto(req_bytes: Uint8Array): void;
   insert_controller(req_bytes: Uint8Array): void;
   patch_controller(req_bytes: Uint8Array): void;
   remove_controller_proto(req_bytes: Uint8Array): void;
-  replace_cached_iterations(req_bytes: Uint8Array): void;
   append_iteration(req_bytes: Uint8Array): void;
   update_thinking_proto(req_bytes: Uint8Array): void;
+  // Fetch→state (B): wire response bytes → state baseline.
+  apply_fetched_controllers(resp_bytes: Uint8Array): void;
+  apply_fetched_current_controller(resp_bytes: Uint8Array): void;
+  apply_fetched_iterations(key: string, resp_bytes: Uint8Array): void;
+  // Read side (B, zero-JSON): state snapshot bytes for the shared selectors.
+  controllers_bytes(): Uint8Array;
+  current_controller_bytes(): Uint8Array;
+  controller_by_pod_key_bytes(pod_key: string): Uint8Array;
+  iterations_bytes(key: string): Uint8Array;
 }
 
 export interface IAutopilotState {
@@ -208,10 +215,6 @@ export interface IChannelService {
   current_channel_json(): any;
   delete_message(channel_id: bigint, message_id: bigint): Promise<void>;
   edit_message(channel_id: bigint, message_id: bigint, content: string): Promise<string>;
-  fetch_channel(id: bigint): Promise<string>;
-  fetch_channels(include_archived?: boolean | null): Promise<string>;
-  fetch_messages(channel_id: bigint, limit?: number | null, before_id?: bigint | null): Promise<string>;
-  fetch_unread_counts(): Promise<string>;
   filter_channels_json(query: string, include_archived: boolean): string;
   get_channel_json(id: bigint): any;
   get_channel_pods(id: bigint): Promise<string>;
@@ -366,15 +369,20 @@ export interface ILoopService {
   get_loop_by_slug_json(slug: string): any;
   loops_json(): string;
   runs_json(): string;
-  // Proto-bytes mutators (mirror WasmLoopService).
-  replace_cached_loops(req_bytes: Uint8Array): void;
-  set_current_loop(req_bytes: Uint8Array): void;
+  // Read side (B): prost-encoded state bytes of the cached loops/runs/current,
+  // so the shared web selector decodes desktop + web identically.
+  loops_bytes(): Uint8Array;
+  runs_bytes(): Uint8Array;
+  current_loop_bytes(): Uint8Array;
+  // Fetch→state (B): decode wire ListLoops/ListRuns response → cache.
+  apply_fetched_loops(respBytes: Uint8Array): void;
+  apply_fetched_current_loop(respBytes: Uint8Array): void;
+  apply_fetched_runs(respBytes: Uint8Array): void;
+  apply_appended_runs(respBytes: Uint8Array): void;
+  // Proto-bytes mutators (mirror WasmLoopService).  set_current_loop(req_bytes: Uint8Array): void;
   clear_current_loop(req_bytes: Uint8Array): void;
   patch_loop_from_action(req_bytes: Uint8Array): void;
-  insert_loop_run(req_bytes: Uint8Array): void;
-  replace_cached_runs(req_bytes: Uint8Array): void;
-  append_cached_runs(req_bytes: Uint8Array): void;
-  patch_loop_run_status(req_bytes: Uint8Array): void;
+  insert_loop_run(req_bytes: Uint8Array): void;  patch_loop_run_status(req_bytes: Uint8Array): void;
   clear_loop_runs(req_bytes: Uint8Array): void;
 }
 
@@ -396,18 +404,11 @@ export interface ILoopState {
 export interface IMeshService {
   clear_topology(): void;
   fetch_topology(): Promise<Uint8Array>;
-  get_active_nodes_json(): string;
-  get_channels_for_node_json(pod_key: string): string;
-  get_edges_for_node_json(pod_key: string): string;
-  get_node_json(pod_key: string): any;
-  get_nodes_by_runner_json(runner_id: bigint): string;
-  get_runner_info_json(runner_id: bigint): any;
   select_node(pod_key?: string | null): void;
   selected_node(): any;
-  topology_json(): any;
-  // Proto-bytes mutator (mirror state_mesh.rs). Carries an opaque
-  // serialised proto.mesh.v1.MeshTopology JSON blob — UI owns the
-  // schema, Rust state stores it verbatim.
+  // Read side (B, zero-JSON): state proto bytes; UI decodes + derives queries.
+  topology_bytes(): Uint8Array;
+  // Proto-bytes mutator (mirror state_mesh.rs).
   replace_topology(req_bytes: Uint8Array): void;
   // Connect-RPC: proto.mesh.v1.MeshService. Binary wire (Uint8Array in,
   // Uint8Array out). Callers encode/decode via @bufbuild/protobuf — see
@@ -420,17 +421,11 @@ export interface IMeshService {
 
 export interface IMeshState {
   clear_topology(): void;
-  get_active_nodes_json(): string;
-  get_channels_for_node_json(pod_key: string): string;
-  get_edges_for_node_json(pod_key: string): string;
-  get_node_json(pod_key: string): any;
-  get_nodes_by_runner_json(runner_id: bigint): string;
-  get_runner_info_json(runner_id: bigint): any;
   select_node(pod_key?: string | null): void;
   selected_node(): any;
   // Proto-bytes mutator (mirror state_mesh.rs).
   replace_topology(req_bytes: Uint8Array): void;
-  topology_json(): any;
+  topology_bytes(): Uint8Array;
 }
 
 export interface INotificationService {
@@ -455,10 +450,7 @@ export interface IPodService {
   current_pod_json(): any;
   get_pod_json(pod_key: string): any;
   pods_json(): string;
-  // Proto-bytes mutators (mirror WasmPodState).
-  replace_cached_pods(req_bytes: Uint8Array): void;
-  append_cached_pods(req_bytes: Uint8Array): void;
-  insert_created_pod(req_bytes: Uint8Array): void;
+  // Proto-bytes mutators (mirror WasmPodState).  insert_created_pod(req_bytes: Uint8Array): void;
   mark_pod_terminated(req_bytes: Uint8Array): void;
   patch_pod_perpetual(req_bytes: Uint8Array): void;
   apply_pod_status_event(req_bytes: Uint8Array): void;
@@ -508,9 +500,12 @@ export interface IRepoState {
   current_repo_json(): any;
   remove_repository(id: string): void;
   repositories_json(): string;
-  // Proto-bytes mutators (mirror state_repo.rs).
-  replace_cached_repositories(req_bytes: Uint8Array): void;
-  set_current_repo_proto(req_bytes: Uint8Array): void;
+  // Read side (B): prost-encoded ReplaceCachedRepositoriesRequest bytes of the
+  // cached repositories, so the shared web selector decodes desktop + web identically.
+  repositories_bytes(): Uint8Array;
+  // Fetch→state (B): decode wire ListRepositoriesResponse → cache (wire == cache).
+  apply_fetched_repositories(respBytes: Uint8Array): void;
+  // Proto-bytes mutators (mirror state_repo.rs).  set_current_repo_proto(req_bytes: Uint8Array): void;
   replace_branches(req_bytes: Uint8Array): void;
   insert_repository(req_bytes: Uint8Array): void;
   patch_repository(req_bytes: Uint8Array): void;
@@ -538,19 +533,12 @@ export interface IRunnerService {
   create_token(request_json: string): Promise<string>;
   current_runner_json(): any;
   delete_runner(id: bigint): Promise<void>;
-  delete_token(id: bigint): Promise<void>;
-  fetch_available_runners(): Promise<string>;
-  fetch_runner(id: bigint): Promise<string>;
-  fetch_runners(status?: string | null): Promise<string>;
-  fetch_tokens(): Promise<string>;
+  delete_token(id: bigint): Promise<void>;  fetch_tokens(): Promise<string>;
   get_auth_status(request_bytes: Uint8Array): Promise<Uint8Array>;
   get_runner_json(id: bigint): any;
   list_runner_logs(id: bigint): Promise<string>;
   query_runner_sandboxes(id: bigint, request_json: string): Promise<string>;
-  // Proto-bytes mutators (mirror state_runner.rs).
-  replace_cached_runners(req_bytes: Uint8Array): void;
-  replace_available_runners(req_bytes: Uint8Array): void;
-  set_current_runner_proto(req_bytes: Uint8Array): void;
+  // Proto-bytes mutators (mirror state_runner.rs).  set_current_runner_proto(req_bytes: Uint8Array): void;
   patch_cached_runner(req_bytes: Uint8Array): void;
   remove_cached_runner(req_bytes: Uint8Array): void;
   request_log_upload(id: bigint): Promise<void>;
@@ -634,6 +622,23 @@ export interface ITicketState {
   current_ticket_json(): any;
   labels_json(): string;
   tickets_json(): string;
+  // ticket→pods mirror — useTicketPods reads/writes this via getTicketState().
+  ticket_pods_bytes(slug: string): Uint8Array;
+  set_ticket_pods(slug: string, podsJson: string): void;
+  // Read side (B): prost-encoded ReplaceCachedTicketsRequest bytes of the cached
+  // tickets, so the shared web selector decodes desktop + web identically.
+  tickets_bytes(): Uint8Array;
+  // Read side (B): prost-encoded state bytes for current ticket / board / labels.
+  current_ticket_bytes(): Uint8Array;
+  board_columns_bytes(): Uint8Array;
+  labels_bytes(): Uint8Array;
+  // Fetch→state (B): decode wire ListTicketsResponse → cache (wire == cache).
+  apply_fetched_tickets(respBytes: Uint8Array): void;
+  // Fetch→state (B) single-object / board / labels (wire == cache).
+  apply_fetched_current_ticket(respBytes: Uint8Array): void;
+  apply_fetched_board_columns(respBytes: Uint8Array): void;
+  apply_appended_board_column_tickets(status: string, respBytes: Uint8Array): void;
+  apply_fetched_labels(respBytes: Uint8Array): void;
   // Proto bytes mutators — each takes prost-encoded Uint8Array; the schema
   // lives in proto/ticket_state/v1/ticket_state.proto. Mirrors the pod_state
   // bridge in shape (apply_*_event for realtime, replace_cached_* for fetch
@@ -641,9 +646,7 @@ export interface ITicketState {
   // mutation results, set_current_ticket / append_board_column_tickets /
   // remove_cached_label for the rest).
   apply_ticket_status_event(req: Uint8Array): void;
-  apply_ticket_deleted_event(req: Uint8Array): void;
-  replace_cached_tickets(req: Uint8Array): void;
-  insert_created_ticket(req: Uint8Array): void;
+  apply_ticket_deleted_event(req: Uint8Array): void;  insert_created_ticket(req: Uint8Array): void;
   patch_cached_ticket(req: Uint8Array): void;
   replace_board_columns(req: Uint8Array): void;
   append_board_column_tickets(req: Uint8Array): void;
@@ -698,3 +701,12 @@ export {
   SERVICE_ERROR_KIND_SET,
   type ServiceErrorKind,
 } from "./service-error-kinds";
+
+// Shared client view-model types (proto→cache projection targets). Owned in
+// this zero-dep layer so web (fromProtoX) and desktop (electron-adapter
+// projections) reference one definition instead of drifting copies.
+export * from "./view-models/loop";
+export * from "./view-models/ticket";
+export * from "./view-models/pod";
+export * from "./view-models/runner";
+export * from "./view-models/repository";

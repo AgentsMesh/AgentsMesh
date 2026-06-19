@@ -324,19 +324,6 @@ function registerLegacyApiAliases() {
       { orgSlug: orgSlug() },
     ),
   );
-  // The Rust runner cache parses `{runners: [...]}` shape — Connect's
-  // ListRunnersResponse uses `items`. Also the renderer reads
-  // `r.available_agents` (snake_case) but Connect emits camelCase, so
-  // recursively rename keys before returning.
-  ipcMain.handle("runnerFetchRunners", async () => {
-    const raw = await callConnectJson(
-      "proto.runner_api.v1.RunnerService",
-      "ListRunners",
-      { orgSlug: orgSlug() },
-    );
-    const parsed = JSON.parse(raw) as { items?: unknown[] };
-    return JSON.stringify({ runners: (parsed.items ?? []).map(snakeCaseDeep) });
-  });
 
   // R6 dropped the Rust channel_join_channel napi (replaced by direct
   // ChannelService.JoinChannelPod). Renderer paths use wasm Connect; main
@@ -522,6 +509,23 @@ function registerLegacyApiAliases() {
     );
     const parsed = JSON.parse(raw) as { items?: unknown[] };
     return JSON.stringify({ repositories: (parsed.items ?? []).map(snakeCaseDeep) });
+  });
+
+  // ElectronRunnerService list flows through Connect now; desktop e2e specs
+  // still seed pods via `runnerFetchRunners` by name. Connect returns
+  // `{items, ...}` — remap to the legacy `{runners: [...]}` shape the specs
+  // parse, snake_case nested fields, and coerce the int64 `id` to a number
+  // (the specs reuse it as `runner_id` for podCreatePod).
+  ipcMain.handle("runnerFetchRunners", async () => {
+    const raw = await callConnectJson(
+      "proto.runner_api.v1.RunnerService",
+      "ListRunners",
+      { orgSlug: orgSlug() },
+    );
+    const parsed = JSON.parse(raw) as { items?: unknown[] };
+    return JSON.stringify({
+      runners: (parsed.items ?? []).map((r) => coerceInt64(snakeCaseDeep(r))),
+    });
   });
 
   // ElectronPodService.create_pod() invokes this. The renderer hands us

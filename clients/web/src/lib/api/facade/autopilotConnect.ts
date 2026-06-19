@@ -4,7 +4,9 @@
 
 export {
   listAutopilots,
+  listAutopilotsRaw,
   getAutopilot,
+  getAutopilotRaw,
   createAutopilot,
   pauseAutopilot,
   resumeAutopilot,
@@ -13,6 +15,7 @@ export {
   handbackAutopilot,
   approveAutopilot,
   getAutopilotIterations,
+  getAutopilotIterationsRaw,
   type AutopilotControllerWire,
   type AutopilotIterationWire,
   type CreateAutopilotParams,

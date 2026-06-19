@@ -2,11 +2,13 @@ use napi_derive::napi;
 use std::collections::HashMap;
 
 use agentsmesh_state::channel_types::ChannelMessage;
+use agentsmesh_types::proto_channel_v1::{
+    Channel, ListChannelMembersResponse, ListChannelMessagesResponse, ListChannelPodsResponse,
+    ListChannelsResponse,
+};
 use agentsmesh_types::proto_channel_state_v1::{
     ApplyChannelMessageEditedEventRequest, InsertChannelMessageRequest, InsertChannelRequest,
-    PatchChannelMemberCountRequest, PrependCachedChannelMessagesRequest,
-    ReplaceCachedChannelMessagesRequest, ReplaceCachedChannelsRequest,
-    ReplaceChannelUnreadCountsRequest,
+    PatchChannelMemberCountRequest, ReplaceChannelUnreadCountsRequest,
 };
 use prost::Message as _;
 
@@ -55,13 +57,81 @@ impl AppState {
             .unwrap_or_else(|_| "{}".to_string())
     }
 
-    // ── Fetch-mirror mutators (renderer fire-and-forgets these so the
-    //    runtime.state baseline matches the renderer cache before realtime) ──
+    // ── Fetch→state (desktop main): decode wire response + fold into state,
+    //    replacing the renderer's wire-JSON-direct-store path. ──
 
     #[napi]
-    pub fn app_channel_replace_cached_channels(&self, req_bytes: Vec<u8>) -> napi::Result<()> {
-        let req = ReplaceCachedChannelsRequest::decode(&req_bytes[..]).map_err(decode_err)?;
-        self.runtime.state.write().channels.set_channels(req.channels);
+    pub fn app_channel_apply_fetched_channels(&self, resp_bytes: Vec<u8>) -> napi::Result<()> {
+        let resp = ListChannelsResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime.state.write().channels.apply_fetched_channels(resp.items);
+        Ok(())
+    }
+
+    // Single-object fetch (B): decode wire GetChannel response (Channel) + upsert.
+    #[napi]
+    pub fn app_channel_apply_fetched_channel(&self, resp_bytes: Vec<u8>) -> napi::Result<()> {
+        let channel = Channel::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime.state.write().channels.apply_fetched_channel(channel);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn app_channel_apply_fetched_messages(
+        &self,
+        channel_id: i64,
+        resp_bytes: Vec<u8>,
+    ) -> napi::Result<()> {
+        let resp = ListChannelMessagesResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime
+            .state
+            .write()
+            .channels
+            .apply_fetched_messages(channel_id, resp.items, resp.has_more);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn app_channel_apply_fetched_messages_prepend(
+        &self,
+        channel_id: i64,
+        resp_bytes: Vec<u8>,
+    ) -> napi::Result<()> {
+        let resp = ListChannelMessagesResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime
+            .state
+            .write()
+            .channels
+            .apply_fetched_messages_prepend(channel_id, resp.items, resp.has_more);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn app_channel_apply_fetched_members(
+        &self,
+        channel_id: i64,
+        resp_bytes: Vec<u8>,
+    ) -> napi::Result<()> {
+        let resp = ListChannelMembersResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime
+            .state
+            .write()
+            .channels
+            .apply_fetched_members(channel_id, resp.items);
+        Ok(())
+    }
+
+    #[napi]
+    pub fn app_channel_apply_fetched_pods(
+        &self,
+        channel_id: i64,
+        resp_bytes: Vec<u8>,
+    ) -> napi::Result<()> {
+        let resp = ListChannelPodsResponse::decode(&resp_bytes[..]).map_err(decode_err)?;
+        self.runtime
+            .state
+            .write()
+            .channels
+            .apply_fetched_pods(channel_id, resp.items);
         Ok(())
     }
 
@@ -77,28 +147,6 @@ impl AppState {
                 guard.channels.add_channel(channel);
             }
         }
-        Ok(())
-    }
-
-    #[napi]
-    pub fn app_channel_replace_cached_messages(&self, req_bytes: Vec<u8>) -> napi::Result<()> {
-        let req = ReplaceCachedChannelMessagesRequest::decode(&req_bytes[..]).map_err(decode_err)?;
-        self.runtime
-            .state
-            .write()
-            .channels
-            .set_messages(req.channel_id, req.messages, req.has_more);
-        Ok(())
-    }
-
-    #[napi]
-    pub fn app_channel_prepend_cached_messages(&self, req_bytes: Vec<u8>) -> napi::Result<()> {
-        let req = PrependCachedChannelMessagesRequest::decode(&req_bytes[..]).map_err(decode_err)?;
-        self.runtime
-            .state
-            .write()
-            .channels
-            .prepend_messages(req.channel_id, req.messages, req.has_more);
         Ok(())
     }
 

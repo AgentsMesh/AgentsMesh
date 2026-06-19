@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use agentsmesh_state::app_state::AppState;
-use agentsmesh_types::proto_pod_v1::Pod;
+use agentsmesh_types::proto_pod_v1::{ListPodsResponse, Pod};
 use agentsmesh_types::proto_pod_state_v1::{
     InsertCreatedPodRequest, PatchPodPerpetualRequest,
     ApplyPodStatusEventRequest, ApplyPodTitleEventRequest,
     ApplyPodAliasEventRequest, ApplyAgentStatusEventRequest,
-    ReplaceCachedPodsRequest, AppendCachedPodsRequest,
+    ReplaceCachedPodsRequest,
     MarkPodTerminatedRequest,
 };
 use parking_lot::RwLock;
@@ -46,6 +46,28 @@ impl WasmPodState {
 
     pub fn pods_json(&self) -> String {
         serde_json::to_string(self.state.read().pods.pods()).unwrap_or_default()
+    }
+
+    // Read side, zero-JSON: prost-encode state pods (reuse the cache wrapper).
+    // Web/desktop decode via fromBinary + podToCache. Replaces pods_json — the
+    // wire Pod and the cached Pod are the same proto, so this is identity.
+    pub fn pods_bytes(&self) -> Vec<u8> {
+        let pods = self.state.read().pods.pods().to_vec();
+        ReplaceCachedPodsRequest { pods }.encode_to_vec()
+    }
+
+    pub fn current_pod_bytes(&self) -> Vec<u8> {
+        match self.state.read().pods.current_pod() {
+            Some(pod) => pod.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn get_pod_bytes(&self, pod_key: &str) -> Vec<u8> {
+        match self.state.read().pods.get_pod(pod_key) {
+            Some(pod) => pod.encode_to_vec(),
+            None => Vec::new(),
+        }
     }
 
     pub fn current_pod_json(&self) -> JsValue {
@@ -111,15 +133,20 @@ impl WasmPodState {
         Ok(())
     }
 
-    pub fn replace_cached_pods(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceCachedPodsRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().pods.set_pods(req.pods);
+    // Fetch→state: decode wire ListPodsResponse + fold into state. The wire Pod
+    // IS the cache Pod (proto.pod.v1.Pod), so this is pure identity — no TS
+    // fromProtoPod + podToProtoPod round-trip. Web fetch hands raw wire bytes
+    // straight to Rust.
+    pub fn apply_fetched_pods(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListPodsResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().pods.set_pods(resp.items);
         Ok(())
     }
 
-    pub fn append_cached_pods(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = AppendCachedPodsRequest::decode(req_bytes).map_err(decode_err)?;
-        for pod in req.pods {
+    // Fetch→state for pagination load-more: upsert each fetched pod (append).
+    pub fn apply_appended_pods(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListPodsResponse::decode(resp_bytes).map_err(decode_err)?;
+        for pod in resp.items {
             self.state.write().pods.upsert_pod(pod, None);
         }
         Ok(())

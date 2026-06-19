@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { act } from "@testing-library/react";
+import { create, toBinary } from "@bufbuild/protobuf";
+import { ChannelMessageSchema, ListChannelMessagesResponseSchema } from "@proto/channel/v1/channel_pb";
 
 const orgSlug = "test-org";
 
@@ -13,7 +15,7 @@ vi.mock("@/stores/auth", async () => {
 });
 
 const mocks = vi.hoisted(() => ({
-  listChannelMessages: vi.fn(),
+  listChannelMessagesRaw: vi.fn(),
   sendChannelMessage: vi.fn(),
   editChannelMessage: vi.fn(),
   deleteChannelMessage: vi.fn(),
@@ -23,7 +25,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/api/facade/channelConnect", () => ({
-  listChannelMessages: mocks.listChannelMessages,
+  listChannelMessagesRaw: mocks.listChannelMessagesRaw,
   sendChannelMessage: mocks.sendChannelMessage,
   editChannelMessage: mocks.editChannelMessage,
   deleteChannelMessage: mocks.deleteChannelMessage,
@@ -56,6 +58,20 @@ function makeMsg(id: number, overrides: Partial<ChannelMessage> = {}): ChannelMe
   } as ChannelMessage;
 }
 
+// wire ListChannelMessagesResponse bytes — fetchMessages now hands these to
+// Rust apply_fetched_messages (no TS projection).
+function wireMessagesBytes(msgs: ChannelMessage[], hasMore: boolean): Uint8Array {
+  return toBinary(ListChannelMessagesResponseSchema, create(ListChannelMessagesResponseSchema, {
+    items: msgs.map((m) => create(ChannelMessageSchema, {
+      id: BigInt(m.id), channelId: BigInt(m.channel_id), body: m.body,
+      messageType: m.message_type ?? "text",
+      senderUserId: m.sender_user_id !== undefined ? BigInt(m.sender_user_id) : undefined,
+      createdAt: m.created_at ?? "",
+    })),
+    hasMore,
+  }));
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   Object.values(mocks).forEach((m) => m.mockReset());
@@ -63,15 +79,15 @@ beforeEach(() => {
 });
 
 describe("useChannelMessageStore — Connect adapter integration", () => {
-  it("fetchMessages: calls listChannelMessages and seeds the SSOT cache", async () => {
+  it("fetchMessages: calls listChannelMessagesRaw and seeds the SSOT cache", async () => {
     const msgs = [makeMsg(1), makeMsg(2)];
-    mocks.listChannelMessages.mockResolvedValue({ items: msgs, has_more: true });
+    mocks.listChannelMessagesRaw.mockResolvedValue(wireMessagesBytes(msgs, true));
 
     await act(async () => {
       await useChannelMessageStore.getState().fetchMessages(42, 20);
     });
 
-    expect(mocks.listChannelMessages).toHaveBeenCalledWith(orgSlug, 42, { beforeId: undefined, limit: 20 });
+    expect(mocks.listChannelMessagesRaw).toHaveBeenCalledWith(orgSlug, 42, { beforeId: undefined, limit: 20 });
     const cache = useChannelMessageStore.getState().cache[42] ?? EMPTY_CACHE;
     const view = readMessages(42);
     expect(view.messages).toHaveLength(2);
@@ -80,7 +96,7 @@ describe("useChannelMessageStore — Connect adapter integration", () => {
   });
 
   it("fetchMessages: records error on failure", async () => {
-    mocks.listChannelMessages.mockRejectedValue(new Error("boom"));
+    mocks.listChannelMessagesRaw.mockRejectedValue(new Error("boom"));
     await act(async () => {
       await useChannelMessageStore.getState().fetchMessages(42);
     });

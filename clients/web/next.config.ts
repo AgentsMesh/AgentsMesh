@@ -51,6 +51,8 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@agentsmesh/service-runtime",
     "@agentsmesh/service-interface",
+    // Refactor B: web reuses electron-adapter/projections (raw .ts).
+    "@agentsmesh/electron-adapter",
     "@agentsmesh/proto",
   ],
 

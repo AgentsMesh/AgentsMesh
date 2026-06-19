@@ -1,4 +1,6 @@
 import { useEffect, useReducer } from "react";
+import { fromBinary } from "@bufbuild/protobuf";
+import { ReplaceChannelPodsRequestSchema } from "@proto/channel_state/v1/mutations_pb";
 import { channelApi } from "@/lib/api/facade/channel";
 import { getChannelState } from "@/lib/wasm-core";
 
@@ -52,7 +54,13 @@ async function fetchPods(channelId: number): Promise<ChannelPodSummary[]> {
 function readPodsFromRust(channelId: number | null): ChannelPodSummary[] {
   if (channelId == null) return [];
   try {
-    return JSON.parse(svc().channel_pods_json(BigInt(channelId))) as ChannelPodSummary[];
+    return fromBinary(ReplaceChannelPodsRequestSchema, svc().channel_pods_bytes(BigInt(channelId)))
+      .pods.map((p) => ({
+        pod_key: p.podKey,
+        alias: p.alias,
+        status: p.status,
+        agent_status: p.agentStatus,
+      }));
   } catch {
     return [];
   }

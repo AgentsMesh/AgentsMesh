@@ -4,22 +4,23 @@ import { create as protoCreate, toBinary, fromBinary } from "@bufbuild/protobuf"
 import type { TicketData, TicketStatus, TicketPriority, BoardColumn } from "@/lib/api";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
-import { getTicketState, parseWasmAny } from "@/lib/wasm-core";
+import { getTicketState } from "@/lib/wasm-core";
 import * as ticketApi from "@/lib/api/facade/ticketConnect";
 import { readCurrentOrg } from "@/stores/auth";
 import {
   ApplyTicketStatusEventRequestSchema, ApplyTicketDeletedEventRequestSchema,
   ReplaceCachedTicketsRequestSchema, InsertCreatedTicketRequestSchema,
   PatchCachedTicketRequestSchema, ReplaceBoardColumnsRequestSchema,
-  AppendBoardColumnTicketsRequestSchema, SetCurrentTicketRequestSchema,
+  SetCurrentTicketRequestSchema,
   ReplaceCachedLabelsRequestSchema, InsertCreatedLabelRequestSchema,
   RemoveCachedLabelRequestSchema, FilterTicketsRequestSchema,
   FilterTicketsResponseSchema,
 } from "@proto/ticket_state/v1/ticket_state_pb";
+import { BoardSchema, ListTicketsResponseSchema } from "@proto/ticket/v1/ticket_pb";
 import {
-  ticketsToProto, ticketToProto, labelsToProto, labelToProto,
-  boardColumnsToProto, protoTicketToTicket,
+  ticketToProto, labelToProto, protoTicketToTicket,
 } from "@/lib/api/ticketProtoMap";
+import { ticketToCache } from "@agentsmesh/electron-adapter/projections";
 
 export type { TicketStatus, TicketPriority };
 export interface Label { id: number; name: string; color: string }
@@ -63,29 +64,51 @@ interface TicketState {
   setSelectedTicketSlug: (s: string | null) => void; setDoneCollapsed: (c: boolean) => void; clearError: () => void;
 }
 
+// Read side (B, zero-JSON): UI is a projection of state proto bytes
+// (tickets_bytes) decoded via fromBinary + ticketToCache (shared projection).
 export function useTickets(): Ticket[] {
   const tick = useTicketStore((s) => s._tick);
-  return useMemo(() => JSON.parse(state().tickets_json()) as Ticket[], [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceCachedTicketsRequestSchema, state().tickets_bytes()).tickets.map(ticketToCache) as Ticket[],
+    [tick],
+  );
 }
 
 export function useCurrentTicket(): Ticket | null {
   const tick = useTicketStore((s) => s._tick);
-  return useMemo(() => parseWasmAny<Ticket>(state().current_ticket_json()), [tick]);
+  return useMemo(() => {
+    const bytes = state().current_ticket_bytes();
+    if (bytes.length === 0) return null;
+    const t = fromBinary(SetCurrentTicketRequestSchema, bytes).ticket;
+    return t ? (ticketToCache(t) as Ticket) : null;
+  }, [tick]);
 }
 
+// Web facade BoardColumn carries `count` (KanbanColumn falls back to
+// tickets.length); decode the state proto column + project to that shape.
 export function useBoardColumns(): BoardColumn[] {
   const tick = useTicketStore((s) => s._tick);
-  return useMemo(() => { const raw = state().board_columns_json(); return raw ? JSON.parse(raw) : []; }, [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceBoardColumnsRequestSchema, state().board_columns_bytes()).columns.map((c) => ({
+      status: c.status, count: Number(c.totalCount), tickets: c.tickets.map(ticketToCache),
+    })) as BoardColumn[],
+    [tick],
+  );
 }
 
 export function useLabels(): Label[] {
   const tick = useTicketStore((s) => s._tick);
-  return useMemo(() => JSON.parse(state().labels_json()) as Label[], [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceCachedLabelsRequestSchema, state().labels_bytes()).labels.map((l) => ({
+      id: Number(l.id), name: l.name, color: l.color,
+    })),
+    [tick],
+  );
 }
 
 export const useTicketStore = create<TicketState>((set, get) => {
   const refresh = () => {
-    const cols = JSON.parse(state().board_columns_json() || "[]") as BoardColumn[];
+    const cols = fromBinary(ReplaceBoardColumnsRequestSchema, state().board_columns_bytes()).columns;
     if (cols.length > 0) get().fetchBoard(get().filters); else get().fetchTickets(get().filters);
   };
   return {
@@ -97,23 +120,26 @@ export const useTicketStore = create<TicketState>((set, get) => {
     fetchTickets: async (filters) => {
       const m = { ...get().filters, ...filters }; set({ error: null, filters: m });
       try {
-        const r = await ticketApi.listTickets(orgSlug(), { status: m.status, limit: 500 });
-        const req = protoCreate(ReplaceCachedTicketsRequestSchema, { tickets: ticketsToProto(r.items as Ticket[]) });
-        state().replace_cached_tickets(toBinary(ReplaceCachedTicketsRequestSchema, req));
-        set({ totalCount: r.total || 0, priorityCounts: {}, columnPagination: {}, _tick: get()._tick + 1 });
+        const respBytes = await ticketApi.listTicketsRaw(orgSlug(), { status: m.status, limit: 500 });
+        state().apply_fetched_tickets(respBytes);
+        set({ priorityCounts: {}, columnPagination: {}, _tick: get()._tick + 1 });
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch tickets") }); }
     },
 
     fetchBoard: async (filters) => {
       const m = { ...get().filters, ...filters }; set({ error: null, filters: m });
       try {
-        const columns = await ticketApi.getBoard(orgSlug(), { repository_id: m.repositoryId });
-        const req = protoCreate(ReplaceBoardColumnsRequestSchema, { columns: boardColumnsToProto(columns) });
-        state().replace_board_columns(toBinary(ReplaceBoardColumnsRequestSchema, req));
+        // total/pagination are derived off the same wire Board the apply folds —
+        // decode once for counts, hand the raw bytes to Rust set_board_columns.
+        const respBytes = await ticketApi.getBoardRaw(orgSlug(), { repository_id: m.repositoryId });
+        state().apply_fetched_board_columns(respBytes);
+        const columns = fromBinary(BoardSchema, respBytes).columns.map((c) => ({
+          status: c.status, count: Number(c.totalCount), tickets: c.tickets,
+        }));
         set({
-          totalCount: columns.reduce((s: number, c: BoardColumn) => s + c.count, 0),
+          totalCount: columns.reduce((s: number, c) => s + c.count, 0),
           priorityCounts: {},
-          columnPagination: initPag(columns),
+          columnPagination: initPag(columns as unknown as BoardColumn[]),
           _tick: get()._tick + 1,
         });
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch board") }); }
@@ -124,14 +150,14 @@ export const useTicketStore = create<TicketState>((set, get) => {
       const pag = cp[status]; if (!pag?.hasMore || pag.loading) return;
       set({ columnPagination: { ...cp, [status]: { ...pag, loading: true } } });
       try {
-        const r = await ticketApi.listTickets(orgSlug(), { status, offset: pag.offset, limit: 20 });
-        const req = protoCreate(AppendBoardColumnTicketsRequestSchema, {
-          status, tickets: ticketsToProto(r.items as Ticket[]),
+        const respBytes = await ticketApi.listTicketsRaw(orgSlug(), {
+          status, offset: pag.offset, limit: 20, repositoryId: get().filters.repositoryId,
         });
-        state().append_board_column_tickets(toBinary(AppendBoardColumnTicketsRequestSchema, req));
-        const off = pag.offset + r.items.length;
+        state().apply_appended_board_column_tickets(status, respBytes);
+        const resp = fromBinary(ListTicketsResponseSchema, respBytes);
+        const off = pag.offset + resp.items.length;
         set({
-          columnPagination: { ...get().columnPagination, [status]: { offset: off, hasMore: off < (r.total || 0), loading: false } },
+          columnPagination: { ...get().columnPagination, [status]: { offset: off, hasMore: off < Number(resp.total || 0), loading: false } },
           _tick: get()._tick + 1,
         });
       } catch (e: unknown) { set({ columnPagination: { ...get().columnPagination, [status]: { ...pag, loading: false } }, error: getErrorMessage(e, "Failed to load more") }); }
@@ -139,9 +165,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
 
     fetchTicket: async (slug) => {
       try {
-        const ticket = await ticketApi.getTicket(orgSlug(), slug);
-        const req = protoCreate(SetCurrentTicketRequestSchema, { ticket: ticketToProto(ticket as Ticket) });
-        state().set_current_ticket(toBinary(SetCurrentTicketRequestSchema, req));
+        const respBytes = await ticketApi.getTicketRaw(orgSlug(), slug);
+        state().apply_fetched_current_ticket(respBytes);
         bump();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch ticket") }); }
     },
@@ -206,9 +231,8 @@ export const useTicketStore = create<TicketState>((set, get) => {
 
     fetchLabels: async (repositoryId) => {
       try {
-        const labels = await ticketApi.listLabels(orgSlug(), { repository_id: repositoryId });
-        const req = protoCreate(ReplaceCachedLabelsRequestSchema, { labels: labelsToProto(labels) });
-        state().replace_cached_labels(toBinary(ReplaceCachedLabelsRequestSchema, req));
+        const respBytes = await ticketApi.listLabelsRaw(orgSlug(), { repository_id: repositoryId });
+        state().apply_fetched_labels(respBytes);
         bump();
       } catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to fetch labels") }); }
     },
@@ -280,7 +304,7 @@ export function useFilteredTickets(): Ticket[] {
       const resp = fromBinary(FilterTicketsResponseSchema, respBytes);
       return resp.tickets.map(protoTicketToTicket);
     }
-    return JSON.parse(state().tickets_json()) as Ticket[];
+    return fromBinary(ReplaceCachedTicketsRequestSchema, state().tickets_bytes()).tickets.map(ticketToCache) as Ticket[];
   }, [tick, search, selectedStatuses, selectedPriorities, selectedRepositoryIds]);
 }
 

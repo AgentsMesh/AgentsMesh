@@ -215,7 +215,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     });
 
     // The stale "mine" page must not clobber the now-active "org" cache/total.
-    expect(podStateMock().replace_cached_pods).not.toHaveBeenCalled();
+    expect(podStateMock().apply_fetched_pods).not.toHaveBeenCalled();
     expect(usePodStore.getState().podTotal).not.toBe(5);
   });
 
@@ -232,7 +232,7 @@ describe("Pod Store — fetchSidebarPods", () => {
     // Silent failure is swallowed and never touches the cache or visible state.
     expect(usePodStore.getState().error).toBe("stale error");
     expect(usePodStore.getState().loading).toBe(false);
-    expect(podStateMock().replace_cached_pods).not.toHaveBeenCalled();
+    expect(podStateMock().apply_fetched_pods).not.toHaveBeenCalled();
     expect(readPods()).toHaveLength(1);
   });
 
@@ -378,7 +378,7 @@ describe("Pod Store — sidebar fetch/loadMore out-of-order guards", () => {
     await act(async () => { await pFast; });
 
     expect(usePodStore.getState().podTotal).toBe(99);
-    const replaceCalls = podStateMock().replace_cached_pods.mock.calls.length;
+    const replaceCalls = podStateMock().apply_fetched_pods.mock.calls.length;
 
     resolveSlow!(encodePods([mockPod], 1));
     await act(async () => { await pSlow; });
@@ -386,7 +386,7 @@ describe("Pod Store — sidebar fetch/loadMore out-of-order guards", () => {
     // The superseded request's response is dropped by the seq guard — neither
     // the cache nor the total regresses to its stale values.
     expect(usePodStore.getState().podTotal).toBe(99);
-    expect(podStateMock().replace_cached_pods.mock.calls.length).toBe(replaceCalls);
+    expect(podStateMock().apply_fetched_pods.mock.calls.length).toBe(replaceCalls);
   });
 
   it("a non-silent cold load superseded by a silent refresh still clears loading", async () => {
@@ -429,7 +429,7 @@ describe("Pod Store — sidebar fetch/loadMore out-of-order guards", () => {
       await pFetch;
     });
 
-    const appendsBefore = podStateMock().append_cached_pods.mock.calls.length;
+    const appendsBefore = podStateMock().apply_appended_pods.mock.calls.length;
     resolveLoadMore!(encodePods([mockPod2], 99));
     await act(async () => {
       await pLoadMore;
@@ -437,7 +437,7 @@ describe("Pod Store — sidebar fetch/loadMore out-of-order guards", () => {
 
     // loadMore was superseded (seq bumped) → must NOT append at the now-stale
     // offset nor write back an inflated count/total.
-    expect(podStateMock().append_cached_pods.mock.calls.length).toBe(appendsBefore);
+    expect(podStateMock().apply_appended_pods.mock.calls.length).toBe(appendsBefore);
     expect(usePodStore.getState().loadingMore).toBe(false);
     expect(usePodStore.getState().podTotal).not.toBe(99);
   });
@@ -458,12 +458,12 @@ describe("Pod Store — sidebar fetch/loadMore out-of-order guards", () => {
     // fetch resolves first: replaces cache + resets sidebarLoadedCount to the page size.
     resolveFetch!(encodePods([mockPod], 99));
     await act(async () => { await pFetch; });
-    const appendsBefore = podStateMock().append_cached_pods.mock.calls.length;
+    const appendsBefore = podStateMock().apply_appended_pods.mock.calls.length;
 
     // loadMore resolves: seq never changed (it never bumped), but the offset was
     // reset — the loaded-count guard must discard it rather than append at 40.
     resolveLoadMore!(encodePods([mockPod2], 99));
     await act(async () => { await pLoadMore; });
-    expect(podStateMock().append_cached_pods.mock.calls.length).toBe(appendsBefore);
+    expect(podStateMock().apply_appended_pods.mock.calls.length).toBe(appendsBefore);
   });
 });

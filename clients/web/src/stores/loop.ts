@@ -1,31 +1,33 @@
 import { create } from "zustand";
 import { useMemo } from "react";
-import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
+import { create as protoCreate, toBinary, fromBinary } from "@bufbuild/protobuf";
 import type { LoopData, LoopRunData, RunStatus, CreateLoopRequest, UpdateLoopRequest } from "@/lib/viewModels/loop";
 import { getLoopState } from "@/lib/wasm-core";
 import { readCurrentOrg } from "@/stores/auth";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import {
-  listLoops as listLoopsConnect,
-  getLoop as getLoopConnect,
+  listLoopsRaw as listLoopsRawConnect,
+  getLoopRaw as getLoopRawConnect,
   createLoop as createLoopConnect,
   updateLoop as updateLoopConnect,
   deleteLoop as deleteLoopConnect,
   enableLoop as enableLoopConnect,
   disableLoop as disableLoopConnect,
   triggerLoop as triggerLoopConnect,
-  listLoopRuns as listLoopRunsConnect,
+  listRunsRaw as listRunsRawConnect,
   cancelLoopRun as cancelLoopRunConnect,
 } from "@/lib/api/facade/loopConnect";
 import {
-  AppendCachedRunsRequestSchema, ClearCurrentLoopRequestSchema,
+  ClearCurrentLoopRequestSchema,
   ClearLoopRunsRequestSchema, InsertLoopRunRequestSchema,
   PatchLoopFromActionRequestSchema, PatchLoopRunStatusRequestSchema,
   ReplaceCachedLoopsRequestSchema, ReplaceCachedRunsRequestSchema,
   SetCurrentLoopRequestSchema,
 } from "@proto/loop_state/v1/loop_state_pb";
+import { ListLoopsResponseSchema, ListRunsResponseSchema } from "@proto/loop/v1/loop_pb";
 import { loopToProtoLoop, loopRunToProtoLoopRun } from "@/lib/api/loopProtoMap";
+import { loopToCache, loopRunToCache } from "@agentsmesh/electron-adapter/projections";
 
 export type { LoopData, LoopRunData, RunStatus };
 
@@ -36,29 +38,34 @@ function orgSlug(): string {
   return readCurrentOrg()?.slug ?? "";
 }
 
+// Read side (B, zero-JSON): UI is a projection of state proto bytes decoded via
+// fromBinary + loopToCache/loopRunToCache (shared projection). LoopData is a
+// lossy subset of proto.loop.v1.Loop on the Rust side — the same fields the old
+// loops_json read path dropped, so no UI regression.
 export function useLoops(): LoopData[] {
   const tick = useLoopStore((s) => s._tick);
-  return useMemo(() => JSON.parse(svc().loops_json()), [tick]);
+  return useMemo(
+    () => fromBinary(ReplaceCachedLoopsRequestSchema, svc().loops_bytes()).loops.map(loopToCache),
+    [tick],
+  );
 }
 
 export function useCurrentLoop(): LoopData | null {
   const tick = useLoopStore((s) => s._tick);
   return useMemo(() => {
-    const v = svc().current_loop_json();
-    return v ? (typeof v === "string" ? JSON.parse(v) : v) : null;
+    const bytes = svc().current_loop_bytes();
+    if (bytes.length === 0) return null;
+    const loop = fromBinary(SetCurrentLoopRequestSchema, bytes).loop;
+    return loop ? loopToCache(loop) : null;
   }, [tick]);
 }
 
 export function useLoopRuns(): LoopRunData[] {
   const tick = useLoopStore((s) => s._tick);
-  return useMemo(() => JSON.parse(svc().runs_json()), [tick]);
-}
-
-function replaceCachedLoops(items: LoopData[]): void {
-  const req = protoCreate(ReplaceCachedLoopsRequestSchema, {
-    loops: items.map(loopToProtoLoop),
-  });
-  svc().replace_cached_loops(toBinary(ReplaceCachedLoopsRequestSchema, req));
+  return useMemo(
+    () => fromBinary(ReplaceCachedRunsRequestSchema, svc().runs_bytes()).runs.map(loopRunToCache),
+    [tick],
+  );
 }
 
 function setCurrentLoop(loop: LoopData): void {
@@ -81,20 +88,6 @@ function patchLoopFromAction(slug: string, loop: LoopData): void {
 function insertLoopRun(run: LoopRunData): void {
   const req = protoCreate(InsertLoopRunRequestSchema, { run: loopRunToProtoLoopRun(run) });
   svc().insert_loop_run(toBinary(InsertLoopRunRequestSchema, req));
-}
-
-function replaceCachedRuns(items: LoopRunData[]): void {
-  const req = protoCreate(ReplaceCachedRunsRequestSchema, {
-    runs: items.map(loopRunToProtoLoopRun),
-  });
-  svc().replace_cached_runs(toBinary(ReplaceCachedRunsRequestSchema, req));
-}
-
-function appendCachedRuns(items: LoopRunData[]): void {
-  const req = protoCreate(AppendCachedRunsRequestSchema, {
-    runs: items.map(loopRunToProtoLoopRun),
-  });
-  svc().append_cached_runs(toBinary(AppendCachedRunsRequestSchema, req));
 }
 
 function patchLoopRunStatus(runId: number, status: string): void {
@@ -137,27 +130,25 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
   fetchLoops: async (filters) => {
     set({ loading: true, error: null });
     try {
-      const { items, total } = await listLoopsConnect(orgSlug(), {
-        status: filters?.status,
-        query: filters?.query,
-        limit: 500,
+      const respBytes = await listLoopsRawConnect(orgSlug(), {
+        status: filters?.status, query: filters?.query, limit: 500,
       });
-      replaceCachedLoops(items);
-      set({ totalCount: total, loading: false, _tick: get()._tick + 1 });
+      svc().apply_fetched_loops(respBytes);
+      set({ loading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), loading: false }); }
   },
 
   fetchLoop: async (slug) => {
-    const curJson = svc().current_loop_json();
-    const curSlug = curJson ? (typeof curJson === "string" ? JSON.parse(curJson) : curJson)?.slug : null;
-    if (curSlug !== slug) {
+    const curBytes = svc().current_loop_bytes();
+    const curLoop = curBytes.length === 0 ? null : fromBinary(SetCurrentLoopRequestSchema, curBytes).loop;
+    if ((curLoop?.slug ?? null) !== slug) {
       clearLoopRuns();
       set({ runsTotalCount: 0, _tick: get()._tick + 1 });
     }
     set({ loopLoading: true, error: null });
     try {
-      const loop = await getLoopConnect(orgSlug(), slug);
-      setCurrentLoop(loop);
+      const respBytes = await getLoopRawConnect(orgSlug(), slug);
+      svc().apply_fetched_current_loop(respBytes);
       set({ loopLoading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), loopLoading: false }); }
   },
@@ -209,24 +200,22 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
   fetchRuns: async (slug, filters) => {
     set({ runsLoading: true });
     try {
-      const { items, total } = await listLoopRunsConnect(orgSlug(), slug, {
-        status: filters?.status,
-        limit: filters?.limit,
-        offset: filters?.offset,
+      const respBytes = await listRunsRawConnect(orgSlug(), slug, {
+        status: filters?.status, limit: filters?.limit, offset: filters?.offset,
       });
-      if ((filters?.offset ?? 0) > 0) {
-        appendCachedRuns(items);
-      } else {
-        replaceCachedRuns(items);
-      }
+      // total is pagination metadata (not state) — decode it off the same wire
+      // bytes that feed apply_*_runs, so no second RPC and no JSON state read.
+      const total = Number(fromBinary(ListRunsResponseSchema, respBytes).total);
+      if ((filters?.offset ?? 0) > 0) svc().apply_appended_runs(respBytes);
+      else svc().apply_fetched_runs(respBytes);
       set({ runsTotalCount: total, runsLoading: false, _tick: get()._tick + 1 });
     } catch (err) { set({ error: getErrorMessage(err, "An error occurred"), runsLoading: false }); }
   },
 
   loadMoreRuns: async (slug) => {
     if (get().runsLoading) return;
-    const runs: LoopRunData[] = JSON.parse(svc().runs_json());
-    await get().fetchRuns(slug, { limit: 20, offset: runs.length });
+    const loaded = fromBinary(ReplaceCachedRunsRequestSchema, svc().runs_bytes()).runs.length;
+    await get().fetchRuns(slug, { limit: 20, offset: loaded });
   },
 
   cancelRun: async (slug, runId) => {
@@ -244,8 +233,9 @@ export const useLoopStore = create<LoopStoreState>((set, get) => ({
   },
 
   getLoopBySlug: (slug) => {
-    const val = svc().get_loop_by_slug_json(slug);
-    return val ? (typeof val === "string" ? JSON.parse(val) : val) : undefined;
+    const loops = fromBinary(ReplaceCachedLoopsRequestSchema, svc().loops_bytes()).loops;
+    const found = loops.find((l) => l.slug === slug);
+    return found ? loopToCache(found) : undefined;
   },
 
   clearError: () => set({ error: null }),

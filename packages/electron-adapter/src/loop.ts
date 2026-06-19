@@ -1,4 +1,3 @@
-import { invoke } from "./invoke";
 import type { ILoopService } from "@agentsmesh/service-interface";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
@@ -12,49 +11,14 @@ import {
   PatchLoopRunStatusRequestSchema,
   ClearLoopRunsRequestSchema,
 } from "@agentsmesh/proto/loop_state/v1/loop_state_pb";
+import { LoopSchema, ListLoopsResponseSchema, ListRunsResponseSchema } from "@agentsmesh/proto/loop/v1/loop_pb";
+import { loopToCache, loopRunToCache } from "./projections/loop";
+import { loopsBytes, runsBytes, currentLoopBytes } from "./loop_cache_to_bytes";
 
-// Proto -> JS-cache shape converter. Mirrors the legacy JSON shape readers
-// (loops_json / current_loop_json / runs_json) consumed by selectors.
-interface ProtoLoop {
-  id: bigint; slug: string; name: string; description?: string;
-  podKey?: string; agentSlug?: string; intervalSeconds?: number;
-  prompt?: string; status?: string; enabled?: boolean;
-  lastRunAt?: string; nextRunAt?: string;
-  createdAt?: string; updatedAt?: string;
-}
-interface ProtoLoopRun {
-  id: bigint; loopSlug?: string; podKey?: string; status?: string;
-  startedAt?: string; finishedAt?: string;
-}
-
-function loopToCache(l: ProtoLoop): Record<string, unknown> {
-  const out: Record<string, unknown> = {
-    id: Number(l.id), slug: l.slug, name: l.name,
-  };
-  if (l.description !== undefined) out.description = l.description;
-  if (l.podKey !== undefined) out.pod_key = l.podKey;
-  if (l.agentSlug !== undefined) out.agent_slug = l.agentSlug;
-  if (l.intervalSeconds !== undefined) out.interval_seconds = l.intervalSeconds;
-  if (l.prompt !== undefined) out.prompt = l.prompt;
-  if (l.status !== undefined) out.status = l.status;
-  if (l.enabled !== undefined) out.enabled = l.enabled;
-  if (l.lastRunAt !== undefined) out.last_run_at = l.lastRunAt;
-  if (l.nextRunAt !== undefined) out.next_run_at = l.nextRunAt;
-  if (l.createdAt !== undefined) out.created_at = l.createdAt;
-  if (l.updatedAt !== undefined) out.updated_at = l.updatedAt;
-  return out;
-}
-
-function runToCache(r: ProtoLoopRun): Record<string, unknown> {
-  const out: Record<string, unknown> = { id: Number(r.id) };
-  if (r.loopSlug !== undefined) out.loop_slug = r.loopSlug;
-  if (r.podKey !== undefined) out.pod_key = r.podKey;
-  if (r.status !== undefined) out.status = r.status;
-  if (r.startedAt !== undefined) out.started_at = r.startedAt;
-  if (r.finishedAt !== undefined) out.finished_at = r.finishedAt;
-  return out;
-}
-
+// Renderer-local loop cache. Unlike pod/channel/mesh there is NO fire-and-forget
+// to the main process: the main-side Rust loop state had no reader, no snapshot
+// push-back, and no persistence (a write-only dead mirror), so the app_loop_*
+// NAPI commands were removed. Loop realtime rides the store refetch path.
 export class ElectronLoopService implements ILoopService {
   private _loopsCache = "[]";
   private _runsCache = "[]";
@@ -70,26 +34,43 @@ export class ElectronLoopService implements ILoopService {
     return l ? JSON.stringify(l) : null;
   }
 
-  // Proto-bytes mutators (mirror WasmLoopService). Decode locally to keep
-  // synchronous read selectors warm, then fan out to NAPI fire-and-forget so
-  // the main-process Rust state stays in sync.
+  // Read side (B, zero-JSON): re-encode renderer cache into state proto bytes.
+  loops_bytes(): Uint8Array { return loopsBytes(this._loopsCache); }
+  runs_bytes(): Uint8Array { return runsBytes(this._runsCache); }
+  current_loop_bytes(): Uint8Array { return currentLoopBytes(this._currentLoopCache); }
 
-  replace_cached_loops(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedLoopsRequestSchema, reqBytes);
-    this._loopsCache = JSON.stringify(req.loops.map(loopToCache));
-    void invoke<void>("appLoopReplaceCachedLoops", Array.from(reqBytes)).catch(() => undefined);
+  // Fetch→state (B): decode wire ListLoops/ListRuns response → renderer cache.
+  // Renderer-local only — loop realtime rides the store refetch path, no NAPI.
+  apply_fetched_loops(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListLoopsResponseSchema, respBytes);
+    this._loopsCache = JSON.stringify(resp.items.map(loopToCache));
+  }
+
+  // Single-object fetch (B): decode the full wire GetLoop response (Loop) →
+  // current cache. Renderer-local only (no NAPI).
+  apply_fetched_current_loop(respBytes: Uint8Array): void {
+    this._currentLoopCache = JSON.stringify(loopToCache(fromBinary(LoopSchema, respBytes)));
+  }
+
+  apply_fetched_runs(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListRunsResponseSchema, respBytes);
+    this._runsCache = JSON.stringify(resp.items.map(loopRunToCache));
+  }
+
+  apply_appended_runs(respBytes: Uint8Array): void {
+    const resp = fromBinary(ListRunsResponseSchema, respBytes);
+    const existing = JSON.parse(this._runsCache) as unknown[];
+    this._runsCache = JSON.stringify([...existing, ...resp.items.map(loopRunToCache)]);
   }
 
   set_current_loop(reqBytes: Uint8Array): void {
     const req = fromBinary(SetCurrentLoopRequestSchema, reqBytes);
     this._currentLoopCache = req.loop ? JSON.stringify(loopToCache(req.loop)) : null;
-    void invoke<void>("appLoopSetCurrentLoop", Array.from(reqBytes)).catch(() => undefined);
   }
 
   clear_current_loop(reqBytes: Uint8Array): void {
     fromBinary(ClearCurrentLoopRequestSchema, reqBytes);
     this._currentLoopCache = null;
-    void invoke<void>("appLoopClearCurrentLoop", Array.from(reqBytes)).catch(() => undefined);
   }
 
   patch_loop_from_action(reqBytes: Uint8Array): void {
@@ -101,31 +82,15 @@ export class ElectronLoopService implements ILoopService {
       if (idx >= 0) list[idx] = { ...list[idx], ...patch } as { slug: string };
       this._loopsCache = JSON.stringify(list);
     }
-    void invoke<void>("appLoopPatchLoopFromAction", Array.from(reqBytes)).catch(() => undefined);
   }
 
   insert_loop_run(reqBytes: Uint8Array): void {
     const req = fromBinary(InsertLoopRunRequestSchema, reqBytes);
     if (req.run) {
       const runs = JSON.parse(this._runsCache) as unknown[];
-      runs.push(runToCache(req.run));
+      runs.push(loopRunToCache(req.run));
       this._runsCache = JSON.stringify(runs);
     }
-    void invoke<void>("appLoopInsertLoopRun", Array.from(reqBytes)).catch(() => undefined);
-  }
-
-  replace_cached_runs(reqBytes: Uint8Array): void {
-    const req = fromBinary(ReplaceCachedRunsRequestSchema, reqBytes);
-    this._runsCache = JSON.stringify(req.runs.map(runToCache));
-    void invoke<void>("appLoopReplaceCachedRuns", Array.from(reqBytes)).catch(() => undefined);
-  }
-
-  append_cached_runs(reqBytes: Uint8Array): void {
-    const req = fromBinary(AppendCachedRunsRequestSchema, reqBytes);
-    const existing = JSON.parse(this._runsCache) as unknown[];
-    const newer = req.runs.map(runToCache);
-    this._runsCache = JSON.stringify([...existing, ...newer]);
-    void invoke<void>("appLoopAppendCachedRuns", Array.from(reqBytes)).catch(() => undefined);
   }
 
   patch_loop_run_status(reqBytes: Uint8Array): void {
@@ -134,12 +99,10 @@ export class ElectronLoopService implements ILoopService {
     const r = runs.find(x => x.id === Number(req.runId));
     if (r) r.status = req.status;
     this._runsCache = JSON.stringify(runs);
-    void invoke<void>("appLoopPatchLoopRunStatus", Array.from(reqBytes)).catch(() => undefined);
   }
 
   clear_loop_runs(reqBytes: Uint8Array): void {
     fromBinary(ClearLoopRunsRequestSchema, reqBytes);
     this._runsCache = "[]";
-    void invoke<void>("appLoopClearLoopRuns", Array.from(reqBytes)).catch(() => undefined);
   }
 }

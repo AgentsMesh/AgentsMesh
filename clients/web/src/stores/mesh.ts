@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import { useMemo } from "react";
+import { fromBinary } from "@bufbuild/protobuf";
+import { MeshTopologySchema } from "@proto/mesh/v1/mesh_pb";
 import { reconnectRegistry } from "@/lib/realtime";
 import { getErrorMessage } from "@/lib/utils";
 import { getMeshService, getMeshState } from "@/lib/wasm-core";
+import { topologyToCache } from "./meshTopologyToCache";
 import { useIDEStore } from "./ide";
 import { useChannelStore } from "./channel";
 
@@ -48,12 +51,31 @@ const svc = getMeshState;
 const net = getMeshService;
 const bump = () => useMeshStore.setState((s) => ({ _tick: s._tick + 1 }));
 
+// Read side (B, zero-JSON): decode state proto bytes + topologyToCache once per
+// _tick. The 6 per-node getters below + useTopology share this projection, so a
+// render that queries several nodes never re-decodes the whole graph; the memo
+// invalidates whenever _tick bumps (fetch / realtime patch).
+let topoMemo: { tick: number; topo: MeshTopology | null } | null = null;
+function readTopology(): MeshTopology | null {
+  const tick = useMeshStore.getState()._tick;
+  if (topoMemo?.tick === tick) return topoMemo.topo;
+  const bytes = svc().topology_bytes();
+  const topo = bytes.length === 0 ? null : topologyToCache(fromBinary(MeshTopologySchema, bytes));
+  topoMemo = { tick, topo };
+  return topo;
+}
+
+// Test-only: the memo keys on the monotonic _tick, which production never
+// resets. Unit tests reinitialize the store to _tick=0 between cases, so they
+// must drop the stale memo to re-read the freshly-mocked topology bytes.
+export function __resetTopologyMemoForTests(): void {
+  topoMemo = null;
+}
+
 export function useTopology(): MeshTopology | null {
   const tick = useMeshStore((s) => s._tick);
-  return useMemo(() => {
-    const raw = svc().topology_json();
-    return raw ? (JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw)) as MeshTopology) : null;
-  }, [tick]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => readTopology(), [tick]);
 }
 
 interface MeshState {
@@ -131,18 +153,17 @@ export const useMeshStore = create<MeshState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  getNodeByKey: (podKey) => {
-    const raw = svc().get_node_json(podKey);
-    return raw ? JSON.parse(String(raw)) : undefined;
-  },
-  getEdgesForNode: (podKey) => JSON.parse(svc().get_edges_for_node_json(podKey)),
-  getChannelsForNode: (podKey) => JSON.parse(svc().get_channels_for_node_json(podKey)),
-  getActiveNodes: () => JSON.parse(svc().get_active_nodes_json()),
-  getNodesByRunner: (runnerId) => JSON.parse(svc().get_nodes_by_runner_json(BigInt(runnerId))),
-  getRunnerInfo: (runnerId) => {
-    const raw = svc().get_runner_info_json(BigInt(runnerId));
-    return raw ? JSON.parse(String(raw)) : undefined;
-  },
+  // Per-node queries derive from the single topology projection (zero-JSON).
+  getNodeByKey: (podKey) => readTopology()?.nodes.find((n) => n.pod_key === podKey),
+  getEdgesForNode: (podKey) =>
+    readTopology()?.edges.filter((e) => e.source === podKey || e.target === podKey) ?? [],
+  getChannelsForNode: (podKey) =>
+    readTopology()?.channels.filter((c) => c.pod_keys.includes(podKey)) ?? [],
+  getActiveNodes: () =>
+    readTopology()?.nodes.filter((n) => n.status === "running" || n.status === "creating") ?? [],
+  getNodesByRunner: (runnerId) =>
+    readTopology()?.nodes.filter((n) => n.runner_id === runnerId) ?? [],
+  getRunnerInfo: (runnerId) => readTopology()?.runners.find((r) => r.id === runnerId),
 }));
 
 reconnectRegistry.register({

@@ -43,6 +43,21 @@ export async function listChannelMessages(
   return { items: resp.items.map(messageFromProto), has_more: resp.hasMore };
 }
 
+// Raw wire bytes for the fetch→state path: ListChannelMessagesResponse goes
+// straight to Rust apply_fetched_messages (no TS messageFromProto/xToProto).
+export async function listChannelMessagesRaw(
+  orgSlug: string, channelId: number,
+  opts: { beforeId?: number; limit?: number } = {},
+): Promise<Uint8Array> {
+  const req = create(ListChannelMessagesRequestSchema, {
+    orgSlug, channelId: BigInt(channelId),
+    beforeId: opts.beforeId !== undefined ? BigInt(opts.beforeId) : undefined,
+    limit: opts.limit,
+  });
+  const bytes = toBinary(ListChannelMessagesRequestSchema, req);
+  return new Uint8Array(await getChannelService().listChannelMessagesConnect(bytes));
+}
+
 export async function searchChannelMessages(
   orgSlug: string, channelId: number, query: string, limit?: number,
 ): Promise<ChannelMessage[]> {

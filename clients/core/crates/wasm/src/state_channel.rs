@@ -4,10 +4,14 @@ use std::sync::Arc;
 use agentsmesh_state::app_state::AppState;
 use agentsmesh_state::channel_state::ChannelSortMode;
 use agentsmesh_state::channel_types::ChannelMessage;
+use agentsmesh_types::proto_channel_v1::{
+    Channel, ListChannelMembersResponse, ListChannelMessagesResponse, ListChannelPodsResponse,
+    ListChannelsResponse,
+};
 use agentsmesh_types::proto_channel_state_v1::{
     ApplyChannelMessageEditedEventRequest, ApplyIncomingChannelMessageRequest,
     InsertChannelMessageRequest, InsertChannelRequest, PatchChannelMemberCountRequest,
-    PrependCachedChannelMessagesRequest, ReplaceCachedChannelMessagesRequest,
+    ReplaceCachedChannelMessagesRequest,
     ReplaceCachedChannelsRequest, ReplaceChannelMembersRequest, ReplaceChannelPodsRequest,
     ReplaceChannelUnreadCountsRequest, RemoveChannelMemberRequest,
 };
@@ -49,6 +53,60 @@ impl WasmChannelState {
         serde_json::to_string(self.state.read().channels.get_channels()).unwrap_or_default()
     }
 
+    // Read side, zero-JSON: prost-encode state channels (reuse the list wrapper).
+    // Web/desktop decode via fromBinary + channelToCache. Replaces channels_json.
+    pub fn channels_bytes(&self) -> Vec<u8> {
+        let channels = self.state.read().channels.get_channels().to_vec();
+        ReplaceCachedChannelsRequest { channels }.encode_to_vec()
+    }
+
+    // Read side, zero-JSON for the remaining facets. Reuse the *Request wrappers
+    // (web/desktop decode via fromBinary + the same xToCache as the mutators).
+    pub fn get_messages_bytes(&self, channel_id: i64) -> Vec<u8> {
+        match self.state.read().channels.get_messages(channel_id) {
+            Some(cache) => ReplaceCachedChannelMessagesRequest {
+                channel_id,
+                messages: cache.messages.clone(),
+                has_more: cache.has_more,
+            }
+            .encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn channel_members_bytes(&self, channel_id: i64) -> Vec<u8> {
+        let members = self.state.read().channels.get_channel_members(channel_id);
+        ReplaceChannelMembersRequest { channel_id, members }.encode_to_vec()
+    }
+
+    pub fn channel_pods_bytes(&self, channel_id: i64) -> Vec<u8> {
+        let pods = self.state.read().channels.get_channel_pods(channel_id);
+        ReplaceChannelPodsRequest { channel_id, pods }.encode_to_vec()
+    }
+
+    // Single-channel + preview read side (zero-JSON). Single channel reuses the
+    // InsertChannelRequest wrapper; preview encodes MessagePreview directly.
+    pub fn get_channel_bytes(&self, id: i64) -> Vec<u8> {
+        match self.state.read().channels.get_channel(id) {
+            Some(c) => InsertChannelRequest { channel: Some(c.clone()) }.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn current_channel_bytes(&self) -> Vec<u8> {
+        match self.state.read().channels.get_current_channel() {
+            Some(c) => InsertChannelRequest { channel: Some(c.clone()) }.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
+    pub fn get_last_message_bytes(&self, channel_id: i64) -> Vec<u8> {
+        match self.state.read().channels.get_last_message(channel_id) {
+            Some(preview) => preview.encode_to_vec(),
+            None => Vec::new(),
+        }
+    }
+
     pub fn current_channel_json(&self) -> JsValue {
         match self.state.read().channels.get_current_channel() {
             Some(c) => JsValue::from_str(
@@ -71,9 +129,41 @@ impl WasmChannelState {
         }
     }
 
-    pub fn replace_cached_channels(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceCachedChannelsRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.set_channels(req.channels);
+    // Fetch→state: decode wire ListChannelsResponse + fold into state. Replaces
+    // the TS channelFromProto + channelToProtoChannel chain — web fetch now
+    // hands raw wire bytes straight to Rust.
+    pub fn apply_fetched_channels(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListChannelsResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_channels(resp.items);
+        Ok(())
+    }
+
+    // Fetch→state: decode wire ListChannelMessagesResponse + fold into state.
+    // Replaces TS messageFromProto + channelMessageToProto + replace_cached_channel_messages.
+    pub fn apply_fetched_messages(&self, channel_id: i64, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListChannelMessagesResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_messages(channel_id, resp.items, resp.has_more);
+        Ok(())
+    }
+
+    // Fetch→state for pagination load-more (prepend older messages).
+    pub fn apply_fetched_messages_prepend(&self, channel_id: i64, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListChannelMessagesResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_messages_prepend(channel_id, resp.items, resp.has_more);
+        Ok(())
+    }
+
+    // Fetch→state: decode wire ListChannelMembersResponse + fold into state.
+    pub fn apply_fetched_members(&self, channel_id: i64, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListChannelMembersResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_members(channel_id, resp.items);
+        Ok(())
+    }
+
+    // Fetch→state: decode wire ListChannelPodsResponse + fold into state.
+    pub fn apply_fetched_pods(&self, channel_id: i64, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let resp = ListChannelPodsResponse::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_pods(channel_id, resp.items);
         Ok(())
     }
 
@@ -87,6 +177,15 @@ impl WasmChannelState {
         } else {
             guard.channels.add_channel(channel);
         }
+        Ok(())
+    }
+
+    // Fetch→state (B): decode the wire GetChannel response (proto.channel.v1
+    // Channel) + upsert via the wire→state converter — no TS channelFromProto +
+    // channelToProtoChannel round-trip.
+    pub fn apply_fetched_channel(&self, resp_bytes: &[u8]) -> Result<(), JsValue> {
+        let channel = Channel::decode(resp_bytes).map_err(decode_err)?;
+        self.state.write().channels.apply_fetched_channel(channel);
         Ok(())
     }
 
@@ -179,18 +278,6 @@ impl WasmChannelState {
         self.state.write().channels.remove_message(channel_id, message_id);
     }
 
-    pub fn replace_cached_channel_messages(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceCachedChannelMessagesRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.set_messages(req.channel_id, req.messages, req.has_more);
-        Ok(())
-    }
-
-    pub fn prepend_cached_channel_messages(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = PrependCachedChannelMessagesRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.prepend_messages(req.channel_id, req.messages, req.has_more);
-        Ok(())
-    }
-
     pub fn get_messages_json(&self, channel_id: i64) -> JsValue {
         match self.state.read().channels.get_messages(channel_id) {
             Some(cache) => {
@@ -232,6 +319,13 @@ impl WasmChannelState {
     pub fn unread_counts_json(&self) -> String {
         let counts = self.state.read().channels.get_all_unread_counts();
         serde_json::to_string(&counts).unwrap_or_else(|_| "{}".to_string())
+    }
+
+    // Read side (B, zero-JSON): encode the unread map into the same wrapper the
+    // mutator decodes, so the selector reads via fromBinary, not serde JSON.
+    pub fn unread_counts_bytes(&self) -> Vec<u8> {
+        let counts = self.state.read().channels.get_all_unread_counts();
+        ReplaceChannelUnreadCountsRequest { counts }.encode_to_vec()
     }
 
     pub fn increment_mention(&self, channel_id: i64) {

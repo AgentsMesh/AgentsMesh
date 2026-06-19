@@ -3,6 +3,7 @@ pub mod acp_types;
 pub mod app_state;
 pub mod auth_types;
 pub mod autopilot_state;
+pub mod autopilot_wire_convert;
 pub mod blockstore_apply;
 pub mod blockstore_state;
 pub mod blockstore_types;

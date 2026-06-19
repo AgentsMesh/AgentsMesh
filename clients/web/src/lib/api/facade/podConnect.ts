@@ -6,6 +6,7 @@
 export {
   fromProtoPod,
   listPods,
+  listPodsRaw,
   getPod,
   createPod,
   terminatePod,

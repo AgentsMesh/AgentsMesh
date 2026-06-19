@@ -74,6 +74,14 @@ export async function listChannelMembers(
   return { members: resp.items.map(memberFromProto), total: Number(resp.total) };
 }
 
+// Raw wire bytes for the fetch→state path (Rust apply_fetched_members).
+export async function listChannelMembersRaw(orgSlug: string, id: number): Promise<Uint8Array> {
+  const req = create(ListChannelMembersRequestSchema, { orgSlug, id: BigInt(id) });
+  return new Uint8Array(
+    await getChannelService().listChannelMembersConnect(toBinary(ListChannelMembersRequestSchema, req)),
+  );
+}
+
 export async function joinChannel(orgSlug: string, id: number): Promise<void> {
   const req = create(JoinChannelRequestSchema, { orgSlug, id: BigInt(id) });
   const bytes = toBinary(JoinChannelRequestSchema, req);
@@ -120,6 +128,14 @@ export async function listChannelPods(
   const respBytes = await getChannelService().listChannelPodsConnect(bytes);
   const resp = fromBinary(ListChannelPodsResponseSchema, new Uint8Array(respBytes));
   return { pods: resp.items.map(podFromProto), total: Number(resp.total) };
+}
+
+// Raw wire bytes for the fetch→state path (Rust apply_fetched_pods).
+export async function listChannelPodsRaw(orgSlug: string, id: number): Promise<Uint8Array> {
+  const req = create(ListChannelPodsRequestSchema, { orgSlug, id: BigInt(id) });
+  return new Uint8Array(
+    await getChannelService().listChannelPodsConnect(toBinary(ListChannelPodsRequestSchema, req)),
+  );
 }
 
 export async function joinChannelPod(

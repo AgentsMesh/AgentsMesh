@@ -33,6 +33,7 @@ export function LoopDetailTabs({ active, onChange, tabs, rightSlot }: LoopDetail
             <button
               key={tab.id}
               type="button"
+              data-testid={`loop-tab-${tab.id}`}
               onClick={() => onChange(tab.id)}
               className={cn(
                 "relative flex flex-col items-center gap-1.5 px-3.5 py-2.5 text-[13px] transition-colors",
