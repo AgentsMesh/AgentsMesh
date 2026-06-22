@@ -13,6 +13,7 @@ const serverConfigSnapshot = ipcRenderer.sendSync("serverConfig:getSync") as Ser
 
 const api = {
   apiUrl,
+  platform: process.platform,
   invoke: (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args),
   on: (channel: string, listener: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
     ipcRenderer.on(channel, listener);

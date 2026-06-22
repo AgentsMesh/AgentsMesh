@@ -27,6 +27,8 @@
   --border-strong: #6E7681;
   --input: #D0D7DE;
   --ring: #0969DA;
+  --sidebar: #EBEDF0;
+  --titlebar-drag-height: 0px;
 
   /* Terminal colors (VS Code style for light theme) */
   --terminal-bg: #1e1e1e;
@@ -65,6 +67,7 @@
   --border-strong: #6E7681;
   --input: #30363D;
   --ring: #2F81F7;
+  --sidebar: #0B0E13;
 
   /* Terminal colors (VS Code style) */
   --terminal-bg: #1e1e1e;
@@ -98,6 +101,7 @@
   --border: #eee8d5;
   --input: #eee8d5;
   --ring: #268bd2;
+  --sidebar: #eee8d5;
 
   /* Terminal colors (Solarized Dark style for terminal) */
   --terminal-bg: #002b36;
@@ -131,6 +135,7 @@
   --border: #073642;
   --input: #073642;
   --ring: #268bd2;
+  --sidebar: #073642;
 
   /* Terminal colors (Solarized Dark style) */
   --terminal-bg: #002b36;
@@ -168,6 +173,7 @@
   --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
   /* Terminal colors */
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-bg-secondary: var(--terminal-bg-secondary);
@@ -236,6 +242,14 @@ html:has(.app-shell),
 body:has(.app-shell) {
   height: 100%;
   overflow: hidden;
+}
+
+/* Electron window drag regions — no-op in browser (Tailwind can't express -webkit-app-region) */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
 }
 
 /* Fix for iOS Safari viewport height - only for app shell pages */

@@ -65,6 +65,8 @@ if (acquireSingleInstance()) {
 }
 
 function createWindow() {
+  const isMac = process.platform === "darwin";
+  const isWin = process.platform === "win32";
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -74,6 +76,17 @@ function createWindow() {
     show: !isHeadlessTest,
     paintWhenInitiallyHidden: true,
     skipTaskbar: isHeadlessTest,
+    // Immersive titlebar: traffic lights float into the left rail's 52px top drag
+    // strip (renderer reserves it via --titlebar-drag-height). Linux keeps native frame.
+    ...(isMac
+      ? { titleBarStyle: "hiddenInset" as const, trafficLightPosition: { x: 14, y: 14 } }
+      : {}),
+    ...(isWin
+      ? {
+          titleBarStyle: "hidden" as const,
+          titleBarOverlay: { color: "#F6F8FA", symbolColor: "#656D76", height: 40 },
+        }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
       contextIsolation: true,

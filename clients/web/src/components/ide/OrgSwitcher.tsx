@@ -49,7 +49,7 @@ export function OrgSwitcher() {
         onClick={() => setOpen((v) => !v)}
         aria-label={currentOrg?.name ?? "Organization"}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-[15px] font-semibold text-primary-foreground transition-colors",
+          "app-no-drag flex h-9 w-9 items-center justify-center rounded-lg text-[15px] font-semibold text-primary-foreground transition-colors",
           "bg-primary hover:bg-primary-hover",
           open && "ring-2 ring-primary/30 ring-offset-1 ring-offset-background",
         )}

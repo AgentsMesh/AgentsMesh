@@ -26,6 +26,8 @@
   --border: #e5e5e5;
   --input: #e5e5e5;
   --ring: #0ea5e9;
+  --sidebar: #EBEBED;
+  --titlebar-drag-height: 0px;
 
   --terminal-bg: #1e1e1e;
   --terminal-bg-secondary: #252526;
@@ -58,6 +60,7 @@
   --border: #262626;
   --input: #262626;
   --ring: #22d3ee;
+  --sidebar: #141414;
 
   --terminal-bg: #1e1e1e;
   --terminal-bg-secondary: #252526;
@@ -90,6 +93,7 @@
   --border: #eee8d5;
   --input: #eee8d5;
   --ring: #268bd2;
+  --sidebar: #eee8d5;
 
   --terminal-bg: #002b36;
   --terminal-bg-secondary: #073642;
@@ -122,6 +126,7 @@
   --border: #073642;
   --input: #073642;
   --ring: #268bd2;
+  --sidebar: #073642;
 
   --terminal-bg: #002b36;
   --terminal-bg-secondary: #073642;
@@ -153,6 +158,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-bg-secondary: var(--terminal-bg-secondary);
   --color-terminal-bg-hover: var(--terminal-bg-hover);
@@ -181,6 +187,25 @@ html:has(.app-shell),
 body:has(.app-shell) {
   height: 100%;
   overflow: hidden;
+}
+
+/* Immersive titlebar drag-region height — gated by platform class set in platform-init.ts */
+.platform-mac {
+  --titlebar-drag-height: 40px;
+}
+.platform-win {
+  --titlebar-drag-height: 40px;
+}
+.platform-linux {
+  --titlebar-drag-height: 0px;
+}
+
+/* Electron window drag regions */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
 }
 
 /* Typography prose — map to theme CSS variables */

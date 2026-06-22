@@ -9,23 +9,19 @@ import { SideBar } from "./SideBar";
 import { BottomPanel } from "./BottomPanel";
 import { CommandPalette } from "./CommandPalette";
 import { CreatePodModal } from "./CreatePodModal";
-import { WorkspaceSidebarContent } from "./sidebar/WorkspaceSidebarContent";
-import { TicketsSidebarContent } from "./sidebar/TicketsSidebarContent";
-import { RepositoriesSidebarContent } from "./sidebar/RepositoriesSidebarContent";
-import { RunnersSidebarContent } from "./sidebar/RunnersSidebarContent";
-import { InfraSidebarContent } from "./sidebar/InfraSidebarContent";
-import { MeshSidebarContent } from "./sidebar/MeshSidebarContent";
-import { ChannelsSidebarContent } from "./sidebar/ChannelsSidebarContent";
-import { LoopsSidebarContent } from "./sidebar/LoopsSidebarContent";
-import { SettingsSidebarContent } from "./sidebar/SettingsSidebarContent";
-import { BlocksSidebar } from "@/components/blocks/BlocksSidebar";
-import { useIDEStore, type ActivityType } from "@/stores/ide";
+import { getSidebarContent, type SidebarCallbacks } from "./sidebarContentResolver";
+import { useIDEStore } from "@/stores/ide";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
 import { toast } from "sonner";
 import { getPodDisplayName } from "@/lib/pod-display-name";
 import { AddRunnerModal } from "./modals/AddRunnerModal";
 import { ImportRepositoryModal } from "./modals/ImportRepositoryModal";
+import { CreateChannelDialog } from "@/components/channel";
+import { useChannelStore } from "@/stores/channel";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface IDEShellProps {
   children: React.ReactNode;
@@ -33,59 +29,21 @@ interface IDEShellProps {
   className?: string;
 }
 
-interface SidebarCallbacks {
-  onCreatePod?: () => void;
-  onAddRunner?: () => void;
-  onImportRepo?: () => void;
-}
-
-function getSidebarContent(
-  activity: ActivityType,
-  callbacks: SidebarCallbacks
-): React.ReactNode {
-  switch (activity) {
-    case "workspace":
-      return <WorkspaceSidebarContent onCreatePod={callbacks.onCreatePod} />;
-    case "tickets":
-      return <TicketsSidebarContent />;
-    case "channels":
-      return <ChannelsSidebarContent />;
-    case "mesh":
-      return <MeshSidebarContent />;
-    case "loops":
-      return <LoopsSidebarContent />;
-    case "blocks":
-      return <BlocksSidebar />;
-    case "infra":
-      return (
-        <InfraSidebarContent
-          onImportRepo={callbacks.onImportRepo}
-          onAddRunner={callbacks.onAddRunner}
-        />
-      );
-    case "repositories":
-      return <RepositoriesSidebarContent onImportRepo={callbacks.onImportRepo} />;
-    case "runners":
-      return <RunnersSidebarContent onAddRunner={callbacks.onAddRunner} />;
-    case "settings":
-      return <SettingsSidebarContent />;
-    default:
-      return null;
-  }
-}
-
 export function IDEShell({
   children,
   sidebarContent,
   className,
 }: IDEShellProps) {
+  const t = useTranslations();
   const bottomPanelOpen = useIDEStore((state) => state.bottomPanelOpen);
   const activeActivity = useIDEStore((state) => state.activeActivity);
   const _hasHydrated = useIDEStore((state) => state._hasHydrated);
   const addPane = useWorkspaceStore((state) => state.addPane);
   const fetchPods = usePodStore((state) => state.fetchPods);
+  const setSelectedChannelId = useChannelStore((state) => state.setSelectedChannelId);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [createPodModalOpen, setCreatePodModalOpen] = useState(false);
+  const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const addRunnerModal = useCtaModal();
   const importRepoModal = useCtaModal();
 
@@ -105,12 +63,32 @@ export function IDEShell({
     }
   }, [addPane, fetchPods]);
 
+  const handleChannelCreated = useCallback(
+    (channelId: number) => {
+      setCreateChannelOpen(false);
+      setSelectedChannelId(channelId);
+    },
+    [setSelectedChannelId],
+  );
+
   const sidebarCallbacks: SidebarCallbacks = {
     onCreatePod: handleCreatePod,
     onAddRunner: addRunnerModal.open,
     onImportRepo: importRepoModal.open,
   };
   const effectiveSidebarContent = sidebarContent ?? getSidebarContent(activeActivity, sidebarCallbacks);
+  const sidebarHeaderAction =
+    activeActivity === "channels" ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 w-7 flex-shrink-0 p-0"
+        onClick={() => setCreateChannelOpen(true)}
+        aria-label={t("channels.sidebar.createChannel")}
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    ) : undefined;
 
   if (!_hasHydrated) {
     return (
@@ -121,22 +99,32 @@ export function IDEShell({
   }
 
   return (
-    <div className={cn("app-shell flex h-screen bg-background overflow-hidden", className)}>
-      <ActivityBar className="flex-shrink-0" />
+    <div className={cn("app-shell flex flex-col h-screen bg-sidebar overflow-hidden", className)}>
+      <div
+        className="app-drag shrink-0"
+        style={{ height: "var(--titlebar-drag-height)" }}
+        aria-hidden="true"
+      />
 
-      <SideBar className="flex-shrink-0">{effectiveSidebarContent}</SideBar>
+      <div className="flex min-h-0 flex-1">
+        <ActivityBar className="flex-shrink-0" />
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main
-          className={cn(
-            "flex-1 overflow-auto",
-            activeActivity === "workspace" && bottomPanelOpen ? "" : "pb-8"
-          )}
-        >
-          {children}
-        </main>
+        <div className="flex min-w-0 flex-1 gap-2 p-2">
+          <SideBar className="flex-shrink-0" headerAction={sidebarHeaderAction}>{effectiveSidebarContent}</SideBar>
 
-        {activeActivity === "workspace" && <BottomPanel />}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden rounded-xl border border-border/50 bg-background shadow-sm">
+            <main
+              className={cn(
+                "flex-1 overflow-auto",
+                activeActivity === "workspace" && bottomPanelOpen ? "" : "pb-8"
+              )}
+            >
+              {children}
+            </main>
+
+            {activeActivity === "workspace" && <BottomPanel />}
+          </div>
+        </div>
       </div>
 
       <CommandPalette
@@ -160,6 +148,12 @@ export function IDEShell({
         open={importRepoModal.isOpen}
         onClose={importRepoModal.close}
         onImported={importRepoModal.commit}
+      />
+
+      <CreateChannelDialog
+        open={createChannelOpen}
+        onOpenChange={setCreateChannelOpen}
+        onCreated={handleChannelCreated}
       />
     </div>
   );
