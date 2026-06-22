@@ -12,6 +12,7 @@ import { LabelsList, CommentsList, SubTicketsList, RelationsList, CommitsList } 
 import { TicketDetailSidebar } from "./TicketDetailSidebar";
 import { InlineEditableText } from "./InlineEditableText";
 import { StatusSelect } from "./StatusSelect";
+import { TicketOverflowMenu } from "./TicketOverflowMenu";
 
 const BlockEditor = lazy(() => import("@/components/ui/block-editor"));
 
@@ -137,82 +138,57 @@ export function TicketDetail({ slug }: TicketDetailProps) {
     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 space-y-6">
         <div className="border-b border-border pb-6">
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1 min-w-0 space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[13px] text-muted-foreground">{slug}</span>
-                <StatusSelect value={currentTicket.status} onChange={handleStatusChange} showLabel size="sm" />
-              </div>
-              <InlineEditableText
-                value={currentTicket.title}
-                onSave={handleTitleSave}
-                placeholder={t("tickets.createDialog.titlePlaceholder")}
-                className="text-[22px] font-semibold leading-7 text-foreground"
-                inputClassName="text-[22px] font-semibold"
-              />
+          <div className="min-w-0 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="font-mono text-[13px] text-muted-foreground">{slug}</span>
+              <StatusSelect value={currentTicket.status} onChange={handleStatusChange} showLabel size="sm" />
+            </div>
+            <InlineEditableText
+              value={currentTicket.title}
+              onSave={handleTitleSave}
+              placeholder={t("tickets.createDialog.titlePlaceholder")}
+              className="text-[22px] font-semibold leading-7 text-foreground"
+              inputClassName="text-[22px] font-semibold"
+            />
 
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-                {currentTicket.repository && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">{t("tickets.detail.repository")}</span>
-                    <span className="font-mono font-medium text-foreground">
-                      {currentTicket.repository.name}
-                    </span>
-                  </div>
-                )}
-                {currentTicket.priority && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">{t("tickets.detail.priority")}</span>
-                    <span className="font-medium text-foreground">
-                      {t(`tickets.priority.${currentTicket.priority}`)}
-                    </span>
-                  </div>
-                )}
-                {currentTicket.due_date && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">{t("tickets.detail.dueDate")}</span>
-                    <span className="font-medium text-foreground">
-                      {new Date(currentTicket.due_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-                {currentTicket.created_at && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">{t("tickets.detail.opened")}</span>
-                    <span className="text-foreground">
-                      {new Date(currentTicket.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {currentTicket.labels && currentTicket.labels.length > 0 && (
-                <LabelsList labels={currentTicket.labels} compact />
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+              {currentTicket.repository && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t("tickets.detail.repository")}</span>
+                  <span className="font-mono font-medium text-foreground">
+                    {currentTicket.repository.name}
+                  </span>
+                </div>
+              )}
+              {currentTicket.priority && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t("tickets.detail.priority")}</span>
+                  <span className="font-medium text-foreground">
+                    {t(`tickets.priority.${currentTicket.priority}`)}
+                  </span>
+                </div>
+              )}
+              {currentTicket.due_date && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t("tickets.detail.dueDate")}</span>
+                  <span className="font-medium text-foreground">
+                    {new Date(currentTicket.due_date).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+              {currentTicket.created_at && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t("tickets.detail.opened")}</span>
+                  <span className="text-foreground">
+                    {new Date(currentTicket.created_at).toLocaleDateString()}
+                  </span>
+                </div>
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5">
-              <Button variant="outline" size="sm" className="h-7 px-3 text-xs">
-                {t("common.edit")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={() => handleStatusChange("done" as TicketStatus)}
-              >
-                {t("tickets.detail.markDone")}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                onClick={handleDelete}
-                aria-label={t("common.more")}
-              >
-                ⋯
-              </Button>
-            </div>
+            {currentTicket.labels && currentTicket.labels.length > 0 && (
+              <LabelsList labels={currentTicket.labels} compact />
+            )}
           </div>
         </div>
 
@@ -245,6 +221,7 @@ export function TicketDetail({ slug }: TicketDetailProps) {
         relations={relations}
         commits={commits}
         t={t}
+        actionsSlot={<TicketOverflowMenu onDelete={handleDelete} t={t} />}
         commentsSlot={
           <div className="lg:hidden">
             <CommentsList

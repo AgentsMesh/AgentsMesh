@@ -27,6 +27,7 @@ interface TicketDetailSidebarProps {
     url?: string;
   }>;
   t: (key: string, params?: Record<string, string | number>) => string;
+  actionsSlot?: React.ReactNode;
   commentsSlot?: React.ReactNode;
 }
 
@@ -37,6 +38,7 @@ export function TicketDetailSidebar({
   relations = [],
   commits = [],
   t,
+  actionsSlot,
   commentsSlot,
 }: TicketDetailSidebarProps) {
   const router = useRouter();
@@ -53,6 +55,7 @@ export function TicketDetailSidebar({
 
   return (
     <aside className="lg:w-80 shrink-0 space-y-4">
+      {actionsSlot && <div className="flex justify-end">{actionsSlot}</div>}
       <div className="space-y-1.5">
         <SpawnPodButton
           ticket={ticket}
