@@ -110,6 +110,11 @@ export function ActivityBar({ className }: ActivityBarProps) {
           className
         )}
       >
+        <div
+          className="app-drag shrink-0"
+          style={{ height: "var(--titlebar-drag-height)" }}
+          aria-hidden="true"
+        />
         <div className="app-drag flex h-12 items-center justify-start px-2">
           <OrgSwitcher />
         </div>
