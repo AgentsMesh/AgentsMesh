@@ -10,6 +10,7 @@ import { installRealtimeMirror } from "./realtime-mirror";
 // imports this module before React renders — so renderer console.warn/error
 // fans out via electronAPI.log → main core:log → Rust rolling file.
 installConsoleCapture();
+markDesktopPlatform();
 
 setPlatformInit(async () => {
   const provider = createElectronServiceProvider();
@@ -17,6 +18,17 @@ setPlatformInit(async () => {
   markServiceReady();
   installRealtimeMirror();
 });
+
+// Tag <html> so shared web components can gate desktop-only immersive-titlebar
+// spacing via CSS — web never runs this module, so --titlebar-drag-height stays 0.
+function markDesktopPlatform() {
+  const root = document.documentElement;
+  root.classList.add("platform-desktop");
+  const platform = window.electronAPI?.platform;
+  if (platform === "darwin") root.classList.add("platform-mac");
+  else if (platform === "win32") root.classList.add("platform-win");
+  else root.classList.add("platform-linux");
+}
 
 export function isElectron(): boolean {
   return typeof window !== "undefined" && !!(window as any).electronAPI;

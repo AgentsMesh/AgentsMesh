@@ -15,9 +15,8 @@ import {
 } from "@/stores/channel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Loader2, MessageSquare, RefreshCw } from "lucide-react";
+import { Search, Loader2, MessageSquare, RefreshCw } from "lucide-react";
 import { ChannelListItem } from "./ChannelListItem";
-import { CreateChannelDialog } from "@/components/channel";
 
 interface ChannelsSidebarContentProps {
   className?: string;
@@ -50,7 +49,7 @@ function classifyChannel(
 function SectionLabel({ children, count }: { children: string; count?: number }) {
   return (
     <div className="flex items-baseline justify-between px-4 pt-3 pb-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+      <span className="text-[11px] font-medium text-muted-foreground">
         {children}
       </span>
       {typeof count === "number" && count > 0 && (
@@ -78,7 +77,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
   const unreadCounts = useUnreadCounts();
   const fetchUnreadCounts = useChannelMessageStore((s) => s.fetchUnreadCounts);
 
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -122,14 +120,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, _tick]);
 
-  const handleChannelCreated = useCallback(
-    (channelId: number) => {
-      setShowCreateDialog(false);
-      setSelectedChannelId(channelId);
-    },
-    [setSelectedChannelId],
-  );
-
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -172,14 +162,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
             className="h-8 pl-8 text-[13px]"
           />
         </div>
-        <Button
-          size="sm"
-          onClick={() => setShowCreateDialog(true)}
-          className="h-8 w-full gap-1.5 text-[13px]"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {t("channels.sidebar.createChannel")}
-        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -205,7 +187,7 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-border px-3 py-2.5 text-[12px]">
+      <div className="flex items-center justify-between border-t border-border/60 px-3 py-2.5 text-[12px]">
         <button
           type="button"
           onClick={() => setShowArchived(!showArchived)}
@@ -226,12 +208,6 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
           <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
         </Button>
       </div>
-
-      <CreateChannelDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCreated={handleChannelCreated}
-      />
     </div>
   );
 }

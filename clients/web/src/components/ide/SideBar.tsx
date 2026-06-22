@@ -10,9 +10,10 @@ import { PanelLeftClose, PanelLeft } from "lucide-react";
 interface SideBarProps {
   className?: string;
   children?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
 
-export function SideBar({ className, children }: SideBarProps) {
+export function SideBar({ className, children, headerAction }: SideBarProps) {
   const t = useTranslations();
   const activeActivity = useIDEStore((s) => s.activeActivity);
   const sidebarOpen = useIDEStore((s) => s.sidebarOpen);
@@ -79,25 +80,28 @@ export function SideBar({ className, children }: SideBarProps) {
   return (
     <aside
       className={cn(
-        "bg-background border-r border-border flex flex-col relative",
+        "bg-background rounded-xl border border-border/50 shadow-sm overflow-hidden flex flex-col relative",
         className,
       )}
       style={{ width: sidebarWidth }}
     >
       {activeActivity !== "settings" && (
-        <div className="flex h-12 items-center justify-between border-b border-border px-3">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-            {getActivityTitle(activeActivity)}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 flex-shrink-0 p-0"
-            onClick={toggleSidebar}
-            aria-label={t("ide.sidebar.collapse")}
-          >
-            <PanelLeftClose className="w-4 h-4" />
-          </Button>
+        <div className="flex h-12 items-center justify-between gap-2 border-b border-border/60 px-3">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 flex-shrink-0 p-0"
+              onClick={toggleSidebar}
+              aria-label={t("ide.sidebar.collapse")}
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </Button>
+            <span className="truncate text-sm font-semibold text-foreground">
+              {getActivityTitle(activeActivity)}
+            </span>
+          </div>
+          {headerAction}
         </div>
       )}
 

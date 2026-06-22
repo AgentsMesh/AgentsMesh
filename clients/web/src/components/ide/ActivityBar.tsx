@@ -106,15 +106,15 @@ export function ActivityBar({ className }: ActivityBarProps) {
     <TooltipProvider delayDuration={300}>
       <aside
         className={cn(
-          "w-[136px] bg-background border-r border-border flex flex-col",
+          "w-[136px] bg-sidebar flex flex-col",
           className
         )}
       >
-        <div className="flex h-12 items-center justify-start px-2 border-b border-border">
+        <div className="app-drag flex h-12 items-center justify-start px-2">
           <OrgSwitcher />
         </div>
 
-        <nav className="flex-1 flex flex-col items-stretch py-2 gap-0.5 px-2">
+        <nav className="flex-1 flex flex-col items-stretch py-3 gap-1 px-2.5">
           {mainActivities.map((activity, idx) => {
             const Icon = ICON_MAP[activity.icon] || Terminal;
             const isActive = activeActivity === activity.id;
@@ -126,23 +126,20 @@ export function ActivityBar({ className }: ActivityBarProps) {
             return (
               <React.Fragment key={activity.id}>
                 {showDivider && (
-                  <div className="my-1 h-px w-full bg-border" aria-hidden="true" />
+                  <div className="my-1 h-px w-full bg-border/60" aria-hidden="true" />
                 )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
                       href={getActivityRoute(activity.id)}
                       className={cn(
-                        "w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors relative",
+                        "w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors",
                         isActive
-                          ? "text-foreground bg-muted"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]",
                       )}
                       onClick={() => setActiveActivity(activity.id)}
                     >
-                      {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
-                      )}
                       <div className="relative shrink-0">
                         <Icon className="w-4 h-4" />
                         {showBadge && (
@@ -172,14 +169,14 @@ export function ActivityBar({ className }: ActivityBarProps) {
 
         <ReminderArea />
 
-        <nav className="flex flex-col items-stretch py-2 gap-0.5 px-2 border-t border-border">
+        <nav className="flex flex-col items-stretch py-2 gap-1 px-2.5 border-t border-border/60">
           <Tooltip>
             <TooltipTrigger asChild>
               <a
                 href="https://discord.gg/3RcX7VBbH9"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                className="w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]"
               >
                 <CircleHelp className="w-4 h-4 shrink-0" />
                 <span className="text-xs leading-tight font-medium truncate">
@@ -207,16 +204,13 @@ export function ActivityBar({ className }: ActivityBarProps) {
                   <Link
                     href={getActivityRoute(activity.id)}
                     className={cn(
-                      "w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors relative",
+                      "w-full h-9 px-2 flex items-center gap-2 rounded-md transition-colors",
                       isActive
-                        ? "text-foreground bg-muted"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                        ? "bg-accent text-accent-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]"
                     )}
                     onClick={() => setActiveActivity(activity.id)}
                   >
-                    {isActive && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-primary rounded-r" />
-                    )}
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="text-xs leading-tight font-medium truncate">
                       {t(`ide.activities.${activity.id}`)}
