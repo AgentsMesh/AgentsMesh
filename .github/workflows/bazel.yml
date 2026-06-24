@@ -284,9 +284,11 @@ jobs:
           bazelisk-cache: true
           disk-cache: true
           repository-cache: true
-      # Lint, type-check + Vitest all run via Bazel.
+      # Lint, type-check + Vitest all run via Bazel. Use :src_typecheck_test, NOT
+      # `bazel build :src` — the latter only transpiles (no_emit) and stays green
+      # on type errors, so it never gated. The typecheck test is the real gate.
       - name: Lint + Type-check + Vitest (Bazel)
-        run: bazel test //clients/web:lint //clients/web:unit && bazel build //clients/web:src //clients/web-admin:src
+        run: bazel test //clients/web:lint //clients/web:unit //clients/web:src_typecheck_test //clients/web-admin:src_typecheck_test
       # Desktop renderer reuses clients/web but routes Connect RPCs through the
       # electron-adapter proxy. Enforce its type-check + unit tests, and the
       # fail-closed routing guard that catches a desktop-only 404 (a wasm verb

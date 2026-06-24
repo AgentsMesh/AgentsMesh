@@ -1,16 +1,19 @@
 "use client";
 
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Channel, ChannelLastMessage } from "@/stores/channel";
 import { formatRelativeShort } from "@/lib/format-relative-time";
 import { Lock } from "lucide-react";
 
-interface ChannelListItemProps {
+// Extends button props so a ContextMenuTrigger `asChild` can forward its ref +
+// onContextMenu onto the focusable <button> directly (keyboard Shift+F10 works).
+interface ChannelListItemProps extends Omit<ComponentPropsWithoutRef<"button">, "onClick"> {
   channel: Channel;
   isSelected: boolean;
   unreadCount?: number;
   lastMessage?: ChannelLastMessage | null;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 /**
@@ -18,13 +21,10 @@ interface ChannelListItemProps {
  * `channel_row` + `channel_row_active`: hash + name + last message preview +
  * short time + unread dot. Private channels use the lock icon in place of #.
  */
-export function ChannelListItem({
-  channel,
-  isSelected,
-  unreadCount = 0,
-  lastMessage,
-  onClick,
-}: ChannelListItemProps) {
+export const ChannelListItem = forwardRef<HTMLButtonElement, ChannelListItemProps>(function ChannelListItem(
+  { channel, isSelected, unreadCount = 0, lastMessage, onClick, className, ...rest },
+  ref,
+) {
   const hasUnread = unreadCount > 0 && !isSelected;
   const isPrivate = channel.visibility === "private";
   const preview = lastMessage
@@ -36,6 +36,7 @@ export function ChannelListItem({
 
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       data-testid="channel-list-item"
@@ -43,7 +44,9 @@ export function ChannelListItem({
       className={cn(
         "group flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left transition-colors",
         isSelected ? "bg-muted" : "hover:bg-muted/50",
+        className,
       )}
+      {...rest}
     >
       <span
         className={cn(
@@ -82,6 +85,6 @@ export function ChannelListItem({
       </span>
     </button>
   );
-}
+});
 
 export default ChannelListItem;

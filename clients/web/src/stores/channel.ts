@@ -1,4 +1,5 @@
 export { useChannelStore, useChannels, useCurrentChannel, getLastMessage, type Channel, type ChannelLastMessage } from "./channelStore";
+export { readChannel } from "./channelSelectors";
 export {
   useChannelMessageStore,
   EMPTY_CACHE,

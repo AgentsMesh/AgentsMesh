@@ -157,6 +157,7 @@ vitest_test(
     ] + glob(
         [
             "src/shared/**/*.ts",
+            "src/main/**/*.ts",
             "scripts/**/*.mjs",
             "scripts/**/*.cjs",
         ],

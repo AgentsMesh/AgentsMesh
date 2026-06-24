@@ -7,6 +7,7 @@ import { AgentStatusBadge } from "@/components/shared/AgentStatusBadge";
 import { usePod } from "@/stores/pod";
 import { usePodTitle } from "@/hooks/usePodTitle";
 import { getShortPodKey } from "@/lib/pod-display-name";
+import { isOutsideCurrentWindow } from "@/lib/windowing";
 import type { ConnectionStatus } from "@/stores/relayConnection";
 import {
   X,
@@ -52,6 +53,21 @@ export function TerminalPaneHeader({
   onClose,
 }: TerminalPaneHeaderProps) {
   const title = usePodTitle(podKey);
+  const canTearOff = Boolean(onPopout && onClose);
+
+  // Tab tear-off: dragging the title strip out of the window frame spawns a
+  // standalone terminal window (= popout) and drops the pane here. Scrollback
+  // does not migrate — the new window rebuilds from the relay snapshot.
+  const handleDragEnd = (e: React.DragEvent) => {
+    // (0,0) is the cancel / no-drop sentinel (Esc, or release on no target) —
+    // not a real out-of-window drop. Ignore it so an aborted drag of the title
+    // strip doesn't accidentally tear the pane off.
+    if (e.screenX === 0 && e.screenY === 0) return;
+    if (canTearOff && isOutsideCurrentWindow(e.screenX, e.screenY)) {
+      onPopout!();
+      onClose!();
+    }
+  };
 
   const statusColor = (() => {
     if (isRunnerDisconnected) return "text-red-500 dark:text-red-400";
@@ -65,7 +81,12 @@ export function TerminalPaneHeader({
 
   return (
     <div className="h-8 flex items-center justify-between px-2 bg-terminal-bg-secondary border-b border-terminal-border">
-      <div className="flex items-center gap-2 min-w-0">
+      <div
+        className="flex items-center gap-2 min-w-0"
+        draggable={canTearOff}
+        onDragStart={(e) => e.dataTransfer.setData("text/plain", podKey)}
+        onDragEnd={handleDragEnd}
+      >
         <Circle className={cn("w-2 h-2 flex-shrink-0", statusColor)} />
         <span className="text-xs text-terminal-text truncate">{title}</span>
         <code className="text-[10px] text-terminal-text-muted truncate">

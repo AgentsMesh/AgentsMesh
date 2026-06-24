@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "Open in New Window"
+    },
     "emptyState": "Select a channel to start chatting",
     "emptyStateHint": "Choose a channel from the sidebar to view messages and collaborate with your team",
     "archivedBanner": "This channel is archived — sending messages is disabled",

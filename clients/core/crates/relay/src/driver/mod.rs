@@ -13,9 +13,7 @@ use crate::command::Command;
 use crate::connection;
 use crate::pool::PoolRouter;
 use crate::retry;
-use crate::types::{
-    OutputCallback, RelayStatus, RelayStatusInfo, StatusCallback, StatusSnapshot,
-};
+use crate::types::{OutputCallback, RelayStatus, RelayStatusInfo, StatusSnapshot};
 
 mod session;
 
@@ -202,19 +200,14 @@ impl<R: Runtime> Driver<R> {
 
     fn notify_status(&self) {
         let info = self.status_info();
-        let listeners: Vec<StatusCallback> = {
+        let listener = {
             let router = self.router.read();
-            router
-                .status_listeners
-                .get(&self.pod_key)
-                .cloned()
-                .unwrap_or_default()
+            router.status_listeners.get(&self.pod_key).cloned()
         };
-        for l in &listeners {
+        if let Some(l) = listener {
             // An app-supplied listener panic must not kill the driver task (which
             // would skip teardown and wedge the pod). catch_unwind isolates it on
             // native; wasm is panic=abort so this is a no-op there.
-            let info = info.clone();
             let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| l(info)));
         }
     }

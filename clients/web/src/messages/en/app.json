@@ -111,6 +111,7 @@
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Open Terminal",
+      "openInNewWindow": "Open in New Window",
       "viewTicket": "View Ticket {slug}",
       "rename": "Rename",
       "terminatePod": "Terminate Pod",
@@ -363,6 +364,7 @@
       "rename": "Rename",
       "share": "Share",
       "terminate": "Terminate",
+      "openInNewWindow": "Open in New Window",
       "enablePerpetual": "Enable Perpetual",
       "disablePerpetual": "Disable Perpetual"
     },

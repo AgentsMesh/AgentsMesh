@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { resolvePersistStorage } from "./persistStorage";
 import type { WorkspacePane, SplitTreeLeaf, SplitTreeSplit, SplitTreeNode, WorkspaceState } from "./workspaceTypes";
 import {
   generatePaneId, generateNodeId,
@@ -142,6 +143,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     {
       name: "agentsmesh-workspace",
       version: 4,
+      storage: createJSONStorage(resolvePersistStorage),
       partialize: (state) => ({
         panes: state.panes,
         activePane: state.activePane,

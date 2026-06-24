@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "在新窗口打开"
+    },
     "emptyState": "选择一个频道开始聊天",
     "emptyStateHint": "从侧边栏选择一个频道，查看消息并与团队协作",
     "archivedBanner": "此频道已归档，无法发送消息",

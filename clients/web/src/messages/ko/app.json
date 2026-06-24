@@ -76,6 +76,7 @@
     "ticket": "티켓",
     "contextMenu": {
       "openTerminal": "터미널 열기",
+      "openInNewWindow": "새 창에서 열기",
       "viewTicket": "티켓 {slug} 보기",
       "rename": "이름 변경",
       "terminatePod": "Pod 종료",
@@ -258,6 +259,7 @@
     "contextMenu": {
       "rename": "이름 변경",
       "terminate": "종료",
+      "openInNewWindow": "새 창에서 열기",
       "enablePerpetual": "영구 모드 활성화",
       "disablePerpetual": "영구 모드 비활성화"
     },

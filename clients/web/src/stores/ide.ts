@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { resolvePersistStorage } from "./persistStorage";
 
 export type ActivityType =
   | "workspace"
@@ -77,6 +78,7 @@ export const useIDEStore = create<IDEState>()(
     }),
     {
       name: "agentsmesh-ide",
+      storage: createJSONStorage(resolvePersistStorage),
       partialize: (state) => ({
         activeActivity: state.activeActivity,
         sidebarOpen: state.sidebarOpen,

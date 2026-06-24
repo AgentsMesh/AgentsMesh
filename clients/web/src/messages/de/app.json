@@ -76,6 +76,7 @@
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Terminal öffnen",
+      "openInNewWindow": "In neuem Fenster öffnen",
       "viewTicket": "Ticket {slug} anzeigen",
       "rename": "Umbenennen",
       "terminatePod": "Pod beenden",
@@ -258,6 +259,7 @@
     "contextMenu": {
       "rename": "Umbenennen",
       "terminate": "Beenden",
+      "openInNewWindow": "In neuem Fenster öffnen",
       "enablePerpetual": "Dauerhaft aktivieren",
       "disablePerpetual": "Dauerhaft deaktivieren"
     },

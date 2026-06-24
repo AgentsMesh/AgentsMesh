@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, MessageSquare, RefreshCw } from "lucide-react";
 import { ChannelListItem } from "./ChannelListItem";
+import { ChannelContextMenu } from "./ChannelContextMenu";
 
 interface ChannelsSidebarContentProps {
   className?: string;
@@ -136,14 +137,15 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
         <SectionLabel count={rows.length}>{label}</SectionLabel>
         <div className="flex flex-col gap-0.5 px-2">
           {rows.map(({ channel, lastMsg }) => (
-            <ChannelListItem
-              key={channel.id}
-              channel={channel}
-              isSelected={selectedChannelId === channel.id}
-              unreadCount={unreadCounts[channel.id] || 0}
-              lastMessage={lastMsg}
-              onClick={() => setSelectedChannelId(channel.id)}
-            />
+            <ChannelContextMenu key={channel.id} channelId={channel.id}>
+              <ChannelListItem
+                channel={channel}
+                isSelected={selectedChannelId === channel.id}
+                unreadCount={unreadCounts[channel.id] || 0}
+                lastMessage={lastMsg}
+                onClick={() => setSelectedChannelId(channel.id)}
+              />
+            </ChannelContextMenu>
           ))}
         </div>
       </>

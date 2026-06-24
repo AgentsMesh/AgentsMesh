@@ -26,6 +26,8 @@ import {
   removeChannelMember as removeChannelMemberConnect,
   listChannelMembers as listChannelMembersConnect,
   listChannelMembersRaw,
+  type ChannelMemberData,
+  type ChannelPodSummary,
 } from "./channelConnect";
 
 export type { MessageContent, MessageMentions } from "@/lib/viewModels/channelMessage";

@@ -9,6 +9,7 @@ import { TerminalGrid } from "./TerminalGrid";
 import { TerminalSwiper } from "./TerminalSwiper";
 import { TerminalToolbar } from "./TerminalToolbar";
 import { PodSelectorModal } from "./PodSelectorModal";
+import { openTerminalWindow } from "@/lib/windowing";
 
 interface WorkspaceManagerProps {
   className?: string;
@@ -34,17 +35,7 @@ export function WorkspaceManager({ className }: WorkspaceManagerProps) {
 
   const handlePopout = (paneId: string) => {
     const pane = panes.find((p) => p.id === paneId);
-    if (!pane) return;
-
-    const popoutUrl = `/popout/terminal/${pane.podKey}`;
-    const popoutWindow = window.open(
-      popoutUrl,
-      `terminal-${pane.podKey}`,
-      "width=800,height=600,menubar=no,toolbar=no,location=no,status=no"
-    );
-
-    if (popoutWindow) {
-    }
+    if (pane) openTerminalWindow(pane.podKey);
   };
 
   if (!_hasHydrated) {

@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "Abrir en una ventana nueva"
+    },
     "emptyState": "Selecciona un canal para empezar a chatear",
     "emptyStateHint": "Elige un canal de la barra lateral para ver mensajes y colaborar con tu equipo",
     "sidebar": {

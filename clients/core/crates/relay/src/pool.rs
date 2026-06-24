@@ -25,8 +25,10 @@ pub struct RelayConnectionPool<R: Runtime = PlatformRuntime> {
 
 pub(crate) struct PoolRouter {
     pub pods: HashMap<String, PodHandle>,
-    pub status_listeners: HashMap<String, Vec<StatusCallback>>,
-    pub acp_listeners: HashMap<String, Vec<AcpCallback>>,
+    // At most one listener per pod, enforced by the value type — every consumer
+    // registers once and fans out locally; re-registration replaces (no accumulate).
+    pub status_listeners: HashMap<String, StatusCallback>,
+    pub acp_listeners: HashMap<String, AcpCallback>,
     pub on_pod_disconnected: Option<DisconnectCallback>,
 }
 
@@ -190,9 +192,7 @@ impl<R: Runtime> RelayConnectionPool<R> {
             let mut router = self.inner.write();
             router
                 .status_listeners
-                .entry(pod_key.to_string())
-                .or_default()
-                .push(Arc::clone(&listener));
+                .insert(pod_key.to_string(), Arc::clone(&listener));
         }
         // Fire current status AFTER registering, reading the LATEST snapshot (not
         // one captured before the push): if the driver changes status between the
@@ -222,9 +222,7 @@ impl<R: Runtime> RelayConnectionPool<R> {
         self.inner
             .write()
             .acp_listeners
-            .entry(pod_key.to_string())
-            .or_default()
-            .push(listener);
+            .insert(pod_key.to_string(), listener);
     }
 
     pub async fn get_status(&self, pod_key: &str) -> RelayStatus {

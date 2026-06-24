@@ -504,3 +504,83 @@ async fn disconnect_with_subscriber_tears_down() {
         "disconnect wrongly revived and reconnected the link",
     );
 }
+
+// Single-value listener map (Phase 3): a re-registration for the same pod REPLACES
+// the previous listener rather than accumulating, so a status transition fires the
+// pod's one listener exactly once — the desync a Vec-append could reintroduce.
+#[tokio::test]
+async fn status_listener_replaces_not_accumulates() {
+    let mock = start_mock_relay().await;
+    let (pool, _rx) = RelayConnectionPool::new();
+    let (cb, _buf) = make_output_cb();
+    pool.subscribe("pod-1", "sub-1", &mock.url, "tok", cb).await;
+    assert!(wait_transport(&mock).await, "never connected");
+
+    let count_a = Arc::new(AtomicUsize::new(0));
+    {
+        let c = count_a.clone();
+        pool.on_status_change("pod-1", Arc::new(move |_info| {
+            c.fetch_add(1, SeqCst);
+        }))
+        .await;
+    }
+    let count_b = Arc::new(AtomicUsize::new(0));
+    {
+        let c = count_b.clone();
+        pool.on_status_change("pod-1", Arc::new(move |_info| {
+            c.fetch_add(1, SeqCst);
+        }))
+        .await;
+    }
+    let a_after_replace = count_a.load(SeqCst);
+
+    // Drive a transition (snapshot → Connected) so notify_status fires.
+    let snap = serde_json::json!({"serialized_content":"X","cols":80,"rows":24});
+    mock.push(MsgType::Snapshot, snap.to_string().as_bytes());
+    assert!(wait_ready(&pool, "pod-1").await, "never reached Connected");
+    assert!(
+        wait_until(|| count_b.load(SeqCst) > 1, Duration::from_secs(3)).await,
+        "replacement listener B never fired on the transition",
+    );
+    assert_eq!(
+        count_a.load(SeqCst),
+        a_after_replace,
+        "replaced listener A still fired — Vec-accumulate regression",
+    );
+}
+
+// Same single-value guarantee for ACP listeners.
+#[tokio::test]
+async fn acp_listener_replaces_not_accumulates() {
+    let mock = start_mock_relay().await;
+    let (pool, _rx) = RelayConnectionPool::new();
+    let (cb, _buf) = make_output_cb();
+    pool.subscribe("pod-1", "sub-1", &mock.url, "tok", cb).await;
+    assert!(wait_transport(&mock).await, "never connected");
+    mock.push(MsgType::AcpSnapshot, serde_json::json!({"session":{}}).to_string().as_bytes());
+    assert!(wait_ready(&pool, "pod-1").await, "never ready");
+
+    let count_a = Arc::new(AtomicUsize::new(0));
+    {
+        let c = count_a.clone();
+        pool.on_acp_message("pod-1", Arc::new(move |_mt, _val| {
+            c.fetch_add(1, SeqCst);
+        }))
+        .await;
+    }
+    let count_b = Arc::new(AtomicUsize::new(0));
+    {
+        let c = count_b.clone();
+        pool.on_acp_message("pod-1", Arc::new(move |_mt, _val| {
+            c.fetch_add(1, SeqCst);
+        }))
+        .await;
+    }
+
+    mock.push(MsgType::AcpEvent, serde_json::json!({"event":"started"}).to_string().as_bytes());
+    assert!(
+        wait_until(|| count_b.load(SeqCst) >= 1, Duration::from_secs(3)).await,
+        "replacement ACP listener B never fired",
+    );
+    assert_eq!(count_a.load(SeqCst), 0, "replaced ACP listener A still fired");
+}

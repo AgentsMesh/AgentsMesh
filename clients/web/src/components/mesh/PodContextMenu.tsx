@@ -21,6 +21,7 @@ import type { MeshNode } from "@/stores/mesh";
 import { useMeshStore } from "@/stores/mesh";
 import { usePodStore } from "@/stores/pod";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { openTerminalWindow } from "@/lib/windowing";
 
 interface PodContextMenuProps {
   node: MeshNode;
@@ -87,6 +88,14 @@ export default function PodContextMenu({ node, children }: PodContextMenuProps) 
           >
             <Terminal className="mr-2 h-4 w-4" />
             {t("contextMenu.openTerminal")}
+          </ContextMenuItem>
+
+          <ContextMenuItem
+            onClick={() => openTerminalWindow(node.pod_key)}
+            disabled={!isActive}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" />
+            {t("contextMenu.openInNewWindow")}
           </ContextMenuItem>
 
           <ContextMenuItem onClick={() => setRenameOpen(true)}>

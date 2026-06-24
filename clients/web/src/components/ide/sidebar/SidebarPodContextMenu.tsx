@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Pencil, Share2, Square, RefreshCw } from "lucide-react";
+import { Pencil, Share2, Square, RefreshCw, ExternalLink } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,6 +10,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import type { Pod } from "@/stores/pod";
+import { openTerminalWindow } from "@/lib/windowing";
 
 interface SidebarPodContextMenuProps {
   pod: Pod;
@@ -42,6 +43,11 @@ export function SidebarPodContextMenu({
         <ContextMenuItem onClick={onShare}>
           <Share2 className="mr-2 h-4 w-4" />
           {t("contextMenu.share")}
+        </ContextMenuItem>
+
+        <ContextMenuItem onClick={() => openTerminalWindow(pod.pod_key)} disabled={!isActive}>
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {t("contextMenu.openInNewWindow")}
         </ContextMenuItem>
 
         {isActive && (

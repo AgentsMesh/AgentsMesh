@@ -76,6 +76,7 @@
     "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "Abrir Terminal",
+      "openInNewWindow": "Abrir en una ventana nueva",
       "viewTicket": "Ver Ticket {slug}",
       "rename": "Renombrar",
       "terminatePod": "Terminar Pod",
@@ -258,6 +259,7 @@
     "contextMenu": {
       "rename": "Renombrar",
       "terminate": "Terminar",
+      "openInNewWindow": "Abrir en una ventana nueva",
       "enablePerpetual": "Activar modo perpetuo",
       "disablePerpetual": "Desactivar modo perpetuo"
     },

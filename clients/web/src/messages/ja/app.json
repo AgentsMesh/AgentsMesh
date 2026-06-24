@@ -76,6 +76,7 @@
     "ticket": "チケット",
     "contextMenu": {
       "openTerminal": "ターミナルを開く",
+      "openInNewWindow": "新しいウィンドウで開く",
       "viewTicket": "チケット {slug} を表示",
       "rename": "名前を変更",
       "terminatePod": "Pod を終了",
@@ -258,6 +259,7 @@
     "contextMenu": {
       "rename": "名前を変更",
       "terminate": "終了",
+      "openInNewWindow": "新しいウィンドウで開く",
       "enablePerpetual": "永続モードを有効にする",
       "disablePerpetual": "永続モードを無効にする"
     },
