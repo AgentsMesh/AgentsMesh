@@ -24,7 +24,7 @@ export function PopoutChannelPage() {
 
   return (
     <RealtimeProvider>
-      <div className="h-screen w-screen bg-background">
+      <div className="no-activity-bar h-screen w-screen bg-background">
         <ChannelChatPanel channelId={channelId} />
       </div>
     </RealtimeProvider>

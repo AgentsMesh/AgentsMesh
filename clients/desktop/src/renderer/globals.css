@@ -207,6 +207,28 @@ body:has(.app-shell) {
 .app-no-drag {
   -webkit-app-region: no-drag;
 }
+/* -webkit-app-region is per-element (no inheritance); carve interactive descendants
+   back to no-drag so a draggable header keeps its buttons clickable. [draggable="true"]
+   opts out too — HTML5 tab tear-off is mutually exclusive with native app-region drag. */
+.app-drag button,
+.app-drag a,
+.app-drag input,
+.app-drag textarea,
+.app-drag select,
+.app-drag label,
+.app-drag [role="button"],
+.app-drag [role="textbox"],
+.app-drag [contenteditable="true"],
+.app-drag [draggable="true"] {
+  -webkit-app-region: no-drag;
+}
+/* A popout's titlebar header has no activity bar to its left, so it sits under the macOS
+   traffic lights — inset it clear. Route-scoped (not window-kind): no-activity-bar marks the
+   popout page root, so navigating into the full IDE shell drops the inset (the root unmounts).
+   78px = trafficLightPosition.x 14 + 3 lights (create_window.ts). */
+.platform-mac .no-activity-bar .app-drag {
+  padding-left: 78px;
+}
 
 /* Typography prose — map to theme CSS variables */
 .prose {

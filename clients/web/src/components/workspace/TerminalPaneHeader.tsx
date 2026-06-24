@@ -80,7 +80,7 @@ export function TerminalPaneHeader({
   })();
 
   return (
-    <div className="h-8 flex items-center justify-between px-2 bg-terminal-bg-secondary border-b border-terminal-border">
+    <div className={cn("h-8 flex items-center justify-between px-2 bg-terminal-bg-secondary border-b border-terminal-border", !canTearOff && "app-drag")}>
       <div
         className="flex items-center gap-2 min-w-0"
         draggable={canTearOff}

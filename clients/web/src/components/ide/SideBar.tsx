@@ -86,7 +86,7 @@ export function SideBar({ className, children, headerAction }: SideBarProps) {
       style={{ width: sidebarWidth }}
     >
       {activeActivity !== "settings" && (
-        <div className="flex h-12 items-center justify-between gap-2 border-b border-border/60 px-3">
+        <div className="app-drag flex h-12 items-center justify-between gap-2 border-b border-border/60 px-3">
           <div className="flex min-w-0 items-center gap-1.5">
             <Button
               variant="ghost"

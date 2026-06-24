@@ -21,7 +21,7 @@ export function PopoutTerminalPage() {
 
   return (
     <RealtimeProvider>
-      <div className="h-screen w-screen bg-terminal-bg">
+      <div className="no-activity-bar h-screen w-screen bg-terminal-bg">
         <TerminalPane
           paneId={`popout-${podKey}`}
           podKey={podKey}
