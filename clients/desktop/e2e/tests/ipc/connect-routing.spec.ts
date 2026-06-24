@@ -25,6 +25,10 @@ test.describe("IPC · connect routing reaches the backend", () => {
       }, { s: service, m: method });
 
       if (err !== null) {
+        // Boot-order regression guard: connectCall must be registered at boot (not
+        // wiped by bindAppStateHandlers clearing appStateHandlers). A missing handler
+        // surfaces as "No handler registered", distinct from a backend 404.
+        expect(err, "connectCall handler missing at boot — bindAppStateHandlers order regression").not.toMatch(/no handler registered/i);
         expect(err, `${service}/${method} is unregistered — desktop-only 404`).not.toMatch(/page not found/i);
       }
     });

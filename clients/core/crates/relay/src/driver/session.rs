@@ -13,7 +13,7 @@ use super::{Driver, SessionEnd, IDLE_TICK_MS};
 use crate::command::Command;
 use crate::dispatch::{dispatch_message, DispatchAction};
 use crate::retry;
-use crate::types::{AcpCallback, OutputCallback, RelayStatus};
+use crate::types::{OutputCallback, RelayStatus};
 
 impl<R: Runtime> Driver<R> {
     /// One connected session: pump inbound frames, fire periodic timers
@@ -148,18 +148,13 @@ impl<R: Runtime> Driver<R> {
                     self.reconnect_attempts = 0;
                     self.set_status(RelayStatus::Connected);
                 }
-                let listeners: Vec<AcpCallback> = {
+                let listener = {
                     let router = self.router.read();
-                    router
-                        .acp_listeners
-                        .get(&self.pod_key)
-                        .cloned()
-                        .unwrap_or_default()
+                    router.acp_listeners.get(&self.pod_key).cloned()
                 };
-                for l in &listeners {
+                if let Some(l) = listener {
                     // Isolate a panicking ACP listener (same rationale as
                     // notify_status); native only, wasm is panic=abort.
-                    let payload = payload.clone();
                     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                         l(msg_type, payload)
                     }));

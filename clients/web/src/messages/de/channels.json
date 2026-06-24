@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "In neuem Fenster öffnen"
+    },
     "emptyState": "Wähle einen Kanal, um zu chatten",
     "emptyStateHint": "Wähle einen Kanal aus der Seitenleiste, um Nachrichten anzuzeigen und mit deinem Team zusammenzuarbeiten",
     "sidebar": {

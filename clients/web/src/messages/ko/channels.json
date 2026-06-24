@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "새 창에서 열기"
+    },
     "emptyState": "채널을 선택하여 채팅 시작",
     "emptyStateHint": "사이드바에서 채널을 선택하여 메시지를 확인하고 팀과 협업하세요",
     "sidebar": {

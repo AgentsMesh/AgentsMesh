@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   useAuthStore,
@@ -11,6 +11,7 @@ import { RealtimeProvider } from "@/providers/RealtimeProvider";
 import { useBrowserNotification, useSessionKeepAlive } from "@/hooks";
 import { handleNotificationEvent } from "@/stores/notificationHandler";
 import type { RealtimeEvent } from "@/lib/realtime";
+import { queryIsPrimaryWindow, onPrimaryWindowChanged, electronApi } from "@/lib/windowing";
 
 export function DashboardShell({
   children,
@@ -26,6 +27,23 @@ export function DashboardShell({
   const currentOrg = useCurrentOrg();
   const { permission, showNotification, requestPermission } = useBrowserNotification();
   useSessionKeepAlive();
+
+  // Notification ownership follows the live primary (survives re-election). Seed from
+  // the kind projection (only the boot primary → true; web → true) so there's no flash
+  // before the async queryIsPrimaryWindow resolves.
+  const [isNotificationOwner, setIsNotificationOwner] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return electronApi()?.ownsNotificationsSeed ?? true;
+  });
+  useEffect(() => {
+    let active = true;
+    const refresh = () => {
+      void queryIsPrimaryWindow().then((p) => { if (active) setIsNotificationOwner(p); });
+    };
+    refresh();
+    const off = onPrimaryWindowChanged(refresh);
+    return () => { active = false; off(); };
+  }, []);
 
   // Evaluate per-render so token expiry (a time-driven flip with no store
   // event) becomes an effect-dependency change. Calling isAuthenticated
@@ -87,7 +105,7 @@ export function DashboardShell({
   }
 
   return (
-    <RealtimeProvider onEvent={handleEvent}>
+    <RealtimeProvider onEvent={isNotificationOwner ? handleEvent : undefined}>
       <ResponsiveShell>{children}</ResponsiveShell>
     </RealtimeProvider>
   );

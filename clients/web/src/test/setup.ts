@@ -194,7 +194,7 @@ vi.mock('@/lib/wasm-core', () => {
     const r = p.runner as PodObj | undefined
     const cb = p.created_by as PodObj | undefined
     return create(PodSchema, {
-      id: p.id != null ? BigInt(p.id as number) : 0n, podKey: (p.pod_key as string) ?? '',
+      id: p.id != null ? BigInt(p.id as number) : BigInt(0), podKey: (p.pod_key as string) ?? '',
       status: (p.status as string) ?? '', agentStatus: (p.agent_status as string) ?? '',
       createdAt: (p.created_at as string) ?? '',
       runner: r ? create(PodRunnerInfoSchema, { id: r.id != null ? BigInt(r.id as number) : undefined, nodeId: r.node_id as string, status: r.status as string }) : undefined,
@@ -230,7 +230,7 @@ vi.mock('@/lib/wasm-core', () => {
     apply_appended_pods: fn((bytes: Uint8Array) => {
       try {
         const resp = fromBinary(ListPodsResponseSchema, bytes)
-        const existing = JSON.parse(h.pod.pods) as { pod_key: string }[]
+        const existing = JSON.parse(h.pod.pods) as PodObj[]
         const seen = new Set(existing.map((p) => p.pod_key))
         for (const p of resp.items) {
           const c = protoPodToCacheMin(p)

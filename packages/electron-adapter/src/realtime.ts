@@ -29,6 +29,7 @@ export class ElectronEventsManager {
   private nextId = 1;
   private unsubFns: Array<() => void> = [];
   private currentState: string = "disconnected";
+  private stateReceived = false;
 
   constructor() {
     const api = (globalThis as { window?: { electronAPI?: RealtimeBridgeApi } }).window
@@ -48,10 +49,24 @@ export class ElectronEventsManager {
     );
     this.unsubFns.push(
       api.onRealtimeState((state: string) => {
+        // Ignore empty/non-string frames (transient '' during rebind) — must not clobber a good badge.
+        if (typeof state !== "string" || state.length === 0) return;
+        this.stateReceived = true;
         this.currentState = state;
         for (const cb of this.stateCallbacks.values()) cb(state);
       }),
     );
+    // Seed state for a window opened after the stream already connected (main only
+    // broadcasts on transitions). Skip once a real broadcast landed — it's authoritative.
+    void invoke("realtime:getState")
+      .then((s) => {
+        if (this.stateReceived || typeof s !== "string" || s === this.currentState) return;
+        this.currentState = s;
+        for (const cb of this.stateCallbacks.values()) cb(s);
+      })
+      .catch(() => {
+        // Cold-start race: handler not ready; the 'disconnected' default stands.
+      });
   }
 
   async subscribe_all(cb: EventCallback): Promise<number> {

@@ -111,6 +111,7 @@
     "ticket": "任务",
     "contextMenu": {
       "openTerminal": "打开终端",
+      "openInNewWindow": "在新窗口打开",
       "viewTicket": "查看任务 {slug}",
       "rename": "重命名",
       "terminatePod": "终止 Pod",
@@ -363,6 +364,7 @@
       "rename": "重命名",
       "share": "共享",
       "terminate": "终止",
+      "openInNewWindow": "在新窗口打开",
       "enablePerpetual": "启用永续模式",
       "disablePerpetual": "禁用永续模式"
     },

@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { type ServerConfig } from "../shared/server-config-types";
 import { type UpdaterSnapshot } from "../shared/updater-reducer";
+import { windowTraits, type WindowKind } from "../shared/window-kind";
 
 // Sync IPC by design: renderer code (env.ts, OAuth URL builders, WS connect) is synchronous.
 // Reading at preload (before any renderer code runs) blocks no UI thread; mainWindow.reload()
@@ -10,10 +11,16 @@ import { type UpdaterSnapshot } from "../shared/updater-reducer";
 // Invariant: main MUST register serverConfig:*Sync handlers before createWindow() (main/index.ts).
 const apiUrl = ipcRenderer.sendSync("serverConfig:getActiveUrlSync") as string;
 const serverConfigSnapshot = ipcRenderer.sendSync("serverConfig:getSync") as ServerConfig;
+// Project the capability table (window-kind.ts) so the renderer reads booleans, not
+// the kind string. windowKind comes from create_window.ts additionalArguments.
+const windowKind = (process.argv.find((a) => a.startsWith("--agentsmesh-window-kind="))?.split("=")[1] ?? "primary") as WindowKind;
+const traits = windowTraits(windowKind);
 
 const api = {
   apiUrl,
   platform: process.platform,
+  ephemeralLayout: traits.ephemeralLayout,
+  ownsNotificationsSeed: traits.seedsNotificationOwner,
   invoke: (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args),
   on: (channel: string, listener: (event: IpcRendererEvent, ...args: unknown[]) => void) => {
     ipcRenderer.on(channel, listener);
@@ -42,6 +49,14 @@ const api = {
     const listener = (_e: IpcRendererEvent, state: string) => handler(state);
     ipcRenderer.on("realtime:state", listener);
     return () => ipcRenderer.removeListener("realtime:state", listener);
+  },
+  // Fired when the main-process primary-window designation changes (e.g. the
+  // current primary closes). Renderers re-query window:isPrimary to update
+  // notification ownership.
+  onPrimaryChanged: (handler: () => void) => {
+    const listener = () => handler();
+    ipcRenderer.on("window:primary-changed", listener);
+    return () => ipcRenderer.removeListener("window:primary-changed", listener);
   },
   // Rust-computed domain snapshot pushed after each EventBus dispatch. The
   // renderer mirrors it into the Electron service cache (the renderer has no

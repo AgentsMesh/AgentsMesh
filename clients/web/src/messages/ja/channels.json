@@ -1,5 +1,8 @@
 {
   "channels": {
+    "contextMenu": {
+      "openInNewWindow": "新しいウィンドウで開く"
+    },
     "emptyState": "チャンネルを選択してチャットを開始",
     "emptyStateHint": "サイドバーからチャンネルを選択して、メッセージを表示しチームと協力しましょう",
     "sidebar": {

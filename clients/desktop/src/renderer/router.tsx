@@ -41,6 +41,7 @@ import { SupportPage } from "@/pages/support/SupportPage";
 import { SupportTicketDetailPage } from "@/pages/support/detail/SupportDetailPage";
 
 import { PopoutTerminalPage } from "@/pages/popout/terminal/PopoutTerminalPage";
+import { PopoutChannelPage } from "@/pages/popout/channel/PopoutChannelPage";
 
 import { RouteErrorBoundary } from "@/pages/RouteErrorBoundary";
 
@@ -86,6 +87,7 @@ export const router = createBrowserRouter([
   // Popout (no shell): window.open()-spawned renderer runs its own AppProviders.PlatformGate
   // bootstrap, so session has been rehydrated from localStorage by the time this route mounts.
   { path: "/popout/terminal/:podKey", element: <RequireAuth><PopoutTerminalPage /></RequireAuth> },
+  { path: "/popout/channel/:id", element: <RequireAuth><PopoutChannelPage /></RequireAuth> },
 
   {
     path: "/:org",
