@@ -29,7 +29,7 @@ export function ChannelChatPanel({ channelId }: ChannelChatPanelProps) {
   if (chat.channelLoading && !chat.currentChannel) {
     return (
       <div className="flex flex-col h-full bg-background">
-        <div className="flex-shrink-0 border-b border-border px-4 py-3">
+        <div className="app-drag flex-shrink-0 border-b border-border px-4 py-3">
           <div className="h-8 w-32 bg-muted animate-pulse rounded" />
         </div>
         <div className="flex-1 flex items-center justify-center">

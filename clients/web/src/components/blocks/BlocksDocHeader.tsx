@@ -29,7 +29,7 @@ export function BlocksDocHeader({
     </>
   );
   return (
-    <div className="flex flex-col gap-1.5 border-b border-border px-12 pb-3 pt-4">
+    <div className="app-drag flex flex-col gap-1.5 border-b border-border px-12 pb-3 pt-4">
       <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
         <span>Pages</span>
         <span className="text-border">›</span>

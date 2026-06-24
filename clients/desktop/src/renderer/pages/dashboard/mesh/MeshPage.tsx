@@ -32,7 +32,7 @@ export function MeshPage() {
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col overflow-hidden">
-      <header className="flex items-center justify-between border-b border-border px-6 py-3.5">
+      <header className="app-drag flex items-center justify-between border-b border-border px-6 py-3.5">
         <h1 className="text-[18px] font-semibold text-foreground">{t("mesh.page.title")}</h1>
 
         <div className="flex items-center gap-2">

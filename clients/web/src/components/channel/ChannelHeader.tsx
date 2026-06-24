@@ -64,7 +64,7 @@ export function ChannelHeader({
   }
 
   return (
-    <div className="flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-3">
+    <div className="app-drag flex flex-shrink-0 items-center justify-between border-b border-border px-6 py-3">
       <div className="flex min-w-0 items-center gap-2.5">
         <Icon
           className={cn(
