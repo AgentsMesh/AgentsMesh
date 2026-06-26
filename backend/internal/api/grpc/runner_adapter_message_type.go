@@ -48,6 +48,8 @@ func extractMessageType(msg *runnerv1.RunnerMessage) string {
 		return "Pong"
 	case *runnerv1.RunnerMessage_UpgradeStatus:
 		return "UpgradeStatus"
+	case *runnerv1.RunnerMessage_UpgradeAgentResult:
+		return "UpgradeAgentResult"
 	case *runnerv1.RunnerMessage_LogUploadStatus:
 		return "LogUploadStatus"
 	case *runnerv1.RunnerMessage_TokenUsage:

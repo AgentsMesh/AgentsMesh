@@ -1,9 +1,9 @@
 {
   "title": "Blocks",
-  "description": "AI Agent 与人协作的 Block 工作区。",
+  "description": "AI Agent 与人协作的 Block Workspace。",
   "emptyPage": "未命名页面",
   "addBlock": "+ 新建 Block",
-  "loadFailed": "加载 Block 工作区失败。",
+  "loadFailed": "加载 Block Workspace 失败。",
   "slash": {
     "paragraph": "段落",
     "paragraphHint": "纯文本",

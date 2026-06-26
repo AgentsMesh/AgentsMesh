@@ -13,7 +13,7 @@
       "concepts": "Konzepte",
       "features": "Funktionen",
       "agentpod": "AgentPod",
-      "workspace": "Arbeitsbereich",
+      "workspace": "Workspace",
       "channels": "Channels",
       "meshTopology": "Mesh-Topologie",
       "tickets": "Tickets",
@@ -46,7 +46,9 @@
       "tutorialLoops": "Automatisierte Loops",
       "help": "Hilfe",
       "faq": "FAQ",
-      "menu": "Menü"
+      "menu": "Menü",
+      "agentfile": "AgentFile",
+      "agentfileLayer": "AgentFile-Layer"
     },
     "intro": {
       "title": "Introduction",
@@ -68,7 +70,7 @@
         "security": "Sicherheit"
       },
       "controlPlane": "Steuerungsebene",
-      "controlPlaneDesc": "Pod-Lebenszyklus, Agentenbefehle, Statussynchronisation",
+      "controlPlaneDesc": "Pod-Lebenszyklus, Agent-Befehle, Statussynchronisation",
       "dataPlane": "Datenebene",
       "dataPlaneDesc": "Terminal-E/A, Echtzeit-Streaming",
       "cluster": "Cluster",
@@ -78,10 +80,10 @@
       "runnerMac": "macOS",
       "runnerLinux": "Linux",
       "runnerCloud": "Cloud-VM",
-      "agentLayer": "Agenten-Schicht",
+      "agentLayer": "Agent-Schicht",
       "agentSubtitle": "KI-Coding-Agenten laufen in isolierten Pods",
       "securityTitle": "Sicherheitsarchitektur — Dual-Pfad-Design",
-      "securityDesc": "Steuersignale (Pod-Erstellung, Agentenbefehle, Status-Updates) werden über gRPC mit gegenseitigem TLS (mTLS) gesichert — jeder Runner besitzt ein einzigartiges X.509-Zertifikat, das von der Plattform-PKI ausgestellt wurde. Terminal-Datenströme (Tastatureingaben, Ausgabe) fließen über das Relay-Cluster und halten latenzempfindliche E/A auf einem separaten, optimierten Pfad. Dieses Dual-Pfad-Design stellt sicher, dass Sie KI-Agenten auf jedem Rechner, von jedem Gerät aus, überall auf der Welt sicher bedienen können."
+      "securityDesc": "Steuersignale (Pod-Erstellung, Agent-Befehle, Status-Updates) werden über gRPC mit gegenseitigem TLS (mTLS) gesichert — jeder Runner besitzt ein einzigartiges X.509-Zertifikat, das von der Plattform-PKI ausgestellt wurde. Terminal-Datenströme (Tastatureingaben, Ausgabe) fließen über das Relay-Cluster und halten latenzempfindliche E/A auf einem separaten, optimierten Pfad. Dieses Dual-Pfad-Design stellt sicher, dass Sie KI-Agents auf jedem Rechner, von jedem Gerät aus, überall auf der Welt sicher bedienen können."
     },
     "whatYouCanDo": {
       "title": "Was Sie tun können",
@@ -214,7 +216,7 @@
         },
         "worktree": {
           "title": "Git-Worktree-Isolation",
-          "description": "Git-Worktrees ermöglichen es mehreren Pods, gleichzeitig am selben Repository zu arbeiten. Jeder Pod arbeitet auf seinem eigenen Branch, ohne andere zu beeinflussen. Dies ist entscheidend für parallele KI-Agenten-Entwicklung, bei der mehrere Agenten dieselbe Codebasis ändern können."
+          "description": "Git-Worktrees ermöglichen es mehreren Pods, gleichzeitig am selben Repository zu arbeiten. Jeder Pod arbeitet auf seinem eigenen Branch, ohne andere zu beeinflussen. Dies ist entscheidend für parallele KI-Agent-Entwicklung, bei der mehrere Agents dieselbe Codebasis ändern können."
         },
         "management": {
           "title": "Repositories verwalten",
@@ -222,6 +224,98 @@
           "addRepoSteps": "Gehen Sie zu Einstellungen → Repositories → Repository hinzufügen. Wählen Sie Ihren Git-Provider, authentifizieren Sie sich und wählen Sie die zu verbindenden Repositories aus.",
           "removeRepo": "Repository entfernen",
           "removeRepoSteps": "Das Entfernen eines Repositories trennt es von AgentsMesh. Bestehende Pods, die dieses Repository verwenden, werden nicht beeinträchtigt, aber es können keine neuen Pods damit erstellt werden."
+        }
+      },
+      "agentfile": {
+        "title": "AgentFile-Syntaxreferenz",
+        "description": "Vollständige Referenz für AgentFile — die domänenspezifische Sprache (DSL), die definiert, wie KI-Agent-Ausführungsumgebungen in AgentsMesh konfiguriert werden.",
+        "whatIs": {
+          "title": "Was ist AgentFile?",
+          "description": "AgentFile ist eine deklarative DSL zur Konfiguration von KI-Agenten-Ausführungsumgebungen, ähnlich wie ein Dockerfile Container-Builds definiert. Jeder Agent in AgentsMesh hat ein AgentFile, das den CLI-Befehl, Umgebungsvariablen, Konfigurationsoptionen und die Build-Logik festlegt, die zum Starten des Agenten erforderlich sind."
+        },
+        "structure": {
+          "title": "Struktur",
+          "description": "Ein AgentFile besteht aus zwei Arten von Anweisungen: Deklarationen und Build-Logik.",
+          "declarationsTitle": "Deklarationen (GROSSBUCHSTABEN)",
+          "declarationsDesc": "Schlüsselwörter auf oberster Ebene, die die Identität, das Konfigurationsschema, die Umgebung und die Integrationen des Agenten definieren. Beispiele: AGENT, CONFIG, ENV, MODE, MCP.",
+          "buildLogicTitle": "Build-Logik (Kleinbuchstaben)",
+          "buildLogicDesc": "Imperative Anweisungen, die CLI-Argumente erstellen, Dateien schreiben und bedingte Logik zur Build-Zeit anwenden. Beispiele: arg, file, mkdir, if/else, for/in."
+        },
+        "declarations": {
+          "title": "Deklarations-Schlüsselwörter",
+          "description": "Deklarationen definieren das Konfigurationsschema und die Laufzeitumgebung des Agents. Sie werden in GROSSBUCHSTABEN geschrieben.",
+          "agentDesc": "Der CLI-Befehl zum Starten des Agents. Akzeptiert eine in Anführungszeichen gesetzte Zeichenkette mit dem Befehl und optionalen Standardargumenten.",
+          "executableDesc": "Der Name der ausführbaren Binärdatei. Wird vom Runner verwendet, um zu überprüfen, ob der Agent installiert ist.",
+          "configDesc": "Definiert eine vom Benutzer konfigurierbare Option. Typen: BOOL, STRING, NUMBER, SECRET, SELECT(\"opt1\",\"opt2\"). Optional kann ein Standardwert mit = gesetzt werden.",
+          "envDesc": "Deklariert eine Umgebungsvariable. Verwenden Sie SECRET für sensible Werte, TEXT für Klartext, OPTIONAL, um sie als nicht erforderlich zu kennzeichnen. Verwenden Sie = \"value\" für statische Werte.",
+          "modeDesc": "Legt den Ausführungsmodus fest. 'pty' führt den Agenten in einem PTY-Terminal aus. 'acp' verwendet das Agent Communication Protocol mit optionalen Argumenten.",
+          "credentialDesc": "Gibt an, welches Anmeldedatenprofil verwendet werden soll. Verwenden Sie einen in Anführungszeichen gesetzten Profilnamen oder 'runner_host', um die Anmeldedaten des Runner-Rechners zu verwenden.",
+          "promptDesc": "Legt den initialen Prompt fest, der an den Agent gesendet wird. PROMPT_POSITION steuert, wo der Prompt eingefügt wird: prepend (vor dem Benutzer-Prompt), append (danach) oder none (deaktiviert).",
+          "repoDesc": "REPO legt das Repository per Slug oder URL fest. BRANCH legt den Branch-Namen fest. GIT_CREDENTIAL wählt die Git-Authentifizierungsmethode: http, ssh oder token.",
+          "mcpDesc": "Aktiviert oder deaktiviert die MCP-Tool-Integration. Wenn ON, kann ein optionales FORMAT das Protokollformat angeben (z. B. streamable-http).",
+          "skillsDesc": "Hängt wiederverwendbare Skill-Definitionen an den Agent an. Skills werden über ihren Slug referenziert, durch Kommas getrennt.",
+          "setupDesc": "Ein Shell-Skript, das vor dem Start des Agents ausgeführt wird. Verwenden Sie die Heredoc-Syntax (<<LABEL...LABEL). Der optionale Parameter timeout= legt die maximale Ausführungszeit in Sekunden fest.",
+          "removeDesc": "Entfernt ein zuvor definiertes Element. Kann ENV-Variablen, SKILLS, CLI-Argumente (arg) oder Dateien (file) entfernen."
+        },
+        "buildLogic": {
+          "title": "Build-Logik",
+          "description": "Build-Logik-Anweisungen werden in Kleinbuchstaben geschrieben und während der AgentFile-Auswertungsphase ausgeführt. Sie erstellen CLI-Argumente, schreiben Dateien und wenden bedingte Logik an."
+        },
+        "expressions": {
+          "title": "Ausdrücke",
+          "description": "AgentFile unterstützt eine Vielzahl von Ausdruckstypen, die in der Build-Logik und in Deklarationen verwendet werden können.",
+          "typeHeader": "Typ",
+          "exampleHeader": "Beispiel"
+        },
+        "builtinVars": {
+          "title": "Integrierte Variablen",
+          "description": "Diese Variablen sind während der AgentFile-Auswertung automatisch verfügbar und ermöglichen den Zugriff auf Konfigurationswerte und den Laufzeitkontext.",
+          "variableHeader": "Variable",
+          "descHeader": "Beschreibung",
+          "configDesc": "Vom Benutzer bereitgestellte Konfigurationswerte, die durch CONFIG-Deklarationen definiert werden",
+          "sandboxRoot": "Stammverzeichnis der Sandbox-Umgebung",
+          "sandboxWorkDir": "Arbeitsverzeichnis innerhalb der Sandbox (kann vom Stammverzeichnis abweichen, wenn ein Repo geklont wird)",
+          "mcpEnabled": "Boolescher Wert, der angibt, ob MCP aktiviert ist",
+          "mcpServers": "Liste der MCP-Server-Konfigurationspfade",
+          "mcpFormat": "Die Zeichenkette des MCP-Protokollformats",
+          "modeDesc": "Aktueller Ausführungsmodus ('pty' oder 'acp')"
+        },
+        "escaping": {
+          "title": "Zeichenketten-Escaping",
+          "description": "AgentFile-Zeichenketten unterstützen Standard-Escape-Sequenzen innerhalb von Zeichenketten in doppelten Anführungszeichen:"
+        },
+        "fullExample": {
+          "title": "Vollständiges Beispiel",
+          "description": "Hier ist ein vollständiges AgentFile für Claude Code, das Deklarationen, Konfiguration, Build-Logik und Setup-Skript zeigt:"
+        }
+      },
+      "agentfileLayer": {
+        "title": "AgentFile-Layer",
+        "description": "Mit AgentFile-Layern können Sie die Agent-Konfiguration pro Pod überschreiben, ohne das Basis-AgentFile zu ändern.",
+        "whatIs": {
+          "title": "Was ist ein AgentFile-Layer?",
+          "description": "Ein AgentFile-Layer ist eine vom Benutzer bereitgestellte Überschreibung, die zum Zeitpunkt der Pod-Erstellung über das Basis-AgentFile gelegt wird. AgentsMesh verwendet ein 3-stufiges Merge-Modell: Das Basis-AgentFile (Agent-Standardwerte) wird mit den Benutzereinstellungen (gespeicherte Einstellungen) zusammengeführt, dann wird zuletzt der Layer (Laufzeit-Überschreibungen pro Pod) angewendet. Der Layer hat die höchste Priorität."
+        },
+        "supported": {
+          "title": "Unterstützte Deklarationen",
+          "description": "Nur eine Teilmenge der AgentFile-Deklarationen kann in einem Layer verwendet werden. Dies sind die Deklarationen, die zur Laufzeit sinnvoll überschrieben werden können:"
+        },
+        "apiUsage": {
+          "title": "API-Verwendung",
+          "description": "Beim Erstellen eines Pods über die REST-API übergeben Sie den Layer als Feld agentfile_layer im Anforderungstext. Der Layer ist eine Zeichenkette, die AgentFile-Syntax enthält:"
+        },
+        "editor": {
+          "title": "Frontend-Editor",
+          "description": "Aktivieren Sie im Pod-Erstellungsformular den Quellmodus, um den AgentFile-Layer direkt mit dem integrierten CodeMirror-Editor mit Syntaxhervorhebung und Autovervollständigung zu bearbeiten. Formularfelder (Modell, Prompt, Repository usw.) werden automatisch mit dem Layer-Inhalt synchronisiert."
+        },
+        "examples": {
+          "title": "Häufige Beispiele",
+          "description": "Hier sind häufige Layer-Muster zur Anpassung des Pod-Verhaltens:",
+          "overrideModel": "Modell überschreiben",
+          "permissionMode": "Berechtigungsmodus festlegen",
+          "addPrompt": "Initialen Prompt hinzufügen",
+          "selectRepo": "Repository und Branch auswählen",
+          "switchMode": "In ACP-Modus wechseln"
         }
       }
     },
@@ -232,7 +326,7 @@
         "title": "Konto erstellen",
         "description": "Registrieren Sie sich auf der Anmeldeseite mit E-Mail, Benutzername und Passwort. Sie erhalten eine Bestätigungs-E-Mail. Falls sie nicht innerhalb weniger Minuten eintrifft, prüfen Sie Ihren Spam-Ordner.",
         "whatYouGet": "Nach der E-Mail-Verifizierung führt Sie der Einrichtungsassistent durch:",
-        "item1": "Einen persönlichen Arbeitsbereich (Ein-Klick) oder Team-Arbeitsbereich erstellen",
+        "item1": "Einen persönlichen Workspace (Ein-Klick) oder Team-Workspace erstellen",
         "item2": "Optional einer bestehenden Organisation über einen Einladungslink beitreten"
       },
       "step2": {
@@ -243,7 +337,7 @@
         "seeSetup": "Siehe {link} für Docker-, Linux-Paket- und Kubernetes-Bereitstellungsoptionen."
       },
       "step3": {
-        "title": "KI-Agenten-CLIs installieren",
+        "title": "KI-Agent-CLIs installieren",
         "description": "Installieren Sie die gewünschten CLI-Tools auf Ihrer Runner-Maschine und setzen Sie die erforderlichen API-Key-Umgebungsvariablen. Der Runner erkennt installierte CLIs automatisch über PATH und meldet verfügbare Agenten an die Plattform.",
         "claudeCode": "Claude Code",
         "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
@@ -272,10 +366,10 @@
       },
       "step5": {
         "title": "Pod starten",
-        "description": "Ein Pod (AgentPod) ist eine virtuelle Workstation, in der ein KI-Agent mit eigenem Terminal und isoliertem Code-Arbeitsbereich läuft. Erstellen Sie jetzt Ihren ersten!",
+        "description": "Ein Pod (AgentPod) ist eine virtuelle Workstation, in der ein KI-Agent mit eigenem Terminal und isoliertem Code-Workspace läuft. Erstellen Sie jetzt Ihren ersten!",
         "item1": "Navigieren Sie zum Workspace in der Seitenleiste",
         "item2": "Klicken Sie auf Neuer Pod",
-        "item3": "Wählen Sie einen KI-Agenten-Typ (Claude Code, Codex CLI usw.)",
+        "item3": "Wählen Sie einen KI-Agent-Typ (Claude Code, Codex CLI usw.)",
         "item4": "Wählen Sie einen Runner",
         "item5": "Wählen Sie optional ein Repository und einen Branch — der Agent arbeitet in einer isolierten Kopie (Git-Worktree), sodass Ihr Hauptbranch sicher bleibt",
         "item6": "Verknüpfen Sie optional ein Ticket für Kontext",
@@ -284,18 +378,18 @@
         "seeSetup": "Siehe {link} für eine ausführliche Anleitung mit Fehlerbehebung."
       },
       "step6": {
-        "title": "Mit Ihrem Agenten interagieren",
+        "title": "Mit Ihrem Agent interagieren",
         "description": "Nach der Erstellung öffnet sich die Terminal-Ansicht mit einer Live-Sitzung. Ihr KI-Agent beginnt mit der Ausführung des initialen Prompts oder wartet auf Eingabe, falls keiner angegeben wurde.",
         "item1": "Geben Sie Folge-Prompts oder Befehle direkt im Terminal ein",
-        "item2": "Beobachten Sie die Statusanzeige des Agenten — Leerlauf (bereit für Eingabe), Ausführung (arbeitet an Ihrer Aufgabe) oder Warten (benötigt Ihre Genehmigung)",
+        "item2": "Beobachten Sie die Statusanzeige des Agents — Leerlauf (bereit für Eingabe), Ausführung (arbeitet an Ihrer Aufgabe) oder Warten (benötigt Ihre Genehmigung)",
         "item3": "Der Agent arbeitet im Repository-Worktree, wenn einer verknüpft wurde",
         "item4": "Beenden Sie den Pod über die Symbolleiste, wenn Ihre Aufgabe abgeschlossen ist"
       },
       "tryIt": {
         "title": "Ausprobieren: Dein erster Pod in 60 Sekunden",
         "description": "Möchten Sie es sofort in Aktion sehen? Hier ist der schnellste Weg — kein Repository nötig:",
-        "item1": "Klicken Sie auf Arbeitsbereich → Neuer Pod",
-        "item2": "Wählen Sie Claude Code (oder einen anderen installierten Agenten) und Ihren Runner",
+        "item1": "Klicken Sie auf Workspace → Neuer Pod",
+        "item2": "Wählen Sie Claude Code (oder einen anderen installierten Agent) und Ihren Runner",
         "item3": "Überspringen Sie die Repository- und Ticket-Felder",
         "item4": "Setzen Sie den initialen Prompt auf: \"Sage Hallo, liste dann die Dateien im aktuellen Verzeichnis auf und erkläre, was du siehst.\"",
         "item5": "Klicken Sie auf Erstellen und beobachten Sie, wie der Agent im Terminal antwortet",
@@ -306,10 +400,10 @@
         "agentpod": "Mehr über AgentPod →",
         "agentpodDesc": "Remote-KI-Entwicklungsworkstations",
         "mesh": "Mesh erkunden →",
-        "meshDesc": "Multi-Agenten-Kollaborationsfunktionen",
+        "meshDesc": "Multi-Agent-Kollaborationsfunktionen",
         "tickets": "Tickets & Kanban →",
         "ticketsDesc": "An Pods gebundenes Aufgabenmanagement",
-        "multiAgent": "Multi-Agenten-Workflows →",
+        "multiAgent": "Multi-Agent-Workflows →",
         "multiAgentDesc": "Mehrere KI-Agenten koordinieren"
       }
     },
@@ -667,7 +761,7 @@
       },
       "loops": {
         "title": "Loops",
-        "description": "CI/CD für KI-Agenten-Aufgaben. Definieren Sie wiederholbare automatisierte Aufgaben und lösen Sie sie nach Zeitplan oder per API aus — wie Cron-Jobs für Ihre KI-Agenten.",
+        "description": "CI/CD für KI-Agent-Aufgaben. Definieren Sie wiederholbare automatisierte Aufgaben und lösen Sie sie nach Zeitplan oder per API aus — wie Cron-Jobs für Ihre KI-Agents.",
         "overview": {
           "title": "Übersicht",
           "description": "Loops ermöglicht es, eine Aufgabe einmal zu definieren und wiederholt auszuführen. Jeder Loop umschließt einen Pod mit einem Prompt-Template, Trigger-Konfiguration und Ausführungsrichtlinie. Hauptfunktionen:",
@@ -1141,9 +1235,9 @@
           "ticketsWriteEndpoints": "Tickets erstellen, aktualisieren, löschen + alle Lese-Endpunkte",
           "channelsRead": "channels:read",
           "channelsReadDesc": "Nur-Lese-Zugriff auf Kanäle",
-          "channelsReadEndpoints": "Kanäle auflisten, Kanal abrufen, Nachrichten auflisten",
+          "channelsReadEndpoints": "Channels auflisten, Channel abrufen, Nachrichten auflisten",
           "channelsWrite": "channels:write",
-          "channelsWriteDesc": "Vollständige Kanal-Verwaltung (inkl. Lesen)",
+          "channelsWriteDesc": "Vollständige Channel-Verwaltung (inkl. Lesen)",
           "channelsWriteEndpoints": "Kanäle erstellen/aktualisieren, Nachrichten senden + alle Lese-Endpunkte",
           "runnersRead": "runners:read",
           "runnersReadDesc": "Nur-Lese-Zugriff auf Runner",
@@ -1201,21 +1295,21 @@
             "description": "Einen neuen AgentPod auf einem angegebenen Runner erstellen. Der Pod wird mit der angegebenen Konfiguration initialisiert und beginnt mit der Ausführung.",
             "fields": {
               "runner_id": "ID des Runners, auf dem der Pod erstellt werden soll",
-              "agent_slug": "Agententyp-Identifikator (z. B. claude-code, aider)",
-              "prompt": "Initialer Prompt oder Aufgabe für den Agenten",
+              "agent_slug": "Agent-Identifikator (z. B. claude-code, aider)",
+              "prompt": "Initialer Prompt oder Aufgabe für den Agent",
               "repository_id": "Repository, das mit dem Pod verknüpft werden soll",
               "branch": "Git-Branch, auf dem gearbeitet werden soll",
               "ticket_slug": "Ticket-Identifikator zum Verknüpfen (z. B. AM-123)",
-              "channel_id": "Kanal, der mit dem Pod verknüpft werden soll",
+              "channel_id": "Channel, der mit dem Pod verknüpft werden soll",
               "sandbox_type": "Sandbox-Typ: worktree oder tempdir",
               "environment_variables": "Schlüssel-Wert-Paare von Umgebungsvariablen",
-              "custom_agent_command": "Benutzerdefinierter Befehl zum Starten des Agenten",
-              "custom_agent_args": "Argumente für den benutzerdefinierten Agentenbefehl",
+              "custom_agent_command": "Benutzerdefinierter Befehl zum Starten des Agents",
+              "custom_agent_args": "Argumente für den benutzerdefinierten Agent-Befehl",
               "custom_mcp_config": "Benutzerdefinierte MCP-Server-Konfiguration (JSON)",
               "auto_close": "Ob sich der Pod nach Aufgabenabschluss automatisch schließen soll",
               "auto_close_delay_seconds": "Verzögerung in Sekunden vor dem automatischen Schließen",
               "pod_timeout_minutes": "Maximale Lebensdauer des Pods in Minuten",
-              "max_turns": "Maximale Anzahl der Agenten-Durchläufe"
+              "max_turns": "Maximale Anzahl der Agent-Durchläufe"
             }
           },
           "terminatePod": {
@@ -1326,11 +1420,11 @@
         "endpoints": {
           "title": "Endpunkte",
           "list": "Kanäle auflisten",
-          "get": "Kanal-Details abrufen",
-          "messages": "Kanal-Nachrichten auflisten",
-          "create": "Neuen Kanal erstellen",
-          "update": "Kanal aktualisieren",
-          "sendMessage": "Nachricht in Kanal senden"
+          "get": "Channel-Details abrufen",
+          "messages": "Channel-Nachrichten auflisten",
+          "create": "Neuen Channel erstellen",
+          "update": "Channel aktualisieren",
+          "sendMessage": "Nachricht in Channel senden"
         },
         "details": {
           "title": "Endpoint-Details",
@@ -1345,47 +1439,47 @@
           },
           "getChannel": {
             "title": "GET /channels/:id",
-            "description": "Detaillierte Informationen über einen bestimmten Kanal abrufen.",
+            "description": "Detaillierte Informationen über einen bestimmten Channel abrufen.",
             "params": {
-              "id": "Die numerische ID des Kanals"
+              "id": "Die numerische ID des Channels"
             }
           },
           "getMessages": {
             "title": "GET /channels/:id/messages",
-            "description": "Nachrichten aus einem Kanal abrufen, sortiert nach den neuesten zuerst.",
+            "description": "Nachrichten aus einem Channel abrufen, sortiert nach den neuesten zuerst.",
             "params": {
-              "id": "Die numerische ID des Kanals",
+              "id": "Die numerische ID des Channels",
               "limit": "Maximale Anzahl der zurückzugebenden Nachrichten (max. 100)"
             }
           },
           "createChannel": {
             "title": "POST /channels",
-            "description": "Einen neuen Kanal für die Agenten-Zusammenarbeit erstellen.",
+            "description": "Einen neuen Channel für die Agent-Zusammenarbeit erstellen.",
             "fields": {
-              "name": "Kanalname (2-100 Zeichen)",
-              "description": "Kanalbeschreibung",
+              "name": "Channel-Name (2-100 Zeichen)",
+              "description": "Channel-Beschreibung",
               "repository_id": "Zu verknüpfendes Repository",
               "ticket_slug": "Ticket-Bezeichner zum Verknüpfen (z. B. AM-123)",
-              "document": "Initiales Dokument oder Kontext für den Kanal"
+              "document": "Initiales Dokument oder Kontext für den Channel"
             }
           },
           "updateChannel": {
             "title": "PUT /channels/:id",
-            "description": "Einen bestehenden Kanal aktualisieren. Nur bereitgestellte Felder werden aktualisiert.",
+            "description": "Einen bestehenden Channel aktualisieren. Nur bereitgestellte Felder werden aktualisiert.",
             "params": {
-              "id": "Die numerische ID des Kanals"
+              "id": "Die numerische ID des Channels"
             },
             "fields": {
-              "name": "Aktualisierter Kanalname",
-              "description": "Aktualisierte Kanalbeschreibung",
-              "document": "Aktualisiertes Kanaldokument"
+              "name": "Aktualisierter Channel-Name",
+              "description": "Aktualisierte Channel-Beschreibung",
+              "document": "Aktualisiertes Channel-Dokument"
             }
           },
           "sendMessage": {
             "title": "POST /channels/:id/messages",
-            "description": "Eine neue Nachricht in einen Kanal senden.",
+            "description": "Eine neue Nachricht in einen Channel senden.",
             "params": {
-              "id": "Die numerische ID des Kanals"
+              "id": "Die numerische ID des Channels"
             },
             "fields": {
               "content": "Textinhalt der Nachricht",
@@ -1676,7 +1770,7 @@
           "description": "Starte nach der Registrierung den Runner-Daemon:",
           "item1": "Führe den Startbefehl aus, um den Runner-Prozess zu starten",
           "item2": "Der Runner verbindet sich über gRPC mit mTLS zum AgentsMesh-Backend",
-          "item3": "Er meldet verfügbare KI-Agenten-CLIs (Claude Code, Codex, Gemini usw.), die im PATH gefunden wurden",
+          "item3": "Er meldet verfügbare KI-Agent-CLIs (Claude Code, Codex, Gemini usw.), die im PATH gefunden wurden",
           "tip": "Für Produktionsumgebungen installiere den Runner als Systemdienst, damit er beim Hochfahren automatisch startet.",
           "background": {
             "title": "Im Hintergrund ausführen",
@@ -1698,7 +1792,7 @@
           }
         },
         "step4": {
-          "title": "KI-Agenten-CLIs installieren",
+          "title": "KI-Agent-CLIs installieren",
           "description": "Installiere die KI-Coding-Agenten, die du auf dem Runner-Rechner verwenden möchtest:",
           "item1": "Claude Code — npm install -g @anthropic-ai/claude-code (setze ANTHROPIC_API_KEY)",
           "item2": "Codex CLI — npm install -g @openai/codex (setze OPENAI_API_KEY)",
@@ -1750,7 +1844,7 @@
           "title": "Wie geht es weiter?",
           "description": "Dein Runner ist bereit. Fahre mit dem nächsten Tutorial fort:",
           "item1": "Git-Repositories verbinden — Verknüpfe deine Code-Repositories für den Pod-Zugriff",
-          "item2": "Dein erster Pod — Erstelle und interagiere mit deinem ersten KI-Agenten"
+          "item2": "Dein erster Pod — Erstelle und interagiere mit deinem ersten KI-Agent"
         }
       },
       "gitSetup": {
@@ -1811,8 +1905,8 @@
         "step7": {
           "title": "Durch Erstellen eines Pods verifizieren",
           "description": "Teste deine Einrichtung, indem du einen Pod mit einem verknüpften Repository erstellst:",
-          "item1": "Gehe zum Arbeitsbereich und klicke auf Neuer Pod",
-          "item2": "Wähle einen KI-Agenten und deinen Runner",
+          "item1": "Gehe zum Workspace und klicke auf Neuer Pod",
+          "item2": "Wähle einen KI-Agent und deinen Runner",
           "item3": "Wähle eines deiner importierten Repositories",
           "item4": "Der Pod sollte mit dem in einen Worktree geklonten Repository starten",
           "tip": "Jeder Pod erhält seinen eigenen Git-Worktree, sodass mehrere Pods ohne Konflikte am selben Repository arbeiten können."
@@ -1834,7 +1928,7 @@
           "item1": "Erkennung — Verfügbare Pods, Runner und Repositories auflisten",
           "item2": "Terminal — Terminals anderer Pods beobachten und steuern",
           "item3": "Bindung — Pod-zu-Pod-Verbindungen anfordern und verwalten",
-          "item4": "Kanal — Kanäle erstellen, Nachrichten senden, Dokumente teilen",
+          "item4": "Channel — Channels erstellen, Nachrichten senden, Dokumente teilen",
           "item5": "Ticket — Tickets suchen, erstellen und aktualisieren",
           "item6": "Pod — Neue Pods erstellen, Snapshots abrufen, Eingaben senden",
           "item7": "Loop — Automatisierte Loops auflisten und auslösen",
@@ -1864,13 +1958,13 @@
           "title": "MCP-Tools in einem Pod überprüfen",
           "description": "Überprüfe nach der Konfiguration der MCP-Server, ob sie funktionieren:",
           "item1": "Erstelle einen neuen Pod mit Claude Code",
-          "item2": "Frage den Agenten im Terminal: \u201EWelche MCP-Tools hast du verfügbar?\u201C",
+          "item2": "Frage den Agent im Terminal: „Welche MCP-Tools hast du verfügbar?“",
           "item3": "Der Agent sollte sowohl integrierte AgentsMesh-Tools als auch benutzerdefinierte MCP-Server auflisten",
-          "item4": "Probiere ein Tool aus \u2014 z. B. \u201EListe alle verf\u00FCgbaren Pods auf\u201C oder \u201ESuche nach Tickets\u201C"
+          "item4": "Probiere ein Tool aus — z. B. „Liste alle verfügbaren Pods auf“ oder „Suche nach Tickets“"
         },
         "whatAreSkills": {
           "title": "Was sind Skills?",
-          "description": "Skills sind wiederverwendbare Agenten-Arbeitsabläufe, die als Markdown-Dateien mit Anweisungen definiert sind. Nach der Installation werden sie in den Kontext deines Agenten eingefügt, sodass er sie bei Bedarf ausführen kann. AgentsMesh bietet zwei integrierte Skills:",
+          "description": "Skills sind wiederverwendbare Agent-Arbeitsabläufe, die als Markdown-Dateien mit Anweisungen definiert sind. Nach der Installation werden sie in den Kontext deines Agents eingefügt, sodass er sie bei Bedarf ausführen kann. AgentsMesh bietet zwei integrierte Skills:",
           "item1": "am-channel — Ermöglicht Agenten, Nachrichten abzurufen, den Aufgabenstatus zu synchronisieren und Informationen mit anderen Agenten über Kanäle auszutauschen",
           "item2": "am-delegate — Ermöglicht Agenten, Aufgaben an andere Pods zu delegieren, Sub-Pods für parallele Arbeit zu erstellen und Folge-Agenten auszulösen"
         },
@@ -1903,55 +1997,55 @@
           "title": "Wie geht es weiter?",
           "description": "Deine Agenten sind jetzt mit MCP-Tools und Skills erweitert. Entdecke weitere Möglichkeiten:",
           "item1": "Dein erster Pod — Erstelle einen Pod und erlebe MCP-Tools in Aktion",
-          "item2": "Multi-Agent-Zusammenarbeit — Verwende Kanal- und Bindungstools für die Agentenkoordination"
+          "item2": "Multi-Agent-Zusammenarbeit — Verwende Channel- und Bindungstools für die Agent-Koordination"
         }
       },
       "firstPod": {
         "title": "Tutorial: Dein erster Pod",
         "difficulty": "Anfänger — 5 Minuten",
-        "description": "Lerne Schritt für Schritt, wie du deinen ersten AgentPod erstellst und damit interagierst. Am Ende dieses Tutorials wirst du einen KI-Coding-Agenten gestartet, ihn mit einem Repository verbunden und eine Aufgabe abgeschlossen haben.",
+        "description": "Lerne Schritt für Schritt, wie du deinen ersten AgentPod erstellst und damit interagierst. Am Ende dieses Tutorials wirst du einen KI-Coding-Agent gestartet, ihn mit einem Repository verbunden und eine Aufgabe abgeschlossen haben.",
         "prerequisites": {
           "title": "Voraussetzungen",
           "description": "Stelle vor dem Start sicher, dass du Folgendes hast:",
           "item1": "Ein AgentsMesh-Konto (registriere dich auf der Anmeldeseite)",
           "item2": "Einen installierten und verbundenen Runner (siehe Schnellstart → Schritt 2)",
-          "item3": "Mindestens eine KI-Agenten-CLI auf deinem Runner installiert (z. B. Claude Code)",
+          "item3": "Mindestens eine KI-Agent-CLI auf deinem Runner installiert (z. B. Claude Code)",
           "item4": "Ein verbundenes Git-Repository (optional, aber empfohlen)"
         },
         "step1": {
-          "title": "Arbeitsbereich öffnen",
-          "description": "Klicke in der linken Seitenleiste auf Arbeitsbereich. Hier befinden sich alle deine Pods. Beim ersten Mal siehst du einen leeren Arbeitsbereich."
+          "title": "Workspace öffnen",
+          "description": "Klicke in der linken Seitenleiste auf Workspace. Hier befinden sich alle deine Pods. Beim ersten Mal siehst du einen leeren Workspace."
         },
         "step2": {
           "title": "Einen neuen Pod erstellen",
           "description": "Klicke oben rechts auf die Schaltfläche Neuer Pod. Der Pod-Erstellungsdialog öffnet sich mit mehreren Konfigurationsoptionen.",
           "fields": "Fülle die folgenden Felder aus:",
-          "field1": "Agententyp — Wähle den KI-Agenten, den du verwenden möchtest (z. B. Claude Code)",
+          "field1": "Agent — Wähle den KI-Agent, den du verwenden möchtest (z. B. Claude Code)",
           "field2": "Runner — Wähle, welcher Runner diesen Pod hosten soll",
           "field3": "Repository — Wähle ein Repository, an dem der Agent arbeiten soll (optional)",
           "field4": "Branch — Wähle den Branch zum Auschecken (standardmäßig der Hauptbranch)",
-          "field5": "Initiale Eingabe — Schreibe eine Aufgabenbeschreibung für den Agenten, z. B. „Eingabevalidierung zum Anmeldeformular hinzufügen“"
+          "field5": "Initiale Eingabe — Schreibe eine Aufgabenbeschreibung für den Agent, z. B. „Eingabevalidierung zum Anmeldeformular hinzufügen“"
         },
         "step3": {
           "title": "Die Pod-Initialisierung beobachten",
           "description": "Nach dem Klick auf Erstellen geht der Pod in den Status Initialisierung über. Der Runner wird:",
           "item1": "Einen isolierten Git-Worktree erstellen (falls ein Repository verknüpft wurde)",
           "item2": "Eine PTY-Terminal-Sitzung starten",
-          "item3": "Den KI-Agenten mit deiner initialen Eingabe starten",
-          "tip": "Die Terminal-Ansicht öffnet sich automatisch. Du kannst dem Agenten in Echtzeit bei der Arbeit zusehen."
+          "item3": "Den KI-Agent mit deiner initialen Eingabe starten",
+          "tip": "Die Terminal-Ansicht öffnet sich automatisch. Du kannst dem Agent in Echtzeit bei der Arbeit zusehen."
         },
         "step4": {
-          "title": "Mit deinem Agenten interagieren",
-          "description": "Sobald der Pod läuft, kannst du über das Web-Terminal mit dem KI-Agenten interagieren:",
+          "title": "Mit deinem Agent interagieren",
+          "description": "Sobald der Pod läuft, kannst du über das Web-Terminal mit dem KI-Agent interagieren:",
           "item1": "Gib Folgeanweisungen direkt in die Terminal-Eingabe ein",
-          "item2": "Beobachte die Agentenstatus-Anzeige — sie zeigt Leerlauf, Ausführung oder Wartend an",
+          "item2": "Beobachte die Agent-Status-Anzeige — sie zeigt Leerlauf, Ausführung oder Wartend an",
           "item3": "Der Agent arbeitet innerhalb des isolierten Git-Worktrees, sodass dein Hauptbranch nie betroffen ist",
           "item4": "Nutze die Vollbild-Schaltfläche für eine ablenkungsfreie Ansicht"
         },
         "step5": {
           "title": "Überprüfen und abschließen",
           "description": "Wenn der Agent deine Aufgabe abgeschlossen hat:",
-          "item1": "Überprüfe die Änderungen des Agenten in der Terminal-Ausgabe",
+          "item1": "Überprüfe die Änderungen des Agents in der Terminal-Ausgabe",
           "item2": "Der Agent hat möglicherweise Commits auf einem Worktree-Branch erstellt — überprüfe das Git-Log",
           "item3": "Klicke auf Beenden in der Pod-Symbolleiste, um den Pod zu stoppen und den Worktree aufzuräumen",
           "item4": "Der Pod-Status wechselt zu Beendet und die Ressourcen werden freigegeben"
@@ -1965,7 +2059,7 @@
           "agentNotResponding": "Agent antwortet nicht",
           "agentNotRespondingDesc": "Überprüfe, ob die KI-Agenten-CLI auf dem Runner installiert ist (z. B. 'claude --version' auf dem Runner-Rechner ausführen). Stelle sicher, dass die API-Key-Umgebungsvariable korrekt gesetzt ist. Der Agent wartet möglicherweise auch auf eine Genehmigung — achte auf eine Berechtigungsabfrage im Terminal.",
           "terminated": "Pod wird sofort beendet",
-          "terminatedDesc": "Dies bedeutet oft, dass die Agenten-CLI beim Start abgestürzt ist. Überprüfe, ob dein API-Key gültig und nicht abgelaufen ist. Versuche, die Agenten-CLI manuell auf dem Runner auszuführen, um die Fehlermeldung zu sehen."
+          "terminatedDesc": "Dies bedeutet oft, dass die Agent-CLI beim Start abgestürzt ist. Überprüfe, ob dein API-Key gültig und nicht abgelaufen ist. Versuche, die Agent-CLI manuell auf dem Runner auszuführen, um die Fehlermeldung zu sehen."
         },
         "nextSteps": {
           "title": "Was soll ich als Nächstes tun?",
@@ -1997,14 +2091,14 @@
           "title": "Ein Ticket mit einem Pod verknüpfen",
           "description": "Die wahre Stärke von Tickets liegt in ihrer Integration mit AgentPods. Wenn du einen neuen Pod erstellst:",
           "item1": "Wähle im Neuer-Pod-Dialog dein Ticket aus dem Ticket-Dropdown aus",
-          "item2": "Titel und Beschreibung des Tickets werden automatisch als Kontext für den KI-Agenten eingefügt",
+          "item2": "Titel und Beschreibung des Tickets werden automatisch als Kontext für den KI-Agent eingefügt",
           "item3": "Der Ticket-Status wechselt automatisch zu In Bearbeitung, wenn der Pod startet",
           "tip": "Du kannst ein Ticket auch über das Detailpanel eines bestehenden Pods verknüpfen."
         },
         "step4": {
           "title": "Fortschritt verfolgen",
           "description": "Während dein KI-Agent an der Aufgabe arbeitet, kannst du den Fortschritt auf verschiedene Weisen verfolgen:",
-          "item1": "Kanban-Board — Die Ticket-Karte zeigt an, welcher Pod daran arbeitet und den aktuellen Agentenstatus",
+          "item1": "Kanban-Board — Die Ticket-Karte zeigt an, welcher Pod daran arbeitet und den aktuellen Agent-Status",
           "item2": "Ticket-Detail — Klicke auf das Ticket, um alle verknüpften Pods, Kommentare und Git-Aktivitäten zu sehen",
           "item3": "Git-Aktivität — Commits und Merge Requests des Pods werden automatisch mit dem Ticket verknüpft",
           "item4": "Kommentare — Füge Notizen oder Feedback direkt zum Ticket hinzu"
@@ -2013,16 +2107,16 @@
           "title": "Durch den Workflow navigieren",
           "description": "Ziehe Tickets zwischen Spalten, um ihren Status zu aktualisieren, oder verwende das Status-Dropdown in der Ticket-Detailansicht:",
           "item1": "Backlog → Zu erledigen — Die Aufgabe ist bereit zur Bearbeitung",
-          "item2": "Zu erledigen → In Bearbeitung — Ein Agenten-Pod arbeitet daran (wird automatisch aktualisiert, wenn ein Pod verknüpft ist)",
+          "item2": "Zu erledigen → In Bearbeitung — Ein Agent-Pod arbeitet daran (wird automatisch aktualisiert, wenn ein Pod verknüpft ist)",
           "item3": "In Bearbeitung → In Überprüfung — Der Agent hat die Aufgabe abgeschlossen und sie muss überprüft werden",
           "item4": "In Überprüfung → Erledigt — Die Aufgabe wurde überprüft und akzeptiert"
         },
         "step6": {
           "title": "Git-Aktivität überprüfen",
           "description": "Jedes Ticket verfolgt alle Git-Aktivitäten seiner verknüpften Pods:",
-          "item1": "Sieh dir die Commits des KI-Agenten auf der Ticket-Detailseite an",
+          "item1": "Sieh dir die Commits des KI-Agents auf der Ticket-Detailseite an",
           "item2": "Sieh Merge/Pull Requests, die vom Worktree-Branch des Pods erstellt wurden",
-          "item3": "Nutze diese Informationen, um die Arbeit des Agenten zu überprüfen und in deinen Hauptbranch zu mergen"
+          "item3": "Nutze diese Informationen, um die Arbeit des Agents zu überprüfen und in deinen Hauptbranch zu mergen"
         },
         "nextSteps": {
           "title": "Wie geht es weiter?",
@@ -2052,7 +2146,7 @@
         "step2": {
           "title": "Den Backend-Pod starten",
           "description": "Erstelle den ersten Pod für die Backend-Arbeit:",
-          "item1": "Klicke auf Neuer Pod und wähle deinen Agenten aus (z. B. Claude Code)",
+          "item1": "Klicke auf Neuer Pod und wähle deinen Agent aus (z. B. Claude Code)",
           "item2": "Wähle das Backend-Repository aus",
           "item3": "Setze die initiale Eingabe: „Implementiere REST-API-Endpunkte für das Benutzerprofil: GET /api/users/:id/profile und PUT /api/users/:id/profile. Poste deinen API-Vertrag in den Channel, wenn du fertig bist.“",
           "tip": "Der Agent hat automatisch Zugriff auf die Channel-MCP-Tools zum Senden von Nachrichten."
@@ -2060,9 +2154,9 @@
         "step3": {
           "title": "Den Frontend-Pod starten",
           "description": "Erstelle den zweiten Pod für die Frontend-Arbeit:",
-          "item1": "Klicke auf Neuer Pod und wähle deinen Agenten aus",
+          "item1": "Klicke auf Neuer Pod und wähle deinen Agent aus",
           "item2": "Wähle das Frontend-Repository aus",
-          "item3": "Setze die initiale Eingabe: „Erstelle eine React-Benutzerprofilseiten-Komponente. Überprüfe den Channel auf den API-Vertrag des Backend-Agenten und implementiere dann die Benutzeroberfläche entsprechend.“"
+          "item3": "Setze die initiale Eingabe: „Erstelle eine React-Benutzerprofilseiten-Komponente. Überprüfe den Channel auf den API-Vertrag des Backend-Agents und implementiere dann die Benutzeroberfläche entsprechend.“"
         },
         "step4": {
           "title": "Beide Pods mit dem Channel verbinden",
@@ -2073,7 +2167,7 @@
           "tip": "Pods können auch während der Erstellung mit Channels verknüpft werden, wenn der Channel bereits existiert."
         },
         "step5": {
-          "title": "Agenten-Kommunikation überwachen",
+          "title": "Agent-Kommunikation überwachen",
           "description": "Öffne die Channel-Ansicht, um die Zusammenarbeit der Agenten zu beobachten:",
           "item1": "Der Backend-Agent postet den API-Vertrag (Endpunkte, Request-/Response-Schemas)",
           "item2": "Der Frontend-Agent liest den Vertrag und implementiert passende API-Aufrufe",
@@ -2090,10 +2184,10 @@
         },
         "bestPractices": {
           "title": "Best Practices",
-          "tip1": "Verwende klare initiale Eingaben, die jedem Agenten seine Rolle und die Art der Koordination erklären",
+          "tip1": "Verwende klare initiale Eingaben, die jedem Agent seine Rolle und die Art der Koordination erklären",
           "tip2": "Erstelle ein gemeinsames Dokument im Channel für Spezifikationen, die beide Agenten benötigen",
           "tip3": "Nutze @Erwähnungen, wenn ein Agent eine bestimmte Antwort von einem anderen benötigt",
-          "tip4": "Starte den Backend-/Infrastruktur-Agenten zuerst, damit er Verträge für Konsumenten posten kann",
+          "tip4": "Starte den Backend-/Infrastruktur-Agent zuerst, damit er Verträge für Konsumenten posten kann",
           "tip5": "Halte Channel-Beschreibungen spezifisch, damit Agenten den Kollaborationskontext verstehen"
         }
       },
@@ -2122,7 +2216,7 @@
           "field3": "Runner — Welcher Runner den Loop ausführen soll",
           "field4": "Repository — Das Repository, an dem der Agent arbeiten soll",
           "field5": "Branch — Der auszucheckende Branch (standardmäßig main)",
-          "field6": "Eingabe — Die Aufgabe für den Agenten, z. B. „Überprüfe die letzten Commits auf Code-Qualitätsprobleme. Prüfe auf Sicherheitslücken, Leistungsprobleme und Stil-Inkonsistenzen. Poste eine Zusammenfassung in den Channel.“",
+          "field6": "Eingabe — Die Aufgabe für den Agent, z. B. „Überprüfe die letzten Commits auf Code-Qualitätsprobleme. Prüfe auf Sicherheitslücken, Leistungsprobleme und Stil-Inkonsistenzen. Poste eine Zusammenfassung in den Channel.“",
           "field7": "Zeitplan — Lege den Cron-Zeitplan fest (z. B. jeden Tag um 9 Uhr, jeden Montag)"
         },
         "step3": {

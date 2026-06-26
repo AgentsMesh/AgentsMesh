@@ -1,7 +1,7 @@
 {
   "ide": {
     "activities": {
-      "workspace": "Espacio de Trabajo",
+      "workspace": "Workspace",
       "tickets": "Tickets",
       "channels": "Canales",
       "mesh": "Mesh",
@@ -10,7 +10,8 @@
       "repositories": "Repositorios",
       "runners": "Runner",
       "settings": "Configuración",
-      "help": "Ayuda y comentarios"
+      "help": "Ayuda y comentarios",
+      "infra": "Infraestructura"
     },
     "bottomPanel": {
       "output": "Salida",
@@ -26,13 +27,13 @@
       "noActivity": "Sin actividad reciente",
       "selectPodFirst": "Seleccione un terminal para ver detalles",
       "noBindings": "Sin vínculos",
-      "podChannels": "Unido a {count} canal(es)",
+      "podChannels": "Unido a {count} Channel(s)",
       "members": "Miembros",
       "incomingBindings": "Vínculos entrantes",
       "outgoingBindings": "Vínculos salientes",
       "currentPod": "Este Pod",
       "sendMessagePlaceholder": "Enviar un mensaje...",
-      "channelDocument": "Documento del Canal",
+      "channelDocument": "Documento del Channel",
       "deliveryTab": {
         "notAvailable": "Estado de entrega no disponible",
         "requiresRepoBranch": "Requiere repositorio y rama",
@@ -45,12 +46,12 @@
       "infoTab": {
         "notFound": "Información del Pod no disponible",
         "podKey": "Pod Key",
-        "agent": "Agente",
-        "agentStatus": "Estado del agente",
+        "agent": "Agent",
+        "agentStatus": "Estado del Agent",
         "runner": "Runner",
         "repository": "Repositorio",
         "branch": "Rama",
-        "worktree": "Directorio de trabajo",
+        "worktree": "Worktree",
         "ticket": "Ticket",
         "createdBy": "Creado por",
         "startedAt": "Iniciado",
@@ -64,8 +65,8 @@
       "selectRunner": "Seleccionar Runner",
       "selectRunnerPlaceholder": "Elige un runner...",
       "noRunnersAvailable": "No runners available",
-      "selectAgent": "Seleccionar Agente",
-      "selectAgentPlaceholder": "Elige un agente...",
+      "selectAgent": "Seleccionar Agent",
+      "selectAgentPlaceholder": "Elige un Agent...",
       "noAgentsForRunner": "This runner does not support any agents",
       "selectCredential": "API Credentials",
       "selectRuntimeBundles": "Runtime Env Bundles",
@@ -80,7 +81,7 @@
       "branch": "Rama",
       "branchPlaceholder": "main",
       "prompt": "Prompt Inicial",
-      "promptPlaceholder": "Ingresa la tarea inicial para el agente...",
+      "promptPlaceholder": "Ingresa la tarea inicial para el Agent...",
       "advancedOptions": "Advanced Options",
       "runnerAutoSelect": "Auto-select (Recommended)",
       "advanced": "Opciones Avanzadas",
@@ -99,9 +100,9 @@
       "alias": "Alias",
       "aliasPlaceholder": "Ingrese un nombre para este pod...",
       "perpetual": "Perpetuo",
-      "perpetualDescription": "Reinicio automático al salir el agente. El Pod permanece activo indefinidamente.",
-      "noBundleLabel": "Usar autenticación predeterminada del agente",
-      "noBundleHint": "No se inyectan credenciales personalizadas; el agente usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.).",
+      "perpetualDescription": "Reinicio automático al salir el Agent. El Pod permanece activo indefinidamente.",
+      "noBundleLabel": "Usar autenticación predeterminada del Agent",
+      "noBundleHint": "No se inyectan credenciales personalizadas; el Agent usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.).",
       "multiBundleHint": "Los paquetes seleccionados se fusionan en el entorno del Pod en orden; las entradas posteriores anulan las anteriores en claves en conflicto.",
       "selectedOrderHint": "Seleccionados (orden de fusión)",
       "moveUp": "Subir",
@@ -136,11 +137,13 @@
           "extensions": "Extensions",
           "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
-          "billingDesc": "Subscription and payments"
+          "billingDesc": "Subscription and payments",
+          "usage": "Uso de tokens",
+          "usageDesc": "Monitorea el consumo de tokens"
         }
       },
       "mesh": {
-        "searchPlaceholder": "Search mesh...",
+        "searchPlaceholder": "Buscar Pod / Runner",
         "viewTopology": "View Topology",
         "showTerminatedPods": "Show terminated pods",
         "networkStats": "Network Stats",
@@ -157,8 +160,24 @@
         "selectedChannel": "Selected Channel",
         "channelsLabel": "Canales",
         "podsLabel": "Pods",
-        "terminal": "Terminal"
-      }
+        "terminal": "Terminal",
+        "resetFilters": "Restablecer filtros",
+        "matchCount": "{count} coincidentes",
+        "runnerFilter": "Runner",
+        "statusFilter": "Estado",
+        "runnerPrefix": "Runner",
+        "statusRunning": "En ejecución",
+        "statusInit": "Inicializando",
+        "statusTerminated": "Terminado",
+        "statusFailed": "Fallido"
+      },
+      "collapse": "Contraer barra lateral"
+    },
+    "orgSwitcher": {
+      "title": "Organización actual",
+      "empty": "No hay organizaciones",
+      "create": "Crear organización",
+      "manage": "Configuración de la organización"
     }
   }
 }

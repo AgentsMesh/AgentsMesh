@@ -4,6 +4,7 @@ go_library(
     name = "agent",
     srcs = [
         "agent_service.go",
+        "agent_upgrade.go",
         "config_builder.go",
         "config_builder_agentfile.go",
         "config_builder_eval.go",
@@ -40,6 +41,7 @@ go_test(
     name = "agent_test",
     srcs = [
         "agent_service_test.go",
+        "agent_upgrade_test.go",
         "config_builder_schema_test.go",
         "custom_agent_test.go",
         "message_service_delivery_test.go",

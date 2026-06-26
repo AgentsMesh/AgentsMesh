@@ -20,7 +20,7 @@
       },
       "security": {
         "title": "Votre Code, Votre Infrastructure",
-        "content": "Agrandir votre workforce d'agents ne devrait pas signifier abandonner le contrôle. Votre code et vos données restent sur votre infrastructure, toujours."
+        "content": "Faire évoluer votre workforce d'Agents ne devrait pas signifier abandonner le contrôle. Votre code et vos données restent sur votre infrastructure, toujours."
       }
     },
     "contact": {
@@ -44,7 +44,7 @@
         "description": "Les Harness Engineers conçoivent les environnements d'exécution où opèrent les agents IA. Vous concevrez des sandboxes, définirez des contraintes d'exécution et construirez l'infrastructure qui maintient les agents sécurisés, isolés et performants.",
         "resp1": "Concevoir et construire des environnements d'exécution sécurisés et isolés pour les agents IA",
         "resp2": "Définir les contraintes d'exécution, les limites de permissions et les garde-fous de sécurité",
-        "resp3": "Développer et optimiser l'infrastructure sandbox pour des opérations d'agents reproductibles"
+        "resp3": "Développer et optimiser l'infrastructure Sandbox pour des opérations d'Agents reproductibles"
       },
       "producer": {
         "title": "Builder",
@@ -95,7 +95,7 @@
     "hero": {
       "title": "Vos agents.",
       "titleHighlight": "Vos règles.",
-      "subtitle": "Sécurité et gouvernance de niveau entreprise pour les organisations qui gèrent des flottes d'agents à grande échelle."
+      "subtitle": "Sécurité et gouvernance de niveau entreprise pour les organisations qui gèrent des workforces d'Agents à grande échelle."
     },
     "onpremise": {
       "title": "Déploiement",

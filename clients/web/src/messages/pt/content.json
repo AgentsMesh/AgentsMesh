@@ -16,11 +16,11 @@
       },
       "collaboration": {
         "title": "Equipes Vencem Individuos",
-        "content": "Um agente brilhante nao resolve tudo. Uma equipe coordenada de agentes -- cada um com sua especialidade, comunicando e compartilhando contexto -- resolve."
+        "content": "Um Agent brilhante nao resolve tudo. Uma equipe coordenada de Agents -- cada um com sua especialidade, comunicando e compartilhando contexto -- resolve."
       },
       "security": {
         "title": "Seu Codigo, Sua Infraestrutura",
-        "content": "Escalar sua workforce de agentes nao deveria significar perder o controle. Seu codigo e dados ficam na sua infraestrutura, sempre."
+        "content": "Escalar sua workforce de Agents nao deveria significar perder o controle. Seu codigo e dados ficam na sua infraestrutura, sempre."
       }
     },
     "contact": {
@@ -44,7 +44,7 @@
         "description": "Harness Engineers projetam os ambientes de execucao onde agentes IA operam. Voce projetara sandboxes, definira restricoes de execucao e construira a infraestrutura que mantem os agentes seguros, isolados e performaticos.",
         "resp1": "Projetar e construir ambientes de execucao seguros e isolados para agentes IA",
         "resp2": "Definir restricoes de execucao, limites de permissao e guardrails de seguranca",
-        "resp3": "Desenvolver e otimizar infraestrutura sandbox para operacoes reproduziveis de agentes"
+        "resp3": "Desenvolver e otimizar infraestrutura Sandbox para operacoes reproduziveis de Agents"
       },
       "producer": {
         "title": "Builder",
@@ -95,7 +95,7 @@
     "hero": {
       "title": "Seus agentes.",
       "titleHighlight": "Suas regras.",
-      "subtitle": "Seguranca e governanca de nivel enterprise para organizacoes que gerenciam workforces de agentes em escala."
+      "subtitle": "Seguranca e governanca de nivel enterprise para organizacoes que gerenciam workforces de Agents em escala."
     },
     "onpremise": {
       "title": "Implantacao",

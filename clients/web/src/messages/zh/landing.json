@@ -13,7 +13,7 @@
     "hero": {
       "badge": "AI Agent 团队管理平台",
       "title1": "基于终端的",
-      "title2": "编程智能体",
+      "title2": "编程 Agent",
       "title3": "协作平台",
       "slogan1": "五个人的团队，",
       "slogan2": "五十个人的产出。",
@@ -92,12 +92,12 @@
         "autonomy": "自主性",
         "capabilities": "能力",
         "environment": "环境",
-        "multiAgent": "多智能体",
+        "multiAgent": "多 Agent",
         "selfHosted": "自托管",
         "ide": {
           "autonomy": "被动响应",
           "capabilities": "代码补全",
-          "environment": "IDE 沙箱",
+          "environment": "IDE Sandbox",
           "multiAgent": "不支持",
           "selfHosted": "仅限云端"
         },
@@ -132,20 +132,20 @@
         "description": "Agent 互相观察彼此的工作、通过频道共享上下文、自行协调。它们自动发现队友、协商权限，工作量大了还会自己拉新人入场。",
         "highlights": {
           "0": "Agent 实时观察彼此的终端",
-          "1": "频道消息支持 @提及和上下文共享",
+          "1": "Channel 消息支持 @提及和上下文共享",
           "2": "自动发现——Agent 自己寻找和招募同伴",
           "3": "实时拓扑图展示所有 Agent 连接",
           "4": "权限管控——只读观察或完整控制"
         }
       },
       "tickets": {
-        "title": "写个工单，活就开始干了。",
+        "title": "写个 Ticket，活就开始干了。",
         "subtitle": "Tickets",
         "description": "把任务往看板一放，Agent 自动认领、拉分支、写代码、提 MR。你负责审查，它负责交付。就这么简单。",
         "highlights": {
           "0": "工单自动成为 Agent 的指令",
           "1": "Agent 自主将史诗拆解为子任务",
-          "2": "MR/PR 关联工单，实时显示 CI 状态",
+          "2": "MR/PR 关联 Ticket，实时显示 CI 状态",
           "3": "看板追踪完整生命周期——从待办到交付",
           "4": "Git Webhook 自动闭环"
         }
@@ -339,7 +339,7 @@
       "typeMessage": "输入消息...",
       "connecting": "正在连接 AgentsMesh...",
       "connected": "已连接到 AgentsMesh 服务器",
-      "workspace": "工作区：/projects/e-commerce",
+      "workspace": "Workspace：/projects/e-commerce",
       "monitorPod": "监控 pod beta-dev 并协助协调身份验证实现",
       "bindingPod": "我将绑定到 pod beta-dev 进行观察和协调...",
       "boundToPod": "已绑定到 beta-dev (Codex CLI)",
@@ -354,9 +354,9 @@
       "rateLimitAdded": "beta-dev：已为认证路由添加速率限制",
       "reviewChanges": "很好！beta-dev 已实现速率限制。现在我来审查更改...",
       "podInfo": {
-        "initializing": "Pod: alpha-dev | 智能体: Claude Code | 状态: 初始化中",
-        "running": "Pod: alpha-dev | 智能体: Claude Code | 状态: 运行中",
-        "observing": "Pod: alpha-dev | 智能体: Claude Code | 观察中: beta-dev"
+        "initializing": "Pod: alpha-dev | Agent : Claude Code | 状态: 初始化中",
+        "running": "Pod: alpha-dev | Agent : Claude Code | 状态: 运行中",
+        "observing": "Pod: alpha-dev | Agent : Claude Code | 观察中: beta-dev"
       }
     },
     "coreDemo": {
@@ -392,7 +392,7 @@
       "architecture": {
         "yourInfrastructure": "你的基础设施",
         "runner": "Runner",
-        "agent": "智能体",
+        "agent": "Agent",
         "websocket": "WebSocket",
         "agentsmeshCloud": "AgentsMesh 云"
       }
@@ -400,7 +400,7 @@
     "demoVideo": {
       "title": "看看你的未来团队",
       "titleHighlight": "如何工作",
-      "description": "两分钟。从工单到合并请求——全程自主完成。",
+      "description": "两分钟。从 Ticket 到合并请求——全程自主完成。",
       "iframeTitle": "AgentsMesh 产品演示",
       "highlight1": "完整生命周期演示",
       "highlight2": "多 Agent 协作",

@@ -19,6 +19,22 @@ func (cm *RunnerConnectionManager) HandleUpgradeStatus(runnerID int64, data *run
 	}
 }
 
+// HandleUpgradeAgentResult records the agent upgrade terminal result. The
+// installed version refreshes via the next heartbeat's agent_versions diff;
+// this log is the audit trail (and the place to wire realtime push if the UX
+// ever needs failure surfacing beyond the version not changing).
+func (cm *RunnerConnectionManager) HandleUpgradeAgentResult(runnerID int64, data *runnerv1.UpgradeAgentResultEvent) {
+	cm.UpdateHeartbeat(runnerID)
+	cm.logger.Info("received agent upgrade result",
+		"runner_id", runnerID,
+		"request_id", data.RequestId,
+		"agent_slug", data.AgentSlug,
+		"status", data.Status,
+		"new_version", data.NewVersion,
+		"error", data.Error,
+	)
+}
+
 func (cm *RunnerConnectionManager) HandleLogUploadStatus(runnerID int64, data *runnerv1.LogUploadStatusEvent) {
 	cm.UpdateHeartbeat(runnerID)
 	cm.logger.Info("received log upload status",

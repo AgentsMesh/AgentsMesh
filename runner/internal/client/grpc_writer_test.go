@@ -63,6 +63,10 @@ func (h *mockHandlerWithRelayConnections) OnUpgradeRunner(cmd *runnerv1.UpgradeR
 	return nil
 }
 
+func (h *mockHandlerWithRelayConnections) OnUpgradeAgent(cmd *runnerv1.UpgradeAgentCommand) error {
+	return nil
+}
+
 func (h *mockHandlerWithRelayConnections) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error {
 	return nil
 }

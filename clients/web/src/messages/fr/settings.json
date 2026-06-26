@@ -16,9 +16,7 @@
     "backToSettings": "Retour aux paramètres",
     "general": "Général",
     "team": "Équipe",
-    "gitProviders": "Fournisseurs Git",
     "agents": "Agents",
-    "billing": "Facturation",
     "personal": {
       "title": "Personal Settings",
       "description": "Manage your personal preferences",
@@ -33,7 +31,9 @@
         "agentCredentials": "Agent Credentials",
         "agentCredentialsDesc": "API keys for AI agents",
         "notifications": "Notifications",
-        "notificationsDesc": "Push notification preferences"
+        "notificationsDesc": "Push notification preferences",
+        "support": "Tickets de support",
+        "supportDesc": "Soumettre et suivre les demandes de support"
       },
       "general": {
         "title": "General Settings",
@@ -123,7 +123,10 @@
         "cancel": "Cancel",
         "inviting": "Inviting...",
         "sendInvite": "Send Invite"
-      }
+      },
+      "subscriptionFrozen": "Votre abonnement a expiré. Veuillez renouveler votre abonnement pour inviter des membres.",
+      "manageSeats": "Gérer les sièges",
+      "renewSubscription": "Renouveler l'abonnement"
     },
     "agentConfig": {
       "title": "Agent Configuration",
@@ -261,10 +264,6 @@
       "namePlaceholder": "e.g., Work Config, Personal",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description for this profile",
-      "baseUrl": "Base URL",
-      "apiKey": "API Key",
-      "apiKeyPlaceholder": "Leave empty to keep existing",
-      "apiKeyEditHint": "Leave empty to keep the existing API key",
       "profileCreated": "Profile created successfully",
       "profileUpdated": "Profile updated successfully",
       "profileDeleted": "Profile deleted successfully",
@@ -273,17 +272,13 @@
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
       "confirmDelete": "Are you sure you want to delete this profile?",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "Leave empty to keep existing",
-      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
-      "credentialMethod": "Authentication Method",
-      "credentialMethodApiKey": "API Key",
-      "credentialMethodAuthToken": "Auth Token",
       "noBundleLabel": "Utiliser l'auth par défaut de l'agent",
       "noBundleHint": "Aucun identifiant personnalisé injecté ; l'agent utilise son flux d'authentification intégré (OAuth, CLI connecté, etc.).",
       "removeSecret": "Supprimer cet identifiant",
       "willRemove": "Sera supprimé lors de l'enregistrement",
-      "baseUrlSecurityHint": "N'intégrez pas de jeton dans l'URL : elle est stockée en clair et affichée ici lors de la modification."
+      "baseUrlSecurityHint": "N'intégrez pas de jeton dans l'URL : elle est stockée en clair et affichée ici lors de la modification.",
+      "secretPlaceholder": "Laisser vide pour conserver l'existant",
+      "secretEditHint": "Laisser vide pour conserver la valeur existante"
     },
     "sshKeys": {
       "title": "SSH Keys",
@@ -449,12 +444,12 @@
       "runnerOfflineDesc": "When a runner goes offline or has issues",
       "active": "Notifications are active",
       "deliveryPreferences": "Préférences de livraison",
-      "channelMessage": "Messages de canal",
+      "channelMessage": "Messages de Channel",
       "channelMessageDesc": "Nouveaux messages dans les canaux auxquels vous appartenez",
       "channelMention": "@Mentions",
-      "channelMentionDesc": "Quand quelqu'un vous mentionne dans un canal",
+      "channelMentionDesc": "Quand quelqu'un vous mentionne dans un Channel",
       "terminalOsc": "Notifications terminal",
-      "terminalOscDesc": "Notifications des terminaux d'agents (événements OSC)",
+      "terminalOscDesc": "Notifications des terminaux d'Agents (événements OSC)",
       "taskCompleted": "Tâche terminée",
       "taskCompletedDesc": "Quand un agent termine sa tâche"
     },
@@ -653,7 +648,7 @@
         "scopePodsWrite": "Écrire les Pods",
         "scopePodsWriteDesc": "Créer, terminer et gérer le cycle de vie des Pods",
         "scopeTicketsRead": "Lire les tickets",
-        "scopeTicketsReadDesc": "Lister et afficher les tickets, le tableau et les détails des tickets",
+        "scopeTicketsReadDesc": "Lister et afficher les Tickets, le tableau et les détails des Tickets",
         "scopeTicketsWrite": "Écrire les tickets",
         "scopeTicketsWriteDesc": "Créer, modifier, supprimer des tickets et changer le statut",
         "scopeChannelsRead": "Lire les canaux",
@@ -661,7 +656,7 @@
         "scopeChannelsWrite": "Écrire les canaux",
         "scopeChannelsWriteDesc": "Créer, modifier des canaux et envoyer des messages",
         "scopeRunnersRead": "Lire les Runners",
-        "scopeRunnersReadDesc": "Lister les runners, afficher les détails, l'état et les pods associés",
+        "scopeRunnersReadDesc": "Lister les Runners, afficher les détails, l'état et les Pods associés",
         "scopeReposRead": "Lire les dépôts",
         "scopeReposReadDesc": "Lister les dépôts, afficher les détails, les branches et les merge requests",
         "expirationLabel": "Expiration",
@@ -671,7 +666,11 @@
         "expiration1y": "1 an",
         "cancel": "Annuler",
         "create": "Créer",
-        "creating": "Création..."
+        "creating": "Création...",
+        "scopeLoopsRead": "Lire les loops",
+        "scopeLoopsReadDesc": "Lister les loops, voir les détails et l'historique des exécutions",
+        "scopeLoopsWrite": "Écrire les loops",
+        "scopeLoopsWriteDesc": "Déclencher des exécutions de loop et annuler les loops en cours"
       },
       "secretDialog": {
         "title": "Clé API créée",
@@ -696,6 +695,191 @@
         "description": "Êtes-vous sûr de vouloir supprimer définitivement cette clé API ? Cette action est irréversible.",
         "delete": "Supprimer",
         "cancel": "Annuler"
+      },
+      "scopeGroupLoops": "Loops"
+    },
+    "gitProviders": {
+      "title": "Fournisseurs Git",
+      "description": "Configurer les fournisseurs Git pour l'intégration des dépôts",
+      "addProvider": "Ajouter un fournisseur",
+      "loading": "Chargement des fournisseurs...",
+      "noProviders": "Aucun fournisseur Git configuré. Ajoutez-en un pour commencer.",
+      "default": "Par défaut",
+      "disabled": "Désactivé",
+      "configure": "Configurer",
+      "enable": "Activer",
+      "disable": "Désactiver",
+      "delete": "Supprimer",
+      "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce fournisseur ?",
+      "failedToLoad": "Échec du chargement des fournisseurs Git",
+      "failedToAdd": "Échec de l'ajout du fournisseur",
+      "failedToUpdate": "Échec de la mise à jour du fournisseur",
+      "failedToDelete": "Échec de la suppression du fournisseur",
+      "failedToToggle": "Échec du changement de statut du fournisseur",
+      "sshAuth": "Authentification SSH",
+      "dialog": {
+        "addTitle": "Ajouter un fournisseur Git",
+        "editTitle": "Configurer le fournisseur",
+        "providerType": "Type de fournisseur",
+        "sshHint": "Le fournisseur SSH utilise des clés SSH pour l'authentification. Adapté aux serveurs Git auto-hébergés.",
+        "nameLabel": "Nom",
+        "namePlaceholderSSH": "ex. Mon serveur Git",
+        "namePlaceholder": "ex. Mon GitHub",
+        "baseUrlLabel": "URL de base",
+        "baseUrlHint": "Pour les instances auto-hébergées, saisissez l'URL de base",
+        "clientIdLabel": "Client ID (facultatif)",
+        "clientIdPlaceholder": "Client ID de l'application OAuth",
+        "clientSecretLabel": "Client Secret (facultatif)",
+        "clientSecretPlaceholder": "Client Secret de l'application OAuth",
+        "botTokenLabel": "Jeton de bot (facultatif)",
+        "botTokenPlaceholder": "Jeton d'accès personnel",
+        "sshKeyLabel": "Clé SSH",
+        "sshKeyPlaceholder": "Sélectionnez une clé SSH...",
+        "noSSHKeys": "Aucune clé SSH disponible. Créez-en une ci-dessous.",
+        "setDefault": "Définir comme fournisseur par défaut",
+        "cancel": "Annuler",
+        "saving": "Enregistrement...",
+        "saveChanges": "Enregistrer les modifications",
+        "addProvider": "Ajouter un fournisseur"
+      }
+    },
+    "billing": {
+      "checkout": {
+        "title": "Finaliser votre achat",
+        "selectBillingCycle": "Sélectionner le cycle de facturation",
+        "monthly": "Mensuel",
+        "yearly": "Annuel (Économisez 17 %)",
+        "monthlyPrice": "{price} $/siège/mois",
+        "yearlyPrice": "{price} $/siège/an",
+        "orderSummary": "Récapitulatif de la commande",
+        "plan": "Plan",
+        "billingCycle": "Cycle de facturation",
+        "pricePerSeat": "Prix par siège",
+        "seats": "Sièges",
+        "total": "Total",
+        "proceedToPayment": "Procéder au paiement",
+        "processing": "Traitement...",
+        "cancel": "Annuler",
+        "redirecting": "Redirection vers le paiement...",
+        "scanQRCode": "Scannez le QR code pour payer",
+        "qrCodeExpired": "QR code expiré",
+        "refresh": "Actualiser",
+        "waitingForPayment": "En attente de la confirmation du paiement...",
+        "paymentMethods": "Moyens de paiement",
+        "stripe": "Carte bancaire (Stripe)",
+        "alipay": "Alipay",
+        "wechat": "WeChat Pay",
+        "additionalSeats": "Sièges supplémentaires",
+        "seatPurchaseNote": "Les sièges seront ajoutés immédiatement à votre abonnement actuel.",
+        "stripePayment": "Paiement via Stripe (carte bancaire)",
+        "globalPayment": "Paiement sécurisé par carte bancaire",
+        "cnPayment": "Paiement via Alipay ou WeChat Pay",
+        "save": "Économisez {amount} $",
+        "scanToPay": "Scanner pour payer",
+        "scanInstructions": "Utilisez Alipay ou WeChat pour scanner le QR code et finaliser le paiement.",
+        "orderNo": "N° de commande",
+        "checkPaymentStatus": "Vérifier le statut du paiement"
+      },
+      "cancel": {
+        "title": "Annuler l'abonnement",
+        "description": "Êtes-vous sûr de vouloir annuler votre abonnement ?",
+        "endOfPeriod": "Annuler à la fin de la période",
+        "endOfPeriodDesc": "Conserver l'accès jusqu'au {date}, puis annuler",
+        "immediate": "Annuler immédiatement",
+        "immediateDesc": "Annuler maintenant et perdre l'accès immédiatement",
+        "immediateWarning": "Avertissement : vous perdrez immédiatement l'accès à toutes les fonctionnalités premium. Cette action est irréversible.",
+        "keepSubscription": "Conserver l'abonnement",
+        "confirmCancel": "Annuler l'abonnement",
+        "cancelling": "Annulation...",
+        "recommended": "Recommandé"
+      },
+      "seats": {
+        "title": "Gestion des sièges",
+        "seatsUsed": "sièges utilisés",
+        "available": "disponibles",
+        "maxSeats": "Maximum {max} sièges autorisés sur votre plan",
+        "addSeats": "Ajouter des sièges",
+        "purchaseSeats": "Acheter des sièges supplémentaires",
+        "seatsToAdd": "Nombre de sièges",
+        "proratedNote": "Un montant au prorata vous sera facturé pour le reste de votre période de facturation.",
+        "cancelPurchase": "Annuler",
+        "proceedToPurchase": "Procéder à l'achat",
+        "processing": "Traitement...",
+        "upgradeToAddSeats": "Passez à un plan payant pour ajouter davantage de sièges",
+        "retry": "Réessayer"
+      },
+      "invoices": {
+        "title": "Historique des factures",
+        "invoiceNo": "Facture n°",
+        "date": "Date",
+        "period": "Période",
+        "amount": "Montant",
+        "status": "Statut",
+        "noInvoices": "Aucune facture pour l'instant",
+        "loadMore": "Charger plus",
+        "loading": "Chargement...",
+        "retry": "Réessayer"
+      },
+      "cycleSwitch": {
+        "title": "Cycle de facturation",
+        "description": "Basculez entre la facturation mensuelle et annuelle. Les changements prennent effet à la fin de votre période de facturation actuelle.",
+        "monthly": "Mensuel",
+        "yearly": "Annuel",
+        "saveNote": "Économisez 17 %",
+        "pendingChange": "Votre facturation passera de {from} à {to} le {date}.",
+        "cancelChange": "Annuler le changement",
+        "cancelling": "Annulation...",
+        "confirmTitle": "Changer le cycle de facturation",
+        "confirmDescription": "Êtes-vous sûr de vouloir passer de la facturation {from} à {to} ? Ce changement prendra effet à la fin de votre période de facturation actuelle.",
+        "cancel": "Annuler",
+        "confirm": "Confirmer",
+        "switching": "Changement...",
+        "success": "Cycle de facturation modifié avec succès"
+      }
+    },
+    "credentialForm": {
+      "anthropic": {
+        "baseUrl": "URL de base Anthropic",
+        "apiKey": "Clé API Anthropic",
+        "authToken": "Jeton d'authentification Anthropic",
+        "authMethod": "Authentification",
+        "authMethodHint": "Fournissez l'un ou l'autre"
+      },
+      "openai": {
+        "apiKey": "Clé API OpenAI"
+      },
+      "google": {
+        "apiKey": "Clé API Google"
+      },
+      "customEnv": {
+        "title": "Variables d'environnement personnalisées",
+        "addButton": "Ajouter une variable",
+        "keyPlaceholder": "NOM_ENV",
+        "valuePlaceholder": "Valeur",
+        "remove": "Supprimer",
+        "keyInvalid": "Nom de variable d'environnement invalide (lettres majuscules, chiffres et underscores uniquement)",
+        "keyConflict": "En conflit avec un champ déclaré",
+        "keyDuplicate": "Nom de variable d'environnement en double"
+      },
+      "codex": {
+        "customEnvHint": "Ajoutez OPENAI_BASE_URL, OPENAI_MODEL, etc. pour le proxy ou les remplacements de modèle"
+      },
+      "loopal": {
+        "customEnvHint": "Clés de fournisseur supplémentaires, ex. XAI_API_KEY, DEEPSEEK_API_KEY"
+      },
+      "gemini": {
+        "customEnvHint": "Clés supplémentaires telles que GEMINI_API_KEY"
+      },
+      "aider": {
+        "customEnvHint": "Autres clés de fournisseur ou paramètres de proxy"
+      },
+      "opencode": {
+        "customEnvHint": "Toutes les variables d'environnement requises par opencode"
+      },
+      "cursor": {
+        "apiKey": "Clé API Cursor",
+        "apiKeyHint": "Facultatif. Laissez vide pour utiliser `cursor-agent login` (OAuth) ; renseignez pour une authentification headless / par clé.",
+        "customEnvHint": "Ajoutez toutes les variables d'environnement supplémentaires dont cursor-agent a besoin"
       }
     }
   }

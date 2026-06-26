@@ -3,20 +3,6 @@
     "title": "Runner",
     "searchPlaceholder": "Rechercher des runners...",
     "addRunner": "Ajouter Runner",
-    "registrationTokens": {
-      "title": "Tokens d'Inscription",
-      "createToken": "Créer Token",
-      "noTokens": "Aucun token d'inscription. Créez un token pour enregistrer de nouveaux Runners.",
-      "description": "Description",
-      "noDescription": "Aucune description",
-      "created": "Créé",
-      "expires": "Expire",
-      "noExpiry": "Pas d'expiration",
-      "uses": "Utilisations",
-      "unlimited": "Illimité",
-      "revoke": "Révoquer",
-      "revoked": "Révoqué"
-    },
     "runnerCount": "runners",
     "disabled": "Désactivé",
     "filters": {
@@ -83,26 +69,7 @@
       "mobileVersionLabel": "Version :",
       "upgradeAvailable": "Mise à jour disponible",
       "visibilityOrganization": "Organisation",
-      "visibilityPrivate": "Privé",
-      "stats": {
-        "online": "En ligne",
-        "offline": "Hors ligne",
-        "busy": "Occupé",
-        "activePods": "Pods Actifs"
-      },
-      "table": {
-        "nodeId": "ID du Nœud",
-        "status": "Statut",
-        "pods": "Pods",
-        "version": "Version",
-        "os": "SE",
-        "cpu": "CPU",
-        "lastSeen": "Dernière vue",
-        "actions": "Actions"
-      },
-      "noDescription": "Aucune description",
-      "justNow": "À l'instant",
-      "ago": "il y a"
+      "visibilityPrivate": "Privé"
     },
     "addRunnerModal": {
       "title": "Add Runner",
@@ -192,12 +159,23 @@
       "upgrade": "Mettre à jour",
       "upgrading": "Mise à jour...",
       "upgradeConfirm": "Êtes-vous sûr de vouloir mettre à jour ce runner vers la dernière version ? Le runner redémarrera après la mise à jour.",
-      "upgradeConfirmWithPods": "Ce runner a actuellement {count} pods actifs. Le runner redémarrera après la mise à jour — les sessions actives sont préservées via Poddaemon.",
+      "upgradeConfirmWithPods": "Ce Runner a actuellement {count, plural, one {# Pod actif} other {# Pods actifs}}. Le Runner redémarrera après la mise à jour — les sessions actives sont préservées via Poddaemon.",
       "upgradeDialogTitle": "Mettre à jour le Runner",
       "upgradeSent": "Commande de mise à jour envoyée. Le runner téléchargera et redémarrera automatiquement.",
       "upgradeFailed": "Échec de l'envoi de la commande de mise à jour. Veuillez réessayer.",
       "upgradeOffline": "Runner hors ligne, mise à jour impossible",
-      "upgradeTooltip": "Mettre à jour le runner vers la dernière version"
+      "upgradeTooltip": "Mettre à jour le runner vers la dernière version",
+      "agentVersionsTitle": "Agents installés",
+      "agentVersionUnknown": "version inconnue",
+      "agentUpgrade": "Mettre à jour",
+      "agentUpgradeDialogTitle": "Mettre à jour l'agent",
+      "agentUpgradeConfirm": "Mettre à jour {agent} vers la dernière version sur ce runner ?",
+      "agentUpgrading": "Mise à jour...",
+      "agentUpgradeSent": "Commande de mise à jour envoyée pour {agent}. La version sera actualisée une fois terminée.",
+      "agentUpgradeFailed": "Échec de la mise à jour de {agent}.",
+      "agentUpgradeTooltip": "Mettre à jour {agent} vers la dernière version",
+      "agentUpgradeUnsupported": "Cet agent ne prend pas en charge la mise à jour à distance.",
+      "tags": "Tags"
     },
     "authorize": {
       "title": "Authorize Runner",
@@ -229,31 +207,29 @@
       "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
       "expiresAt": "This link expires at {time}"
     },
-    "token": {
-      "title": "Token d'Inscription",
-      "description": "Utilisez ce token pour enregistrer de nouveaux runners",
-      "generate": "Générer Token",
-      "copy": "Copier",
-      "copied": "Copié !",
-      "expires": "Expire",
-      "active": "actif",
-      "noTokens": "Aucun token d'inscription",
-      "viewAll": "Voir tous les tokens",
-      "manage": "Gérer les Tokens"
-    },
-    "createTokenModal": {
-      "title": "Créer Token d'Inscription",
-      "descriptionLabel": "Description (optionnel)",
-      "descriptionPlaceholder": "ex., Runner équipe de développement",
-      "maxUsesLabel": "Utilisations Max (optionnel)",
-      "maxUsesPlaceholder": "Laisser vide pour illimité",
-      "expiresLabel": "Expire Le (optionnel)",
-      "cancel": "Annuler",
-      "creating": "Création...",
-      "create": "Créer"
-    },
     "resume": {
-      "ALREADY_EXISTS": "Ce pod a déjà été repris — ouvrez le pod repris dans l'espace de travail."
+      "ALREADY_EXISTS": "Ce Pod a déjà été repris — ouvrez le Pod repris dans le Workspace."
+    },
+    "registrationTokens": "Jetons d'enregistrement",
+    "logs": {
+      "title": "Journaux de diagnostic",
+      "upload": "Téléverser les journaux",
+      "uploading": "Téléversement...",
+      "noLogs": "Aucun journal de diagnostic téléversé pour l'instant",
+      "status": {
+        "pending": "En attente",
+        "collecting": "Collecte",
+        "uploading": "Téléversement",
+        "completed": "Terminé",
+        "failed": "Échoué",
+        "unknown": "Inconnu"
+      },
+      "download": "Télécharger",
+      "size": "Taille",
+      "requestedAt": "Demandé",
+      "uploadSuccess": "Demande de téléversement des journaux envoyée",
+      "uploadFailed": "Échec de la demande de téléversement des journaux",
+      "offlineHint": "Le runner doit être en ligne pour téléverser les journaux"
     }
   },
   "agent": {
@@ -348,6 +324,19 @@
           "description": "Select a model or leave empty to use the first in your list",
           "options": {
             "": "Auto (First in List)"
+          }
+        }
+      }
+    },
+    "loopal": {
+      "fields": {
+        "permission_mode": {
+          "label": "Mode de permission",
+          "description": "Contrôler comment les permissions sont gérées",
+          "options": {
+            "supervised": "Supervisé (Approbation manuelle)",
+            "auto": "Auto (Approbation intelligente)",
+            "bypass": "Contourner (Tout approuver automatiquement)"
           }
         }
       }

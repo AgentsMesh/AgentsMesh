@@ -13,7 +13,7 @@
       "concepts": "コンセプト",
       "features": "機能",
       "agentpod": "AgentPod",
-      "workspace": "ワークスペース",
+      "workspace": "Workspace",
       "channels": "Channels",
       "meshTopology": "Mesh トポロジー",
       "tickets": "チケット",
@@ -26,7 +26,7 @@
       "guides": "ガイド",
       "gitIntegration": "Git 連携",
       "teamManagement": "チーム管理",
-      "multiAgentWorkflows": "マルチエージェントワークフロー",
+      "multiAgentWorkflows": "マルチ Agent ワークフロー",
       "api": "API",
       "apiOverview": "概要",
       "apiAuthentication": "認証",
@@ -42,15 +42,17 @@
       "tutorialMcpSkills": "MCP とスキル",
       "tutorialFirstPod": "はじめての Pod",
       "tutorialTicketWorkflow": "タスク管理",
-      "tutorialMultiAgent": "マルチエージェントコラボレーション",
+      "tutorialMultiAgent": "マルチ Agent コラボレーション",
       "tutorialLoops": "自動化ループ",
       "help": "ヘルプ",
       "faq": "よくある質問",
-      "menu": "メニュー"
+      "menu": "メニュー",
+      "agentfile": "AgentFile",
+      "agentfileLayer": "AgentFile レイヤー"
     },
     "intro": {
       "title": "Introduction",
-      "description": "AgentsMesh は AI エージェントフリート司令センターです。チームが Claude Code、Codex CLI、Gemini CLI、Aider などの AI コーディングエージェントを大規模に統合管理できるプラットフォームです。リモート AI ワークステーション（AgentPod）の管理、マルチエージェントコラボレーション（AgentsMesh）の連携、統合タスク管理による進捗追跡 — すべてを単一のプラットフォームから実行できます。",
+      "description": "AgentsMesh は AI Agent フリート司令センターです。チームが Claude Code、Codex CLI、Gemini CLI、Aider などの AI コーディング Agent を大規模に統合管理できるプラットフォームです。リモート AI ワークステーション（AgentPod）の管理、マルチ Agent コラボレーション（AgentsMesh）の連携、統合タスク管理による進捗追跡 — すべてを単一のプラットフォームから実行できます。",
       "supportedAgents": "Supported AI Agents:",
       "customAgents": "Custom agents via MCP protocol"
     },
@@ -68,7 +70,7 @@
         "security": "セキュリティ"
       },
       "controlPlane": "コントロールプレーン",
-      "controlPlaneDesc": "Pod ライフサイクル、エージェントコマンド、状態同期",
+      "controlPlaneDesc": "Pod ライフサイクル、Agent コマンド、状態同期",
       "dataPlane": "データプレーン",
       "dataPlaneDesc": "ターミナル I/O、リアルタイムストリーミング",
       "cluster": "クラスター",
@@ -78,10 +80,10 @@
       "runnerMac": "macOS",
       "runnerLinux": "Linux",
       "runnerCloud": "クラウド VM",
-      "agentLayer": "エージェント層",
+      "agentLayer": "Agent 層",
       "agentSubtitle": "隔離された Pod 内で動作する AI コーディングエージェント",
       "securityTitle": "セキュリティアーキテクチャ——デュアルパス設計",
-      "securityDesc": "制御信号（Pod 作成、エージェントコマンド、状態更新）は gRPC + 相互 TLS (mTLS) で保護されます。各 Runner はプラットフォーム PKI が発行する固有の X.509 証明書を保持します。ターミナルデータストリーム（キー入力、出力）は Relay クラスターを経由し、レイテンシに敏感な I/O を最適化された別パスで処理します。このデュアルパス設計により、世界中どこからでも、どのデバイスからでも、あらゆるマシン上の AI エージェントを安全に操作できます。"
+      "securityDesc": "制御信号（Pod 作成、Agent コマンド、状態更新）は gRPC + 相互 TLS (mTLS) で保護されます。各 Runner はプラットフォーム PKI が発行する固有の X.509 証明書を保持します。ターミナルデータストリーム（キー入力、出力）は Relay クラスターを経由し、レイテンシに敏感な I/O を最適化された別パスで処理します。このデュアルパス設計により、世界中どこからでも、どのデバイスからでも、あらゆるマシン上の AI Agent を安全に操作できます。"
     },
     "whatYouCanDo": {
       "title": "できること",
@@ -92,7 +94,7 @@
       },
       "remoteWorkstation": {
         "title": "リモート AI ワークステーション",
-        "description": "AgentPod を起動 — リアルタイムターミナルアクセス、Git ワークツリー分離、完全な AI エージェント機能を備えたクラウド開発環境。"
+        "description": "AgentPod を起動 — リアルタイムターミナルアクセス、Git Worktree 分離、完全な AI Agent 機能を備えたクラウド開発環境。"
       },
       "taskDriven": {
         "title": "タスク駆動開発",
@@ -150,7 +152,7 @@
         "description": "Git リポジトリを AgentsMesh に接続し、シームレスな AI 開発ワークフローのためにプロバイダーアクセスを設定します。",
         "overview": {
           "title": "概要",
-          "description": "リポジトリは Git プロジェクトをプラットフォームにリンクします。リンクされたリポジトリで Pod を作成すると、Runner が自動的にプロジェクトをクローンし、分離された Git ワークツリーをセットアップします。AgentsMesh は主要な Git ホスティングプラットフォームと統合し、AI エージェントにシームレスなリポジトリアクセスを提供します。"
+          "description": "リポジトリは Git プロジェクトをプラットフォームにリンクします。リンクされたリポジトリで Pod を作成すると、Runner が自動的にプロジェクトをクローンし、分離された Git Worktree をセットアップします。AgentsMesh は主要な Git ホスティングプラットフォームと統合し、AI Agent にシームレスなリポジトリアクセスを提供します。"
         },
         "providers": {
           "title": "対応 Git プロバイダー",
@@ -208,13 +210,13 @@
           "title": "Pod でのリポジトリの使用",
           "description": "リポジトリが接続されたら、Pod にリンクできます：",
           "step1": "新しい Pod を作成する際、ドロップダウンからリポジトリを選択",
-          "step2": "Runner がリポジトリをクローンし、分離された Git ワークツリーを作成",
-          "step3": "AI エージェントがリポジトリの作業ディレクトリで起動",
-          "step4": "すべての変更は Pod のワークツリーに分離されます"
+          "step2": "Runner がリポジトリをクローンし、分離された Git Worktree を作成",
+          "step3": "AI Agent がリポジトリの作業ディレクトリで起動",
+          "step4": "すべての変更は Pod の Worktree に分離されます"
         },
         "worktree": {
-          "title": "Git ワークツリー分離",
-          "description": "Git ワークツリーにより、複数の Pod が同じリポジトリで同時に作業できます。各 Pod は他に影響を与えることなく独自のブランチで操作します。これは、複数のエージェントが同じコードベースを変更する可能性がある並列 AI エージェント開発において重要です。"
+          "title": "Git Worktree 分離",
+          "description": "Git Worktree により、複数の Pod が同じリポジトリで同時に作業できます。各 Pod は他に影響を与えることなく独自のブランチで操作します。これは、複数の Agent が同じコードベースを変更する可能性がある並列 AI Agent 開発において重要です。"
         },
         "management": {
           "title": "リポジトリの管理",
@@ -222,6 +224,98 @@
           "addRepoSteps": "設定 → リポジトリ → リポジトリを追加に移動します。Git プロバイダーを選択し、認証を行い、接続するリポジトリを選択します。",
           "removeRepo": "リポジトリの削除",
           "removeRepoSteps": "リポジトリを削除すると、AgentsMesh から切断されます。このリポジトリを使用している既存の Pod には影響しませんが、新しい Pod を作成することはできなくなります。"
+        }
+      },
+      "agentfile": {
+        "title": "AgentFile 構文リファレンス",
+        "description": "AgentFile の完全なリファレンス — AgentsMesh で AI Agent の実行環境を構成する方法を定義するドメイン固有言語（DSL）です。",
+        "whatIs": {
+          "title": "AgentFile とは？",
+          "description": "AgentFile は AI Agent の実行環境を構成するための宣言的 DSL で、Dockerfile がコンテナのビルドを定義するのと似ています。AgentsMesh の各 Agent には、Agent を起動するために必要な CLI コマンド、環境変数、構成オプション、ビルドロジックを指定する AgentFile があります。"
+        },
+        "structure": {
+          "title": "構造",
+          "description": "AgentFile は宣言とビルドロジックという 2 種類のステートメントで構成されます。",
+          "declarationsTitle": "宣言（大文字）",
+          "declarationsDesc": "エージェントのアイデンティティ、構成スキーマ、環境、統合を定義するトップレベルのキーワードです。例：AGENT、CONFIG、ENV、MODE、MCP。",
+          "buildLogicTitle": "ビルドロジック（小文字）",
+          "buildLogicDesc": "ビルド時に CLI 引数を構築し、ファイルを書き込み、条件ロジックを適用する命令型ステートメントです。例：arg、file、mkdir、if/else、for/in。"
+        },
+        "declarations": {
+          "title": "宣言キーワード",
+          "description": "宣言は Agent の構成スキーマと実行時環境を定義します。大文字で記述します。",
+          "agentDesc": "Agent を起動するために使用する CLI コマンドです。コマンドとオプションのデフォルト引数を含む引用符付き文字列を受け付けます。",
+          "executableDesc": "実行可能バイナリの名前です。Runner が Agent のインストールを確認するために使用します。",
+          "configDesc": "ユーザーが構成可能なオプションを定義します。型：BOOL、STRING、NUMBER、SECRET、SELECT(\"opt1\",\"opt2\")。= でデフォルト値を任意に設定できます。",
+          "envDesc": "環境変数を宣言します。機密値には SECRET、プレーンテキストには TEXT、必須でないことを示すには OPTIONAL を使用します。静的な値には = \"value\" を使用します。",
+          "modeDesc": "実行モードを設定します。'pty' はエージェントを PTY ターミナルで実行します。'acp' はオプションの引数を伴う Agent Communication Protocol を使用します。",
+          "credentialDesc": "使用する認証情報プロファイルを指定します。引用符付きのプロファイル名、または Runner マシンの認証情報を使用する 'runner_host' を指定します。",
+          "promptDesc": "エージェントに送信される初期プロンプトを設定します。PROMPT_POSITION はプロンプトを挿入する位置を制御します：prepend（ユーザープロンプトの前）、append（後）、none（無効）。",
+          "repoDesc": "REPO はリポジトリを slug または URL で設定します。BRANCH はブランチ名を設定します。GIT_CREDENTIAL は Git 認証方式を選択します：http、ssh、token。",
+          "mcpDesc": "MCP ツール統合を有効または無効にします。ON の場合、オプションの FORMAT でプロトコル形式（例：streamable-http）を指定できます。",
+          "skillsDesc": "再利用可能なスキル定義を Agent に付与します。スキルは slug で参照し、カンマで区切ります。",
+          "setupDesc": "Agent の起動前に実行されるシェルスクリプトです。ヒアドキュメント構文（<<LABEL...LABEL）を使用します。オプションの timeout= パラメータで最大実行時間を秒単位で設定します。",
+          "removeDesc": "以前に定義した項目を削除します。ENV 変数、SKILLS、CLI 引数（arg）、ファイル（file）を削除できます。"
+        },
+        "buildLogic": {
+          "title": "ビルドロジック",
+          "description": "ビルドロジックのステートメントは小文字で、AgentFile の評価フェーズ中に実行されます。CLI 引数を構築し、ファイルを書き込み、条件ロジックを適用します。"
+        },
+        "expressions": {
+          "title": "式",
+          "description": "AgentFile はビルドロジックと宣言で使用できるさまざまな式の型をサポートします。",
+          "typeHeader": "型",
+          "exampleHeader": "例"
+        },
+        "builtinVars": {
+          "title": "組み込み変数",
+          "description": "これらの変数は AgentFile の評価中に自動的に利用可能になり、構成値や実行時コンテキストへのアクセスを提供します。",
+          "variableHeader": "変数",
+          "descHeader": "説明",
+          "configDesc": "CONFIG 宣言で定義された、ユーザー指定の構成値",
+          "sandboxRoot": "Sandbox 環境のルートディレクトリ",
+          "sandboxWorkDir": "Sandbox 内の作業ディレクトリ（リポジトリがクローンされている場合はルートと異なることがあります）",
+          "mcpEnabled": "MCP が有効かどうかを示すブール値",
+          "mcpServers": "MCP サーバー構成パスのリスト",
+          "mcpFormat": "MCP プロトコル形式の文字列",
+          "modeDesc": "現在の実行モード（'pty' または 'acp'）"
+        },
+        "escaping": {
+          "title": "文字列のエスケープ",
+          "description": "AgentFile の文字列は、二重引用符で囲まれた文字列内で標準のエスケープシーケンスをサポートします："
+        },
+        "fullExample": {
+          "title": "完全な例",
+          "description": "以下は Claude Code 用の完全な AgentFile で、宣言、構成、ビルドロジック、セットアップスクリプトを示しています："
+        }
+      },
+      "agentfileLayer": {
+        "title": "AgentFile レイヤー",
+        "description": "AgentFile レイヤーを使うと、ベースの AgentFile を変更せずに Pod ごとに Agent 構成をオーバーライドできます。",
+        "whatIs": {
+          "title": "AgentFile レイヤーとは？",
+          "description": "AgentFile レイヤーは、Pod 作成時にベースの AgentFile の上にマージされる、ユーザー指定のオーバーライドです。AgentsMesh は 3 段階のマージモデルを使用します：ベースの AgentFile（Agent のデフォルト）がユーザー設定（保存された設定）とマージされ、最後にレイヤー（Pod ごとの実行時オーバーライド）が適用されます。レイヤーが最も高い優先度を持ちます。"
+        },
+        "supported": {
+          "title": "サポートされる宣言",
+          "description": "レイヤーで使用できるのは AgentFile 宣言の一部のみです。これらは実行時にオーバーライドする意味がある宣言です："
+        },
+        "apiUsage": {
+          "title": "API の使用方法",
+          "description": "REST API 経由で Pod を作成する際は、リクエストボディの agentfile_layer フィールドにレイヤーを渡します。レイヤーは AgentFile 構文を含む文字列です："
+        },
+        "editor": {
+          "title": "フロントエンドエディター",
+          "description": "Pod 作成フォームでソースモードに切り替えると、構文ハイライトと自動補完を備えた組み込みの CodeMirror エディターで AgentFile レイヤーを直接編集できます。フォームフィールド（モデル、プロンプト、リポジトリなど）はレイヤーの内容と自動的に同期されます。"
+        },
+        "examples": {
+          "title": "よくある例",
+          "description": "Pod の動作をカスタマイズするための一般的なレイヤーパターンを以下に示します：",
+          "overrideModel": "モデルをオーバーライド",
+          "permissionMode": "権限モードを設定",
+          "addPrompt": "初期プロンプトを追加",
+          "selectRepo": "リポジトリとブランチを選択",
+          "switchMode": "ACP モードに切り替え"
         }
       }
     },
@@ -232,19 +326,19 @@
         "title": "アカウントを作成",
         "description": "サインアップページでメールアドレス、ユーザー名、パスワードを入力して登録します。確認メールが届きます。数分経っても届かない場合は迷惑メールフォルダを確認してください。",
         "whatYouGet": "メール認証後、オンボーディングウィザードが以下をガイドします：",
-        "item1": "個人ワークスペース（ワンクリック）またはチームワークスペースを作成",
+        "item1": "個人 Workspace（ワンクリック）またはチーム Workspace を作成",
         "item2": "または招待リンクから既存の組織に参加"
       },
       "step2": {
-        "title": "Runnerをセットアップ",
+        "title": "Runner をセットアップ",
         "description": "Runner はあなたのマシン上で動作する軽量デーモンで、Pod と呼ばれる隔離されたワークスペースで AI エージェントを実行します。開発マシンまたはサーバーに AgentsMesh Runner をインストールします。",
         "methodToken": "トークンで登録",
         "methodLogin": "ブラウザログインで登録",
         "seeSetup": "Docker、Linuxパッケージ、Kubernetesデプロイオプションについては {link} をご覧ください。"
       },
       "step3": {
-        "title": "AI エージェントCLIをインストール",
-        "description": "Runnerマシンに使用するCLIツールをインストールし、必要なAPIキー環境変数を設定します。RunnerはPATHからインストール済みCLIを自動検出し、利用可能なエージェントをプラットフォームに報告します。",
+        "title": "AI Agent CLIをインストール",
+        "description": "Runner マシンに使用するCLIツールをインストールし、必要なAPIキー環境変数を設定します。Runner はPATHからインストール済みCLIを自動検出し、利用可能な Agent をプラットフォームに報告します。",
         "claudeCode": "Claude Code",
         "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
         "claudeCodeEnv": "export ANTHROPIC_API_KEY=sk-ant-...",
@@ -257,7 +351,7 @@
         "geminiCliInstall": "npm install -g @google/gemini-cli",
         "geminiCliEnv": "export GOOGLE_API_KEY=...",
         "geminiCliHint": "APIキーの取得先",
-        "tip": "インストール後、Runnerを再起動するか次のハートビートを待ちます。新しいエージェントが「新規Pod」ダイアログに表示されます。",
+        "tip": "インストール後、Runner を再起動するか次のハートビートを待ちます。新しい Agent が「新規Pod」ダイアログに表示されます。",
         "seeSetup": "MCP ツールとスキルの設定について詳しくは {link} をご覧ください。"
       },
       "step4": {
@@ -271,45 +365,45 @@
         "seeGuide": "SSHキーやGiteeを含む完全なセットアップ手順は {link} をご覧ください。"
       },
       "step5": {
-        "title": "Podを起動",
-        "description": "Pod（AgentPod）は、AI エージェントが専用のターミナルと隔離されたコードワークスペースで動作する仮想ワークステーションです。さっそく最初の Pod を作成しましょう！",
-        "item1": "サイドバーからワークスペースに移動",
+        "title": "Pod を起動",
+        "description": "Pod（AgentPod）は、AI Agent が専用のターミナルと隔離されたコード Workspace で動作する仮想ワークステーションです。さっそく最初の Pod を作成しましょう！",
+        "item1": "サイドバーから Workspace に移動",
         "item2": "「新規Pod」をクリック",
-        "item3": "AI エージェントを選択（Claude Code、Codex CLIなど）",
-        "item4": "Runnerを選択",
-        "item5": "任意でリポジトリとブランチを選択 — エージェントは隔離されたコピー（Git ワークツリー）で作業するため、メインブランチは安全です",
-        "item6": "任意でチケットをリンクしてコンテキストを提供",
+        "item3": "AI Agent を選択（Claude Code、Codex CLIなど）",
+        "item4": "Runner を選択",
+        "item5": "任意でリポジトリとブランチを選択 — Agent は隔離されたコピー（Git Worktree）で作業するため、メインブランチは安全です",
+        "item6": "任意で Ticket をリンクしてコンテキストを提供",
         "item7": "タスクを説明する初期プロンプトを追加（例：「ログインフォームに入力バリデーションを追加」や「auth.test.ts の失敗テストを修正」）",
         "item8": "「作成」をクリック",
         "seeSetup": "トラブルシューティング付きの詳細ウォークスルーは {link} をご覧ください。"
       },
       "step6": {
-        "title": "エージェントと対話",
-        "description": "作成後、ライブセッション付きのターミナルビューが開きます。AI エージェントが初期プロンプトの実行を開始するか、未指定の場合は入力を待ちます。",
+        "title": "Agent と対話",
+        "description": "作成後、ライブセッション付きのターミナルビューが開きます。AI Agent が初期プロンプトの実行を開始するか、未指定の場合は入力を待ちます。",
         "item1": "ターミナルで直接フォローアップのプロンプトやコマンドを入力",
-        "item2": "エージェントのステータスインジケーターを確認 — Idle（入力待ち）、Executing（タスク実行中）、Waiting（承認待ち）",
-        "item3": "リポジトリがリンクされている場合、エージェントはワークツリー内で作業",
-        "item4": "タスク完了後、ツールバーからPodを終了"
+        "item2": "Agent のステータスインジケーターを確認 — Idle（入力待ち）、Executing（タスク実行中）、Waiting（承認待ち）",
+        "item3": "リポジトリがリンクされている場合、Agent は Worktree 内で作業",
+        "item4": "タスク完了後、ツールバーから Pod を終了"
       },
       "tryIt": {
         "title": "試してみよう：60秒で最初の Pod",
         "description": "すぐに動作を確認したいですか？リポジトリ不要の最速パスはこちらです：",
-        "item1": "ワークスペース → 新規 Pod をクリック",
-        "item2": "Claude Code（または任意のインストール済みエージェント）と Runner を選択",
-        "item3": "リポジトリとチケットのフィールドはスキップ",
+        "item1": "Workspace → 新規 Pod をクリック",
+        "item2": "Claude Code（または任意のインストール済み Agent）と Runner を選択",
+        "item3": "リポジトリと Ticket のフィールドはスキップ",
         "item4": "初期プロンプトに「こんにちは、と挨拶してからカレントディレクトリのファイルを一覧表示し、何が見えるか説明してください。」と入力",
-        "item5": "「作成」をクリックして、ターミナルでエージェントの応答を確認",
-        "tip": "これはリポジトリなしの Pod を作成します — エージェントは一時ディレクトリで実行されます。実際のコードで作業する前にセットアップをテストするのに最適です。"
+        "item5": "「作成」をクリックして、ターミナルで Agent の応答を確認",
+        "tip": "これはリポジトリなしの Pod を作成します — Agent は一時ディレクトリで実行されます。実際のコードで作業する前にセットアップをテストするのに最適です。"
       },
       "nextSteps": {
         "title": "次のステップ",
         "agentpod": "AgentPodを学ぶ →",
         "agentpodDesc": "リモートAI開発ワークステーション",
-        "mesh": "Meshを探索 →",
-        "meshDesc": "マルチエージェント協調機能",
+        "mesh": "Mesh を探索 →",
+        "meshDesc": "マルチ Agent 協調機能",
         "tickets": "チケット＆かんばん →",
         "ticketsDesc": "Podにリンクされたタスク管理",
-        "multiAgent": "マルチエージェントワークフロー →",
+        "multiAgent": "マルチ Agent ワークフロー →",
         "multiAgentDesc": "複数のAI エージェントを協調"
       }
     },
@@ -369,7 +463,7 @@
           "waiting": "Waiting",
           "waitingDesc": "Agent is waiting for user input or approval",
           "executing": "実行中",
-          "executingDesc": "エージェントがタスクを実行中"
+          "executingDesc": "Agent がタスクを実行中"
         },
         "configuration": {
           "title": "Pod Configuration",
@@ -449,8 +543,8 @@
           "channelDescriptionDesc": "Optional description of the channel's purpose",
           "projectId": "Project ID",
           "projectIdDesc": "Link to a specific project/repository",
-          "ticketSlug": "チケットスラッグ",
-          "ticketSlugDesc": "特定のチケットにリンク"
+          "ticketSlug": "Ticket スラッグ",
+          "ticketSlugDesc": "特定の Ticket にリンク"
         },
         "messageTypes": {
           "title": "Message Types",
@@ -667,13 +761,13 @@
       },
       "loops": {
         "title": "Loops",
-        "description": "AI エージェントタスクのCI/CD。繰り返し可能な自動化タスクを定義し、スケジュールまたはAPI経由でトリガーします — AI エージェント用のcronジョブのようなものです。",
+        "description": "AI Agent タスクのCI/CD。繰り返し可能な自動化タスクを定義し、スケジュールまたはAPI経由でトリガーします — AI Agent 用のcronジョブのようなものです。",
         "overview": {
           "title": "概要",
-          "description": "Loopsはタスクを一度定義して繰り返し実行できます。各LoopはPromptテンプレート、トリガー設定、実行ポリシーを持つPodをラップします。主な機能：",
+          "description": "Loop はタスクを一度定義して繰り返し実行できます。各 Loop は Prompt テンプレート、トリガー設定、実行ポリシーを持つ Pod をラップします。主な機能：",
           "item1": "CronスケジューリングまたはAPIトリガー実行",
           "item2": "Autopilot（監督付き）またはDirect��自律）実行モード",
-          "item3": "増���作業のための永続サンドボックス再利用",
+          "item3": "増分作業のための永続 Sandbox 再利用",
           "item4": "Promptテンプ��ートでの変数置換",
           "item5": "実行完了通知のWebhookコールバック",
           "item6": "同時実行ポリシー（スキップ、キュー、置換）"
@@ -681,9 +775,9 @@
         "executionModes": {
           "title": "実行��ード",
           "autopilot": "Autopilot",
-          "autopilotDesc": "Control Agentが実行を��督します。進捗を監視し、エラーを処理し、タスク完了を判断します。複雑なマルチステップワークフローに最適です。",
+          "autopilotDesc": "Control Agent が実行を監督します。進捗を監視し、エラーを処理し、タスク完了を判断します。複雑なマルチステップワークフローに最適です。",
           "direct": "Direct",
-          "directDesc": "エージェントがPromptを自律的に実行します。エージェントの完了時にPodが自動終了します。シンプルで明確に定義されたタスクに最適です。"
+          "directDesc": "Agent が Prompt を自律的に実行します。Agent の完了時に Pod が自動終了します。シンプルで明確に定義されたタスクに最適です。"
         },
         "triggerTypes": {
           "title": "トリガータイプ",
@@ -694,16 +788,16 @@
           "apiDesc": "HTTP POSTでプログラム的に実行をトリガー。ランタイム変数を渡して各実行をカスタマイズできます。CI/CDパイプライン、Webhook、イベント駆動型自動化に最適です。"
         },
         "sandboxStrategies": {
-          "title": "サンドボックス戦略",
+          "title": "Sandbox 戦略",
           "description": "実行間の環境管理方法を制御します：",
           "persistent": "Persistent",
-          "persistentDesc": "実行間で同じサンドボックスを再利用。ファイル変更、git状態、インストール済みパッケージが引き継がれます。Pod Resumeを使用して前の環境を復元します。",
+          "persistentDesc": "実行間で同じ Sandbox を再利用。ファイル変更、git状態、インストール済みパッケージが引き継がれます。Pod Resumeを使用して前の環境を復元します。",
           "fresh": "Fresh",
-          "freshDesc": "実行ごとに新しいサンドボックスを作���。毎回クリーンな初期状態を保証します。再���可能な環境が必要なタスクに最適です。"
+          "freshDesc": "実行ごとに新しい Sandbox を作成。毎回クリーンな初期状態を保証します。再現可能な環境が必要なタスクに最適です。"
         },
         "sessionPersistence": {
           "title": "��ッション永続化",
-          "description": "有効にすると、エー��ェントは実行間で会話���歴を保持します。同じSessionIDが再利用され、エージェントは前回の実行のコンテキストを記憶します。履歴コンテキストなしの独立した実行には無効にしてください。"
+          "description": "有効にすると、Agent は実行間で会話履歴を保持します。同じSessionIDが再利用され、Agent は前回の実行のコンテキストを記憶します。履歴コンテキストなしの独立した実行には無効にしてください。"
         },
         "concurrency": {
           "title": "��時実行ポリシー",
@@ -717,7 +811,7 @@
         },
         "promptTemplates": {
           "title": "Promptテンプレート",
-          "description": "Promptで{{variable}}プレースホルダーを使用します。Loop作成時にデフ��ルト値を定義し、トリガー時にオーバーライドできます。例：",
+          "description": "Prompt で{{variable}}プレースホルダーを使用します。Loop 作成時にデフォルト値を定義し、トリガー時にオーバーライドできます。例：",
           "example": "前��のレビュー以降の{{branch}}ブランチの全変更ファイルをレビュー。{{focus_area}}の問題に焦点を当てる。"
         },
         "webhookCallbacks": {
@@ -897,7 +991,7 @@
           "listLoopsDesc": "組織内の自動化されたLoopを一覧表示",
           "listLoopsParams": "status?, query?, limit?, offset?",
           "triggerLoop": "trigger_loop",
-          "triggerLoopDesc": "Loop実行を手動でトリガー",
+          "triggerLoopDesc": "Loop 実行を手動でトリガー",
           "triggerLoopParams": "loop_slug (required), variables?"
         },
         "pod": {
@@ -1091,7 +1185,7 @@
           "title": "概要",
           "description": "AgentsMeshは、サードパーティ統合、CI/CDパイプライン、自動化ワークフロー向けに組織レベルのAPI Keyを提供します。API Keyを使用すると：",
           "item1": "プログラムでAgentPodを管理（作成、一覧、終了）",
-          "item2": "チケットの作成とステータス更新を自動化",
+          "item2": "Ticket の作成とステータス更新を自動化",
           "item3": "チャンネルの照会とメッセージの送信",
           "item4": "Runnerとリポジトリのステータスを監視"
         },
@@ -1135,15 +1229,15 @@
           "podsWriteEndpoints": "Podの作成、Podの終了 + 全読み取りエンドポイント",
           "ticketsRead": "tickets:read",
           "ticketsReadDesc": "チケットの読み取り専用アクセス",
-          "ticketsReadEndpoints": "チケット一覧、チケット取得、ボード取得",
+          "ticketsReadEndpoints": "Ticket 一覧、Ticket 取得、ボード取得",
           "ticketsWrite": "tickets:write",
-          "ticketsWriteDesc": "完全なチケット管理（読み取りを含む）",
+          "ticketsWriteDesc": "完全な Ticket 管理（読み取りを含む）",
           "ticketsWriteEndpoints": "チケットの作成、更新、削除 + 全読み取りエンドポイント",
           "channelsRead": "channels:read",
           "channelsReadDesc": "チャンネルの読み取り専用アクセス",
-          "channelsReadEndpoints": "チャンネル一覧、チャンネル取得、メッセージ一覧",
+          "channelsReadEndpoints": "Channel 一覧、Channel 取得、メッセージ一覧",
           "channelsWrite": "channels:write",
-          "channelsWriteDesc": "完全なチャンネル管理（読み取りを含む）",
+          "channelsWriteDesc": "完全な Channel 管理（読み取りを含む）",
           "channelsWriteEndpoints": "チャンネルの作成/更新、メッセージ送信 + 全読み取りエンドポイント",
           "runnersRead": "runners:read",
           "runnersReadDesc": "Runnerの読み取り専用アクセス",
@@ -1229,21 +1323,21 @@
       },
       "tickets": {
         "title": "Tickets API",
-        "description": "チケット管理を自動化します。REST APIを通じてチケットの作成、更新、追跡ができます。",
+        "description": "Ticket 管理を自動化します。REST APIを通じて Ticket の作成、更新、追跡ができます。",
         "endpoints": {
           "title": "エンドポイント",
           "list": "チケットを一覧表示",
           "board": "カンバンボードビューを取得",
-          "get": "識別子でチケットを取得",
-          "create": "新しいチケットを作成",
-          "update": "チケットを更新",
-          "updateStatus": "チケットステータスを更新",
-          "delete": "チケットを削除"
+          "get": "識別子で Ticket を取得",
+          "create": "新しい Ticket を作成",
+          "update": "Ticket を更新",
+          "updateStatus": "Ticket ステータスを更新",
+          "delete": "Ticket を削除"
         },
         "examples": {
           "title": "コード例",
           "listTickets": "全チケットを一覧表示",
-          "createTicket": "新しいチケットを作成"
+          "createTicket": "新しい Ticket を作成"
         },
         "details": {
           "title": "エンドポイント詳細",
@@ -1268,44 +1362,44 @@
           },
           "getTicket": {
             "title": "GET /tickets/:slug",
-            "description": "人間が読める識別子で特定のチケットの詳細情報を取得します。",
+            "description": "人間が読める識別子で特定の Ticket の詳細情報を取得します。",
             "params": {
-              "slug": "チケット識別子（例：AM-123）"
+              "slug": "Ticket 識別子（例：AM-123）"
             }
           },
           "createTicket": {
             "title": "POST /tickets",
-            "description": "新しいチケットを作成します。最低限タイプとタイトルが必要です。",
+            "description": "新しい Ticket を作成します。最低限タイプとタイトルが必要です。",
             "fields": {
-              "title": "チケットタイトル（1〜500文字）",
+              "title": "Ticket タイトル（1〜500文字）",
               "priority": "優先度：low、medium、high、またはcritical",
               "status": "初期ステータス（デフォルトはopen）",
-              "assignee_id": "チケットを割り当てるユーザーID",
+              "assignee_id": "Ticket を割り当てるユーザーID",
               "repository_id": "関連付けるリポジトリ",
               "labels": "ラベル文字列の配列",
-              "parent_slug": "サブタスクの親チケット識別子"
+              "parent_slug": "サブタスクの親 Ticket 識別子"
             }
           },
           "updateTicket": {
             "title": "PUT /tickets/:slug",
-            "description": "既存のチケットを更新します。すべてのフィールドは任意です——提供されたフィールドのみ更新されます。",
+            "description": "既存の Ticket を更新します。すべてのフィールドは任意です——提供されたフィールドのみ更新されます。",
             "params": {
-              "slug": "チケット識別子（例：AM-123）"
+              "slug": "Ticket 識別子（例：AM-123）"
             },
             "fields": {
-              "title": "更新後のチケットタイトル",
+              "title": "更新後の Ticket タイトル",
               "priority": "更新後の優先度",
               "status": "更新後のステータス",
               "assignee_id": "更新後の担当者ユーザーID",
               "labels": "更新後のラベル文字列の配列",
-              "parent_slug": "更新後の親チケット識別子"
+              "parent_slug": "更新後の親 Ticket 識別子"
             }
           },
           "updateStatus": {
             "title": "PATCH /tickets/:slug/status",
-            "description": "チケットのステータスのみを更新します。ステータス遷移のための便利なエンドポイントです。",
+            "description": "Ticket のステータスのみを更新します。ステータス遷移のための便利なエンドポイントです。",
             "params": {
-              "slug": "チケット識別子（例：AM-123）"
+              "slug": "Ticket 識別子（例：AM-123）"
             },
             "fields": {
               "status": "新しいステータス：open、in_progress、resolved、またはclosed"
@@ -1313,9 +1407,9 @@
           },
           "deleteTicket": {
             "title": "DELETE /tickets/:slug",
-            "description": "チケットを完全に削除します。この操作は元に戻せません。",
+            "description": "Ticket を完全に削除します。この操作は元に戻せません。",
             "params": {
-              "slug": "チケット識別子（例：AM-123）"
+              "slug": "Ticket 識別子（例：AM-123）"
             }
           }
         }
@@ -1326,66 +1420,66 @@
         "endpoints": {
           "title": "エンドポイント",
           "list": "チャンネルを一覧表示",
-          "get": "チャンネル詳細を取得",
-          "messages": "チャンネルメッセージを一覧表示",
-          "create": "新しいチャンネルを作成",
-          "update": "チャンネルを更新",
-          "sendMessage": "チャンネルにメッセージを送信"
+          "get": "Channel 詳細を取得",
+          "messages": "Channel メッセージを一覧表示",
+          "create": "新しい Channel を作成",
+          "update": "Channel を更新",
+          "sendMessage": "Channel にメッセージを送信"
         },
         "details": {
           "title": "エンドポイント詳細",
           "listChannels": {
             "title": "GET /channels",
-            "description": "チャンネルのリストを取得します。リポジトリ、チケット、アーカイブ状態によるフィルタリングをサポートしています。",
+            "description": "Channel のリストを取得します。リポジトリ、Ticket、アーカイブ状態によるフィルタリングをサポートしています。",
             "params": {
               "repository_id": "リポジトリIDでフィルタリング",
-              "ticket_slug": "関連チケットスラッグでフィルタリング",
+              "ticket_slug": "関連 Ticket スラッグでフィルタリング",
               "include_archived": "アーカイブ済みチャンネルを含める（true/false）"
             }
           },
           "getChannel": {
             "title": "GET /channels/:id",
-            "description": "特定のチャンネルの詳細情報を取得します。",
+            "description": "特定の Channel の詳細情報を取得します。",
             "params": {
-              "id": "チャンネルの数値ID"
+              "id": "Channel の数値ID"
             }
           },
           "getMessages": {
             "title": "GET /channels/:id/messages",
-            "description": "チャンネルからメッセージを取得します（最新順）。",
+            "description": "Channel からメッセージを取得します（最新順）。",
             "params": {
-              "id": "チャンネルの数値ID",
+              "id": "Channel の数値ID",
               "limit": "返されるメッセージの最大数（最大100）"
             }
           },
           "createChannel": {
             "title": "POST /channels",
-            "description": "エージェント間のコラボレーション用に新しいチャンネルを作成します。",
+            "description": "Agent 間のコラボレーション用に新しい Channel を作成します。",
             "fields": {
-              "name": "チャンネル名（2〜100文字）",
-              "description": "チャンネルの説明",
+              "name": "Channel 名（2〜100文字）",
+              "description": "Channel の説明",
               "repository_id": "関連付けるリポジトリ",
-              "ticket_slug": "リンクするチケット識別子（例：AM-123）",
-              "document": "チャンネルの初期ドキュメントまたはコンテキスト"
+              "ticket_slug": "リンクする Ticket 識別子（例：AM-123）",
+              "document": "Channel の初期ドキュメントまたはコンテキスト"
             }
           },
           "updateChannel": {
             "title": "PUT /channels/:id",
-            "description": "既存のチャンネルを更新します。提供されたフィールドのみ更新されます。",
+            "description": "既存の Channel を更新します。提供されたフィールドのみ更新されます。",
             "params": {
-              "id": "チャンネルの数値ID"
+              "id": "Channel の数値ID"
             },
             "fields": {
-              "name": "更新後のチャンネル名",
-              "description": "更新後のチャンネル説明",
-              "document": "更新後のチャンネルドキュメント"
+              "name": "更新後の Channel 名",
+              "description": "更新後の Channel 説明",
+              "document": "更新後の Channel ドキュメント"
             }
           },
           "sendMessage": {
             "title": "POST /channels/:id/messages",
-            "description": "チャンネルに新しいメッセージを送信します。",
+            "description": "Channel に新しいメッセージを送信します。",
             "params": {
-              "id": "チャンネルの数値ID"
+              "id": "Channel の数値ID"
             },
             "fields": {
               "content": "メッセージのコンテンツテキスト",
@@ -1396,13 +1490,13 @@
       },
       "runners": {
         "title": "Runners API",
-        "description": "Runnerのステータスと可用性を監視します。REST APIを通じてRunnerの一覧表示と接続されたPodの確認ができます。",
+        "description": "Runner のステータスと可用性を監視します。REST APIを通じて Runner の一覧表示と接続された Pod の確認ができます。",
         "endpoints": {
           "title": "エンドポイント",
           "list": "全Runnerを一覧表示",
-          "get": "Runner詳細を取得",
+          "get": "Runner 詳細を取得",
           "available": "利用可能（オンライン）Runnerを一覧表示",
-          "pods": "Runner上のPodを一覧表示"
+          "pods": "Runner 上の Pod を一覧表示"
         },
         "details": {
           "title": "エンドポイント詳細",
@@ -1412,9 +1506,9 @@
           },
           "getRunner": {
             "title": "GET /runners/:id",
-            "description": "特定のRunnerの詳細情報を取得します。",
+            "description": "特定の Runner の詳細情報を取得します。",
             "params": {
-              "id": "Runnerの数値ID"
+              "id": "Runner の数値ID"
             }
           },
           "availableRunners": {
@@ -1423,9 +1517,9 @@
           },
           "runnerPods": {
             "title": "GET /runners/:id/pods",
-            "description": "特定のRunner上で動作しているPodのページネーション付きリストを取得します。",
+            "description": "特定の Runner 上で動作している Pod のページネーション付きリストを取得します。",
             "params": {
-              "id": "Runnerの数値ID",
+              "id": "Runner の数値ID",
               "status": "Podステータスでフィルタリング（例：running、terminated）",
               "limit": "返される結果の最大数",
               "offset": "ページネーション用にスキップする結果数"
@@ -1477,7 +1571,7 @@
       },
       "loops": {
         "title": "Loops API",
-        "description": "自動化されたLoopタスクとその実行を���理します。Loopの作成、トリガーの設定、��行の監視をREST APIで行います。",
+        "description": "自動化された Loop タスクとその実行を管理します。Loop の作成、トリガーの設定、実行の監視をREST APIで行います。",
         "endpoints": {
           "title": "Endpoints",
           "list": "List all loops",
@@ -1675,8 +1769,8 @@
           "title": "Runner を起動する",
           "description": "登録後、Runner デーモンを起動します：",
           "item1": "起動コマンドを実行して Runner プロセスを開始します",
-          "item2": "Runner は mTLS を使用して gRPC 経由で AgentsMesh バックエンドに接続します",
-          "item3": "PATH にある利用可能な AI エージェント CLI（Claude Code、Codex、Gemini など）を報告します",
+          "item2": "Runner は mTLS を使用して gRPC 経由で AgentsMesh Backend に接続します",
+          "item3": "PATH にある利用可能な AI Agent CLI（Claude Code、Codex、Gemini など）を報告します",
           "tip": "本番環境では、起動時に自動的に開始されるように Runner をシステムサービスとしてインストールしてください。",
           "background": {
             "title": "バックグラウンドで実行",
@@ -1698,7 +1792,7 @@
           }
         },
         "step4": {
-          "title": "AI エージェント CLI をインストールする",
+          "title": "AI Agent CLI をインストールする",
           "description": "Runner マシンで使用したい AI コーディングエージェントをインストールします：",
           "item1": "Claude Code — npm install -g @anthropic-ai/claude-code（ANTHROPIC_API_KEY を設定）",
           "item2": "Codex CLI — npm install -g @openai/codex（OPENAI_API_KEY を設定）",
@@ -1750,7 +1844,7 @@
           "title": "次のステップ",
           "description": "Runner の準備ができました。次のチュートリアルに進みましょう：",
           "item1": "Git リポジトリを接続する — Pod がコードリポジトリにアクセスできるようにリンクします",
-          "item2": "はじめての Pod — 最初の AI エージェントを作成し、操作します"
+          "item2": "はじめての Pod — 最初の AI Agent を作成し、操作します"
         }
       },
       "gitSetup": {
@@ -1811,11 +1905,11 @@
         "step7": {
           "title": "Pod を作成して確認する",
           "description": "リンクされたリポジトリで Pod を作成してセットアップをテストします：",
-          "item1": "ワークスペースに移動し、「新規 Pod」をクリックします",
-          "item2": "AI エージェントと Runner を選択します",
+          "item1": "Workspace に移動し、「新規 Pod」をクリックします",
+          "item2": "AI Agent と Runner を選択します",
           "item3": "インポートしたリポジトリの 1 つを選択します",
-          "item4": "リポジトリがワークツリーにクローンされた状態で Pod が起動するはずです",
-          "tip": "各 Pod は独自の Git ワークツリーを取得するため、複数の Pod が競合なく同じリポジトリで作業できます。"
+          "item4": "リポジトリが Worktree にクローンされた状態で Pod が起動するはずです",
+          "tip": "各 Pod は独自の Git Worktree を取得するため、複数の Pod が競合なく同じリポジトリで作業できます。"
         },
         "nextSteps": {
           "title": "次のステップ",
@@ -1834,10 +1928,10 @@
           "item1": "ディスカバリー — 利用可能な Pod、Runner、リポジトリの一覧表示",
           "item2": "ターミナル — 他の Pod のターミナルの監視と制御",
           "item3": "バインディング — Pod 間接続のリクエストと管理",
-          "item4": "チャンネル — チャンネルの作成、メッセージの送信、ドキュメントの共有",
-          "item5": "チケット — チケットの検索、作成、更新",
+          "item4": "Channel — Channel の作成、メッセージの送信、ドキュメントの共有",
+          "item5": "Ticket — Ticket の検索、作成、更新",
           "item6": "Pod — 新しい Pod の作成、スナップショットの取得、入力の送信",
-          "item7": "ループ — 自動化ループの一覧表示とトリガー",
+          "item7": "Loop — 自動化 Loop の一覧表示とトリガー",
           "autoNote": "これらの組み込みツールはすべての Pod で自動的に利用可能です — 設定は不要です。"
         },
         "step1": {
@@ -1864,13 +1958,13 @@
           "title": "Pod で MCP ツールを確認する",
           "description": "MCP サーバーの設定後、動作を確認します：",
           "item1": "Claude Code で新しい Pod を作成します",
-          "item2": "ターミナルでエージェントに「利用可能な MCP ツールは何ですか？」と尋ねます",
-          "item3": "エージェントは組み込みの AgentsMesh ツールとインストールしたカスタム MCP サーバーの両方を一覧表示するはずです",
+          "item2": "ターミナルで Agent に「利用可能な MCP ツールは何ですか？」と尋ねます",
+          "item3": "Agent は組み込みの AgentsMesh ツールとインストールしたカスタム MCP サーバーの両方を一覧表示するはずです",
           "item4": "ツールを試してみましょう — 例えば「利用可能なすべての Pod を一覧表示して」や「チケットを検索して」"
         },
         "whatAreSkills": {
           "title": "スキルとは？",
-          "description": "スキルは、指示を含むマークダウンファイルとして定義された再利用可能なエージェントワークフローです。インストールすると、エージェントのコンテキストに注入され、オンデマンドで実行できます。AgentsMesh は 2 つの組み込みスキルを提供しています：",
+          "description": "スキルは、指示を含むマークダウンファイルとして定義された再利用可能な Agent ワークフローです。インストールすると、Agent のコンテキストに注入され、オンデマンドで実行できます。AgentsMesh は 2 つの組み込みスキルを提供しています：",
           "item1": "am-channel — エージェントがチャンネルを通じてメッセージの確認、タスクステータスの同期、他のエージェントとの情報交換を行えるようにします",
           "item2": "am-delegate — エージェントが他の Pod にタスクを委任したり、並列作業用のサブ Pod を作成したり、フォローアップエージェントをトリガーしたりできるようにします"
         },
@@ -1880,7 +1974,7 @@
           "channelTitle": "am-channel スキル",
           "channelDesc": "タスク開始前に新しいメッセージを自動的にチェックし、チャンネルにステータス更新を同期し、コラボレーション中のエージェントと情報を交換します。エージェント間の連携が必要な場合に使用します。",
           "delegateTitle": "am-delegate スキル",
-          "delegateDesc": "エージェントが他の Pod や環境にサブタスクを委任できるようにします。エージェントは子 Pod を作成し、作業を割り当て、結果を待つことができます。並列実行が有効な複雑なタスクに使用します。"
+          "delegateDesc": "Agent が他の Pod や環境にサブタスクを委任できるようにします。Agent は子 Pod を作成し、作業を割り当て、結果を待つことができます。並列実行が有効な複雑なタスクに使用します。"
         },
         "step5": {
           "title": "カスタムスキルをインストールする",
@@ -1889,7 +1983,7 @@
           "item2": "利用可能なスキルを閲覧するか、スキルを追加をクリックして URL からインストールします",
           "item3": "スキルは組織またはパーソナルアカウントにスコープを設定できます",
           "item4": "インストールされたスキルは新しい Pod に自動的に注入されます",
-          "tip": "カスタムスキルは YAML フロントマターを含むマークダウンファイルです。スキルがいつトリガーされるべきか、エージェントがどの指示に従うべきかを定義して、独自のスキルを作成できます。"
+          "tip": "カスタムスキルは YAML フロントマターを含むマークダウンファイルです。スキルがいつトリガーされるべきか、Agent がどの指示に従うべきかを定義して、独自のスキルを作成できます。"
         },
         "step6": {
           "title": "リポジトリごとに MCP サーバーを設定する",
@@ -1903,57 +1997,57 @@
           "title": "次のステップ",
           "description": "エージェントが MCP ツールとスキルで拡張されました。引き続き探索しましょう：",
           "item1": "はじめての Pod — Pod を作成して MCP ツールの動作を確認する",
-          "item2": "マルチエージェントコラボレーション — チャンネルとバインディングツールでエージェント間の連携を行う"
+          "item2": "マルチ Agent コラボレーション — Channel とバインディングツールで Agent 間の連携を行う"
         }
       },
       "firstPod": {
         "title": "チュートリアル：はじめての Pod",
         "difficulty": "初級 — 5分",
-        "description": "はじめての AgentPod をステップバイステップで作成し、操作する方法を学びます。このチュートリアルを完了すると、AI コーディングエージェントの起動、リポジトリへの接続、タスクの完了ができるようになります。",
+        "description": "はじめての AgentPod をステップバイステップで作成し、操作する方法を学びます。このチュートリアルを完了すると、AI コーディング Agent の起動、リポジトリへの接続、タスクの完了ができるようになります。",
         "prerequisites": {
           "title": "前提条件",
           "description": "始める前に、以下を準備してください：",
           "item1": "AgentsMesh アカウント（登録ページからサインアップ）",
           "item2": "Runner がインストールされ、接続済みであること（クイックスタート → ステップ 2 を参照）",
-          "item3": "Runner に少なくとも 1 つの AI エージェント CLI がインストールされていること（例：Claude Code）",
+          "item3": "Runner に少なくとも 1 つの AI Agent CLI がインストールされていること（例：Claude Code）",
           "item4": "Git リポジトリが接続されていること（任意ですが推奨）"
         },
         "step1": {
-          "title": "ワークスペースを開く",
-          "description": "左サイドバーの「ワークスペース」をクリックします。ここにすべての Pod が表示されます。初めての場合は空のワークスペースが表示されます。"
+          "title": "Workspace を開く",
+          "description": "左サイドバーの「Workspace」をクリックします。ここにすべての Pod が表示されます。初めての場合は空の Workspace が表示されます。"
         },
         "step2": {
           "title": "新しい Pod を作成する",
           "description": "右上の「New Pod」ボタンをクリックします。いくつかの設定オプションを含む Pod 作成ダイアログが開きます。",
           "fields": "以下のフィールドを入力してください：",
-          "field1": "エージェント — 使用する AI エージェントを選択します（例：Claude Code）",
+          "field1": "Agent — 使用する AI Agent を選択します（例：Claude Code）",
           "field2": "Runner — この Pod をホストする Runner を選択します",
-          "field3": "リポジトリ — エージェントが作業するリポジトリを選択します（任意）",
+          "field3": "リポジトリ — Agent が作業するリポジトリを選択します（任意）",
           "field4": "ブランチ — チェックアウトするブランチを選択します（デフォルトはメインブランチ）",
-          "field5": "初期プロンプト — エージェントへのタスク説明を記述します（例：「ログインフォームに入力バリデーションを追加」）"
+          "field5": "初期プロンプト — Agent へのタスク説明を記述します（例：「ログインフォームに入力バリデーションを追加」）"
         },
         "step3": {
           "title": "Pod の初期化を確認する",
           "description": "「作成」をクリックすると、Pod は初期化中の状態に入ります。Runner は以下を実行します：",
-          "item1": "隔離された Git ワークツリーを作成（リポジトリがリンクされている場合）",
+          "item1": "隔離された Git Worktree を作成（リポジトリがリンクされている場合）",
           "item2": "PTY ターミナルセッションを開始",
-          "item3": "初期プロンプトで AI エージェントを起動",
-          "tip": "ターミナルビューが自動的に開きます。エージェントがリアルタイムで作業を開始する様子を確認できます。"
+          "item3": "初期プロンプトで AI Agent を起動",
+          "tip": "ターミナルビューが自動的に開きます。Agent がリアルタイムで作業を開始する様子を確認できます。"
         },
         "step4": {
-          "title": "エージェントと対話する",
-          "description": "Pod が実行中になると、Web ターミナルを通じて AI エージェントと対話できます：",
+          "title": "Agent と対話する",
+          "description": "Pod が実行中になると、Web ターミナルを通じて AI Agent と対話できます：",
           "item1": "ターミナル入力に直接フォローアップの指示を入力します",
-          "item2": "エージェントステータスインジケーターを確認します — Idle、Executing、Waiting が表示されます",
-          "item3": "エージェントは隔離された Git ワークツリー内で作業するため、メインブランチは影響を受けません",
+          "item2": "Agent ステータスインジケーターを確認します — Idle、Executing、Waiting が表示されます",
+          "item3": "Agent は隔離された Git Worktree 内で作業するため、メインブランチは影響を受けません",
           "item4": "フルスクリーンボタンで集中できるビューに切り替えられます"
         },
         "step5": {
           "title": "レビューと完了",
-          "description": "エージェントがタスクを完了したら：",
-          "item1": "ターミナル出力でエージェントが行った変更を確認します",
-          "item2": "エージェントがワークツリーブランチにコミットを作成している場合があります — git log を確認してください",
-          "item3": "Pod ツールバーの「Terminate」をクリックして Pod を停止し、ワークツリーをクリーンアップします",
+          "description": "Agent がタスクを完了したら：",
+          "item1": "ターミナル出力で Agent が行った変更を確認します",
+          "item2": "Agent が Worktree ブランチにコミットを作成している場合があります — git log を確認してください",
+          "item3": "Pod ツールバーの「Terminate」をクリックして Pod を停止し、Worktree をクリーンアップします",
           "item4": "Pod のステータスが Terminated に変わり、リソースが解放されます"
         },
         "troubleshooting": {
@@ -1962,139 +2056,139 @@
           "noRunnersDesc": "Runner がオフラインの可能性があります。設定 → Runner でステータスを確認してください。オフラインと表示される場合は、Runner プロセスを再起動し、AgentsMesh サーバーに到達できることを確認してください。",
           "stuckInit": "Pod が初期化中のまま進まない",
           "stuckInitDesc": "通常、リポジトリが大きくクローン中であることが原因です。数分待ってください。解決しない場合は、Runner のログでクローンエラーを確認してください。基本的な動作をテストするために、リポジトリなしで Pod を作成してみてください。",
-          "agentNotResponding": "エージェントが応答しない",
-          "agentNotRespondingDesc": "Runner に AI エージェント CLI がインストールされていることを確認してください（例：Runner マシンで 'claude --version' を実行）。API キーの環境変数が正しく設定されているか確認してください。エージェントが権限を待っている場合もあります — ターミナルで権限プロンプトを探してください。",
+          "agentNotResponding": "Agent が応答しない",
+          "agentNotRespondingDesc": "Runner に AI Agent CLI がインストールされていることを確認してください（例：Runner マシンで 'claude --version' を実行）。API キーの環境変数が正しく設定されているか確認してください。Agent が権限を待っている場合もあります — ターミナルで権限プロンプトを探してください。",
           "terminated": "Pod がすぐに終了する",
-          "terminatedDesc": "エージェント CLI が起動時にクラッシュしていることが多いです。API キーが有効で期限切れでないことを確認してください。エラーメッセージを確認するために、Runner 上でエージェント CLI を手動で実行してみてください。"
+          "terminatedDesc": "Agent CLI が起動時にクラッシュしていることが多いです。API キーが有効で期限切れでないことを確認してください。エラーメッセージを確認するために、Runner 上で Agent CLI を手動で実行してみてください。"
         },
         "nextSteps": {
           "title": "次は何をすべき？",
           "description": "おめでとうございます！Pod が動作しています。次のステップはあなたの目標次第です：",
           "item1": "タスクを管理したい → タスク管理 — チケットとカンバンボードを使う",
-          "item2": "複数のエージェントを連携させたい → マルチエージェントコラボレーション",
+          "item2": "複数の Agent を連携させたい → マルチ Agent コラボレーション",
           "item3": "繰り返しタスクを自動化したい → 自動化ループ"
         }
       },
       "ticketWorkflow": {
         "title": "チュートリアル：チケットによるタスク管理",
         "difficulty": "初級 — 10分",
-        "description": "AgentsMesh のチケットシステムを使って作業を整理し、カンバンボードで進捗を追跡し、チケットを AgentPod に接続してコンテキストを自動注入する方法を学びます。",
+        "description": "AgentsMesh の Ticket システムを使って作業を整理し、カンバンボードで進捗を追跡し、Ticket を AgentPod に接続してコンテキストを自動注入する方法を学びます。",
         "step1": {
-          "title": "チケットボードに移動する",
+          "title": "Ticket ボードに移動する",
           "description": "左サイドバーの「チケット」をクリックします。各ステータスのカラムを持つカンバンボードが表示されます：Backlog、To Do、In Progress、In Review、Done。"
         },
         "step2": {
-          "title": "チケットを作成する",
-          "description": "任意のカラム（通常は Backlog または To Do）の上部にある「+」ボタンをクリックして新しいチケットを作成します。",
-          "fields": "チケットの詳細を入力してください：",
+          "title": "Ticket を作成する",
+          "description": "任意のカラム（通常は Backlog または To Do）の上部にある「+」ボタンをクリックして新しい Ticket を作成します。",
+          "fields": "Ticket の詳細を入力してください：",
           "field1": "タイトル — タスクの明確で簡潔な説明（例：「ユーザーリストのページネーションバグを修正」）",
           "field2": "説明 — 詳細な要件、受け入れ基準、またはコンテキストを Markdown で記述",
           "field3": "優先度 — 緊急度を設定：Urgent、High、Medium、Low、None",
           "field4": "ストーリーポイント — フィボナッチ数列で工数を見積もり（1、2、3、5、8、13、21）",
-          "field5": "担当者 — 任意でチームメンバーにチケットを割り当て"
+          "field5": "担当者 — 任意でチームメンバーに Ticket を割り当て"
         },
         "step3": {
-          "title": "チケットを Pod にバインドする",
+          "title": "Ticket を Pod にバインドする",
           "description": "チケットの真価は AgentPod との連携にあります。新しい Pod を作成する際に：",
-          "item1": "New Pod ダイアログで、チケットドロップダウンからチケットを選択します",
-          "item2": "チケットのタイトルと説明が AI エージェントのコンテキストとして自動的に注入されます",
-          "item3": "Pod が開始されると、チケットのステータスは自動的に In Progress に移動します",
-          "tip": "Pod の詳細パネルから既存の Pod にチケットをバインドすることもできます。"
+          "item1": "New Pod ダイアログで、Ticket ドロップダウンから Ticket を選択します",
+          "item2": "Ticket のタイトルと説明が AI Agent のコンテキストとして自動的に注入されます",
+          "item3": "Pod が開始されると、Ticket のステータスは自動的に In Progress に移動します",
+          "tip": "Pod の詳細パネルから既存の Pod に Ticket をバインドすることもできます。"
         },
         "step4": {
           "title": "進捗を追跡する",
-          "description": "AI エージェントがタスクに取り組んでいる間、複数の方法で進捗を追跡できます：",
-          "item1": "カンバンボード — チケットカードに作業中の Pod とエージェントの現在のステータスが表示されます",
-          "item2": "チケット詳細 — チケットをクリックすると、リンクされたすべての Pod、コメント、Git アクティビティが表示されます",
-          "item3": "Git アクティビティ — Pod が行ったコミットとマージリクエストがチケットに自動的にリンクされます",
-          "item4": "コメント — チケットに直接メモやフィードバックを追加できます"
+          "description": "AI Agent がタスクに取り組んでいる間、複数の方法で進捗を追跡できます：",
+          "item1": "カンバンボード — Ticket カードに作業中の Pod と Agent の現在のステータスが表示されます",
+          "item2": "Ticket 詳細 — Ticket をクリックすると、リンクされたすべての Pod、コメント、Git アクティビティが表示されます",
+          "item3": "Git アクティビティ — Pod が行ったコミットとマージリクエストが Ticket に自動的にリンクされます",
+          "item4": "コメント — Ticket に直接メモやフィードバックを追加できます"
         },
         "step5": {
           "title": "ワークフローを進める",
-          "description": "チケットをカラム間でドラッグしてステータスを更新するか、チケット詳細ビューのステータスドロップダウンを使用します：",
+          "description": "Ticket をカラム間でドラッグしてステータスを更新するか、Ticket 詳細ビューのステータスドロップダウンを使用します：",
           "item1": "Backlog → To Do — タスクが着手可能な状態です",
-          "item2": "To Do → In Progress — エージェント Pod が作業中です（Pod がバインドされると自動更新）",
-          "item3": "In Progress → In Review — エージェントがタスクを完了し、レビューが必要です",
+          "item2": "To Do → In Progress — Agent Pod が作業中です（Pod がバインドされると自動更新）",
+          "item3": "In Progress → In Review — Agent がタスクを完了し、レビューが必要です",
           "item4": "In Review → Done — タスクがレビューされ承認されました"
         },
         "step6": {
           "title": "Git アクティビティを確認する",
-          "description": "各チケットはリンクされた Pod からのすべての Git アクティビティを追跡します：",
-          "item1": "チケット詳細ページで AI エージェントが行ったコミットを確認",
-          "item2": "Pod のワークツリーブランチから作成されたマージ/プルリクエストを確認",
-          "item3": "この情報を使って、エージェントの作業をメインブランチにレビューしてマージします"
+          "description": "各 Ticket はリンクされた Pod からのすべての Git アクティビティを追跡します：",
+          "item1": "Ticket 詳細ページで AI Agent が行ったコミットを確認",
+          "item2": "Pod の Worktree ブランチから作成されたマージ/プルリクエストを確認",
+          "item3": "この情報を使って、Agent の作業をメインブランチにレビューしてマージします"
         },
         "nextSteps": {
           "title": "次のステップ",
           "description": "チケットによるタスク管理の方法を学びました。さらに探索してみましょう：",
-          "item1": "マルチエージェントコラボレーション — 関連するチケットに複数のエージェントを割り当てる",
+          "item1": "マルチ Agent コラボレーション — 関連する Ticket に複数の Agent を割り当てる",
           "item2": "自動化ループ — 繰り返しタスクの Pod を自動作成する"
         }
       },
       "multiAgent": {
-        "title": "チュートリアル：マルチエージェントコラボレーション",
+        "title": "チュートリアル：マルチ Agent コラボレーション",
         "difficulty": "中級 — 15分",
-        "description": "チャンネルを通じて通信・連携する複数の AI エージェントの設定方法を学びます。このチュートリアルでは、フロントエンドエージェントとバックエンドエージェントが機能開発で協力する実践的なシナリオを紹介します。",
+        "description": "Channel を通じて通信・連携する複数の AI Agent の設定方法を学びます。このチュートリアルでは、フロントエンド Agent と Backend Agent が機能開発で協力する実践的なシナリオを紹介します。",
         "scenario": {
           "title": "シナリオ概要",
-          "description": "新しいユーザープロフィールページを構築します。フロントエンド（React）用とバックエンド（API）用の 2 つの Pod を作成し、共有チャンネルを通じて連携させます。",
+          "description": "新しいユーザープロフィールページを構築します。フロントエンド（React）用と Backend（API）用の 2 つの Pod を作成し、共有 Channel を通じて連携させます。",
           "frontend": "フロントエンド Pod — React UI コンポーネントを構築",
-          "backend": "バックエンド Pod — API エンドポイントを実装"
+          "backend": "Backend Pod — API エンドポイントを実装"
         },
         "step1": {
-          "title": "チャンネルを作成する",
-          "description": "チャンネルはマルチエージェントワークフローのコミュニケーションハブです。サイドバーの「チャンネル」に移動し、「New Channel」をクリックします。",
-          "fields": "チャンネルを設定してください：",
+          "title": "Channel を作成する",
+          "description": "Channel はマルチ Agent ワークフローのコミュニケーションハブです。サイドバーの「Channel」に移動し、「New Channel」をクリックします。",
+          "fields": "Channel を設定してください：",
           "field1": "名前 — わかりやすい名前を付けます（例：「user-profile-feature」）",
-          "field2": "説明 — 目的を説明します：「ユーザープロフィールページ機能の連携チャンネル」",
-          "field3": "チケット — 任意でコンテキスト用にチケットをリンク"
+          "field2": "説明 — 目的を説明します：「ユーザープロフィールページ機能の連携 Channel」",
+          "field3": "Ticket — 任意でコンテキスト用に Ticket をリンク"
         },
         "step2": {
-          "title": "バックエンド Pod を起動する",
-          "description": "バックエンド作業用の最初の Pod を作成します：",
-          "item1": "「New Pod」をクリックし、エージェントを選択します（例：Claude Code）",
-          "item2": "バックエンドリポジトリを選択します",
-          "item3": "初期プロンプトを設定します：「ユーザープロフィール用の REST API エンドポイントを実装してください：GET /api/users/:id/profile と PUT /api/users/:id/profile。完了したら API コントラクトをチャンネルに投稿してください。」",
-          "tip": "エージェントはメッセージ送信のためのチャンネル MCP ツールに自動的にアクセスできます。"
+          "title": "Backend Pod を起動する",
+          "description": "Backend 作業用の最初の Pod を作成します：",
+          "item1": "「New Pod」をクリックし、Agent を選択します（例：Claude Code）",
+          "item2": "Backend リポジトリを選択します",
+          "item3": "初期プロンプトを設定します：「ユーザープロフィール用の REST API エンドポイントを実装してください：GET /api/users/:id/profile と PUT /api/users/:id/profile。完了したら API コントラクトを Channel に投稿してください。」",
+          "tip": "Agent はメッセージ送信のための Channel MCP ツールに自動的にアクセスできます。"
         },
         "step3": {
           "title": "フロントエンド Pod を起動する",
           "description": "フロントエンド作業用の 2 つ目の Pod を作成します：",
-          "item1": "「New Pod」をクリックし、エージェントを選択します",
+          "item1": "「New Pod」をクリックし、Agent を選択します",
           "item2": "フロントエンドリポジトリを選択します",
-          "item3": "初期プロンプトを設定します：「React ユーザープロフィールページコンポーネントを構築してください。チャンネルでバックエンドエージェントからの API コントラクトを確認し、それに合わせて UI を実装してください。」"
+          "item3": "初期プロンプトを設定します：「React ユーザープロフィールページコンポーネントを構築してください。Channel で Backend Agent からの API コントラクトを確認し、それに合わせて UI を実装してください。」"
         },
         "step4": {
-          "title": "両方の Pod をチャンネルにバインドする",
-          "description": "両方の Pod をチャンネルに接続して通信できるようにします：",
+          "title": "両方の Pod を Channel にバインドする",
+          "description": "両方の Pod を Channel に接続して通信できるようにします：",
           "item1": "各 Pod の詳細パネルを開きます",
-          "item2": "チャンネルバインディングで「user-profile-feature」チャンネルを選択します",
-          "item3": "両方の Pod がチャンネルを通じてメッセージを送受信できるようになります",
-          "tip": "チャンネルが既に存在する場合は、Pod 作成時にチャンネルをバインドすることもできます。"
+          "item2": "Channel バインディングで「user-profile-feature」Channel を選択します",
+          "item3": "両方の Pod が Channel を通じてメッセージを送受信できるようになります",
+          "tip": "Channel が既に存在する場合は、Pod 作成時に Channel をバインドすることもできます。"
         },
         "step5": {
-          "title": "エージェント間の通信を監視する",
-          "description": "チャンネルビューを開いてエージェントの連携を確認します：",
-          "item1": "バックエンドエージェントが API コントラクト（エンドポイント、リクエスト/レスポンススキーマ）を投稿します",
-          "item2": "フロントエンドエージェントがコントラクトを読み取り、対応する API コールを実装します",
+          "title": "Agent 間の通信を監視する",
+          "description": "Channel ビューを開いて Agent の連携を確認します：",
+          "item1": "Backend Agent が API コントラクト（エンドポイント、リクエスト/レスポンススキーマ）を投稿します",
+          "item2": "フロントエンド Agent がコントラクトを読み取り、対応する API コールを実装します",
           "item3": "エージェントは @メンションを使って特定の Pod にメッセージを送信できます",
           "item4": "共有ドキュメント機能により、エージェントはリビングデザインドキュメントを維持できます"
         },
         "step6": {
           "title": "統合結果をレビューする",
           "description": "両方のエージェントが完了したら：",
-          "item1": "各 Pod の Git ワークツリーで行われたコミットを確認します",
-          "item2": "チャンネルのメッセージ履歴で意思決定のタイムラインを確認します",
+          "item1": "各 Pod の Git Worktree で行われたコミットを確認します",
+          "item2": "Channel のメッセージ履歴で意思決定のタイムラインを確認します",
           "item3": "共有ドキュメントに最終合意された API コントラクトが含まれています",
           "item4": "両方のブランチをメインブランチにマージして機能を完成させます"
         },
         "bestPractices": {
           "title": "ベストプラクティス",
-          "tip1": "各エージェントの役割と連携方法を明確にした初期プロンプトを使用する",
-          "tip2": "両方のエージェントが必要とする仕様のために、チャンネルに共有ドキュメントを作成する",
-          "tip3": "一方のエージェントが他方からの具体的な応答を必要とする場合は @メンションを使用する",
-          "tip4": "バックエンド/インフラストラクチャエージェントを先に起動し、コンシューマー向けのコントラクトを投稿させる",
-          "tip5": "エージェントがコラボレーションのコンテキストを理解できるよう、チャンネルの説明を具体的にする"
+          "tip1": "各 Agent の役割と連携方法を明確にした初期プロンプトを使用する",
+          "tip2": "両方の Agent が必要とする仕様のために、Channel に共有ドキュメントを作成する",
+          "tip3": "一方の Agent が他方からの具体的な応答を必要とする場合は @メンションを使用する",
+          "tip4": "Backend/インフラストラクチャ Agent を先に起動し、コンシューマー向けのコントラクトを投稿させる",
+          "tip5": "Agent がコラボレーションのコンテキストを理解できるよう、Channel の説明を具体的にする"
         }
       },
       "loops": {
@@ -2103,7 +2197,7 @@
         "description": "スケジュールに基づいて Pod を自動作成するループの設定方法を学びます。ループはコードレビュー、依存関係の更新、テスト実行、モニタリングなどの繰り返しタスクに最適です。",
         "whatAreLoops": {
           "title": "ループとは？",
-          "description": "ループは、事前定義された設定で定期的に AgentPod を作成するスケジュール自動化です。AI エージェントの cron ジョブのようなもので、スケジュールに従ってプロンプトを実行し、毎回新しい Pod を作成します。",
+          "description": "Loop は、事前定義された設定で定期的に AgentPod を作成するスケジュール自動化です。AI Agent の cron ジョブのようなもので、スケジュールに従ってプロンプトを実行し、毎回新しい Pod を作成します。",
           "item1": "定期的なコードレビュー — 毎朝コード品質の問題をチェック",
           "item2": "依存関係の更新 — 古いパッケージを毎週スキャンして更新",
           "item3": "テストモニタリング — テストスイートを毎日実行し、失敗を報告",
@@ -2114,15 +2208,15 @@
           "description": "左サイドバーの「Loops」をクリックします。既存のループ一覧（初めての場合は空）と新規作成ボタンが表示されます。"
         },
         "step2": {
-          "title": "新しいループを作成する",
+          "title": "新しい Loop を作成する",
           "description": "「New Loop」をクリックして自動化を設定します：",
-          "fields": "ループの設定を入力してください：",
+          "fields": "Loop の設定を入力してください：",
           "field1": "名前 — わかりやすい名前（例：「デイリーコードレビュー」）",
-          "field2": "エージェント — 使用する AI エージェント（例：Claude Code）",
-          "field3": "Runner — ループを実行する Runner",
-          "field4": "リポジトリ — エージェントが作業するリポジトリ",
+          "field2": "Agent — 使用する AI Agent（例：Claude Code）",
+          "field3": "Runner — Loop を実行する Runner",
+          "field4": "リポジトリ — Agent が作業するリポジトリ",
           "field5": "ブランチ — チェックアウトするブランチ（デフォルトは main）",
-          "field6": "プロンプト — エージェントへのタスク（例：「最近のコミットのコード品質をレビューしてください。セキュリティの脆弱性、パフォーマンスの問題、スタイルの不整合をチェックし、チャンネルにサマリーを投稿してください。」）",
+          "field6": "プロンプト — Agent へのタスク（例：「最近のコミットのコード品質をレビューしてください。セキュリティの脆弱性、パフォーマンスの問題、スタイルの不整合をチェックし、Channel にサマリーを投稿してください。」）",
           "field7": "スケジュール — cron スケジュールを設定（例：毎日午前 9 時、毎週月曜日）"
         },
         "step3": {
@@ -2132,44 +2226,44 @@
           "pattern2": "毎週月曜日午前 8 時 — 0 8 * * 1",
           "pattern3": "6 時間ごと — 0 */6 * * *",
           "pattern4": "平日午前 10 時 — 0 10 * * 1-5",
-          "tip": "ループダッシュボードに次回のスケジュール実行時刻が表示されるので、cron 式を確認できます。"
+          "tip": "Loop ダッシュボードに次回のスケジュール実行時刻が表示されるので、cron 式を確認できます。"
         },
         "step4": {
-          "title": "ループの実行を監視する",
-          "description": "ループを作成した後、アクティビティを監視できます：",
-          "item1": "ループダッシュボード — すべてのループのステータス、最終実行時刻、次回スケジュール実行を確認",
-          "item2": "実行履歴 — ループをクリックして作成された Pod の履歴を表示",
+          "title": "Loop の実行を監視する",
+          "description": "Loop を作成した後、アクティビティを監視できます：",
+          "item1": "Loop ダッシュボード — すべての Loop のステータス、最終実行時刻、次回スケジュール実行を確認",
+          "item2": "実行履歴 — Loop をクリックして作成された Pod の履歴を表示",
           "item3": "Pod の結果 — 各実行で作成された Pod のターミナル出力と Git の変更を確認",
-          "item4": "通知 — チャンネルバインディングを設定してループの結果をチャンネルで受信"
+          "item4": "通知 — Channel バインディングを設定して Loop の結果を Channel で受信"
         },
         "step5": {
           "title": "ループを管理する",
           "description": "ループダッシュボードからループを管理できます：",
-          "item1": "一時停止 — ループを削除せずに新しい Pod の作成を一時的に停止",
-          "item2": "再開 — 一時停止中のループを再起動",
+          "item1": "一時停止 — Loop を削除せずに新しい Pod の作成を一時的に停止",
+          "item2": "再開 — 一時停止中の Loop を再起動",
           "item3": "編集 — プロンプト、スケジュール、または設定を更新",
           "item4": "今すぐ実行 — 次のスケジュールを待たずに即時実行をトリガー",
-          "item5": "削除 — ループを完全に削除"
+          "item5": "削除 — Loop を完全に削除"
         },
         "commonPatterns": {
-          "title": "よくあるループパターン",
+          "title": "よくある Loop パターン",
           "pattern1": {
             "title": "朝のコードレビュー",
-            "description": "毎日午前 9 時に実行して前日のコミットをレビュー。エージェントがコード品質、セキュリティの問題をチェックし、チームチャンネルにサマリーを投稿します。"
+            "description": "毎日午前 9 時に実行して前日のコミットをレビュー。Agent がコード品質、セキュリティの問題をチェックし、チーム Channel にサマリーを投稿します。"
           },
           "pattern2": {
             "title": "週次依存関係監査",
-            "description": "毎週月曜日に実行して古いまたは脆弱な依存関係をスキャン。エージェントが安全な更新を含む PR を作成します。"
+            "description": "毎週月曜日に実行して古いまたは脆弱な依存関係をスキャン。Agent が安全な更新を含む PR を作成します。"
           },
           "pattern3": {
             "title": "継続的テストモニター",
-            "description": "6 時間ごとに実行してテストスイートを実行。エージェントが失敗やリグレッションをモニタリングチャンネルに報告します。"
+            "description": "6 時間ごとに実行してテストスイートを実行。Agent が失敗やリグレッションをモニタリング Channel に報告します。"
           }
         },
         "nextSteps": {
           "title": "次のステップ",
-          "description": "はじめての自動化ループを設定できました。さらに探索してみましょう：",
-          "item1": "マルチエージェントコラボレーション — ループとチャンネルを組み合わせて自動化されたマルチエージェントパイプラインを構築",
+          "description": "はじめての自動化 Loop を設定できました。さらに探索してみましょう：",
+          "item1": "マルチ Agent コラボレーション — Loop と Channel を組み合わせて自動化されたマルチ Agent パイプラインを構築",
           "item2": "タスク管理 — チケットを使ってループで発見された問題を追跡"
         }
       }

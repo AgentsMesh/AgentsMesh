@@ -106,6 +106,9 @@ func mountRunnerService(mux *http.ServeMux, svc *serviceContainer, rest *v1.Serv
 	if rest.UpgradeCommandSender != nil {
 		serverOpts = append(serverOpts, runnerconnect.WithUpgradeCommandSender(rest.UpgradeCommandSender))
 	}
+	if svc.agentSvc != nil {
+		serverOpts = append(serverOpts, runnerconnect.WithAgentUpgradeReader(svc.agentSvc))
+	}
 	if rest.LogUploadSender != nil {
 		serverOpts = append(serverOpts, runnerconnect.WithLogUploadSender(rest.LogUploadSender))
 	}

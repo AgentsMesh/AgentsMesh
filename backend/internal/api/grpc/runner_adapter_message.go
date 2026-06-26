@@ -103,6 +103,9 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 	case *runnerv1.RunnerMessage_UpgradeStatus:
 		a.connManager.HandleUpgradeStatus(runnerID, payload.UpgradeStatus)
 
+	case *runnerv1.RunnerMessage_UpgradeAgentResult:
+		a.connManager.HandleUpgradeAgentResult(runnerID, payload.UpgradeAgentResult)
+
 	case *runnerv1.RunnerMessage_LogUploadStatus:
 		a.connManager.HandleLogUploadStatus(runnerID, payload.LogUploadStatus)
 

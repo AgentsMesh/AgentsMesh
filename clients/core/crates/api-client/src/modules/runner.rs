@@ -85,6 +85,18 @@ impl ApiClient {
         .await
     }
 
+    pub async fn upgrade_agent_connect(
+        &self,
+        req: &runner_proto::UpgradeAgentRequest,
+    ) -> Result<runner_proto::UpgradeAgentResponse, ApiError> {
+        connect_call(
+            self,
+            "/proto.runner_api.v1.RunnerService/UpgradeAgent",
+            req,
+        )
+        .await
+    }
+
     pub async fn request_log_upload_connect(
         &self,
         req: &runner_proto::RequestLogUploadRequest,

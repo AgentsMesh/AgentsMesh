@@ -16,9 +16,7 @@
     "backToSettings": "設定に戻る",
     "general": "一般",
     "team": "チーム",
-    "gitProviders": "Gitプロバイダー",
     "agents": "エージェント",
-    "billing": "請求",
     "personal": {
       "title": "Personal Settings",
       "description": "Manage your personal preferences",
@@ -33,7 +31,9 @@
         "agentCredentials": "Agent Credentials",
         "agentCredentialsDesc": "API keys for AI agents",
         "notifications": "Notifications",
-        "notificationsDesc": "Push notification preferences"
+        "notificationsDesc": "Push notification preferences",
+        "support": "サポートチケット",
+        "supportDesc": "サポートリクエストの送信と追跡"
       },
       "general": {
         "title": "General Settings",
@@ -123,7 +123,10 @@
         "cancel": "Cancel",
         "inviting": "Inviting...",
         "sendInvite": "Send Invite"
-      }
+      },
+      "subscriptionFrozen": "サブスクリプションの有効期限が切れています。メンバーを招待するにはサブスクリプションを更新してください。",
+      "manageSeats": "シートを管理",
+      "renewSubscription": "サブスクリプションを更新"
     },
     "agentConfig": {
       "title": "Agent Configuration",
@@ -148,7 +151,7 @@
       "invalidJson": "Invalid JSON format",
       "credentials": {
         "title": "API Credentials",
-        "description": "このエージェントの API 認証情報を設定します。未設定の場合、エージェントの組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。"
+        "description": "この Agent の API 認証情報を設定します。未設定の場合、Agent の組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。"
       },
       "runtime": {
         "title": "Runtime Configuration",
@@ -246,7 +249,7 @@
     },
     "agentCredentials": {
       "title": "Agent Credentials",
-      "description": "エージェントごとの API 認証情報を管理します。未設定のエージェントは組み込みの認証フローを使用し、認証情報を追加すると起動時に注入されます。",
+      "description": "Agent ごとの API 認証情報を管理します。未設定の Agent は組み込みの認証フローを使用し、認証情報を追加すると起動時に注入されます。",
       "failedToLoad": "Failed to load agent credentials",
       "profiles": "profiles",
       "noAgents": "No agents available",
@@ -256,15 +259,11 @@
       "setAsDefault": "Set as default",
       "addProfile": "Add Custom Credentials",
       "editProfile": "Edit Credentials",
-      "customProfileDescription": "このエージェント用の独自 API 認証情報を追加します。起動時にエージェント環境に注入されます。",
+      "customProfileDescription": "この Agent 用の独自 API 認証情報を追加します。起動時に Agent 環境に注入されます。",
       "name": "Profile Name",
       "namePlaceholder": "e.g., Work Config, Personal",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description for this profile",
-      "baseUrl": "Base URL",
-      "apiKey": "API Key",
-      "apiKeyPlaceholder": "Leave empty to keep existing",
-      "apiKeyEditHint": "Leave empty to keep the existing API key",
       "profileCreated": "Profile created successfully",
       "profileUpdated": "Profile updated successfully",
       "profileDeleted": "Profile deleted successfully",
@@ -273,17 +272,13 @@
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
       "confirmDelete": "Are you sure you want to delete this profile?",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "Leave empty to keep existing",
-      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
-      "credentialMethod": "Authentication Method",
-      "credentialMethodApiKey": "API Key",
-      "credentialMethodAuthToken": "Auth Token",
-      "noBundleLabel": "エージェントの既定認証を使用",
-      "noBundleHint": "追加の認証情報を注入しません。エージェントの組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。",
+      "noBundleLabel": "Agent の既定認証を使用",
+      "noBundleHint": "追加の認証情報を注入しません。Agent の組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。",
       "removeSecret": "この認証情報を削除",
       "willRemove": "保存時に削除されます",
-      "baseUrlSecurityHint": "URL にトークンを埋め込まないでください。平文で保存され、編集時にここに表示されます。"
+      "baseUrlSecurityHint": "URL にトークンを埋め込まないでください。平文で保存され、編集時にここに表示されます。",
+      "secretPlaceholder": "既存の値を保持するには空欄のままにします",
+      "secretEditHint": "既存の値を保持するには空欄のままにします"
     },
     "sshKeys": {
       "title": "SSH Keys",
@@ -405,7 +400,7 @@
       "cacheCreationTokens": "キャッシュ作成トークン",
       "totalTokens": "合計トークン",
       "timeSeriesTitle": "トークン使用量の推移",
-      "byAgentTitle": "エージェント別使用量",
+      "byAgentTitle": "Agent 別使用量",
       "byUserTitle": "ユーザー別使用量",
       "byModelTitle": "モデル別使用量",
       "columnUser": "ユーザー",
@@ -416,7 +411,7 @@
       "retry": "再試行",
       "filters": {
         "timeRange": "期間",
-        "agent": "エージェント",
+        "agent": "Agent",
         "granularity": "粒度",
         "allAgents": "すべてのエージェント",
         "last7Days": "過去7日間",
@@ -449,14 +444,14 @@
       "runnerOfflineDesc": "When a runner goes offline or has issues",
       "active": "Notifications are active",
       "deliveryPreferences": "配信設定",
-      "channelMessage": "チャンネルメッセージ",
+      "channelMessage": "Channel メッセージ",
       "channelMessageDesc": "参���しているチャンネルに新しいメッセージがあっ��時",
       "channelMention": "@メンシ��ン",
-      "channelMentionDesc": "チャンネルで誰かがあなたをメンションした時",
+      "channelMentionDesc": "Channel で誰かがあなたをメンションした時",
       "terminalOsc": "ターミナル通知",
-      "terminalOscDesc": "��ージェントターミナルからの通知（OSCイベント）",
+      "terminalOscDesc": "Agent ターミナルからの通知（OSCイベント）",
       "taskCompleted": "タスク完了",
-      "taskCompletedDesc": "エージェントがタスクを完了した時"
+      "taskCompletedDesc": "Agent がタスクを完了した時"
     },
     "runnersSection": {
       "title": "Runners",
@@ -661,7 +656,7 @@
         "scopeChannelsWrite": "チャンネルの書き込み",
         "scopeChannelsWriteDesc": "チャンネルの作成、更新、メッセージの送信",
         "scopeRunnersRead": "ランナーの読み取り",
-        "scopeRunnersReadDesc": "ランナーの一覧表示、詳細、ステータス、関連Podの閲覧",
+        "scopeRunnersReadDesc": "Runner の一覧表示、詳細、ステータス、関連Podの閲覧",
         "scopeReposRead": "リポジトリの読み取り",
         "scopeReposReadDesc": "リポジトリの一覧表示、詳細、ブランチ、マージリクエストの閲覧",
         "expirationLabel": "有効期限",
@@ -671,7 +666,11 @@
         "expiration1y": "1年",
         "cancel": "キャンセル",
         "create": "作成",
-        "creating": "作成中..."
+        "creating": "作成中...",
+        "scopeLoopsRead": "ループの読み取り",
+        "scopeLoopsReadDesc": "ループの一覧表示、詳細の閲覧、実行履歴の確認",
+        "scopeLoopsWrite": "ループの書き込み",
+        "scopeLoopsWriteDesc": "Loop 実行のトリガーと実行中 Loop のキャンセル"
       },
       "secretDialog": {
         "title": "APIキーが作成されました",
@@ -696,6 +695,191 @@
         "description": "このAPIキーを完全に削除しますか？この操作は取り消せません。",
         "delete": "削除",
         "cancel": "キャンセル"
+      },
+      "scopeGroupLoops": "ループ"
+    },
+    "gitProviders": {
+      "title": "Git プロバイダー",
+      "description": "リポジトリ統合のための Git プロバイダーを構成します",
+      "addProvider": "プロバイダーを追加",
+      "loading": "プロバイダーを読み込み中...",
+      "noProviders": "Git プロバイダーが構成されていません。追加して始めましょう。",
+      "default": "デフォルト",
+      "disabled": "無効",
+      "configure": "構成",
+      "enable": "有効化",
+      "disable": "無効化",
+      "delete": "削除",
+      "confirmDelete": "このプロバイダーを削除してもよろしいですか？",
+      "failedToLoad": "Git プロバイダーの読み込みに失敗しました",
+      "failedToAdd": "プロバイダーの追加に失敗しました",
+      "failedToUpdate": "プロバイダーの更新に失敗しました",
+      "failedToDelete": "プロバイダーの削除に失敗しました",
+      "failedToToggle": "プロバイダーのステータス切り替えに失敗しました",
+      "sshAuth": "SSH 認証",
+      "dialog": {
+        "addTitle": "Git プロバイダーを追加",
+        "editTitle": "プロバイダーを構成",
+        "providerType": "プロバイダーの種類",
+        "sshHint": "SSH プロバイダーは認証に SSH キーを使用します。自己ホスト型の Git サーバーに適しています。",
+        "nameLabel": "名前",
+        "namePlaceholderSSH": "例：My Git Server",
+        "namePlaceholder": "例：My GitHub",
+        "baseUrlLabel": "ベース URL",
+        "baseUrlHint": "自己ホスト型インスタンスの場合は、ベース URL を入力してください",
+        "clientIdLabel": "クライアント ID（任意）",
+        "clientIdPlaceholder": "OAuth アプリのクライアント ID",
+        "clientSecretLabel": "クライアントシークレット（任意）",
+        "clientSecretPlaceholder": "OAuth アプリのクライアントシークレット",
+        "botTokenLabel": "Bot トークン（任意）",
+        "botTokenPlaceholder": "個人アクセストークン",
+        "sshKeyLabel": "SSH キー",
+        "sshKeyPlaceholder": "SSH キーを選択...",
+        "noSSHKeys": "利用可能な SSH キーがありません。下で作成してください。",
+        "setDefault": "デフォルトのプロバイダーに設定",
+        "cancel": "キャンセル",
+        "saving": "保存中...",
+        "saveChanges": "変更を保存",
+        "addProvider": "プロバイダーを追加"
+      }
+    },
+    "billing": {
+      "checkout": {
+        "title": "購入を完了する",
+        "selectBillingCycle": "請求サイクルを選択",
+        "monthly": "月払い",
+        "yearly": "年払い（17% お得）",
+        "monthlyPrice": "${price}/シート/月",
+        "yearlyPrice": "${price}/シート/年",
+        "orderSummary": "注文内容",
+        "plan": "プラン",
+        "billingCycle": "請求サイクル",
+        "pricePerSeat": "シートあたりの価格",
+        "seats": "シート数",
+        "total": "合計",
+        "proceedToPayment": "支払いに進む",
+        "processing": "処理中...",
+        "cancel": "キャンセル",
+        "redirecting": "支払いページにリダイレクト中...",
+        "scanQRCode": "QR コードをスキャンして支払う",
+        "qrCodeExpired": "QR コードの有効期限が切れました",
+        "refresh": "更新",
+        "waitingForPayment": "支払いの確認を待っています...",
+        "paymentMethods": "支払い方法",
+        "stripe": "クレジットカード（Stripe）",
+        "alipay": "Alipay",
+        "wechat": "WeChat Pay",
+        "additionalSeats": "追加シート",
+        "seatPurchaseNote": "シートは現在のサブスクリプションに直ちに追加されます。",
+        "stripePayment": "Stripe（クレジットカード）による支払い",
+        "globalPayment": "クレジットカードによる安全な支払い",
+        "cnPayment": "Alipay または WeChat Pay による支払い",
+        "save": "${amount} お得",
+        "scanToPay": "スキャンして支払う",
+        "scanInstructions": "Alipay または WeChat で QR コードをスキャンして支払いを完了してください。",
+        "orderNo": "注文番号",
+        "checkPaymentStatus": "支払い状況を確認"
+      },
+      "cancel": {
+        "title": "サブスクリプションを解約",
+        "description": "サブスクリプションを解約してもよろしいですか？",
+        "endOfPeriod": "期間終了時に解約",
+        "endOfPeriodDesc": "{date} までアクセスを維持し、その後解約します",
+        "immediate": "今すぐ解約",
+        "immediateDesc": "今すぐ解約し、直ちにアクセスを失います",
+        "immediateWarning": "警告：すべてのプレミアム機能へのアクセスが直ちに失われます。この操作は元に戻せません。",
+        "keepSubscription": "サブスクリプションを維持",
+        "confirmCancel": "サブスクリプションを解約",
+        "cancelling": "解約中...",
+        "recommended": "推奨"
+      },
+      "seats": {
+        "title": "シート管理",
+        "seatsUsed": "シート使用中",
+        "available": "利用可能",
+        "maxSeats": "ご利用のプランでは最大 {max} シートまで許可されています",
+        "addSeats": "シートを追加",
+        "purchaseSeats": "追加シートを購入",
+        "seatsToAdd": "シート数",
+        "proratedNote": "請求期間の残り日数に応じて日割り計算された金額が請求されます。",
+        "cancelPurchase": "キャンセル",
+        "proceedToPurchase": "購入に進む",
+        "processing": "処理中...",
+        "upgradeToAddSeats": "シートを追加するには有料プランにアップグレードしてください",
+        "retry": "再試行"
+      },
+      "invoices": {
+        "title": "請求書履歴",
+        "invoiceNo": "請求書番号",
+        "date": "日付",
+        "period": "期間",
+        "amount": "金額",
+        "status": "ステータス",
+        "noInvoices": "まだ請求書はありません",
+        "loadMore": "もっと読み込む",
+        "loading": "読み込み中...",
+        "retry": "再試行"
+      },
+      "cycleSwitch": {
+        "title": "請求サイクル",
+        "description": "月払いと年払いを切り替えます。変更は現在の請求期間の終了時に有効になります。",
+        "monthly": "月払い",
+        "yearly": "年払い",
+        "saveNote": "17% お得",
+        "pendingChange": "請求は {date} に {from} から {to} に切り替わります。",
+        "cancelChange": "変更をキャンセル",
+        "cancelling": "キャンセル中...",
+        "confirmTitle": "請求サイクルを変更",
+        "confirmDescription": "{from} から {to} の請求に切り替えてもよろしいですか？この変更は現在の請求期間の終了時に有効になります。",
+        "cancel": "キャンセル",
+        "confirm": "確認",
+        "switching": "切り替え中...",
+        "success": "請求サイクルを変更しました"
+      }
+    },
+    "credentialForm": {
+      "anthropic": {
+        "baseUrl": "Anthropic ベース URL",
+        "apiKey": "Anthropic API キー",
+        "authToken": "Anthropic 認証トークン",
+        "authMethod": "認証",
+        "authMethodHint": "いずれか一方を指定してください"
+      },
+      "openai": {
+        "apiKey": "OpenAI API キー"
+      },
+      "google": {
+        "apiKey": "Google API キー"
+      },
+      "customEnv": {
+        "title": "カスタム環境変数",
+        "addButton": "変数を追加",
+        "keyPlaceholder": "ENV_NAME",
+        "valuePlaceholder": "値",
+        "remove": "削除",
+        "keyInvalid": "無効な環境変数名です（大文字、数字、アンダースコアのみ）",
+        "keyConflict": "宣言済みのフィールドと競合しています",
+        "keyDuplicate": "環境変数名が重複しています"
+      },
+      "codex": {
+        "customEnvHint": "プロキシやモデルのオーバーライドのために OPENAI_BASE_URL、OPENAI_MODEL などを追加します"
+      },
+      "loopal": {
+        "customEnvHint": "追加のプロバイダーキー（例：XAI_API_KEY、DEEPSEEK_API_KEY）"
+      },
+      "gemini": {
+        "customEnvHint": "GEMINI_API_KEY などの追加キー"
+      },
+      "aider": {
+        "customEnvHint": "その他のプロバイダーキーまたはプロキシ設定"
+      },
+      "opencode": {
+        "customEnvHint": "opencode が必要とする任意の環境変数"
+      },
+      "cursor": {
+        "apiKey": "Cursor API キー",
+        "apiKeyHint": "任意。空欄の場合は `cursor-agent login`（OAuth）を使用します。ヘッドレス／キーベース認証の場合は設定してください。",
+        "customEnvHint": "cursor-agent が必要とする追加の環境変数を追加します"
       }
     }
   }

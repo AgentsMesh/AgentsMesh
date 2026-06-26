@@ -62,6 +62,13 @@ func probeAgents(agents []*runnerv1.AgentInfo) []agentProbeResult {
 	return results
 }
 
+// ProbeAgentVersion runs the agent's --version flag at the given executable
+// path and returns the parsed version (empty if detection fails). Exported so
+// the runner package can re-probe an agent's version right after an upgrade.
+func ProbeAgentVersion(executablePath string) string {
+	return detectAgentVersion(executablePath)
+}
+
 // detectAgentVersion runs "<command> --version" and extracts the version string.
 // Each attempt uses an independent timeout to avoid one slow attempt starving the next.
 // Returns empty string if version detection fails (non-fatal).

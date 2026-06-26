@@ -55,6 +55,7 @@ service RunnerService {
 
   // Lifecycle commands
   rpc UpgradeRunner(UpgradeRunnerRequest) returns (UpgradeRunnerResponse);
+  rpc UpgradeAgent(UpgradeAgentRequest) returns (UpgradeAgentResponse);
   rpc RequestLogUpload(RequestLogUploadRequest) returns (RequestLogUploadResponse);
   rpc ListRunnerLogs(ListRunnerLogsRequest) returns (ListRunnerLogsResponse);
   rpc QuerySandboxes(QuerySandboxesRequest) returns (QuerySandboxesResponse);
@@ -250,6 +251,21 @@ message UpgradeRunnerRequest {
 
 message UpgradeRunnerResponse {
   // UUID for correlating upgrade_status events from the runner.
+  string request_id = 1;
+  string message = 2;
+}
+
+// UpgradeAgent upgrades a single installed agent (claude-code/codex/...) to
+// the latest version via its package-manager command. The command itself is
+// the SSOT in the agents table — the client only names which agent.
+message UpgradeAgentRequest {
+  string org_slug = 1;
+  int64 id = 2;          // runner id
+  string agent_slug = 3;
+}
+
+message UpgradeAgentResponse {
+  // UUID for correlating upgrade_agent_result events from the runner.
   string request_id = 1;
   string message = 2;
 }

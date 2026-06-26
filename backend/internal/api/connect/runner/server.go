@@ -42,6 +42,7 @@ const (
 	UpdateRunnerProcedure         = "/" + ServiceName + "/UpdateRunner"
 	DeleteRunnerProcedure         = "/" + ServiceName + "/DeleteRunner"
 	UpgradeRunnerProcedure        = "/" + ServiceName + "/UpgradeRunner"
+	UpgradeAgentProcedure         = "/" + ServiceName + "/UpgradeAgent"
 	RequestLogUploadProcedure     = "/" + ServiceName + "/RequestLogUpload"
 	ListRunnerLogsProcedure       = "/" + ServiceName + "/ListRunnerLogs"
 	QuerySandboxesProcedure       = "/" + ServiceName + "/QuerySandboxes"
@@ -80,6 +81,14 @@ type SandboxQueryService interface {
 type UpgradeCommandSender interface {
 	IsConnected(runnerID int64) bool
 	SendUpgradeRunner(runnerID int64, requestID, targetVersion string, force bool) error
+	SendUpgradeAgent(runnerID int64, requestID, agentSlug, executable string, argv []string) error
+}
+
+// AgentUpgradeReader resolves the package-manager upgrade command for an agent
+// slug. ok=false → the agent does not support remote upgrade. Kept minimal so
+// the Connect server depends on a behavior, not the whole AgentService.
+type AgentUpgradeReader interface {
+	GetUpgradeCommand(ctx context.Context, slug string) (executable string, argv []string, ok bool, err error)
 }
 
 // LogUploadCommandSender ditto for the log-upload command path.
@@ -97,6 +106,7 @@ type Server struct {
 	podCoordinator  PodCoordinator
 	sandboxQuerySvc SandboxQueryService
 	upgradeSender   UpgradeCommandSender
+	agentUpgrade    AgentUpgradeReader
 	logUploadSender LogUploadCommandSender
 	logUploadSvc    *runnerlog.Service
 	pkiSvc          interfaces.PKICertificateIssuer
@@ -129,6 +139,9 @@ func WithPodCoordinator(p PodCoordinator) Option           { return func(s *Serv
 func WithSandboxQueryService(q SandboxQueryService) Option { return func(s *Server) { s.sandboxQuerySvc = q } }
 func WithUpgradeCommandSender(u UpgradeCommandSender) Option {
 	return func(s *Server) { s.upgradeSender = u }
+}
+func WithAgentUpgradeReader(r AgentUpgradeReader) Option {
+	return func(s *Server) { s.agentUpgrade = r }
 }
 func WithLogUploadSender(l LogUploadCommandSender) Option {
 	return func(s *Server) { s.logUploadSender = l }
@@ -166,6 +179,9 @@ func Mount(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {
 	))
 	mux.Handle(UpgradeRunnerProcedure, connect.NewUnaryHandler(
 		UpgradeRunnerProcedure, srv.UpgradeRunner, opts...,
+	))
+	mux.Handle(UpgradeAgentProcedure, connect.NewUnaryHandler(
+		UpgradeAgentProcedure, srv.UpgradeAgent, opts...,
 	))
 	mux.Handle(RequestLogUploadProcedure, connect.NewUnaryHandler(
 		RequestLogUploadProcedure, srv.RequestLogUpload, opts...,

@@ -61,6 +61,7 @@ export function fromProtoAgent(p: ProtoAgent): AgentData {
     is_builtin: p.isBuiltin,
     is_active: p.isActive,
     supported_modes: p.supportedModes,
+    upgrade_manager: p.upgradeManager,
   };
 }
 

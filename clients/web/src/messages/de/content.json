@@ -12,7 +12,7 @@
       "title": "Woran wir glauben",
       "autonomous": {
         "title": "Agenten sind Teammitglieder",
-        "content": "KI-Agenten sind nicht nur Tools für Code-Vervollständigung. Sie sind autonome Teammitglieder, die Aufgaben end-to-end übernehmen — vom Lesen eines Tickets bis zum Öffnen eines Merge Requests."
+        "content": "KI-Agents sind nicht nur Tools für Code-Vervollständigung. Sie sind autonome Teammitglieder, die Aufgaben end-to-end übernehmen — vom Lesen eines Tickets bis zum Öffnen eines Merge Requests."
       },
       "collaboration": {
         "title": "Teams schlagen Einzelkämpfer",

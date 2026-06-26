@@ -3,12 +3,12 @@
     "contextMenu": {
       "openInNewWindow": "在新窗口打开"
     },
-    "emptyState": "选择一个频道开始聊天",
-    "emptyStateHint": "从侧边栏选择一个频道，查看消息并与团队协作",
-    "archivedBanner": "此频道已归档，无法发送消息",
+    "emptyState": "选择一个 Channel 开始聊天",
+    "emptyStateHint": "从侧边栏选择一个 Channel，查看消息并与团队协作",
+    "archivedBanner": "此 Channel 已归档，无法发送消息",
     "sidebar": {
       "searchPlaceholder": "搜索频道...",
-      "createChannel": "新建频道",
+      "createChannel": "新建 Channel",
       "refresh": "刷新",
       "showArchived": "查看已归档 →",
       "hideArchived": "隐藏已归档",
@@ -20,15 +20,15 @@
       "groupQuiet": "安静"
     },
     "createDialog": {
-      "title": "创建频道",
-      "name": "频道名称",
+      "title": "创建 Channel",
+      "name": "Channel 名称",
       "namePlaceholder": "例如 feature-auth、bug-fix-login",
-      "nameRequired": "请输入频道名称",
+      "nameRequired": "请输入 Channel 名称",
       "description": "描述",
-      "descriptionPlaceholder": "这个频道用于什么？",
+      "descriptionPlaceholder": "这个 Channel 用于什么？",
       "descriptionHint": "可选",
       "visibility": "可见性",
-      "failed": "创建频道失败"
+      "failed": "创建 Channel 失败"
     },
     "visibility": {
       "public": "公开",
@@ -37,7 +37,7 @@
     "actions": {
       "join": "加入",
       "leave": "离开",
-      "joinToParticipate": "加入此频道以查看消息并参与讨论"
+      "joinToParticipate": "加入此 Channel 以查看消息并参与讨论"
     },
     "header": {
       "podsCount": "{count} 个 Pod",
@@ -46,7 +46,7 @@
       "linkedTo": "关联",
       "search": "搜索消息",
       "members": "成员",
-      "settings": "频道设置",
+      "settings": "Channel 设置",
       "more": "更多"
     },
     "rightRail": {
@@ -72,7 +72,7 @@
       "formatLink": "链接"
     },
     "members": {
-      "title": "频道成员",
+      "title": "Channel 成员",
       "current": "成员",
       "available": "添加成员",
       "searchPlaceholder": "搜索成员...",
@@ -106,22 +106,22 @@
       "resultCount": "{count} 条结果"
     },
     "settings": {
-      "title": "频道设置",
+      "title": "Channel 设置",
       "tabs": {
         "basic": "基本",
         "archive": "归档"
       },
-      "name": "频道名称",
+      "name": "Channel 名称",
       "description": "描述",
-      "descriptionPlaceholder": "这个频道用于什么？",
+      "descriptionPlaceholder": "这个 Channel 用于什么？",
       "save": "保存",
       "cancel": "取消",
       "saved": "已保存",
       "saveFailed": "保存失败",
-      "archive": "归档此频道",
-      "unarchive": "恢复此频道",
-      "archiveHint": "归档后频道对成员隐藏，但保留所有历史消息。",
-      "unarchiveHint": "频道当前处于归档状态，恢复后成员可重新访问。",
+      "archive": "归档此 Channel",
+      "unarchive": "恢复此 Channel",
+      "archiveHint": "归档后 Channel 对成员隐藏，但保留所有历史消息。",
+      "unarchiveHint": "Channel 当前处于归档状态，恢复后成员可重新访问。",
       "archived": "已归档",
       "unarchived": "已恢复",
       "archiveFailed": "归档操作失败"

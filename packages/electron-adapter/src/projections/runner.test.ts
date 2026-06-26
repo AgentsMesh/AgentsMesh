@@ -12,6 +12,7 @@ describe("runnerToCache", () => {
       lastHeartbeat: "hb1", currentPods: 2, maxConcurrentPods: 8,
       runnerVersion: "1.2.3", isEnabled: true, visibility: "organization",
       registeredByUserId: 7n, availableAgents: ["claude-code"], tags: ["mac"],
+      agentVersions: [{ slug: "claude-code", version: "1.2.3", path: "/bin/claude" }],
       createdAt: "c0", updatedAt: "u0",
     }));
     expect(c.id).toBe(9);
@@ -25,6 +26,7 @@ describe("runnerToCache", () => {
     expect(c.registered_by_user_id).toBe(7);
     expect(c.available_agents).toEqual(["claude-code"]);
     expect(c.tags).toEqual(["mac"]);
+    expect(c.agent_versions).toEqual([{ slug: "claude-code", version: "1.2.3", path: "/bin/claude" }]);
   });
 
   it("parses host_info JSON and normalizes empty lists/strings", () => {
@@ -36,6 +38,7 @@ describe("runnerToCache", () => {
     expect(c.host_info).toEqual({ os: "darwin", arch: "arm64", cpu_cores: 10 });
     expect(c.available_agents).toBeUndefined();
     expect(c.tags).toBeUndefined();
+    expect(c.agent_versions).toBeUndefined();
     expect(c.description).toBeUndefined();
   });
 

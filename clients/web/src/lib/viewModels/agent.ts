@@ -17,6 +17,8 @@ export interface AgentData {
   is_builtin: boolean;
   is_active: boolean;
   supported_modes?: string | string[];
+  // Package manager for remote upgrade ("npm"/"pip"); absent = not upgradable.
+  upgrade_manager?: string;
 }
 
 export interface ConfigFieldOption {

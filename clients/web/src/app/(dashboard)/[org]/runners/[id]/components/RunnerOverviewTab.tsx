@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { format, formatDistanceToNow } from "date-fns";
-import { Cpu, HardDrive, Terminal, ArrowUpCircle } from "lucide-react";
+import { Cpu, HardDrive, ArrowUpCircle } from "lucide-react";
 import type { RunnerData, RelayConnectionInfo } from "@/lib/viewModels/runner";
 import { upgradeRunner } from "@/lib/api/facade/runnerConnect";
 import { isVersionOutdated } from "@/lib/utils/version";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AgentVersionsCard } from "./AgentVersionsCard";
 import { RelayConnectionsCard } from "./RelayConnectionsCard";
 import { RunnerLogsCard } from "./RunnerLogsCard";
 
@@ -17,9 +18,10 @@ interface RunnerOverviewTabProps {
   runner: RunnerData;
   relayConnections?: RelayConnectionInfo[];
   latestRunnerVersion?: string;
+  onUpgraded?: () => void;
 }
 
-export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersion }: RunnerOverviewTabProps) {
+export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersion, onUpgraded }: RunnerOverviewTabProps) {
   const t = useTranslations();
   const params = useParams();
   const orgSlug = String(params.org ?? "");
@@ -178,25 +180,8 @@ export function RunnerOverviewTab({ runner, relayConnections, latestRunnerVersio
         </dl>
       </div>
 
-      {/* Available Agents */}
-      {runner.available_agents && runner.available_agents.length > 0 && (
-        <div className="bg-card rounded-lg border border-border p-6 md:col-span-2">
-          <h3 className="text-lg font-medium text-foreground mb-4">
-            {t("runners.detail.availableAgents")}
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {runner.available_agents.map((agent) => (
-              <span
-                key={agent}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-              >
-                <Terminal className="w-4 h-4 mr-1" />
-                {agent}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Installed Agents — version + per-agent upgrade */}
+      <AgentVersionsCard runner={runner} onUpgraded={onUpgraded} />
 
       {/* Tags */}
       {runner.tags && runner.tags.length > 0 && (

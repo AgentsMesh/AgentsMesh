@@ -11,20 +11,23 @@
       "download": "다운로드"
     },
     "hero": {
-      "badge": "AI 에이전트 워크포스 플랫폼",
+      "badge": "AI Agent 워크포스 플랫폼",
       "title1": "터미널 기반",
-      "title2": "코딩 에이전트",
+      "title2": "코딩 Agent",
       "title3": "협업 플랫폼",
       "slogan1": "50명의 팀처럼 배포하세요.",
       "slogan2": "5명의 팀으로.",
-      "tagline": "야심 찬 팀을 위한 AI 에이전트 워크포스 플랫폼",
-      "description": "모든 팀원에게 AI 에이전트 팀을 제공하세요. 작업을 할당하고, 진행 상황을 추적하고, 에이전트들이 협업하게 하세요. 코드는 당신의 인프라에 그대로.",
+      "tagline": "야심 찬 팀을 위한 AI Agent 워크포스 플랫폼",
+      "description": "모든 팀원에게 AI Agent 팀을 제공하세요. 작업을 할당하고, 진행 상황을 추적하고, Agent들이 협업하게 하세요. 코드는 당신의 인프라에 그대로.",
       "getStartedFree": "팀 구축 시작",
       "viewDocs": "데모 보기",
       "trustedBy": "전 세계 야심 찬 팀이 신뢰합니다",
       "teams": "성장하는 팀",
       "pods": "수천 개의 Pod",
-      "openSource": "오픈 소스"
+      "openSource": "오픈 소스",
+      "signInConsole": "콘솔에 로그인",
+      "enterpriseNote": "프라이빗 배포가 필요하신가요?",
+      "contactUs": "문의하기"
     },
     "agentLogos": {
       "title": "팀이 이미 사용 중인 에이전트와 연동",
@@ -35,7 +38,8 @@
         "openSource": "오픈소스",
         "community": "커뮤니티",
         "yourOwn": "커스텀",
-        "anysphere": "Anysphere"
+        "anysphere": "Anysphere",
+        "selfBuilt": "자체 구축"
       }
     },
     "paradigmShift": {
@@ -46,7 +50,7 @@
         "label": "개인 생산성",
         "items": {
           "0": "개인 속도 ×10, 팀 산출량 ×1",
-          "1": "각자 자기 에이전트만 따로 운영",
+          "1": "각자 자기 Agent만 따로 운영",
           "2": "컨텍스트가 개인 세션에 갇혀 있음",
           "3": "도구가 늘수록 혼란도 늘어남"
         }
@@ -55,7 +59,7 @@
         "label": "조직 생산성",
         "items": {
           "0": "개인 속도 ×10, 팀 산출량 ×50",
-          "1": "각자 에이전트 부대를 이끌며 동기화",
+          "1": "각자 Agent 부대를 이끌며 동기화",
           "2": "컨텍스트 실시간 공유, 완전한 가시성",
           "3": "하나의 플랫폼으로 모든 것을 관리"
         }
@@ -64,7 +68,7 @@
     "whyTerminal": {
       "title": "왜",
       "titleHighlight": "터미널 기반",
-      "titleEnd": "에이전트인가?",
+      "titleEnd": "Agent인가?",
       "description": "Cursor나 Copilot 같은 IDE 플러그인과 달리, 터미널 기반 에이전트는 자율 실행과 완전한 개발 기능을 제공합니다.",
       "benefits": {
         "autonomous": {
@@ -88,12 +92,12 @@
         "autonomy": "자율성",
         "capabilities": "기능",
         "environment": "환경",
-        "multiAgent": "멀티 에이전트",
+        "multiAgent": "멀티 Agent",
         "selfHosted": "셀프 호스트",
         "ide": {
           "autonomy": "수동적 응답",
           "capabilities": "코드 완성",
-          "environment": "IDE 샌드박스",
+          "environment": "IDE Sandbox",
           "multiAgent": "지원 안 함",
           "selfHosted": "클라우드만"
         },
@@ -111,13 +115,13 @@
       "titleHighlight": "워크포스입니다.",
       "description": "AI 에이전트를 단독 도구에서 협업 팀으로 바꾸는 다섯 가지 기능.",
       "agentpod": {
-        "title": "모든 에이전트에게 전용 데스크를. 몇 초면 준비 완료.",
+        "title": "모든 Agent에게 전용 데스크를. 몇 초면 준비 완료.",
         "subtitle": "AgentPod",
-        "description": "온디맨드로 격리된 개발 환경을 생성. 각 에이전트가 자체 워크스페이스를 보유 — Git 리포, 터미널, 전체 개발 도구. 노트북이든 폰이든, 전체 플로어를 한눈에 모니터링.",
+        "description": "온디맨드로 격리된 개발 환경을 생성. 각 Agent가 자체 Workspace를 보유 — Git 리포, 터미널, 전체 개발 도구. 노트북이든 폰이든, 전체 플로어를 한눈에 모니터링.",
         "highlights": {
           "0": "30초 셋업 — 제로에서 코딩까지",
           "1": "브라우저 기반 터미널, 모든 기기에서 동작",
-          "2": "에이전트별 격리된 Git worktree — 충돌 없음",
+          "2": "Agent별 격리된 Git Worktree — 충돌 없음",
           "3": "수십 개의 에이전트를 동시 실행",
           "4": "작업 완료 시 자동 정리"
         }
@@ -128,22 +132,22 @@
         "description": "에이전트는 서로의 작업을 관찰하고, 채널을 통해 컨텍스트를 공유하며, 자율적으로 협업합니다. 팀원을 찾고, 접근 권한을 협상하고, 워크로드가 늘면 지원군을 자동 생성합니다.",
         "highlights": {
           "0": "에이전트끼리 실시간으로 터미널을 관찰",
-          "1": "@mention과 컨텍스트 공유를 통한 채널 메시징",
+          "1": "@mention과 컨텍스트 공유를 통한 Channel 메시징",
           "2": "자동 발견 — 에이전트가 피어를 찾아 영입",
-          "3": "모든 에이전트 연결의 라이브 토폴로지 맵",
+          "3": "모든 Agent 연결의 라이브 토폴로지 맵",
           "4": "스코프 기반 권한 — 읽기 전용 관찰 또는 전체 제어"
         }
       },
       "tickets": {
-        "title": "티켓을 쓰면 완료됩니다.",
+        "title": "Ticket을 쓰면 완료됩니다.",
         "subtitle": "Tickets",
-        "description": "칸반 보드에 작업을 올리세요. 에이전트가 선점하고, 브랜치를 만들고, 코드를 작성하고, 머지 리퀘스트를 엽니다. 당신은 리뷰하고 배포만 하면 됩니다.",
+        "description": "칸반 보드에 작업을 올리세요. Agent가 선점하고, 브랜치를 만들고, 코드를 작성하고, 머지 리퀘스트를 엽니다. 당신은 리뷰하고 배포만 하면 됩니다.",
         "highlights": {
-          "0": "티켓이 자동으로 에이전트 지시사항으로 변환",
+          "0": "Ticket이 자동으로 Agent 지시사항으로 변환",
           "1": "에이전트가 에픽을 서브태스크로 자율 분해",
-          "2": "MR/PR이 티켓에 연결되어 실시간 CI 상태 표시",
+          "2": "MR/PR이 Ticket에 연결되어 실시간 CI 상태 표시",
           "3": "백로그부터 배포까지 전체 라이프사이클 추적",
-          "4": "Git webhook이 자동으로 루프를 닫음"
+          "4": "Git webhook이 자동으로 Loop를 닫음"
         }
       },
       "runners": {
@@ -160,9 +164,9 @@
       "scheduledTasks": {
         "title": "코드베이스에 24/7 유지보수 크루를.",
         "subtitle": "LOOP",
-        "description": "코드 리뷰, 의존성 업데이트, 보안 스캔, 테스트 스위트 — 스케줄링하고 자동 처리. 한 번만 설정하세요. 당신이 퇴근한 뒤에도 에이전트 팀이 코드베이스를 지킵니다.",
+        "description": "코드 리뷰, 의존성 업데이트, 보안 스캔, 테스트 스위트 — 스케줄링하고 자동 처리. 한 번만 설정하세요. 당신이 퇴근한 뒤에도 Agent 팀이 코드베이스를 지킵니다.",
         "highlights": {
-          "0": "모든 에이전트 작업에 Cron 스타일 스케줄링",
+          "0": "모든 Agent 작업에 Cron 스타일 스케줄링",
           "1": "자동 브랜치 생성 및 MR 제출",
           "2": "완료 또는 실패 시 Slack/Webhook 알림",
           "3": "로그와 diff를 포함한 전체 히스토리",
@@ -171,9 +175,9 @@
       }
     },
     "howItWorks": {
-      "title": "에이전트 팀을",
+      "title": "Agent 팀을",
       "titleHighlight": "3분",
-      "description": "설치부터 첫 에이전트까지. 지난 스탠드업보다 빠릅니다.",
+      "description": "설치부터 첫 Agent까지. 지난 스탠드업보다 빠릅니다.",
       "step1": {
         "title": "Runner 배포",
         "description": "어떤 머신이든 설치 가능 — 클라우드든 로컬이든. 명령어 하나면 끝."
@@ -190,7 +194,7 @@
     "enterprise": {
       "title": "당신의 에이전트.",
       "titleHighlight": "당신의 규칙.",
-      "description": "에이전트 워크포스를 대규모로 관리하는 조직을 위한 엔터프라이즈급 보안과 거버넌스.",
+      "description": "Agent 워크포스를 대규모로 관리하는 조직을 위한 엔터프라이즈급 보안과 거버넌스.",
       "features": {
         "multiTenant": {
           "title": "멀티 테넌트",
@@ -247,7 +251,7 @@
       "based": {
         "name": "Based",
         "badge": "30일 무료 체험",
-        "description": "혼자서 시작하세요. 에이전트 하나로 뭘 할 수 있는지 확인하세요.",
+        "description": "혼자서 시작하세요. Agent 하나로 뭘 할 수 있는지 확인하세요.",
         "features": {
           "0": "1석 (솔로 모드)",
           "1": "5 에이전트 동시 실행",
@@ -259,7 +263,7 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "첫 에이전트 팀. 최대 5석, 10 에이전트 병렬 실행.",
+        "description": "첫 Agent 팀. 최대 5석, 10 Agent 병렬 실행.",
         "features": {
           "0": "최대 5석",
           "1": "10 에이전트 동시 실행",
@@ -272,7 +276,7 @@
       },
       "enterprise": {
         "name": "Team",
-        "description": "부서 규모. 50석으로 각자의 에이전트 스쿼드를 운영.",
+        "description": "부서 규모. 50석으로 각자의 Agent 스쿼드를 운영.",
         "features": {
           "0": "최대 50석",
           "1": "50 에이전트 동시 실행",
@@ -311,17 +315,22 @@
       "kubernetesHelm": "Kubernetes Helm (출시 예정)",
       "airGappedSupport": "에어갭 지원 (출시 예정)",
       "viewDocs": "배포 문서 보기",
-      "contactSales": "엔터프라이즈 영업팀 연락"
+      "contactSales": "엔터프라이즈 영업팀 연락",
+      "saasNote": "프라이빗 배포가 필요 없으신가요? SaaS 버전을 바로 사용할 수 있습니다 —",
+      "saasRegister": "무료로 가입"
     },
     "finalCta": {
       "title1": "당신의 팀이",
       "title2": "훨씬 커집니다.",
-      "description": "에이전트 한 명부터 시작해서 50명까지 확장. 무료로 시작하며 신용카드 불필요.",
+      "description": "Agent 한 명부터 시작해서 50명까지 확장. 무료로 시작하며 신용카드 불필요.",
       "getStartedFree": "팀 구축하기",
       "scheduleDemo": "상담하기",
       "freeTier": "무료 플랜 제공",
       "noCreditCard": "신용카드 불필요",
-      "selfHostedOption": "셀프 호스트 옵션"
+      "selfHostedOption": "셀프 호스트 옵션",
+      "signInConsole": "콘솔에 로그인",
+      "enterpriseNote": "프라이빗 배포가 필요하신가요?",
+      "contactUs": "상담하기"
     },
     "heroDemo": {
       "podTopology": "Pod 토폴로지",
@@ -345,9 +354,9 @@
       "rateLimitAdded": "beta-dev: 인증 라우트에 속도 제한 추가됨",
       "reviewChanges": "좋습니다! beta-dev가 속도 제한을 구현했습니다. 변경 사항을 리뷰합니다...",
       "podInfo": {
-        "initializing": "Pod: alpha-dev | 에이전트: Claude Code | 상태: 초기화 중",
-        "running": "Pod: alpha-dev | 에이전트: Claude Code | 상태: 실행 중",
-        "observing": "Pod: alpha-dev | 에이전트: Claude Code | 관찰 중: beta-dev"
+        "initializing": "Pod: alpha-dev | Agent: Claude Code | 상태: 초기화 중",
+        "running": "Pod: alpha-dev | Agent: Claude Code | 상태: 실행 중",
+        "observing": "Pod: alpha-dev | Agent: Claude Code | 관찰 중: beta-dev"
       }
     },
     "coreDemo": {
@@ -383,7 +392,7 @@
       "architecture": {
         "yourInfrastructure": "당신의 인프라",
         "runner": "Runner",
-        "agent": "에이전트",
+        "agent": "Agent",
         "websocket": "WebSocket",
         "agentsmeshCloud": "AgentsMesh 클라우드"
       }
@@ -391,10 +400,10 @@
     "demoVideo": {
       "title": "미래의 팀을",
       "titleHighlight": "직접 확인하세요",
-      "description": "2분. 티켓에서 머지 리퀘스트까지 — 완전 자율.",
+      "description": "2분. Ticket에서 머지 리퀘스트까지 — 완전 자율.",
       "iframeTitle": "AgentsMesh 제품 데모",
       "highlight1": "전체 라이프사이클 데모",
-      "highlight2": "멀티 에이전트 협업",
+      "highlight2": "멀티 Agent 협업",
       "highlight3": "자율형 작업 완료"
     },
     "footer": {
@@ -485,7 +494,7 @@
       "runner": {
         "badge": "Runner CLI",
         "title": "자체 인프라에서 에이전트를 실행하세요",
-        "description": "Runner는 격리된 터미널 Pod에서 AI 에이전트 작업을 실행하는 셀프 호스팅 데몬입니다. 코드는 머신을 벗어나지 않습니다.",
+        "description": "Runner는 격리된 터미널 Pod에서 AI Agent 작업을 실행하는 셀프 호스팅 데몬입니다. 코드는 머신을 벗어나지 않습니다.",
         "macLinux": "macOS · Linux",
         "windows": "Windows · PowerShell",
         "manualTitle": "또는 바이너리 직접 다운로드"

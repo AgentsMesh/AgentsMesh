@@ -59,6 +59,11 @@ impl WasmRunnerService {
         self.0.upgrade_runner_connect(request).await
     }
 
+    #[wasm_bindgen(js_name = upgradeAgentConnect)]
+    pub async fn upgrade_agent_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.upgrade_agent_connect(request).await
+    }
+
     #[wasm_bindgen(js_name = requestLogUploadConnect)]
     pub async fn request_log_upload_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
         self.0.request_log_upload_connect(request).await

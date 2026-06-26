@@ -27,7 +27,16 @@
     "disconnected": "Disconnected",
     "pageNotFound": "찾으시는 페이지가 존재하지 않거나 이동되었습니다.",
     "backToHome": "홈으로 돌아가기",
-    "undo": "실행 취소"
+    "undo": "실행 취소",
+    "more": "추가 작업",
+    "justNow": "방금 전",
+    "overdue": "기한 초과",
+    "timeAgoMinutes": "{count}분 전",
+    "timeAgoHours": "{count}시간 전",
+    "timeAgoDays": "{count}일 전",
+    "timeInMinutes": "{count}분 후",
+    "timeInHours": "{count}시간 후",
+    "timeInDays": "{count}일 후"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",
@@ -54,9 +63,7 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
     "RESOURCE_EXHAUSTED": "리소스 할당량이 초과되었습니다. 나중에 다시 시도하거나 플랜을 업그레이드하세요.",
     "FAILED_PRECONDITION": "현재 상태에서는 이 작업을 수행할 수 없습니다.",
     "UNAVAILABLE": "서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
@@ -68,5 +75,19 @@
     "tickets": "티켓",
     "settings": "설정",
     "billing": "결제"
+  },
+  "share": {
+    "title": "공유",
+    "selectUser": "사용자",
+    "selectUserPlaceholder": "팀 멤버를 선택하세요...",
+    "share": "공유",
+    "revoke": "취소",
+    "revokeConfirmTitle": "접근 권한을 취소하시겠습니까?",
+    "revokeConfirmDescription": "이 사용자는 더 이상 이 리소스에 접근할 수 없게 됩니다.",
+    "sharedWith": "공유 대상",
+    "noShares": "아직 아무에게도 공유되지 않았습니다.",
+    "loadFailed": "공유 정보를 불러오지 못했습니다",
+    "grantFailed": "공유하지 못했습니다",
+    "revokeFailed": "접근 권한을 취소하지 못했습니다"
   }
 }

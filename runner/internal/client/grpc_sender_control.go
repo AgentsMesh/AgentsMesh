@@ -111,6 +111,17 @@ func (c *GRPCConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) e
 	return c.sendControl(msg)
 }
 
+// SendUpgradeAgentResult sends a single-agent upgrade result event to the server (control message).
+func (c *GRPCConnection) SendUpgradeAgentResult(event *runnerv1.UpgradeAgentResultEvent) error {
+	msg := &runnerv1.RunnerMessage{
+		Payload: &runnerv1.RunnerMessage_UpgradeAgentResult{
+			UpgradeAgentResult: event,
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return c.sendControl(msg)
+}
+
 // SendLogUploadStatus sends a log upload status event to the server (control message).
 func (c *GRPCConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error {
 	msg := &runnerv1.RunnerMessage{

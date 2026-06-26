@@ -71,13 +71,15 @@ func coreTableDDLs() []string {
 		`CREATE TABLE IF NOT EXISTS agents (
 			id INTEGER PRIMARY KEY, slug TEXT, name TEXT, launch_command TEXT, description TEXT,
 			executable TEXT, default_args TEXT,
+			upgrade_manager TEXT, upgrade_args TEXT,
 			config_schema TEXT DEFAULT '{}', agentfile_source TEXT,
 			is_builtin INTEGER NOT NULL DEFAULT 0, is_active INTEGER NOT NULL DEFAULT 1,
 			is_internal INTEGER NOT NULL DEFAULT 0,
 			supported_modes TEXT NOT NULL DEFAULT 'pty',
 			uses_legacy_columns INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			CHECK ((upgrade_manager IS NULL) = (upgrade_args IS NULL))
 		)`,
 		`CREATE TABLE IF NOT EXISTS repositories (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -2,21 +2,7 @@
   "runners": {
     "title": "Runner",
     "searchPlaceholder": "Runnerを検索...",
-    "addRunner": "Runnerを追加",
-    "registrationTokens": {
-      "title": "登録トークン",
-      "createToken": "トークンを作成",
-      "noTokens": "登録トークンがありません。新しいRunnerを登録するにはトークンを作成してください。",
-      "description": "説明",
-      "noDescription": "説明なし",
-      "created": "作成日時",
-      "expires": "有効期限",
-      "noExpiry": "無期限",
-      "uses": "使用回数",
-      "unlimited": "無制限",
-      "revoke": "取り消し",
-      "revoked": "取り消し済み"
-    },
+    "addRunner": "Runner を追加",
     "runnerCount": "個のRunner",
     "disabled": "無効",
     "filters": {
@@ -31,8 +17,8 @@
     },
     "emptyState": {
       "title": "Runnerがありません",
-      "description": "Runnerをデプロイしてポッドの作成を開始",
-      "deployRunner": "Runnerをデプロイ",
+      "description": "Runner をデプロイしてポッドの作成を開始",
+      "deployRunner": "Runner をデプロイ",
       "noMatch": "フィルターに一致するRunnerがありません"
     },
     "runner": {
@@ -83,26 +69,7 @@
       "mobileVersionLabel": "バージョン：",
       "upgradeAvailable": "アップグレード可能",
       "visibilityOrganization": "組織",
-      "visibilityPrivate": "プライベート",
-      "stats": {
-        "online": "オンライン",
-        "offline": "オフライン",
-        "busy": "ビジー",
-        "activePods": "アクティブPod"
-      },
-      "table": {
-        "nodeId": "ノードID",
-        "status": "ステータス",
-        "pods": "Pod",
-        "version": "バージョン",
-        "os": "OS",
-        "cpu": "CPU",
-        "lastSeen": "最終確認",
-        "actions": "操作"
-      },
-      "noDescription": "説明なし",
-      "justNow": "たった今",
-      "ago": "前"
+      "visibilityPrivate": "プライベート"
     },
     "addRunnerModal": {
       "title": "Add Runner",
@@ -122,7 +89,7 @@
       "serviceHint": "Install the runner as a system service so it starts automatically and survives reboots:"
     },
     "configModal": {
-      "title": "Runnerを設定",
+      "title": "Runner を設定",
       "nodeIdLabel": "ノードID",
       "descriptionLabel": "説明",
       "descriptionPlaceholder": "説明を追加...",
@@ -175,7 +142,7 @@
       "status": "Status",
       "sandbox": "Sandbox",
       "branch": "Branch",
-      "ticket": "チケット",
+      "ticket": "Ticket",
       "actions": "Actions",
       "canResume": "Can Resume",
       "exists": "Exists",
@@ -191,13 +158,24 @@
       "confirmResumeBtn": "Resume",
       "upgrade": "アップグレード",
       "upgrading": "アップグレード中...",
-      "upgradeConfirm": "このランナーを最新バージョンにアップグレードしますか？アップグレード後にランナーは再起動します。",
-      "upgradeConfirmWithPods": "このランナーには現在 {count} 個のアクティブ Pod があります。アップグレード後にランナーは再起動しますが、アクティブセッションは Poddaemon により維持されます。",
-      "upgradeDialogTitle": "ランナーをアップグレード",
-      "upgradeSent": "アップグレードコマンドを送信しました。ランナーは自動的にダウンロードして再起動します。",
+      "upgradeConfirm": "この Runner を最新バージョンにアップグレードしますか？アップグレード後に Runner は再起動します。",
+      "upgradeConfirmWithPods": "この Runner には現在 {count} 個のアクティブ Pod があります。アップグレード後に Runner は再起動しますが、アクティブセッションは Poddaemon により維持されます。",
+      "upgradeDialogTitle": "Runner をアップグレード",
+      "upgradeSent": "アップグレードコマンドを送信しました。Runner は自動的にダウンロードして再起動します。",
       "upgradeFailed": "アップグレードコマンドの送信に失敗しました。再試行してください。",
-      "upgradeOffline": "ランナーがオフラインのため、アップグレードできません",
-      "upgradeTooltip": "ランナーを最新バージョンにアップグレード"
+      "upgradeOffline": "Runner がオフラインのため、アップグレードできません",
+      "upgradeTooltip": "Runner を最新バージョンにアップグレード",
+      "agentVersionsTitle": "インストール済みエージェント",
+      "agentVersionUnknown": "バージョン不明",
+      "agentUpgrade": "アップグレード",
+      "agentUpgradeDialogTitle": "Agent をアップグレード",
+      "agentUpgradeConfirm": "この Runner で {agent} を最新バージョンにアップグレードしますか？",
+      "agentUpgrading": "アップグレード中...",
+      "agentUpgradeSent": "{agent} のアップグレードコマンドを送信しました。完了後にバージョンが更新されます。",
+      "agentUpgradeFailed": "{agent} のアップグレードに失敗しました。",
+      "agentUpgradeTooltip": "{agent} を最新バージョンにアップグレード",
+      "agentUpgradeUnsupported": "この Agent はリモートアップグレードに対応していません。",
+      "tags": "タグ"
     },
     "authorize": {
       "title": "Authorize Runner",
@@ -229,31 +207,29 @@
       "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
       "expiresAt": "This link expires at {time}"
     },
-    "token": {
-      "title": "登録トークン",
-      "description": "このトークンを使用して新しいRunnerを登録",
-      "generate": "トークンを生成",
-      "copy": "コピー",
-      "copied": "コピーしました！",
-      "expires": "有効期限",
-      "active": "アクティブ",
-      "noTokens": "登録トークンがありません",
-      "viewAll": "すべてのトークンを表示",
-      "manage": "トークンを管理"
-    },
-    "createTokenModal": {
-      "title": "登録トークンを作成",
-      "descriptionLabel": "説明（任意）",
-      "descriptionPlaceholder": "例：開発チームRunner",
-      "maxUsesLabel": "最大使用回数（任意）",
-      "maxUsesPlaceholder": "無制限の場合は空欄",
-      "expiresLabel": "有効期限（任意）",
-      "cancel": "キャンセル",
-      "creating": "作成中...",
-      "create": "作成"
-    },
     "resume": {
-      "ALREADY_EXISTS": "この Pod はすでに再開されています。ワークスペースで再開済みの Pod を確認してください。"
+      "ALREADY_EXISTS": "この Pod はすでに再開されています。Workspace で再開済みの Pod を確認してください。"
+    },
+    "registrationTokens": "登録トークン",
+    "logs": {
+      "title": "診断ログ",
+      "upload": "ログをアップロード",
+      "uploading": "アップロード中...",
+      "noLogs": "まだ診断ログはアップロードされていません",
+      "status": {
+        "pending": "保留中",
+        "collecting": "収集中",
+        "uploading": "アップロード中",
+        "completed": "完了",
+        "failed": "失敗",
+        "unknown": "不明"
+      },
+      "download": "ダウンロード",
+      "size": "サイズ",
+      "requestedAt": "リクエスト日時",
+      "uploadSuccess": "ログのアップロードリクエストを送信しました",
+      "uploadFailed": "ログのアップロードリクエストに失敗しました",
+      "offlineHint": "ログをアップロードするには Runner がオンラインである必要があります"
     }
   },
   "agent": {
@@ -305,7 +281,7 @@
           "description": "Codexの承認方法を制御します（Rustバージョン >= 0.100.0 が必要）",
           "options": {
             "suggest": "リクエスト時（手動承認）",
-            "auto-edit": "フルオート（ワークスペース内自動、外部操作は確認）",
+            "auto-edit": "フルオート（Workspace 内自動、外部操作は確認）",
             "full-auto": "なし（完全自律）"
           }
         }
@@ -348,6 +324,19 @@
           "description": "Select a model or leave empty to use the first in your list",
           "options": {
             "": "Auto (First in List)"
+          }
+        }
+      }
+    },
+    "loopal": {
+      "fields": {
+        "permission_mode": {
+          "label": "権限モード",
+          "description": "権限の処理方法を制御します",
+          "options": {
+            "supervised": "監視あり（手動承認）",
+            "auto": "自動（スマート承認）",
+            "bypass": "バイパス（すべて自動承認）"
           }
         }
       }

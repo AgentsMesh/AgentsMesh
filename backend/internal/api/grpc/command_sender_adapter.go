@@ -143,6 +143,15 @@ func (s *GRPCCommandSender) SendUpgradeRunner(runnerID int64, requestID, targetV
 	return nil
 }
 
+func (s *GRPCCommandSender) SendUpgradeAgent(runnerID int64, requestID, agentSlug, executable string, argv []string) error {
+	slog.Info("sending upgrade_agent command", "runner_id", runnerID, "request_id", requestID, "agent_slug", agentSlug)
+	if err := s.adapter.SendUpgradeAgent(runnerID, requestID, agentSlug, executable, argv); err != nil {
+		slog.Error("failed to send upgrade_agent command", "runner_id", runnerID, "request_id", requestID, "agent_slug", agentSlug, "error", err)
+		return err
+	}
+	return nil
+}
+
 func (s *GRPCCommandSender) SendUploadLogs(runnerID int64, requestID, presignedURL string, urlExpiresAt int64) error {
 	slog.Info("sending upload_logs command", "runner_id", runnerID, "request_id", requestID)
 	if err := s.adapter.SendUploadLogs(runnerID, requestID, presignedURL, urlExpiresAt); err != nil {
