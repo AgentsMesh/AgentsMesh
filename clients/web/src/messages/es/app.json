@@ -5,7 +5,7 @@
     "newPod": "Nuevo Pod",
     "runners": "Runners",
     "noRunnersOnline": "No hay runners en línea",
-    "selectAgent": "Seleccionar Agente",
+    "selectAgent": "Seleccionar Agent",
     "selectRepository": "Seleccionar Repositorio",
     "prompt": "Prompt Inicial",
     "status": {
@@ -32,19 +32,23 @@
   "mesh": {
     "title": "AgentsMesh",
     "channels": "Canales",
-    "newChannel": "Nuevo Canal",
+    "newChannel": "Nuevo Channel",
     "topology": "Topología",
     "messages": "Mensajes",
     "sendMessage": "Enviar mensaje...",
     "page": {
       "title": "Mesh",
-      "subtitle": "Topología de red de colaboración multi-agente",
+      "subtitle": "Topología de red de colaboración multi-Agent",
       "activePods": "{count} pods activos",
       "channelsCount": "{count} canales",
       "bindingsCount": "{count} enlaces",
       "refresh": "Actualizar",
       "dismiss": "Cerrar",
-      "updating": "Actualizando..."
+      "updating": "Actualizando...",
+      "runnersOnline": "{online} de {total} runners en línea",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "fit": "Ajustar"
     },
     "legend": {
       "title": "Leyenda",
@@ -52,7 +56,7 @@
       "initializing": "Inicializando",
       "terminated": "Terminado",
       "failed": "Fallido",
-      "channel": "Canal",
+      "channel": "Channel",
       "activeBinding": "Enlace Activo",
       "pendingBinding": "Enlace Pendiente"
     },
@@ -90,8 +94,8 @@
       "podCount": "{count} pods"
     },
     "channelPodManager": {
-      "title": "Pods del Canal",
-      "description": "Gestionar pods en este canal",
+      "title": "Pods del Channel",
+      "description": "Gestionar Pods en este Channel",
       "joined": "Unido",
       "available": "Disponible",
       "empty": "No hay pods activos disponibles"
@@ -101,7 +105,6 @@
     "title": "Tickets",
     "newTicket": "Nuevo Ticket",
     "board": "Tablero",
-    "list": "Lista",
     "backlog": "Backlog",
     "todo": "Por Hacer",
     "inProgress": "En Progreso",
@@ -196,7 +199,23 @@
       "dangerZone": "Zona de peligro",
       "deleteWarning": "Esta acción no se puede deshacer.",
       "linked": "Vinculados",
-      "noLinkedItems": "Aún no hay elementos vinculados."
+      "noLinkedItems": "Aún no hay elementos vinculados.",
+      "priority": "Prioridad",
+      "opened": "Abierto",
+      "spawnPod": "Generar Pod",
+      "markDone": "Marcar como hecho",
+      "lastUsedAgent": "claude-code (usado por última vez)",
+      "comments": "Comentarios",
+      "noComments": "Aún no hay comentarios",
+      "addComment": "Añadir un comentario...",
+      "reply": "Responder",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "deleteCommentConfirm": "¿Seguro que quieres eliminar este comentario?",
+      "replyTo": "Respondiendo a @{username}",
+      "cancelReply": "Cancelar",
+      "submit": "Comentar",
+      "edited": "editado"
     },
     "podPanel": {
       "activeCount": "{count} active",
@@ -221,10 +240,36 @@
       "connect": "Connect",
       "openInNewTab": "Open in new tab",
       "started": "Started"
+    },
+    "views": {
+      "board": "Tablero",
+      "list": "Lista"
+    },
+    "actions": {
+      "newTicket": "Nuevo",
+      "export": "Exportar"
+    },
+    "rail": {
+      "workingPods": "Pods en trabajo",
+      "noPods": "No hay pods activos",
+      "subTickets": "Subtickets",
+      "noSubTickets": "No hay subtickets",
+      "pullRequests": "Pull Requests",
+      "noPRs": "No hay PRs vinculados",
+      "activity": "Actividad",
+      "activityCreated": "Ticket creado",
+      "activityUpdated": "Ticket actualizado"
+    },
+    "list": {
+      "ticket": "Ticket",
+      "assignees": "Asignados",
+      "dueDate": "Fecha límite",
+      "updated": "Actualizado",
+      "noTickets": "No se encontraron tickets"
     }
   },
   "workspace": {
-    "title": "Espacio de Trabajo",
+    "title": "Workspace",
     "searchPlaceholder": "Buscar pods...",
     "newPod": "Nuevo Pod",
     "noTerminalsOpen": "No terminals open",
@@ -261,7 +306,8 @@
       "terminate": "Terminar",
       "openInNewWindow": "Abrir en una ventana nueva",
       "enablePerpetual": "Activar modo perpetuo",
-      "disablePerpetual": "Desactivar modo perpetuo"
+      "disablePerpetual": "Desactivar modo perpetuo",
+      "share": "Compartir"
     },
     "renameDialog": {
       "title": "Renombrar Pod",
@@ -273,7 +319,7 @@
     "loadMore": "Cargar más",
     "pod": {
       "status": "Estado",
-      "agent": "Agente",
+      "agent": "Agent",
       "repository": "Repositorio",
       "branch": "Rama",
       "created": "Creado",
@@ -298,6 +344,34 @@
       "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
+    },
+    "emptyHeroTitle": "Genera tu primer Pod",
+    "emptyHeroDescription": "Un Pod es un terminal aislado donde un Agent de IA trabaja en tu código. Puedes observar, intervenir o dejarlo funcionar en Autopilot.",
+    "recipesHeading": "O empieza desde una receta",
+    "recipes": {
+      "explain": {
+        "title": "Explica este código base",
+        "description": "Claude Code recorre tu repositorio y resume la arquitectura.",
+        "duration": "2 min"
+      },
+      "tests": {
+        "title": "Ejecuta tus pruebas",
+        "description": "Claude Code ejecuta el conjunto de pruebas e informa de los fallos.",
+        "duration": "3 min"
+      },
+      "bug": {
+        "title": "Corrige un error abierto",
+        "description": "Elige un Ticket y genera un Pod. El Agent lee el contexto y propone una corrección.",
+        "duration": "8 min"
+      }
+    },
+    "banner": {
+      "newUser": "¿Nuevo en AgentsMesh?",
+      "watchIntro": "Mira la introducción de 2 minutos →"
+    },
+    "hints": {
+      "search": "para buscar",
+      "createPod": "para crear pod"
     }
   },
   "commandPalette": {
@@ -306,8 +380,8 @@
     "noResults": "No se encontraron resultados.",
     "navigation": "Navegación",
     "actions": "Acciones",
-    "goToWorkspace": "Ir al Espacio de Trabajo",
-    "workspaceDescription": "Espacio de trabajo de terminal",
+    "goToWorkspace": "Ir al Workspace",
+    "workspaceDescription": "Workspace de terminal",
     "goToTickets": "Ir a Tickets",
     "ticketsDescription": "Ver y gestionar tickets",
     "goToMesh": "Ir a AgentsMesh",
@@ -321,7 +395,7 @@
     "goToSettings": "Ir a Configuración",
     "settingsDescription": "Configuración de la organización",
     "createNewPod": "Crear Nuevo Pod",
-    "createPodDescription": "Iniciar un nuevo pod de agente",
+    "createPodDescription": "Iniciar un nuevo Pod de Agent",
     "createNewTicket": "Crear Nuevo Ticket",
     "createTicketDescription": "Crear una nueva tarea o incidencia",
     "signOut": "Cerrar Sesión",
@@ -434,41 +508,170 @@
       "required": "El título y la descripción son obligatorios"
     },
     "error": {
-      "createFailed": "Error al crear el ticket. Por favor, inténtelo de nuevo."
+      "createFailed": "Error al crear el ticket. Por favor, inténtelo de nuevo.",
+      "loadFailed": "No se pudieron cargar los datos. Inténtalo de nuevo.",
+      "sendFailed": "No se pudo enviar el mensaje. Inténtalo de nuevo."
     }
   },
   "loopal": {
-    "activity": { "heading": "Actividad" },
+    "activity": {
+      "heading": "Actividad"
+    },
     "status": {
       "title": "Loopal",
       "thinking": "Pensando: {value}",
       "topology": "Topología",
-      "mode": { "act": "Actuar", "plan": "Planificar" },
-      "goal": { "pause": "Pausar", "resume": "Reanudar", "complete": "Completar", "reopen": "Reabrir", "clear": "Borrar" }
+      "mode": {
+        "act": "Actuar",
+        "plan": "Planificar"
+      },
+      "goal": {
+        "pause": "Pausar",
+        "resume": "Reanudar",
+        "complete": "Completar",
+        "reopen": "Reabrir",
+        "clear": "Borrar"
+      }
     },
-    "thinking": { "auto": "Auto", "off": "Desactivado", "low": "Bajo", "med": "Medio", "high": "Alto", "max": "Máx" },
+    "thinking": {
+      "auto": "Auto",
+      "off": "Desactivado",
+      "low": "Bajo",
+      "med": "Medio",
+      "high": "Alto",
+      "max": "Máx"
+    },
     "dock": {
-      "tabs": { "bgShell": "Shell en segundo plano", "cron": "Cron", "tasks": "Tareas", "agents": "Agentes", "mcp": "MCP" },
-      "agents": { "expand": "Expandir topología" },
-      "bgShell": { "kill": "Detener", "killConfirmTitle": "¿Detener la tarea en segundo plano?" },
-      "cron": { "due": "vencido", "inMinutes": "en {m} min", "inHours": "en {h} h", "inDays": "en {d} d", "recurring": "recurrente", "once": "una vez", "durable": "persistente", "delete": "Eliminar", "deleteConfirmTitle": "¿Eliminar el trabajo cron?" },
-      "tasks": { "blockedBy": "bloqueada por {count}" },
-      "mcp": { "refresh": "actualizar", "toolCount": "{count} herramientas", "reconnect": "Reconectar", "disconnect": "Desconectar", "disconnectConfirmTitle": "¿Desconectar el servidor MCP?" }
+      "tabs": {
+        "bgShell": "Shell en segundo plano",
+        "cron": "Cron",
+        "tasks": "Tareas",
+        "agents": "Agentes",
+        "mcp": "MCP"
+      },
+      "agents": {
+        "expand": "Expandir topología"
+      },
+      "bgShell": {
+        "kill": "Detener",
+        "killConfirmTitle": "¿Detener la tarea en segundo plano?"
+      },
+      "cron": {
+        "due": "vencido",
+        "inMinutes": "en {m} min",
+        "inHours": "en {h} h",
+        "inDays": "en {d} d",
+        "recurring": "recurrente",
+        "once": "una vez",
+        "durable": "persistente",
+        "delete": "Eliminar",
+        "deleteConfirmTitle": "¿Eliminar el trabajo cron?"
+      },
+      "tasks": {
+        "blockedBy": "bloqueada por {count}"
+      },
+      "mcp": {
+        "refresh": "actualizar",
+        "toolCount": "{count} herramientas",
+        "reconnect": "Reconectar",
+        "disconnect": "Desconectar",
+        "disconnectConfirmTitle": "¿Desconectar el servidor MCP?"
+      }
     },
     "prompt": {
       "placeholder": "Escribe a Loopal, o / para comandos",
       "interrupt": "Interrumpir",
-      "rewindTitle": "Retroceder al turno", "rewindPlaceholder": "turno #",
-      "resumeTitle": "Reanudar sesión", "resumePlaceholder": "id de sesión",
-      "model": "Modelo", "thinking": "Pensamiento"
+      "rewindTitle": "Retroceder al turno",
+      "rewindPlaceholder": "turno #",
+      "resumeTitle": "Reanudar sesión",
+      "resumePlaceholder": "id de sesión",
+      "model": "Modelo",
+      "thinking": "Pensamiento"
     },
     "commands": {
-      "act": "Cambiar al modo Actuar", "plan": "Cambiar al modo Planificar", "model": "Modelo y nivel de pensamiento", "thinking": "Nivel de esfuerzo de pensamiento",
-      "compact": "Compactar el contexto de la conversación", "clear": "Borrar todo el historial de conversación", "rewind": "Retroceder a un turno anterior",
-      "resume": "Reanudar una sesión por id", "suspend": "Suspender cron / reactivación", "unsuspend": "Reanudar cron / reactivación",
-      "goal": "Definir un objetivo de hilo (/goal [objetivo])", "mcpRefresh": "Actualizar el estado de MCP",
-      "goalPause": "Pausar el objetivo", "goalResume": "Reanudar el objetivo", "goalComplete": "Marcar el objetivo como completado", "goalReopen": "Reabrir el objetivo", "goalClear": "Borrar el objetivo"
+      "act": "Cambiar al modo Actuar",
+      "plan": "Cambiar al modo Planificar",
+      "model": "Modelo y nivel de pensamiento",
+      "thinking": "Nivel de esfuerzo de pensamiento",
+      "compact": "Compactar el contexto de la conversación",
+      "clear": "Borrar todo el historial de conversación",
+      "rewind": "Retroceder a un turno anterior",
+      "resume": "Reanudar una sesión por id",
+      "suspend": "Suspender cron / reactivación",
+      "unsuspend": "Reanudar cron / reactivación",
+      "goal": "Definir un objetivo de hilo (/goal [objetivo])",
+      "mcpRefresh": "Actualizar el estado de MCP",
+      "goalPause": "Pausar el objetivo",
+      "goalResume": "Reanudar el objetivo",
+      "goalComplete": "Marcar el objetivo como completado",
+      "goalReopen": "Reabrir el objetivo",
+      "goalClear": "Borrar el objetivo"
     },
-    "topology": { "sheetTitle": "Topología de agentes", "root": "raíz" }
+    "topology": {
+      "sheetTitle": "Topología de Agents",
+      "root": "raíz"
+    }
+  },
+  "acp": {
+    "modeSelector": {
+      "bypassPermissions": {
+        "label": "Omitir",
+        "desc": "Aprobar todo automáticamente"
+      },
+      "acceptEdits": {
+        "label": "Aceptar ediciones",
+        "desc": "Aprobar ediciones de archivos automáticamente"
+      },
+      "default": {
+        "label": "Predeterminado",
+        "desc": "Aprobar cada herramienta"
+      },
+      "dontAsk": {
+        "label": "No preguntar",
+        "desc": "Denegar salvo en la lista de permitidos"
+      },
+      "bypass": {
+        "label": "Omitir",
+        "desc": "Aprobar todo automáticamente"
+      },
+      "ask_dangerous": {
+        "label": "Preguntar si es arriesgado",
+        "desc": "Confirmar solo operaciones peligrosas"
+      },
+      "ask_any_write": {
+        "label": "Preguntar al escribir",
+        "desc": "Confirmar cualquier operación de escritura"
+      },
+      "unknown": {
+        "label": "—",
+        "desc": "El runner aún no ha reportado el modo"
+      }
+    },
+    "activityStream": {
+      "waitingSession": "Esperando sesión ACP...",
+      "agentWorking": "El Agent está trabajando...",
+      "thinking": "Pensando..."
+    },
+    "promptInput": {
+      "placeholder": "Enviar instrucción...",
+      "notConnected": "Sin conexión",
+      "cancel": "Cancelar"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay sin conexión. Espera e inténtalo de nuevo."
+    },
+    "permissionCard": {
+      "title": "Permiso requerido",
+      "approve": "Aprobar",
+      "alwaysAllow": "Permitir siempre",
+      "deny": "Denegar"
+    }
+  },
+  "errors": {
+    "unexpected": "Algo salió mal",
+    "notFound": "Página no encontrada",
+    "goBack": "Volver",
+    "reload": "Recargar",
+    "home": "Inicio"
   }
 }

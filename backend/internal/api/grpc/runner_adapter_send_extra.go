@@ -48,6 +48,26 @@ func (a *GRPCRunnerAdapter) SendUpgradeRunner(runnerID int64, requestID, targetV
 	return conn.SendMessage(msg)
 }
 
+func (a *GRPCRunnerAdapter) SendUpgradeAgent(runnerID int64, requestID, agentSlug, executable string, argv []string) error {
+	conn := a.connManager.GetConnection(runnerID)
+	if conn == nil {
+		return status.Errorf(codes.NotFound, "runner %d not connected", runnerID)
+	}
+
+	msg := &runnerv1.ServerMessage{
+		Payload: &runnerv1.ServerMessage_UpgradeAgent{
+			UpgradeAgent: &runnerv1.UpgradeAgentCommand{
+				RequestId:   requestID,
+				AgentSlug:   agentSlug,
+				Executable:  executable,
+				UpgradeArgv: argv,
+			},
+		},
+		Timestamp: time.Now().UnixMilli(),
+	}
+	return conn.SendMessage(msg)
+}
+
 func (a *GRPCRunnerAdapter) SendUploadLogs(runnerID int64, requestID, presignedURL string, urlExpiresAt int64) error {
 	conn := a.connManager.GetConnection(runnerID)
 	if conn == nil {

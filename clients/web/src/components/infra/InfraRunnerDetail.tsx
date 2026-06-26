@@ -136,6 +136,7 @@ export function InfraRunnerDetail({ runnerId, onBack }: Props) {
           runner={runner}
           relayConnections={state.relayConnections}
           latestRunnerVersion={state.latestRunnerVersion}
+          onUpgraded={state.loadRunner}
         />
       )}
       {state.activeTab === "pods" && (

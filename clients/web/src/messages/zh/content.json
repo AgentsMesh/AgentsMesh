@@ -12,7 +12,7 @@
       "title": "我们的理念",
       "autonomous": {
         "title": "Agent 是团队成员",
-        "content": "AI Agent 不只是自动补全代码的工具。它们是能端到端负责任务的自主队友——从读取工单到提交合并请求。"
+        "content": "AI Agent 不只是自动补全代码的工具。它们是能端到端负责任务的自主队友——从读取 Ticket 到提交合并请求。"
       },
       "collaboration": {
         "title": "团队胜于个人",
@@ -44,7 +44,7 @@
         "description": "Harness Engineer 负责构建 AI 智能体运行的基础环境。你将设计沙箱、定义执行约束，构建让智能体安全、隔离且高性能运行的基础设施。",
         "resp1": "设计和构建安全、隔离的 AI 智能体运行时环境",
         "resp2": "定义执行约束、权限边界和安全护栏",
-        "resp3": "开发和优化沙箱基础设施，确保智能体操作可复现"
+        "resp3": "开发和优化 Sandbox 基础设施，确保 Agent 操作可复现"
       },
       "producer": {
         "title": "Builder（产品构建者）",

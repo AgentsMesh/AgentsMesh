@@ -27,7 +27,16 @@
     "disconnected": "Disconnected",
     "pageNotFound": "A página que você procura não existe ou foi movida.",
     "backToHome": "Voltar para o início",
-    "undo": "Desfazer"
+    "undo": "Desfazer",
+    "more": "Mais ações",
+    "justNow": "agora mesmo",
+    "overdue": "atrasado",
+    "timeAgoMinutes": "há {count}m",
+    "timeAgoHours": "há {count}h",
+    "timeAgoDays": "há {count}d",
+    "timeInMinutes": "em {count}m",
+    "timeInHours": "em {count}h",
+    "timeInDays": "em {count}d"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",
@@ -54,9 +63,7 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
     "RESOURCE_EXHAUSTED": "Cota de recursos excedida. Tente novamente mais tarde ou faça upgrade do seu plano.",
     "FAILED_PRECONDITION": "O estado atual não permite esta operação.",
     "UNAVAILABLE": "Serviço temporariamente indisponível. Tente novamente mais tarde.",
@@ -68,5 +75,19 @@
     "tickets": "Tickets",
     "settings": "Configurações",
     "billing": "Faturamento"
+  },
+  "share": {
+    "title": "Compartilhar",
+    "selectUser": "Usuário",
+    "selectUserPlaceholder": "Selecione um membro da equipe...",
+    "share": "Compartilhar",
+    "revoke": "Revogar",
+    "revokeConfirmTitle": "Revogar acesso?",
+    "revokeConfirmDescription": "Este usuário não terá mais acesso a este recurso.",
+    "sharedWith": "Compartilhado com",
+    "noShares": "Ainda não compartilhado com ninguém.",
+    "loadFailed": "Falha ao carregar as informações de compartilhamento",
+    "grantFailed": "Falha ao compartilhar",
+    "revokeFailed": "Falha ao revogar o acesso"
   }
 }

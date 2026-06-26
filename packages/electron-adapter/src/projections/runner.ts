@@ -21,6 +21,9 @@ export function runnerToCache(r: ProtoRunner): RunnerData {
       r.registeredByUserId === undefined ? undefined : Number(r.registeredByUserId),
     host_info: parseJSON<RunnerData["host_info"]>(r.hostInfoJson),
     available_agents: r.availableAgents?.length ? r.availableAgents : undefined,
+    agent_versions: r.agentVersions?.length
+      ? r.agentVersions.map((v) => ({ slug: v.slug, version: v.version, path: v.path || undefined }))
+      : undefined,
     tags: r.tags?.length ? r.tags : undefined,
     created_at: r.createdAt,
     updated_at: r.updatedAt,

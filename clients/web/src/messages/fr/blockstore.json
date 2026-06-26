@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "Supprimer la page",
+      "deletePageTitle": "Supprimer la page ?",
+      "deletePageDesc": "« {title} » et ses blocs seront supprimés. Cette action est irréversible."
+    }
   }
 }

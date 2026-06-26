@@ -32,6 +32,11 @@ type Agent struct {
 
 	SupportedModes string `gorm:"column:supported_modes;type:varchar(50);default:pty;not null" json:"supported_modes"`
 
+	// Remote-upgrade command (SSOT). UpgradeArgs is a JSON argv the runner
+	// exec()s directly without a shell; nil = remote upgrade unsupported.
+	UpgradeManager *string `gorm:"size:20" json:"upgrade_manager,omitempty"`
+	UpgradeArgs    *string `gorm:"type:text" json:"upgrade_args,omitempty"`
+
 	UsesLegacyColumns bool `gorm:"column:uses_legacy_columns;not null;default:false" json:"uses_legacy_columns"`
 
 	CreatedAt time.Time `gorm:"not null;default:now()" json:"created_at"`

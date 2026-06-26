@@ -14,6 +14,7 @@ go_library(
         "handlers_crud.go",
         "handlers_ops.go",
         "handlers_tokens.go",
+        "handlers_upgrade_agent.go",
         "runner_convert_custom.go",
         "server.go",
         ":runner_convert_amesh",
@@ -39,12 +40,17 @@ go_library(
 
 go_test(
     name = "runner_test",
-    srcs = ["server_test.go"],
+    srcs = [
+        "handlers_upgrade_agent_test.go",
+        "server_test.go",
+    ],
     embed = [":runner"],
     deps = [
         "//backend/internal/domain/runner",
+        "//backend/internal/infra",
         "//backend/internal/middleware",
         "//backend/internal/service/runner",
+        "//backend/internal/testkit",
         "//proto/runner_api/v1:runner_api_go_proto",
         "@com_connectrpc_connect//:connect",
         "@com_github_stretchr_testify//assert",

@@ -115,7 +115,7 @@
         "title": "删除 Runner",
         "description": "确定要删除此 Runner 吗？此操作无法撤销。"
       },
-      "confirmResume": "要从「{podKey}」的 Sandbox 恢复一个新 Pod 吗？这将使用现有工作区创建新 Pod。",
+      "confirmResume": "要从「{podKey}」的 Sandbox 恢复一个新 Pod 吗？这将使用现有 Workspace 创建新 Pod。",
       "resumeFailed": "恢复 Pod 失败，请重试。",
       "alreadyResumedBadge": "已恢复 → {podKey}",
       "tabs": {
@@ -144,7 +144,7 @@
       "status": "状态",
       "sandbox": "Sandbox",
       "branch": "分支",
-      "ticket": "工单",
+      "ticket": "Ticket",
       "actions": "操作",
       "canResume": "可恢复",
       "exists": "存在",
@@ -153,10 +153,10 @@
       "noPods": "此 Runner 暂无 Pod",
       "showing": "显示 {from} 到 {to}，共 {total} 个 Pod",
       "resume": "恢复",
-      "resumeTooltip": "使用现有 Sandbox 工作区创建新 Pod",
+      "resumeTooltip": "使用现有 Sandbox Workspace 创建新 Pod",
       "resumeDialogTitle": "恢复 Pod",
       "resumeDialogDescription": "即将从「{podKey}」的 Sandbox 恢复。",
-      "resumeDialogInfo": "这将使用现有工作区创建新 Pod，让 AI 智能体可以从上次中断的地方继续工作。",
+      "resumeDialogInfo": "这将使用现有 Workspace 创建新 Pod，让 AI Agent 可以从上次中断的地方继续工作。",
       "confirmResumeBtn": "确认恢复",
       "upgrade": "升级",
       "upgrading": "升级中...",
@@ -166,7 +166,17 @@
       "upgradeSent": "升级命令已发送，Runner 将自动下载并重启。",
       "upgradeFailed": "升级命令发送失败，请重试。",
       "upgradeOffline": "Runner 离线，无法升级",
-      "upgradeTooltip": "将 Runner 升级到最新版本"
+      "upgradeTooltip": "将 Runner 升级到最新版本",
+      "agentVersionsTitle": "已安装 Agent",
+      "agentVersionUnknown": "版本未知",
+      "agentUpgrade": "升级",
+      "agentUpgradeDialogTitle": "升级 Agent",
+      "agentUpgradeConfirm": "确定将 {agent} 升级到此 Runner 上的最新版本吗？",
+      "agentUpgrading": "升级中...",
+      "agentUpgradeSent": "已发送 {agent} 的升级指令，完成后版本会自动刷新。",
+      "agentUpgradeFailed": "升级 {agent} 失败。",
+      "agentUpgradeTooltip": "将 {agent} 升级到最新版本",
+      "agentUpgradeUnsupported": "该 agent 不支持远程升级。"
     },
     "logs": {
       "title": "诊断日志",
@@ -190,7 +200,7 @@
     },
     "authorize": {
       "title": "授权 Runner",
-      "description": "一个 Runner 正在请求连接到您的组织。授权后即可执行 AI 智能体任务。",
+      "description": "一个 Runner 正在请求连接到您的组织。授权后即可执行 AI Agent 任务。",
       "missingAuthKey": "缺少授权密钥。请使用 runner login 命令生成的完整链接。",
       "invalidAuthKey": "此授权链接无效或已过期。",
       "invalidTitle": "授权无效",
@@ -219,7 +229,7 @@
       "expiresAt": "此链接将于 {time} 过期"
     },
     "resume": {
-      "ALREADY_EXISTS": "该 Pod 已被恢复过，请在工作区查看恢复出的 Pod。"
+      "ALREADY_EXISTS": "该 Pod 已被恢复过，请在 Workspace 查看恢复出的 Pod。"
     }
   },
   "agent": {
@@ -259,8 +269,8 @@
           "description": "允许 Agent 通过 MCP 协议与 AgentsMesh 平台通信"
         },
         "sandbox_mode": {
-          "label": "沙盒模式",
-          "description": "在沙盒模式下运行以提高安全性"
+          "label": "Sandbox 模式",
+          "description": "在 Sandbox 模式下运行以提高安全性"
         }
       }
     },
@@ -271,7 +281,7 @@
           "description": "控制 Codex 的审批方式（需要 Rust 版本 >= 0.100.0）",
           "options": {
             "suggest": "按需审批（手动确认）",
-            "auto-edit": "完全自动（工作区内自动，外部操作需确认）",
+            "auto-edit": "完全自动（Workspace 内自动，外部操作需确认）",
             "full-auto": "从不审批（完全自主）"
           }
         }

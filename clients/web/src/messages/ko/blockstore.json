@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "페이지 삭제",
+      "deletePageTitle": "페이지를 삭제하시겠습니까?",
+      "deletePageDesc": "\"{title}\" 및 해당 블록이 제거됩니다. 이 작업은 되돌릴 수 없습니다."
+    }
   }
 }

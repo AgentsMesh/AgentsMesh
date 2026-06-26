@@ -166,7 +166,17 @@
       "upgradeSent": "Upgrade command sent. The runner will download and restart automatically.",
       "upgradeFailed": "Failed to send upgrade command. Please try again.",
       "upgradeOffline": "Runner is offline, cannot upgrade",
-      "upgradeTooltip": "Upgrade runner to the latest version"
+      "upgradeTooltip": "Upgrade runner to the latest version",
+      "agentVersionsTitle": "Installed Agents",
+      "agentVersionUnknown": "version unknown",
+      "agentUpgrade": "Upgrade",
+      "agentUpgradeDialogTitle": "Upgrade Agent",
+      "agentUpgradeConfirm": "Upgrade {agent} to the latest version on this runner?",
+      "agentUpgrading": "Upgrading...",
+      "agentUpgradeSent": "Upgrade command sent for {agent}. The version refreshes after it completes.",
+      "agentUpgradeFailed": "Failed to upgrade {agent}.",
+      "agentUpgradeTooltip": "Upgrade {agent} to the latest version",
+      "agentUpgradeUnsupported": "This agent does not support remote upgrade."
     },
     "logs": {
       "title": "Diagnostic Logs",

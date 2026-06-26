@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "Seite löschen",
+      "deletePageTitle": "Seite löschen?",
+      "deletePageDesc": "\"{title}\" und ihre Blöcke werden entfernt. Dies kann nicht rückgängig gemacht werden."
+    }
   }
 }

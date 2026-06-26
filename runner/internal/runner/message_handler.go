@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 	"github.com/anthropics/agentsmesh/runner/internal/client"
@@ -17,6 +18,10 @@ type RunnerMessageHandler struct {
 	podStore           PodStore
 	conn               client.Connection
 	relayClientFactory func(url, podKey, token string, logger *slog.Logger) relay.RelayClient
+
+	// agentUpgradeMu serializes OnUpgradeAgent: concurrent package-manager
+	// installs on one runner race on the manager's global cache lock.
+	agentUpgradeMu sync.Mutex
 }
 
 // NewRunnerMessageHandler creates a new message handler.

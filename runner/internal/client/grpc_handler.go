@@ -129,6 +129,13 @@ func (c *GRPCConnection) handleServerMessage(ctx context.Context, msg *runnerv1.
 			c.handleUpgradeRunner(payload.UpgradeRunner)
 		})
 
+	case *runnerv1.ServerMessage_UpgradeAgent:
+		c.handlerWg.Add(1)
+		safego.Go("handle-upgrade-agent", func() {
+			defer c.handlerWg.Done()
+			c.handleUpgradeAgent(payload.UpgradeAgent)
+		})
+
 	case *runnerv1.ServerMessage_UploadLogs:
 		c.handlerWg.Add(1)
 		safego.Go("handle-upload-logs", func() {
@@ -201,6 +208,20 @@ func (c *GRPCConnection) handleUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand)
 
 	if err := c.handler.OnUpgradeRunner(cmd); err != nil {
 		log.Error("Failed to handle upgrade runner", "request_id", cmd.RequestId, "error", err)
+	}
+}
+
+// handleUpgradeAgent handles upgrade_agent command from server.
+func (c *GRPCConnection) handleUpgradeAgent(cmd *runnerv1.UpgradeAgentCommand) {
+	log := logger.GRPC()
+	log.Info("Received upgrade_agent", "request_id", cmd.RequestId, "agent_slug", cmd.AgentSlug)
+	if c.handler == nil {
+		log.Warn("No handler set, ignoring upgrade_agent")
+		return
+	}
+
+	if err := c.handler.OnUpgradeAgent(cmd); err != nil {
+		log.Error("Failed to handle upgrade agent", "request_id", cmd.RequestId, "error", err)
 	}
 }
 

@@ -5,7 +5,7 @@
     "newPod": "새 Pod",
     "runners": "러너",
     "noRunnersOnline": "온라인 러너 없음",
-    "selectAgent": "에이전트 선택",
+    "selectAgent": "Agent 선택",
     "selectRepository": "저장소 선택",
     "prompt": "초기 프롬프트",
     "status": {
@@ -32,19 +32,23 @@
   "mesh": {
     "title": "AgentsMesh",
     "channels": "채널",
-    "newChannel": "새 채널",
+    "newChannel": "새 Channel",
     "topology": "토폴로지",
     "messages": "메시지",
     "sendMessage": "메시지 보내기...",
     "page": {
       "title": "Mesh",
-      "subtitle": "멀티 에이전트 협업 네트워크 토폴로지",
+      "subtitle": "멀티 Agent 협업 네트워크 토폴로지",
       "activePods": "{count}개의 활성 Pod",
       "channelsCount": "{count}개의 채널",
       "bindingsCount": "{count}개의 바인딩",
       "refresh": "새로고침",
       "dismiss": "닫기",
-      "updating": "업데이트 중..."
+      "updating": "업데이트 중...",
+      "runnersOnline": "{total}개 중 {online}개 Runner 온라인",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "fit": "맞춤"
     },
     "legend": {
       "title": "범례",
@@ -52,7 +56,7 @@
       "initializing": "초기화 중",
       "terminated": "종료됨",
       "failed": "실패",
-      "channel": "채널",
+      "channel": "Channel",
       "activeBinding": "활성 바인딩",
       "pendingBinding": "대기 중 바인딩"
     },
@@ -73,11 +77,11 @@
       "members": "멤버",
       "pods": "Pods"
     },
-    "ticket": "티켓",
+    "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "터미널 열기",
       "openInNewWindow": "새 창에서 열기",
-      "viewTicket": "티켓 {slug} 보기",
+      "viewTicket": "Ticket {slug} 보기",
       "rename": "이름 변경",
       "terminatePod": "Pod 종료",
       "terminateTitle": "Pod 종료",
@@ -90,8 +94,8 @@
       "podCount": "{count}개 Pod"
     },
     "channelPodManager": {
-      "title": "채널 Pod",
-      "description": "이 채널의 Pod 관리",
+      "title": "Channel Pod",
+      "description": "이 Channel의 Pod 관리",
       "joined": "참여됨",
       "available": "사용 가능",
       "empty": "활성 Pod가 없습니다"
@@ -99,9 +103,8 @@
   },
   "tickets": {
     "title": "티켓",
-    "newTicket": "새 티켓",
+    "newTicket": "새 Ticket",
     "board": "보드",
-    "list": "목록",
     "backlog": "백로그",
     "todo": "할 일",
     "inProgress": "진행 중",
@@ -122,7 +125,7 @@
     "emptyState": {
       "title": "티켓이 없습니다",
       "noMatch": "필터와 일치하는 티켓이 없습니다",
-      "createFirst": "첫 번째 티켓을 만들어 시작하세요"
+      "createFirst": "첫 번째 Ticket을 만들어 시작하세요"
     },
     "moreTickets": "+{count}개",
     "listView": {
@@ -132,7 +135,7 @@
       "priority": "우선순위",
       "assignee": "담당자",
       "created": "생성일",
-      "noTickets": "티켓을 찾을 수 없습니다. 사이드바 필터를 사용하거나 새 티켓을 만드세요."
+      "noTickets": "Ticket을 찾을 수 없습니다. 사이드바 필터를 사용하거나 새 Ticket을 만드세요."
     },
     "kanban": {
       "noTickets": "티켓 없음",
@@ -196,7 +199,23 @@
       "dangerZone": "위험 구역",
       "deleteWarning": "이 작업은 되돌릴 수 없습니다.",
       "linked": "연결됨",
-      "noLinkedItems": "아직 연결된 항목이 없습니다."
+      "noLinkedItems": "아직 연결된 항목이 없습니다.",
+      "priority": "우선순위",
+      "opened": "생성됨",
+      "spawnPod": "Pod 생성",
+      "markDone": "완료로 표시",
+      "lastUsedAgent": "claude-code (마지막 사용)",
+      "comments": "댓글",
+      "noComments": "아직 댓글이 없습니다",
+      "addComment": "댓글을 입력하세요...",
+      "reply": "답글",
+      "edit": "편집",
+      "delete": "삭제",
+      "deleteCommentConfirm": "이 댓글을 삭제하시겠습니까?",
+      "replyTo": "@{username}에게 답글",
+      "cancelReply": "취소",
+      "submit": "댓글 작성",
+      "edited": "편집됨"
     },
     "podPanel": {
       "activeCount": "{count} active",
@@ -221,10 +240,36 @@
       "connect": "Connect",
       "openInNewTab": "Open in new tab",
       "started": "Started"
+    },
+    "views": {
+      "board": "보드",
+      "list": "목록"
+    },
+    "actions": {
+      "newTicket": "새로 만들기",
+      "export": "내보내기"
+    },
+    "rail": {
+      "workingPods": "작업 중인 Pod",
+      "noPods": "활성 Pod 없음",
+      "subTickets": "하위 티켓",
+      "noSubTickets": "하위 티켓 없음",
+      "pullRequests": "풀 리퀘스트",
+      "noPRs": "연결된 PR 없음",
+      "activity": "활동",
+      "activityCreated": "Ticket 생성됨",
+      "activityUpdated": "Ticket 업데이트됨"
+    },
+    "list": {
+      "ticket": "Ticket",
+      "assignees": "담당자",
+      "dueDate": "마감일",
+      "updated": "업데이트됨",
+      "noTickets": "티켓을 찾을 수 없습니다"
     }
   },
   "workspace": {
-    "title": "워크스페이스",
+    "title": "Workspace",
     "searchPlaceholder": "Pod 검색...",
     "newPod": "새 Pod",
     "noTerminalsOpen": "No terminals open",
@@ -261,7 +306,8 @@
       "terminate": "종료",
       "openInNewWindow": "새 창에서 열기",
       "enablePerpetual": "영구 모드 활성화",
-      "disablePerpetual": "영구 모드 비활성화"
+      "disablePerpetual": "영구 모드 비활성화",
+      "share": "공유"
     },
     "renameDialog": {
       "title": "Pod 이름 변경",
@@ -273,7 +319,7 @@
     "loadMore": "더 보기",
     "pod": {
       "status": "상태",
-      "agent": "에이전트",
+      "agent": "Agent",
       "repository": "저장소",
       "branch": "브랜치",
       "created": "생성일",
@@ -298,6 +344,34 @@
       "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
+    },
+    "emptyHeroTitle": "첫 번째 Pod를 생성하세요",
+    "emptyHeroDescription": "Pod는 AI Agent가 코드 작업을 수행하는 격리된 터미널입니다. 작업을 지켜보거나, 개입하거나, Autopilot으로 실행하도록 둘 수 있습니다.",
+    "recipesHeading": "또는 레시피로 시작하세요",
+    "recipes": {
+      "explain": {
+        "title": "이 코드베이스 설명하기",
+        "description": "Claude Code가 저장소를 살펴보고 아키텍처를 요약합니다.",
+        "duration": "2분"
+      },
+      "tests": {
+        "title": "테스트 실행하기",
+        "description": "Claude Code가 테스트 스위트를 실행하고 실패를 보고합니다.",
+        "duration": "3분"
+      },
+      "bug": {
+        "title": "미해결 버그 수정하기",
+        "description": "Ticket을 선택해 Pod를 생성하세요. Agent가 컨텍스트를 읽고 수정안을 제안합니다.",
+        "duration": "8분"
+      }
+    },
+    "banner": {
+      "newUser": "AgentsMesh가 처음이신가요?",
+      "watchIntro": "2분 소개 영상 보기 →"
+    },
+    "hints": {
+      "search": "검색하기",
+      "createPod": "Pod 생성하기"
     }
   },
   "commandPalette": {
@@ -306,8 +380,8 @@
     "noResults": "결과를 찾을 수 없습니다.",
     "navigation": "탐색",
     "actions": "작업",
-    "goToWorkspace": "워크스페이스로 이동",
-    "workspaceDescription": "터미널 워크스페이스",
+    "goToWorkspace": "Workspace로 이동",
+    "workspaceDescription": "터미널 Workspace",
     "goToTickets": "티켓으로 이동",
     "ticketsDescription": "티켓 보기 및 관리",
     "goToMesh": "AgentsMesh로 이동",
@@ -321,8 +395,8 @@
     "goToSettings": "설정으로 이동",
     "settingsDescription": "조직 설정",
     "createNewPod": "새 Pod 만들기",
-    "createPodDescription": "새 에이전트 Pod 시작",
-    "createNewTicket": "새 티켓 만들기",
+    "createPodDescription": "새 Agent Pod 시작",
+    "createNewTicket": "새 Ticket 만들기",
     "createTicketDescription": "새 작업 또는 이슈 생성",
     "signOut": "로그아웃",
     "signOutDescription": "계정에서 로그아웃",
@@ -382,7 +456,7 @@
   "support": {
     "title": "지원 티켓",
     "description": "질문이나 피드백을 제출하고 요청을 추적하세요",
-    "create": "새 티켓",
+    "create": "새 Ticket",
     "createDescription": "문제를 설명해 주시면 답���드리겠습니다",
     "submit": "제출",
     "submitting": "제출 중...",
@@ -392,8 +466,8 @@
     "attach": "첨부",
     "replyPlaceholder": "답변을 입력하세요...",
     "empty": "아직 ���원 티켓이 없습니다",
-    "createFirst": "첫 번째 티켓을 만드세요",
-    "notFound": "티켓을 찾을 수 없습니다",
+    "createFirst": "첫 번째 Ticket을 만드세요",
+    "notFound": "Ticket을 찾을 수 없습니다",
     "backToList": "티켓 목록으로 돌아가기",
     "retry": "다시 시도",
     "download": "다운로드",
@@ -434,41 +508,170 @@
       "required": "제목과 설명은 필수입니다"
     },
     "error": {
-      "createFailed": "티켓 생성에 실패했습니다. 다시 시도해 주세요."
+      "createFailed": "Ticket 생성에 실패했습니다. 다시 시도해 주세요.",
+      "loadFailed": "데이터를 불러오지 못했습니다. 다시 시도해 주세요.",
+      "sendFailed": "메시지를 보내지 못했습니다. 다시 시도해 주세요."
     }
   },
   "loopal": {
-    "activity": { "heading": "활동" },
+    "activity": {
+      "heading": "활동"
+    },
     "status": {
       "title": "Loopal",
       "thinking": "사고: {value}",
       "topology": "토폴로지",
-      "mode": { "act": "실행", "plan": "계획" },
-      "goal": { "pause": "일시정지", "resume": "재개", "complete": "완료", "reopen": "다시 열기", "clear": "지우기" }
+      "mode": {
+        "act": "실행",
+        "plan": "계획"
+      },
+      "goal": {
+        "pause": "일시정지",
+        "resume": "재개",
+        "complete": "완료",
+        "reopen": "다시 열기",
+        "clear": "지우기"
+      }
     },
-    "thinking": { "auto": "자동", "off": "끄기", "low": "낮음", "med": "중간", "high": "높음", "max": "최대" },
+    "thinking": {
+      "auto": "자동",
+      "off": "끄기",
+      "low": "낮음",
+      "med": "중간",
+      "high": "높음",
+      "max": "최대"
+    },
     "dock": {
-      "tabs": { "bgShell": "백그라운드 셸", "cron": "Cron", "tasks": "작업", "agents": "에이전트", "mcp": "MCP" },
-      "agents": { "expand": "토폴로지 확장" },
-      "bgShell": { "kill": "종료", "killConfirmTitle": "백그라운드 작업을 종료할까요?" },
-      "cron": { "due": "기한 도래", "inMinutes": "{m}분 후", "inHours": "{h}시간 후", "inDays": "{d}일 후", "recurring": "반복", "once": "한 번", "durable": "영구", "delete": "삭제", "deleteConfirmTitle": "Cron 작업을 삭제할까요?" },
-      "tasks": { "blockedBy": "{count}개에 의해 차단됨" },
-      "mcp": { "refresh": "새로고침", "toolCount": "도구 {count}개", "reconnect": "다시 연결", "disconnect": "연결 해제", "disconnectConfirmTitle": "MCP 서버 연결을 해제할까요?" }
+      "tabs": {
+        "bgShell": "백그라운드 셸",
+        "cron": "Cron",
+        "tasks": "작업",
+        "agents": "에이전트",
+        "mcp": "MCP"
+      },
+      "agents": {
+        "expand": "토폴로지 확장"
+      },
+      "bgShell": {
+        "kill": "종료",
+        "killConfirmTitle": "백그라운드 작업을 종료할까요?"
+      },
+      "cron": {
+        "due": "기한 도래",
+        "inMinutes": "{m}분 후",
+        "inHours": "{h}시간 후",
+        "inDays": "{d}일 후",
+        "recurring": "반복",
+        "once": "한 번",
+        "durable": "영구",
+        "delete": "삭제",
+        "deleteConfirmTitle": "Cron 작업을 삭제할까요?"
+      },
+      "tasks": {
+        "blockedBy": "{count}개에 의해 차단됨"
+      },
+      "mcp": {
+        "refresh": "새로고침",
+        "toolCount": "도구 {count}개",
+        "reconnect": "다시 연결",
+        "disconnect": "연결 해제",
+        "disconnectConfirmTitle": "MCP 서버 연결을 해제할까요?"
+      }
     },
     "prompt": {
       "placeholder": "Loopal에 메시지를 보내거나 / 로 명령",
       "interrupt": "중단",
-      "rewindTitle": "해당 턴으로 되감기", "rewindPlaceholder": "턴 #",
-      "resumeTitle": "세션 재개", "resumePlaceholder": "세션 ID",
-      "model": "모델", "thinking": "사고"
+      "rewindTitle": "해당 턴으로 되감기",
+      "rewindPlaceholder": "턴 #",
+      "resumeTitle": "세션 재개",
+      "resumePlaceholder": "세션 ID",
+      "model": "모델",
+      "thinking": "사고"
     },
     "commands": {
-      "act": "실행 모드로 전환", "plan": "계획 모드로 전환", "model": "모델 및 사고 수준", "thinking": "사고 강도 수준",
-      "compact": "대화 컨텍스트 압축", "clear": "모든 대화 기록 지우기", "rewind": "이전 턴으로 되감기",
-      "resume": "ID로 세션 재개", "suspend": "Cron / 재기동 일시중단", "unsuspend": "Cron / 재기동 재개",
-      "goal": "스레드 목표 설정 (/goal [목표])", "mcpRefresh": "MCP 상태 새로고침",
-      "goalPause": "목표 일시정지", "goalResume": "목표 재개", "goalComplete": "목표를 완료로 표시", "goalReopen": "목표 다시 열기", "goalClear": "목표 지우기"
+      "act": "실행 모드로 전환",
+      "plan": "계획 모드로 전환",
+      "model": "모델 및 사고 수준",
+      "thinking": "사고 강도 수준",
+      "compact": "대화 컨텍스트 압축",
+      "clear": "모든 대화 기록 지우기",
+      "rewind": "이전 턴으로 되감기",
+      "resume": "ID로 세션 재개",
+      "suspend": "Cron / 재기동 일시중단",
+      "unsuspend": "Cron / 재기동 재개",
+      "goal": "스레드 목표 설정 (/goal [목표])",
+      "mcpRefresh": "MCP 상태 새로고침",
+      "goalPause": "목표 일시정지",
+      "goalResume": "목표 재개",
+      "goalComplete": "목표를 완료로 표시",
+      "goalReopen": "목표 다시 열기",
+      "goalClear": "목표 지우기"
     },
-    "topology": { "sheetTitle": "에이전트 토폴로지", "root": "루트" }
+    "topology": {
+      "sheetTitle": "Agent 토폴로지",
+      "root": "루트"
+    }
+  },
+  "acp": {
+    "modeSelector": {
+      "bypassPermissions": {
+        "label": "우회",
+        "desc": "모두 자동 승인"
+      },
+      "acceptEdits": {
+        "label": "편집 수락",
+        "desc": "파일 편집 자동 승인"
+      },
+      "default": {
+        "label": "기본",
+        "desc": "도구마다 승인"
+      },
+      "dontAsk": {
+        "label": "묻지 않음",
+        "desc": "허용 목록 외에는 거부"
+      },
+      "bypass": {
+        "label": "우회",
+        "desc": "모든 작업 자동 승인"
+      },
+      "ask_dangerous": {
+        "label": "위험 시 확인",
+        "desc": "위험한 작업만 확인"
+      },
+      "ask_any_write": {
+        "label": "쓰기 시 확인",
+        "desc": "모든 쓰기 작업 확인"
+      },
+      "unknown": {
+        "label": "—",
+        "desc": "Runner가 아직 모드를 보고하지 않았습니다"
+      }
+    },
+    "activityStream": {
+      "waitingSession": "ACP 세션을 기다리는 중...",
+      "agentWorking": "Agent가 작업 중입니다...",
+      "thinking": "생각 중..."
+    },
+    "promptInput": {
+      "placeholder": "지시를 입력하세요...",
+      "notConnected": "연결되지 않음",
+      "cancel": "취소"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay가 연결되지 않았습니다. 잠시 후 다시 시도해 주세요."
+    },
+    "permissionCard": {
+      "title": "권한 필요",
+      "approve": "승인",
+      "alwaysAllow": "항상 허용",
+      "deny": "거부"
+    }
+  },
+  "errors": {
+    "unexpected": "문제가 발생했습니다",
+    "notFound": "페이지를 찾을 수 없습니다",
+    "goBack": "뒤로 가기",
+    "reload": "새로고침",
+    "home": "홈"
   }
 }

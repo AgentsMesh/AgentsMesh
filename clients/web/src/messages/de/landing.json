@@ -18,13 +18,16 @@
       "slogan1": "Liefern wie ein Team von fünfzig.",
       "slogan2": "Mit einem Team von fünf.",
       "tagline": "Die AI-Agent-Workforce-Plattform für ambitionierte Teams",
-      "description": "Geben Sie jedem Entwickler ein eigenes KI-Agenten-Team. Aufgaben zuweisen, Fortschritt verfolgen und Agenten zusammenarbeiten lassen — während Ihr Code auf Ihrer Infrastruktur bleibt.",
+      "description": "Geben Sie jedem Entwickler ein eigenes KI-Agent-Team. Aufgaben zuweisen, Fortschritt verfolgen und Agents zusammenarbeiten lassen — während Ihr Code auf Ihrer Infrastruktur bleibt.",
       "getStartedFree": "Bauen Sie Ihr Team auf",
       "viewDocs": "Demo ansehen",
       "trustedBy": "Vertraut von Teams weltweit",
       "teams": "Wachsende Teams",
       "pods": "Tausende von Pods",
-      "openSource": "Open Source"
+      "openSource": "Open Source",
+      "signInConsole": "An der Konsole anmelden",
+      "enterpriseNote": "Benötigen Sie eine private Bereitstellung?",
+      "contactUs": "Kontaktieren Sie uns"
     },
     "agentLogos": {
       "title": "Funktioniert mit den Agenten, die Ihr Team bereits nutzt",
@@ -35,7 +38,8 @@
         "openSource": "Open Source",
         "community": "Community",
         "yourOwn": "Eigene",
-        "anysphere": "Anysphere"
+        "anysphere": "Anysphere",
+        "selfBuilt": "Selbst entwickelt"
       }
     },
     "paradigmShift": {
@@ -64,7 +68,7 @@
     "whyTerminal": {
       "title": "Warum",
       "titleHighlight": "Terminal-basierte",
-      "titleEnd": "Agenten?",
+      "titleEnd": "Agent?",
       "description": "Anders als IDE-Plugins wie Cursor oder Copilot bieten Terminal-basierte Agenten autonome Ausführung und vollständige Entwicklungsfähigkeiten.",
       "benefits": {
         "autonomous": {
@@ -139,11 +143,11 @@
         "subtitle": "Tickets",
         "description": "Legen Sie eine Aufgabe auf das Kanban-Board. Ein Agent übernimmt sie, erstellt einen Branch, schreibt den Code und öffnet einen Merge Request. Sie reviewen und shippen. Das war's.",
         "highlights": {
-          "0": "Tickets werden automatisch zu Agenten-Anweisungen",
+          "0": "Tickets werden automatisch zu Agent-Anweisungen",
           "1": "Agenten zerlegen Epics eigenständig in Unteraufgaben",
           "2": "MR/PR mit Ticket verknüpft, mit Live-CI-Status",
           "3": "Vollständiges Lifecycle-Tracking — Backlog bis ausgeliefert",
-          "4": "Git Webhooks schließen den Kreislauf automatisch"
+          "4": "Git Webhooks schließen den Loop automatisch"
         }
       },
       "runners": {
@@ -160,9 +164,9 @@
       "scheduledTasks": {
         "title": "Ihre Codebase hat ein 24/7-Wartungsteam.",
         "subtitle": "LOOP",
-        "description": "Code-Reviews, Dependency-Updates, Security-Scans, Test-Suites — geplant und erledigt. Einmal einrichten. Ihr Agenten-Team hält den Betrieb am Laufen, während Sie Feierabend haben.",
+        "description": "Code-Reviews, Dependency-Updates, Security-Scans, Test-Suites — geplant und erledigt. Einmal einrichten. Ihr Agent-Team hält den Betrieb am Laufen, während Sie Feierabend haben.",
         "highlights": {
-          "0": "Cron-basierte Planung für jede Agentenaufgabe",
+          "0": "Cron-basierte Planung für jede Agent-Aufgabe",
           "1": "Erstellt automatisch Branches und reicht MRs ein",
           "2": "Slack/Webhook-Benachrichtigungen bei Abschluss oder Fehler",
           "3": "Vollständige Historie mit Logs und Diffs",
@@ -171,7 +175,7 @@
       }
     },
     "howItWorks": {
-      "title": "Bauen Sie Ihr Agenten-Team in",
+      "title": "Bauen Sie Ihr Agent-Team in",
       "titleHighlight": "3 Minuten",
       "description": "Von der Installation bis zum ersten Agent — schneller als Ihr letztes Standup.",
       "step1": {
@@ -259,7 +263,7 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "Ihr erstes Agenten-Team. Bis zu 5 Entwickler, 10 Agenten parallel.",
+        "description": "Ihr erstes Agent-Team. Bis zu 5 Entwickler, 10 Agents parallel.",
         "features": {
           "0": "Bis zu 5 Plätze",
           "1": "10 gleichzeitige Agenten",
@@ -272,7 +276,7 @@
       },
       "enterprise": {
         "name": "Team",
-        "description": "Abteilungsgröße. 50 Entwickler mit eigenen Agenten-Squads.",
+        "description": "Abteilungsgröße. 50 Entwickler mit eigenen Agent-Squads.",
         "features": {
           "0": "Bis zu 50 Plätze",
           "1": "50 gleichzeitige Agenten",
@@ -311,17 +315,22 @@
       "kubernetesHelm": "Kubernetes Helm (Demnächst)",
       "airGappedSupport": "Air-Gapped-Unterstützung (Demnächst)",
       "viewDocs": "Deployment-Dokumentation ansehen",
-      "contactSales": "Enterprise-Vertrieb kontaktieren"
+      "contactSales": "Enterprise-Vertrieb kontaktieren",
+      "saasNote": "Keine private Bereitstellung nötig? Die SaaS-Version ist sofort einsatzbereit —",
+      "saasRegister": "Kostenlos registrieren"
     },
     "finalCta": {
       "title1": "Ihr Team wird gleich",
       "title2": "deutlich größer.",
-      "description": "Starten Sie mit einem Agenten. Skalieren Sie auf fünfzig. Kostenlos starten, keine Kreditkarte erforderlich.",
+      "description": "Starten Sie mit einem Agent. Skalieren Sie auf fünfzig. Kostenlos starten, keine Kreditkarte erforderlich.",
       "getStartedFree": "Bauen Sie Ihr Team auf",
       "scheduleDemo": "Sprechen Sie mit uns",
       "freeTier": "Kostenlose Stufe verfügbar",
       "noCreditCard": "Keine Kreditkarte erforderlich",
-      "selfHostedOption": "Self-Hosted-Option"
+      "selfHostedOption": "Self-Hosted-Option",
+      "signInConsole": "An der Konsole anmelden",
+      "enterpriseNote": "Benötigen Sie eine private Bereitstellung?",
+      "contactUs": "Sprechen Sie mit uns"
     },
     "heroDemo": {
       "podTopology": "Pod-Topologie",

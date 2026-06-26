@@ -18,13 +18,16 @@
       "slogan1": "Livrez comme une équipe de cinquante.",
       "slogan2": "Avec une équipe de cinq.",
       "tagline": "La plateforme AI Agent Workforce pour les équipes ambitieuses",
-      "description": "Donnez à chaque membre de l'équipe une équipe d'agents IA. Assignez des tâches, suivez la progression et laissez-les collaborer — pendant que votre code reste sur votre infrastructure.",
+      "description": "Donnez à chaque membre de l'équipe une escouade d'Agents IA. Assignez des tâches, suivez la progression et laissez-les collaborer — pendant que votre code reste sur votre infrastructure.",
       "getStartedFree": "Construisez Votre Équipe",
       "viewDocs": "Voir la démo",
       "trustedBy": "Adopté par des équipes dans le monde entier",
       "teams": "Équipes en Croissance",
       "pods": "Des Milliers de Pods",
-      "openSource": "Open Source"
+      "openSource": "Open Source",
+      "signInConsole": "Se connecter à la console",
+      "enterpriseNote": "Besoin d'un déploiement privé ?",
+      "contactUs": "Contactez-nous"
     },
     "agentLogos": {
       "title": "Compatible avec les agents que votre équipe utilise déjà",
@@ -35,7 +38,8 @@
         "openSource": "Open Source",
         "community": "Communauté",
         "yourOwn": "Le Vôtre",
-        "anysphere": "Anysphere"
+        "anysphere": "Anysphere",
+        "selfBuilt": "Personnalisé"
       }
     },
     "paradigmShift": {
@@ -55,7 +59,7 @@
         "label": "Productivité Organisationnelle",
         "items": {
           "0": "Vitesse individuelle ×10, production d'équipe ×50",
-          "1": "Chacun dirige une escouade d'agents, en synergie",
+          "1": "Chacun dirige une escouade d'Agents, en synergie",
           "2": "Contexte partagé en temps réel, visibilité totale",
           "3": "Une plateforme pour tout gérer"
         }
@@ -113,7 +117,7 @@
       "agentpod": {
         "title": "Chaque agent a son bureau. Prêt en secondes.",
         "subtitle": "AgentPod",
-        "description": "Déployez des environnements de développement isolés à la demande. Chaque agent a son propre espace — dépôt Git, terminal, outils de développement complets. Supervisez tout l'étage depuis votre portable ou votre téléphone.",
+        "description": "Déployez des environnements de développement isolés à la demande. Chaque Agent a son propre Workspace — dépôt Git, terminal, outils de développement complets. Supervisez tout l'étage depuis votre portable ou votre téléphone.",
         "highlights": {
           "0": "Configuration en 30 secondes — de zéro au code",
           "1": "Terminal dans le navigateur, fonctionne sur n'importe quel appareil",
@@ -128,9 +132,9 @@
         "description": "Les agents observent le travail des autres, partagent le contexte via des canaux et se coordonnent de manière autonome. Ils trouvent des coéquipiers, négocient les accès et déploient des renforts quand la charge l'exige.",
         "highlights": {
           "0": "Les agents observent les terminaux des autres en temps réel",
-          "1": "Messagerie de canal avec @mentions et partage de contexte",
+          "1": "Messagerie de Channel avec @mentions et partage de contexte",
           "2": "Auto-découverte — les agents trouvent et recrutent leurs pairs",
-          "3": "Carte topologique en temps réel de toutes les connexions",
+          "3": "Carte topologique en temps réel de toutes les connexions d'Agents",
           "4": "Permissions à périmètre défini — observation seule ou contrôle total"
         }
       },
@@ -139,11 +143,11 @@
         "subtitle": "Tickets",
         "description": "Déposez une tâche sur le tableau kanban. Un agent la prend, crée une branche, écrit le code et ouvre une merge request. Vous relisez et livrez. C'est tout.",
         "highlights": {
-          "0": "Les tickets deviennent automatiquement des instructions pour les agents",
+          "0": "Les Tickets deviennent automatiquement des instructions pour les Agents",
           "1": "Les agents décomposent les epics en sous-tâches par eux-mêmes",
           "2": "MR/PR liée au ticket avec statut CI en direct",
           "3": "Suivi complet du cycle de vie — du backlog à la livraison",
-          "4": "Les Git webhooks bouclent la boucle automatiquement"
+          "4": "Les Git webhooks bouclent le Loop automatiquement"
         }
       },
       "runners": {
@@ -160,7 +164,7 @@
       "scheduledTasks": {
         "title": "Votre codebase a une équipe de maintenance 24h/24.",
         "subtitle": "LOOP",
-        "description": "Revues de code, mises à jour de dépendances, analyses de sécurité, suites de tests — planifiées et traitées. Configurez une fois. Votre équipe d'agents veille pendant que vous êtes déconnecté.",
+        "description": "Revues de code, mises à jour de dépendances, analyses de sécurité, suites de tests — planifiées et traitées. Configurez une fois. Votre équipe d'Agents veille pendant que vous êtes déconnecté.",
         "highlights": {
           "0": "Planification Cron pour toute tâche d'agent",
           "1": "Création automatique de branches et soumission de MR",
@@ -171,7 +175,7 @@
       }
     },
     "howItWorks": {
-      "title": "Montez votre équipe d'agents en",
+      "title": "Montez votre équipe d'Agents en",
       "titleHighlight": "3 minutes",
       "description": "De l'installation au premier agent — plus rapide que votre dernier standup.",
       "step1": {
@@ -190,7 +194,7 @@
     "enterprise": {
       "title": "Vos agents.",
       "titleHighlight": "Vos règles.",
-      "description": "Sécurité et gouvernance de niveau entreprise pour les organisations qui gèrent des flottes d'agents à grande échelle.",
+      "description": "Sécurité et gouvernance de niveau entreprise pour les organisations qui gèrent des workforces d'Agents à grande échelle.",
       "features": {
         "multiTenant": {
           "title": "Multi-Tenant",
@@ -259,7 +263,7 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "Votre première équipe d'agents. Jusqu'à 5 sièges, 10 agents en parallèle.",
+        "description": "Votre première équipe d'Agents. Jusqu'à 5 sièges, 10 Agents en parallèle.",
         "features": {
           "0": "Jusqu'à 5 sièges",
           "1": "10 agents simultanés",
@@ -272,7 +276,7 @@
       },
       "enterprise": {
         "name": "Team",
-        "description": "Échelle départementale. 50 sièges avec leurs propres escouades d'agents.",
+        "description": "Échelle départementale. 50 sièges avec leurs propres escouades d'Agents.",
         "features": {
           "0": "Jusqu'à 50 sièges",
           "1": "50 agents simultanés",
@@ -311,7 +315,9 @@
       "kubernetesHelm": "Kubernetes Helm (Bientôt)",
       "airGappedSupport": "Support Air-gapped (Bientôt)",
       "viewDocs": "Voir la Documentation de Déploiement",
-      "contactSales": "Contacter les Ventes Enterprise"
+      "contactSales": "Contacter les Ventes Enterprise",
+      "saasNote": "Pas besoin d'un déploiement privé ? La version SaaS est prête à l'emploi —",
+      "saasRegister": "Inscription gratuite"
     },
     "finalCta": {
       "title1": "Votre équipe est sur le point",
@@ -321,7 +327,10 @@
       "scheduleDemo": "Parlons-en",
       "freeTier": "Offre gratuite disponible",
       "noCreditCard": "Aucune carte de crédit requise",
-      "selfHostedOption": "Option auto-hébergée"
+      "selfHostedOption": "Option auto-hébergée",
+      "signInConsole": "Se connecter à la console",
+      "enterpriseNote": "Besoin d'un déploiement privé ?",
+      "contactUs": "Parlons-en"
     },
     "heroDemo": {
       "podTopology": "Topologie des Pods",
@@ -330,7 +339,7 @@
       "typeMessage": "Tapez un message...",
       "connecting": "Connexion à AgentsMesh...",
       "connected": "Connecté au serveur AgentsMesh",
-      "workspace": "Espace de travail : /projects/e-commerce",
+      "workspace": "Workspace : /projects/e-commerce",
       "monitorPod": "Surveiller le pod beta-dev et aider à coordonner l'implémentation de l'authentification",
       "bindingPod": "Je vais me lier au pod beta-dev pour observer et coordonner...",
       "boundToPod": "Lié à beta-dev (Codex CLI)",

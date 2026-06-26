@@ -51,6 +51,8 @@ message RunnerMessage {
     ObservePodResult observe_pod_result = 26;
     // 永续 Pod 重启事件
     PodRestartingEvent pod_restarting = 31;
+    // 单个 Agent 升级终态回报（Runner -> Backend）
+    UpgradeAgentResultEvent upgrade_agent_result = 32;
     // 27-30 reserved: previously used for ACP gRPC events, now ACP data flows exclusively via Relay.
   }
   reserved 27, 28, 29, 30;
@@ -206,6 +208,8 @@ message ServerMessage {
     // 22 = acp_cancel_session (走 Relay)
     // 更新 Pod 永续模式命令（Backend -> Runner）
     UpdatePodPerpetualCommand update_pod_perpetual = 23;
+    // 升级单个 Agent 命令（Backend -> Runner）
+    UpgradeAgentCommand upgrade_agent = 24;
   }
   int64 timestamp = 15;
 }
@@ -694,6 +698,29 @@ message UpgradeStatusEvent {
   string error = 5;            // phase=failed 时的错误信息
   string current_version = 6;  // 当前运行版本
   string target_version = 7;   // 目标升级版本
+}
+
+// ==================== 单个 Agent 升级相关消息 ====================
+
+// UpgradeAgentCommand 升级单个 Agent 命令（Backend -> Runner）
+// Backend 从 agents 表读出包管理器升级命令（argv）下发，Runner 直接 exec，不经 shell。
+// 与 UpgradeRunnerCommand 不同：不重启 Runner、不影响运行中 Pod。
+message UpgradeAgentCommand {
+  string request_id = 1;             // UUID，关联终态回报
+  string agent_slug = 2;             // 要升级的 agent slug
+  string executable = 3;             // = agent.Executable，升级后据此重探测版本
+  repeated string upgrade_argv = 4;  // 完整 argv，Runner 直接 exec(argv[0], argv[1:]...)
+}
+
+// UpgradeAgentResultEvent 单个 Agent 升级终态回报（Runner -> Backend）
+// 异步升级，仅在结束时回报一次；版本号由后续心跳的 agent_versions 刷新。
+message UpgradeAgentResultEvent {
+  string request_id = 1;       // 对应 UpgradeAgentCommand.request_id
+  string agent_slug = 2;
+  string status = 3;           // "success" | "failed"
+  string message = 4;          // 人类可读状态信息
+  string new_version = 5;      // 升级后探测到的版本（success 且测得）
+  string error = 6;            // status=failed 时的错误信息
 }
 
 // ==================== Runner 日志上传相关消息 ====================

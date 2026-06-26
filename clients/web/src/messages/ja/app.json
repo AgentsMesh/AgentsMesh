@@ -5,7 +5,7 @@
     "newPod": "新規Pod",
     "runners": "ランナー",
     "noRunnersOnline": "オンラインのランナーがありません",
-    "selectAgent": "エージェントを選択",
+    "selectAgent": "Agent を選択",
     "selectRepository": "リポジトリを選択",
     "prompt": "初期プロンプト",
     "status": {
@@ -32,19 +32,23 @@
   "mesh": {
     "title": "AgentsMesh",
     "channels": "チャンネル",
-    "newChannel": "新規チャンネル",
+    "newChannel": "新規 Channel",
     "topology": "トポロジー",
     "messages": "メッセージ",
     "sendMessage": "メッセージを送信...",
     "page": {
       "title": "Mesh",
-      "subtitle": "マルチエージェント協調ネットワークトポロジー",
+      "subtitle": "マルチ Agent 協調ネットワークトポロジー",
       "activePods": "{count}個のアクティブPod",
       "channelsCount": "{count}個のチャンネル",
       "bindingsCount": "{count}個のバインディング",
       "refresh": "更新",
       "dismiss": "閉じる",
-      "updating": "更新中..."
+      "updating": "更新中...",
+      "runnersOnline": "{total} 個中 {online} 個の Runner がオンライン",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小",
+      "fit": "全体表示"
     },
     "legend": {
       "title": "凡例",
@@ -52,7 +56,7 @@
       "initializing": "初期化中",
       "terminated": "終了",
       "failed": "失敗",
-      "channel": "チャンネル",
+      "channel": "Channel",
       "activeBinding": "アクティブバインディング",
       "pendingBinding": "保留中バインディング"
     },
@@ -73,11 +77,11 @@
       "members": "メンバー",
       "pods": "Pods"
     },
-    "ticket": "チケット",
+    "ticket": "Ticket",
     "contextMenu": {
       "openTerminal": "ターミナルを開く",
       "openInNewWindow": "新しいウィンドウで開く",
-      "viewTicket": "チケット {slug} を表示",
+      "viewTicket": "Ticket {slug} を表示",
       "rename": "名前を変更",
       "terminatePod": "Pod を終了",
       "terminateTitle": "Pod を終了",
@@ -91,7 +95,7 @@
     },
     "channelPodManager": {
       "title": "チャンネル Pod",
-      "description": "このチャンネルの Pod を管理",
+      "description": "この Channel の Pod を管理",
       "joined": "参加済み",
       "available": "利用可能",
       "empty": "アクティブな Pod がありません"
@@ -99,9 +103,8 @@
   },
   "tickets": {
     "title": "チケット",
-    "newTicket": "新規チケット",
+    "newTicket": "新規 Ticket",
     "board": "ボード",
-    "list": "リスト",
     "backlog": "バックログ",
     "todo": "To Do",
     "inProgress": "進行中",
@@ -122,7 +125,7 @@
     "emptyState": {
       "title": "チケットがありません",
       "noMatch": "フィルターに一致するチケットがありません",
-      "createFirst": "最初のチケットを作成して始めましょう"
+      "createFirst": "最初の Ticket を作成して始めましょう"
     },
     "moreTickets": "+{count}件",
     "listView": {
@@ -132,7 +135,7 @@
       "priority": "優先度",
       "assignee": "担当者",
       "created": "作成日",
-      "noTickets": "チケットが見つかりません。サイドバーのフィルターを使用するか、新しいチケットを作成してください。"
+      "noTickets": "Ticket が見つかりません。サイドバーのフィルターを使用するか、新しい Ticket を作成してください。"
     },
     "kanban": {
       "noTickets": "チケットなし",
@@ -196,7 +199,23 @@
       "dangerZone": "危険ゾーン",
       "deleteWarning": "この操作は取り消せません。",
       "linked": "リンク済み",
-      "noLinkedItems": "リンクされた項目はまだありません。"
+      "noLinkedItems": "リンクされた項目はまだありません。",
+      "priority": "優先度",
+      "opened": "起票日時",
+      "spawnPod": "Pod を起動",
+      "markDone": "完了にする",
+      "lastUsedAgent": "claude-code（前回使用）",
+      "comments": "コメント",
+      "noComments": "まだコメントはありません",
+      "addComment": "コメントを追加...",
+      "reply": "返信",
+      "edit": "編集",
+      "delete": "削除",
+      "deleteCommentConfirm": "このコメントを削除してもよろしいですか？",
+      "replyTo": "@{username} に返信中",
+      "cancelReply": "キャンセル",
+      "submit": "コメント",
+      "edited": "編集済み"
     },
     "podPanel": {
       "activeCount": "{count} active",
@@ -221,10 +240,36 @@
       "connect": "Connect",
       "openInNewTab": "Open in new tab",
       "started": "Started"
+    },
+    "views": {
+      "board": "ボード",
+      "list": "リスト"
+    },
+    "actions": {
+      "newTicket": "新規",
+      "export": "エクスポート"
+    },
+    "rail": {
+      "workingPods": "稼働中の Pod",
+      "noPods": "アクティブな Pod はありません",
+      "subTickets": "サブチケット",
+      "noSubTickets": "サブチケットはありません",
+      "pullRequests": "プルリクエスト",
+      "noPRs": "リンクされた PR はありません",
+      "activity": "アクティビティ",
+      "activityCreated": "Ticket が作成されました",
+      "activityUpdated": "Ticket が更新されました"
+    },
+    "list": {
+      "ticket": "Ticket",
+      "assignees": "担当者",
+      "dueDate": "期限",
+      "updated": "更新日時",
+      "noTickets": "チケットが見つかりません"
     }
   },
   "workspace": {
-    "title": "ワークスペース",
+    "title": "Workspace",
     "searchPlaceholder": "Podを検索...",
     "newPod": "新規Pod",
     "noTerminalsOpen": "No terminals open",
@@ -261,7 +306,8 @@
       "terminate": "終了",
       "openInNewWindow": "新しいウィンドウで開く",
       "enablePerpetual": "永続モードを有効にする",
-      "disablePerpetual": "永続モードを無効にする"
+      "disablePerpetual": "永続モードを無効にする",
+      "share": "共有"
     },
     "renameDialog": {
       "title": "Pod の名前を変更",
@@ -273,7 +319,7 @@
     "loadMore": "さらに読み込む",
     "pod": {
       "status": "ステータス",
-      "agent": "エージェント",
+      "agent": "Agent",
       "repository": "リポジトリ",
       "branch": "ブランチ",
       "created": "作成日時",
@@ -298,6 +344,34 @@
       "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
+    },
+    "emptyHeroTitle": "最初の Pod を起動",
+    "emptyHeroDescription": "Pod は AI Agent があなたのコードを処理する隔離されたターミナルです。作業を見守ったり、介入したり、Autopilot に任せたりできます。",
+    "recipesHeading": "またはレシピから始める",
+    "recipes": {
+      "explain": {
+        "title": "このコードベースを説明",
+        "description": "Claude Code がリポジトリを調べてアーキテクチャを要約します。",
+        "duration": "2 分"
+      },
+      "tests": {
+        "title": "テストを実行",
+        "description": "Claude Code がテストスイートを実行し、失敗を報告します。",
+        "duration": "3 分"
+      },
+      "bug": {
+        "title": "未解決のバグを修正",
+        "description": "Ticket を選んで Pod を起動。Agent がコンテキストを読み取り、修正案を提示します。",
+        "duration": "8 分"
+      }
+    },
+    "banner": {
+      "newUser": "AgentsMesh は初めてですか？",
+      "watchIntro": "2 分の紹介動画を見る →"
+    },
+    "hints": {
+      "search": "で検索",
+      "createPod": "で Pod を作成"
     }
   },
   "commandPalette": {
@@ -306,8 +380,8 @@
     "noResults": "結果が見つかりません。",
     "navigation": "ナビゲーション",
     "actions": "アクション",
-    "goToWorkspace": "ワークスペースへ移動",
-    "workspaceDescription": "ターミナルワークスペース",
+    "goToWorkspace": "Workspace へ移動",
+    "workspaceDescription": "ターミナル Workspace",
     "goToTickets": "チケットへ移動",
     "ticketsDescription": "チケットの表示と管理",
     "goToMesh": "AgentsMeshへ移動",
@@ -321,8 +395,8 @@
     "goToSettings": "設定へ移動",
     "settingsDescription": "組織設定",
     "createNewPod": "新しいPodを作成",
-    "createPodDescription": "新しいエージェントPodを開始",
-    "createNewTicket": "新しいチケットを作成",
+    "createPodDescription": "新しい Agent Pod を開始",
+    "createNewTicket": "新しい Ticket を作成",
     "createTicketDescription": "新しいタスクまたは課題を作成",
     "signOut": "ログアウト",
     "signOutDescription": "アカウントからログアウト",
@@ -382,7 +456,7 @@
   "support": {
     "title": "サポートチケット",
     "description": "質問やフィードバックを送信し、リクエストを追跡します",
-    "create": "新規チケット",
+    "create": "新規 Ticket",
     "createDescription": "問題を説明してください。折り返しご連絡いたします",
     "submit": "送��",
     "submitting": "送信中...",
@@ -392,8 +466,8 @@
     "attach": "添付",
     "replyPlaceholder": "返信を入力...",
     "empty": "サ���ートチケットはまだありません",
-    "createFirst": "最初のチケットを作成",
-    "notFound": "チケットが見つかりません",
+    "createFirst": "最初の Ticket を作成",
+    "notFound": "Ticket が見つかりません",
     "backToList": "チケット一覧に戻る",
     "retry": "再試行",
     "download": "ダウン��ード",
@@ -434,41 +508,170 @@
       "required": "タイトルと説明は必須です"
     },
     "error": {
-      "createFailed": "チケットの作成に失敗し��した。もう一度お試しください。"
+      "createFailed": "Ticket の作成に失敗しました。もう一度お試しください。",
+      "loadFailed": "データの読み込みに失敗しました。もう一度お試しください。",
+      "sendFailed": "メッセージの送信に失敗しました。もう一度お試しください。"
     }
   },
   "loopal": {
-    "activity": { "heading": "アクティビティ" },
+    "activity": {
+      "heading": "アクティビティ"
+    },
     "status": {
       "title": "Loopal",
       "thinking": "思考: {value}",
       "topology": "トポロジー",
-      "mode": { "act": "実行", "plan": "計画" },
-      "goal": { "pause": "一時停止", "resume": "再開", "complete": "完了", "reopen": "再オープン", "clear": "クリア" }
+      "mode": {
+        "act": "実行",
+        "plan": "計画"
+      },
+      "goal": {
+        "pause": "一時停止",
+        "resume": "再開",
+        "complete": "完了",
+        "reopen": "再オープン",
+        "clear": "クリア"
+      }
     },
-    "thinking": { "auto": "自動", "off": "オフ", "low": "低", "med": "中", "high": "高", "max": "最大" },
+    "thinking": {
+      "auto": "自動",
+      "off": "オフ",
+      "low": "低",
+      "med": "中",
+      "high": "高",
+      "max": "最大"
+    },
     "dock": {
-      "tabs": { "bgShell": "バックグラウンドシェル", "cron": "Cron", "tasks": "タスク", "agents": "エージェント", "mcp": "MCP" },
-      "agents": { "expand": "トポロジーを展開" },
-      "bgShell": { "kill": "停止", "killConfirmTitle": "バックグラウンドタスクを停止しますか？" },
-      "cron": { "due": "期限到来", "inMinutes": "{m}分後", "inHours": "{h}時間後", "inDays": "{d}日後", "recurring": "繰り返し", "once": "一度のみ", "durable": "永続", "delete": "削除", "deleteConfirmTitle": "Cronジョブを削除しますか？" },
-      "tasks": { "blockedBy": "{count}件によりブロック中" },
-      "mcp": { "refresh": "更新", "toolCount": "{count}個のツール", "reconnect": "再接続", "disconnect": "切断", "disconnectConfirmTitle": "MCPサーバーを切断しますか？" }
+      "tabs": {
+        "bgShell": "バックグラウンドシェル",
+        "cron": "Cron",
+        "tasks": "タスク",
+        "agents": "エージェント",
+        "mcp": "MCP"
+      },
+      "agents": {
+        "expand": "トポロジーを展開"
+      },
+      "bgShell": {
+        "kill": "停止",
+        "killConfirmTitle": "バックグラウンドタスクを停止しますか？"
+      },
+      "cron": {
+        "due": "期限到来",
+        "inMinutes": "{m}分後",
+        "inHours": "{h}時間後",
+        "inDays": "{d}日後",
+        "recurring": "繰り返し",
+        "once": "一度のみ",
+        "durable": "永続",
+        "delete": "削除",
+        "deleteConfirmTitle": "Cronジョブを削除しますか？"
+      },
+      "tasks": {
+        "blockedBy": "{count}件によりブロック中"
+      },
+      "mcp": {
+        "refresh": "更新",
+        "toolCount": "{count}個のツール",
+        "reconnect": "再接続",
+        "disconnect": "切断",
+        "disconnectConfirmTitle": "MCPサーバーを切断しますか？"
+      }
     },
     "prompt": {
       "placeholder": "Loopalにメッセージを送信、または / でコマンド",
       "interrupt": "中断",
-      "rewindTitle": "指定ターンへ巻き戻し", "rewindPlaceholder": "ターン #",
-      "resumeTitle": "セッションを再開", "resumePlaceholder": "セッションID",
-      "model": "モデル", "thinking": "思考"
+      "rewindTitle": "指定ターンへ巻き戻し",
+      "rewindPlaceholder": "ターン #",
+      "resumeTitle": "セッションを再開",
+      "resumePlaceholder": "セッションID",
+      "model": "モデル",
+      "thinking": "思考"
     },
     "commands": {
-      "act": "実行モードに切り替え", "plan": "計画モードに切り替え", "model": "モデルと思考レベル", "thinking": "思考の強度レベル",
-      "compact": "会話コンテキストを圧縮", "clear": "すべての会話履歴をクリア", "rewind": "以前のターンへ巻き戻し",
-      "resume": "IDでセッションを再開", "suspend": "Cron / 再起動を一時停止", "unsuspend": "Cron / 再起動を再開",
-      "goal": "スレッドの目標を設定 (/goal [目標])", "mcpRefresh": "MCPステータスを更新",
-      "goalPause": "目標を一時停止", "goalResume": "目標を再開", "goalComplete": "目標を完了にする", "goalReopen": "目標を再オープン", "goalClear": "目標をクリア"
+      "act": "実行モードに切り替え",
+      "plan": "計画モードに切り替え",
+      "model": "モデルと思考レベル",
+      "thinking": "思考の強度レベル",
+      "compact": "会話コンテキストを圧縮",
+      "clear": "すべての会話履歴をクリア",
+      "rewind": "以前のターンへ巻き戻し",
+      "resume": "IDでセッションを再開",
+      "suspend": "Cron / 再起動を一時停止",
+      "unsuspend": "Cron / 再起動を再開",
+      "goal": "スレッドの目標を設定 (/goal [目標])",
+      "mcpRefresh": "MCPステータスを更新",
+      "goalPause": "目標を一時停止",
+      "goalResume": "目標を再開",
+      "goalComplete": "目標を完了にする",
+      "goalReopen": "目標を再オープン",
+      "goalClear": "目標をクリア"
     },
-    "topology": { "sheetTitle": "エージェントトポロジー", "root": "ルート" }
+    "topology": {
+      "sheetTitle": "Agent トポロジー",
+      "root": "ルート"
+    }
+  },
+  "acp": {
+    "modeSelector": {
+      "bypassPermissions": {
+        "label": "バイパス",
+        "desc": "すべて自動承認"
+      },
+      "acceptEdits": {
+        "label": "編集を承認",
+        "desc": "ファイル編集を自動承認"
+      },
+      "default": {
+        "label": "デフォルト",
+        "desc": "各ツールを承認"
+      },
+      "dontAsk": {
+        "label": "確認しない",
+        "desc": "許可リスト以外は拒否"
+      },
+      "bypass": {
+        "label": "バイパス",
+        "desc": "すべて自動承認"
+      },
+      "ask_dangerous": {
+        "label": "危険時に確認",
+        "desc": "危険な操作のみ確認"
+      },
+      "ask_any_write": {
+        "label": "書き込み時に確認",
+        "desc": "すべての書き込み操作を確認"
+      },
+      "unknown": {
+        "label": "—",
+        "desc": "Runner からモードがまだ報告されていません"
+      }
+    },
+    "activityStream": {
+      "waitingSession": "ACP セッションを待機中...",
+      "agentWorking": "Agent が作業中...",
+      "thinking": "思考中..."
+    },
+    "promptInput": {
+      "placeholder": "指示を送信...",
+      "notConnected": "未接続",
+      "cancel": "キャンセル"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay に接続されていません。しばらく待ってから再試行してください。"
+    },
+    "permissionCard": {
+      "title": "権限が必要です",
+      "approve": "承認",
+      "alwaysAllow": "常に許可",
+      "deny": "拒否"
+    }
+  },
+  "errors": {
+    "unexpected": "問題が発生しました",
+    "notFound": "ページが見つかりません",
+    "goBack": "戻る",
+    "reload": "再読み込み",
+    "home": "ホーム"
   }
 }

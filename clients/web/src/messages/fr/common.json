@@ -27,7 +27,16 @@
     "disconnected": "Disconnected",
     "pageNotFound": "La page que vous recherchez n'existe pas ou a été déplacée.",
     "backToHome": "Retour à l'accueil",
-    "undo": "Annuler"
+    "undo": "Annuler",
+    "more": "Plus d'actions",
+    "justNow": "à l'instant",
+    "overdue": "en retard",
+    "timeAgoMinutes": "il y a {count} min",
+    "timeAgoHours": "il y a {count} h",
+    "timeAgoDays": "il y a {count} j",
+    "timeInMinutes": "dans {count} min",
+    "timeInHours": "dans {count} h",
+    "timeInDays": "dans {count} j"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",
@@ -54,9 +63,7 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
     "RESOURCE_EXHAUSTED": "Quota de ressources dépassé. Réessayez plus tard ou passez à un plan supérieur.",
     "FAILED_PRECONDITION": "L'état actuel ne permet pas cette opération.",
     "UNAVAILABLE": "Service temporairement indisponible. Veuillez réessayer plus tard.",
@@ -68,5 +75,19 @@
     "tickets": "Tickets",
     "settings": "Paramètres",
     "billing": "Facturation"
+  },
+  "share": {
+    "title": "Partager",
+    "selectUser": "Utilisateur",
+    "selectUserPlaceholder": "Sélectionnez un membre de l'équipe...",
+    "share": "Partager",
+    "revoke": "Révoquer",
+    "revokeConfirmTitle": "Révoquer l'accès ?",
+    "revokeConfirmDescription": "Cet utilisateur n'aura plus accès à cette ressource.",
+    "sharedWith": "Partagé avec",
+    "noShares": "Pas encore partagé avec personne.",
+    "loadFailed": "Échec du chargement des informations de partage",
+    "grantFailed": "Échec du partage",
+    "revokeFailed": "Échec de la révocation de l'accès"
   }
 }

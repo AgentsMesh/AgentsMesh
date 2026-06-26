@@ -71,7 +71,7 @@
   },
   "nav": {
     "agentpod": "AgentPod",
-    "mesh": "智能体网络",
+    "mesh": "Mesh",
     "tickets": "任务管理",
     "settings": "设置",
     "billing": "账单"

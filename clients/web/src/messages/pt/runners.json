@@ -3,20 +3,6 @@
     "title": "Runner",
     "searchPlaceholder": "Pesquisar runners...",
     "addRunner": "Adicionar Runner",
-    "registrationTokens": {
-      "title": "Tokens de Registro",
-      "createToken": "Criar Token",
-      "noTokens": "Nenhum token de registro. Crie um token para registrar novos Runners.",
-      "description": "Descrição",
-      "noDescription": "Sem descrição",
-      "created": "Criado",
-      "expires": "Expira",
-      "noExpiry": "Sem expiração",
-      "uses": "Usos",
-      "unlimited": "Ilimitado",
-      "revoke": "Revogar",
-      "revoked": "Revogado"
-    },
     "runnerCount": "runners",
     "disabled": "Desativado",
     "filters": {
@@ -83,26 +69,7 @@
       "mobileVersionLabel": "Versão:",
       "upgradeAvailable": "Atualização disponível",
       "visibilityOrganization": "Organização",
-      "visibilityPrivate": "Privado",
-      "stats": {
-        "online": "Online",
-        "offline": "Offline",
-        "busy": "Ocupado",
-        "activePods": "Pods Ativos"
-      },
-      "table": {
-        "nodeId": "ID do Nó",
-        "status": "Status",
-        "pods": "Pods",
-        "version": "Versão",
-        "os": "SO",
-        "cpu": "CPU",
-        "lastSeen": "Visto por último",
-        "actions": "Ações"
-      },
-      "noDescription": "Sem descrição",
-      "justNow": "Agora mesmo",
-      "ago": "atrás"
+      "visibilityPrivate": "Privado"
     },
     "addRunnerModal": {
       "title": "Add Runner",
@@ -192,12 +159,23 @@
       "upgrade": "Atualizar",
       "upgrading": "Atualizando...",
       "upgradeConfirm": "Tem certeza de que deseja atualizar este runner para a versão mais recente? O runner será reiniciado após a atualização.",
-      "upgradeConfirmWithPods": "Este runner possui atualmente {count} pods ativos. O runner será reiniciado após a atualização — as sessões ativas são preservadas pelo Poddaemon.",
+      "upgradeConfirmWithPods": "Este Runner possui atualmente {count} Pods ativos. O Runner será reiniciado após a atualização — as sessões ativas são preservadas pelo Poddaemon.",
       "upgradeDialogTitle": "Atualizar Runner",
       "upgradeSent": "Comando de atualização enviado. O runner baixará e reiniciará automaticamente.",
       "upgradeFailed": "Falha ao enviar o comando de atualização. Tente novamente.",
       "upgradeOffline": "Runner está offline, não é possível atualizar",
-      "upgradeTooltip": "Atualizar runner para a versão mais recente"
+      "upgradeTooltip": "Atualizar runner para a versão mais recente",
+      "agentVersionsTitle": "Agentes instalados",
+      "agentVersionUnknown": "versão desconhecida",
+      "agentUpgrade": "Atualizar",
+      "agentUpgradeDialogTitle": "Atualizar Agent",
+      "agentUpgradeConfirm": "Atualizar {agent} para a versão mais recente neste runner?",
+      "agentUpgrading": "Atualizando...",
+      "agentUpgradeSent": "Comando de atualização enviado para {agent}. A versão será atualizada após a conclusão.",
+      "agentUpgradeFailed": "Falha ao atualizar {agent}.",
+      "agentUpgradeTooltip": "Atualizar {agent} para a versão mais recente",
+      "agentUpgradeUnsupported": "Este Agent não suporta atualização remota.",
+      "tags": "Tags"
     },
     "authorize": {
       "title": "Authorize Runner",
@@ -229,31 +207,29 @@
       "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
       "expiresAt": "This link expires at {time}"
     },
-    "token": {
-      "title": "Token de Registro",
-      "description": "Use este token para registrar novos runners",
-      "generate": "Gerar Token",
-      "copy": "Copiar",
-      "copied": "Copiado!",
-      "expires": "Expira",
-      "active": "ativo",
-      "noTokens": "Nenhum token de registro",
-      "viewAll": "Ver todos os tokens",
-      "manage": "Gerenciar Tokens"
-    },
-    "createTokenModal": {
-      "title": "Criar Token de Registro",
-      "descriptionLabel": "Descrição (opcional)",
-      "descriptionPlaceholder": "ex., Runner da equipe de desenvolvimento",
-      "maxUsesLabel": "Usos Máximos (opcional)",
-      "maxUsesPlaceholder": "Deixe vazio para ilimitado",
-      "expiresLabel": "Expira Em (opcional)",
-      "cancel": "Cancelar",
-      "creating": "Criando...",
-      "create": "Criar"
-    },
     "resume": {
-      "ALREADY_EXISTS": "Este pod já foi retomado — abra o pod retomado no espaço de trabalho."
+      "ALREADY_EXISTS": "Este Pod já foi retomado — abra o Pod retomado no Workspace."
+    },
+    "registrationTokens": "Tokens de Registro",
+    "logs": {
+      "title": "Logs de Diagnóstico",
+      "upload": "Enviar Logs",
+      "uploading": "Enviando...",
+      "noLogs": "Nenhum log de diagnóstico enviado ainda",
+      "status": {
+        "pending": "Pendente",
+        "collecting": "Coletando",
+        "uploading": "Enviando",
+        "completed": "Concluído",
+        "failed": "Falhou",
+        "unknown": "Desconhecido"
+      },
+      "download": "Baixar",
+      "size": "Tamanho",
+      "requestedAt": "Solicitado",
+      "uploadSuccess": "Solicitação de envio de logs enviada",
+      "uploadFailed": "Falha ao solicitar o envio de logs",
+      "offlineHint": "O runner deve estar online para enviar logs"
     }
   },
   "agent": {
@@ -348,6 +324,19 @@
           "description": "Select a model or leave empty to use the first in your list",
           "options": {
             "": "Auto (First in List)"
+          }
+        }
+      }
+    },
+    "loopal": {
+      "fields": {
+        "permission_mode": {
+          "label": "Modo de Permissão",
+          "description": "Controlar como as permissões são tratadas",
+          "options": {
+            "supervised": "Supervisionado (Aprovação Manual)",
+            "auto": "Automático (Aprovação Inteligente)",
+            "bypass": "Ignorar (Aprovar Tudo Automaticamente)"
           }
         }
       }

@@ -1,7 +1,7 @@
 {
   "ide": {
     "activities": {
-      "workspace": "워크스페이스",
+      "workspace": "Workspace",
       "tickets": "티켓",
       "channels": "채널",
       "mesh": "Mesh",
@@ -10,7 +10,8 @@
       "repositories": "저장소",
       "runners": "Runner",
       "settings": "설정",
-      "help": "도움말 및 피드백"
+      "help": "도움말 및 피드백",
+      "infra": "인프라"
     },
     "bottomPanel": {
       "output": "출력",
@@ -26,13 +27,13 @@
       "noActivity": "최근 활동이 없습니다",
       "selectPodFirst": "세부 정보를 보려면 터미널을 선택하세요",
       "noBindings": "바인딩 없음",
-      "podChannels": "{count}개 채널에 참여함",
+      "podChannels": "{count}개 Channel에 참여함",
       "members": "멤버",
       "incomingBindings": "수신 바인딩",
       "outgoingBindings": "발신 바인딩",
       "currentPod": "이 Pod",
       "sendMessagePlaceholder": "메시지 보내기...",
-      "channelDocument": "채널 문서",
+      "channelDocument": "Channel 문서",
       "deliveryTab": {
         "notAvailable": "배포 상태를 사용할 수 없습니다",
         "requiresRepoBranch": "저장소와 브랜치가 필요합니다",
@@ -45,13 +46,13 @@
       "infoTab": {
         "notFound": "Pod 정보를 사용할 수 없습니다",
         "podKey": "Pod Key",
-        "agent": "에이전트",
-        "agentStatus": "에이전트 상태",
+        "agent": "Agent",
+        "agentStatus": "Agent 상태",
         "runner": "Runner",
         "repository": "저장소",
         "branch": "브랜치",
-        "worktree": "워크트리",
-        "ticket": "티켓",
+        "worktree": "Worktree",
+        "ticket": "Ticket",
         "createdBy": "생성자",
         "startedAt": "시작",
         "createdAt": "생성",
@@ -64,8 +65,8 @@
       "selectRunner": "Runner 선택",
       "selectRunnerPlaceholder": "Runner를 선택하세요...",
       "noRunnersAvailable": "No runners available",
-      "selectAgent": "에이전트 선택",
-      "selectAgentPlaceholder": "에이전트를 선택하세요...",
+      "selectAgent": "Agent 선택",
+      "selectAgentPlaceholder": "Agent를 선택하세요...",
       "noAgentsForRunner": "This runner does not support any agents",
       "selectCredential": "API Credentials",
       "selectRuntimeBundles": "Runtime Env Bundles",
@@ -80,7 +81,7 @@
       "branch": "브랜치",
       "branchPlaceholder": "main",
       "prompt": "초기 프롬프트",
-      "promptPlaceholder": "에이전트의 초기 작업을 입력하세요...",
+      "promptPlaceholder": "Agent의 초기 작업을 입력하세요...",
       "advancedOptions": "Advanced Options",
       "runnerAutoSelect": "Auto-select (Recommended)",
       "advanced": "고급 옵션",
@@ -99,9 +100,9 @@
       "alias": "별칭",
       "aliasPlaceholder": "Pod 표시 이름을 입력하세요...",
       "perpetual": "영구 모드",
-      "perpetualDescription": "에이전트 종료 시 자동 재시작. Pod가 지속적으로 온라인 상태를 유지합니다.",
-      "noBundleLabel": "에이전트 기본 인증 사용",
-      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. 에이전트의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다.",
+      "perpetualDescription": "Agent 종료 시 자동 재시작. Pod가 지속적으로 온라인 상태를 유지합니다.",
+      "noBundleLabel": "Agent 기본 인증 사용",
+      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. Agent의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다.",
       "multiBundleHint": "선택한 번들은 순서대로 Pod 환경 변수에 병합됩니다. 나중에 선택한 항목이 동일한 키를 덮어씁니다.",
       "selectedOrderHint": "선택됨 (병합 순서)",
       "moveUp": "위로",
@@ -136,7 +137,9 @@
           "extensions": "Extensions",
           "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
-          "billingDesc": "Subscription and payments"
+          "billingDesc": "Subscription and payments",
+          "usage": "토큰 사용량",
+          "usageDesc": "토큰 소비량 모니터링"
         }
       },
       "mesh": {
@@ -157,8 +160,24 @@
         "selectedChannel": "Selected Channel",
         "channelsLabel": "채널",
         "podsLabel": "Pod",
-        "terminal": "Terminal"
-      }
+        "terminal": "Terminal",
+        "resetFilters": "필터 재설정",
+        "matchCount": "{count}개 일치",
+        "runnerFilter": "Runner",
+        "statusFilter": "상태",
+        "runnerPrefix": "Runner",
+        "statusRunning": "실행 중",
+        "statusInit": "초기화 중",
+        "statusTerminated": "종료됨",
+        "statusFailed": "실패"
+      },
+      "collapse": "사이드바 접기"
+    },
+    "orgSwitcher": {
+      "title": "현재 조직",
+      "empty": "조직 없음",
+      "create": "조직 생성",
+      "manage": "조직 설정"
     }
   }
 }

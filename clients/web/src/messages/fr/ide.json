@@ -1,7 +1,7 @@
 {
   "ide": {
     "activities": {
-      "workspace": "Espace de Travail",
+      "workspace": "Workspace",
       "tickets": "Tickets",
       "channels": "Canaux",
       "mesh": "Mesh",
@@ -10,7 +10,8 @@
       "repositories": "Dépôts",
       "runners": "Runner",
       "settings": "Paramètres",
-      "help": "Aide et commentaires"
+      "help": "Aide et commentaires",
+      "infra": "Infra"
     },
     "bottomPanel": {
       "output": "Sortie",
@@ -26,13 +27,13 @@
       "noActivity": "Aucune activité récente",
       "selectPodFirst": "Sélectionnez un terminal pour voir les détails",
       "noBindings": "Aucune liaison",
-      "podChannels": "Rejoint {count} canal/canaux",
+      "podChannels": "Rejoint {count} Channel(s)",
       "members": "Membres",
       "incomingBindings": "Liaisons entrantes",
       "outgoingBindings": "Liaisons sortantes",
       "currentPod": "Ce Pod",
       "sendMessagePlaceholder": "Envoyer un message...",
-      "channelDocument": "Document du Canal",
+      "channelDocument": "Document du Channel",
       "deliveryTab": {
         "notAvailable": "Statut de livraison non disponible",
         "requiresRepoBranch": "Nécessite un dépôt et une branche",
@@ -50,7 +51,7 @@
         "runner": "Runner",
         "repository": "Dépôt",
         "branch": "Branche",
-        "worktree": "Répertoire de travail",
+        "worktree": "Worktree",
         "ticket": "Ticket",
         "createdBy": "Créé par",
         "startedAt": "Démarré",
@@ -136,11 +137,13 @@
           "extensions": "Extensions",
           "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
-          "billingDesc": "Subscription and payments"
+          "billingDesc": "Subscription and payments",
+          "usage": "Utilisation des tokens",
+          "usageDesc": "Surveiller la consommation de tokens"
         }
       },
       "mesh": {
-        "searchPlaceholder": "Search mesh...",
+        "searchPlaceholder": "Rechercher pod / runner...",
         "viewTopology": "View Topology",
         "showTerminatedPods": "Show terminated pods",
         "networkStats": "Network Stats",
@@ -157,8 +160,24 @@
         "selectedChannel": "Selected Channel",
         "channelsLabel": "Canaux",
         "podsLabel": "Pods",
-        "terminal": "Terminal"
-      }
+        "terminal": "Terminal",
+        "resetFilters": "Réinitialiser les filtres",
+        "matchCount": "{count} correspondant(s)",
+        "runnerFilter": "Runner",
+        "statusFilter": "Statut",
+        "runnerPrefix": "Runner",
+        "statusRunning": "En cours d'exécution",
+        "statusInit": "Initialisation",
+        "statusTerminated": "Terminé",
+        "statusFailed": "Échoué"
+      },
+      "collapse": "Réduire la barre latérale"
+    },
+    "orgSwitcher": {
+      "title": "Organisation actuelle",
+      "empty": "Aucune organisation",
+      "create": "Créer une organisation",
+      "manage": "Paramètres de l'organisation"
     }
   }
 }

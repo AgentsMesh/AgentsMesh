@@ -89,6 +89,10 @@ func (h *mockHandler) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error 
 	return nil
 }
 
+func (h *mockHandler) OnUpgradeAgent(cmd *runnerv1.UpgradeAgentCommand) error {
+	return nil
+}
+
 func (h *mockHandler) OnUploadLogs(cmd *runnerv1.UploadLogsCommand) error {
 	return nil
 }
@@ -163,6 +167,10 @@ func (h *mockHandlerWithError) OnAutopilotControl(cmd *runnerv1.AutopilotControl
 }
 
 func (h *mockHandlerWithError) OnUpgradeRunner(cmd *runnerv1.UpgradeRunnerCommand) error {
+	return nil
+}
+
+func (h *mockHandlerWithError) OnUpgradeAgent(cmd *runnerv1.UpgradeAgentCommand) error {
 	return nil
 }
 

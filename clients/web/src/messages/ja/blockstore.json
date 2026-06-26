@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "ページを削除",
+      "deletePageTitle": "ページを削除しますか？",
+      "deletePageDesc": "「{title}」とそのブロックが削除されます。この操作は元に戻せません。"
+    }
   }
 }

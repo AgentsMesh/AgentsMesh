@@ -119,7 +119,9 @@
         "title": "Delete Repository",
         "description": "Are you sure you want to delete this repository? This action cannot be undone."
       },
-      "branchesRequireCredentials": "Branch listing requires Git credentials"
+      "branchesRequireCredentials": "Branch listing requires Git credentials",
+      "httpCloneUrl": "URL de clonación HTTP",
+      "sshCloneUrl": "URL de clonación SSH"
     },
     "edit": {
       "title": "Edit Repository",
@@ -130,7 +132,10 @@
       "nameRequired": "Name is required",
       "updateFailed": "Failed to update repository. Please try again.",
       "saving": "Saving...",
-      "saveChanges": "Save Changes"
+      "saveChanges": "Save Changes",
+      "httpCloneUrl": "URL de clonación HTTP",
+      "sshCloneUrl": "URL de clonación SSH",
+      "cloneUrlHint": "Las URL se generan automáticamente si se dejan vacías"
     },
     "webhook": {
       "title": "Webhook Settings",

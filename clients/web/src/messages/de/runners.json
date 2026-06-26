@@ -3,20 +3,6 @@
     "title": "Runner",
     "searchPlaceholder": "Runner suchen...",
     "addRunner": "Runner hinzufügen",
-    "registrationTokens": {
-      "title": "Registrierungstoken",
-      "createToken": "Token Erstellen",
-      "noTokens": "Keine Registrierungstoken. Erstellen Sie ein Token um neue Runner zu registrieren.",
-      "description": "Beschreibung",
-      "noDescription": "Keine Beschreibung",
-      "created": "Erstellt",
-      "expires": "Läuft ab",
-      "noExpiry": "Kein Ablauf",
-      "uses": "Verwendungen",
-      "unlimited": "Unbegrenzt",
-      "revoke": "Widerrufen",
-      "revoked": "Widerrufen"
-    },
     "runnerCount": "Runner",
     "disabled": "Deaktiviert",
     "filters": {
@@ -83,26 +69,7 @@
       "mobileVersionLabel": "Version:",
       "upgradeAvailable": "Upgrade verfügbar",
       "visibilityOrganization": "Organisation",
-      "visibilityPrivate": "Privat",
-      "stats": {
-        "online": "Online",
-        "offline": "Offline",
-        "busy": "Beschäftigt",
-        "activePods": "Aktive Pods"
-      },
-      "table": {
-        "nodeId": "Knoten-ID",
-        "status": "Status",
-        "pods": "Pods",
-        "version": "Version",
-        "os": "Betriebssystem",
-        "cpu": "CPU",
-        "lastSeen": "Zuletzt gesehen",
-        "actions": "Aktionen"
-      },
-      "noDescription": "Keine Beschreibung",
-      "justNow": "Gerade eben",
-      "ago": "vor"
+      "visibilityPrivate": "Privat"
     },
     "addRunnerModal": {
       "title": "Add Runner",
@@ -197,7 +164,18 @@
       "upgradeSent": "Upgrade-Befehl gesendet. Der Runner wird automatisch herunterladen und neu starten.",
       "upgradeFailed": "Upgrade-Befehl konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
       "upgradeOffline": "Runner ist offline, Upgrade nicht möglich",
-      "upgradeTooltip": "Runner auf die neueste Version aktualisieren"
+      "upgradeTooltip": "Runner auf die neueste Version aktualisieren",
+      "agentVersionsTitle": "Installierte Agents",
+      "agentVersionUnknown": "Version unbekannt",
+      "agentUpgrade": "Aktualisieren",
+      "agentUpgradeDialogTitle": "Agent aktualisieren",
+      "agentUpgradeConfirm": "{agent} auf diesem Runner auf die neueste Version aktualisieren?",
+      "agentUpgrading": "Wird aktualisiert...",
+      "agentUpgradeSent": "Aktualisierungsbefehl für {agent} gesendet. Die Version wird nach Abschluss aktualisiert.",
+      "agentUpgradeFailed": "{agent} konnte nicht aktualisiert werden.",
+      "agentUpgradeTooltip": "{agent} auf die neueste Version aktualisieren",
+      "agentUpgradeUnsupported": "Dieser Agent unterstützt keine Remote-Aktualisierung.",
+      "tags": "Tags"
     },
     "authorize": {
       "title": "Authorize Runner",
@@ -229,31 +207,29 @@
       "quotaExceeded": "Runner quota exceeded. Please upgrade your plan or remove unused runners.",
       "expiresAt": "This link expires at {time}"
     },
-    "token": {
-      "title": "Registrierungstoken",
-      "description": "Verwenden Sie dieses Token um neue Runner zu registrieren",
-      "generate": "Token generieren",
-      "copy": "Kopieren",
-      "copied": "Kopiert!",
-      "expires": "Läuft ab",
-      "active": "aktiv",
-      "noTokens": "Keine Registrierungstoken",
-      "viewAll": "Alle Token anzeigen",
-      "manage": "Token verwalten"
-    },
-    "createTokenModal": {
-      "title": "Registrierungstoken Erstellen",
-      "descriptionLabel": "Beschreibung (optional)",
-      "descriptionPlaceholder": "z.B. Entwicklungsteam Runner",
-      "maxUsesLabel": "Max. Verwendungen (optional)",
-      "maxUsesPlaceholder": "Leer lassen für unbegrenzt",
-      "expiresLabel": "Läuft Ab Am (optional)",
-      "cancel": "Abbrechen",
-      "creating": "Wird erstellt...",
-      "create": "Erstellen"
-    },
     "resume": {
-      "ALREADY_EXISTS": "Dieser Pod wurde bereits fortgesetzt — öffnen Sie den fortgesetzten Pod im Arbeitsbereich."
+      "ALREADY_EXISTS": "Dieser Pod wurde bereits fortgesetzt — öffnen Sie den fortgesetzten Pod im Workspace."
+    },
+    "registrationTokens": "Registrierungstoken",
+    "logs": {
+      "title": "Diagnoseprotokolle",
+      "upload": "Protokolle hochladen",
+      "uploading": "Wird hochgeladen...",
+      "noLogs": "Noch keine Diagnoseprotokolle hochgeladen",
+      "status": {
+        "pending": "Ausstehend",
+        "collecting": "Wird gesammelt",
+        "uploading": "Wird hochgeladen",
+        "completed": "Abgeschlossen",
+        "failed": "Fehlgeschlagen",
+        "unknown": "Unbekannt"
+      },
+      "download": "Herunterladen",
+      "size": "Größe",
+      "requestedAt": "Angefordert",
+      "uploadSuccess": "Anforderung zum Hochladen der Protokolle gesendet",
+      "uploadFailed": "Anforderung zum Hochladen der Protokolle fehlgeschlagen",
+      "offlineHint": "Der Runner muss online sein, um Protokolle hochzuladen"
     }
   },
   "agent": {
@@ -348,6 +324,19 @@
           "description": "Select a model or leave empty to use the first in your list",
           "options": {
             "": "Auto (First in List)"
+          }
+        }
+      }
+    },
+    "loopal": {
+      "fields": {
+        "permission_mode": {
+          "label": "Berechtigungsmodus",
+          "description": "Steuern, wie Berechtigungen gehandhabt werden",
+          "options": {
+            "supervised": "Überwacht (Manuelle Genehmigung)",
+            "auto": "Auto (Intelligente Genehmigung)",
+            "bypass": "Umgehen (Alles automatisch genehmigen)"
           }
         }
       }

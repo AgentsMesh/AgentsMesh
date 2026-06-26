@@ -32,6 +32,8 @@ import {
   RunnerSchema,
   RunnerTokenSchema,
   UpdateRunnerRequestSchema,
+  UpgradeAgentRequestSchema,
+  UpgradeAgentResponseSchema,
   UpgradeRunnerRequestSchema,
   UpgradeRunnerResponseSchema,
   type RelayConnectionInfo as ProtoRelayConn,
@@ -242,6 +244,22 @@ export async function upgradeRunner(
   const bytes = toBinary(UpgradeRunnerRequestSchema, req);
   const respBytes = await getRunnerService().upgradeRunnerConnect(bytes);
   const resp = fromBinary(UpgradeRunnerResponseSchema, new Uint8Array(respBytes));
+  return { request_id: resp.requestId, message: resp.message };
+}
+
+export async function upgradeAgent(
+  orgSlug: string,
+  id: number,
+  agentSlug: string,
+): Promise<{ request_id: string; message: string }> {
+  const req = create(UpgradeAgentRequestSchema, {
+    orgSlug,
+    id: BigInt(id),
+    agentSlug,
+  });
+  const bytes = toBinary(UpgradeAgentRequestSchema, req);
+  const respBytes = await getRunnerService().upgradeAgentConnect(bytes);
+  const resp = fromBinary(UpgradeAgentResponseSchema, new Uint8Array(respBytes));
   return { request_id: resp.requestId, message: resp.message };
 }
 

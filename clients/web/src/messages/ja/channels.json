@@ -3,28 +3,31 @@
     "contextMenu": {
       "openInNewWindow": "新しいウィンドウで開く"
     },
-    "emptyState": "チャンネルを選択してチャットを開始",
-    "emptyStateHint": "サイドバーからチャンネルを選択して、メッセージを表示しチームと協力しましょう",
+    "emptyState": "Channel を選択してチャットを開始",
+    "emptyStateHint": "サイドバーから Channel を選択して、メッセージを表示しチームと協力しましょう",
     "sidebar": {
       "searchPlaceholder": "チャンネルを検索...",
-      "createChannel": "新規チャンネル",
+      "createChannel": "新規 Channel",
       "refresh": "更新",
       "showArchived": "アーカイブ済みを表示",
       "hideArchived": "アーカイブ済みを非表示",
       "noChannels": "チャンネルがありません",
       "noMatch": "一致するチャンネルがありません",
-      "podsCount": "{count} Pods"
+      "podsCount": "{count} Pods",
+      "groupActive": "アクティブ",
+      "groupLinked": "リンク済み",
+      "groupQuiet": "静かなチャンネル"
     },
     "createDialog": {
-      "title": "チャンネルを作成",
-      "name": "チャンネル名",
+      "title": "Channel を作成",
+      "name": "Channel 名",
       "namePlaceholder": "例: feature-auth、bug-fix-login",
-      "nameRequired": "チャンネル名を入力してください",
+      "nameRequired": "Channel 名を入力してください",
       "description": "説明",
-      "descriptionPlaceholder": "このチャンネルの目的は？",
+      "descriptionPlaceholder": "この Channel の目的は？",
       "descriptionHint": "任意",
       "visibility": "可視性",
-      "failed": "チャンネルの作成に失敗しました"
+      "failed": "Channel の作成に失敗しました"
     },
     "visibility": {
       "public": "パブリック",
@@ -33,10 +36,10 @@
     "actions": {
       "join": "参加",
       "leave": "退出",
-      "joinToParticipate": "このチャンネルに参加してメッセージを閲覧・参加してください"
+      "joinToParticipate": "この Channel に参加してメッセージを閲覧・参加してください"
     },
     "members": {
-      "title": "チャンネルメンバー",
+      "title": "Channel メンバー",
       "current": "メンバー",
       "available": "メンバーを追加",
       "searchPlaceholder": "メンバーを検索...",
@@ -61,6 +64,71 @@
       "deleteConfirmDescription": "このメッセージを削除してもよろしいですか？この操作は元に戻せません。",
       "delete": "削除",
       "moreActions": "そ���他"
+    },
+    "archivedBanner": "この Channel はアーカイブされています — メッセージの送信は無効です",
+    "header": {
+      "podsCount": "{count} 個の Pod",
+      "agentsCount": "{count} 個のエージェント",
+      "membersCount": "{count} 人のメンバー",
+      "linkedTo": "リンク先",
+      "search": "メッセージを検索",
+      "members": "メンバー",
+      "settings": "Channel 設定",
+      "more": "その他"
+    },
+    "rightRail": {
+      "pods": "POD",
+      "agents": "エージェント",
+      "members": "メンバー",
+      "linked": "リンク済み",
+      "document": "ドキュメント",
+      "podsEmpty": "まだ Pod はありません",
+      "agentsEmpty": "まだエージェントはありません",
+      "documentEmpty": "まだドキュメントはありません",
+      "destroyed": "破棄済み"
+    },
+    "composer": {
+      "placeholder": "#{channel} へのメッセージ — @ で Pod やメンバーをメンションできます",
+      "mention": "メンション",
+      "attach": "ファイルを添付",
+      "send": "送信",
+      "formatBold": "太字",
+      "formatItalic": "斜体",
+      "formatStrike": "取り消し線",
+      "formatCode": "インラインコード",
+      "formatLink": "リンク"
+    },
+    "search": {
+      "title": "メッセージを検索",
+      "titleFor": "#{channel} 内を検索",
+      "placeholder": "キーワードを入力...",
+      "empty": "一致するメッセージはありません",
+      "resultCount": "{count} 件の結果"
+    },
+    "settings": {
+      "title": "Channel 設定",
+      "tabs": {
+        "basic": "基本",
+        "archive": "アーカイブ"
+      },
+      "name": "Channel 名",
+      "description": "説明",
+      "descriptionPlaceholder": "この Channel は何についてのものですか？",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "saved": "保存しました",
+      "saveFailed": "保存に失敗しました",
+      "archive": "Channel をアーカイブ",
+      "unarchive": "アーカイブを解除",
+      "archiveHint": "アーカイブするとメンバーから Channel が非表示になりますが、すべてのメッセージは保持されます。",
+      "unarchiveHint": "この Channel は現在アーカイブされています。アーカイブを解除するとメンバーのアクセスが復元されます。",
+      "archived": "アーカイブ済み",
+      "unarchived": "アーカイブ解除済み",
+      "archiveFailed": "アーカイブ操作に失敗しました"
+    },
+    "attachment": {
+      "download": "添付ファイルをダウンロード",
+      "preview": "添付ファイルをプレビュー"
     }
   }
 }

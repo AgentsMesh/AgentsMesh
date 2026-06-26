@@ -71,6 +71,9 @@ type ConnectionSender interface {
 	// SendUpgradeStatus sends an upgrade status event to the server.
 	SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) error
 
+	// SendUpgradeAgentResult sends a single-agent upgrade terminal result to the server.
+	SendUpgradeAgentResult(event *runnerv1.UpgradeAgentResultEvent) error
+
 	// SendLogUploadStatus sends a log upload status event to the server.
 	SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error
 

@@ -16,9 +16,7 @@
     "backToSettings": "Volver a configuración",
     "general": "General",
     "team": "Equipo",
-    "gitProviders": "Proveedores Git",
     "agents": "Agentes",
-    "billing": "Facturación",
     "personal": {
       "title": "Personal Settings",
       "description": "Manage your personal preferences",
@@ -33,7 +31,9 @@
         "agentCredentials": "Agent Credentials",
         "agentCredentialsDesc": "API keys for AI agents",
         "notifications": "Notifications",
-        "notificationsDesc": "Push notification preferences"
+        "notificationsDesc": "Push notification preferences",
+        "support": "Tickets de soporte",
+        "supportDesc": "Envía y haz seguimiento de solicitudes de soporte"
       },
       "general": {
         "title": "General Settings",
@@ -123,7 +123,10 @@
         "cancel": "Cancel",
         "inviting": "Inviting...",
         "sendInvite": "Send Invite"
-      }
+      },
+      "subscriptionFrozen": "Tu suscripción ha caducado. Renueva tu suscripción para invitar a miembros.",
+      "manageSeats": "Gestionar asientos",
+      "renewSubscription": "Renovar suscripción"
     },
     "agentConfig": {
       "title": "Agent Configuration",
@@ -148,7 +151,7 @@
       "invalidJson": "Invalid JSON format",
       "credentials": {
         "title": "API Credentials",
-        "description": "Configurar credenciales API para este agente. Si no se establece ninguna, el agente usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.)."
+        "description": "Configurar credenciales API para este Agent. Si no se establece ninguna, el Agent usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.)."
       },
       "runtime": {
         "title": "Runtime Configuration",
@@ -246,7 +249,7 @@
     },
     "agentCredentials": {
       "title": "Agent Credentials",
-      "description": "Gestionar credenciales API para cada agente. Sin credenciales, el agente usa su flujo de autenticación integrado; añada una credencial para inyectar sus propias claves al iniciar.",
+      "description": "Gestionar credenciales API para cada Agent. Sin credenciales, el Agent usa su flujo de autenticación integrado; añada una credencial para inyectar sus propias claves al iniciar.",
       "failedToLoad": "Failed to load agent credentials",
       "profiles": "profiles",
       "noAgents": "No agents available",
@@ -256,15 +259,11 @@
       "setAsDefault": "Set as default",
       "addProfile": "Add Custom Credentials",
       "editProfile": "Edit Credentials",
-      "customProfileDescription": "Añade tus propias credenciales API para este agente. Se inyectarán en el entorno del agente al iniciar.",
+      "customProfileDescription": "Añade tus propias credenciales API para este Agent. Se inyectarán en el entorno del Agent al iniciar.",
       "name": "Profile Name",
       "namePlaceholder": "e.g., Work Config, Personal",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description for this profile",
-      "baseUrl": "Base URL",
-      "apiKey": "API Key",
-      "apiKeyPlaceholder": "Leave empty to keep existing",
-      "apiKeyEditHint": "Leave empty to keep the existing API key",
       "profileCreated": "Profile created successfully",
       "profileUpdated": "Profile updated successfully",
       "profileDeleted": "Profile deleted successfully",
@@ -273,17 +272,13 @@
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
       "confirmDelete": "Are you sure you want to delete this profile?",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "Leave empty to keep existing",
-      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
-      "credentialMethod": "Authentication Method",
-      "credentialMethodApiKey": "API Key",
-      "credentialMethodAuthToken": "Auth Token",
-      "noBundleLabel": "Usar autenticación predeterminada del agente",
-      "noBundleHint": "No se inyectan credenciales personalizadas; el agente usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.).",
+      "noBundleLabel": "Usar autenticación predeterminada del Agent",
+      "noBundleHint": "No se inyectan credenciales personalizadas; el Agent usa su flujo de autenticación integrado (OAuth, CLI con sesión, etc.).",
       "removeSecret": "Eliminar esta credencial",
       "willRemove": "Se eliminará al guardar",
-      "baseUrlSecurityHint": "No incrustes un token en la URL: se almacena en texto plano y se muestra aquí al editar."
+      "baseUrlSecurityHint": "No incrustes un token en la URL: se almacena en texto plano y se muestra aquí al editar.",
+      "secretPlaceholder": "Deja vacío para conservar el actual",
+      "secretEditHint": "Deja vacío para conservar el valor actual"
     },
     "sshKeys": {
       "title": "SSH Keys",
@@ -405,7 +400,7 @@
       "cacheCreationTokens": "Tokens de creación de caché",
       "totalTokens": "Tokens totales",
       "timeSeriesTitle": "Uso de tokens en el tiempo",
-      "byAgentTitle": "Uso por agente",
+      "byAgentTitle": "Uso por Agent",
       "byUserTitle": "Uso por usuario",
       "byModelTitle": "Uso por modelo",
       "columnUser": "Usuario",
@@ -416,7 +411,7 @@
       "retry": "Reintentar",
       "filters": {
         "timeRange": "Período",
-        "agent": "Agente",
+        "agent": "Agent",
         "granularity": "Granularidad",
         "allAgents": "Todos los agentes",
         "last7Days": "Últimos 7 días",
@@ -449,14 +444,14 @@
       "runnerOfflineDesc": "When a runner goes offline or has issues",
       "active": "Notifications are active",
       "deliveryPreferences": "Preferencias de entrega",
-      "channelMessage": "Mensajes de canal",
+      "channelMessage": "Mensajes de Channel",
       "channelMessageDesc": "Nuevos mensajes en canales de los que eres miembro",
       "channelMention": "@Menciones",
-      "channelMentionDesc": "Cuando alguien te menciona en un canal",
+      "channelMentionDesc": "Cuando alguien te menciona en un Channel",
       "terminalOsc": "Notificaciones de terminal",
-      "terminalOscDesc": "Notificaciones de terminales de agentes (eventos OSC)",
+      "terminalOscDesc": "Notificaciones de terminales de Agent (eventos OSC)",
       "taskCompleted": "Tarea completada",
-      "taskCompletedDesc": "Cuando un agente termina su tarea"
+      "taskCompletedDesc": "Cuando un Agent termina su tarea"
     },
     "runnersSection": {
       "title": "Runners",
@@ -653,7 +648,7 @@
         "scopePodsWrite": "Escribir Pods",
         "scopePodsWriteDesc": "Crear, terminar y gestionar el ciclo de vida de los Pods",
         "scopeTicketsRead": "Leer tickets",
-        "scopeTicketsReadDesc": "Listar y ver tickets, tablero y detalles de tickets",
+        "scopeTicketsReadDesc": "Listar y ver Tickets, tablero y detalles de Tickets",
         "scopeTicketsWrite": "Escribir tickets",
         "scopeTicketsWriteDesc": "Crear, actualizar, eliminar tickets y cambiar estado",
         "scopeChannelsRead": "Leer canales",
@@ -661,7 +656,7 @@
         "scopeChannelsWrite": "Escribir canales",
         "scopeChannelsWriteDesc": "Crear, actualizar canales y enviar mensajes",
         "scopeRunnersRead": "Leer Runners",
-        "scopeRunnersReadDesc": "Listar runners, ver detalles, estado y pods asociados",
+        "scopeRunnersReadDesc": "Listar Runners, ver detalles, estado y Pods asociados",
         "scopeReposRead": "Leer repositorios",
         "scopeReposReadDesc": "Listar repositorios, ver detalles, ramas y solicitudes de fusión",
         "expirationLabel": "Expiración",
@@ -671,7 +666,11 @@
         "expiration1y": "1 año",
         "cancel": "Cancelar",
         "create": "Crear",
-        "creating": "Creando..."
+        "creating": "Creando...",
+        "scopeLoopsRead": "Leer loops",
+        "scopeLoopsReadDesc": "Listar loops, ver detalles e historial de ejecuciones",
+        "scopeLoopsWrite": "Escribir loops",
+        "scopeLoopsWriteDesc": "Iniciar ejecuciones de loop y cancelar loops en ejecución"
       },
       "secretDialog": {
         "title": "Clave API creada",
@@ -696,6 +695,191 @@
         "description": "¿Está seguro de que desea eliminar permanentemente esta clave API? Esta acción no se puede deshacer.",
         "delete": "Eliminar",
         "cancel": "Cancelar"
+      },
+      "scopeGroupLoops": "Loops"
+    },
+    "gitProviders": {
+      "title": "Proveedores de Git",
+      "description": "Configura proveedores de Git para la integración de repositorios",
+      "addProvider": "Añadir proveedor",
+      "loading": "Cargando proveedores...",
+      "noProviders": "No hay proveedores de Git configurados. Añade uno para empezar.",
+      "default": "Predeterminado",
+      "disabled": "Deshabilitado",
+      "configure": "Configurar",
+      "enable": "Habilitar",
+      "disable": "Deshabilitar",
+      "delete": "Eliminar",
+      "confirmDelete": "¿Seguro que quieres eliminar este proveedor?",
+      "failedToLoad": "Error al cargar los proveedores de Git",
+      "failedToAdd": "Error al añadir el proveedor",
+      "failedToUpdate": "Error al actualizar el proveedor",
+      "failedToDelete": "Error al eliminar el proveedor",
+      "failedToToggle": "Error al cambiar el estado del proveedor",
+      "sshAuth": "Autenticación SSH",
+      "dialog": {
+        "addTitle": "Añadir proveedor de Git",
+        "editTitle": "Configurar proveedor",
+        "providerType": "Tipo de proveedor",
+        "sshHint": "El proveedor SSH usa claves SSH para la autenticación. Adecuado para servidores Git autoalojados.",
+        "nameLabel": "Nombre",
+        "namePlaceholderSSH": "p. ej., Mi servidor Git",
+        "namePlaceholder": "p. ej., Mi GitHub",
+        "baseUrlLabel": "URL base",
+        "baseUrlHint": "Para instancias autoalojadas, introduce la URL base",
+        "clientIdLabel": "ID de cliente (opcional)",
+        "clientIdPlaceholder": "ID de cliente de la app OAuth",
+        "clientSecretLabel": "Secreto de cliente (opcional)",
+        "clientSecretPlaceholder": "Secreto de cliente de la app OAuth",
+        "botTokenLabel": "Token de bot (opcional)",
+        "botTokenPlaceholder": "Token de acceso personal",
+        "sshKeyLabel": "Clave SSH",
+        "sshKeyPlaceholder": "Selecciona una clave SSH...",
+        "noSSHKeys": "No hay claves SSH disponibles. Crea una abajo.",
+        "setDefault": "Establecer como proveedor predeterminado",
+        "cancel": "Cancelar",
+        "saving": "Guardando...",
+        "saveChanges": "Guardar cambios",
+        "addProvider": "Añadir proveedor"
+      }
+    },
+    "billing": {
+      "checkout": {
+        "title": "Completa tu compra",
+        "selectBillingCycle": "Selecciona el ciclo de facturación",
+        "monthly": "Mensual",
+        "yearly": "Anual (ahorra 17%)",
+        "monthlyPrice": "${price}/asiento/mes",
+        "yearlyPrice": "${price}/asiento/año",
+        "orderSummary": "Resumen del pedido",
+        "plan": "Plan",
+        "billingCycle": "Ciclo de facturación",
+        "pricePerSeat": "Precio por asiento",
+        "seats": "Asientos",
+        "total": "Total",
+        "proceedToPayment": "Proceder al pago",
+        "processing": "Procesando...",
+        "cancel": "Cancelar",
+        "redirecting": "Redirigiendo al pago...",
+        "scanQRCode": "Escanea el código QR para pagar",
+        "qrCodeExpired": "Código QR caducado",
+        "refresh": "Actualizar",
+        "waitingForPayment": "Esperando confirmación del pago...",
+        "paymentMethods": "Métodos de pago",
+        "stripe": "Tarjeta de crédito (Stripe)",
+        "alipay": "Alipay",
+        "wechat": "WeChat Pay",
+        "additionalSeats": "Asientos adicionales",
+        "seatPurchaseNote": "Los asientos se añadirán a tu suscripción actual de inmediato.",
+        "stripePayment": "Pago mediante Stripe (tarjeta de crédito)",
+        "globalPayment": "Pago seguro con tarjeta de crédito",
+        "cnPayment": "Pago mediante Alipay o WeChat Pay",
+        "save": "Ahorra ${amount}",
+        "scanToPay": "Escanea para pagar",
+        "scanInstructions": "Usa Alipay o WeChat para escanear el código QR y completar el pago.",
+        "orderNo": "N.º de pedido",
+        "checkPaymentStatus": "Comprobar estado del pago"
+      },
+      "cancel": {
+        "title": "Cancelar suscripción",
+        "description": "¿Seguro que quieres cancelar tu suscripción?",
+        "endOfPeriod": "Cancelar al final del periodo",
+        "endOfPeriodDesc": "Mantén el acceso hasta {date}, luego cancela",
+        "immediate": "Cancelar de inmediato",
+        "immediateDesc": "Cancela ahora y pierde el acceso de inmediato",
+        "immediateWarning": "Advertencia: perderás de inmediato el acceso a todas las funciones premium. Esta acción no se puede deshacer.",
+        "keepSubscription": "Mantener suscripción",
+        "confirmCancel": "Cancelar suscripción",
+        "cancelling": "Cancelando...",
+        "recommended": "Recomendado"
+      },
+      "seats": {
+        "title": "Gestión de asientos",
+        "seatsUsed": "asientos usados",
+        "available": "disponibles",
+        "maxSeats": "Máximo de {max} asientos permitidos en tu plan",
+        "addSeats": "Añadir asientos",
+        "purchaseSeats": "Comprar asientos adicionales",
+        "seatsToAdd": "Número de asientos",
+        "proratedNote": "Se te cobrará un importe prorrateado por el resto de tu periodo de facturación.",
+        "cancelPurchase": "Cancelar",
+        "proceedToPurchase": "Proceder a la compra",
+        "processing": "Procesando...",
+        "upgradeToAddSeats": "Mejora a un plan de pago para añadir más asientos",
+        "retry": "Reintentar"
+      },
+      "invoices": {
+        "title": "Historial de facturas",
+        "invoiceNo": "Factura n.º",
+        "date": "Fecha",
+        "period": "Periodo",
+        "amount": "Importe",
+        "status": "Estado",
+        "noInvoices": "Aún no hay facturas",
+        "loadMore": "Cargar más",
+        "loading": "Cargando...",
+        "retry": "Reintentar"
+      },
+      "cycleSwitch": {
+        "title": "Ciclo de facturación",
+        "description": "Cambia entre facturación mensual y anual. Los cambios se aplican al final de tu periodo de facturación actual.",
+        "monthly": "Mensual",
+        "yearly": "Anual",
+        "saveNote": "Ahorra 17%",
+        "pendingChange": "Tu facturación cambiará de {from} a {to} el {date}.",
+        "cancelChange": "Cancelar cambio",
+        "cancelling": "Cancelando...",
+        "confirmTitle": "Cambiar ciclo de facturación",
+        "confirmDescription": "¿Seguro que quieres cambiar de facturación {from} a {to}? Este cambio se aplicará al final de tu periodo de facturación actual.",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "switching": "Cambiando...",
+        "success": "Ciclo de facturación cambiado correctamente"
+      }
+    },
+    "credentialForm": {
+      "anthropic": {
+        "baseUrl": "URL base de Anthropic",
+        "apiKey": "Clave de API de Anthropic",
+        "authToken": "Token de autenticación de Anthropic",
+        "authMethod": "Autenticación",
+        "authMethodHint": "Proporciona uno u otro"
+      },
+      "openai": {
+        "apiKey": "Clave de API de OpenAI"
+      },
+      "google": {
+        "apiKey": "Clave de API de Google"
+      },
+      "customEnv": {
+        "title": "Variables de entorno personalizadas",
+        "addButton": "Añadir variable",
+        "keyPlaceholder": "NOMBRE_ENV",
+        "valuePlaceholder": "Valor",
+        "remove": "Eliminar",
+        "keyInvalid": "Nombre de variable de entorno no válido (solo letras mayúsculas, dígitos y guiones bajos)",
+        "keyConflict": "Entra en conflicto con un campo declarado",
+        "keyDuplicate": "Nombre de variable de entorno duplicado"
+      },
+      "codex": {
+        "customEnvHint": "Añade OPENAI_BASE_URL, OPENAI_MODEL, etc. para proxy o anulaciones de modelo"
+      },
+      "loopal": {
+        "customEnvHint": "Claves de proveedor adicionales, p. ej. XAI_API_KEY, DEEPSEEK_API_KEY"
+      },
+      "gemini": {
+        "customEnvHint": "Claves adicionales como GEMINI_API_KEY"
+      },
+      "aider": {
+        "customEnvHint": "Otras claves de proveedor o ajustes de proxy"
+      },
+      "opencode": {
+        "customEnvHint": "Cualquier variable de entorno requerida por opencode"
+      },
+      "cursor": {
+        "apiKey": "Clave de API de Cursor",
+        "apiKeyHint": "Opcional. Déjalo en blanco para usar `cursor-agent login` (OAuth); configúralo para autenticación headless o basada en clave.",
+        "customEnvHint": "Añade cualquier variable de entorno adicional que necesite cursor-agent"
       }
     }
   }

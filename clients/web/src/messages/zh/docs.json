@@ -13,7 +13,7 @@
       "concepts": "概念",
       "features": "功能特性",
       "agentpod": "AgentPod",
-      "workspace": "工作空间",
+      "workspace": "Workspace",
       "channels": "频道",
       "meshTopology": "Mesh 拓扑",
       "tickets": "任务管理",
@@ -28,7 +28,7 @@
       "guides": "使用指南",
       "gitIntegration": "Git 集成",
       "teamManagement": "团队管理",
-      "multiAgentWorkflows": "多智能体工作流",
+      "multiAgentWorkflows": "多 Agent 工作流",
       "api": "API",
       "apiOverview": "概述",
       "apiAuthentication": "认证",
@@ -44,7 +44,7 @@
       "tutorialMcpSkills": "MCP 与技能",
       "tutorialFirstPod": "创建你的第一个 Pod",
       "tutorialTicketWorkflow": "任务管理",
-      "tutorialMultiAgent": "多智能体协作",
+      "tutorialMultiAgent": "多 Agent 协作",
       "tutorialLoops": "自动化循环",
       "help": "帮助",
       "faq": "常见问题",
@@ -52,7 +52,7 @@
     },
     "intro": {
       "title": "简介",
-      "description": "AgentsMesh 是一个 AI 智能体编排指挥中心，帮助团队大规模协调 Claude Code、Codex CLI、Gemini CLI 和 Aider 等 AI 编程智能体。管理远程 AI 工作站（AgentPod）、协调多智能体协作（AgentsMesh）、通过集成任务管理跟踪进度——一切尽在一个平台。",
+      "description": "AgentsMesh 是一个 AI Agent 编排指挥中心，帮助团队大规模协调 Claude Code、Codex CLI、Gemini CLI 和 Aider 等 AI 编程 Agent。管理远程 AI 工作站（AgentPod）、协调多 Agent 协作（AgentsMesh）、通过集成任务管理跟踪进度——一切尽在一个平台。",
       "supportedAgents": "支持的 AI 智能体：",
       "customAgents": "通过 MCP 协议自定义智能体"
     },
@@ -70,7 +70,7 @@
         "security": "安全保障"
       },
       "controlPlane": "控制面",
-      "controlPlaneDesc": "Pod 生命周期、智能体指令、状态同步",
+      "controlPlaneDesc": "Pod 生命周期、Agent 指令、状态同步",
       "dataPlane": "数据面",
       "dataPlaneDesc": "终端 I/O、实时数据流",
       "cluster": "集群",
@@ -80,10 +80,10 @@
       "runnerMac": "macOS",
       "runnerLinux": "Linux",
       "runnerCloud": "云服务器",
-      "agentLayer": "智能体层",
+      "agentLayer": "Agent 层",
       "agentSubtitle": "AI 编程智能体在隔离的 Pod 中运行",
       "securityTitle": "安全架构——双通道设计",
-      "securityDesc": "控制信号（Pod 创建、智能体指令、状态更新）通过 gRPC + 双向 TLS (mTLS) 传输——每个 Runner 持有平台 PKI 颁发的唯一 X.509 证书。终端数据流（按键、输出）通过 Relay 集群转发，将延迟敏感的 I/O 放在独立的优化通道上。这种双通道设计确保你可以在世界任何地方、通过任何设备，安全地操控任意机器上的 AI 智能体。"
+      "securityDesc": "控制信号（Pod 创建、Agent 指令、状态更新）通过 gRPC + 双向 TLS (mTLS) 传输——每个 Runner 持有平台 PKI 颁发的唯一 X.509 证书。终端数据流（按键、输出）通过 Relay 集群转发，将延迟敏感的 I/O 放在独立的优化通道上。这种双通道设计确保你可以在世界任何地方、通过任何设备，安全地操控任意机器上的 AI Agent。"
     },
     "whatYouCanDo": {
       "title": "你可以做什么",
@@ -94,7 +94,7 @@
       },
       "remoteWorkstation": {
         "title": "远程 AI 工作站",
-        "description": "启动 AgentPod——基于云的开发环境，提供实时终端访问、Git 工作树隔离和完整的 AI 智能体能力。"
+        "description": "启动 AgentPod——基于云的开发环境，提供实时终端访问、Git Worktree 隔离和完整的 AI Agent 能力。"
       },
       "taskDriven": {
         "title": "任务驱动开发",
@@ -110,7 +110,7 @@
       "quickStart": "快速上手",
       "quickStartDesc": "5 分钟内快速启动",
       "agentpodDesc": "远程 AI 开发工作站",
-      "agentsmeshDesc": "多智能体协作网络",
+      "agentsmeshDesc": "多 Agent 协作网络",
       "mcpTools": "MCP 工具",
       "mcpToolsDesc": "26 个 AI 智能体工具"
     },
@@ -125,7 +125,7 @@
         "runnerTitle": "运行节点 (Runner)",
         "runnerDesc": "自托管的守护进程，通过 gRPC + mTLS 连接到 AgentsMesh 后端。Runner 提供 Pod 执行所需的计算环境。你可以在不同机器上运行多个 Runner。",
         "podTitle": "Pod (AgentPod)",
-        "podDesc": "隔离的执行环境，AI 编程智能体在其中运行。每个 Pod 拥有独立的 PTY 终端、沙箱和可选的 Git 工作树。Pod 在 Runner 上创建，通过 Web 界面管理。",
+        "podDesc": "隔离的执行环境，AI 编程 Agent 在其中运行。每个 Pod 拥有独立的 PTY 终端、Sandbox 和可选的 Git Worktree。Pod 在 Runner 上创建，通过 Web 界面管理。",
         "channelTitle": "频道 (Channel)",
         "channelDesc": "通信中心，多个 Pod 可以在此交换消息、共享文档和协调工作。频道可以关联到项目和任务。",
         "ticketTitle": "任务 (Ticket)",
@@ -140,8 +140,8 @@
         "description": "Runner 与后端之间的通信通过双向 TLS（mTLS）保护。当 Runner 注册时，它会从平台 PKI 获取唯一的 X.509 证书。后续所有 gRPC 通信都经过加密和双向认证。证书会在到期前自动续期。"
       },
       "sandbox": {
-        "title": "沙箱与 Git 工作树隔离",
-        "description": "每个 Pod 运行在隔离的沙箱环境中。当关联仓库时，Runner 会创建专用的 Git 工作树，使多个 Pod 可以同时在同一仓库上工作而互不冲突。Pod 终止时工作树会自动清理。"
+        "title": "Sandbox 与 Git Worktree 隔离",
+        "description": "每个 Pod 运行在隔离的 Sandbox 环境中。当关联仓库时，Runner 会创建专用的 Git Worktree，使多个 Pod 可以同时在同一仓库上工作而互不冲突。Pod 终止时 Worktree 会自动清理。"
       },
       "mcp": {
         "title": "MCP（模型上下文协议）",
@@ -152,7 +152,7 @@
         "description": "将你的 Git 仓库连接到 AgentsMesh，配置提供商访问权限，实现无缝的 AI 驱动开发工作流。",
         "overview": {
           "title": "概述",
-          "description": "仓库将你的 Git 项目关联到平台。当使用关联仓库创建 Pod 时，Runner 会自动克隆项目并设置隔离的 Git 工作树。AgentsMesh 集成了主流 Git 托管平台，为 AI 智能体提供无缝的仓库访问。"
+          "description": "仓库将你的 Git 项目关联到平台。当使用关联仓库创建 Pod 时，Runner 会自动克隆项目并设置隔离的 Git Worktree。AgentsMesh 集成了主流 Git 托管平台，为 AI Agent 提供无缝的仓库访问。"
         },
         "providers": {
           "title": "支持的 Git 提供商",
@@ -210,13 +210,13 @@
           "title": "在 Pod 中使用仓库",
           "description": "仓库连接后，你可以将其关联到 Pod：",
           "step1": "创建新 Pod 时，从下拉列表中选择一个仓库",
-          "step2": "Runner 克隆仓库并创建隔离的 Git 工作树",
-          "step3": "AI 智能体在仓库的工作目录中启动",
-          "step4": "所有更改都隔离在 Pod 的工作树中"
+          "step2": "Runner 克隆仓库并创建隔离的 Git Worktree",
+          "step3": "AI Agent 在仓库的工作目录中启动",
+          "step4": "所有更改都隔离在 Pod 的 Worktree 中"
         },
         "worktree": {
-          "title": "Git 工作树隔离",
-          "description": "Git 工作树允许多个 Pod 同时在同一仓库上工作。每个 Pod 在自己的分支上操作，互不影响。这对于多个 AI 智能体可能同时修改同一代码库的并行开发至关重要。"
+          "title": "Git Worktree 隔离",
+          "description": "Git Worktree 允许多个 Pod 同时在同一仓库上工作。每个 Pod 在自己的分支上操作，互不影响。这对于多个 AI Agent 可能同时修改同一代码库的并行开发至关重要。"
         },
         "management": {
           "title": "管理仓库",
@@ -228,10 +228,10 @@
       },
       "agentfile": {
         "title": "AgentFile 语法参考",
-        "description": "AgentFile 完整参考 — 用于定义 AI 智能体执行环境配置的领域特定语言 (DSL)。",
+        "description": "AgentFile 完整参考—用于定义 AI Agent 执行环境配置的领域特定语言 (DSL)。",
         "whatIs": {
           "title": "什么是 AgentFile？",
-          "description": "AgentFile 是一种声明式 DSL，用于配置 AI 智能体的执行环境，类似于 Dockerfile 定义容器构建。AgentsMesh 中的每个智能体都有一个 AgentFile，指定启动智能体所需的 CLI 命令、环境变量、配置选项和构建逻辑。"
+          "description": "AgentFile 是一种声明式 DSL，用于配置 AI Agent 的执行环境，类似于 Dockerfile 定义容器构建。AgentsMesh 中的每个 Agent 都有一个 AgentFile，指定启动 Agent 所需的 CLI 命令、环境变量、配置选项和构建逻辑。"
         },
         "structure": {
           "title": "结构",
@@ -243,18 +243,18 @@
         },
         "declarations": {
           "title": "声明关键字",
-          "description": "声明用于定义智能体的配置模式和运行时环境，使用大写字母编写。",
-          "agentDesc": "用于启动智能体的 CLI 命令。接受带引号的字符串，包含命令和可选的默认参数。",
-          "executableDesc": "可执行文件的名称。Runner 使用它来验证智能体是否已安装。",
+          "description": "声明用于定义 Agent 的配置模式和运行时环境，使用大写字母编写。",
+          "agentDesc": "用于启动 Agent 的 CLI 命令。接受带引号的字符串，包含命令和可选的默认参数。",
+          "executableDesc": "可执行文件的名称。Runner 使用它来验证 Agent 是否已安装。",
           "configDesc": "定义用户可配置的选项。类型：BOOL、STRING、NUMBER、SECRET、SELECT(\"opt1\",\"opt2\")。可使用 = 设置默认值。",
           "envDesc": "声明环境变量。SECRET 用于敏感值，TEXT 用于纯文本，OPTIONAL 标记为非必需。使用 = \"value\" 设置静态值。",
-          "modeDesc": "设置执行模式。'pty' 在 PTY 终端中运行智能体。'acp' 使用智能体通信协议，可带可选参数。",
+          "modeDesc": "设置执行模式。'pty' 在 PTY 终端中运行 Agent。'acp' 使用 Agent 通信协议，可带可选参数。",
           "credentialDesc": "指定使用哪个凭据配置文件。使用带引号的配置文件名或 'runner_host' 来使用 Runner 机器的凭据。",
-          "promptDesc": "设置发送给智能体的初始提示。PROMPT_POSITION 控制提示注入位置：prepend（用户提示之前）、append（之后）或 none（禁用）。",
+          "promptDesc": "设置发送给 Agent 的初始提示。PROMPT_POSITION 控制提示注入位置：prepend（用户提示之前）、append（之后）或 none（禁用）。",
           "repoDesc": "REPO 通过 slug 或 URL 设置仓库。BRANCH 设置分支名称。GIT_CREDENTIAL 选择 Git 认证方式：http、ssh 或 token。",
           "mcpDesc": "启用或禁用 MCP 工具集成。启用时可选 FORMAT 指定协议格式（如 streamable-http）。",
-          "skillsDesc": "将可复用的技能定义附加到智能体。技能通过 slug 引用，以逗号分隔。",
-          "setupDesc": "在智能体启动前运行的 Shell 脚本。使用 heredoc 语法（<<LABEL...LABEL）。可选 timeout= 参数设置最大执行时间（秒）。",
+          "skillsDesc": "将可复用的技能定义附加到 Agent。技能通过 slug 引用，以逗号分隔。",
+          "setupDesc": "在 Agent 启动前运行的 Shell 脚本。使用 heredoc 语法（<<LABEL...LABEL）。可选 timeout= 参数设置最大执行时间（秒）。",
           "removeDesc": "移除先前定义的项目。可以移除 ENV 变量、SKILLS、CLI 参数（arg）或文件（file）。"
         },
         "buildLogic": {
@@ -273,8 +273,8 @@
           "variableHeader": "变量",
           "descHeader": "描述",
           "configDesc": "用户通过 CONFIG 声明提供的配置值",
-          "sandboxRoot": "沙箱环境的根目录",
-          "sandboxWorkDir": "沙箱内的工作目录（克隆仓库时可能与根目录不同）",
+          "sandboxRoot": "Sandbox 环境的根目录",
+          "sandboxWorkDir": "Sandbox 内的工作目录（克隆仓库时可能与根目录不同）",
           "mcpEnabled": "布尔值，表示 MCP 是否启用",
           "mcpServers": "MCP 服务器配置路径列表",
           "mcpFormat": "MCP 协议格式字符串",
@@ -291,10 +291,10 @@
       },
       "agentfileLayer": {
         "title": "AgentFile Layer",
-        "description": "AgentFile Layer 允许你在每个 Pod 的基础上覆盖智能体配置，无需修改基础 AgentFile。",
+        "description": "AgentFile Layer 允许你在每个 Pod 的基础上覆盖 Agent 配置，无需修改基础 AgentFile。",
         "whatIs": {
           "title": "什么是 AgentFile Layer？",
-          "description": "AgentFile Layer 是用户提供的覆盖层，在创建 Pod 时合并到基础 AgentFile 之上。AgentsMesh 使用三层合并模型：基础 AgentFile（智能体默认值）与用户偏好设置（保存的设置）合并，然后应用 Layer（每个 Pod 的运行时覆盖）。Layer 具有最高优先级。"
+          "description": "AgentFile Layer 是用户提供的覆盖层，在创建 Pod 时合并到基础 AgentFile 之上。AgentsMesh 使用三层合并模型：基础 AgentFile（Agent 默认值）与用户偏好设置（保存的设置）合并，然后应用 Layer（每个 Pod 的运行时覆盖）。Layer 具有最高优先级。"
         },
         "supported": {
           "title": "支持的声明",
@@ -326,7 +326,7 @@
         "title": "创建账户",
         "description": "前往注册页面，填写邮箱、用户名和密码。提交后你将收到一封验证邮件——如果几分钟内没有收到，请检查垃圾邮件文件夹。",
         "whatYouGet": "验证邮箱后，引导向导将帮助你：",
-        "item1": "创建个人工作空间（一键）或团队工作空间",
+        "item1": "创建个人 Workspace（一键）或团队 Workspace",
         "item2": "或通过邀请链接加入已有组织"
       },
       "step2": {
@@ -337,7 +337,7 @@
         "seeSetup": "查看 {link} 了解 Docker、Linux 包和 Kubernetes 部署选项。"
       },
       "step3": {
-        "title": "安装 AI 智能体 CLI",
+        "title": "安装 AI Agent CLI",
         "description": "在 Runner 机器上安装你需要的 CLI 工具并设置 API 密钥环境变量。Runner 会通过 PATH 自动检测已安装的 CLI，并向平台报告可用智能体。",
         "claudeCode": "Claude Code",
         "claudeCodeInstall": "npm install -g @anthropic-ai/claude-code",
@@ -366,44 +366,44 @@
       },
       "step5": {
         "title": "启动 Pod",
-        "description": "Pod（AgentPod）是一个虚拟工作站，AI 智能体在其中运行，拥有自己的终端和隔离的代码工作空间。现在创建你的第一个 Pod！",
-        "item1": "在侧边栏中导航到工作空间",
+        "description": "Pod（AgentPod）是一个虚拟工作站，AI Agent 在其中运行，拥有自己的终端和隔离的代码 Workspace。现在创建你的第一个 Pod！",
+        "item1": "在侧边栏中导航到 Workspace",
         "item2": "点击 新建 Pod",
-        "item3": "选择 AI 智能体（Claude Code、Codex CLI 等）",
+        "item3": "选择 AI Agent（Claude Code、Codex CLI 等）",
         "item4": "选择一个 Runner",
-        "item5": "可选地选择仓库和分支——智能体将在隔离副本（Git worktree）中工作，你的主分支保持安全",
-        "item6": "可选地关联任务以提供上下文",
+        "item5": "可选地选择仓库和分支——Agent 将在隔离副本（Git worktree）中工作，你的主分支保持安全",
+        "item6": "可选地关联 Ticket 以提供上下文",
         "item7": "添加描述任务的初始提示（例如「为登录表单添加输入验证」或「修复 auth.test.ts 中失败的测试」）",
         "item8": "点击 创建",
         "seeSetup": "查看 {link} 了解包含故障排除的详细操作指南。"
       },
       "step6": {
-        "title": "与智能体交互",
-        "description": "创建后将打开终端视图，显示实时会话。AI 智能体开始执行初始提示，如果未提供则等待输入。",
+        "title": "与 Agent 交互",
+        "description": "创建后将打开终端视图，显示实时会话。AI Agent 开始执行初始提示，如果未提供则等待输入。",
         "item1": "直接在终端中输入后续提示或命令",
-        "item2": "观察智能体状态指示器——空闲（等待输入）、执行中（正在处理任务）或等待中（需要你的批准）",
-        "item3": "如果关联了仓库，智能体在仓库工作树中工作",
+        "item2": "观察 Agent 状态指示器——空闲（等待输入）、执行中（正在处理任务）或等待中（需要你的批准）",
+        "item3": "如果关联了仓库，Agent 在仓库 Worktree 中工作",
         "item4": "任务完成后从工具栏终止 Pod"
       },
       "tryIt": {
         "title": "试一试：60 秒创建你的第一个 Pod",
         "description": "想立刻看到效果？这是最快的方式——无需仓库：",
-        "item1": "点击 工作空间 → 新建 Pod",
-        "item2": "选择 Claude Code（或任何已安装的智能体）和你的 Runner",
-        "item3": "跳过仓库和任务字段",
+        "item1": "点击 Workspace → 新建 Pod",
+        "item2": "选择 Claude Code（或任何已安装的 Agent）和你的 Runner",
+        "item3": "跳过仓库和 Ticket 字段",
         "item4": "将初始提示设置为：\"打个招呼，然后列出当前目录中的文件并解释你看到的内容。\"",
-        "item5": "点击 创建，观看智能体在终端中响应",
-        "tip": "这会创建一个没有仓库的 Pod——智能体在临时目录中运行。非常适合在使用真实代码之前测试你的设置。"
+        "item5": "点击 创建，观看 Agent 在终端中响应",
+        "tip": "这会创建一个没有仓库的 Pod——Agent 在临时目录中运行。非常适合在使用真实代码之前测试你的设置。"
       },
       "nextSteps": {
         "title": "下一步",
         "agentpod": "了解 AgentPod →",
         "agentpodDesc": "远程 AI 开发工作站",
         "mesh": "探索 Mesh →",
-        "meshDesc": "多智能体协作功能",
+        "meshDesc": "多 Agent 协作功能",
         "tickets": "任务与看板 →",
         "ticketsDesc": "关联 Pod 的任务管理",
-        "multiAgent": "多智能体工作流 →",
+        "multiAgent": "多 Agent 工作流 →",
         "multiAgentDesc": "协调多个 AI 智能体"
       }
     },
@@ -413,23 +413,23 @@
         "description": "AgentPod 提供集成终端访问的远程 AI 开发工作站。每个 Pod 在 Runner 上运行，提供完整的 AI 辅助开发环境。",
         "overview": {
           "title": "概述",
-          "description": "AgentPod 是一个隔离的开发环境，AI 编程智能体（如 Claude Code）在其中以完整终端访问权限运行。每个 Pod 包含：",
+          "description": "AgentPod 是一个隔离的开发环境，AI 编程 Agent（如 Claude Code）在其中以完整终端访问权限运行。每个 Pod 包含：",
           "terminal": "Web 终端 — 通过 WebSocket 实时终端访问",
-          "worktree": "Git 工作树 — 每个 Pod 独立的工作空间",
-          "agent": "AI 智能体 — 你选择的编程助手",
+          "worktree": "Git Worktree—每个 Pod 独立的 Workspace",
+          "agent": "AI Agent—你选择的编程助手",
           "mcpTools": "MCP 工具 — 26 个用于发现、终端控制、协作等的工具"
         },
         "keyFeatures": {
           "title": "核心特性",
           "webTerminal": "基于 Web 的终端",
           "webTerminalDesc": "浏览器中的完整终端仿真，支持 WebSocket 实时交互。无需本地安装。",
-          "statusMonitoring": "智能体状态监控",
-          "statusMonitoringDesc": "实时查看 AI 智能体的状态：空闲、工作中、等待输入或已完成。",
-          "worktreeIsolation": "Git 工作树隔离",
-          "worktreeIsolationDesc": "每个 Pod 拥有独立的 Git 工作树，确保并发 Pod 之间完全隔离。",
+          "statusMonitoring": "Agent 状态监控",
+          "statusMonitoringDesc": "实时查看 AI Agent 的状态：空闲、工作中、等待输入或已完成。",
+          "worktreeIsolation": "Git Worktree 隔离",
+          "worktreeIsolationDesc": "每个 Pod 拥有独立的 Git Worktree，确保并发 Pod 之间完全隔离。",
           "multiplePods": "多 Pod 并行",
-          "multiplePodsDesc": "同时运行多个 AI 智能体 Pod，每个处理不同的任务或分支。",
-          "ticketIntegration": "任务集成",
+          "multiplePodsDesc": "同时运行多个 AI Agent Pod，每个处理不同的任务或分支。",
+          "ticketIntegration": "Ticket 集成",
           "ticketIntegrationDesc": "将 Pod 关联到任务，实现自动上下文注入和进度跟踪。",
           "autoCleanup": "自动清理",
           "autoCleanupDesc": "Pod 终止时自动清理，释放资源。"
@@ -437,11 +437,11 @@
         "lifecycle": {
           "title": "Pod 生命周期",
           "initializing": "初始化中",
-          "initializingDesc": "Pod 正在创建，工作树正在设置，智能体正在启动。",
+          "initializingDesc": "Pod 正在创建，Worktree 正在设置，Agent 正在启动。",
           "running": "运行中",
           "runningDesc": "Pod 已激活，可以交互。",
           "paused": "已暂停",
-          "pausedDesc": "Pod 临时暂停（智能体未激活）。",
+          "pausedDesc": "Pod 临时暂停（Agent 未激活）。",
           "disconnected": "已断连",
           "disconnectedDesc": "Runner 连接中断，Pod 可能恢复。",
           "completed": "已完成",
@@ -454,23 +454,23 @@
           "errorDesc": "Pod 执行过程中遇到错误。"
         },
         "agentStatus": {
-          "title": "智能体状态",
-          "description": "在运行中的 Pod 内，AI 智能体有自己的状态：",
+          "title": "Agent 状态",
+          "description": "在运行中的 Pod 内，AI Agent 有自己的状态：",
           "statusHeader": "状态",
           "descriptionHeader": "说明",
           "idle": "空闲",
-          "idleDesc": "智能体正在等待任务或提示",
+          "idleDesc": "Agent 正在等待任务或提示",
           "waiting": "等待中",
-          "waitingDesc": "智能体正在等待用户输入或确认",
+          "waitingDesc": "Agent 正在等待用户输入或确认",
           "executing": "执行中",
-          "executingDesc": "智能体正在执行任务"
+          "executingDesc": "Agent 正在执行任务"
         },
         "configuration": {
           "title": "Pod 配置",
           "description": "创建 Pod 时可以配置：",
           "optionHeader": "选项",
           "descriptionHeader": "说明",
-          "agent": "智能体",
+          "agent": "Agent",
           "agentDesc": "Claude Code、Codex CLI、Gemini CLI、Aider 或自定义",
           "model": "模型",
           "modelDesc": "opus、sonnet 或 haiku（适用于 Claude）",
@@ -478,22 +478,22 @@
           "permissionModeDesc": "bypassPermissions（自动批准全部，默认）、default（逐个工具审批）、acceptEdits（自动批准文件编辑）、dontAsk（白名单外直接拒绝）或 plan（只读规划）",
           "repository": "仓库",
           "repositoryDesc": "关联 Git 仓库以自动克隆",
-          "ticket": "任务",
-          "ticketDesc": "关联任务以提供上下文和跟踪",
+          "ticket": "Ticket",
+          "ticketDesc": "关联 Ticket 以提供上下文和跟踪",
           "prompt": "初始提示",
-          "promptDesc": "给 AI 智能体的初始指令"
+          "promptDesc": "给 AI Agent 的初始指令"
         }
       },
       "workspace": {
-        "title": "工作空间",
-        "description": "工作空间是你管理和交互所有活跃 AgentPod 的中心枢纽。",
+        "title": "Workspace",
+        "description": "Workspace 是你管理和交互所有活跃 AgentPod 的中心枢纽。",
         "overview": {
           "title": "概述",
-          "description": "工作空间提供多面板视图，你可以同时监控和交互多个 Pod。它专为并行运行多个 AI 智能体的开发者设计。"
+          "description": "Workspace 提供多面板视图，你可以同时监控和交互多个 Pod。它专为并行运行多个 AI Agent 的开发者设计。"
         },
         "multiTerminal": {
           "title": "多终端视图",
-          "description": "并排查看多个终端会话。每个终端连接到不同的 Pod，让你可以跨项目监控 AI 智能体活动。",
+          "description": "并排查看多个终端会话。每个终端连接到不同的 Pod，让你可以跨项目监控 AI Agent 活动。",
           "splitView": "分屏视图",
           "splitViewDesc": "以水平或垂直分屏排列终端，对比不同 Pod 的输出。",
           "fullscreen": "全屏模式",
@@ -503,18 +503,18 @@
         },
         "podList": {
           "title": "Pod 管理",
-          "description": "Pod 列表侧边栏显示所有 Pod 及其实时状态指示器。按状态、智能体或仓库筛选，快速找到所需内容。",
+          "description": "Pod 列表侧边栏显示所有 Pod 及其实时状态指示器。按状态、Agent 或仓库筛选，快速找到所需内容。",
           "statusFilters": "状态筛选",
           "statusFiltersDesc": "按运行中、已暂停、已完成或错误状态筛选 Pod。",
           "quickActions": "快捷操作",
           "quickActionsDesc": "直接从列表终止、暂停或重启 Pod。",
           "details": "Pod 详情",
-          "detailsDesc": "点击任意 Pod 查看其配置、关联任务和资源使用情况。"
+          "detailsDesc": "点击任意 Pod 查看其配置、关联 Ticket 和资源使用情况。"
         },
         "quickCreate": {
           "title": "快速创建",
-          "description": "使用快速创建对话框从工作空间快速启动新 Pod。选择智能体，选择 Runner，可选地关联仓库——只需几步点击。",
-          "steps": "步骤：选择智能体 → 选择 Runner →（可选）关联仓库 → 创建"
+          "description": "使用快速创建对话框从 Workspace 快速启动新 Pod。选择 Agent，选择 Runner，可选地关联仓库——只需几步点击。",
+          "steps": "步骤：选择 Agent → 选择 Runner →（可选）关联仓库 → 创建"
         },
         "realTime": {
           "title": "实时交互",
@@ -523,7 +523,7 @@
       },
       "channels": {
         "title": "频道",
-        "description": "频道为 AI 智能体提供通信中心。多个 Pod 可以加入频道协作完成任务、共享信息和协调工作。",
+        "description": "Channel 为 AI Agent 提供通信中心。多个 Pod 可以加入 Channel 协作完成任务、共享信息和协调工作。",
         "overview": {
           "title": "概述",
           "description": "频道是持久的通信空间，AI 智能体可以在此：",
@@ -538,13 +538,13 @@
           "fieldHeader": "字段",
           "descriptionHeader": "说明",
           "name": "名称",
-          "nameDesc": "频道名称（必填）",
+          "nameDesc": "Channel 名称（必填）",
           "channelDescription": "描述",
-          "channelDescriptionDesc": "频道用途的可选描述",
+          "channelDescriptionDesc": "Channel 用途的可选描述",
           "projectId": "项目 ID",
           "projectIdDesc": "关联到特定项目/仓库",
-          "ticketSlug": "任务 Slug",
-          "ticketSlugDesc": "关联到特定任务"
+          "ticketSlug": "Ticket Slug",
+          "ticketSlugDesc": "关联到特定 Ticket"
         },
         "messageTypes": {
           "title": "消息类型",
@@ -560,7 +560,7 @@
         },
         "sharedDocs": {
           "title": "共享文档",
-          "description": "每个频道都有一个共享文档，智能体可以协同编辑：",
+          "description": "每个 Channel 都有一个共享文档，Agent 可以协同编辑：",
           "getDoc": "get_channel_document",
           "getDocDesc": "获取当前共享文档内容。",
           "updateDoc": "update_channel_document",
@@ -568,19 +568,19 @@
           "hint": "使用共享文档进行协作笔记、规格说明或任何需要跨消息持久化的内容。"
         },
         "mcpTools": {
-          "title": "频道 MCP 工具",
+          "title": "Channel MCP 工具",
           "toolHeader": "工具",
           "descriptionHeader": "说明",
           "searchChannels": "search_channels",
-          "searchChannelsDesc": "按名称、项目或任务搜索频道",
+          "searchChannelsDesc": "按名称、项目或 Ticket 搜索 Channel",
           "createChannel": "create_channel",
-          "createChannelDesc": "创建新频道",
+          "createChannelDesc": "创建新 Channel",
           "getChannel": "get_channel",
-          "getChannelDesc": "获取频道详情",
+          "getChannelDesc": "获取 Channel 详情",
           "sendMessage": "send_channel_message",
-          "sendMessageDesc": "向频道发送消息",
+          "sendMessageDesc": "向 Channel 发送消息",
           "getMessages": "get_channel_messages",
-          "getMessagesDesc": "获取频道消息",
+          "getMessagesDesc": "获取 Channel 消息",
           "getDocument": "get_channel_document",
           "getDocumentDesc": "获取共享文档",
           "updateDocument": "update_channel_document",
@@ -589,7 +589,7 @@
         "useCases": {
           "title": "使用场景",
           "coordination": "任务协调",
-          "coordinationDesc": "为任务创建频道，让多个智能体讨论实现方案、共享发现并协调工作。",
+          "coordinationDesc": "为 Ticket 创建 Channel，让多个 Agent 讨论实现方案、共享发现并协调工作。",
           "designDocs": "设计文档",
           "designDocsDesc": "使用共享文档功能协作编写技术规格或架构决策。",
           "notifications": "通知",
@@ -599,7 +599,7 @@
           "title": "在 Web 界面中使用频道",
           "description": "你也可以直接从 Web 界面管理频道：",
           "step1": "从侧边栏导航到 Mesh 视图",
-          "step2": "打开右侧的频道面板",
+          "step2": "打开右侧的 Channel 面板",
           "step3": "创建新频道或选择已有频道",
           "step4": "查看消息历史和共享文档",
           "step5": "实时查看哪些 Pod 正在参与"
@@ -607,10 +607,10 @@
       },
       "mesh": {
         "title": "Mesh 拓扑",
-        "description": "实时可视化和管理 AI 智能体 Pod 之间的协作网络。",
+        "description": "实时可视化和管理 AI Agent Pod 之间的协作网络。",
         "overview": {
           "title": "概述",
-          "description": "Mesh 视图提供交互式拓扑可视化，展示 Pod 之间的连接和协作方式。它是多智能体工作流的中央控制面板。"
+          "description": "Mesh 视图提供交互式拓扑可视化，展示 Pod 之间的连接和协作方式。它是多 Agent 工作流的中央控制面板。"
         },
         "visualization": {
           "title": "拓扑可视化",
@@ -646,16 +646,16 @@
           "flowStep4": "如果接受，Pod A 可以使用授权的范围"
         },
         "channelIntegration": {
-          "title": "频道集成",
-          "description": "Mesh 视图右侧包含频道面板，你可以在此查看和参与频道对话。选择一个频道，可以在拓扑视图旁查看消息和共享文档。"
+          "title": "Channel 集成",
+          "description": "Mesh 视图右侧包含 Channel 面板，你可以在此查看和参与 Channel 对话。选择一个 Channel，可以在拓扑视图旁查看消息和共享文档。"
         },
         "monitoring": {
           "title": "实时监控",
           "description": "Mesh 视图通过 WebSocket 连接实时更新。你可以观察：",
           "item1": "Pod 创建和终止事件",
           "item2": "绑定请求和状态变化",
-          "item3": "频道消息活动",
-          "item4": "智能体状态转换（空闲 → 工作中 → 等待中 → 已完成）"
+          "item3": "Channel 消息活动",
+          "item4": "Agent 状态转换（空闲 → 工作中 → 等待中 → 已完成）"
         }
       },
       "tickets": {
@@ -665,13 +665,13 @@
           "title": "概述",
           "description": "AgentsMesh 任务提供为 AI 驱动开发设计的轻量级问题跟踪系统。核心功能包括：",
           "item1": "看板视图",
-          "item2": "任务 ↔ Pod 关联",
+          "item2": "Ticket ↔ Pod 关联",
           "item3": "Git 提交和合并请求关联",
           "item4": "优先级和工时估算",
           "item5": "标签和负责人"
         },
         "status": {
-          "title": "任务状态",
+          "title": "Ticket 状态",
           "description": "任务在看板中按以下状态流转：",
           "backlog": "待办池",
           "todo": "待开始",
@@ -697,10 +697,10 @@
         "podIntegration": {
           "title": "Pod 集成",
           "description": "将任务关联到 AgentPod：",
-          "context": "提供上下文 — AI 智能体将任务详情作为初始上下文",
+          "context": "提供上下文—AI Agent 将 Ticket 详情作为初始上下文",
           "progress": "跟踪进度 — 查看哪些 Pod 正在处理哪些任务",
-          "autoUpdate": "自动更新 — Pod 完成后可自动更新任务状态",
-          "history": "查看历史 — 查看所有处理过该任务的 Pod"
+          "autoUpdate": "自动更新—Pod 完成后可自动更新 Ticket 状态",
+          "history": "查看历史—查看所有处理过该 Ticket 的 Pod"
         },
         "gitIntegration": {
           "title": "Git 集成",
@@ -723,7 +723,7 @@
           "description": "Loops 允许你一次定义任务，反复执行。每个 Loop 封装了一个 Pod 配置、Prompt 模板、触发器设置和执行策略。核心功能包括：",
           "item1": "Cron 定时调度或 API 触发执行",
           "item2": "Autopilot（受监督）或 Direct（自主）执行模式",
-          "item3": "持久化沙箱跨运行复用，支持增量工作",
+          "item3": "持久化 Sandbox 跨运行复用，支持增量工作",
           "item4": "Prompt 模板中的变量替换",
           "item5": "运行完成后的 Webhook 回调通知",
           "item6": "并发策略（跳过、排队或替换）"
@@ -744,12 +744,12 @@
           "apiDesc": "通过 HTTP POST 以编程方式触发运行。传递运行时变量来定制每次执行。适用于 CI/CD 流水线、Webhook 和事件驱动自动化。"
         },
         "sandboxStrategies": {
-          "title": "沙箱策略",
+          "title": "Sandbox 策略",
           "description": "控制执行环境在多次运行间如何管理：",
           "persistent": "持久化",
-          "persistentDesc": "跨运行复用同一沙箱。文件变更、Git 状态和已安装的包都会保留。使用 Pod Resume 恢复之前的环境。",
+          "persistentDesc": "跨运行复用同一 Sandbox。文件变更、Git 状态和已安装的包都会保留。使用 Pod Resume 恢复之前的环境。",
           "fresh": "全新",
-          "freshDesc": "每次运行创建新沙箱。保证每次都有干净的初始状态。适合需要可复现环境的任务。"
+          "freshDesc": "每次运行创建新 Sandbox。保证每次都有干净的初始状态。适合需要可复现环境的任务。"
         },
         "sessionPersistence": {
           "title": "会话持久化",
@@ -788,7 +788,7 @@
         "description": "将 Git 仓库连接到 AgentsMesh，实现无缝的 AI 辅助开发工作流。",
         "overview": {
           "title": "概述",
-          "description": "仓库将你的 Git 项目关联到平台。当创建关联了仓库的 Pod 时，Runner 会自动克隆项目并设置隔离的 Git 工作树。"
+          "description": "仓库将你的 Git 项目关联到平台。当创建关联了仓库的 Pod 时，Runner 会自动克隆项目并设置隔离的 Git Worktree。"
         },
         "providers": {
           "title": "支持的 Git 服务商",
@@ -810,14 +810,14 @@
           "title": "仓库与 Pod 关联",
           "description": "创建关联仓库的 Pod 时：",
           "step1": "Runner 克隆仓库（如果尚未缓存）",
-          "step2": "为 Pod 创建新的 Git 工作树",
-          "step3": "AI 智能体在工作树目录中启动",
+          "step2": "为 Pod 创建新的 Git Worktree",
+          "step3": "AI Agent 在 Worktree 目录中启动",
           "step4": "更改与使用同一仓库的其他 Pod 隔离",
-          "step5": "Pod 终止时，工作树会被清理"
+          "step5": "Pod 终止时，Worktree 会被清理"
         },
         "worktree": {
-          "title": "Git 工作树隔离",
-          "description": "Git 工作树允许多个 Pod 同时在同一仓库上工作。每个 Pod 在自己的分支上操作，互不影响。这对于多个智能体可能修改同一代码库的并行 AI 开发至关重要。"
+          "title": "Git Worktree 隔离",
+          "description": "Git Worktree 允许多个 Pod 同时在同一仓库上工作。每个 Pod 在自己的分支上操作，互不影响。这对于多个 Agent 可能修改同一代码库的并行 AI 开发至关重要。"
         },
         "management": {
           "title": "仓库管理操作",
@@ -831,7 +831,7 @@
     "runners": {
       "setup": {
         "title": "Runner 配置",
-        "description": "Runner 是 AI 智能体 Pod 的执行环境。在任何安装了 Git 和开发工具的机器上配置 Runner。",
+        "description": "Runner 是 AI Agent Pod 的执行环境。在任何安装了 Git 和开发工具的机器上配置 Runner。",
         "requirements": {
           "title": "系统要求",
           "item1": "Linux、macOS 或 Windows（推荐 WSL2）",
@@ -894,7 +894,7 @@
       },
       "mcpTools": {
         "title": "MCP 工具",
-        "description": "Runner 提供 26 个 MCP（模型上下文协议）工具，供 AI 智能体与其他智能体协作。工具分为 7 个类别：发现、终端、绑定、频道、任务、Pod 和 Loop。",
+        "description": "Runner 提供 26 个 MCP（模型上下文协议）工具，供 AI Agent 与其他 Agent 协作。工具分为 7 个类别：发现、终端、绑定、Channel、Ticket、Pod 和 Loop。",
         "overview": {
           "title": "概述",
           "description": "MCP 工具自动提供给在 AgentPod 中运行的 AI 智能体。工具通过端口 19000 的 HTTP 服务提供，使用 Pod 密钥进行认证。",
@@ -937,7 +937,7 @@
           "getBoundPodsParams": "-"
         },
         "channel": {
-          "title": "频道工具",
+          "title": "Channel 工具",
           "toolHeader": "工具",
           "descriptionHeader": "说明",
           "paramsHeader": "参数",
@@ -945,16 +945,16 @@
           "searchChannelsDesc": "搜索频道",
           "searchChannelsParams": "name?, project_id?, ticket_slug?",
           "createChannel": "create_channel",
-          "createChannelDesc": "创建新频道",
+          "createChannelDesc": "创建新 Channel",
           "createChannelParams": "name, description?, project_id?, ticket_slug?",
           "getChannel": "get_channel",
-          "getChannelDesc": "获取频道详情",
+          "getChannelDesc": "获取 Channel 详情",
           "getChannelParams": "channel_id",
           "sendMessage": "send_channel_message",
-          "sendMessageDesc": "向频道发送消息",
+          "sendMessageDesc": "向 Channel 发送消息",
           "sendMessageParams": "channel_id, content, message_type?, mentions[]?",
           "getMessages": "get_channel_messages",
-          "getMessagesDesc": "获取频道消息",
+          "getMessagesDesc": "获取 Channel 消息",
           "getMessagesParams": "channel_id, before_time?, after_time?, limit?",
           "getDocument": "get_channel_document",
           "getDocumentDesc": "获取共享文档",
@@ -964,7 +964,7 @@
           "updateDocumentParams": "channel_id, document"
         },
         "ticket": {
-          "title": "任务工具",
+          "title": "Ticket 工具",
           "toolHeader": "工具",
           "descriptionHeader": "说明",
           "paramsHeader": "参数",
@@ -972,13 +972,13 @@
           "searchTicketsDesc": "搜索任务",
           "searchTicketsParams": "product_id?, status?, type?, priority?, query?",
           "getTicket": "get_ticket",
-          "getTicketDesc": "获取任务详情",
+          "getTicketDesc": "获取 Ticket 详情",
           "getTicketParams": "ticket_id（数字或 \"AM-123\"）",
           "createTicket": "create_ticket",
-          "createTicketDesc": "创建新任务",
+          "createTicketDesc": "创建新 Ticket",
           "createTicketParams": "product_id, title, type?, priority?",
           "updateTicket": "update_ticket",
-          "updateTicketDesc": "更新任务",
+          "updateTicketDesc": "更新 Ticket",
           "updateTicketParams": "ticket_id, title?, status?, priority?, type?"
         },
         "loop": {
@@ -1062,9 +1062,9 @@
           "title": "在 Pod 中使用仓库",
           "description": "仓库连接后，你可以将其关联到 Pod：",
           "step1": "创建新 Pod 时，从下拉列表中选择仓库",
-          "step2": "Runner 克隆仓库并创建隔离的 Git 工作树",
-          "step3": "AI 智能体在仓库工作目录中启动",
-          "step4": "所有更改都隔离在 Pod 的工作树中"
+          "step2": "Runner 克隆仓库并创建隔离的 Git Worktree",
+          "step3": "AI Agent 在仓库工作目录中启动",
+          "step4": "所有更改都隔离在 Pod 的 Worktree 中"
         }
       },
       "teamManagement": {
@@ -1114,45 +1114,45 @@
         }
       },
       "multiAgent": {
-        "title": "多智能体工作流",
+        "title": "多 Agent 工作流",
         "description": "了解如何编排多个 AI 智能体协作完成复杂的开发任务。",
         "overview": {
           "title": "概述",
-          "description": "多智能体工作流允许你将复杂任务拆分给多个 AI 智能体。每个智能体运行在自己的 Pod 中，通过频道和 Pod 绑定进行通信。"
+          "description": "多 Agent 工作流允许你将复杂任务拆分给多个 AI Agent。每个 Agent 运行在自己的 Pod 中，通过 Channel 和 Pod 绑定进行通信。"
         },
         "setup": {
-          "title": "设置多智能体工作流",
-          "step1": "为任务创建频道（如 'feature-auth-implementation'）",
+          "title": "设置多 Agent 工作流",
+          "step1": "为任务创建 Channel（如 'feature-auth-implementation'）",
           "step2": "启动多个 Pod，每个具有不同的角色或专注领域",
-          "step3": "将所有 Pod 关联到同一频道",
+          "step3": "将所有 Pod 关联到同一 Channel",
           "step4": "每个 Pod 使用 MCP 工具进行通信和协调",
           "step5": "通过 Mesh 拓扑视图监控进度"
         },
         "scenario1": {
           "title": "场景：代码审查工作流",
           "description": "使用两个智能体——一个写代码，另一个审查：",
-          "developer": "开发 Pod — 根据任务需求编写代码",
-          "reviewer": "审查 Pod — 通过绑定观察开发者的终端输出，审查变更并通过频道提供反馈",
-          "flow": "审查者可以使用 get_pod_snapshot 观察开发者工作，然后通过频道发送反馈。开发者阅读反馈并迭代改进。"
+          "developer": "开发 Pod—根据 Ticket 需求编写代码",
+          "reviewer": "审查 Pod—通过绑定观察开发者的终端输出，审查变更并通过 Channel 提供反馈",
+          "flow": "审查者可以使用 get_pod_snapshot 观察开发者工作，然后通过 Channel 发送反馈。开发者阅读反馈并迭代改进。"
         },
         "scenario2": {
           "title": "场景：前后端拆分",
           "description": "使用两个专业化智能体并行全栈开发：",
           "frontend": "前端 Pod — 开发 UI 组件、样式和客户端逻辑",
-          "backend": "后端 Pod — 实现 API 端点、数据库模型和业务逻辑",
-          "coordination": "两个 Pod 共享一个频道来协调 API 契约、数据结构和集成点。它们可以使用共享文档维护 API 规范。"
+          "backend": "后端 Pod—实现 API 端点、数据库模型和业务逻辑",
+          "coordination": "两个 Pod 共享一个 Channel 来协调 API 契约、数据结构和集成点。它们可以使用共享文档维护 API 规范。"
         },
         "scenario3": {
           "title": "场景：测试与开发并行",
           "description": "开发的同时运行测试，加速迭代：",
           "devPod": "开发 Pod — 实现功能",
           "testPod": "测试 Pod — 为新代码编写和运行测试",
-          "process": "测试 Pod 通过频道消息监控开发 Pod 的进度。当开发者完成一个模块时，测试者编写并执行测试，通过频道反馈结果。"
+          "process": "测试 Pod 通过 Channel 消息监控开发 Pod 的进度。当开发者完成一个模块时，测试者编写并执行测试，通过 Channel 反馈结果。"
         },
         "bestPractices": {
           "title": "最佳实践",
           "tip1": "明确任务分配——给每个 Pod 一个聚焦的初始提示",
-          "tip2": "使用频道协调——优先使用频道消息而非直接终端访问",
+          "tip2": "使用 Channel 协调——优先使用 Channel 消息而非直接终端访问",
           "tip3": "关联任务——将 Pod 与任务关联以获得自动上下文",
           "tip4": "通过 Mesh 监控——使用拓扑视图跟踪协作状态",
           "tip5": "及时清理——任务完成后终止 Pod 以释放资源"
@@ -1180,12 +1180,12 @@
       },
       "overview": {
         "title": "API 概述",
-        "description": "使用组织级 API Key 将第三方服务与 AgentsMesh 集成。通过 REST API 自动化 Pod 管理、任务跟踪等操作。",
+        "description": "使用组织级 API Key 将第三方服务与 AgentsMesh 集成。通过 REST API 自动化 Pod 管理、Ticket 跟踪等操作。",
         "overview": {
           "title": "概述",
           "description": "AgentsMesh 提供组织级 API Key，用于第三方集成、CI/CD 流水线和自动化工作流。通过 API Key 你可以：",
           "item1": "以编程方式管理 AgentPod（创建、列表、终止）",
-          "item2": "自动创建任务和更新状态",
+          "item2": "自动创建 Ticket 和更新状态",
           "item3": "查询频道和发送消息",
           "item4": "监控 Runner 和仓库状态"
         },
@@ -1229,15 +1229,15 @@
           "podsWriteEndpoints": "创建 Pod、终止 Pod + 所有读取端点",
           "ticketsRead": "tickets:read",
           "ticketsReadDesc": "任务只读访问",
-          "ticketsReadEndpoints": "列表任务、获取任务、获取看板",
+          "ticketsReadEndpoints": "列表 Ticket、获取 Ticket、获取看板",
           "ticketsWrite": "tickets:write",
-          "ticketsWriteDesc": "完整任务管理（包含读取）",
+          "ticketsWriteDesc": "完整 Ticket 管理（包含读取）",
           "ticketsWriteEndpoints": "创建、更新、删除任务 + 所有读取端点",
           "channelsRead": "channels:read",
           "channelsReadDesc": "频道只读访问",
-          "channelsReadEndpoints": "列表频道、获取频道、列表消息",
+          "channelsReadEndpoints": "列表 Channel、获取 Channel、列表消息",
           "channelsWrite": "channels:write",
-          "channelsWriteDesc": "完整频道管理（包含读取）",
+          "channelsWriteDesc": "完整 Channel 管理（包含读取）",
           "channelsWriteEndpoints": "创建/更新频道、发送消息 + 所有读取端点",
           "runnersRead": "runners:read",
           "runnersReadDesc": "Runner 只读访问",
@@ -1295,21 +1295,21 @@
             "description": "在指定 Runner 上创建新的 AgentPod。Pod 将使用给定配置初始化并开始执行。",
             "fields": {
               "runner_id": "创建 Pod 的 Runner ID",
-              "agent_slug": "智能体标识符（如 claude-code、aider）",
-              "prompt": "给智能体的初始提示或任务",
+              "agent_slug": "Agent 标识符（如 claude-code、aider）",
+              "prompt": "给 Agent 的初始提示或任务",
               "repository_id": "关联到 Pod 的仓库",
               "branch": "要操作的 Git 分支",
-              "ticket_slug": "要关联的任务标识符（如 AM-123）",
-              "channel_id": "关联到 Pod 的频道",
-              "sandbox_type": "沙箱类型：worktree 或 tempdir",
+              "ticket_slug": "要关联的 Ticket 标识符（如 AM-123）",
+              "channel_id": "关联到 Pod 的 Channel",
+              "sandbox_type": "Sandbox 类型：worktree 或 tempdir",
               "environment_variables": "环境变量的键值对",
-              "custom_agent_command": "启动智能体的自定义命令",
-              "custom_agent_args": "自定义智能体命令的参数",
+              "custom_agent_command": "启动 Agent 的自定义命令",
+              "custom_agent_args": "自定义 Agent 命令的参数",
               "custom_mcp_config": "自定义 MCP 服务器配置（JSON）",
               "auto_close": "任务完成后是否自动关闭 Pod",
               "auto_close_delay_seconds": "自动关闭前的延迟秒数",
               "pod_timeout_minutes": "Pod 的最大存活时间（分钟）",
-              "max_turns": "智能体的最大轮次数"
+              "max_turns": "Agent 的最大轮次数"
             }
           },
           "terminatePod": {
@@ -1323,21 +1323,21 @@
       },
       "tickets": {
         "title": "Tickets API",
-        "description": "自动化任务管理。通过 REST API 创建、更新和跟踪任务。",
+        "description": "自动化 Ticket 管理。通过 REST API 创建、更新和跟踪 Ticket。",
         "endpoints": {
           "title": "端点",
           "list": "列出任务",
           "board": "获取看板视图",
-          "get": "按标识获取任务",
-          "create": "创建新任务",
-          "update": "更新任务",
-          "updateStatus": "更新任务状态",
-          "delete": "删除任务"
+          "get": "按标识获取 Ticket",
+          "create": "创建新 Ticket",
+          "update": "更新 Ticket",
+          "updateStatus": "更新 Ticket 状态",
+          "delete": "删除 Ticket"
         },
         "examples": {
           "title": "代码示例",
           "listTickets": "列出所有任务",
-          "createTicket": "创建新任务"
+          "createTicket": "创建新 Ticket"
         },
         "details": {
           "title": "端点详情",
@@ -1362,44 +1362,44 @@
           },
           "getTicket": {
             "title": "GET /tickets/:slug",
-            "description": "通过可读标识符获取特定任务的详细信息。",
+            "description": "通过可读标识符获取特定 Ticket 的详细信息。",
             "params": {
-              "slug": "任务标识符（如 AM-123）"
+              "slug": "Ticket 标识符（如 AM-123）"
             }
           },
           "createTicket": {
             "title": "POST /tickets",
-            "description": "创建新任务。至少需要提供类型和标题。",
+            "description": "创建新 Ticket。至少需要提供类型和标题。",
             "fields": {
-              "title": "任务标题（1-500 个字符）",
+              "title": "Ticket 标题（1-500 个字符）",
               "priority": "优先级：low、medium、high 或 critical",
               "status": "初始状态（默认为 open）",
               "assignee_id": "要分配的用户 ID",
               "repository_id": "关联的仓库",
               "labels": "标签字符串数组",
-              "parent_slug": "父任务标识符（用于子任务）"
+              "parent_slug": "父 Ticket 标识符（用于子 Ticket）"
             }
           },
           "updateTicket": {
             "title": "PUT /tickets/:slug",
-            "description": "更新现有任务。所有字段均为可选——仅更新提供的字段。",
+            "description": "更新现有 Ticket。所有字段均为可选——仅更新提供的字段。",
             "params": {
-              "slug": "任务标识符（如 AM-123）"
+              "slug": "Ticket 标识符（如 AM-123）"
             },
             "fields": {
-              "title": "更新后的任务标题",
+              "title": "更新后的 Ticket 标题",
               "priority": "更新后的优先级",
               "status": "更新后的状态",
               "assignee_id": "更新后的负责人用户 ID",
               "labels": "更新后的标签字符串数组",
-              "parent_slug": "更新后的父任务标识符"
+              "parent_slug": "更新后的父 Ticket 标识符"
             }
           },
           "updateStatus": {
             "title": "PATCH /tickets/:slug/status",
-            "description": "仅更新任务的状态。这是一个便捷的状态转换端点。",
+            "description": "仅更新 Ticket 的状态。这是一个便捷的状态转换端点。",
             "params": {
-              "slug": "任务标识符（如 AM-123）"
+              "slug": "Ticket 标识符（如 AM-123）"
             },
             "fields": {
               "status": "新状态：open、in_progress、resolved 或 closed"
@@ -1407,9 +1407,9 @@
           },
           "deleteTicket": {
             "title": "DELETE /tickets/:slug",
-            "description": "永久删除任务。此操作不可撤销。",
+            "description": "永久删除 Ticket。此操作不可撤销。",
             "params": {
-              "slug": "任务标识符（如 AM-123）"
+              "slug": "Ticket 标识符（如 AM-123）"
             }
           }
         }
@@ -1420,12 +1420,12 @@
         "endpoints": {
           "title": "端点",
           "list": "列出所有循环任务",
-          "create": "创建循环任务",
-          "get": "按 slug 获取循环任务",
-          "update": "更新循环任务",
-          "delete": "删除循环任务",
-          "enable": "启用循环任务",
-          "disable": "禁用循环任务",
+          "create": "创建 Loop",
+          "get": "按 slug 获取 Loop",
+          "update": "更新 Loop",
+          "delete": "删除 Loop",
+          "enable": "启用 Loop",
+          "disable": "禁用 Loop",
           "trigger": "手动触发运行",
           "listRuns": "列出运行历史",
           "getRun": "获取运行详情",
@@ -1433,7 +1433,7 @@
         },
         "examples": {
           "title": "代码示例",
-          "createLoop": "创建定时循环任务",
+          "createLoop": "创建定时 Loop",
           "triggerRun": "带变量触发运行"
         },
         "details": {
@@ -1444,16 +1444,16 @@
           },
           "createLoop": {
             "title": "POST /loops",
-            "description": "使用指定配置创建新的循环任务。",
+            "description": "使用指定配置创建新的 Loop。",
             "fields": {
-              "name": "循环任务名称（必填，1-255 字符）",
+              "name": "Loop 名称（必填，1-255 字符）",
               "description": "可选描述",
               "agent_slug": "使用的内置 Agent 类型 ID",
               "custom_agent_slug": "自定义 Agent 类型 ID（与 agent_slug 二选一）",
               "prompt_template": "任务 Prompt，支持 {{variable}} 占位符（必填）",
               "prompt_variables": "Prompt 变量的默认值（JSON 对象）",
-              "repository_id": "要克隆到沙箱的仓库",
-              "runner_id": "首选运行节点",
+              "repository_id": "要克隆到 Sandbox 的仓库",
+              "runner_id": "首选 Runner",
               "branch_name": "要检出的 Git 分支",
               "execution_mode": "autopilot 或 direct（默认：autopilot）",
               "cron_expression": "Cron 调度表达式（如 '0 9 * * *'）。设置后按计划触发",
@@ -1468,32 +1468,32 @@
           },
           "getLoop": {
             "title": "GET /loops/:slug",
-            "description": "按 slug 获取循环任务的详细信息。",
+            "description": "按 slug 获取 Loop 的详细信息。",
             "params": {
               "slug": "Loop slug（从名称自动生成）"
             }
           },
           "updateLoop": {
             "title": "PUT /loops/:slug",
-            "description": "更新现有循环任务。所有字段可选 — 仅更新提供的字段。",
+            "description": "更新现有 Loop。所有字段可选—仅更新提供的字段。",
             "params": {
               "slug": "Loop slug"
             }
           },
           "deleteLoop": {
             "title": "DELETE /loops/:slug",
-            "description": "永久删除循环任务及其所有运行历史。此操作不可撤销。",
+            "description": "永久删除 Loop 及其所有运行历史。此操作不可撤销。",
             "params": {
               "slug": "Loop slug"
             }
           },
           "enableLoop": {
             "title": "POST /loops/:slug/enable",
-            "description": "启用已禁用的循环任务。如果已配置 Cron 调度，将恢复定时触发。"
+            "description": "启用已禁用的 Loop。如果已配置 Cron 调度，将恢复定时触发。"
           },
           "disableLoop": {
             "title": "POST /loops/:slug/disable",
-            "description": "禁用循环任务。Cron 调度暂停，手动触发也会被阻止。"
+            "description": "禁用 Loop。Cron 调度暂停，手动触发也会被阻止。"
           },
           "triggerLoop": {
             "title": "POST /loops/:slug/trigger",
@@ -1504,7 +1504,7 @@
           },
           "listRuns": {
             "title": "GET /loops/:slug/runs",
-            "description": "获取循环任务的运行历史，按最近优先排序。",
+            "description": "获取 Loop 的运行历史，按最近优先排序。",
             "params": {
               "limit": "返回的最大结果数",
               "offset": "跳过的结果数（分页用）"
@@ -1532,66 +1532,66 @@
         "endpoints": {
           "title": "端点",
           "list": "列出频道",
-          "get": "获取频道详情",
-          "messages": "列出频道消息",
-          "create": "创建新频道",
-          "update": "更新频道",
-          "sendMessage": "向频道发送消息"
+          "get": "获取 Channel 详情",
+          "messages": "列出 Channel 消息",
+          "create": "创建新 Channel",
+          "update": "更新 Channel",
+          "sendMessage": "向 Channel 发送消息"
         },
         "details": {
           "title": "端点详情",
           "listChannels": {
             "title": "GET /channels",
-            "description": "获取频道列表。支持按仓库、任务和归档状态筛选。",
+            "description": "获取 Channel 列表。支持按仓库、Ticket 和归档状态筛选。",
             "params": {
               "repository_id": "按仓库 ID 筛选",
-              "ticket_slug": "按关联任务 Slug 筛选",
+              "ticket_slug": "按关联 Ticket Slug 筛选",
               "include_archived": "是否包含已归档频道（true/false）"
             }
           },
           "getChannel": {
             "title": "GET /channels/:id",
-            "description": "获取特定频道的详细信息。",
+            "description": "获取特定 Channel 的详细信息。",
             "params": {
-              "id": "频道的数字 ID"
+              "id": "Channel 的数字 ID"
             }
           },
           "getMessages": {
             "title": "GET /channels/:id/messages",
-            "description": "获取频道的消息，按最新排序。",
+            "description": "获取 Channel 的消息，按最新排序。",
             "params": {
-              "id": "频道的数字 ID",
+              "id": "Channel 的数字 ID",
               "limit": "返回的最大消息数（最多 100）"
             }
           },
           "createChannel": {
             "title": "POST /channels",
-            "description": "创建新的智能体协作频道。",
+            "description": "创建新的 Agent 协作 Channel。",
             "fields": {
-              "name": "频道名称（2-100 个字符）",
-              "description": "频道描述",
+              "name": "Channel 名称（2-100 个字符）",
+              "description": "Channel 描述",
               "repository_id": "关联的仓库",
-              "ticket_slug": "要关联的任务标识符（如 AM-123）",
-              "document": "频道的初始文档或上下文"
+              "ticket_slug": "要关联的 Ticket 标识符（如 AM-123）",
+              "document": "Channel 的初始文档或上下文"
             }
           },
           "updateChannel": {
             "title": "PUT /channels/:id",
-            "description": "更新现有频道。仅更新提供的字段。",
+            "description": "更新现有 Channel。仅更新提供的字段。",
             "params": {
-              "id": "频道的数字 ID"
+              "id": "Channel 的数字 ID"
             },
             "fields": {
-              "name": "更新后的频道名称",
-              "description": "更新后的频道描述",
-              "document": "更新后的频道文档"
+              "name": "更新后的 Channel 名称",
+              "description": "更新后的 Channel 描述",
+              "document": "更新后的 Channel 文档"
             }
           },
           "sendMessage": {
             "title": "POST /channels/:id/messages",
-            "description": "向频道发送新消息。",
+            "description": "向 Channel 发送新消息。",
             "params": {
-              "id": "频道的数字 ID"
+              "id": "Channel 的数字 ID"
             },
             "fields": {
               "content": "消息内容文本",
@@ -1707,7 +1707,7 @@
         },
         "podStuck": {
           "question": "Pod 卡在「初始化中」状态，怎么回事？",
-          "answer": "这通常意味着仓库克隆耗时较长，或 Runner 在创建 Git 工作树时遇到问题。查看 Runner 日志了解详情。对于大型仓库，首次克隆可能需要几分钟。"
+          "answer": "这通常意味着仓库克隆耗时较长，或 Runner 在创建 Git Worktree 时遇到问题。查看 Runner 日志了解详情。对于大型仓库，首次克隆可能需要几分钟。"
         },
         "apiKeyFormat": {
           "question": "API 密钥应该是什么格式？",
@@ -1723,7 +1723,7 @@
         },
         "gitWorktreeConflict": {
           "question": "多个 Pod 可以同时在同一仓库上工作吗？",
-          "answer": "可以！每个 Pod 获得独立的 Git 工作树，所以多个 Pod 可以在同一仓库上同时工作而不会冲突。每个工作树在自己的分支上操作，更改相互隔离。"
+          "answer": "可以！每个 Pod 获得独立的 Git Worktree，所以多个 Pod 可以在同一仓库上同时工作而不会冲突。每个 Worktree 在自己的分支上操作，更改相互隔离。"
         },
         "billingBYOK": {
           "question": "BYOK（自带密钥）计费模式如何运作？",
@@ -1770,7 +1770,7 @@
           "description": "注册完成后，启动 Runner 守护进程：",
           "item1": "运行启动命令以开始 Runner 进程",
           "item2": "Runner 通过 gRPC + mTLS 连接到 AgentsMesh 后端",
-          "item3": "它会报告 PATH 中可用的 AI 智能体 CLI（Claude Code、Codex、Gemini 等）",
+          "item3": "它会报告 PATH 中可用的 AI Agent CLI（Claude Code、Codex、Gemini 等）",
           "tip": "在生产环境中，建议将 Runner 安装为系统服务，以便开机自动启动。",
           "background": {
             "title": "在后台运行",
@@ -1792,7 +1792,7 @@
           }
         },
         "step4": {
-          "title": "安装 AI 智能体 CLI",
+          "title": "安装 AI Agent CLI",
           "description": "在 Runner 机器上安装你想使用的 AI 编程智能体：",
           "item1": "Claude Code — npm install -g @anthropic-ai/claude-code（设置 ANTHROPIC_API_KEY）",
           "item2": "Codex CLI — npm install -g @openai/codex（设置 OPENAI_API_KEY）",
@@ -1844,7 +1844,7 @@
           "title": "下一步",
           "description": "你的 Runner 已准备就绪。继续下一个教程：",
           "item1": "连接 Git 仓库 — 关联你的代码仓库以供 Pod 使用",
-          "item2": "创建你的第一个 Pod — 创建并使用你的第一个 AI 智能体"
+          "item2": "创建你的第一个 Pod—创建并使用你的第一个 AI Agent"
         }
       },
       "gitSetup": {
@@ -1905,8 +1905,8 @@
         "step7": {
           "title": "通过创建 Pod 验证",
           "description": "创建一个关联仓库的 Pod 来测试你的设置：",
-          "item1": "前往 工作区 并点击 新建 Pod",
-          "item2": "选择一个 AI 智能体和你的 Runner",
+          "item1": "前往 Workspace 并点击 新建 Pod",
+          "item2": "选择一个 AI Agent 和你的 Runner",
           "item3": "选择一个已导入的仓库",
           "item4": "Pod 应该会启动并将仓库克隆到一个 worktree 中",
           "tip": "每个 Pod 都有自己的 Git worktree，因此多个 Pod 可以同时操作同一仓库而不会冲突。"
@@ -1928,10 +1928,10 @@
           "item1": "发现 — 列出可用的 Pod、Runner 和仓库",
           "item2": "终端 — 观察和控制其他 Pod 的终端",
           "item3": "绑定 — 请求和管理 Pod 间连接",
-          "item4": "频道 — 创建频道、发送消息、共享文档",
-          "item5": "工单 — 搜索、创建和更新工单",
+          "item4": "Channel—创建 Channel、发送消息、共享文档",
+          "item5": "Ticket—搜索、创建和更新 Ticket",
           "item6": "Pod — 创建新 Pod、获取快照、发送输入",
-          "item7": "循环 — 列出和触发自动化循环",
+          "item7": "Loop—列出和触发自动化 Loop",
           "autoNote": "这些内置工具自动对每个 Pod 可用——无需任何配置。"
         },
         "step1": {
@@ -1958,13 +1958,13 @@
           "title": "在 Pod 中验证 MCP 工具",
           "description": "配置 MCP 服务器后，验证其是否正常工作：",
           "item1": "使用 Claude Code 创建一个新 Pod",
-          "item2": "在终端中询问智能体：\"你有哪些可用的 MCP 工具？\"",
-          "item3": "智能体应列出内置的 AgentsMesh 工具和你安装的所有自定义 MCP 服务器",
+          "item2": "在终端中询问 Agent：\"你有哪些可用的 MCP 工具？\"",
+          "item3": "Agent 应列出内置的 AgentsMesh 工具和你安装的所有自定义 MCP 服务器",
           "item4": "尝试使用一个工具——例如\"列出所有可用的 Pod\"或\"搜索工单\""
         },
         "whatAreSkills": {
           "title": "什么是技能？",
-          "description": "技能是以 Markdown 文件定义的可复用智能体工作流，包含指令说明。安装后，它们会被注入到你的智能体上下文中，以便按需执行。AgentsMesh 提供两个内置技能：",
+          "description": "技能是以 Markdown 文件定义的可复用 Agent 工作流，包含指令说明。安装后，它们会被注入到你的 Agent 上下文中，以便按需执行。AgentsMesh 提供两个内置技能：",
           "item1": "am-channel — 使智能体能够检查消息、同步任务状态，并通过频道与其他智能体交换信息",
           "item2": "am-delegate — 使智能体能够将任务委派给其他 Pod、创建子 Pod 以并行工作，并触发后续智能体"
         },
@@ -1974,7 +1974,7 @@
           "channelTitle": "am-channel 技能",
           "channelDesc": "在开始任务前自动检查新消息，将状态更新同步到频道，并与协作智能体交换信息。当智能体需要协调时使用此技能。",
           "delegateTitle": "am-delegate 技能",
-          "delegateDesc": "使智能体能够将子任务委派给其他 Pod 或环境。智能体可以创建子 Pod、分配工作并等待结果。适用于需要并行执行的复杂任务。"
+          "delegateDesc": "使 Agent 能够将子任务委派给其他 Pod 或环境。Agent 可以创建子 Pod、分配工作并等待结果。适用于需要并行执行的复杂任务。"
         },
         "step5": {
           "title": "安装自定义技能",
@@ -1983,7 +1983,7 @@
           "item2": "浏览可用技能或点击添加技能从 URL 安装",
           "item3": "技能可以限定在你的组织或个人账户范围内",
           "item4": "已安装的技能会自动注入到新的 Pod 中",
-          "tip": "自定义技能是带有 YAML 前置元数据的 Markdown 文件。你可以通过定义技能触发时机和智能体应遵循的指令来创建自己的技能。"
+          "tip": "自定义技能是带有 YAML 前置元数据的 Markdown 文件。你可以通过定义技能触发时机和 Agent 应遵循的指令来创建自己的技能。"
         },
         "step6": {
           "title": "按仓库配置 MCP 服务器",
@@ -1997,56 +1997,56 @@
           "title": "下一步",
           "description": "你的智能体现在已通过 MCP 工具和技能进行了扩展。继续探索：",
           "item1": "创建你的第一个 Pod — 创建 Pod 并查看 MCP 工具的实际效果",
-          "item2": "多智能体协作 — 使用频道和绑定工具进行智能体协调"
+          "item2": "多 Agent 协作—使用 Channel 和绑定工具进行 Agent 协调"
         }
       },
       "firstPod": {
         "title": "教程：创建你的第一个 Pod",
         "difficulty": "初学者 — 5 分钟",
-        "description": "逐步学习如何创建并使用你的第一个 AgentPod。完成本教程后，你将成功启动一个 AI 编程智能体，将其连接到代码仓库，并完成一项任务。",
+        "description": "逐步学习如何创建并使用你的第一个 AgentPod。完成本教程后，你将成功启动一个 AI 编程 Agent，将其连接到代码仓库，并完成一项任务。",
         "prerequisites": {
           "title": "前提条件",
           "description": "开始之前，请确保你已准备好：",
           "item1": "一个 AgentsMesh 账号（在注册页面注册）",
           "item2": "已安装并连接 Runner（参见快速上手 → 步骤 2）",
-          "item3": "Runner 上至少安装了一个 AI 智能体 CLI（例如 Claude Code）",
+          "item3": "Runner 上至少安装了一个 AI Agent CLI（例如 Claude Code）",
           "item4": "已连接 Git 仓库（可选但推荐）"
         },
         "step1": {
-          "title": "打开工作空间",
-          "description": "点击左侧边栏的工作空间。这里是你所有 Pod 的集中管理处。如果你是第一次使用，会看到一个空白的工作空间。"
+          "title": "打开 Workspace",
+          "description": "点击左侧边栏的 Workspace。这里是你所有 Pod 的集中管理处。如果你是第一次使用，会看到一个空白的 Workspace。"
         },
         "step2": {
           "title": "创建新 Pod",
           "description": "点击右上角的新建 Pod 按钮。Pod 创建对话框将打开，其中包含多个配置选项。",
           "fields": "填写以下字段：",
-          "field1": "智能体 - 选择你要使用的 AI 智能体（例如 Claude Code）",
+          "field1": "Agent - 选择你要使用的 AI Agent（例如 Claude Code）",
           "field2": "Runner - 选择托管此 Pod 的 Runner",
-          "field3": "仓库 - 选择智能体要处理的仓库（可选）",
+          "field3": "仓库 - 选择 Agent 要处理的仓库（可选）",
           "field4": "分支 - 选择要检出的分支（默认为主分支）",
-          "field5": "初始提示词 - 为智能体编写任务描述，例如「为登录表单添加输入验证」"
+          "field5": "初始提示词 - 为 Agent 编写任务描述，例如「为登录表单添加输入验证」"
         },
         "step3": {
           "title": "观察 Pod 初始化",
           "description": "点击创建后，Pod 进入初始化状态。Runner 将执行以下操作：",
           "item1": "创建隔离的 Git worktree（如果已关联仓库）",
           "item2": "启动 PTY 终端会话",
-          "item3": "使用你的初始提示词启动 AI 智能体",
-          "tip": "终端视图会自动打开。你可以实时观看智能体开始工作。"
+          "item3": "使用你的初始提示词启动 AI Agent",
+          "tip": "终端视图会自动打开。你可以实时观看 Agent 开始工作。"
         },
         "step4": {
-          "title": "与智能体交互",
-          "description": "Pod 进入运行状态后，你可以通过 Web 终端与 AI 智能体交互：",
+          "title": "与 Agent 交互",
+          "description": "Pod 进入运行状态后，你可以通过 Web 终端与 AI Agent 交互：",
           "item1": "直接在终端输入框中输入后续指令",
-          "item2": "观察智能体状态指示器 - 它显示空闲、执行中或等待中",
-          "item3": "智能体在隔离的 Git worktree 中工作，因此你的主分支不会受到影响",
+          "item2": "观察 Agent 状态指示器 - 它显示空闲、执行中或等待中",
+          "item3": "Agent 在隔离的 Git worktree 中工作，因此你的主分支不会受到影响",
           "item4": "使用全屏按钮获得无干扰的工作视图"
         },
         "step5": {
           "title": "审查与完成",
-          "description": "当智能体完成你的任务后：",
-          "item1": "在终端输出中审查智能体所做的更改",
-          "item2": "智能体可能已在 worktree 分支上创建了提交 - 检查 git 日志",
+          "description": "当 Agent 完成你的任务后：",
+          "item1": "在终端输出中审查 Agent 所做的更改",
+          "item2": "Agent 可能已在 worktree 分支上创建了提交 - 检查 git 日志",
           "item3": "点击 Pod 工具栏中的终止按钮以停止 Pod 并清理 worktree",
           "item4": "Pod 状态变为已终止，资源被释放"
         },
@@ -2056,121 +2056,121 @@
           "noRunnersDesc": "你的 Runner 可能已离线。前往 设置 → Runner 检查状态。如果显示离线，请重启 Runner 进程并确保它能连接到 AgentsMesh 服务器。",
           "stuckInit": "Pod 一直停留在初始化状态",
           "stuckInitDesc": "这通常意味着仓库较大，仍在克隆中。请等待几分钟。如果问题仍未解决，请检查 Runner 日志中的克隆错误。尝试创建一个不带仓库的 Pod 来测试基本功能。",
-          "agentNotResponding": "智能体无响应",
-          "agentNotRespondingDesc": "确认 Runner 上已安装 AI 智能体 CLI（例如在 Runner 机器上运行 'claude --version'）。检查 API 密钥环境变量是否正确设置。智能体也可能正在等待权限——查看终端中是否有权限提示。",
+          "agentNotResponding": "Agent 无响应",
+          "agentNotRespondingDesc": "确认 Runner 上已安装 AI Agent CLI（例如在 Runner 机器上运行 'claude --version'）。检查 API 密钥环境变量是否正确设置。Agent 也可能正在等待权限——查看终端中是否有权限提示。",
           "terminated": "Pod 立即终止",
-          "terminatedDesc": "这通常意味着智能体 CLI 在启动时崩溃。检查你的 API 密钥是否有效且未过期。尝试在 Runner 上手动运行智能体 CLI 以查看错误信息。"
+          "terminatedDesc": "这通常意味着 Agent CLI 在启动时崩溃。检查你的 API 密钥是否有效且未过期。尝试在 Runner 上手动运行 Agent CLI 以查看错误信息。"
         },
         "nextSteps": {
           "title": "接下来该做什么？",
           "description": "恭喜！你已经有了一个可用的 Pod。下一步取决于你想实现什么：",
           "item1": "我想跟踪任务 → 任务管理 — 使用工单和看板",
-          "item2": "我想让多个智能体协同工作 → 多智能体协作",
+          "item2": "我想让多个 Agent 协同工作 → 多 Agent 协作",
           "item3": "我想自动化定期任务 → 自动化循环"
         }
       },
       "ticketWorkflow": {
         "title": "教程：使用工单管理任务",
         "difficulty": "初学者 — 10 分钟",
-        "description": "学习如何使用 AgentsMesh 的工单系统来组织工作、在看板上跟踪进度，以及将工单连接到 AgentPod 以自动注入上下文。",
+        "description": "学习如何使用 AgentsMesh 的 Ticket 系统来组织工作、在看板上跟踪进度，以及将 Ticket 连接到 AgentPod 以自动注入上下文。",
         "step1": {
-          "title": "导航到工单看板",
+          "title": "导航到 Ticket 看板",
           "description": "点击左侧边栏的工单。你将看到一个看板，包含各状态列：待办池、待处理、进行中、审查中和已完成。"
         },
         "step2": {
-          "title": "创建工单",
-          "description": "点击任意列（通常是待办池或待处理）顶部的 + 按钮来创建新工单。",
-          "fields": "填写工单详情：",
+          "title": "创建 Ticket",
+          "description": "点击任意列（通常是待办池或待处理）顶部的 + 按钮来创建新 Ticket。",
+          "fields": "填写 Ticket 详情：",
           "field1": "标题 - 清晰简洁的任务描述（例如「修复用户列表分页 Bug」）",
           "field2": "描述 - 详细的需求、验收标准或上下文，支持 Markdown 格式",
           "field3": "优先级 - 设置紧急程度：紧急、高、中、低或无",
           "field4": "故事点数 - 使用斐波那契数列估算工作量（1、2、3、5、8、13、21）",
-          "field5": "负责人 - 可选择将工单分配给团队成员"
+          "field5": "负责人 - 可选择将 Ticket 分配给团队成员"
         },
         "step3": {
-          "title": "将工单绑定到 Pod",
+          "title": "将 Ticket 绑定到 Pod",
           "description": "工单的真正威力在于与 AgentPod 的集成。创建新 Pod 时：",
-          "item1": "在新建 Pod 对话框中，从工单下拉菜单中选择你的工单",
-          "item2": "工单的标题和描述会自动作为上下文注入给 AI 智能体",
-          "item3": "当 Pod 启动时，工单状态自动变为进行中",
-          "tip": "你也可以在 Pod 的详情面板中将工单绑定到已有的 Pod。"
+          "item1": "在新建 Pod 对话框中，从 Ticket 下拉菜单中选择你的 Ticket",
+          "item2": "Ticket 的标题和描述会自动作为上下文注入给 AI Agent",
+          "item3": "当 Pod 启动时，Ticket 状态自动变为进行中",
+          "tip": "你也可以在 Pod 的详情面板中将 Ticket 绑定到已有的 Pod。"
         },
         "step4": {
           "title": "跟踪进度",
-          "description": "在 AI 智能体处理任务时，你可以通过多种方式跟踪进度：",
-          "item1": "看板 - 工单卡片显示正在处理它的 Pod 以及智能体的当前状态",
-          "item2": "工单详情 - 点击工单查看所有关联的 Pod、评论和 Git 活动",
-          "item3": "Git 活动 - Pod 产生的提交和合并请求会自动关联到工单",
-          "item4": "评论 - 直接在工单上添加备注或反馈"
+          "description": "在 AI Agent 处理任务时，你可以通过多种方式跟踪进度：",
+          "item1": "看板 - Ticket 卡片显示正在处理它的 Pod 以及 Agent 的当前状态",
+          "item2": "Ticket 详情 - 点击 Ticket 查看所有关联的 Pod、评论和 Git 活动",
+          "item3": "Git 活动 - Pod 产生的提交和合并请求会自动关联到 Ticket",
+          "item4": "评论 - 直接在 Ticket 上添加备注或反馈"
         },
         "step5": {
           "title": "推进工作流",
-          "description": "在列之间拖动工单以更新状态，或在工单详情视图中使用状态下拉菜单：",
+          "description": "在列之间拖动 Ticket 以更新状态，或在 Ticket 详情视图中使用状态下拉菜单：",
           "item1": "待办池 → 待处理 - 任务已准备好可以开始",
-          "item2": "待处理 → 进行中 - 智能体 Pod 正在处理（绑定 Pod 时自动更新）",
-          "item3": "进行中 → 审查中 - 智能体已完成任务，需要审查",
+          "item2": "待处理 → 进行中 - Agent Pod 正在处理（绑定 Pod 时自动更新）",
+          "item3": "进行中 → 审查中 - Agent 已完成任务，需要审查",
           "item4": "审查中 → 已完成 - 任务已审查并通过"
         },
         "step6": {
           "title": "审查 Git 活动",
-          "description": "每个工单都会跟踪其关联 Pod 的所有 Git 活动：",
-          "item1": "在工单详情页查看 AI 智能体的提交记录",
+          "description": "每个 Ticket 都会跟踪其关联 Pod 的所有 Git 活动：",
+          "item1": "在 Ticket 详情页查看 AI Agent 的提交记录",
           "item2": "查看从 Pod worktree 分支创建的合并/拉取请求",
-          "item3": "利用这些信息审查并将智能体的工作合并到主分支"
+          "item3": "利用这些信息审查并将 Agent 的工作合并到主分支"
         },
         "nextSteps": {
           "title": "下一步",
           "description": "你现在已经了解如何使用工单管理任务。继续探索：",
-          "item1": "多智能体协作 - 将多个智能体分配到相关工单",
+          "item1": "多 Agent 协作 - 将多个 Agent 分配到相关 Ticket",
           "item2": "自动化循环 - 为定期任务自动创建 Pod"
         }
       },
       "multiAgent": {
-        "title": "教程：多智能体协作",
+        "title": "教程：多 Agent 协作",
         "difficulty": "进阶 — 15 分钟",
-        "description": "学习如何设置多个 AI 智能体通过频道进行沟通和协作。本教程将引导你完成一个实际场景：前端智能体和后端智能体协同开发一个功能。",
+        "description": "学习如何设置多个 AI Agent 通过 Channel 进行沟通和协作。本教程将引导你完成一个实际场景：前端 Agent 和后端 Agent 协同开发一个功能。",
         "scenario": {
           "title": "场景概述",
-          "description": "你正在构建一个新的用户个人资料页面。你将创建两个 Pod - 一个负责前端（React），一个负责后端（API）- 并让它们通过共享频道进行协调。",
+          "description": "你正在构建一个新的用户个人资料页面。你将创建两个 Pod - 一个负责前端（React），一个负责后端（API）- 并让它们通过共享 Channel 进行协调。",
           "frontend": "前端 Pod - 构建 React UI 组件",
           "backend": "后端 Pod - 实现 API 端点"
         },
         "step1": {
-          "title": "创建频道",
-          "description": "频道是多智能体工作流的通信枢纽。导航到侧边栏的频道，点击新建频道。",
-          "fields": "配置频道：",
+          "title": "创建 Channel",
+          "description": "Channel 是多 Agent 工作流的通信枢纽。导航到侧边栏的 Channel，点击新建 Channel。",
+          "fields": "配置 Channel：",
           "field1": "名称 - 使用描述性的名称，例如「user-profile-feature」",
-          "field2": "描述 - 说明用途：「用户个人资料页面功能的协调频道」",
-          "field3": "工单 - 可选关联工单以提供上下文"
+          "field2": "描述 - 说明用途：「用户个人资料页面功能的协调 Channel」",
+          "field3": "Ticket - 可选关联 Ticket 以提供上下文"
         },
         "step2": {
           "title": "启动后端 Pod",
           "description": "为后端工作创建第一个 Pod：",
-          "item1": "点击新建 Pod，选择你的智能体（例如 Claude Code）",
+          "item1": "点击新建 Pod，选择你的 Agent（例如 Claude Code）",
           "item2": "选择后端代码仓库",
-          "item3": "设置初始提示词：「实现用户个人资料的 REST API 端点：GET /api/users/:id/profile 和 PUT /api/users/:id/profile。完成后将 API 契约发布到频道。」",
-          "tip": "智能体将自动获得频道 MCP 工具的访问权限，用于发送消息。"
+          "item3": "设置初始提示词：「实现用户个人资料的 REST API 端点：GET /api/users/:id/profile 和 PUT /api/users/:id/profile。完成后将 API 契约发布到 Channel。」",
+          "tip": "Agent 将自动获得 Channel MCP 工具的访问权限，用于发送消息。"
         },
         "step3": {
           "title": "启动前端 Pod",
           "description": "为前端工作创建第二个 Pod：",
-          "item1": "点击新建 Pod，选择你的智能体",
+          "item1": "点击新建 Pod，选择你的 Agent",
           "item2": "选择前端代码仓库",
-          "item3": "设置初始提示词：「构建 React 用户个人资料页面组件。查看频道中后端智能体的 API 契约，然后根据契约实现 UI。」"
+          "item3": "设置初始提示词：「构建 React 用户个人资料页面组件。查看 Channel 中后端 Agent 的 API 契约，然后根据契约实现 UI。」"
         },
         "step4": {
-          "title": "将两个 Pod 绑定到频道",
-          "description": "将两个 Pod 连接到频道，使它们能够通信：",
+          "title": "将两个 Pod 绑定到 Channel",
+          "description": "将两个 Pod 连接到 Channel，使它们能够通信：",
           "item1": "打开每个 Pod 的详情面板",
-          "item2": "在频道绑定下，选择「user-profile-feature」频道",
-          "item3": "两个 Pod 现在可以通过频道发送和接收消息",
-          "tip": "如果频道已存在，也可以在创建 Pod 时直接绑定。"
+          "item2": "在 Channel 绑定下，选择「user-profile-feature」Channel",
+          "item3": "两个 Pod 现在可以通过 Channel 发送和接收消息",
+          "tip": "如果 Channel 已存在，也可以在创建 Pod 时直接绑定。"
         },
         "step5": {
-          "title": "监控智能体通信",
-          "description": "打开频道视图观看智能体的协作过程：",
-          "item1": "后端智能体发布 API 契约（端点、请求/响应结构）",
-          "item2": "前端智能体读取契约并实现相应的 API 调用",
+          "title": "监控 Agent 通信",
+          "description": "打开 Channel 视图观看 Agent 的协作过程：",
+          "item1": "后端 Agent 发布 API 契约（端点、请求/响应结构）",
+          "item2": "前端 Agent 读取契约并实现相应的 API 调用",
           "item3": "智能体可以使用 @提及来向特定 Pod 发送消息",
           "item4": "共享文档功能让智能体可以维护一份动态设计文档"
         },
@@ -2178,17 +2178,17 @@
           "title": "审查综合结果",
           "description": "当两个智能体都完成工作后：",
           "item1": "检查每个 Pod 的 Git worktree 中的提交记录",
-          "item2": "查看频道消息历史，了解决策时间线",
+          "item2": "查看 Channel 消息历史，了解决策时间线",
           "item3": "共享文档包含最终达成一致的 API 契约",
           "item4": "将两个分支合并到主分支以完成完整功能"
         },
         "bestPractices": {
           "title": "最佳实践",
-          "tip1": "使用清晰的初始提示词，告诉每个智能体它的角色以及如何协调",
-          "tip2": "在频道中创建共享文档，用于双方智能体都需要的规范说明",
-          "tip3": "当一个智能体需要另一个智能体的特定回复时，使用 @提及",
-          "tip4": "先启动后端/基础设施智能体，让它发布契约供消费者使用",
-          "tip5": "保持频道描述的具体性，以便智能体理解协作上下文"
+          "tip1": "使用清晰的初始提示词，告诉每个 Agent 它的角色以及如何协调",
+          "tip2": "在 Channel 中创建共享文档，用于双方 Agent 都需要的规范说明",
+          "tip3": "当一个 Agent 需要另一个 Agent 的特定回复时，使用 @提及",
+          "tip4": "先启动后端/基础设施 Agent，让它发布契约供消费者使用",
+          "tip5": "保持 Channel 描述的具体性，以便 Agent 理解协作上下文"
         }
       },
       "loops": {
@@ -2197,7 +2197,7 @@
         "description": "学习如何设置按计划自动创建 Pod 的循环任务。循环非常适合定期任务，如代码审查、依赖更新、测试运行和监控。",
         "whatAreLoops": {
           "title": "什么是循环？",
-          "description": "循环是一种定时自动化机制，会按预设配置定期创建 AgentPod。你可以把它想象成 AI 智能体的 cron 任务 - 它按计划运行你的提示词，每次创建一个全新的 Pod。",
+          "description": "Loop 是一种定时自动化机制，会按预设配置定期创建 AgentPod。你可以把它想象成 AI Agent 的 cron 任务 - 它按计划运行你的提示词，每次创建一个全新的 Pod。",
           "item1": "定期代码审查 - 每天早上检查代码质量问题",
           "item2": "依赖更新 - 每周扫描并更新过期的依赖包",
           "item3": "测试监控 - 每天运行测试套件并报告失败",
@@ -2208,15 +2208,15 @@
           "description": "点击左侧边栏的循环。你将看到现有循环的列表（如果是第一次使用则为空）以及创建新循环的按钮。"
         },
         "step2": {
-          "title": "创建新循环",
-          "description": "点击新建循环并配置自动化：",
-          "fields": "填写循环设置：",
+          "title": "创建新 Loop",
+          "description": "点击新建 Loop 并配置自动化：",
+          "fields": "填写 Loop 设置：",
           "field1": "名称 - 描述性名称，例如「每日代码审查」",
-          "field2": "智能体 - 要使用的 AI 智能体（例如 Claude Code）",
-          "field3": "Runner - 执行循环的 Runner",
-          "field4": "仓库 - 智能体要处理的仓库",
+          "field2": "Agent - 要使用的 AI Agent（例如 Claude Code）",
+          "field3": "Runner - 执行 Loop 的 Runner",
+          "field4": "仓库 - Agent 要处理的仓库",
           "field5": "分支 - 要检出的分支（默认为 main）",
-          "field6": "提示词 - 智能体的任务，例如「审查最近的提交，检查代码质量问题。检查安全漏洞、性能问题和风格不一致。将摘要发布到频道。」",
+          "field6": "提示词 - Agent 的任务，例如「审查最近的提交，检查代码质量问题。检查安全漏洞、性能问题和风格不一致。将摘要发布到 Channel。」",
           "field7": "计划 - 设置 cron 计划（例如每天上午 9 点、每周一）"
         },
         "step3": {
@@ -2226,44 +2226,44 @@
           "pattern2": "每周一上午 8 点 - 0 8 * * 1",
           "pattern3": "每 6 小时 - 0 */6 * * *",
           "pattern4": "工作日上午 10 点 - 0 10 * * 1-5",
-          "tip": "循环仪表板显示下次计划执行时间，方便你验证 cron 表达式。"
+          "tip": "Loop 仪表板显示下次计划执行时间，方便你验证 cron 表达式。"
         },
         "step4": {
-          "title": "监控循环执行",
-          "description": "创建循环后，你可以监控其活动：",
-          "item1": "循环仪表板 - 查看所有循环的状态、上次运行时间和下次计划运行时间",
-          "item2": "执行历史 - 点击循环查看其创建的 Pod 历史记录",
+          "title": "监控 Loop 执行",
+          "description": "创建 Loop 后，你可以监控其活动：",
+          "item1": "Loop 仪表板 - 查看所有 Loop 的状态、上次运行时间和下次计划运行时间",
+          "item2": "执行历史 - 点击 Loop 查看其创建的 Pod 历史记录",
           "item3": "Pod 结果 - 每次执行都会创建一个 Pod，你可以查看终端输出和 Git 变更",
-          "item4": "通知 - 设置频道绑定以在频道中接收循环结果"
+          "item4": "通知 - 设置 Channel 绑定以在 Channel 中接收 Loop 结果"
         },
         "step5": {
           "title": "管理你的循环",
           "description": "你可以在循环仪表板中管理循环：",
-          "item1": "暂停 - 临时停止循环创建新 Pod，但不删除它",
-          "item2": "恢复 - 重新启动已暂停的循环",
+          "item1": "暂停 - 临时停止 Loop 创建新 Pod，但不删除它",
+          "item2": "恢复 - 重新启动已暂停的 Loop",
           "item3": "编辑 - 更新提示词、计划或配置",
           "item4": "立即运行 - 无需等待下次计划，立即触发一次执行",
-          "item5": "删除 - 永久移除循环"
+          "item5": "删除 - 永久移除 Loop"
         },
         "commonPatterns": {
-          "title": "常见循环模式",
+          "title": "常见 Loop 模式",
           "pattern1": {
             "title": "每日代码审查",
-            "description": "每天上午 9 点运行，审查昨天的提交。智能体检查代码质量、安全问题，并将摘要发布到团队频道。"
+            "description": "每天上午 9 点运行，审查昨天的提交。Agent 检查代码质量、安全问题，并将摘要发布到团队 Channel。"
           },
           "pattern2": {
             "title": "每周依赖审计",
-            "description": "每周一运行，扫描过期或存在漏洞的依赖。智能体创建包含安全更新的 PR。"
+            "description": "每周一运行，扫描过期或存在漏洞的依赖。Agent 创建包含安全更新的 PR。"
           },
           "pattern3": {
             "title": "持续测试监控",
-            "description": "每 6 小时运行一次测试套件。智能体将任何失败或回归报告到监控频道。"
+            "description": "每 6 小时运行一次测试套件。Agent 将任何失败或回归报告到监控 Channel。"
           }
         },
         "nextSteps": {
           "title": "下一步",
-          "description": "你已经设置了第一个自动化循环。继续探索更多：",
-          "item1": "多智能体协作 - 将循环与频道结合，构建自动化多智能体流水线",
+          "description": "你已经设置了第一个自动化 Loop。继续探索更多：",
+          "item1": "多 Agent 协作 - 将 Loop 与 Channel 结合，构建自动化多 Agent 流水线",
           "item2": "任务管理 - 使用工单跟踪循环发现的问题"
         }
       }

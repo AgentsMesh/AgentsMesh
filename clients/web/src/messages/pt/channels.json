@@ -3,28 +3,31 @@
     "contextMenu": {
       "openInNewWindow": "Abrir em nova janela"
     },
-    "emptyState": "Selecione um canal para começar a conversar",
-    "emptyStateHint": "Escolha um canal na barra lateral para ver mensagens e colaborar com sua equipe",
+    "emptyState": "Selecione um Channel para começar a conversar",
+    "emptyStateHint": "Escolha um Channel na barra lateral para ver mensagens e colaborar com sua equipe",
     "sidebar": {
       "searchPlaceholder": "Pesquisar canais...",
-      "createChannel": "Novo canal",
+      "createChannel": "Novo Channel",
       "refresh": "Atualizar",
       "showArchived": "Mostrar arquivados",
       "hideArchived": "Ocultar arquivados",
       "noChannels": "Nenhum canal ainda",
       "noMatch": "Nenhum canal encontrado",
-      "podsCount": "{count} pods"
+      "podsCount": "{count} pods",
+      "groupActive": "Ativo",
+      "groupLinked": "Vinculado",
+      "groupQuiet": "Silencioso"
     },
     "createDialog": {
-      "title": "Criar canal",
-      "name": "Nome do canal",
+      "title": "Criar Channel",
+      "name": "Nome do Channel",
       "namePlaceholder": "Ex: feature-auth, bug-fix-login",
-      "nameRequired": "O nome do canal é obrigatório",
+      "nameRequired": "O nome do Channel é obrigatório",
       "description": "Descrição",
-      "descriptionPlaceholder": "Sobre o que é este canal?",
+      "descriptionPlaceholder": "Sobre o que é este Channel?",
       "descriptionHint": "Opcional",
       "visibility": "Visibilidade",
-      "failed": "Falha ao criar canal"
+      "failed": "Falha ao criar Channel"
     },
     "visibility": {
       "public": "Público",
@@ -33,10 +36,10 @@
     "actions": {
       "join": "Entrar",
       "leave": "Sair",
-      "joinToParticipate": "Entre neste canal para ver mensagens e participar"
+      "joinToParticipate": "Entre neste Channel para ver mensagens e participar"
     },
     "members": {
-      "title": "Membros do canal",
+      "title": "Membros do Channel",
       "current": "Membros",
       "available": "Adicionar membros",
       "searchPlaceholder": "Pesquisar membros...",
@@ -61,6 +64,71 @@
       "deleteConfirmDescription": "Tem certeza de que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
       "delete": "Excluir",
       "moreActions": "Mais"
+    },
+    "archivedBanner": "Este Channel está arquivado — o envio de mensagens está desativado",
+    "header": {
+      "podsCount": "{count} pods",
+      "agentsCount": "{count} agentes",
+      "membersCount": "{count} membros",
+      "linkedTo": "Vinculado a",
+      "search": "Pesquisar mensagens",
+      "members": "Membros",
+      "settings": "Configurações do Channel",
+      "more": "Mais"
+    },
+    "rightRail": {
+      "pods": "PODS",
+      "agents": "AGENTES",
+      "members": "MEMBROS",
+      "linked": "VINCULADO",
+      "document": "DOCUMENTO",
+      "podsEmpty": "Nenhum pod ainda",
+      "agentsEmpty": "Nenhum agente ainda",
+      "documentEmpty": "Nenhum documento ainda",
+      "destroyed": "Destruído"
+    },
+    "composer": {
+      "placeholder": "Mensagem #{channel} — use @ para mencionar um pod ou membro",
+      "mention": "Mencionar",
+      "attach": "Anexar arquivo",
+      "send": "Enviar",
+      "formatBold": "Negrito",
+      "formatItalic": "Itálico",
+      "formatStrike": "Tachado",
+      "formatCode": "Código em linha",
+      "formatLink": "Link"
+    },
+    "search": {
+      "title": "Pesquisar mensagens",
+      "titleFor": "Pesquisar em #{channel}",
+      "placeholder": "Digite palavras-chave...",
+      "empty": "Nenhuma mensagem correspondente",
+      "resultCount": "{count} resultados"
+    },
+    "settings": {
+      "title": "Configurações do Channel",
+      "tabs": {
+        "basic": "Básico",
+        "archive": "Arquivar"
+      },
+      "name": "Nome do Channel",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Sobre o que é este Channel?",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "saved": "Salvo",
+      "saveFailed": "Falha ao salvar",
+      "archive": "Arquivar Channel",
+      "unarchive": "Desarquivar Channel",
+      "archiveHint": "Arquivar oculta o Channel dos membros, mas preserva todas as mensagens.",
+      "unarchiveHint": "Este Channel está atualmente arquivado. Desarquivar restaura o acesso dos membros.",
+      "archived": "Arquivado",
+      "unarchived": "Desarquivado",
+      "archiveFailed": "A operação de arquivamento falhou"
+    },
+    "attachment": {
+      "download": "Baixar anexo",
+      "preview": "Visualizar anexo"
     }
   }
 }

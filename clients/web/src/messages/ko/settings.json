@@ -16,9 +16,7 @@
     "backToSettings": "설정으로 돌아가기",
     "general": "일반",
     "team": "팀",
-    "gitProviders": "Git 제공자",
     "agents": "에이전트",
-    "billing": "결제",
     "personal": {
       "title": "Personal Settings",
       "description": "Manage your personal preferences",
@@ -33,7 +31,9 @@
         "agentCredentials": "Agent Credentials",
         "agentCredentialsDesc": "API keys for AI agents",
         "notifications": "Notifications",
-        "notificationsDesc": "Push notification preferences"
+        "notificationsDesc": "Push notification preferences",
+        "support": "지원 티켓",
+        "supportDesc": "지원 요청을 제출하고 추적합니다"
       },
       "general": {
         "title": "General Settings",
@@ -123,7 +123,10 @@
         "cancel": "Cancel",
         "inviting": "Inviting...",
         "sendInvite": "Send Invite"
-      }
+      },
+      "subscriptionFrozen": "구독이 만료되었습니다. 멤버를 초대하려면 구독을 갱신하세요.",
+      "manageSeats": "좌석 관리",
+      "renewSubscription": "구독 갱신"
     },
     "agentConfig": {
       "title": "Agent Configuration",
@@ -148,7 +151,7 @@
       "invalidJson": "Invalid JSON format",
       "credentials": {
         "title": "API Credentials",
-        "description": "이 에이전트의 API 자격 증명을 구성합니다. 설정되지 않은 경우 에이전트의 내장 인증 흐름(OAuth, 로그인된 CLI 등)을 사용합니다."
+        "description": "이 Agent의 API 자격 증명을 구성합니다. 설정되지 않은 경우 Agent의 내장 인증 흐름(OAuth, 로그인된 CLI 등)을 사용합니다."
       },
       "runtime": {
         "title": "Runtime Configuration",
@@ -246,7 +249,7 @@
     },
     "agentCredentials": {
       "title": "Agent Credentials",
-      "description": "에이전트별 API 자격 증명을 관리합니다. 자격 증명이 없는 에이전트는 내장 인증 흐름을 사용하며, 자격 증명을 추가하면 시작 시 주입됩니다.",
+      "description": "Agent별 API 자격 증명을 관리합니다. 자격 증명이 없는 Agent는 내장 인증 흐름을 사용하며, 자격 증명을 추가하면 시작 시 주입됩니다.",
       "failedToLoad": "Failed to load agent credentials",
       "profiles": "profiles",
       "noAgents": "No agents available",
@@ -256,15 +259,11 @@
       "setAsDefault": "Set as default",
       "addProfile": "Add Custom Credentials",
       "editProfile": "Edit Credentials",
-      "customProfileDescription": "이 에이전트에 대한 자체 API 자격 증명을 추가합니다. 에이전트 시작 시 환경에 주입됩니다.",
+      "customProfileDescription": "이 Agent에 대한 자체 API 자격 증명을 추가합니다. Agent 시작 시 환경에 주입됩니다.",
       "name": "Profile Name",
       "namePlaceholder": "e.g., Work Config, Personal",
       "descriptionLabel": "Description",
       "descriptionPlaceholder": "Optional description for this profile",
-      "baseUrl": "Base URL",
-      "apiKey": "API Key",
-      "apiKeyPlaceholder": "Leave empty to keep existing",
-      "apiKeyEditHint": "Leave empty to keep the existing API key",
       "profileCreated": "Profile created successfully",
       "profileUpdated": "Profile updated successfully",
       "profileDeleted": "Profile deleted successfully",
@@ -273,17 +272,13 @@
       "failedToDelete": "Failed to delete profile",
       "failedToSetDefault": "Failed to set default profile",
       "confirmDelete": "Are you sure you want to delete this profile?",
-      "authToken": "Auth Token",
-      "authTokenPlaceholder": "Leave empty to keep existing",
-      "authTokenEditHint": "Leave empty to keep the existing Auth Token",
-      "credentialMethod": "Authentication Method",
-      "credentialMethodApiKey": "API Key",
-      "credentialMethodAuthToken": "Auth Token",
-      "noBundleLabel": "에이전트 기본 인증 사용",
-      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. 에이전트의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다.",
+      "noBundleLabel": "Agent 기본 인증 사용",
+      "noBundleHint": "추가 자격 증명을 주입하지 않습니다. Agent의 내장 인증 흐름(OAuth, 로그인된 CLI 등)이 사용됩니다.",
       "removeSecret": "이 자격 증명 제거",
       "willRemove": "저장 시 제거됩니다",
-      "baseUrlSecurityHint": "URL에 토큰을 넣지 마세요. 평문으로 저장되며 편집 시 여기에 표시됩니다."
+      "baseUrlSecurityHint": "URL에 토큰을 넣지 마세요. 평문으로 저장되며 편집 시 여기에 표시됩니다.",
+      "secretPlaceholder": "기존 값을 유지하려면 비워 두세요",
+      "secretEditHint": "기존 값을 유지하려면 비워 두세요"
     },
     "sshKeys": {
       "title": "SSH Keys",
@@ -405,7 +400,7 @@
       "cacheCreationTokens": "캐시 생성 토큰",
       "totalTokens": "총 토큰",
       "timeSeriesTitle": "시간별 토큰 사용량",
-      "byAgentTitle": "에이전트별 사용량",
+      "byAgentTitle": "Agent별 사용량",
       "byUserTitle": "사용자별 사용량",
       "byModelTitle": "모델별 사용량",
       "columnUser": "사용자",
@@ -416,7 +411,7 @@
       "retry": "다시 시도",
       "filters": {
         "timeRange": "기간",
-        "agent": "에이전트",
+        "agent": "Agent",
         "granularity": "세분화",
         "allAgents": "모든 에이전트",
         "last7Days": "최근 7일",
@@ -449,14 +444,14 @@
       "runnerOfflineDesc": "When a runner goes offline or has issues",
       "active": "Notifications are active",
       "deliveryPreferences": "전달 설정",
-      "channelMessage": "채널 메시지",
+      "channelMessage": "Channel 메시지",
       "channelMessageDesc": "참여 중인 채널에 새 메시지가 있을 때",
       "channelMention": "@멘션",
-      "channelMentionDesc": "채널에서 누군가 당신을 멘션했을 때",
+      "channelMentionDesc": "Channel에서 누군가 당신을 멘션했을 때",
       "terminalOsc": "터미널 알림",
-      "terminalOscDesc": "에이전트 터미널의 알림 (OSC 이벤트)",
+      "terminalOscDesc": "Agent 터미널의 알림 (OSC 이벤트)",
       "taskCompleted": "작업 ���료",
-      "taskCompletedDesc": "에이전트가 ���업을 완료했을 때"
+      "taskCompletedDesc": "Agent가 작업을 완료했을 때"
     },
     "runnersSection": {
       "title": "Runners",
@@ -653,7 +648,7 @@
         "scopePodsWrite": "Pod 쓰기",
         "scopePodsWriteDesc": "Pod 생성, 종료 및 수명 주기 관리",
         "scopeTicketsRead": "티켓 읽기",
-        "scopeTicketsReadDesc": "티켓, 보드, 티켓 상세정보 목록 및 조회",
+        "scopeTicketsReadDesc": "Ticket, 보드, Ticket 상세정보 목록 및 조회",
         "scopeTicketsWrite": "티켓 쓰기",
         "scopeTicketsWriteDesc": "티켓 생성, 수정, 삭제 및 상태 변경",
         "scopeChannelsRead": "채널 읽기",
@@ -661,7 +656,7 @@
         "scopeChannelsWrite": "채널 쓰기",
         "scopeChannelsWriteDesc": "채널 생성, 수정 및 메시지 전송",
         "scopeRunnersRead": "러너 읽기",
-        "scopeRunnersReadDesc": "러너 목록, 상세정보, 상태 및 관련 Pod 조회",
+        "scopeRunnersReadDesc": "Runner 목록, 상세정보, 상태 및 관련 Pod 조회",
         "scopeReposRead": "리포지토리 읽기",
         "scopeReposReadDesc": "리포지토리 목록, 상세정보, 브랜치 및 머지 리퀘스트 조회",
         "expirationLabel": "만료",
@@ -671,7 +666,11 @@
         "expiration1y": "1년",
         "cancel": "취소",
         "create": "생성",
-        "creating": "생성 중..."
+        "creating": "생성 중...",
+        "scopeLoopsRead": "Loops 읽기",
+        "scopeLoopsReadDesc": "Loop 목록, 상세 정보, 실행 기록 조회",
+        "scopeLoopsWrite": "Loops 쓰기",
+        "scopeLoopsWriteDesc": "Loop 실행 트리거 및 실행 중인 Loop 취소"
       },
       "secretDialog": {
         "title": "API 키가 생성되었습니다",
@@ -696,6 +695,191 @@
         "description": "이 API 키를 영구적으로 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
         "delete": "삭제",
         "cancel": "취소"
+      },
+      "scopeGroupLoops": "Loops"
+    },
+    "gitProviders": {
+      "title": "Git 제공자",
+      "description": "저장소 통합을 위한 Git 제공자를 구성합니다",
+      "addProvider": "제공자 추가",
+      "loading": "제공자를 불러오는 중...",
+      "noProviders": "구성된 Git 제공자가 없습니다. 시작하려면 하나를 추가하세요.",
+      "default": "기본값",
+      "disabled": "비활성화됨",
+      "configure": "구성",
+      "enable": "활성화",
+      "disable": "비활성화",
+      "delete": "삭제",
+      "confirmDelete": "이 제공자를 삭제하시겠습니까?",
+      "failedToLoad": "Git 제공자를 불러오지 못했습니다",
+      "failedToAdd": "제공자를 추가하지 못했습니다",
+      "failedToUpdate": "제공자를 업데이트하지 못했습니다",
+      "failedToDelete": "제공자를 삭제하지 못했습니다",
+      "failedToToggle": "제공자 상태를 전환하지 못했습니다",
+      "sshAuth": "SSH 인증",
+      "dialog": {
+        "addTitle": "Git 제공자 추가",
+        "editTitle": "제공자 구성",
+        "providerType": "제공자 유형",
+        "sshHint": "SSH 제공자는 인증에 SSH 키를 사용합니다. 자체 호스팅 Git 서버에 적합합니다.",
+        "nameLabel": "이름",
+        "namePlaceholderSSH": "예: 내 Git 서버",
+        "namePlaceholder": "예: 내 GitHub",
+        "baseUrlLabel": "기본 URL",
+        "baseUrlHint": "자체 호스팅 인스턴스의 경우 기본 URL을 입력하세요",
+        "clientIdLabel": "Client ID (선택 사항)",
+        "clientIdPlaceholder": "OAuth 앱 Client ID",
+        "clientSecretLabel": "Client Secret (선택 사항)",
+        "clientSecretPlaceholder": "OAuth 앱 Client Secret",
+        "botTokenLabel": "봇 토큰 (선택 사항)",
+        "botTokenPlaceholder": "개인 액세스 토큰",
+        "sshKeyLabel": "SSH 키",
+        "sshKeyPlaceholder": "SSH 키를 선택하세요...",
+        "noSSHKeys": "사용 가능한 SSH 키가 없습니다. 아래에서 하나를 만드세요.",
+        "setDefault": "기본 제공자로 설정",
+        "cancel": "취소",
+        "saving": "저장 중...",
+        "saveChanges": "변경 사항 저장",
+        "addProvider": "제공자 추가"
+      }
+    },
+    "billing": {
+      "checkout": {
+        "title": "구매 완료하기",
+        "selectBillingCycle": "결제 주기 선택",
+        "monthly": "월간",
+        "yearly": "연간 (17% 절약)",
+        "monthlyPrice": "좌석당 ${price}/월",
+        "yearlyPrice": "좌석당 ${price}/년",
+        "orderSummary": "주문 요약",
+        "plan": "플랜",
+        "billingCycle": "결제 주기",
+        "pricePerSeat": "좌석당 가격",
+        "seats": "좌석",
+        "total": "합계",
+        "proceedToPayment": "결제 진행",
+        "processing": "처리 중...",
+        "cancel": "취소",
+        "redirecting": "결제로 이동 중...",
+        "scanQRCode": "QR 코드를 스캔하여 결제",
+        "qrCodeExpired": "QR 코드가 만료되었습니다",
+        "refresh": "새로고침",
+        "waitingForPayment": "결제 확인을 기다리는 중...",
+        "paymentMethods": "결제 수단",
+        "stripe": "신용카드 (Stripe)",
+        "alipay": "Alipay",
+        "wechat": "WeChat Pay",
+        "additionalSeats": "추가 좌석",
+        "seatPurchaseNote": "좌석이 현재 구독에 즉시 추가됩니다.",
+        "stripePayment": "Stripe(신용카드)로 결제",
+        "globalPayment": "신용카드로 안전하게 결제",
+        "cnPayment": "Alipay 또는 WeChat Pay로 결제",
+        "save": "${amount} 절약",
+        "scanToPay": "스캔하여 결제",
+        "scanInstructions": "Alipay 또는 WeChat으로 QR 코드를 스캔하여 결제를 완료하세요.",
+        "orderNo": "주문 번호",
+        "checkPaymentStatus": "결제 상태 확인"
+      },
+      "cancel": {
+        "title": "구독 취소",
+        "description": "구독을 취소하시겠습니까?",
+        "endOfPeriod": "기간 종료 시 취소",
+        "endOfPeriodDesc": "{date}까지 접근 권한을 유지한 후 취소",
+        "immediate": "즉시 취소",
+        "immediateDesc": "지금 취소하고 즉시 접근 권한을 잃습니다",
+        "immediateWarning": "경고: 모든 프리미엄 기능에 대한 접근 권한을 즉시 잃게 됩니다. 이 작업은 되돌릴 수 없습니다.",
+        "keepSubscription": "구독 유지",
+        "confirmCancel": "구독 취소",
+        "cancelling": "취소 중...",
+        "recommended": "권장"
+      },
+      "seats": {
+        "title": "좌석 관리",
+        "seatsUsed": "사용 중인 좌석",
+        "available": "사용 가능",
+        "maxSeats": "현재 플랜에서 최대 {max}개 좌석이 허용됩니다",
+        "addSeats": "좌석 추가",
+        "purchaseSeats": "추가 좌석 구매",
+        "seatsToAdd": "좌석 수",
+        "proratedNote": "남은 결제 기간에 대해 일할 계산된 금액이 청구됩니다.",
+        "cancelPurchase": "취소",
+        "proceedToPurchase": "구매 진행",
+        "processing": "처리 중...",
+        "upgradeToAddSeats": "좌석을 더 추가하려면 유료 플랜으로 업그레이드하세요",
+        "retry": "다시 시도"
+      },
+      "invoices": {
+        "title": "청구서 기록",
+        "invoiceNo": "청구서 번호",
+        "date": "날짜",
+        "period": "기간",
+        "amount": "금액",
+        "status": "상태",
+        "noInvoices": "아직 청구서가 없습니다",
+        "loadMore": "더 보기",
+        "loading": "로딩 중...",
+        "retry": "다시 시도"
+      },
+      "cycleSwitch": {
+        "title": "결제 주기",
+        "description": "월간 결제와 연간 결제를 전환합니다. 변경 사항은 현재 결제 기간이 끝날 때 적용됩니다.",
+        "monthly": "월간",
+        "yearly": "연간",
+        "saveNote": "17% 절약",
+        "pendingChange": "{date}에 결제가 {from}에서 {to}(으)로 전환됩니다.",
+        "cancelChange": "변경 취소",
+        "cancelling": "취소 중...",
+        "confirmTitle": "결제 주기 변경",
+        "confirmDescription": "결제를 {from}에서 {to}(으)로 전환하시겠습니까? 이 변경 사항은 현재 결제 기간이 끝날 때 적용됩니다.",
+        "cancel": "취소",
+        "confirm": "확인",
+        "switching": "전환 중...",
+        "success": "결제 주기가 성공적으로 변경되었습니다"
+      }
+    },
+    "credentialForm": {
+      "anthropic": {
+        "baseUrl": "Anthropic Base URL",
+        "apiKey": "Anthropic API 키",
+        "authToken": "Anthropic 인증 토큰",
+        "authMethod": "인증",
+        "authMethodHint": "둘 중 하나를 입력하세요"
+      },
+      "openai": {
+        "apiKey": "OpenAI API 키"
+      },
+      "google": {
+        "apiKey": "Google API 키"
+      },
+      "customEnv": {
+        "title": "사용자 지정 환경 변수",
+        "addButton": "변수 추가",
+        "keyPlaceholder": "ENV_NAME",
+        "valuePlaceholder": "값",
+        "remove": "제거",
+        "keyInvalid": "유효하지 않은 환경 변수 이름입니다 (대문자, 숫자, 밑줄만 가능)",
+        "keyConflict": "선언된 필드와 충돌합니다",
+        "keyDuplicate": "중복된 환경 변수 이름입니다"
+      },
+      "codex": {
+        "customEnvHint": "프록시 또는 모델 재정의를 위해 OPENAI_BASE_URL, OPENAI_MODEL 등을 추가하세요"
+      },
+      "loopal": {
+        "customEnvHint": "추가 제공자 키, 예: XAI_API_KEY, DEEPSEEK_API_KEY"
+      },
+      "gemini": {
+        "customEnvHint": "GEMINI_API_KEY 같은 추가 키"
+      },
+      "aider": {
+        "customEnvHint": "기타 제공자 키 또는 프록시 설정"
+      },
+      "opencode": {
+        "customEnvHint": "opencode에 필요한 모든 환경 변수"
+      },
+      "cursor": {
+        "apiKey": "Cursor API 키",
+        "apiKeyHint": "선택 사항. `cursor-agent login`(OAuth)을 사용하려면 비워 두고, 헤드리스/키 기반 인증에는 설정하세요.",
+        "customEnvHint": "cursor-agent에 필요한 추가 환경 변수를 추가하세요"
       }
     }
   }

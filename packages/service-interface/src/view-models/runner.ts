@@ -23,6 +23,7 @@ export interface RunnerData {
     hostname?: string;
   };
   available_agents?: string[];
+  agent_versions?: Array<{ slug: string; version: string; path?: string }>;
   tags?: string[];
   created_at?: string;
   updated_at?: string;

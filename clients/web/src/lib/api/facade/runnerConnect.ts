@@ -12,6 +12,7 @@ export {
   updateRunner,
   deleteRunner,
   upgradeRunner,
+  upgradeAgent,
   requestLogUpload,
   listRunnerLogs,
   querySandboxes,

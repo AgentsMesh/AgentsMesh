@@ -45,7 +45,7 @@
       "lastUpdated": "최종 업데이트",
       "defaultBranch": "기본 브랜치",
       "default": "기본",
-      "ticketPrefix": "티켓 접두사",
+      "ticketPrefix": "Ticket 접두사",
       "viewOnProvider": "{provider}에서 보기",
       "visibility": "가시성",
       "public": "공개",
@@ -119,7 +119,9 @@
         "title": "Delete Repository",
         "description": "Are you sure you want to delete this repository? This action cannot be undone."
       },
-      "branchesRequireCredentials": "Branch listing requires Git credentials"
+      "branchesRequireCredentials": "Branch listing requires Git credentials",
+      "httpCloneUrl": "HTTP 클론 URL",
+      "sshCloneUrl": "SSH 클론 URL"
     },
     "edit": {
       "title": "Edit Repository",
@@ -130,7 +132,10 @@
       "nameRequired": "Name is required",
       "updateFailed": "Failed to update repository. Please try again.",
       "saving": "Saving...",
-      "saveChanges": "Save Changes"
+      "saveChanges": "Save Changes",
+      "httpCloneUrl": "HTTP 클론 URL",
+      "sshCloneUrl": "SSH 클론 URL",
+      "cloneUrlHint": "비워 두면 URL이 자동으로 생성됩니다"
     },
     "webhook": {
       "title": "Webhook Settings",

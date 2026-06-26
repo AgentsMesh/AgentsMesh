@@ -49,8 +49,9 @@ func (m *mockSender) SendSandboxesStatus(string, []*SandboxStatusInfo) error { r
 func (m *mockSender) SendObservePodResult(string, string, string, string, int, int, int, bool, string) error {
 	return nil
 }
-func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error     { return nil }
-func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error { return nil }
+func (m *mockSender) SendUpgradeStatus(*runnerv1.UpgradeStatusEvent) error           { return nil }
+func (m *mockSender) SendUpgradeAgentResult(*runnerv1.UpgradeAgentResultEvent) error { return nil }
+func (m *mockSender) SendLogUploadStatus(*runnerv1.LogUploadStatusEvent) error       { return nil }
 func (m *mockSender) SendTokenUsage(string, []*runnerv1.TokenModelUsage, time.Time) error {
 	return nil
 }

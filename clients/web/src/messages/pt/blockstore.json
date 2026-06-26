@@ -11,5 +11,12 @@
     "taskHint": "To-do item",
     "list": "List",
     "listHint": "Bullet container"
+  },
+  "blocks": {
+    "sidebar": {
+      "deletePage": "Excluir página",
+      "deletePageTitle": "Excluir página?",
+      "deletePageDesc": "\"{title}\" e seus blocos serão removidos. Isso não pode ser desfeito."
+    }
   }
 }

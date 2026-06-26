@@ -1,7 +1,7 @@
 {
   "ide": {
     "activities": {
-      "workspace": "ワークスペース",
+      "workspace": "Workspace",
       "tickets": "チケット",
       "channels": "チャンネル",
       "mesh": "Mesh",
@@ -10,7 +10,8 @@
       "repositories": "リポジトリ",
       "runners": "Runner",
       "settings": "設定",
-      "help": "ヘルプとフィードバック"
+      "help": "ヘルプとフィードバック",
+      "infra": "インフラ"
     },
     "bottomPanel": {
       "output": "出力",
@@ -26,13 +27,13 @@
       "noActivity": "最近のアクティビティはありません",
       "selectPodFirst": "詳細を表示するにはターミナルを選択してください",
       "noBindings": "バインディングなし",
-      "podChannels": "{count}個のチャンネルに参加中",
+      "podChannels": "{count}個の Channel に参加中",
       "members": "メンバー",
       "incomingBindings": "受信バインディング",
       "outgoingBindings": "送信バインディング",
       "currentPod": "このPod",
       "sendMessagePlaceholder": "メッセージを送信...",
-      "channelDocument": "チャンネルドキュメント",
+      "channelDocument": "Channel ドキュメント",
       "deliveryTab": {
         "notAvailable": "デリバリーステータスが利用できません",
         "requiresRepoBranch": "リポジトリとブランチが必要です",
@@ -45,13 +46,13 @@
       "infoTab": {
         "notFound": "Pod情報が利用できません",
         "podKey": "Pod Key",
-        "agent": "エージェント",
-        "agentStatus": "エージェント状態",
+        "agent": "Agent",
+        "agentStatus": "Agent 状態",
         "runner": "Runner",
         "repository": "リポジトリ",
         "branch": "ブランチ",
-        "worktree": "ワークツリー",
-        "ticket": "チケット",
+        "worktree": "Worktree",
+        "ticket": "Ticket",
         "createdBy": "作成者",
         "startedAt": "開始",
         "createdAt": "作成",
@@ -61,11 +62,11 @@
     },
     "createPod": {
       "title": "新しいPodを作成",
-      "selectRunner": "Runnerを選択",
-      "selectRunnerPlaceholder": "Runnerを選んでください...",
+      "selectRunner": "Runner を選択",
+      "selectRunnerPlaceholder": "Runner を選んでください...",
       "noRunnersAvailable": "No runners available",
-      "selectAgent": "エージェントを選択",
-      "selectAgentPlaceholder": "エージェントを選んでください...",
+      "selectAgent": "Agent を選択",
+      "selectAgentPlaceholder": "Agent を選んでください...",
       "noAgentsForRunner": "This runner does not support any agents",
       "selectCredential": "API Credentials",
       "selectRuntimeBundles": "Runtime Env Bundles",
@@ -80,7 +81,7 @@
       "branch": "ブランチ",
       "branchPlaceholder": "main",
       "prompt": "初期プロンプト",
-      "promptPlaceholder": "エージェントの初期タスクを入力...",
+      "promptPlaceholder": "Agent の初期タスクを入力...",
       "advancedOptions": "Advanced Options",
       "runnerAutoSelect": "Auto-select (Recommended)",
       "advanced": "詳細オプション",
@@ -99,9 +100,9 @@
       "alias": "エイリアス",
       "aliasPlaceholder": "Podの表示名を入力...",
       "perpetual": "永続モード",
-      "perpetualDescription": "エージェント終了時に自動再起動。Podは常にオンラインのまま。",
-      "noBundleLabel": "エージェントの既定認証を使用",
-      "noBundleHint": "追加の認証情報を注入しません。エージェントの組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。",
+      "perpetualDescription": "Agent 終了時に自動再起動。Podは常にオンラインのまま。",
+      "noBundleLabel": "Agent の既定認証を使用",
+      "noBundleHint": "追加の認証情報を注入しません。Agent の組み込み認証フロー（OAuth、ログイン済み CLI など）が使われます。",
       "multiBundleHint": "選択したバンドルは順番に Pod 環境変数へマージされます。後に選んだものが同名キーを上書きします。",
       "selectedOrderHint": "選択中（マージ順）",
       "moveUp": "上へ",
@@ -136,11 +137,13 @@
           "extensions": "Extensions",
           "extensionsDesc": "Skills and MCP server marketplace",
           "billing": "Billing",
-          "billingDesc": "Subscription and payments"
+          "billingDesc": "Subscription and payments",
+          "usage": "トークン使用量",
+          "usageDesc": "トークン消費を監視"
         }
       },
       "mesh": {
-        "searchPlaceholder": "Search mesh...",
+        "searchPlaceholder": "Pod / Runner を検索",
         "viewTopology": "View Topology",
         "showTerminatedPods": "Show terminated pods",
         "networkStats": "Network Stats",
@@ -157,8 +160,24 @@
         "selectedChannel": "Selected Channel",
         "channelsLabel": "チャンネル",
         "podsLabel": "Pod",
-        "terminal": "Terminal"
-      }
+        "terminal": "Terminal",
+        "resetFilters": "フィルターをリセット",
+        "matchCount": "{count} 件一致",
+        "runnerFilter": "Runner",
+        "statusFilter": "ステータス",
+        "runnerPrefix": "Runner",
+        "statusRunning": "実行中",
+        "statusInit": "初期化中",
+        "statusTerminated": "終了",
+        "statusFailed": "失敗"
+      },
+      "collapse": "サイドバーを折りたたむ"
+    },
+    "orgSwitcher": {
+      "title": "現在の組織",
+      "empty": "組織がありません",
+      "create": "組織を作成",
+      "manage": "組織設定"
     }
   }
 }

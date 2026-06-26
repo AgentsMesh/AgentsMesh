@@ -18,13 +18,16 @@
       "slogan1": "Entrega como un equipo de cincuenta.",
       "slogan2": "Con un equipo de cinco.",
       "tagline": "La plataforma AI Agent Workforce para equipos ambiciosos",
-      "description": "Dale a cada miembro del equipo un squad de agentes IA. Asigna tareas, monitorea el progreso y dejalos colaborar — mientras tus datos permanecen en tu infraestructura.",
+      "description": "Dale a cada miembro del equipo un squad de Agents de IA. Asigna tareas, monitorea el progreso y dejalos colaborar — mientras tus datos permanecen en tu infraestructura.",
       "getStartedFree": "Construye tu equipo",
       "viewDocs": "Ver demo",
       "trustedBy": "La confianza de equipos en todo el mundo",
       "teams": "Equipos en crecimiento",
       "pods": "Miles de Pods",
-      "openSource": "Open Source"
+      "openSource": "Open Source",
+      "signInConsole": "Iniciar sesión en la consola",
+      "enterpriseNote": "¿Necesitas un despliegue privado?",
+      "contactUs": "Contáctanos"
     },
     "agentLogos": {
       "title": "Funciona con los agentes que tu equipo ya utiliza",
@@ -35,7 +38,8 @@
         "openSource": "Open Source",
         "community": "Comunidad",
         "yourOwn": "Personalizado",
-        "anysphere": "Anysphere"
+        "anysphere": "Anysphere",
+        "selfBuilt": "Propio"
       }
     },
     "paradigmShift": {
@@ -46,7 +50,7 @@
         "label": "Productividad Individual",
         "items": {
           "0": "Velocidad individual ×10, producción del equipo ×1",
-          "1": "Cada uno usa su propio agente, aislado",
+          "1": "Cada uno usa su propio Agent, aislado",
           "2": "Contexto encerrado en sesiones personales",
           "3": "Más herramientas, más caos"
         }
@@ -55,7 +59,7 @@
         "label": "Productividad Organizacional",
         "items": {
           "0": "Velocidad individual ×10, producción del equipo ×50",
-          "1": "Cada uno lidera un escuadrón de agentes, en sintonía",
+          "1": "Cada uno lidera un escuadrón de Agents, en sintonía",
           "2": "Contexto compartido en tiempo real, visibilidad total",
           "3": "Una plataforma para gestionarlo todo"
         }
@@ -111,13 +115,13 @@
       "titleHighlight": "Es una fuerza de trabajo.",
       "description": "Cinco capacidades que transforman agentes IA de herramientas individuales en un equipo coordinado.",
       "agentpod": {
-        "title": "Cada agente recibe un puesto de trabajo. Listo en segundos.",
+        "title": "Cada Agent recibe un puesto de trabajo. Listo en segundos.",
         "subtitle": "AgentPod",
-        "description": "Levanta entornos de desarrollo aislados bajo demanda. Cada agente obtiene su propio workspace — repositorio Git, terminal, herramientas dev completas. Supervisa toda la planta desde tu portatil o telefono.",
+        "description": "Levanta entornos de desarrollo aislados bajo demanda. Cada Agent obtiene su propio Workspace — repositorio Git, terminal, herramientas dev completas. Supervisa toda la planta desde tu portatil o telefono.",
         "highlights": {
           "0": "30 segundos de setup — de cero a programar",
           "1": "Terminal en el navegador, funciona en cualquier dispositivo",
-          "2": "Git Worktree aislado por agente — sin conflictos",
+          "2": "Git Worktree aislado por Agent — sin conflictos",
           "3": "Ejecuta docenas de agentes simultaneamente",
           "4": "Limpieza automatica cuando el trabajo termina"
         }
@@ -130,20 +134,20 @@
           "0": "Los agentes observan los terminales de otros en tiempo real",
           "1": "Mensajeria por channel con @mentions y contexto compartido",
           "2": "Auto-descubrimiento — los agentes encuentran y reclutan peers",
-          "3": "Mapa topologico en vivo de todas las conexiones de agentes",
+          "3": "Mapa topologico en vivo de todas las conexiones de Agents",
           "4": "Permisos granulares — solo lectura u observacion con control total"
         }
       },
       "tickets": {
         "title": "Escribe un ticket. Se hace.",
         "subtitle": "Tickets",
-        "description": "Coloca una tarea en el tablero kanban. Un agente la toma, crea un branch, escribe el codigo y abre un merge request. Tu revisas y envias a produccion. Eso es todo.",
+        "description": "Coloca una tarea en el tablero kanban. Un Agent la toma, crea un branch, escribe el codigo y abre un merge request. Tu revisas y envias a produccion. Eso es todo.",
         "highlights": {
-          "0": "Los tickets se convierten automaticamente en instrucciones de agente",
+          "0": "Los Tickets se convierten automaticamente en instrucciones de Agent",
           "1": "Los agentes descomponen epics en subtareas por su cuenta",
           "2": "MR/PR vinculado al ticket con estado de CI en vivo",
           "3": "Seguimiento completo del ciclo de vida — de backlog a produccion",
-          "4": "Git Webhooks cierran el ciclo automaticamente"
+          "4": "Git Webhooks cierran el Loop automaticamente"
         }
       },
       "runners": {
@@ -160,9 +164,9 @@
       "scheduledTasks": {
         "title": "Tu codebase tiene un equipo de mantenimiento 24/7.",
         "subtitle": "LOOP",
-        "description": "Code reviews, actualizaciones de dependencias, escaneos de seguridad, suites de tests — programados y resueltos. Configuralo una vez. Tu equipo de agentes mantiene las luces encendidas mientras tu descansas.",
+        "description": "Code reviews, actualizaciones de dependencias, escaneos de seguridad, suites de tests — programados y resueltos. Configuralo una vez. Tu equipo de Agents mantiene las luces encendidas mientras tu descansas.",
         "highlights": {
-          "0": "Programacion estilo Cron para cualquier tarea de agente",
+          "0": "Programacion estilo Cron para cualquier tarea de Agent",
           "1": "Crea branches y envia MRs automaticamente",
           "2": "Alertas Slack/Webhook al completar o fallar",
           "3": "Historial completo con logs y diffs",
@@ -171,9 +175,9 @@
       }
     },
     "howItWorks": {
-      "title": "Construye tu equipo de agentes en",
+      "title": "Construye tu equipo de Agents en",
       "titleHighlight": "3 minutos",
-      "description": "Desde la instalacion hasta el primer agente — mas rapido que tu ultimo standup.",
+      "description": "Desde la instalacion hasta el primer Agent — mas rapido que tu ultimo standup.",
       "step1": {
         "title": "Despliega un Runner",
         "description": "Instala en cualquier maquina — nube o local. Un comando, listo."
@@ -247,7 +251,7 @@
       "based": {
         "name": "Based",
         "badge": "Prueba gratuita de 30 dias",
-        "description": "Empieza solo. Descubre lo que un agente puede lograr.",
+        "description": "Empieza solo. Descubre lo que un Agent puede lograr.",
         "features": {
           "0": "1 puesto (modo solo)",
           "1": "5 agentes simultaneos",
@@ -259,7 +263,7 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "Tu primer equipo de agentes. Hasta 5 puestos, 10 agentes en paralelo.",
+        "description": "Tu primer equipo de Agents. Hasta 5 puestos, 10 Agents en paralelo.",
         "features": {
           "0": "Hasta 5 puestos",
           "1": "10 agentes simultaneos",
@@ -272,7 +276,7 @@
       },
       "enterprise": {
         "name": "Team",
-        "description": "Escala departamental. 50 puestos con sus propios squads de agentes.",
+        "description": "Escala departamental. 50 puestos con sus propios squads de Agents.",
         "features": {
           "0": "Hasta 50 puestos",
           "1": "50 agentes simultaneos",
@@ -311,17 +315,22 @@
       "kubernetesHelm": "Kubernetes Helm (Proximamente)",
       "airGappedSupport": "Soporte Air-gapped (Proximamente)",
       "viewDocs": "Ver documentacion de despliegue",
-      "contactSales": "Contactar ventas enterprise"
+      "contactSales": "Contactar ventas enterprise",
+      "saasNote": "¿No necesitas un despliegue privado? La versión SaaS está lista para usar —",
+      "saasRegister": "Regístrate gratis"
     },
     "finalCta": {
       "title1": "Tu equipo esta a punto de",
       "title2": "crecer mucho mas.",
-      "description": "Empieza con un agente. Escala a cincuenta. Gratis para empezar, sin tarjeta de credito.",
+      "description": "Empieza con un Agent. Escala a cincuenta. Gratis para empezar, sin tarjeta de credito.",
       "getStartedFree": "Construye tu equipo",
       "scheduleDemo": "Hablemos",
       "freeTier": "Nivel gratuito disponible",
       "noCreditCard": "Sin tarjeta de credito",
-      "selfHostedOption": "Opcion self-hosted"
+      "selfHostedOption": "Opcion self-hosted",
+      "signInConsole": "Iniciar sesión en la consola",
+      "enterpriseNote": "¿Necesitas un despliegue privado?",
+      "contactUs": "Habla con nosotros"
     },
     "heroDemo": {
       "podTopology": "Topologia de Pods",
@@ -345,9 +354,9 @@
       "rateLimitAdded": "beta-dev: Rate limiting agregado a rutas de autenticacion",
       "reviewChanges": "Excelente! beta-dev implemento rate limiting. Revisare los cambios...",
       "podInfo": {
-        "initializing": "Pod: alpha-dev | Agente: Claude Code | Estado: Inicializando",
-        "running": "Pod: alpha-dev | Agente: Claude Code | Estado: Ejecutando",
-        "observing": "Pod: alpha-dev | Agente: Claude Code | Observando: beta-dev"
+        "initializing": "Pod: alpha-dev | Agent: Claude Code | Estado: Inicializando",
+        "running": "Pod: alpha-dev | Agent: Claude Code | Estado: Ejecutando",
+        "observing": "Pod: alpha-dev | Agent: Claude Code | Observando: beta-dev"
       }
     },
     "coreDemo": {
@@ -383,7 +392,7 @@
       "architecture": {
         "yourInfrastructure": "Tu Infraestructura",
         "runner": "Runner",
-        "agent": "Agente",
+        "agent": "Agent",
         "websocket": "WebSocket",
         "agentsmeshCloud": "AgentsMesh Cloud"
       }
@@ -394,7 +403,7 @@
       "description": "Dos minutos. Del ticket al merge request — completamente autonomo.",
       "iframeTitle": "Demo del Producto AgentsMesh",
       "highlight1": "Demo del ciclo completo",
-      "highlight2": "Colaboracion multi-agente",
+      "highlight2": "Colaboracion multi-Agent",
       "highlight3": "Ejecucion autonoma de tareas"
     },
     "footer": {

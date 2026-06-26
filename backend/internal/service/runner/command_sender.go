@@ -114,6 +114,8 @@ type SandboxQuerySender interface {
 type UpgradeCommandSender interface {
 	SendUpgradeRunner(runnerID int64, requestID, targetVersion string, force bool) error
 
+	SendUpgradeAgent(runnerID int64, requestID, agentSlug, executable string, argv []string) error
+
 	IsConnected(runnerID int64) bool
 }
 

@@ -27,7 +27,16 @@
     "disconnected": "Disconnected",
     "pageNotFound": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
     "backToHome": "Zurück zur Startseite",
-    "undo": "Rückgängig"
+    "undo": "Rückgängig",
+    "more": "Weitere Aktionen",
+    "justNow": "gerade eben",
+    "overdue": "überfällig",
+    "timeAgoMinutes": "vor {count} Min.",
+    "timeAgoHours": "vor {count} Std.",
+    "timeAgoDays": "vor {count} T.",
+    "timeInMinutes": "in {count} Min.",
+    "timeInHours": "in {count} Std.",
+    "timeInDays": "in {count} T."
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",
@@ -54,9 +63,7 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
     "RESOURCE_EXHAUSTED": "Ressourcenkontingent überschritten. Versuchen Sie es später erneut oder upgraden Sie Ihren Plan.",
     "FAILED_PRECONDITION": "Der aktuelle Zustand erlaubt diese Operation nicht.",
     "UNAVAILABLE": "Dienst vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut.",
@@ -68,5 +75,19 @@
     "tickets": "Tickets",
     "settings": "Einstellungen",
     "billing": "Abrechnung"
+  },
+  "share": {
+    "title": "Teilen",
+    "selectUser": "Benutzer",
+    "selectUserPlaceholder": "Teammitglied auswählen...",
+    "share": "Teilen",
+    "revoke": "Widerrufen",
+    "revokeConfirmTitle": "Zugriff widerrufen?",
+    "revokeConfirmDescription": "Dieser Benutzer hat keinen Zugriff mehr auf diese Ressource.",
+    "sharedWith": "Geteilt mit",
+    "noShares": "Noch mit niemandem geteilt.",
+    "loadFailed": "Freigabeinformationen konnten nicht geladen werden",
+    "grantFailed": "Teilen fehlgeschlagen",
+    "revokeFailed": "Zugriff konnte nicht widerrufen werden"
   }
 }

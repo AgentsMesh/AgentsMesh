@@ -16,7 +16,7 @@
       },
       "collaboration": {
         "title": "Los equipos superan a los individuos",
-        "content": "Un agente brillante no puede resolverlo todo. Un equipo coordinado de agentes — cada uno con su especialidad, comunicandose y compartiendo contexto — si puede."
+        "content": "Un Agent brillante no puede resolverlo todo. Un equipo coordinado de Agents — cada uno con su especialidad, comunicandose y compartiendo contexto — si puede."
       },
       "security": {
         "title": "Tu codigo, tu infraestructura",
@@ -44,7 +44,7 @@
         "description": "Los Harness Engineers disenen los entornos de ejecucion donde operan los agentes IA. Disenara sandboxes, definira restricciones de ejecucion y construira la infraestructura que mantiene a los agentes seguros, aislados y con alto rendimiento.",
         "resp1": "Disenar y construir entornos de ejecucion seguros y aislados para agentes IA",
         "resp2": "Definir restricciones de ejecucion, limites de permisos y barreras de seguridad",
-        "resp3": "Desarrollar y optimizar infraestructura sandbox para operaciones reproducibles de agentes"
+        "resp3": "Desarrollar y optimizar infraestructura Sandbox para operaciones reproducibles de Agents"
       },
       "producer": {
         "title": "Builder",

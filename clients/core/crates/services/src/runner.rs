@@ -102,6 +102,14 @@ impl RunnerService {
         Ok(resp.encode_to_vec())
     }
 
+    pub async fn upgrade_agent_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
+        let req = runner_proto::UpgradeAgentRequest::decode(request_bytes)
+            .map_err(|e| format!("decode upgrade_agent request: {e}"))?;
+        tracing::info!(target: "runner", org_slug = %req.org_slug, runner_id = req.id, agent_slug = %req.agent_slug, "upgrade agent");
+        let resp = self.client.upgrade_agent_connect(&req).await.map_err(crate::wire)?;
+        Ok(resp.encode_to_vec())
+    }
+
     pub async fn request_log_upload_connect(&self, request_bytes: &[u8]) -> Result<Vec<u8>, String> {
         let req = runner_proto::RequestLogUploadRequest::decode(request_bytes)
             .map_err(|e| format!("decode request_log_upload request: {e}"))?;

@@ -98,6 +98,9 @@ message Agent {
   // organization_id is null for builtin agents; CustomAgent path emits it
   // via the hand-written converter.
   optional int64 organization_id = 13 [(amesh.codegen.v1.field_skip) = true];
+  // Package-manager name for remote agent upgrade ("npm"/"pip"); nil = the
+  // agent has no remote-upgrade command (curl-installed / self-built).
+  optional string upgrade_manager = 14 [(amesh.codegen.v1.field_convert) = "string_ptr"];
 }
 
 // AgentListResponse — §9 multi-field envelope (intentional deviation from §8).

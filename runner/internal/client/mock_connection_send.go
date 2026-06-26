@@ -76,6 +76,17 @@ func (m *MockConnection) SendUpgradeStatus(event *runnerv1.UpgradeStatusEvent) e
 	return nil
 }
 
+// SendUpgradeAgentResult records a single-agent upgrade result event.
+func (m *MockConnection) SendUpgradeAgentResult(event *runnerv1.UpgradeAgentResultEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.SendErr != nil {
+		return m.SendErr
+	}
+	m.Events = append(m.Events, EventCall{Type: "upgrade_agent_result", Data: event})
+	return nil
+}
+
 // SendLogUploadStatus records a log upload status event.
 func (m *MockConnection) SendLogUploadStatus(event *runnerv1.LogUploadStatusEvent) error {
 	m.mu.Lock()

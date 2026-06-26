@@ -40,6 +40,8 @@ func extractServerMessageType(msg *runnerv1.ServerMessage) string {
 		return "HeartbeatAck"
 	case *runnerv1.ServerMessage_UpgradeRunner:
 		return "UpgradeRunner"
+	case *runnerv1.ServerMessage_UpgradeAgent:
+		return "UpgradeAgent"
 	case *runnerv1.ServerMessage_UploadLogs:
 		return "UploadLogs"
 	case *runnerv1.ServerMessage_UpdatePodPerpetual:

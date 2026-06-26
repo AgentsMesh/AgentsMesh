@@ -32,7 +32,7 @@
   "mesh": {
     "title": "AgentsMesh",
     "channels": "Kanäle",
-    "newChannel": "Neuer Kanal",
+    "newChannel": "Neuer Channel",
     "topology": "Topologie",
     "messages": "Nachrichten",
     "sendMessage": "Nachricht senden...",
@@ -44,7 +44,11 @@
       "bindingsCount": "{count} Bindungen",
       "refresh": "Aktualisieren",
       "dismiss": "Schließen",
-      "updating": "Aktualisierung..."
+      "updating": "Aktualisierung...",
+      "runnersOnline": "{online} von {total} Runnern online",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern",
+      "fit": "Einpassen"
     },
     "legend": {
       "title": "Legende",
@@ -52,7 +56,7 @@
       "initializing": "Initialisierung",
       "terminated": "Beendet",
       "failed": "Fehlgeschlagen",
-      "channel": "Kanal",
+      "channel": "Channel",
       "activeBinding": "Aktive Bindung",
       "pendingBinding": "Ausstehende Bindung"
     },
@@ -90,8 +94,8 @@
       "podCount": "{count} Pods"
     },
     "channelPodManager": {
-      "title": "Kanal-Pods",
-      "description": "Pods in diesem Kanal verwalten",
+      "title": "Channel-Pods",
+      "description": "Pods in diesem Channel verwalten",
       "joined": "Beigetreten",
       "available": "Verfügbar",
       "empty": "Keine aktiven Pods verfügbar"
@@ -101,7 +105,6 @@
     "title": "Tickets",
     "newTicket": "Neues Ticket",
     "board": "Board",
-    "list": "Liste",
     "backlog": "Backlog",
     "todo": "Zu Erledigen",
     "inProgress": "In Bearbeitung",
@@ -196,7 +199,23 @@
       "dangerZone": "Gefahrenzone",
       "deleteWarning": "Diese Aktion kann nicht rückgängig gemacht werden.",
       "linked": "Verknüpft",
-      "noLinkedItems": "Noch keine verknüpften Elemente."
+      "noLinkedItems": "Noch keine verknüpften Elemente.",
+      "priority": "Priorität",
+      "opened": "Geöffnet",
+      "spawnPod": "Pod starten",
+      "markDone": "Als erledigt markieren",
+      "lastUsedAgent": "claude-code (zuletzt verwendet)",
+      "comments": "Kommentare",
+      "noComments": "Noch keine Kommentare",
+      "addComment": "Kommentar hinzufügen...",
+      "reply": "Antworten",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "deleteCommentConfirm": "Möchten Sie diesen Kommentar wirklich löschen?",
+      "replyTo": "Antwort an @{username}",
+      "cancelReply": "Abbrechen",
+      "submit": "Kommentieren",
+      "edited": "bearbeitet"
     },
     "podPanel": {
       "activeCount": "{count} active",
@@ -221,10 +240,36 @@
       "connect": "Connect",
       "openInNewTab": "Open in new tab",
       "started": "Started"
+    },
+    "views": {
+      "board": "Board",
+      "list": "Liste"
+    },
+    "actions": {
+      "newTicket": "Neu",
+      "export": "Exportieren"
+    },
+    "rail": {
+      "workingPods": "Arbeitende Pods",
+      "noPods": "Keine aktiven Pods",
+      "subTickets": "Unter-Tickets",
+      "noSubTickets": "Keine Unter-Tickets",
+      "pullRequests": "Pull Requests",
+      "noPRs": "Keine PRs verknüpft",
+      "activity": "Aktivität",
+      "activityCreated": "Ticket erstellt",
+      "activityUpdated": "Ticket aktualisiert"
+    },
+    "list": {
+      "ticket": "Ticket",
+      "assignees": "Zuständige",
+      "dueDate": "Fälligkeitsdatum",
+      "updated": "Aktualisiert",
+      "noTickets": "Keine Tickets gefunden"
     }
   },
   "workspace": {
-    "title": "Arbeitsbereich",
+    "title": "Workspace",
     "searchPlaceholder": "Pods suchen...",
     "newPod": "Neuer Pod",
     "noTerminalsOpen": "No terminals open",
@@ -261,7 +306,8 @@
       "terminate": "Beenden",
       "openInNewWindow": "In neuem Fenster öffnen",
       "enablePerpetual": "Dauerhaft aktivieren",
-      "disablePerpetual": "Dauerhaft deaktivieren"
+      "disablePerpetual": "Dauerhaft deaktivieren",
+      "share": "Teilen"
     },
     "renameDialog": {
       "title": "Pod umbenennen",
@@ -298,6 +344,34 @@
       "promptPlaceholder": "Enter an initial prompt for the agent...",
       "creating": "Creating...",
       "createPod": "Create Pod"
+    },
+    "emptyHeroTitle": "Starten Sie Ihren ersten Pod",
+    "emptyHeroDescription": "Ein Pod ist ein isoliertes Terminal, in dem ein KI-Agent an Ihrem Code arbeitet. Sie können zusehen, eingreifen oder ihn auf Autopilot laufen lassen.",
+    "recipesHeading": "Oder mit einem Rezept beginnen",
+    "recipes": {
+      "explain": {
+        "title": "Diese Codebasis erklären",
+        "description": "Claude Code geht Ihr Repository durch und fasst die Architektur zusammen.",
+        "duration": "2 Min."
+      },
+      "tests": {
+        "title": "Tests ausführen",
+        "description": "Claude Code führt die Testsuite aus und meldet Fehler.",
+        "duration": "3 Min."
+      },
+      "bug": {
+        "title": "Offenen Bug beheben",
+        "description": "Wählen Sie ein Ticket, starten Sie einen Pod. Der Agent liest den Kontext und schlägt eine Lösung vor.",
+        "duration": "8 Min."
+      }
+    },
+    "banner": {
+      "newUser": "Neu bei AgentsMesh?",
+      "watchIntro": "Sehen Sie sich die 2-minütige Einführung an →"
+    },
+    "hints": {
+      "search": "zum Suchen",
+      "createPod": "um Pod zu erstellen"
     }
   },
   "commandPalette": {
@@ -306,8 +380,8 @@
     "noResults": "Keine Ergebnisse gefunden.",
     "navigation": "Navigation",
     "actions": "Aktionen",
-    "goToWorkspace": "Zum Arbeitsbereich gehen",
-    "workspaceDescription": "Terminal-Arbeitsbereich",
+    "goToWorkspace": "Zum Workspace gehen",
+    "workspaceDescription": "Terminal-Workspace",
     "goToTickets": "Zu Tickets gehen",
     "ticketsDescription": "Tickets anzeigen und verwalten",
     "goToMesh": "Zu AgentsMesh gehen",
@@ -321,7 +395,7 @@
     "goToSettings": "Zu Einstellungen gehen",
     "settingsDescription": "Organisationseinstellungen",
     "createNewPod": "Neuen Pod erstellen",
-    "createPodDescription": "Einen neuen Agenten-Pod starten",
+    "createPodDescription": "Einen neuen Agent-Pod starten",
     "createNewTicket": "Neues Ticket erstellen",
     "createTicketDescription": "Eine neue Aufgabe oder ein Issue erstellen",
     "signOut": "Abmelden",
@@ -434,41 +508,170 @@
       "required": "Titel und Beschreibung sind erforderlich"
     },
     "error": {
-      "createFailed": "Ticket konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+      "createFailed": "Ticket konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+      "loadFailed": "Daten konnten nicht geladen werden. Bitte erneut versuchen.",
+      "sendFailed": "Nachricht konnte nicht gesendet werden. Bitte erneut versuchen."
     }
   },
   "loopal": {
-    "activity": { "heading": "Aktivität" },
+    "activity": {
+      "heading": "Aktivität"
+    },
     "status": {
       "title": "Loopal",
       "thinking": "Denken: {value}",
       "topology": "Topologie",
-      "mode": { "act": "Ausführen", "plan": "Planen" },
-      "goal": { "pause": "Pausieren", "resume": "Fortsetzen", "complete": "Abschließen", "reopen": "Erneut öffnen", "clear": "Löschen" }
+      "mode": {
+        "act": "Ausführen",
+        "plan": "Planen"
+      },
+      "goal": {
+        "pause": "Pausieren",
+        "resume": "Fortsetzen",
+        "complete": "Abschließen",
+        "reopen": "Erneut öffnen",
+        "clear": "Löschen"
+      }
     },
-    "thinking": { "auto": "Auto", "off": "Aus", "low": "Niedrig", "med": "Mittel", "high": "Hoch", "max": "Max" },
+    "thinking": {
+      "auto": "Auto",
+      "off": "Aus",
+      "low": "Niedrig",
+      "med": "Mittel",
+      "high": "Hoch",
+      "max": "Max"
+    },
     "dock": {
-      "tabs": { "bgShell": "Hintergrund-Shell", "cron": "Cron", "tasks": "Aufgaben", "agents": "Agenten", "mcp": "MCP" },
-      "agents": { "expand": "Topologie erweitern" },
-      "bgShell": { "kill": "Beenden", "killConfirmTitle": "Hintergrundaufgabe beenden?" },
-      "cron": { "due": "fällig", "inMinutes": "in {m} Min.", "inHours": "in {h} Std.", "inDays": "in {d} Tg.", "recurring": "wiederkehrend", "once": "einmalig", "durable": "dauerhaft", "delete": "Löschen", "deleteConfirmTitle": "Cron-Job löschen?" },
-      "tasks": { "blockedBy": "blockiert von {count}" },
-      "mcp": { "refresh": "aktualisieren", "toolCount": "{count} Tools", "reconnect": "Erneut verbinden", "disconnect": "Trennen", "disconnectConfirmTitle": "MCP-Server trennen?" }
+      "tabs": {
+        "bgShell": "Hintergrund-Shell",
+        "cron": "Cron",
+        "tasks": "Aufgaben",
+        "agents": "Agenten",
+        "mcp": "MCP"
+      },
+      "agents": {
+        "expand": "Topologie erweitern"
+      },
+      "bgShell": {
+        "kill": "Beenden",
+        "killConfirmTitle": "Hintergrundaufgabe beenden?"
+      },
+      "cron": {
+        "due": "fällig",
+        "inMinutes": "in {m} Min.",
+        "inHours": "in {h} Std.",
+        "inDays": "in {d} Tg.",
+        "recurring": "wiederkehrend",
+        "once": "einmalig",
+        "durable": "dauerhaft",
+        "delete": "Löschen",
+        "deleteConfirmTitle": "Cron-Job löschen?"
+      },
+      "tasks": {
+        "blockedBy": "blockiert von {count}"
+      },
+      "mcp": {
+        "refresh": "aktualisieren",
+        "toolCount": "{count} Tools",
+        "reconnect": "Erneut verbinden",
+        "disconnect": "Trennen",
+        "disconnectConfirmTitle": "MCP-Server trennen?"
+      }
     },
     "prompt": {
       "placeholder": "Nachricht an Loopal, oder / für Befehle",
       "interrupt": "Unterbrechen",
-      "rewindTitle": "Zu Runde zurückspulen", "rewindPlaceholder": "Runde #",
-      "resumeTitle": "Sitzung fortsetzen", "resumePlaceholder": "Sitzungs-ID",
-      "model": "Modell", "thinking": "Denken"
+      "rewindTitle": "Zu Runde zurückspulen",
+      "rewindPlaceholder": "Runde #",
+      "resumeTitle": "Sitzung fortsetzen",
+      "resumePlaceholder": "Sitzungs-ID",
+      "model": "Modell",
+      "thinking": "Denken"
     },
     "commands": {
-      "act": "In den Ausführen-Modus wechseln", "plan": "In den Planen-Modus wechseln", "model": "Modell & Denkstufe", "thinking": "Denkaufwand-Stufe",
-      "compact": "Konversationskontext verdichten", "clear": "Gesamten Konversationsverlauf löschen", "rewind": "Zu einer früheren Runde zurückspulen",
-      "resume": "Eine Sitzung per ID fortsetzen", "suspend": "Cron / Aufwecken aussetzen", "unsuspend": "Cron / Aufwecken fortsetzen",
-      "goal": "Thread-Ziel festlegen (/goal [Ziel])", "mcpRefresh": "MCP-Status aktualisieren",
-      "goalPause": "Ziel pausieren", "goalResume": "Ziel fortsetzen", "goalComplete": "Ziel als abgeschlossen markieren", "goalReopen": "Ziel erneut öffnen", "goalClear": "Ziel löschen"
+      "act": "In den Ausführen-Modus wechseln",
+      "plan": "In den Planen-Modus wechseln",
+      "model": "Modell & Denkstufe",
+      "thinking": "Denkaufwand-Stufe",
+      "compact": "Konversationskontext verdichten",
+      "clear": "Gesamten Konversationsverlauf löschen",
+      "rewind": "Zu einer früheren Runde zurückspulen",
+      "resume": "Eine Sitzung per ID fortsetzen",
+      "suspend": "Cron / Aufwecken aussetzen",
+      "unsuspend": "Cron / Aufwecken fortsetzen",
+      "goal": "Thread-Ziel festlegen (/goal [Ziel])",
+      "mcpRefresh": "MCP-Status aktualisieren",
+      "goalPause": "Ziel pausieren",
+      "goalResume": "Ziel fortsetzen",
+      "goalComplete": "Ziel als abgeschlossen markieren",
+      "goalReopen": "Ziel erneut öffnen",
+      "goalClear": "Ziel löschen"
     },
-    "topology": { "sheetTitle": "Agenten-Topologie", "root": "Wurzel" }
+    "topology": {
+      "sheetTitle": "Agent-Topologie",
+      "root": "Wurzel"
+    }
+  },
+  "acp": {
+    "modeSelector": {
+      "bypassPermissions": {
+        "label": "Umgehen",
+        "desc": "Alles automatisch genehmigen"
+      },
+      "acceptEdits": {
+        "label": "Änderungen annehmen",
+        "desc": "Dateibearbeitungen automatisch genehmigen"
+      },
+      "default": {
+        "label": "Standard",
+        "desc": "Jedes Tool genehmigen"
+      },
+      "dontAsk": {
+        "label": "Nicht fragen",
+        "desc": "Ablehnen, außer auf Zulassungsliste"
+      },
+      "bypass": {
+        "label": "Umgehen",
+        "desc": "Alles automatisch genehmigen"
+      },
+      "ask_dangerous": {
+        "label": "Bei riskanten fragen",
+        "desc": "Nur gefährliche Vorgänge bestätigen"
+      },
+      "ask_any_write": {
+        "label": "Bei Schreibvorgängen fragen",
+        "desc": "Jeden Schreibvorgang bestätigen"
+      },
+      "unknown": {
+        "label": "—",
+        "desc": "Modus vom Runner noch nicht gemeldet"
+      }
+    },
+    "activityStream": {
+      "waitingSession": "Warte auf ACP-Sitzung...",
+      "agentWorking": "Agent arbeitet...",
+      "thinking": "Denkt nach..."
+    },
+    "promptInput": {
+      "placeholder": "Anweisung senden...",
+      "notConnected": "Nicht verbunden",
+      "cancel": "Abbrechen"
+    },
+    "permissionDialog": {
+      "relayNotConnected": "Relay nicht verbunden. Bitte warten und erneut versuchen."
+    },
+    "permissionCard": {
+      "title": "Berechtigung erforderlich",
+      "approve": "Genehmigen",
+      "alwaysAllow": "Immer zulassen",
+      "deny": "Ablehnen"
+    }
+  },
+  "errors": {
+    "unexpected": "Etwas ist schiefgelaufen",
+    "notFound": "Seite nicht gefunden",
+    "goBack": "Zurück",
+    "reload": "Neu laden",
+    "home": "Startseite"
   }
 }

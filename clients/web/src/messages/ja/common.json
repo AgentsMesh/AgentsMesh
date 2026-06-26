@@ -27,7 +27,16 @@
     "disconnected": "Disconnected",
     "pageNotFound": "お探しのページは存在しないか、移動されました。",
     "backToHome": "ホームに戻る",
-    "undo": "元に戻す"
+    "undo": "元に戻す",
+    "more": "その他の操作",
+    "justNow": "たった今",
+    "overdue": "期限超過",
+    "timeAgoMinutes": "{count} 分前",
+    "timeAgoHours": "{count} 時間前",
+    "timeAgoDays": "{count} 日前",
+    "timeInMinutes": "{count} 分後",
+    "timeInHours": "{count} 時間後",
+    "timeInDays": "{count} 日後"
   },
   "apiErrors": {
     "ACCESS_DENIED": "Access denied",
@@ -54,9 +63,7 @@
     "INTERNAL_ERROR": "An internal error occurred. Please try again later.",
     "AUTH_REQUIRED": "Authentication required. Please log in.",
     "INVALID_TOKEN": "Invalid or expired authentication token",
-    "SESSION_REFRESH_FAILED": "Your session has expired. Please log in again.",
     "TOKEN_EXPIRED": "Authentication credentials have expired.",
-    "API_KEY_EXPIRED": "API key has expired. Please regenerate it in API Keys settings.",
     "RESOURCE_EXHAUSTED": "リソースのクォータ上限に達しました。後で再試行するかプランをアップグレードしてください。",
     "FAILED_PRECONDITION": "現在の状態ではこの操作を実行できません。",
     "UNAVAILABLE": "サービスが一時的に利用できません。しばらくしてから再試行してください。",
@@ -68,5 +75,19 @@
     "tickets": "チケット",
     "settings": "設定",
     "billing": "請求"
+  },
+  "share": {
+    "title": "共有",
+    "selectUser": "ユーザー",
+    "selectUserPlaceholder": "チームメンバーを選択...",
+    "share": "共有",
+    "revoke": "取り消し",
+    "revokeConfirmTitle": "アクセスを取り消しますか？",
+    "revokeConfirmDescription": "このユーザーはこのリソースにアクセスできなくなります。",
+    "sharedWith": "共有先",
+    "noShares": "まだ誰とも共有されていません。",
+    "loadFailed": "共有情報の読み込みに失敗しました",
+    "grantFailed": "共有に失敗しました",
+    "revokeFailed": "アクセスの取り消しに失敗しました"
   }
 }
