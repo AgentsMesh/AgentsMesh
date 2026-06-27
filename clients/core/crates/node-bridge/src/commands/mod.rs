@@ -1,6 +1,7 @@
 pub mod apikey;
 pub mod app_autopilot;
 pub mod app_channel;
+pub mod app_channel_fetch;
 pub mod app_channel_pods;
 pub mod app_mesh;
 pub mod app_pod;

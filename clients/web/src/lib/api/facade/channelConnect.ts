@@ -29,11 +29,18 @@ export {
   sendChannelMessage,
   editChannelMessage,
   deleteChannelMessage,
-  markChannelRead,
-  getChannelUnreadCounts,
-  muteChannel,
   type SendChannelMessagePayload,
 } from "../connect/channelMessageConnect";
+
+export {
+  markChannelRead,
+  markChannelUnread,
+  getMessageReadBy,
+  getChannelUnreadCounts,
+  muteChannel,
+  pinChannel,
+  type ChannelUnreadSummary,
+} from "../connect/channelReadStateConnect";
 
 export {
   listChannelMembers,

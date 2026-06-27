@@ -139,6 +139,8 @@ func (r *channelRepository) ListVisibleForUser(ctx context.Context, orgID, userI
 		channel.Channel
 		IsMember    bool  `gorm:"column:is_member"`
 		MemberCount int64 `gorm:"column:member_count"`
+		IsMuted     bool  `gorm:"column:is_muted"`
+		IsPinned    bool  `gorm:"column:is_pinned"`
 	}
 
 	baseWhere := "c.organization_id = ?"
@@ -170,10 +172,17 @@ func (r *channelRepository) ListVisibleForUser(ctx context.Context, orgID, userI
 	copy(countArgs, args)
 	r.db.WithContext(ctx).Raw("SELECT COUNT(*) FROM channels c WHERE "+fullWhere, countArgs...).Scan(&total)
 
+	// A single LEFT JOIN on the caller's membership row supplies is_member /
+	// is_muted / is_pinned at once — avoids one correlated subquery per per-user
+	// flag (member_count stays a subquery; it counts all members, not the row).
 	selectSQL := `SELECT c.*,
-		EXISTS(SELECT 1 FROM channel_members cm WHERE cm.channel_id = c.id AND cm.user_id = ?) as is_member,
-		(SELECT COUNT(*) FROM channel_members cm2 WHERE cm2.channel_id = c.id) as member_count
-		FROM channels c WHERE ` + fullWhere + " ORDER BY c.updated_at DESC"
+		cm_u.user_id IS NOT NULL as is_member,
+		(SELECT COUNT(*) FROM channel_members cm2 WHERE cm2.channel_id = c.id) as member_count,
+		COALESCE(cm_u.is_muted, FALSE) as is_muted,
+		COALESCE(cm_u.is_pinned, FALSE) as is_pinned
+		FROM channels c
+		LEFT JOIN channel_members cm_u ON cm_u.channel_id = c.id AND cm_u.user_id = ?
+		WHERE ` + fullWhere + " ORDER BY c.updated_at DESC"
 
 	selectArgs := append([]interface{}{userID}, args...)
 	if filter.Limit > 0 {
@@ -191,6 +200,8 @@ func (r *channelRepository) ListVisibleForUser(ctx context.Context, orgID, userI
 		ch := rows[i].Channel
 		ch.IsMember = rows[i].IsMember
 		ch.MemberCount = rows[i].MemberCount
+		ch.IsMuted = rows[i].IsMuted
+		ch.IsPinned = rows[i].IsPinned
 		channels[i] = &ch
 	}
 	return channels, total, nil

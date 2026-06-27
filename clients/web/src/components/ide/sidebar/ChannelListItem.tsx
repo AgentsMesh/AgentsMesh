@@ -4,7 +4,11 @@ import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Channel, ChannelLastMessage } from "@/stores/channel";
 import { formatRelativeShort } from "@/lib/format-relative-time";
+import { useTranslations } from "next-intl";
 import { Lock } from "lucide-react";
+import { ChannelUnreadBadge } from "./ChannelUnreadBadge";
+import { previewLabel } from "./channel-preview-label";
+import { useChannelHasDraft } from "@/stores/useChannelDraft";
 
 // Extends button props so a ContextMenuTrigger `asChild` can forward its ref +
 // onContextMenu onto the focusable <button> directly (keyboard Shift+F10 works).
@@ -12,27 +16,43 @@ interface ChannelListItemProps extends Omit<ComponentPropsWithoutRef<"button">, 
   channel: Channel;
   isSelected: boolean;
   unreadCount?: number;
+  mentionCount?: number;
+  manuallyUnread?: boolean;
+  isMuted?: boolean;
   lastMessage?: ChannelLastMessage | null;
   onClick?: () => void;
 }
 
 /**
  * Channel row in the sidebar list — matches design/desktop/pages/channels.pastel
- * `channel_row` + `channel_row_active`: hash + name + last message preview +
- * short time + unread dot. Private channels use the lock icon in place of #.
+ * `channel_row`: hash + name + last message preview + short time + unread badge.
+ * A red `@me` prefix marks unread @-mentions (highest-priority signal). Private
+ * channels use the lock icon in place of #.
  */
 export const ChannelListItem = forwardRef<HTMLButtonElement, ChannelListItemProps>(function ChannelListItem(
-  { channel, isSelected, unreadCount = 0, lastMessage, onClick, className, ...rest },
+  {
+    channel,
+    isSelected,
+    unreadCount = 0,
+    mentionCount = 0,
+    manuallyUnread = false,
+    isMuted = false,
+    lastMessage,
+    onClick,
+    className,
+    ...rest
+  },
   ref,
 ) {
-  const hasUnread = unreadCount > 0 && !isSelected;
+  const t = useTranslations("channels.sidebar");
+  const hasDraft = useChannelHasDraft(channel.id);
   const isPrivate = channel.visibility === "private";
-  const preview = lastMessage
-    ? lastMessage.sender_name
-      ? `${lastMessage.sender_name}: ${lastMessage.content_preview}`
-      : lastMessage.content_preview
-    : channel.description ?? "";
+  const previewBody = lastMessage ? previewLabel(lastMessage, t) : channel.description ?? "";
+  const preview = lastMessage?.sender_name
+    ? `${lastMessage.sender_name}: ${previewBody}`
+    : previewBody;
   const time = formatRelativeShort(lastMessage?.timestamp ?? channel.updated_at);
+  const showMention = mentionCount > 0 && !isSelected;
 
   return (
     <button
@@ -71,18 +91,25 @@ export const ChannelListItem = forwardRef<HTMLButtonElement, ChannelListItemProp
             <span className="shrink-0 text-[10px] text-muted-foreground/70">{time}</span>
           )}
         </span>
-        {preview && (
-          <span className="truncate text-[11px] text-muted-foreground/70">
-            {preview}
+        {(preview || showMention || hasDraft) && (
+          <span className="flex min-w-0 items-center truncate text-[11px] text-muted-foreground/70">
+            {showMention ? (
+              <span className="mr-1 shrink-0 font-medium text-destructive">{t("atMe")}</span>
+            ) : hasDraft ? (
+              <span className="mr-1 shrink-0 font-medium text-destructive">{t("draftTag")}</span>
+            ) : null}
+            <span className="truncate">{preview}</span>
           </span>
         )}
       </span>
 
-      <span className="flex w-2 shrink-0 justify-center">
-        {hasUnread && (
-          <span className="h-1.5 w-1.5 rounded-full bg-destructive" aria-label="unread" />
-        )}
-      </span>
+      <ChannelUnreadBadge
+        unreadCount={unreadCount}
+        mentionCount={mentionCount}
+        manuallyUnread={manuallyUnread}
+        isMuted={isMuted}
+        isSelected={isSelected}
+      />
     </button>
   );
 });

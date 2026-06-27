@@ -142,6 +142,7 @@ func (s *Service) GetChannelForUser(ctx context.Context, channelID, userID int64
 		return nil, err
 	}
 	ch.IsMember, _ = s.repo.IsMember(ctx, channelID, userID)
+	ch.IsMuted, ch.IsPinned, _ = s.repo.GetMemberFlags(ctx, channelID, userID)
 	memberIDs, _ := s.repo.GetMemberUserIDs(ctx, channelID)
 	ch.MemberCount = int64(len(memberIDs))
 	ch.AgentCount, _ = s.repo.GetChannelPodCount(ctx, channelID)

@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "Open in New Window"
+      "openInNewWindow": "Open in New Window",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "markUnread": "Mark as unread"
     },
     "emptyState": "Select a channel to start chatting",
     "emptyStateHint": "Choose a channel from the sidebar to view messages and collaborate with your team",
@@ -17,7 +22,16 @@
       "podsCount": "{count} pods",
       "groupActive": "Active",
       "groupLinked": "Linked",
-      "groupQuiet": "Quiet"
+      "groupQuiet": "Quiet",
+      "groupPinned": "Pinned",
+      "atMe": "@me",
+      "typeAttachment": "[Attachment]",
+      "typeCode": "[Code]",
+      "typeCommand": "[Command]",
+      "unreadBadge": "{count} unread",
+      "muted": "Muted",
+      "markedUnread": "Unread",
+      "draftTag": "[Draft]"
     },
     "createDialog": {
       "title": "Create Channel",
@@ -76,11 +90,17 @@
       "current": "Members",
       "available": "Add Members",
       "searchPlaceholder": "Search members...",
-      "empty": "No members"
+      "empty": "No members",
+      "owner": "Owner"
     },
     "messages": {
       "today": "Today",
       "yesterday": "Yesterday",
+      "newMessagesDivider": "New messages below",
+      "mentionBelow": "Someone mentioned you",
+      "readBy": "Read by",
+      "readByTitle": "Read by {count}",
+      "readByNone": "No one has read this yet",
       "loadOlder": "Load older messages",
       "loading": "Loading...",
       "noMessages": "No messages yet",

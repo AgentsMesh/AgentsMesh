@@ -63,7 +63,13 @@ export function handleChannelEvent(event: RealtimeEvent, channelDebounceRef?: De
 // needs to do for channel realtime.
 function bumpChannelStores() {
   useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
-  useChannelMessageStore.setState((s) => ({ _messagesTick: s._messagesTick + 1 }));
+  // _unreadTick too: Rust on_new_message updated unread/mention counts, and the
+  // sidebar badge selectors (useUnreadCounts / useMentionCounts) key on
+  // _unreadTick — without this a realtime message never re-renders the badge.
+  useChannelMessageStore.setState((s) => ({
+    _messagesTick: s._messagesTick + 1,
+    _unreadTick: s._unreadTick + 1,
+  }));
 }
 
 export function handleInfraEvent(event: RealtimeEvent, ticketDebounceRef?: DebounceRef) {

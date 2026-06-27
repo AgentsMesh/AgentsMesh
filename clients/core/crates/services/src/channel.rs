@@ -58,6 +58,9 @@ impl ChannelService {
     connect_bridge!(mark_channel_read_connect, MarkChannelReadRequest, mark_channel_read_connect);
     connect_bridge!(get_channel_unread_counts_connect, GetChannelUnreadCountsRequest, get_channel_unread_counts_connect);
     connect_bridge!(mute_channel_connect, MuteChannelRequest, mute_channel_connect);
+    connect_bridge!(pin_channel_connect, PinChannelRequest, pin_channel_connect);
+    connect_bridge!(mark_channel_unread_connect, MarkChannelUnreadRequest, mark_channel_unread_connect);
+    connect_bridge!(get_message_read_by_connect, GetMessageReadByRequest, get_message_read_by_connect);
     connect_bridge!(list_channel_members_connect, ListChannelMembersRequest, list_channel_members_connect);
     connect_bridge!(join_channel_connect, JoinChannelRequest, join_channel_connect);
     connect_bridge!(leave_channel_connect, LeaveChannelRequest, leave_channel_connect);

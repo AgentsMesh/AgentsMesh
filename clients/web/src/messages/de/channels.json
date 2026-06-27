@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "In neuem Fenster öffnen"
+      "openInNewWindow": "In neuem Fenster öffnen",
+      "mute": "Stummschalten",
+      "unmute": "Stummschaltung aufheben",
+      "pin": "Anheften",
+      "unpin": "Lösen",
+      "markUnread": "Als ungelesen markieren"
     },
     "emptyState": "Wähle einen Channel, um zu chatten",
     "emptyStateHint": "Wähle einen Channel aus der Seitenleiste, um Nachrichten anzuzeigen und mit deinem Team zusammenzuarbeiten",
@@ -16,7 +21,16 @@
       "podsCount": "{count} Pods",
       "groupActive": "Aktiv",
       "groupLinked": "Verknüpft",
-      "groupQuiet": "Ruhig"
+      "groupQuiet": "Ruhig",
+      "groupPinned": "Angeheftet",
+      "atMe": "@me",
+      "typeAttachment": "[Anhang]",
+      "typeCode": "[Code]",
+      "typeCommand": "[Befehl]",
+      "unreadBadge": "{count} ungelesen",
+      "muted": "Stummgeschaltet",
+      "markedUnread": "Ungelesen",
+      "draftTag": "[Entwurf]"
     },
     "createDialog": {
       "title": "Channel erstellen",
@@ -43,7 +57,8 @@
       "current": "Mitglieder",
       "available": "Mitglieder hinzufügen",
       "searchPlaceholder": "Mitglieder suchen...",
-      "empty": "Keine Mitglieder"
+      "empty": "Keine Mitglieder",
+      "owner": "Eigentümer"
     },
     "messages": {
       "today": "Heute",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "Nachricht löschen",
       "deleteConfirmDescription": "Möchten Sie diese Nachricht wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
       "delete": "Löschen",
-      "moreActions": "Mehr"
+      "moreActions": "Mehr",
+      "newMessagesDivider": "Neue Nachrichten unten",
+      "mentionBelow": "Jemand hat dich erwähnt",
+      "readBy": "Gelesen von",
+      "readByTitle": "Von {count} gelesen",
+      "readByNone": "Noch niemand hat dies gelesen"
     },
     "archivedBanner": "Dieser Channel ist archiviert — das Senden von Nachrichten ist deaktiviert",
     "header": {

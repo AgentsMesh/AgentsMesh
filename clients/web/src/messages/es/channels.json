@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "Abrir en una ventana nueva"
+      "openInNewWindow": "Abrir en una ventana nueva",
+      "mute": "Silenciar",
+      "unmute": "Reactivar",
+      "pin": "Fijar",
+      "unpin": "Dejar de fijar",
+      "markUnread": "Marcar como no leído"
     },
     "emptyState": "Selecciona un Channel para empezar a chatear",
     "emptyStateHint": "Elige un Channel de la barra lateral para ver mensajes y colaborar con tu equipo",
@@ -16,7 +21,16 @@
       "podsCount": "{count} pods",
       "groupActive": "Activos",
       "groupLinked": "Vinculados",
-      "groupQuiet": "Silenciosos"
+      "groupQuiet": "Silenciosos",
+      "groupPinned": "Fijados",
+      "atMe": "@me",
+      "typeAttachment": "[Adjunto]",
+      "typeCode": "[Código]",
+      "typeCommand": "[Comando]",
+      "unreadBadge": "{count} sin leer",
+      "muted": "Silenciado",
+      "markedUnread": "No leído",
+      "draftTag": "[Borrador]"
     },
     "createDialog": {
       "title": "Crear Channel",
@@ -43,7 +57,8 @@
       "current": "Miembros",
       "available": "Añadir miembros",
       "searchPlaceholder": "Buscar miembros...",
-      "empty": "Sin miembros"
+      "empty": "Sin miembros",
+      "owner": "Propietario"
     },
     "messages": {
       "today": "Hoy",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "Eliminar mensaje",
       "deleteConfirmDescription": "¿Estás seguro de que quieres eliminar este mensaje? Esta acción no se puede deshacer.",
       "delete": "Eliminar",
-      "moreActions": "Más"
+      "moreActions": "Más",
+      "newMessagesDivider": "Mensajes nuevos a continuación",
+      "mentionBelow": "Alguien te mencionó",
+      "readBy": "Leído por",
+      "readByTitle": "Leído por {count}",
+      "readByNone": "Nadie lo ha leído todavía"
     },
     "archivedBanner": "Este Channel está archivado — el envío de mensajes está deshabilitado",
     "header": {

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { create as protoCreate, toBinary } from "@bufbuild/protobuf";
 import { getErrorMessage } from "@/lib/utils";
 import { getChannelState } from "@/lib/wasm-core";
+import { useChannelMessageStore } from "./channelMessageStore";
 import { readCurrentOrg, readCurrentUser } from "@/stores/auth";
 import {
   listChannelsRaw,
@@ -30,6 +31,11 @@ export { useChannels, useCurrentChannel, useChannelMembers, getLastMessage } fro
 
 const svc = () => getChannelState();
 const bump = () => useChannelStore.setState((s) => ({ _tick: s._tick + 1 }));
+// Sidebar unread badges memoize on channelMessageStore._unreadTick; select_channel
+// clears the wasm counts but lives in this store, so bump that tick too — else an
+// opened empty / marked-unread channel keeps its stale dot until markRead fires.
+const bumpUnread = () =>
+  useChannelMessageStore.setState((s) => ({ _unreadTick: s._unreadTick + 1 }));
 
 function orgSlug(): string {
   return readCurrentOrg()?.slug ?? "";
@@ -71,6 +77,7 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
     if (id !== null) {
       svc().select_channel(BigInt(id));
       bump();
+      bumpUnread();
       get().fetchChannel(id);
     } else {
       svc().select_channel(undefined as unknown as bigint);

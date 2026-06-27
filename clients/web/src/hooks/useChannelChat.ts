@@ -2,10 +2,11 @@
 
 import { useEffect, useCallback, useMemo, useRef } from "react";
 import { useCurrentUser, useAuthStore } from "@/stores/auth";
-import { useChannelStore, useChannelMessageStore, useCurrentChannel } from "@/stores/channel";
+import { useChannelStore, useChannelMessageStore, useCurrentChannel, useChannelMembers } from "@/stores/channel";
 import { EMPTY_CACHE, LOAD_MORE_MESSAGE_LIMIT, useChannelMessages } from "@/stores/channelMessageStore";
 import { useMeshStore, useTopology } from "@/stores/mesh";
 import { transformMessage } from "@/components/channel/transformMessage";
+import { useChannelEntryAnchor } from "@/components/channel/useChannelEntryAnchor";
 import type { TransformedMessage } from "@/components/channel/types";
 import type { MessageSendPayload, MessageEditPayload } from "@/lib/viewModels/channelMessage";
 
@@ -23,6 +24,8 @@ interface UseChannelChatReturn {
   channelName: string;
   transformedMessages: TransformedMessage[];
   hasMore: boolean;
+  firstUnreadId: number | null;
+  roleByUserId: Map<number, string>;
   currentUserId: number | undefined;
   handlePodsChanged: () => void;
   handleSendMessage: (payload: MessageSendPayload) => Promise<void>;
@@ -146,6 +149,14 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     [messages]
   );
 
+  const firstUnreadId = useChannelEntryAnchor(channelId, transformedMessages);
+
+  const members = useChannelMembers(channelId);
+  const roleByUserId = useMemo(
+    () => new Map(members.map((m) => [m.user_id, m.role])),
+    [members],
+  );
+
   return {
     currentChannel,
     channelLoading,
@@ -156,6 +167,8 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     channelName,
     transformedMessages,
     hasMore,
+    firstUnreadId,
+    roleByUserId,
     currentUserId,
     handlePodsChanged,
     handleSendMessage,

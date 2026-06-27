@@ -500,6 +500,8 @@ vi.mock('@/lib/wasm-core', () => {
       const k = cKey(chId); h.channel.unread.set(k, (h.channel.unread.get(k) || 0) + 1)
     }),
     clear_channel_unread: fn((chId: bigint) => { h.channel.unread.delete(cKey(chId)) }),
+    get_last_read_id: fn(() => -1),
+    advance_last_read: fn(),
     unread_counts_json: fn(() => {
       const obj: Record<string, number> = {}
       for (const [k, v] of h.channel.unread.entries()) { if (v > 0) obj[k] = v }

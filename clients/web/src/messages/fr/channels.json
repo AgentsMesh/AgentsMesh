@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "Ouvrir dans une nouvelle fenêtre"
+      "openInNewWindow": "Ouvrir dans une nouvelle fenêtre",
+      "mute": "Muet",
+      "unmute": "Réactiver",
+      "pin": "Épingler",
+      "unpin": "Désépingler",
+      "markUnread": "Marquer comme non lu"
     },
     "emptyState": "Sélectionnez un Channel pour commencer à discuter",
     "emptyStateHint": "Choisissez un Channel dans la barre latérale pour voir les messages et collaborer avec votre équipe",
@@ -16,7 +21,16 @@
       "podsCount": "{count} pods",
       "groupActive": "Actifs",
       "groupLinked": "Liés",
-      "groupQuiet": "Silencieux"
+      "groupQuiet": "Silencieux",
+      "groupPinned": "Épinglés",
+      "atMe": "@me",
+      "typeAttachment": "[Pièce jointe]",
+      "typeCode": "[Code]",
+      "typeCommand": "[Commande]",
+      "unreadBadge": "{count} non lus",
+      "muted": "Muet",
+      "markedUnread": "Non lu",
+      "draftTag": "[Brouillon]"
     },
     "createDialog": {
       "title": "Créer un Channel",
@@ -43,7 +57,8 @@
       "current": "Membres",
       "available": "Ajouter des membres",
       "searchPlaceholder": "Rechercher des membres...",
-      "empty": "Aucun membre"
+      "empty": "Aucun membre",
+      "owner": "Propriétaire"
     },
     "messages": {
       "today": "Aujourd'hui",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "Supprimer le message",
       "deleteConfirmDescription": "Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.",
       "delete": "Supprimer",
-      "moreActions": "Plus"
+      "moreActions": "Plus",
+      "newMessagesDivider": "Nouveaux messages ci-dessous",
+      "mentionBelow": "Quelqu'un vous a mentionné",
+      "readBy": "Lu par",
+      "readByTitle": "Lu par {count}",
+      "readByNone": "Personne ne l'a encore lu"
     },
     "archivedBanner": "Ce Channel est archivé — l'envoi de messages est désactivé",
     "header": {

@@ -105,6 +105,24 @@ impl ApiClient {
         connect_call(self, "/proto.channel.v1.ChannelService/MuteChannel", req).await
     }
 
+    pub async fn pin_channel_connect(
+        &self, req: &channel_proto::PinChannelRequest,
+    ) -> Result<channel_proto::PinChannelResponse, ApiError> {
+        connect_call(self, "/proto.channel.v1.ChannelService/PinChannel", req).await
+    }
+
+    pub async fn mark_channel_unread_connect(
+        &self, req: &channel_proto::MarkChannelUnreadRequest,
+    ) -> Result<channel_proto::MarkChannelUnreadResponse, ApiError> {
+        connect_call(self, "/proto.channel.v1.ChannelService/MarkChannelUnread", req).await
+    }
+
+    pub async fn get_message_read_by_connect(
+        &self, req: &channel_proto::GetMessageReadByRequest,
+    ) -> Result<channel_proto::GetMessageReadByResponse, ApiError> {
+        connect_call(self, "/proto.channel.v1.ChannelService/GetMessageReadBy", req).await
+    }
+
     pub async fn list_channel_members_connect(
         &self, req: &channel_proto::ListChannelMembersRequest,
     ) -> Result<channel_proto::ListChannelMembersResponse, ApiError> {

@@ -1,10 +1,12 @@
-export { useChannelStore, useChannels, useCurrentChannel, getLastMessage, type Channel, type ChannelLastMessage } from "./channelStore";
+export { useChannelStore, useChannels, useCurrentChannel, useChannelMembers, getLastMessage, type Channel, type ChannelLastMessage } from "./channelStore";
 export { readChannel } from "./channelSelectors";
 export {
   useChannelMessageStore,
   EMPTY_CACHE,
   useUnreadCounts,
   useUnreadCount,
+  useMentionCounts,
+  useManuallyUnread,
   useTotalUnreadCount,
 } from "./channelMessageStore";
 export type { ChannelMessageCache, ChannelMessageState } from "./channelMessageTypes";

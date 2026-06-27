@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "새 창에서 열기"
+      "openInNewWindow": "새 창에서 열기",
+      "mute": "음소거",
+      "unmute": "음소거 해제",
+      "pin": "고정",
+      "unpin": "고정 해제",
+      "markUnread": "읽지 않음으로 표시"
     },
     "emptyState": "Channel을 선택하여 채팅 시작",
     "emptyStateHint": "사이드바에서 Channel을 선택하여 메시지를 확인하고 팀과 협업하세요",
@@ -16,7 +21,16 @@
       "podsCount": "{count}개 Pod",
       "groupActive": "활성",
       "groupLinked": "연결됨",
-      "groupQuiet": "조용함"
+      "groupQuiet": "조용함",
+      "groupPinned": "고정됨",
+      "atMe": "@me",
+      "typeAttachment": "[첨부]",
+      "typeCode": "[코드]",
+      "typeCommand": "[명령]",
+      "unreadBadge": "읽지 않음 {count}개",
+      "muted": "음소거됨",
+      "markedUnread": "읽지 않음",
+      "draftTag": "[임시저장]"
     },
     "createDialog": {
       "title": "Channel 만들기",
@@ -43,7 +57,8 @@
       "current": "멤버",
       "available": "멤버 추가",
       "searchPlaceholder": "멤버 검색...",
-      "empty": "멤버 없음"
+      "empty": "멤버 없음",
+      "owner": "소유자"
     },
     "messages": {
       "today": "오늘",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "메시지 삭제",
       "deleteConfirmDescription": "이 메시지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
       "delete": "삭제",
-      "moreActions": "더 보기"
+      "moreActions": "더 보기",
+      "newMessagesDivider": "여기부터 새 메시지",
+      "mentionBelow": "누군가 회원님을 언급했습니다",
+      "readBy": "읽음",
+      "readByTitle": "{count}명이 읽음",
+      "readByNone": "아직 아무도 읽지 않았습니다"
     },
     "archivedBanner": "이 Channel은 보관됨 — 메시지 전송이 비활성화되었습니다",
     "header": {

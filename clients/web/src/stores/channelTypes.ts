@@ -3,6 +3,8 @@ export interface Channel {
   is_archived: boolean;
   visibility?: "public" | "private";
   is_member?: boolean;
+  is_muted?: boolean;
+  is_pinned?: boolean;
   member_count: number;
   agent_count?: number;
   created_at?: string; updated_at?: string;

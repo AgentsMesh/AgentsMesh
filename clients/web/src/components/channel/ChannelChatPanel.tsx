@@ -68,6 +68,9 @@ export function ChannelChatPanel({ channelId }: ChannelChatPanelProps) {
                 onLoadMore={chat.handleLoadMore}
                 onRetry={chat.handleRefresh}
                 currentUserId={chat.currentUserId}
+                channelId={channelId}
+                firstUnreadId={chat.firstUnreadId}
+                roleByUserId={chat.roleByUserId}
                 onEditMessage={chat.handleEditMessage}
                 onDeleteMessage={chat.handleDeleteMessage}
               />
@@ -77,6 +80,7 @@ export function ChannelChatPanel({ channelId }: ChannelChatPanelProps) {
                 </div>
               ) : (
                 <MessageInput
+                  key={channelId}
                   onSend={chat.handleSendMessage}
                   channelId={channelId}
                   channelName={chat.channelName}

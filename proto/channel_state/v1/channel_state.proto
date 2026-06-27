@@ -50,6 +50,10 @@ message Channel {
   optional string updated_at = 16;
   // Computed: total joined pods count.
   optional int64 agent_count = 17;
+  // Computed: per-user mute state (mirrors wire is_muted).
+  bool is_muted = 18;
+  // Computed: per-user pin state (mirrors wire is_pinned).
+  bool is_pinned = 19;
 
   // --- client-derived business fields (Rust maintains; UI consumes) ---
 
@@ -67,6 +71,15 @@ message Channel {
   // Timestamp of `last_message` (or channel's updated_at when no
   // messages). Drives the sidebar sort.
   optional string last_activity_at = 103;
+
+  // Monotonic last-read message id mirrored from the backend (0/absent =
+  // nothing read). Frozen on channel entry to anchor the "new messages"
+  // divider; never zeroed by a list refresh (preserved in set_channels).
+  optional int64 last_read_message_id = 104;
+
+  // Computed: user marked this channel unread (sticky until the next read).
+  // Drives the unread dot even when unread_count is 0.
+  bool manually_unread = 105;
 }
 
 // ---------------------------------------------------------------------------

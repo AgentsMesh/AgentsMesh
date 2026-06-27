@@ -32,6 +32,7 @@ func channelTableDDLs() []string {
 			channel_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
 			role TEXT NOT NULL DEFAULT 'member',
 			is_muted INTEGER NOT NULL DEFAULT 0,
+			is_pinned INTEGER NOT NULL DEFAULT 0,
 			joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			UNIQUE(channel_id, user_id)
 		)`,
@@ -40,6 +41,7 @@ func channelTableDDLs() []string {
 			channel_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
 			last_read_message_id INTEGER,
 			last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			manually_unread INTEGER NOT NULL DEFAULT 0,
 			UNIQUE(channel_id, user_id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS channel_message_edits (

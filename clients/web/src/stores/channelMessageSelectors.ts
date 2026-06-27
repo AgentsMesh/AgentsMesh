@@ -38,6 +38,28 @@ export function useUnreadCounts(): Record<number, number> {
   }, [tick]);
 }
 
+export function useManuallyUnread(): Record<number, boolean> {
+  const tick = useChannelMessageStore((s) => s._unreadTick);
+  return useMemo(() => {
+    const req = fromBinary(ReplaceChannelUnreadCountsRequestSchema, svc().unread_counts_bytes());
+    const out: Record<number, boolean> = {};
+    for (const [k, v] of Object.entries(req.manuallyUnread)) out[Number(k)] = v;
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
+}
+
+export function useMentionCounts(): Record<number, number> {
+  const tick = useChannelMessageStore((s) => s._unreadTick);
+  return useMemo(() => {
+    const raw = JSON.parse(svc().mention_counts_json() || "{}") as Record<string, number>;
+    const out: Record<number, number> = {};
+    for (const [k, v] of Object.entries(raw)) out[Number(k)] = v;
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick]);
+}
+
 export function useUnreadCount(channelId: number | null | undefined): number {
   const tick = useChannelMessageStore((s) => s._unreadTick);
   return useMemo(() => {

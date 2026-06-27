@@ -72,6 +72,7 @@ go_test(
         "message_test.go",
         "mock_repo_test.go",
         "mutation_coverage_test.go",
+        "readstate_coverage_test.go",
         "readstate_test.go",
         "service_coverage_test.go",
         "test_helper_test.go",

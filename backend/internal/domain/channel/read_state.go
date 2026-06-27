@@ -7,6 +7,7 @@ type ReadState struct {
 	UserID            int64     `gorm:"primaryKey" json:"user_id"`
 	LastReadMessageID *int64    `json:"last_read_message_id"`
 	LastReadAt        time.Time `gorm:"default:now()" json:"last_read_at"`
+	ManuallyUnread    bool      `gorm:"default:false" json:"manually_unread"`
 }
 
 func (ReadState) TableName() string { return "channel_read_states" }

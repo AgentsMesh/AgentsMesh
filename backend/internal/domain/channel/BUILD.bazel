@@ -6,6 +6,7 @@ go_library(
         "binding_model.go",
         "binding_repository.go",
         "channel.go",
+        "channel_summary.go",
         "hooks.go",
         "member.go",
         "message_content.go",

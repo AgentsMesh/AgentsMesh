@@ -87,6 +87,22 @@ func (s *Service) SetMemberMuted(ctx context.Context, channelID, userID int64, m
 	return nil
 }
 
+func (s *Service) SetMemberPinned(ctx context.Context, channelID, userID int64, pinned bool) error {
+	ch, err := s.GetChannel(ctx, channelID)
+	if err != nil {
+		return err
+	}
+	// Auto-join public channels like MarkRead / SetManuallyUnread: a visible
+	// public channel can be pinned without a prior explicit join (else the pin
+	// silently no-ops on a channel the user sees but hasn't formally joined).
+	if ch.IsPublic() {
+		_ = s.repo.AddMemberWithRole(ctx, channelID, userID, channel.RoleMember)
+	} else if err := s.requireMembership(ctx, channelID, userID); err != nil {
+		return err
+	}
+	return s.repo.SetMemberPinned(ctx, channelID, userID, pinned)
+}
+
 func (s *Service) MarkRead(ctx context.Context, channelID, userID int64, messageID int64) error {
 	ch, err := s.GetChannel(ctx, channelID)
 	if err != nil {
@@ -102,8 +118,38 @@ func (s *Service) MarkRead(ctx context.Context, channelID, userID int64, message
 	return s.repo.MarkRead(ctx, channelID, userID, messageID)
 }
 
-func (s *Service) GetUnreadCounts(ctx context.Context, userID int64) (map[int64]int64, error) {
-	return s.repo.GetUnreadCounts(ctx, userID)
+func (s *Service) SetManuallyUnread(ctx context.Context, channelID, userID int64) error {
+	ch, err := s.GetChannel(ctx, channelID)
+	if err != nil {
+		return err
+	}
+	if ch.IsPublic() {
+		_ = s.repo.AddMemberWithRole(ctx, channelID, userID, channel.RoleMember)
+	} else if err := s.requireMembership(ctx, channelID, userID); err != nil {
+		return err
+	}
+	return s.repo.SetManuallyUnread(ctx, channelID, userID)
+}
+
+func (s *Service) GetChannelSummaries(ctx context.Context, userID int64) (map[int64]channel.ChannelSummary, error) {
+	return s.repo.GetChannelSummaries(ctx, userID)
+}
+
+func (s *Service) GetMessageReadBy(ctx context.Context, channelID, messageID, requesterID int64) ([]int64, error) {
+	msg, err := s.repo.GetMessageByID(ctx, messageID)
+	if err != nil {
+		return nil, err
+	}
+	if msg == nil || msg.ChannelID != channelID {
+		return nil, ErrMessageNotFound
+	}
+	// Read receipts are author-only (the UI only surfaces them on your own
+	// messages); enforce it server-side so a member can't enumerate who read
+	// someone else's message.
+	if msg.SenderUserID == nil || *msg.SenderUserID != requesterID {
+		return nil, ErrNotMessageSender
+	}
+	return s.repo.GetReadByUserIDs(ctx, channelID, messageID)
 }
 
 func (s *Service) GetMemberUserIDs(ctx context.Context, channelID int64) ([]int64, error) {

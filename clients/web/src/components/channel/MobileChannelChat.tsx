@@ -106,10 +106,14 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
             onLoadMore={chat.handleLoadMore}
             onRetry={chat.handleRefresh}
             currentUserId={chat.currentUserId}
+            channelId={channelId}
+            firstUnreadId={chat.firstUnreadId}
+            roleByUserId={chat.roleByUserId}
             onEditMessage={chat.handleEditMessage}
             onDeleteMessage={chat.handleDeleteMessage}
           />
           <MessageInput
+            key={channelId}
             onSend={chat.handleSendMessage}
             placeholder="Send a message..."
             channelId={channelId}

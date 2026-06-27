@@ -15,12 +15,13 @@ interface MessageBubbleProps {
   isFirstInGroup: boolean;
   formatTime: (dateString: string) => string;
   currentUserId?: number;
+  channelId?: number | null;
   onEdit?: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   onDelete?: (messageId: number) => Promise<void>;
 }
 
 export function MessageBubble({
-  message, isFirstInGroup, formatTime, currentUserId, onEdit, onDelete,
+  message, isFirstInGroup, formatTime, currentUserId, channelId, onEdit, onDelete,
 }: MessageBubbleProps) {
   const t = useTranslations("channels.messages");
   const [editing, setEditing] = useState(false);
@@ -55,6 +56,7 @@ export function MessageBubble({
     <div className="group/msg relative">
       <MessageActions
         messageId={message.id}
+        channelId={channelId}
         content={message.body}
         isOwnMessage={isOwnMessage}
         onEdit={onEdit ? () => Promise.resolve() : undefined}
