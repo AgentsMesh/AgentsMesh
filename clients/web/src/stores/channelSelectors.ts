@@ -35,6 +35,8 @@ export function channelToCache(c: ProtoStateChannel): Channel {
     visibility: c.visibility as Channel["visibility"],
     is_archived: c.isArchived,
     is_member: c.isMember,
+    is_muted: c.isMuted,
+    is_pinned: c.isPinned,
     member_count: c.memberCount !== undefined ? Number(c.memberCount) : 0,
     agent_count: c.agentCount !== undefined ? Number(c.agentCount) : undefined,
     created_at: c.createdAt,

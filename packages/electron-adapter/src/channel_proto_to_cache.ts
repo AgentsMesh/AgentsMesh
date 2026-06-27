@@ -30,6 +30,8 @@ export function channelToCache(c: WireChannel | StateChannel): Record<string, un
     visibility: c.visibility,
     is_archived: c.isArchived,
     is_member: c.isMember,
+    is_muted: c.isMuted,
+    is_pinned: c.isPinned,
     member_count: Number(c.memberCount),
     agent_count: Number(c.agentCount),
     created_by_pod: c.createdByPod || undefined,

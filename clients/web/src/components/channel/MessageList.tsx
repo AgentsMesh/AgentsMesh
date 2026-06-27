@@ -1,15 +1,13 @@
 "use client";
 
-import { useMemo, useCallback, useRef, useEffect } from "react";
+import { useMemo, useCallback, useRef, useEffect, Fragment } from "react";
 import { MessageSquare, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { MessageBubble } from "./MessageBubble";
-import { ToolCallCard } from "./ToolCallCard";
-import { AttachmentCard } from "./AttachmentCard";
+import { MessageRow } from "./MessageRow";
+import { UnreadDivider } from "./UnreadDivider";
+import { computeGroupFlags } from "./message-grouping";
 import { useMessageListScroll } from "./useMessageListScroll";
-import { getPodDisplayName } from "@/lib/pod-display-name";
-import { usePods, type Pod } from "@/stores/pod";
-import { cn } from "@/lib/utils";
+import { usePods } from "@/stores/pod";
 import type { TransformedMessage } from "./types";
 import type { MessageEditPayload } from "@/lib/viewModels/channelMessage";
 
@@ -22,48 +20,24 @@ interface MessageListProps {
   onLoadMore?: () => void;
   onRetry?: () => void;
   currentUserId?: number;
+  channelId?: number;
+  firstUnreadId?: number | null;
+  roleByUserId?: Map<number, string>;
   onEditMessage?: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   onDeleteMessage?: (messageId: number) => Promise<void>;
 }
 
-const AVATAR_PALETTE = [
-  "bg-sky-500", "bg-emerald-500", "bg-amber-500", "bg-violet-500",
-  "bg-rose-500", "bg-indigo-500", "bg-teal-500", "bg-orange-500",
-];
-
-function paletteFor(seed: string | number): string {
-  const s = String(seed);
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
-  return AVATAR_PALETTE[hash % AVATAR_PALETTE.length];
-}
-
-function getSenderName(msg: TransformedMessage, allPods: Pod[]): string {
-  if (msg.pod) {
-    const storePod = allPods.find((p) => p.pod_key === msg.pod!.podKey);
-    return getPodDisplayName(storePod ?? {
-      pod_key: msg.pod.podKey, alias: msg.pod.alias,
-      agent: msg.pod.agent ? { name: msg.pod.agent.name } : undefined,
-    });
-  }
-  if (msg.user) return msg.user.name || msg.user.username || "Unknown";
-  return "Unknown";
-}
-
-function formatTime(dateString: string) {
-  return new Date(dateString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
 export function MessageList({
   messages, loading, loadingMore, hasMore, error,
-  onLoadMore, onRetry, currentUserId, onEditMessage, onDeleteMessage,
+  onLoadMore, onRetry, currentUserId, channelId, firstUnreadId, roleByUserId,
+  onEditMessage, onDeleteMessage,
 }: MessageListProps) {
   const t = useTranslations("channels.messages");
   const allPods = usePods();
   const {
-    containerRef, bottomRef, isAtBottom, newMessageCount,
-    handleScroll, scrollToBottom,
-  } = useMessageListScroll({ messages, loading, loadingMore });
+    containerRef, bottomRef, isAtBottom, newMessageCount, mentionBelowId,
+    handleScroll, scrollToBottom, scrollToMessage,
+  } = useMessageListScroll({ messages, loading, loadingMore, channelId, firstUnreadId, currentUserId });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const onLoadMoreRef = useRef(onLoadMore);
@@ -107,83 +81,7 @@ export function MessageList({
     return result;
   }, [messages, formatDate]);
 
-  const renderMessage = (message: TransformedMessage) => {
-    if (message.messageType === "system") {
-      return (
-        <div key={message.id} data-message-id={message.id} className="flex justify-center py-2">
-          <span className="text-[11px] text-muted-foreground">{message.body}</span>
-        </div>
-      );
-    }
-
-    const isPod = !!message.pod;
-    const senderName = getSenderName(message, allPods);
-    const letter = senderName.charAt(0).toUpperCase() || "?";
-    const time = formatTime(message.createdAt);
-    const avatarBg = paletteFor(
-      isPod ? (message.pod?.podKey ?? "") : (message.user?.id ?? senderName),
-    );
-    const isToolCall = message.content?.kind === "tool_call";
-
-    return (
-      <div
-        key={message.id}
-        data-message-id={message.id}
-        className="group/msg flex gap-3 px-6 py-1.5 hover:bg-muted/30"
-      >
-        {/* Avatar — circular for users, square 6px radius for pods */}
-        <span
-          className={cn(
-            "flex h-7 w-7 flex-shrink-0 items-center justify-center text-xs font-semibold text-white",
-            avatarBg,
-            isPod ? "rounded-md font-mono" : "rounded-full",
-          )}
-        >
-          {letter}
-        </span>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* Header row */}
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            {isPod ? (
-              <>
-                <span className="text-[13px] font-semibold text-foreground">
-                  {senderName}
-                </span>
-                {message.pod?.agent?.name && (
-                  <span className="rounded border border-border bg-muted px-1.5 py-[1px] font-mono text-[10px] text-muted-foreground">
-                    {message.pod.agent.name}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-[13px] font-semibold text-foreground">{senderName}</span>
-            )}
-            <span>{time}</span>
-          </div>
-
-          {/* Body */}
-          {isToolCall ? (
-            <ToolCallCard content={message.content!} />
-          ) : (
-            <>
-              <MessageBubble
-                message={message}
-                isFirstInGroup
-                formatTime={formatTime}
-                currentUserId={currentUserId}
-                onEdit={onEditMessage}
-                onDelete={onDeleteMessage}
-              />
-              {message.content?.attachment_key && (
-                <AttachmentCard url={message.content.attachment_key} />
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
+  const groupFlags = useMemo(() => computeGroupFlags(messages), [messages]);
 
   return (
     <div className="relative min-h-0 flex-1">
@@ -205,7 +103,21 @@ export function MessageList({
             <div className="flex justify-center py-2">
               <span className="text-[11px] text-muted-foreground">— {dateGroup.date} —</span>
             </div>
-            {dateGroup.messages.map(renderMessage)}
+            {dateGroup.messages.map((message) => (
+              <Fragment key={message.id}>
+                {firstUnreadId === message.id && <UnreadDivider />}
+                <MessageRow
+                  message={message}
+                  allPods={allPods}
+                  currentUserId={currentUserId}
+                  channelId={channelId}
+                  isFirstInGroup={groupFlags.get(message.id) ?? true}
+                  role={message.user ? roleByUserId?.get(message.user.id) : undefined}
+                  onEditMessage={onEditMessage}
+                  onDeleteMessage={onDeleteMessage}
+                />
+              </Fragment>
+            ))}
           </div>
         ))}
 
@@ -232,10 +144,21 @@ export function MessageList({
         <div ref={bottomRef} />
       </div>
 
+      {mentionBelowId != null && messages.some((m) => m.id === mentionBelowId) && (
+        <button
+          aria-label={t("mentionBelow")}
+          className="absolute bottom-16 right-4 z-10 flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-[11px] font-medium text-destructive-foreground shadow-md transition-colors hover:bg-destructive/90"
+          onClick={() => scrollToMessage(mentionBelowId)}
+        >
+          {t("mentionBelow")}
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+      )}
+
       {!isAtBottom && messages.length > 0 && (
         <button
           aria-label={t("loadOlder")}
-          className="absolute bottom-4 right-4 z-10 flex items-center gap-1 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-all hover:bg-primary/90"
+          className="absolute bottom-4 right-4 z-10 flex items-center gap-1 rounded-full bg-primary p-2 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
           onClick={scrollToBottom}
         >
           <ChevronDown className="h-4 w-4" />

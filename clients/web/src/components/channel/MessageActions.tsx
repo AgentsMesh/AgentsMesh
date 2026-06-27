@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Copy, Check, MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -12,9 +12,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "next-intl";
+import { ReadReceiptsDialog } from "./ReadReceiptsDialog";
 
 interface MessageActionsProps {
   messageId: number;
+  channelId?: number | null;
   content: string;
   isOwnMessage: boolean;
   onEdit?: () => void;
@@ -23,12 +25,13 @@ interface MessageActionsProps {
 }
 
 export function MessageActions({
-  messageId, content, isOwnMessage, onEdit, onDelete, onStartEdit,
+  messageId, channelId, content, isOwnMessage, onEdit, onDelete, onStartEdit,
 }: MessageActionsProps) {
   const t = useTranslations("channels.messages");
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [readByOpen, setReadByOpen] = useState(false);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -60,6 +63,11 @@ export function MessageActions({
             <DropdownMenuItem onClick={handleCopy}>
               <Copy className="w-3.5 h-3.5 mr-2" />{t("copyMessage")}
             </DropdownMenuItem>
+            {isOwnMessage && channelId != null && (
+              <DropdownMenuItem onClick={() => setReadByOpen(true)}>
+                <Eye className="w-3.5 h-3.5 mr-2" />{t("readBy")}
+              </DropdownMenuItem>
+            )}
             {isOwnMessage && onEdit && (
               <>
                 <DropdownMenuSeparator />
@@ -91,6 +99,15 @@ export function MessageActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {readByOpen && channelId != null && (
+        <ReadReceiptsDialog
+          open={readByOpen}
+          onOpenChange={setReadByOpen}
+          channelId={channelId}
+          messageId={messageId}
+        />
+      )}
     </>
   );
 }

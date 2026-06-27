@@ -25,6 +25,11 @@ export class ChannelLocalState {
   // Populated by ElectronChannelService.replace_channel_members (proto-bytes
   // mutator) so useChannelMembers can read synchronously.
   _membersByChannel = new Map<string, string>();
+  // Per-channel last-read cursor + manually-unread flag — mirror the inline
+  // Channel.last_read_message_id / manually_unread the WASM core keeps. Held in
+  // side maps (the renderer channel cache JSON doesn't round-trip them).
+  _lastReadCache = new Map<string, number>();
+  _manuallyUnreadCache = new Set<string>();
 
   channels_json(): string { return this._channelsCache; }
   channel_pods_json(channelId: bigint): string {
@@ -74,6 +79,28 @@ export class ChannelLocalState {
   get_mention_count(channelId: bigint): number {
     const counts = JSON.parse(this._mentionCountsCache) as Record<string, number>;
     return counts[String(channelId)] ?? 0;
+  }
+
+  // -1 = no known cursor (mirror WasmChannelState.get_last_read_id) so the
+  // divider hook tells "read nothing yet" (0) from "never fetched" (-1).
+  get_last_read_id(channelId: bigint): number {
+    return this._lastReadCache.get(String(channelId)) ?? -1;
+  }
+
+  advance_last_read(channelId: bigint, messageId: bigint): void {
+    const k = String(channelId);
+    const m = Number(messageId);
+    if (m > (this._lastReadCache.get(k) ?? 0)) this._lastReadCache.set(k, m);
+  }
+
+  get_manually_unread(channelId: bigint): boolean {
+    return this._manuallyUnreadCache.has(String(channelId));
+  }
+
+  get_all_manually_unread(): string {
+    const obj: Record<string, boolean> = {};
+    for (const k of this._manuallyUnreadCache) obj[k] = true;
+    return JSON.stringify(obj);
   }
 
   total_unread_count(): number {
@@ -205,6 +232,7 @@ export class ChannelLocalState {
     const counts = JSON.parse(this._unreadCountsCache) as Record<string, number>;
     delete counts[String(channelId)];
     this._unreadCountsCache = JSON.stringify(counts);
+    this._manuallyUnreadCache.delete(String(channelId)); // reading dismisses mark-unread
   }
 
   clear_channel_mentions(channelId: bigint): void {

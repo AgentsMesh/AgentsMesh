@@ -95,6 +95,21 @@ impl WasmChannelService {
         self.0.mute_channel_connect(request).await
     }
 
+    #[wasm_bindgen(js_name = pinChannelConnect)]
+    pub async fn pin_channel_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.pin_channel_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = markChannelUnreadConnect)]
+    pub async fn mark_channel_unread_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.mark_channel_unread_connect(request).await
+    }
+
+    #[wasm_bindgen(js_name = getMessageReadByConnect)]
+    pub async fn get_message_read_by_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.get_message_read_by_connect(request).await
+    }
+
     #[wasm_bindgen(js_name = listChannelMembersConnect)]
     pub async fn list_channel_members_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
         self.0.list_channel_members_connect(request).await

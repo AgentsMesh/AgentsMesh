@@ -44,11 +44,12 @@ impl ChannelState {
             .or_else(|| msg.sender_pod_info.as_ref().map(pod_sender_name))
             .unwrap_or_default();
 
-        let preview = match msg.message_type.as_deref() {
-            Some("code") => "[Code]".to_string(),
-            Some("command") => "[Command]".to_string(),
-            _ => truncate_str(&msg.body, PREVIEW_MAX_CHARS),
-        };
+        // content_preview is raw content (the truncated body); message_type is
+        // the stable marker the frontend localizes (previewLabel owns every type
+        // label). Baking "[Code]"/"[Command]" here duplicated that mapping in
+        // English and left attachments as a raw body, so the label lives only on
+        // the frontend now.
+        let preview = truncate_str(&msg.body, PREVIEW_MAX_CHARS);
 
         MessagePreview {
             message_id: msg.id,

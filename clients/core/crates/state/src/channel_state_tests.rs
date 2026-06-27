@@ -38,6 +38,82 @@ fn msg_with_time(id: i64, ch: i64, content: &str, time: &str) -> ChannelMessage 
 #[test] fn get_messages_no_cache() { let s = ChannelState::new(); assert!(s.get_messages(99).is_none()); }
 #[test] fn default_impl() { let s = ChannelState::default(); assert!(s.get_channels().is_empty()); }
 
+// ── last_read cursor + manually_unread (read-state) ──
+
+#[test]
+fn get_last_read_none_until_set() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a")]);
+    assert_eq!(s.get_last_read(1), None); // no cursor → None (wasm maps to -1)
+}
+
+#[test]
+fn set_last_read_keeps_genuine_zero_cursor() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a")]);
+    let mut m = HashMap::new();
+    m.insert(1, 0);
+    s.set_last_read(m);
+    assert_eq!(s.get_last_read(1), Some(0)); // 0 ("read nothing") is distinct from None
+}
+
+#[test]
+fn set_last_read_is_monotonic() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a")]);
+    let mut m = HashMap::new();
+    m.insert(1, 100);
+    s.set_last_read(m);
+    s.advance_last_read(1, 105);
+    // a stale in-flight fetch reporting an older cursor must NOT rewind the advance
+    let mut stale = HashMap::new();
+    stale.insert(1, 100);
+    s.set_last_read(stale);
+    assert_eq!(s.get_last_read(1), Some(105));
+    // a newer baseline still advances
+    let mut newer = HashMap::new();
+    newer.insert(1, 110);
+    s.set_last_read(newer);
+    assert_eq!(s.get_last_read(1), Some(110));
+}
+
+#[test]
+fn advance_last_read_is_monotonic() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a")]);
+    s.advance_last_read(1, 50);
+    assert_eq!(s.get_last_read(1), Some(50));
+    s.advance_last_read(1, 40); // older → ignored
+    assert_eq!(s.get_last_read(1), Some(50));
+    s.advance_last_read(1, 60);
+    assert_eq!(s.get_last_read(1), Some(60));
+}
+
+#[test]
+fn manually_unread_set_get_all() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a"), ch(2, "b")]);
+    let mut m = HashMap::new();
+    m.insert(1, true);
+    m.insert(2, false);
+    s.set_manually_unread(m);
+    assert!(s.get_manually_unread(1));
+    assert!(!s.get_manually_unread(2));
+    assert_eq!(s.get_all_manually_unread().get(&1), Some(&true));
+    assert_eq!(s.get_all_manually_unread().get(&2), None); // map carries only true entries
+}
+
+#[test]
+fn clear_channel_unread_dismisses_manually_unread() {
+    let mut s = ChannelState::new();
+    s.set_channels(vec![ch(1, "a")]);
+    let mut m = HashMap::new();
+    m.insert(1, true);
+    s.set_manually_unread(m);
+    s.clear_channel_unread(1); // reading a channel dismisses a "mark unread"
+    assert!(!s.get_manually_unread(1));
+}
+
 // ── on_new_message ──
 
 #[test]
@@ -258,7 +334,10 @@ fn preview_code_message_type() {
     let mut m = msg(1, 1, "fn main() {}");
     m.message_type = Some("code".into());
     let preview = ChannelState::make_preview(&m);
-    assert_eq!(preview.content_preview, "[Code]");
+    // content_preview is raw content; message_type is the stable marker the
+    // frontend localizes into "[Code]" (channel-preview-label.ts owns labels).
+    assert_eq!(preview.content_preview, "fn main() {}");
+    assert_eq!(preview.message_type.as_deref(), Some("code"));
 }
 
 #[test]
@@ -266,7 +345,8 @@ fn preview_command_message_type() {
     let mut m = msg(1, 1, "/deploy prod");
     m.message_type = Some("command".into());
     let preview = ChannelState::make_preview(&m);
-    assert_eq!(preview.content_preview, "[Command]");
+    assert_eq!(preview.content_preview, "/deploy prod");
+    assert_eq!(preview.message_type.as_deref(), Some("command"));
 }
 
 #[test]

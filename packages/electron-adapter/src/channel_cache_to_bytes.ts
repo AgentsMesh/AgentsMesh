@@ -26,6 +26,7 @@ function cacheToStateChannel(c: Obj) {
     ticketSlug: (c.ticket_slug as string) ?? "",
     visibility: (c.visibility as string) ?? "",
     isArchived: !!c.is_archived, isMember: !!c.is_member,
+    isMuted: !!c.is_muted, isPinned: !!c.is_pinned,
     memberCount: c.member_count != null ? BigInt(num(c.member_count)) : undefined,
     agentCount: c.agent_count != null ? BigInt(num(c.agent_count)) : undefined,
     createdByPod: (c.created_by_pod as string) ?? "",

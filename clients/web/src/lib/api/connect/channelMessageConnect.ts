@@ -15,12 +15,6 @@ import {
   EditChannelMessageRequestSchema,
   DeleteChannelMessageRequestSchema,
   DeleteChannelMessageResponseSchema,
-  MarkChannelReadRequestSchema,
-  MarkChannelReadResponseSchema,
-  GetChannelUnreadCountsRequestSchema,
-  GetChannelUnreadCountsResponseSchema,
-  MuteChannelRequestSchema,
-  MuteChannelResponseSchema,
 } from "@proto/channel/v1/channel_pb";
 import { create, toBinary, fromBinary } from "@bufbuild/protobuf";
 import { getChannelService } from "@/lib/wasm-core";
@@ -129,34 +123,4 @@ export async function deleteChannelMessage(
   const bytes = toBinary(DeleteChannelMessageRequestSchema, req);
   const respBytes = await getChannelService().deleteChannelMessageConnect(bytes);
   fromBinary(DeleteChannelMessageResponseSchema, new Uint8Array(respBytes));
-}
-
-export async function markChannelRead(
-  orgSlug: string, channelId: number, messageId: number,
-): Promise<void> {
-  const req = create(MarkChannelReadRequestSchema, {
-    orgSlug, channelId: BigInt(channelId), messageId: BigInt(messageId),
-  });
-  const bytes = toBinary(MarkChannelReadRequestSchema, req);
-  const respBytes = await getChannelService().markChannelReadConnect(bytes);
-  fromBinary(MarkChannelReadResponseSchema, new Uint8Array(respBytes));
-}
-
-export async function getChannelUnreadCounts(orgSlug: string): Promise<Record<string, number>> {
-  const req = create(GetChannelUnreadCountsRequestSchema, { orgSlug });
-  const bytes = toBinary(GetChannelUnreadCountsRequestSchema, req);
-  const respBytes = await getChannelService().getChannelUnreadCountsConnect(bytes);
-  const resp = fromBinary(GetChannelUnreadCountsResponseSchema, new Uint8Array(respBytes));
-  const out: Record<string, number> = {};
-  for (const [k, v] of Object.entries(resp.unread)) {
-    out[k] = Number(v);
-  }
-  return out;
-}
-
-export async function muteChannel(orgSlug: string, id: number, muted: boolean): Promise<void> {
-  const req = create(MuteChannelRequestSchema, { orgSlug, id: BigInt(id), muted });
-  const bytes = toBinary(MuteChannelRequestSchema, req);
-  const respBytes = await getChannelService().muteChannelConnect(bytes);
-  fromBinary(MuteChannelResponseSchema, new Uint8Array(respBytes));
 }

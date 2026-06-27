@@ -35,7 +35,7 @@ vi.mock("@/lib/api/facade/channelConnect", () => ({
 }));
 
 import { useChannelMessageStore, EMPTY_CACHE, readMessages } from "../channelMessageStore";
-import { getChannelService } from "@/lib/wasm-core";
+import { getChannelService, getChannelState } from "@/lib/wasm-core";
 import type { ChannelMessage } from "@/lib/api/facade/channel";
 import type { MessageSendPayload, MessageEditPayload } from "@/lib/viewModels/channelMessage";
 
@@ -151,7 +151,7 @@ describe("useChannelMessageStore — Connect adapter integration", () => {
   });
 
   it("fetchUnreadCounts: writes counts into SSOT and bumps tick", async () => {
-    mocks.getChannelUnreadCounts.mockResolvedValue({ "1": 3, "2": 5 });
+    mocks.getChannelUnreadCounts.mockResolvedValue({ unread: { "1": 3, "2": 5 }, mentions: {}, lastRead: {}, manuallyUnread: {} });
     await act(async () => {
       await useChannelMessageStore.getState().fetchUnreadCounts();
     });
@@ -160,12 +160,16 @@ describe("useChannelMessageStore — Connect adapter integration", () => {
     expect(svc().get_unread_count(BigInt(1))).toBe(3);
   });
 
-  it("markRead: calls markChannelRead and bumps unread tick", async () => {
+  it("markRead: clears unread+mentions, advances cursor, then persists, bumps tick", async () => {
     mocks.markChannelRead.mockResolvedValue(undefined);
     await act(async () => {
       await useChannelMessageStore.getState().markRead(42, 99);
     });
     expect(mocks.markChannelRead).toHaveBeenCalledWith(orgSlug, 42, 99);
+    // #2/#6: reading dismisses the @-mention locally and advances the read cursor
+    expect(vi.mocked(getChannelState().clear_channel_unread)).toHaveBeenCalledWith(BigInt(42));
+    expect(vi.mocked(getChannelState().clear_channel_mentions)).toHaveBeenCalledWith(BigInt(42));
+    expect(vi.mocked(getChannelState().advance_last_read)).toHaveBeenCalledWith(BigInt(42), BigInt(99));
     expect(useChannelMessageStore.getState()._unreadTick).toBeGreaterThan(0);
   });
 

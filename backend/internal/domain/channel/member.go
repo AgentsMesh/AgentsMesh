@@ -7,6 +7,7 @@ type Member struct {
 	UserID    int64     `gorm:"primaryKey" json:"user_id"`
 	Role      string    `gorm:"size:20;not null;default:'member'" json:"role"`
 	IsMuted   bool      `gorm:"default:false" json:"is_muted"`
+	IsPinned  bool      `gorm:"default:false" json:"is_pinned"`
 	JoinedAt  time.Time `gorm:"default:now()" json:"joined_at"`
 }
 

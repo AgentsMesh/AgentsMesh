@@ -32,6 +32,8 @@ export interface ChannelMessageState {
   fetchUnreadCounts: () => Promise<void>;
   markRead: (channelId: number, messageId: number) => Promise<void>;
   muteChannel: (channelId: number, muted: boolean) => Promise<void>;
+  pinChannel: (channelId: number, pinned: boolean) => Promise<void>;
+  markUnread: (channelId: number) => Promise<void>;
   incrementUnread: (channelId: number) => void;
   clearChannelUnread: (channelId: number) => void;
 }

@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "新しいウィンドウで開く"
+      "openInNewWindow": "新しいウィンドウで開く",
+      "mute": "ミュート",
+      "unmute": "ミュート解除",
+      "pin": "ピン留め",
+      "unpin": "ピン留め解除",
+      "markUnread": "未読にする"
     },
     "emptyState": "Channel を選択してチャットを開始",
     "emptyStateHint": "サイドバーから Channel を選択して、メッセージを表示しチームと協力しましょう",
@@ -16,7 +21,16 @@
       "podsCount": "{count} Pods",
       "groupActive": "アクティブ",
       "groupLinked": "リンク済み",
-      "groupQuiet": "静かなチャンネル"
+      "groupQuiet": "静かなチャンネル",
+      "groupPinned": "ピン留め",
+      "atMe": "@me",
+      "typeAttachment": "[添付]",
+      "typeCode": "[コード]",
+      "typeCommand": "[コマンド]",
+      "unreadBadge": "{count}件の未読",
+      "muted": "ミュート中",
+      "markedUnread": "未読",
+      "draftTag": "[下書き]"
     },
     "createDialog": {
       "title": "Channel を作成",
@@ -43,7 +57,8 @@
       "current": "メンバー",
       "available": "メンバーを追加",
       "searchPlaceholder": "メンバーを検索...",
-      "empty": "メンバーなし"
+      "empty": "メンバーなし",
+      "owner": "オーナー"
     },
     "messages": {
       "today": "今日",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "メッセージを削除",
       "deleteConfirmDescription": "このメッセージを削除してもよろしいですか？この操作は元に戻せません。",
       "delete": "削除",
-      "moreActions": "そ���他"
+      "moreActions": "そ���他",
+      "newMessagesDivider": "ここから新着メッセージ",
+      "mentionBelow": "あなたがメンションされました",
+      "readBy": "既読",
+      "readByTitle": "{count}人が既読",
+      "readByNone": "まだ誰も読んでいません"
     },
     "archivedBanner": "この Channel はアーカイブされています — メッセージの送信は無効です",
     "header": {

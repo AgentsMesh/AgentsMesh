@@ -1,7 +1,12 @@
 {
   "channels": {
     "contextMenu": {
-      "openInNewWindow": "Abrir em nova janela"
+      "openInNewWindow": "Abrir em nova janela",
+      "mute": "Silenciar",
+      "unmute": "Reativar",
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "markUnread": "Marcar como não lido"
     },
     "emptyState": "Selecione um Channel para começar a conversar",
     "emptyStateHint": "Escolha um Channel na barra lateral para ver mensagens e colaborar com sua equipe",
@@ -16,7 +21,16 @@
       "podsCount": "{count} pods",
       "groupActive": "Ativo",
       "groupLinked": "Vinculado",
-      "groupQuiet": "Silencioso"
+      "groupQuiet": "Silencioso",
+      "groupPinned": "Fixados",
+      "atMe": "@me",
+      "typeAttachment": "[Anexo]",
+      "typeCode": "[Código]",
+      "typeCommand": "[Comando]",
+      "unreadBadge": "{count} não lidas",
+      "muted": "Silenciado",
+      "markedUnread": "Não lido",
+      "draftTag": "[Rascunho]"
     },
     "createDialog": {
       "title": "Criar Channel",
@@ -43,7 +57,8 @@
       "current": "Membros",
       "available": "Adicionar membros",
       "searchPlaceholder": "Pesquisar membros...",
-      "empty": "Sem membros"
+      "empty": "Sem membros",
+      "owner": "Proprietário"
     },
     "messages": {
       "today": "Hoje",
@@ -63,7 +78,12 @@
       "deleteConfirmTitle": "Excluir mensagem",
       "deleteConfirmDescription": "Tem certeza de que deseja excluir esta mensagem? Esta ação não pode ser desfeita.",
       "delete": "Excluir",
-      "moreActions": "Mais"
+      "moreActions": "Mais",
+      "newMessagesDivider": "Novas mensagens abaixo",
+      "mentionBelow": "Alguém mencionou você",
+      "readBy": "Lido por",
+      "readByTitle": "Lido por {count}",
+      "readByNone": "Ninguém leu isto ainda"
     },
     "archivedBanner": "Este Channel está arquivado — o envio de mensagens está desativado",
     "header": {

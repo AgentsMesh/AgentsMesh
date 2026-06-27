@@ -72,9 +72,9 @@ func TestMarkRead_CursorOnlyForward(t *testing.T) {
 	svc.MarkRead(ctx, ch.ID, creator, msg1.ID)
 
 	// Unread count should be 0 (cursor stayed at msg2, not regressed to msg1)
-	counts, _ := svc.GetUnreadCounts(ctx, creator)
-	if count, exists := counts[ch.ID]; exists && count > 0 {
-		t.Errorf("Expected 0 unread after forward mark, got %d (cursor may have regressed)", count)
+	counts, _ := svc.GetChannelSummaries(ctx, creator)
+	if s, exists := counts[ch.ID]; exists && s.Unread > 0 {
+		t.Errorf("Expected 0 unread after forward mark, got %d (cursor may have regressed)", s.Unread)
 	}
 }
 
@@ -175,8 +175,8 @@ func TestGetUnreadCounts(t *testing.T) {
 	})
 
 	// New member should have 0 unread (cursor initialized to latest)
-	counts, _ := svc.GetUnreadCounts(ctx, member)
-	if count := counts[ch.ID]; count != 0 {
+	counts, _ := svc.GetChannelSummaries(ctx, member)
+	if count := counts[ch.ID].Unread; count != 0 {
 		t.Errorf("New member should have 0 unread, got %d", count)
 	}
 
@@ -186,13 +186,13 @@ func TestGetUnreadCounts(t *testing.T) {
 	}
 
 	// Member should have 3 unread
-	counts, _ = svc.GetUnreadCounts(ctx, member)
-	if counts[ch.ID] != 3 {
-		t.Errorf("Expected 3 unread, got %d", counts[ch.ID])
+	counts, _ = svc.GetChannelSummaries(ctx, member)
+	if counts[ch.ID].Unread != 3 {
+		t.Errorf("Expected 3 unread, got %d", counts[ch.ID].Unread)
 	}
 
 	// Non-member should have 0
-	counts, _ = svc.GetUnreadCounts(ctx, 99)
+	counts, _ = svc.GetChannelSummaries(ctx, 99)
 	if len(counts) != 0 {
 		t.Errorf("Non-member should have 0 channels in unread counts, got %d", len(counts))
 	}

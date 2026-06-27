@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use agentsmesh_state::app_state::AppState;
+// Fetch→state + channel/message mutations for WasmChannelState. Split from
+// the parent module for the file-size limit; a child module so it reaches the
+// parent's private `state` field and `decode_err` via `super`.
 use agentsmesh_state::channel_state::ChannelSortMode;
 use agentsmesh_state::channel_types::ChannelMessage;
 use agentsmesh_types::proto_channel_v1::{
@@ -11,124 +10,14 @@ use agentsmesh_types::proto_channel_v1::{
 use agentsmesh_types::proto_channel_state_v1::{
     ApplyChannelMessageEditedEventRequest, ApplyIncomingChannelMessageRequest,
     InsertChannelMessageRequest, InsertChannelRequest, PatchChannelMemberCountRequest,
-    ReplaceCachedChannelMessagesRequest,
-    ReplaceCachedChannelsRequest, ReplaceChannelMembersRequest, ReplaceChannelPodsRequest,
-    ReplaceChannelUnreadCountsRequest, RemoveChannelMemberRequest,
 };
-use parking_lot::RwLock;
 use prost::Message;
 use wasm_bindgen::prelude::*;
 
-/// View into `AppState.channels` exposed to JavaScript. See `state_pod.rs`
-/// for the shared-state pattern rationale.
-#[wasm_bindgen]
-pub struct WasmChannelState {
-    state: Arc<RwLock<AppState>>,
-}
-
-fn decode_err<E: std::fmt::Display>(e: E) -> JsValue {
-    JsValue::from_str(&format!("decode: {e}"))
-}
-
-impl WasmChannelState {
-    pub(crate) fn from_runtime(state: Arc<RwLock<AppState>>) -> Self {
-        Self { state }
-    }
-}
+use super::{decode_err, WasmChannelState};
 
 #[wasm_bindgen]
 impl WasmChannelState {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        Self {
-            state: Arc::new(RwLock::new(AppState::with_storage(crate::new_memory_backend()))),
-        }
-    }
-
-    pub fn set_current_user_id(&self, user_id: Option<i64>) {
-        self.state.write().channels.set_current_user_id(user_id);
-    }
-
-    pub fn channels_json(&self) -> String {
-        serde_json::to_string(self.state.read().channels.get_channels()).unwrap_or_default()
-    }
-
-    // Read side, zero-JSON: prost-encode state channels (reuse the list wrapper).
-    // Web/desktop decode via fromBinary + channelToCache. Replaces channels_json.
-    pub fn channels_bytes(&self) -> Vec<u8> {
-        let channels = self.state.read().channels.get_channels().to_vec();
-        ReplaceCachedChannelsRequest { channels }.encode_to_vec()
-    }
-
-    // Read side, zero-JSON for the remaining facets. Reuse the *Request wrappers
-    // (web/desktop decode via fromBinary + the same xToCache as the mutators).
-    pub fn get_messages_bytes(&self, channel_id: i64) -> Vec<u8> {
-        match self.state.read().channels.get_messages(channel_id) {
-            Some(cache) => ReplaceCachedChannelMessagesRequest {
-                channel_id,
-                messages: cache.messages.clone(),
-                has_more: cache.has_more,
-            }
-            .encode_to_vec(),
-            None => Vec::new(),
-        }
-    }
-
-    pub fn channel_members_bytes(&self, channel_id: i64) -> Vec<u8> {
-        let members = self.state.read().channels.get_channel_members(channel_id);
-        ReplaceChannelMembersRequest { channel_id, members }.encode_to_vec()
-    }
-
-    pub fn channel_pods_bytes(&self, channel_id: i64) -> Vec<u8> {
-        let pods = self.state.read().channels.get_channel_pods(channel_id);
-        ReplaceChannelPodsRequest { channel_id, pods }.encode_to_vec()
-    }
-
-    // Single-channel + preview read side (zero-JSON). Single channel reuses the
-    // InsertChannelRequest wrapper; preview encodes MessagePreview directly.
-    pub fn get_channel_bytes(&self, id: i64) -> Vec<u8> {
-        match self.state.read().channels.get_channel(id) {
-            Some(c) => InsertChannelRequest { channel: Some(c.clone()) }.encode_to_vec(),
-            None => Vec::new(),
-        }
-    }
-
-    pub fn current_channel_bytes(&self) -> Vec<u8> {
-        match self.state.read().channels.get_current_channel() {
-            Some(c) => InsertChannelRequest { channel: Some(c.clone()) }.encode_to_vec(),
-            None => Vec::new(),
-        }
-    }
-
-    pub fn get_last_message_bytes(&self, channel_id: i64) -> Vec<u8> {
-        match self.state.read().channels.get_last_message(channel_id) {
-            Some(preview) => preview.encode_to_vec(),
-            None => Vec::new(),
-        }
-    }
-
-    pub fn current_channel_json(&self) -> JsValue {
-        match self.state.read().channels.get_current_channel() {
-            Some(c) => JsValue::from_str(
-                &serde_json::to_string(c).unwrap_or_default(),
-            ),
-            None => JsValue::NULL,
-        }
-    }
-
-    pub fn set_current_channel(&self, id: Option<i64>) {
-        self.state.write().channels.set_current_channel(id);
-    }
-
-    pub fn get_channel_json(&self, id: i64) -> JsValue {
-        match self.state.read().channels.get_channel(id) {
-            Some(c) => JsValue::from_str(
-                &serde_json::to_string(c).unwrap_or_default(),
-            ),
-            None => JsValue::NULL,
-        }
-    }
-
     // Fetch→state: decode wire ListChannelsResponse + fold into state. Replaces
     // the TS channelFromProto + channelToProtoChannel chain — web fetch now
     // hands raw wire bytes straight to Rust.
@@ -291,89 +180,5 @@ impl WasmChannelState {
             }
             None => JsValue::NULL,
         }
-    }
-
-    pub fn replace_channel_unread_counts(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceChannelUnreadCountsRequest::decode(req_bytes).map_err(decode_err)?;
-        let counts: HashMap<i64, u32> = req.counts.into_iter().collect();
-        self.state.write().channels.set_unread_counts(counts);
-        Ok(())
-    }
-
-    pub fn increment_unread(&self, channel_id: i64) {
-        self.state.write().channels.increment_unread(channel_id);
-    }
-
-    pub fn clear_channel_unread(&self, channel_id: i64) {
-        self.state.write().channels.clear_channel_unread(channel_id);
-    }
-
-    pub fn get_unread_count(&self, channel_id: i64) -> u32 {
-        self.state.read().channels.get_unread_count(channel_id)
-    }
-
-    pub fn total_unread_count(&self) -> u32 {
-        self.state.read().channels.total_unread_count()
-    }
-
-    pub fn unread_counts_json(&self) -> String {
-        let counts = self.state.read().channels.get_all_unread_counts();
-        serde_json::to_string(&counts).unwrap_or_else(|_| "{}".to_string())
-    }
-
-    // Read side (B, zero-JSON): encode the unread map into the same wrapper the
-    // mutator decodes, so the selector reads via fromBinary, not serde JSON.
-    pub fn unread_counts_bytes(&self) -> Vec<u8> {
-        let counts = self.state.read().channels.get_all_unread_counts();
-        ReplaceChannelUnreadCountsRequest { counts }.encode_to_vec()
-    }
-
-    pub fn increment_mention(&self, channel_id: i64) {
-        self.state.write().channels.increment_mention(channel_id);
-    }
-
-    pub fn clear_channel_mentions(&self, channel_id: i64) {
-        self.state.write().channels.clear_channel_mentions(channel_id);
-    }
-
-    pub fn get_mention_count(&self, channel_id: i64) -> u32 {
-        self.state.read().channels.get_mention_count(channel_id)
-    }
-
-    pub fn total_mention_count(&self) -> u32 {
-        self.state.read().channels.total_mention_count()
-    }
-
-    pub fn mention_counts_json(&self) -> String {
-        let counts = self.state.read().channels.get_all_mention_counts();
-        serde_json::to_string(&counts).unwrap_or_else(|_| "{}".to_string())
-    }
-
-    pub fn channel_members_json(&self, channel_id: i64) -> String {
-        let members = self.state.read().channels.get_channel_members(channel_id);
-        serde_json::to_string(&members).unwrap_or_else(|_| "[]".to_string())
-    }
-
-    pub fn channel_pods_json(&self, channel_id: i64) -> String {
-        let pods = self.state.read().channels.get_channel_pods(channel_id);
-        serde_json::to_string(&pods).unwrap_or_else(|_| "[]".to_string())
-    }
-
-    pub fn replace_channel_pods(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceChannelPodsRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.set_channel_pods(req.channel_id, req.pods);
-        Ok(())
-    }
-
-    pub fn replace_channel_members(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = ReplaceChannelMembersRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.set_channel_members(req.channel_id, req.members);
-        Ok(())
-    }
-
-    pub fn remove_channel_member(&self, req_bytes: &[u8]) -> Result<(), JsValue> {
-        let req = RemoveChannelMemberRequest::decode(req_bytes).map_err(decode_err)?;
-        self.state.write().channels.remove_channel_member(req.channel_id, req.user_id);
-        Ok(())
     }
 }

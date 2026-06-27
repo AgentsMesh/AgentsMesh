@@ -86,8 +86,10 @@ export class ElectronChannelService extends ChannelLocalState implements IChanne
   channels_bytes(): Uint8Array { return channelsBytes(this._channelsCache); }
   unread_counts_bytes(): Uint8Array {
     const counts = JSON.parse(this._unreadCountsCache) as Record<string, number>;
+    const manuallyUnread: Record<string, boolean> = {};
+    for (const k of this._manuallyUnreadCache) manuallyUnread[k] = true;
     return toBinary(ReplaceChannelUnreadCountsRequestSchema,
-      create(ReplaceChannelUnreadCountsRequestSchema, { counts }));
+      create(ReplaceChannelUnreadCountsRequestSchema, { counts, manuallyUnread }));
   }
   get_channel_bytes(id: bigint): Uint8Array { return channelBytes(this._channelsCache, Number(id)); }
   current_channel_bytes(): Uint8Array { return currentChannelBytes(this._channelsCache, this._currentChannelId); }
@@ -310,11 +312,21 @@ export class ElectronChannelService extends ChannelLocalState implements IChanne
 
   replace_channel_unread_counts(reqBytes: Uint8Array): Promise<void> {
     const req = fromBinary(ReplaceChannelUnreadCountsRequestSchema, reqBytes);
-    const out: Record<string, number> = {};
-    for (const [k, v] of Object.entries(req.counts)) {
-      out[String(k)] = Number(v);
+    const counts: Record<string, number> = {};
+    for (const [k, v] of Object.entries(req.counts)) counts[String(k)] = Number(v);
+    this._unreadCountsCache = JSON.stringify(counts);
+    const mentions: Record<string, number> = {};
+    for (const [k, v] of Object.entries(req.mentions)) mentions[String(k)] = Number(v);
+    this._mentionCountsCache = JSON.stringify(mentions);
+    // last_read: monotonic merge (mirror WASM set_last_read — never rewind).
+    for (const [k, v] of Object.entries(req.lastRead)) {
+      const lr = Number(v);
+      const cur = this._lastReadCache.get(String(k));
+      if (cur == null || lr > cur) this._lastReadCache.set(String(k), lr);
     }
-    this._unreadCountsCache = JSON.stringify(out);
+    this._manuallyUnreadCache = new Set(
+      Object.entries(req.manuallyUnread).filter(([, v]) => v).map(([k]) => String(k)),
+    );
     void invoke<void>("appChannelReplaceUnreadCounts", Array.from(reqBytes)).catch(() => undefined);
     return Promise.resolve();
   }

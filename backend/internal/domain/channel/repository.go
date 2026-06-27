@@ -50,13 +50,17 @@ type MemberStore interface {
 	AddMemberWithRole(ctx context.Context, channelID, userID int64, role string) error
 	IsMember(ctx context.Context, channelID, userID int64) (bool, error)
 	GetMemberRole(ctx context.Context, channelID, userID int64) (string, error)
+	GetMemberFlags(ctx context.Context, channelID, userID int64) (isMuted, isPinned bool, err error)
 	RemoveMember(ctx context.Context, channelID, userID int64) error
 	GetMembers(ctx context.Context, channelID int64, limit, offset int) ([]Member, int64, error)
 	GetMemberUserIDs(ctx context.Context, channelID int64) ([]int64, error)
 	GetNonMutedMemberUserIDs(ctx context.Context, channelID int64) ([]int64, error)
 	SetMemberMuted(ctx context.Context, channelID, userID int64, muted bool) error
+	SetMemberPinned(ctx context.Context, channelID, userID int64, pinned bool) error
 	MarkRead(ctx context.Context, channelID, userID int64, messageID int64) error
-	GetUnreadCounts(ctx context.Context, userID int64) (map[int64]int64, error)
+	SetManuallyUnread(ctx context.Context, channelID, userID int64) error
+	GetReadByUserIDs(ctx context.Context, channelID, messageID int64) ([]int64, error)
+	GetChannelSummaries(ctx context.Context, userID int64) (map[int64]ChannelSummary, error)
 }
 
 type AccessStore interface {

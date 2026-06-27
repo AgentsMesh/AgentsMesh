@@ -47,8 +47,11 @@ const (
 	DeleteChannelMessageProcedure  = "/" + ServiceName + "/DeleteChannelMessage"
 
 	MarkChannelReadProcedure        = "/" + ServiceName + "/MarkChannelRead"
+	MarkChannelUnreadProcedure      = "/" + ServiceName + "/MarkChannelUnread"
 	GetChannelUnreadCountsProcedure = "/" + ServiceName + "/GetChannelUnreadCounts"
+	GetMessageReadByProcedure       = "/" + ServiceName + "/GetMessageReadBy"
 	MuteChannelProcedure            = "/" + ServiceName + "/MuteChannel"
+	PinChannelProcedure             = "/" + ServiceName + "/PinChannel"
 
 	ListChannelMembersProcedure   = "/" + ServiceName + "/ListChannelMembers"
 	JoinChannelProcedure          = "/" + ServiceName + "/JoinChannel"
@@ -112,8 +115,11 @@ func mountMessages(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOptio
 
 func mountReadState(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {
 	mux.Handle(MarkChannelReadProcedure, connect.NewUnaryHandler(MarkChannelReadProcedure, srv.MarkChannelRead, opts...))
+	mux.Handle(MarkChannelUnreadProcedure, connect.NewUnaryHandler(MarkChannelUnreadProcedure, srv.MarkChannelUnread, opts...))
 	mux.Handle(GetChannelUnreadCountsProcedure, connect.NewUnaryHandler(GetChannelUnreadCountsProcedure, srv.GetChannelUnreadCounts, opts...))
+	mux.Handle(GetMessageReadByProcedure, connect.NewUnaryHandler(GetMessageReadByProcedure, srv.GetMessageReadBy, opts...))
 	mux.Handle(MuteChannelProcedure, connect.NewUnaryHandler(MuteChannelProcedure, srv.MuteChannel, opts...))
+	mux.Handle(PinChannelProcedure, connect.NewUnaryHandler(PinChannelProcedure, srv.PinChannel, opts...))
 }
 
 func mountMembers(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {

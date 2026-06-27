@@ -63,7 +63,9 @@ service ChannelService {
 
   // -- Read state / mute --
   rpc MarkChannelRead(MarkChannelReadRequest) returns (MarkChannelReadResponse);
+  rpc MarkChannelUnread(MarkChannelUnreadRequest) returns (MarkChannelUnreadResponse);
   rpc GetChannelUnreadCounts(GetChannelUnreadCountsRequest) returns (GetChannelUnreadCountsResponse);
+  rpc GetMessageReadBy(GetMessageReadByRequest) returns (GetMessageReadByResponse);
   rpc MuteChannel(MuteChannelRequest) returns (MuteChannelResponse);
 
   // -- Members --
@@ -72,6 +74,7 @@ service ChannelService {
   rpc LeaveChannel(LeaveChannelRequest) returns (LeaveChannelResponse);
   rpc InviteChannelMembers(InviteChannelMembersRequest) returns (InviteChannelMembersResponse);
   rpc RemoveChannelMember(RemoveChannelMemberRequest) returns (RemoveChannelMemberResponse);
+  rpc PinChannel(PinChannelRequest) returns (PinChannelResponse);
 
   // -- Channel pods --
   rpc ListChannelPods(ListChannelPodsRequest) returns (ListChannelPodsResponse);
@@ -114,6 +117,10 @@ message Channel {
   string updated_at = 16 [(amesh.codegen.v1.field_convert) = "rfc3339"];
   // Computed: total joined pods count. Populated by GetChannel.
   int64 agent_count = 17;
+  // Computed: has the requesting user muted this channel? (per-user)
+  bool is_muted = 18;
+  // Computed: has the requesting user pinned this channel? (per-user)
+  bool is_pinned = 19;
 }
 
 // ChannelMessage — body is the plain-text projection. content + mentions
@@ -373,12 +380,40 @@ message MarkChannelReadResponse {
   string status = 1;
 }
 
+message MarkChannelUnreadRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+}
+message MarkChannelUnreadResponse {
+  string status = 1;
+}
+
 message GetChannelUnreadCountsRequest {
   string org_slug = 1;
 }
 message GetChannelUnreadCountsResponse {
   // channel_id (as string for map key) -> unread count
   map<string, int64> unread = 1;
+  // channel_id -> count of unread messages that @-mention the caller (direct
+  // @user or @channel). Sparse — only channels with mentions appear.
+  map<string, int64> mentions = 2;
+  // channel_id -> last_read_message_id, emitted only for channels with
+  // unread > 0 so the client can anchor the "new messages" divider on entry.
+  map<string, int64> last_read = 3;
+  // channel_id -> true when the user marked the channel unread (sticky flag,
+  // sparse). Drives the unread dot even when unread count is 0.
+  map<string, bool> manually_unread = 4;
+}
+
+message GetMessageReadByRequest {
+  string org_slug = 1;
+  int64 channel_id = 2;
+  int64 message_id = 3;
+}
+message GetMessageReadByResponse {
+  // User ids whose read cursor is at or past this message. The client resolves
+  // names/avatars from its cached member list.
+  repeated int64 user_ids = 1;
 }
 
 message MuteChannelRequest {
@@ -442,6 +477,15 @@ message RemoveChannelMemberRequest {
 }
 message RemoveChannelMemberResponse {
   string message = 1;
+}
+
+message PinChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+  bool pinned = 3;
+}
+message PinChannelResponse {
+  string status = 1;
 }
 
 // =============================================================================

@@ -9,42 +9,18 @@ import {
   useChannels,
   useChannelMessageStore,
   useUnreadCounts,
-  getLastMessage,
-  type Channel,
-  type ChannelLastMessage,
+  useMentionCounts,
+  useManuallyUnread,
 } from "@/stores/channel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, MessageSquare, RefreshCw } from "lucide-react";
 import { ChannelListItem } from "./ChannelListItem";
 import { ChannelContextMenu } from "./ChannelContextMenu";
+import { useChannelGroups, type GroupedRow } from "./useChannelGroups";
 
 interface ChannelsSidebarContentProps {
   className?: string;
-}
-
-/**
- * Activity-weighted group the channel belongs to. Mirrors the design's
- * "Active / Linked / Quiet" sections:
- *   - Active: has any message in the last 24h
- *   - Linked: tied to a ticket or repository (and not Active)
- *   - Quiet:  everything else
- */
-type ChannelGroup = "active" | "linked" | "quiet";
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function classifyChannel(
-  channel: Channel,
-  lastMsg: ChannelLastMessage | null,
-  now: number,
-): ChannelGroup {
-  const ts = lastMsg?.timestamp ?? channel.updated_at;
-  if (ts) {
-    const t = new Date(ts).getTime();
-    if (!Number.isNaN(t) && now - t < DAY_MS) return "active";
-  }
-  if (channel.ticket || channel.repository) return "linked";
-  return "quiet";
 }
 
 function SectionLabel({ children, count }: { children: string; count?: number }) {
@@ -76,6 +52,8 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
   const _tick = useChannelStore((s) => s._tick);
 
   const unreadCounts = useUnreadCounts();
+  const mentionCounts = useMentionCounts();
+  const manuallyUnread = useManuallyUnread();
   const fetchUnreadCounts = useChannelMessageStore((s) => s.fetchUnreadCounts);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -101,25 +79,7 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     });
   }, [channels, searchQuery, showArchived]);
 
-  const grouped = useMemo(() => {
-    const now = Date.now();
-    const rows = visible.map((ch) => {
-      const lastMsg = getLastMessage(ch.id);
-      return { channel: ch, lastMsg, group: classifyChannel(ch, lastMsg, now) };
-    });
-    rows.sort((a, b) => {
-      const ta = a.lastMsg?.timestamp ?? a.channel.updated_at ?? "";
-      const tb = b.lastMsg?.timestamp ?? b.channel.updated_at ?? "";
-      return tb.localeCompare(ta);
-    });
-    return {
-      active: rows.filter((r) => r.group === "active"),
-      linked: rows.filter((r) => r.group === "linked"),
-      quiet: rows.filter((r) => r.group === "quiet"),
-    };
-    // `_tick` is the WASM store invalidator — re-derive on any channel event.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, _tick]);
+  const grouped = useChannelGroups(visible, _tick);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -130,18 +90,26 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
     }
   }, [fetchChannels]);
 
-  const renderGroup = (label: string, rows: typeof grouped.active) => {
+  const renderGroup = (label: string, rows: GroupedRow[]) => {
     if (rows.length === 0) return null;
     return (
       <>
         <SectionLabel count={rows.length}>{label}</SectionLabel>
         <div className="flex flex-col gap-0.5 px-2">
           {rows.map(({ channel, lastMsg }) => (
-            <ChannelContextMenu key={channel.id} channelId={channel.id}>
+            <ChannelContextMenu
+              key={channel.id}
+              channelId={channel.id}
+              isMuted={channel.is_muted}
+              isPinned={channel.is_pinned}
+            >
               <ChannelListItem
                 channel={channel}
                 isSelected={selectedChannelId === channel.id}
                 unreadCount={unreadCounts[channel.id] || 0}
+                mentionCount={mentionCounts[channel.id] || 0}
+                manuallyUnread={manuallyUnread[channel.id] ?? false}
+                isMuted={channel.is_muted}
                 lastMessage={lastMsg}
                 onClick={() => setSelectedChannelId(channel.id)}
               />
@@ -182,6 +150,7 @@ export function ChannelsSidebarContent({ className }: ChannelsSidebarContentProp
           </div>
         ) : (
           <div className="pb-3">
+            {renderGroup(t("channels.sidebar.groupPinned"), grouped.pinned)}
             {renderGroup(t("channels.sidebar.groupActive"), grouped.active)}
             {renderGroup(t("channels.sidebar.groupLinked"), grouped.linked)}
             {renderGroup(t("channels.sidebar.groupQuiet"), grouped.quiet)}

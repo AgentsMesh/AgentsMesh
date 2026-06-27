@@ -107,6 +107,13 @@ message InsertChannelMessageRequest {
 // ---------------------------------------------------------------------------
 message ReplaceChannelUnreadCountsRequest {
   map<int64, uint32> counts = 1;
+  // Per-channel mention counts (subset of `counts`). Absent → 0.
+  map<int64, uint32> mentions = 2;
+  // Per-channel last-read message id (emitted only for channels with unread
+  // > 0). Absent channels keep their existing value — never zeroed here.
+  map<int64, int64> last_read = 3;
+  // Per-channel "marked unread" sticky flag. Absent → false.
+  map<int64, bool> manually_unread = 4;
 }
 
 // ---------------------------------------------------------------------------

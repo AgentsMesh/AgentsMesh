@@ -21,21 +21,30 @@ impl ChannelState {
     /// maintained by `on_new_message` and friends.
     pub fn set_channels(&mut self, channels: Vec<Channel>) {
         tracing::debug!(target: "channel", count = channels.len(), "set channels (baseline)");
-        let mut prev: HashMap<i64, (u32, u32, Option<MessagePreview>, Option<String>)> =
-            HashMap::with_capacity(self.channels.len());
+        type Preserved = (u32, u32, Option<MessagePreview>, Option<String>, Option<i64>, bool);
+        let mut prev: HashMap<i64, Preserved> = HashMap::with_capacity(self.channels.len());
         for c in &self.channels {
             prev.insert(
                 c.id,
-                (c.unread_count, c.mention_count, c.last_message.clone(), c.last_activity_at.clone()),
+                (
+                    c.unread_count,
+                    c.mention_count,
+                    c.last_message.clone(),
+                    c.last_activity_at.clone(),
+                    c.last_read_message_id,
+                    c.manually_unread,
+                ),
             );
         }
         self.channels = channels;
         for c in self.channels.iter_mut() {
-            if let Some((u, m, lm, ts)) = prev.get(&c.id) {
+            if let Some((u, m, lm, ts, lr, mu)) = prev.get(&c.id) {
                 if c.unread_count == 0 { c.unread_count = *u; }
                 if c.mention_count == 0 { c.mention_count = *m; }
                 if c.last_message.is_none() { c.last_message = lm.clone(); }
                 if c.last_activity_at.is_none() { c.last_activity_at = ts.clone(); }
+                if c.last_read_message_id.is_none() { c.last_read_message_id = *lr; }
+                if !c.manually_unread { c.manually_unread = *mu; }
             }
         }
         if let Some(repo) = &self.channel_repo {

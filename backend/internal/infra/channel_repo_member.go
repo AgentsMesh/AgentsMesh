@@ -2,9 +2,11 @@ package infra
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/channel"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -68,6 +70,18 @@ func (r *channelRepository) RemoveMember(ctx context.Context, channelID, userID 
 		Delete(&channel.Member{}).Error
 }
 
+func (r *channelRepository) GetMemberFlags(ctx context.Context, channelID, userID int64) (isMuted, isPinned bool, err error) {
+	var m channel.Member
+	err = r.db.WithContext(ctx).
+		Select("is_muted", "is_pinned").
+		Where("channel_id = ? AND user_id = ?", channelID, userID).
+		Take(&m).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, false, nil
+	}
+	return m.IsMuted, m.IsPinned, err
+}
+
 func (r *channelRepository) GetMemberRole(ctx context.Context, channelID, userID int64) (string, error) {
 	var role string
 	err := r.db.WithContext(ctx).
@@ -116,4 +130,11 @@ func (r *channelRepository) SetMemberMuted(ctx context.Context, channelID, userI
 		Model(&channel.Member{}).
 		Where("channel_id = ? AND user_id = ?", channelID, userID).
 		Update("is_muted", muted).Error
+}
+
+func (r *channelRepository) SetMemberPinned(ctx context.Context, channelID, userID int64, pinned bool) error {
+	return r.db.WithContext(ctx).
+		Model(&channel.Member{}).
+		Where("channel_id = ? AND user_id = ?", channelID, userID).
+		Update("is_pinned", pinned).Error
 }

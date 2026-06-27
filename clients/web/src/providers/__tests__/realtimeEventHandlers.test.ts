@@ -150,7 +150,7 @@ describe("handleChannelEvent", () => {
   beforeEach(() => {
     getAuthManager().apply_session(JSON.stringify({ token: "t", refresh_token: "r", user: { id: 1, email: "u@e.com", username: "u" } }));
     useChannelStore.setState({ selectedChannelId: null, currentChannel: null } as never);
-    useChannelMessageStore.setState({ cache: {}, _messagesTick: 0 } as never);
+    useChannelMessageStore.setState({ cache: {}, _messagesTick: 0, _unreadTick: 0 } as never);
   });
 
   // Message persistence + the unread/mention business rules now live in Rust
@@ -167,6 +167,20 @@ describe("handleChannelEvent", () => {
         category: "entity", organization_id: 1, entity_type: "channel", entity_id: "1", timestamp: Date.now(),
       });
       const after = (useChannelMessageStore.getState() as unknown as { _messagesTick: number })._messagesTick;
+      expect(after).toBeGreaterThan(before);
+    });
+
+    // Regression: the sidebar unread/mention selectors key on _unreadTick, so a
+    // realtime message must bump it or the badge never re-reads the Rust-updated
+    // count (caught by the channel-readstate-realtime e2e).
+    it("bumps the unread tick so the sidebar badge re-reads", () => {
+      const before = (useChannelMessageStore.getState() as unknown as { _unreadTick: number })._unreadTick;
+      handleChannelEvent({
+        type: "channel:message",
+        data: { id: 11, channel_id: 1, sender_user_id: 2, body: "hi", message_type: "text", created_at: "2024-01-01T00:00:00Z" },
+        category: "entity", organization_id: 1, entity_type: "channel", entity_id: "1", timestamp: Date.now(),
+      });
+      const after = (useChannelMessageStore.getState() as unknown as { _unreadTick: number })._unreadTick;
       expect(after).toBeGreaterThan(before);
     });
   });

@@ -87,4 +87,28 @@ impl AppState {
         let svc = self.channel.lock().await;
         svc.list_channel_members_connect(&request).await.map_err(err)
     }
+
+    #[napi]
+    pub async fn channel_mute_channel_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
+        let svc = self.channel.lock().await;
+        svc.mute_channel_connect(&request).await.map_err(err)
+    }
+
+    #[napi]
+    pub async fn channel_pin_channel_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
+        let svc = self.channel.lock().await;
+        svc.pin_channel_connect(&request).await.map_err(err)
+    }
+
+    #[napi]
+    pub async fn channel_mark_channel_unread_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
+        let svc = self.channel.lock().await;
+        svc.mark_channel_unread_connect(&request).await.map_err(err)
+    }
+
+    #[napi]
+    pub async fn channel_get_message_read_by_connect(&self, request: Vec<u8>) -> napi::Result<Vec<u8>> {
+        let svc = self.channel.lock().await;
+        svc.get_message_read_by_connect(&request).await.map_err(err)
+    }
 }

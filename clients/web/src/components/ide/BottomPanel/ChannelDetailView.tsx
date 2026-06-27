@@ -74,12 +74,16 @@ export function ChannelDetailView({
               onLoadMore={chat.handleLoadMore}
               onRetry={chat.handleRefresh}
               currentUserId={chat.currentUserId}
+              channelId={channelId}
+              firstUnreadId={chat.firstUnreadId}
+              roleByUserId={chat.roleByUserId}
               onEditMessage={chat.handleEditMessage}
               onDeleteMessage={chat.handleDeleteMessage}
             />
           </div>
           <div className="flex-shrink-0 bg-muted/20">
             <MessageInput
+              key={channelId}
               onSend={chat.handleSendMessage}
               placeholder={t("ide.bottomPanel.sendMessagePlaceholder")}
               channelId={channelId}
