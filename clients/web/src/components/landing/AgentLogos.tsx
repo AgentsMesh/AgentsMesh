@@ -61,6 +61,17 @@ const agentConfigs = [
     ),
   },
   {
+    name: "GitHub Copilot CLI",
+    descriptionKey: "landing.agentLogos.descriptions.github",
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor">
+        <rect x="3" y="7" width="18" height="12" rx="6" stroke="currentColor" strokeWidth="2" fill="none" />
+        <circle cx="9" cy="13" r="1.5" fill="currentColor" />
+        <circle cx="15" cy="13" r="1.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
     name: "Loopal",
     descriptionKey: "landing.agentLogos.descriptions.selfBuilt",
     icon: (

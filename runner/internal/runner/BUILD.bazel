@@ -72,6 +72,7 @@ go_library(
         "//runner/internal/agents/aider",
         "//runner/internal/agents/claude",
         "//runner/internal/agents/codex",
+        "//runner/internal/agents/copilot",
         "//runner/internal/agents/cursor",
         "//runner/internal/agents/gemini",
         "//runner/internal/agents/loopal",
