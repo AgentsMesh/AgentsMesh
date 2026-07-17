@@ -56,7 +56,7 @@ jobs:
     outputs:
       should_release: ${{ steps.diff.outputs.should_release }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # Tag history is needed both for skip-if-unchanged here and
           # for last-stable lookup in the version job. `fetch-tags`
@@ -114,7 +114,7 @@ jobs:
       minor: ${{ steps.compute.outputs.minor }}
       previous_tag: ${{ steps.compute.outputs.previous_tag }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -175,7 +175,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -369,7 +369,7 @@ jobs:
             installers: |
               AgentsMesh*.exe
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -587,7 +587,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Delete nightly releases older than 14 days
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
