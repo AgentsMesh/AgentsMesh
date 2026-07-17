@@ -3,9 +3,9 @@ package admin
 import (
 	"context"
 	"log/slog"
-	"strings"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/user"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/dberr"
 )
 
 type UserListQuery struct {
@@ -78,7 +78,7 @@ func (s *Service) UpdateUser(ctx context.Context, userID int64, updates map[stri
 	}
 
 	if err := s.db.Updates(&u, updates); err != nil {
-		if isUniqueViolation(err) {
+		if dberr.IsUniqueViolation(err) {
 			if _, ok := updates["username"]; ok {
 				return nil, ErrUsernameAlreadyExists
 			}
@@ -96,16 +96,6 @@ func (s *Service) UpdateUser(ctx context.Context, userID int64, updates map[stri
 		return nil, err
 	}
 	return &u, nil
-}
-
-func isUniqueViolation(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "SQLSTATE 23505") ||
-		strings.Contains(msg, "duplicate key") ||
-		strings.Contains(msg, "UNIQUE constraint failed")
 }
 
 func (s *Service) DisableUser(ctx context.Context, userID int64) (*user.User, error) {

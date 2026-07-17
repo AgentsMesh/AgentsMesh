@@ -117,6 +117,40 @@ func TestCleanupExpiredReactivationTokens(t *testing.T) {
 		db.Model(&runner.ReactivationToken{}).Where("id = ?", validToken.ID).Count(&count)
 		assert.Equal(t, int64(1), count)
 	})
+
+	// used_at is only ever set inside ReactivateWithTokenAtomic's committed tx, so
+	// a consumed token is genuinely done — purge it immediately rather than let it
+	// keep pinning its creator via the NO ACTION FK to users. An unused, unexpired
+	// token must survive.
+	t.Run("purges consumed tokens immediately, keeps unused ones", func(t *testing.T) {
+		r := &runner.Runner{OrganizationID: 1, NodeID: "test-node-used"}
+		require.NoError(t, db.Create(r).Error)
+
+		justUsed := time.Now()
+		usedToken := &runner.ReactivationToken{
+			RunnerID:  r.ID,
+			TokenHash: "used-hash",
+			ExpiresAt: time.Now().Add(1 * time.Hour),
+			UsedAt:    &justUsed,
+		}
+		require.NoError(t, db.Create(usedToken).Error)
+
+		unusedToken := &runner.ReactivationToken{
+			RunnerID:  r.ID,
+			TokenHash: "unused-hash",
+			ExpiresAt: time.Now().Add(1 * time.Hour),
+		}
+		require.NoError(t, db.Create(unusedToken).Error)
+
+		require.NoError(t, service.CleanupExpiredReactivationTokens(ctx))
+
+		var count int64
+		db.Model(&runner.ReactivationToken{}).Where("id = ?", usedToken.ID).Count(&count)
+		assert.Zero(t, count, "a consumed token must not keep pinning its creator")
+
+		db.Model(&runner.ReactivationToken{}).Where("id = ?", unusedToken.ID).Count(&count)
+		assert.Equal(t, int64(1), count, "an unused, unexpired token must survive")
+	})
 }
 
 // Helper functions

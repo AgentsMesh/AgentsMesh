@@ -302,8 +302,21 @@ func TestAuthorizeRunner(t *testing.T) {
 		}
 		require.NoError(t, db.Create(pendingAuth).Error)
 
-		// Try to authorize with same nodeID - should fail
+		// Try to authorize with same nodeID - should fail with the conflict
+		// sentinel (409), not a bare error that could mask a 500.
 		_, err := service.AuthorizeRunner(ctx, authKey, org.ID, 1, "duplicate-node")
-		assert.Error(t, err)
+		require.ErrorIs(t, err, ErrRunnerAlreadyExists)
+
+		// A post-claim rejection must not burn the auth key: the pending auth
+		// stays unauthorized so the user can retry once the conflict is resolved.
+		var after runner.PendingAuth
+		require.NoError(t, db.First(&after, pendingAuth.ID).Error)
+		assert.False(t, after.Authorized, "duplicate-node rejection must leave the auth key reusable")
+		assert.Nil(t, after.RunnerID)
+
+		// And no partial runner row was left behind for it.
+		var runners int64
+		db.Model(&runner.Runner{}).Where("organization_id = ? AND node_id = ?", org.ID, "duplicate-node").Count(&runners)
+		assert.Equal(t, int64(1), runners, "only the pre-existing runner should exist")
 	})
 }

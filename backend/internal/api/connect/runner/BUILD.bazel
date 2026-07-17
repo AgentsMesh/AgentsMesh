@@ -17,7 +17,7 @@ go_library(
         "handlers_upgrade_agent.go",
         "runner_convert_custom.go",
         "server.go",
-        ":runner_convert_amesh",
+        ":runner_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/runner",
     visibility = ["//backend:__subpackages__"],

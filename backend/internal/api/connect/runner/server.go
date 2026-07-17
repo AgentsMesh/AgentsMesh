@@ -235,6 +235,13 @@ func mapServiceError(err error) error {
 		errors.Is(err, runner.ErrTokenExpired),
 		errors.Is(err, runner.ErrTokenExhausted):
 		return connect.NewError(connect.CodeUnauthenticated, err)
+	case errors.Is(err, runner.ErrRunnerAlreadyExists),
+		errors.Is(err, runner.ErrAuthRequestAlreadyAuthorized):
+		return connect.NewError(connect.CodeAlreadyExists, err)
+	case errors.Is(err, runner.ErrAuthRequestNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, runner.ErrAuthRequestExpired):
+		return connect.NewError(connect.CodeInvalidArgument, err)
 	default:
 		return connect.NewError(connect.CodeInternal, err)
 	}

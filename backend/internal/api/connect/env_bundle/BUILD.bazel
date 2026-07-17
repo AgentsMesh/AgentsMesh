@@ -13,7 +13,7 @@ go_library(
         "crud.go",
         "env_bundle_convert_custom.go",
         "server.go",
-        ":env_bundle_convert_amesh",
+        ":env_bundle_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/env_bundle",
     visibility = ["//backend:__subpackages__"],
@@ -21,7 +21,7 @@ go_library(
         "//backend/internal/domain/envbundle",
         "//backend/internal/middleware",
         "//backend/internal/service/envbundle",
-        "//backend/pkg/protoconv",
+        "//backend/pkg/protoconv",  # keep
         "//proto/env_bundle/v1:env_bundle_go_proto",
         "@com_connectrpc_connect//:connect",
     ],

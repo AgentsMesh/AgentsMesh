@@ -8,6 +8,12 @@ import (
 
 var (
 	ErrTokenExhausted = errors.New("registration token usage exhausted")
+	// ErrReactivationUnavailable: the token was expired or already claimed when
+	// the atomic reactivation tried to claim it.
+	ErrReactivationUnavailable = errors.New("reactivation token expired or already used")
+	// ErrRunnerQuotaExceeded: the org's runner limit was hit, detected inside the
+	// authorize transaction under the per-org advisory lock.
+	ErrRunnerQuotaExceeded = errors.New("runner quota exceeded")
 )
 
 type HeartbeatUpdate struct {
@@ -49,10 +55,9 @@ type RunnerRepository interface {
 
 	CreatePendingAuth(ctx context.Context, pa *PendingAuth) error
 	GetPendingAuthByKey(ctx context.Context, authKey string) (*PendingAuth, error)
-	ClaimPendingAuth(ctx context.Context, id int64, orgID int64) (int64, error)
-	UpdatePendingAuthRunnerID(ctx context.Context, id int64, runnerID int64) error
+	AuthorizeAndCreateRunner(ctx context.Context, pendingAuthID, orgID int64, r *Runner, runnerLimit int) (int64, error)
 	DeleteClaimedPendingAuth(ctx context.Context, id int64) (int64, error)
-	CleanupExpiredPendingAuths(ctx context.Context) error
+	CleanupExpiredPendingAuths(ctx context.Context) (int64, error)
 
 	CreateRegistrationToken(ctx context.Context, token *GRPCRegistrationToken) error
 	GetRegistrationTokenByHash(ctx context.Context, hash string) (*GRPCRegistrationToken, error)
@@ -64,7 +69,6 @@ type RunnerRepository interface {
 
 	CreateReactivationToken(ctx context.Context, token *ReactivationToken) error
 	GetReactivationTokenByHash(ctx context.Context, hash string) (*ReactivationToken, error)
-	ClaimReactivationToken(ctx context.Context, id int64) (int64, error)
-	UnclaimReactivationToken(ctx context.Context, id int64) error
-	CleanupExpiredReactivationTokens(ctx context.Context) error
+	ReactivateWithTokenAtomic(ctx context.Context, tokenID, runnerID int64, cert *Certificate, issueCert func() error) error
+	CleanupExpiredReactivationTokens(ctx context.Context) (int64, error)
 }

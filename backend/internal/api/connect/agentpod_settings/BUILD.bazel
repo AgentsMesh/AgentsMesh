@@ -14,7 +14,7 @@ go_library(
         "agentpod_settings_convert_custom.go",
         "handlers.go",
         "server.go",
-        ":agentpod_settings_convert_amesh",
+        ":agentpod_settings_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/agentpod_settings",
     visibility = ["//backend:__subpackages__"],
@@ -22,7 +22,7 @@ go_library(
         "//backend/internal/domain/agentpod",
         "//backend/internal/middleware",
         "//backend/internal/service/agentpod",
-        "//backend/pkg/protoconv",
+        "//backend/pkg/protoconv",  # keep
         "//proto/pod/v1:pod_go_proto",
         "@com_connectrpc_connect//:connect",
     ],

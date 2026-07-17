@@ -176,6 +176,7 @@ go_test(
         "token_refresh_test.go",
         "upgrade_controller_test.go",
     ],
+    data = glob(["testdata/**"]),
     embed = [":runner"],
     deps = [
         "//proto/runner/v1:runner_go_proto",

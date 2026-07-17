@@ -13,6 +13,11 @@ load("@gazelle//:def.bzl", "gazelle")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 
 # gazelle:prefix github.com/anthropics/agentsmesh
+# `bazel run //backend:lint` copies the amesh_proto_convert outputs from
+# bazel-bin into the source tree so golangci-lint's typecheck can see them
+# (build_defs/go/golangci_lint_runner.sh). They are gitignored, so gazelle
+# would otherwise pick up a stale copy and swap out the codegen target.
+# gazelle:exclude **/*_convert.amesh.go
 # gazelle:proto disable_global
 # gazelle:go_naming_convention import_alias
 # gazelle:resolve go github.com/anthropics/agentsmesh/proto/gen/go/runner/v1 //proto/runner/v1:runner_go_proto

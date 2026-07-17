@@ -14,7 +14,7 @@ go_library(
         "repository_provider.go",
         "server.go",
         "user_credential_convert_custom.go",
-        ":user_credential_convert_amesh",
+        ":user_credential_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/user_credential",
     visibility = ["//backend:__subpackages__"],
@@ -23,7 +23,7 @@ go_library(
         "//backend/internal/infra/git",
         "//backend/internal/middleware",
         "//backend/internal/service/user",
-        "//backend/pkg/protoconv",
+        "//backend/pkg/protoconv",  # keep
         "//proto/user_credential/v1:user_credential_go_proto",
         "@com_connectrpc_connect//:connect",
     ],

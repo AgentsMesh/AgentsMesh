@@ -90,9 +90,12 @@ func (s *Service) DeleteGRPCRegistrationToken(ctx context.Context, tokenID, orgI
 }
 
 func (s *Service) CleanupExpiredPendingAuths(ctx context.Context) error {
-	if err := s.repo.CleanupExpiredPendingAuths(ctx); err != nil {
-		slog.ErrorContext(ctx, "failed to cleanup expired pending auths", "error", err)
+	deleted, err := s.repo.CleanupExpiredPendingAuths(ctx)
+	if err != nil {
 		return err
+	}
+	if deleted > 0 {
+		slog.InfoContext(ctx, "purged expired pending auths", "deleted", deleted)
 	}
 	return nil
 }

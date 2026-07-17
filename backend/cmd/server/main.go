@@ -180,10 +180,12 @@ func main() {
 	cleanupMkt := startMarketplaceWorker(services)
 	defer cleanupMkt()
 
+	registrationGC := startRegistrationGC(services, appLogger.Logger)
+
 	subscriptionScheduler := startSubscriptionJobs(db, cfg, services.email, appLogger.Logger)
 
 	// Start HTTP server (Connect-RPC handlers wrap the Gin router)
 	srv := startHTTPServer(cfg, wrapWithConnect(cfg, services, svc, router))
 
-	waitForShutdown(srv, grpcResult.server, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, relayManager, services, db, redisClient)
+	waitForShutdown(srv, grpcResult.server, eventBus, heartbeatBatcher, subscriptionScheduler, loopScheduler, orgAwareness, relayManager, registrationGC, services, db, redisClient)
 }

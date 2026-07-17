@@ -16,7 +16,7 @@ go_library(
         "handlers_query.go",
         "server.go",
         "support_ticket_admin_convert_custom.go",
-        ":support_ticket_admin_convert_amesh",
+        ":support_ticket_admin_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/support_ticket",
     visibility = ["//backend:__subpackages__"],

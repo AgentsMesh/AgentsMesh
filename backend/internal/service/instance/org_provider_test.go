@@ -2,6 +2,7 @@ package instance
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"sync"
@@ -67,7 +68,7 @@ type runnerSeed struct {
 
 func seedRunners(t *testing.T, db *gorm.DB, runners []runnerSeed) {
 	for _, r := range runners {
-		err := db.Exec("INSERT INTO runners (id, organization_id, node_id) VALUES (?, ?, ?)", r.ID, r.OrgID, "test-node").Error
+		err := db.Exec("INSERT INTO runners (id, organization_id, node_id) VALUES (?, ?, ?)", r.ID, r.OrgID, fmt.Sprintf("test-node-%d", r.ID)).Error
 		require.NoError(t, err)
 	}
 }

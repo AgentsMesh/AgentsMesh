@@ -114,7 +114,10 @@ docker compose logs -f postgres                  # docker infra
 bazel info workspace
 bazel run //:buildifier_check
 
-# Regenerate Go BUILD.bazel files after editing imports / adding packages
+# Regenerate Go BUILD.bazel files after editing imports / adding packages.
+# 跑完务必 `git diff` —— gazelle 只认磁盘上的 .go import，凡是它推不出来的
+# src/dep（codegen 产物、只被生成代码 import 的包）都会被删掉。这类行必须带
+# `# keep`，见下方「gazelle 与 codegen 产物」。CI 的 go-lint job 会验证幂等。
 bazel run //:gazelle
 
 # Build a Go binary + its OCI image
@@ -574,5 +577,65 @@ Or use an existing admin to grant privileges via the Admin Console UI.
 3. 加 `BeforeSave` hook 调 `slugkit.ValidateIdentifier("<table>.<col>", value)`
 4. service 包加 `*Registry` helper 封装 `slugkit.GenerateUnique`
 5. 单测覆盖含 `.`/`_`/uppercase/unicode 的输入，断言落库值通过 `slugkit.Validate`
+
+## gazelle 与 codegen 产物
+
+gazelle 从磁盘上的 `.go` import 反推 `srcs`/`deps`。`amesh_proto_convert`（`//build_defs/protoconv`）的产物只存在于 bazel-bin，gazelle 看不见 —— 它会把 `:*_convert_amesh` 从 srcs 删掉，连带删掉只被生成代码 import 的 deps（`//backend/pkg/protoconv`、`//backend/internal/domain/*`），于是 `undefined: ToProtoX`。
+
+**凡是 gazelle 推不出来的行，必须标 `# keep`：**
+
+```python
+go_library(
+    srcs = [
+        "binding.go",
+        ":binding_convert_amesh",  # keep
+    ],
+    deps = [
+        "//backend/pkg/protoconv",  # keep
+    ],
+)
+```
+
+新增一个 `amesh_proto_convert` 包时照此办理，否则下一个跑 gazelle 的人会打断构建。CI 的 `go-lint` job 里 `Gazelle is idempotent (post-lint tree)` 会拦 —— 它**故意排在 lint 之后**，因为只有那时源码树才处于会触发问题的状态。
+
+> **源码树里出现 `*_convert.amesh.go` 是正常的，别去删。** `bazel run //backend:lint` 会把 bazel-bin 里的产物拷进源码树 —— golangci-lint 的 typecheck 必须看得见它们（`build_defs/go/golangci_lint_runner.sh`）。它们被 .gitignore 忽略，所以 `git status` 看不见。
+>
+> 于是 `lint` → `gazelle` 这个顺序（两条都是本文档推荐的命令）会让 gazelle 捡起这些文件、把它们当成手写 src 加进 `srcs`，和 `# keep` 住的 codegen target 撞成重复符号。根 `BUILD.bazel` 的 `# gazelle:exclude **/*_convert.amesh.go` 挡住这一步 —— **两个工具都没错，错在它们互不知情**。
+
+## 外键契约：本系统不使用外键
+
+**引用完整性由 service 层保证，不由 FK 约束保证。** 理由见 migration 000072：高写表上 FK 校验拖慢每次 INSERT，大表上 `ON DELETE CASCADE` 会拉出长事务和表锁。
+
+**新建表禁止写 `REFERENCES`。** 父子关系用普通列 + 索引表达（`runner_id BIGINT NOT NULL` + `CREATE INDEX`），不写约束。CI 的 `Schema (FK contract)` job 会拦：它把全部 migration 跑到一个空库上，再比对 `backend/migrations/fk_allowlist.txt`。
+
+```bash
+# 本地复现 CI 门禁（psql 若不在 host PATH，用 --entrypoint bash 跑在容器里）
+URL="postgres://postgres:pw@localhost:15999/fkgate?sslmode=disable"
+docker run -d --name pg -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=fkgate -p 15999:5432 pgvector/pgvector:pg16
+docker run --rm --network host -v "$PWD/backend/migrations:/m:ro" migrate/migrate:v4.19.0 -path=/m -database "$URL" up
+backend/migrations/check_fk_allowlist.sh "$URL"
+```
+
+新增/修改 identifier 之外的表时若 CI 报 FK 门禁失败，**不要往 allowlist 里加行** —— 那正是它拒绝的操作。
+
+### 删除契约（无 FK 之后，删除逻辑全在 Go 里）
+
+新增一张带父引用的表时，**必须**同时决定父被删除时它怎么办，三选一：
+
+| 策略 | 做法 | 例 |
+|---|---|---|
+| **随父删除** | 在父的 service/repo 删除路径里显式 `DELETE FROM child WHERE parent_id = ?` | `organizationRepo.DeleteWithCleanup` |
+| **拦住父删除** | 父的 service 里先 count，非零就返回 domain error，API 层映射成 409 | `CountLoopsByRunner` → `ErrRunnerHasLoopRefs` |
+| **自过期** | 表自带 `expires_at` + 后台 purge job；容忍孤儿行到期被清 | `runner_pending_auths` / `runner_reactivation_tokens` + `startRegistrationGC` |
+
+**漏掉这一步的代价**：手写清理清单漂移过两次，都炸到线上 —— SQLSTATE 42703（清单引用了不存在的列，阻断**所有** org 删除）、SQLSTATE 23503（漏了一张表 + 残留 FK，阻断 runner 删除和 15 个 org）。
+
+### 存量债
+
+`backend/migrations/fk_allowlist.txt` 是存量的 SSOT（数量以文件为准，不要在别处抄一份）。多数早于 000072，另有 9 个 migration 在 000072 之后新增。它们是债，正在分批 DROP —— **它们与本契约相悖，是意料之外的失败模式来源**。`DROP CONSTRAINT` 是 O(1) 元数据操作；反向 `ADD CONSTRAINT` 要全表扫描验证，所以还债便宜、走反方向贵。
+
+allowlist 的 key 里带 `[delete rule]`：CASCADE 被悄悄改成 NO ACTION 正是两次事故的根因，只比对列名的门禁看不见它。
+
+**门禁只覆盖 migration 跑在空库上的结果，不覆盖线上漂移**（手工 DDL 它看不到）。两个 CI step 各管一半：`FK contract` 断言 allowlist 与 schema 一致；`FK allowlist may only shrink` 对 base ref 做 diff，拒绝新增行 —— 没有后者的话，往 allowlist 里补一行就能让前者闭嘴。
 
 参见 `backend/pkg/slugkit/doc.go` 完整说明，`.claude/plans/sharded-imagining-bird.md` 重构 plan。

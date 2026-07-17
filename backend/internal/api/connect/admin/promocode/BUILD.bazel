@@ -15,18 +15,16 @@ go_library(
         "handlers_write.go",
         "promocode_admin_convert_custom.go",
         "server.go",
-        ":promocode_admin_convert_amesh",
+        ":promocode_admin_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/promocode",
     visibility = ["//backend:__subpackages__"],
     deps = [
         "//backend/internal/api/connect/interceptors",
-        "//backend/internal/domain/organization",
         "//backend/internal/domain/promocode",
-        "//backend/internal/domain/user",
         "//backend/internal/infra/database",
         "//backend/internal/service/admin",
-        "//backend/pkg/protoconv",
+        "//backend/pkg/protoconv",  # keep
         "//proto/promocode/v1:promocode_go_proto",
         "@com_connectrpc_connect//:connect",
     ],

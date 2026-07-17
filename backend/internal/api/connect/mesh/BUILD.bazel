@@ -15,7 +15,7 @@ go_library(
         "mesh_handlers.go",
         "mesh_message_handlers.go",
         "message_convert.go",
-        ":mesh_convert_amesh",
+        ":mesh_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/mesh",
     visibility = ["//backend:__subpackages__"],

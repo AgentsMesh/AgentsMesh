@@ -10,67 +10,11 @@ import (
 )
 
 func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, requestedAmount int) error {
-	sub, err := s.GetSubscription(ctx, orgID)
-
-	var plan *billing.SubscriptionPlan
+	limit, err := s.ResourceLimit(ctx, orgID, resource)
 	if err != nil {
-		if errors.Is(err, ErrSubscriptionNotFound) {
-			plan, _ = s.GetPlan(ctx, billing.PlanBased)
-			if plan == nil {
-				slog.WarnContext(ctx, "no based plan found in database, allowing by default", "org_id", orgID, "resource", resource)
-				return nil
-			}
-		} else {
-			return err
-		}
-	} else {
-		if sub.IsFrozen() {
-			slog.WarnContext(ctx, "quota check denied: subscription frozen", "org_id", orgID, "resource", resource)
-			return ErrSubscriptionFrozen
-		}
-
-		plan = sub.Plan
-		if plan == nil {
-			plan, _ = s.GetPlanByID(ctx, sub.PlanID)
-		}
+		return err
 	}
-
-	if plan == nil {
-		return ErrPlanNotFound
-	}
-
-	if sub != nil && sub.CustomQuotas != nil {
-		if customLimit, ok := sub.CustomQuotas[resource]; ok {
-			if limit, ok := customLimit.(float64); ok && int(limit) != -1 {
-				current, err := s.getCurrentResourceCount(ctx, orgID, resource)
-				if err != nil {
-					return fmt.Errorf("failed to get current resource count: %w", err)
-				}
-				if current+requestedAmount > int(limit) {
-					return ErrQuotaExceeded
-				}
-				return nil
-			}
-		}
-	}
-
-	var limit int
-	switch resource {
-	case "users":
-		limit = plan.MaxUsers
-	case "runners":
-		limit = plan.MaxRunners
-	case "concurrent_pods":
-		limit = plan.MaxConcurrentPods
-	case "repositories":
-		limit = plan.MaxRepositories
-	case "pod_minutes":
-		limit = plan.IncludedPodMinutes
-	default:
-		return nil
-	}
-
-	if limit == -1 {
+	if limit == UnlimitedQuota {
 		return nil
 	}
 
@@ -84,6 +28,67 @@ func (s *Service) CheckQuota(ctx context.Context, orgID int64, resource string, 
 	}
 
 	return nil
+}
+
+// UnlimitedQuota is the sentinel limit meaning "no cap" (the plan/custom-quota -1).
+const UnlimitedQuota = -1
+
+// ResourceLimit resolves the org's effective numeric limit for a resource
+// (UnlimitedQuota = no cap), surfacing ErrSubscriptionFrozen / ErrPlanNotFound
+// exactly as CheckQuota did. Callers that must close the check-then-create race
+// resolve the limit here and enforce the count inside their own transaction.
+func (s *Service) ResourceLimit(ctx context.Context, orgID int64, resource string) (int, error) {
+	sub, err := s.GetSubscription(ctx, orgID)
+
+	var plan *billing.SubscriptionPlan
+	if err != nil {
+		if errors.Is(err, ErrSubscriptionNotFound) {
+			plan, _ = s.GetPlan(ctx, billing.PlanBased)
+			if plan == nil {
+				slog.WarnContext(ctx, "no based plan found in database, allowing by default", "org_id", orgID, "resource", resource)
+				return UnlimitedQuota, nil
+			}
+		} else {
+			return 0, err
+		}
+	} else {
+		if sub.IsFrozen() {
+			slog.WarnContext(ctx, "quota check denied: subscription frozen", "org_id", orgID, "resource", resource)
+			return 0, ErrSubscriptionFrozen
+		}
+
+		plan = sub.Plan
+		if plan == nil {
+			plan, _ = s.GetPlanByID(ctx, sub.PlanID)
+		}
+	}
+
+	if plan == nil {
+		return 0, ErrPlanNotFound
+	}
+
+	if sub != nil && sub.CustomQuotas != nil {
+		if customLimit, ok := sub.CustomQuotas[resource]; ok {
+			if limit, ok := customLimit.(float64); ok && int(limit) != UnlimitedQuota {
+				return int(limit), nil
+			}
+		}
+	}
+
+	switch resource {
+	case "users":
+		return plan.MaxUsers, nil
+	case "runners":
+		return plan.MaxRunners, nil
+	case "concurrent_pods":
+		return plan.MaxConcurrentPods, nil
+	case "repositories":
+		return plan.MaxRepositories, nil
+	case "pod_minutes":
+		return plan.IncludedPodMinutes, nil
+	default:
+		return UnlimitedQuota, nil
+	}
 }
 
 // CheckSeatAvailability gates member invitations against purchased seats (not plan limits).

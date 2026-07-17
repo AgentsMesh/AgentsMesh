@@ -20,7 +20,7 @@ go_library(
         "messages_handlers.go",
         "pods_handlers.go",
         "readstate_handlers.go",
-        ":channel_convert_amesh",
+        ":channel_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/channel",
     visibility = ["//backend:__subpackages__"],

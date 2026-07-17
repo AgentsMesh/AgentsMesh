@@ -15,7 +15,7 @@ go_library(
         "search.go",
         "server.go",
         "user_convert_custom.go",
-        ":user_convert_amesh",
+        ":user_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/user",
     visibility = ["//backend:__subpackages__"],
