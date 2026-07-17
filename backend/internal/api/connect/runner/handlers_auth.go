@@ -3,7 +3,6 @@ package runnerconnect
 import (
 	"context"
 	"errors"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -37,7 +36,7 @@ func (s *Server) AuthorizeRunner(
 		ctx, req.Msg.GetAuthKey(), tenant.OrganizationID, tenant.UserID, req.Msg.GetNodeId(),
 	)
 	if err != nil {
-		return nil, mapAuthorizeError(err)
+		return nil, mapServiceError(err)
 	}
 	return connect.NewResponse(&runnerapiv1.AuthorizeRunnerResponse{
 		RunnerId: r.ID,
@@ -105,23 +104,3 @@ func (s *Server) GetRunnerAuthStatus(
 	return connect.NewResponse(out), nil
 }
 
-func mapAuthorizeError(err error) error {
-	switch {
-	case errors.Is(err, runner.ErrRunnerAlreadyExists):
-		return connect.NewError(connect.CodeAlreadyExists, err)
-	case errors.Is(err, runner.ErrRunnerQuotaExceeded):
-		return connect.NewError(connect.CodeResourceExhausted, err)
-	case errors.Is(err, runner.ErrAuthRequestNotFound):
-		return connect.NewError(connect.CodeNotFound, err)
-	case errors.Is(err, runner.ErrAuthRequestExpired):
-		return connect.NewError(connect.CodeInvalidArgument, err)
-	case errors.Is(err, runner.ErrAuthRequestAlreadyAuthorized):
-		return connect.NewError(connect.CodeAlreadyExists, err)
-	default:
-		return connect.NewError(connect.CodeInternal, err)
-	}
-}
-
-// Used only via mapAuthorizeError; satisfy import for the time package
-// when the surrounding handlers grow time-based logic.
-var _ = time.Now

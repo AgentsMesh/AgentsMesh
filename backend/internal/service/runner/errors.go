@@ -14,7 +14,7 @@ var (
 	ErrTokenExhausted      = runnerDomain.ErrTokenExhausted // shared with infra layer
 	ErrRunnerAlreadyExists = errors.New("runner already exists")
 	ErrRunnerDisabled      = errors.New("runner is disabled")
-	ErrRunnerQuotaExceeded = errors.New("runner quota exceeded")
+	ErrRunnerQuotaExceeded = runnerDomain.ErrRunnerQuotaExceeded // shared with infra layer
 	ErrGRPCTokenNotFound   = errors.New("gRPC registration token not found")
 	ErrNoRunnerForAgent    = errors.New("no available runner supports the requested agent")
 	ErrRunnerHasLoopRefs   = errors.New("cannot delete: runner is referenced by one or more loops")

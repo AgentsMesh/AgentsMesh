@@ -17,6 +17,7 @@ go_library(
     visibility = ["//backend:__subpackages__"],
     deps = [
         "//backend/internal/domain/blockstore",
+        "//backend/internal/infra/dberr",
         "//backend/internal/infra/eventbus",
         "@com_github_google_uuid//:uuid",
         "@io_gorm_gorm//:gorm",

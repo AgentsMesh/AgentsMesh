@@ -1,0 +1,134 @@
+# Foreign keys still produced by backend/migrations. Contract: CLAUDE.md 外键契约.
+#
+# Legacy debt. Each line is a constraint that predates or violates the no-FK
+# contract, and is a source of failure modes the service layer does not expect.
+# This list may only shrink: check_fk_allowlist.sh asserts it matches the DB,
+# and CI's "FK allowlist may only shrink" step rejects added lines.
+#
+# The [rule] is load-bearing -- a CASCADE silently becoming NO ACTION is what
+# caused both prod incidents, so it is part of the key, not a note.
+api_keys.created_by -> users  [NO ACTION]  api_keys_created_by_fkey
+api_keys.organization_id -> organizations  [CASCADE]  api_keys_organization_id_fkey
+audit_logs.actor_id -> users  [SET NULL]  audit_logs_actor_id_fkey
+audit_logs.organization_id -> organizations  [SET NULL]  audit_logs_organization_id_fkey
+autopilot_controllers.organization_id -> organizations  [CASCADE]  ralph_pods_organization_id_fkey
+autopilot_controllers.pod_id -> pods  [CASCADE]  ralph_pods_worker_pod_id_fkey
+autopilot_controllers.runner_id -> runners  [CASCADE]  ralph_pods_runner_id_fkey
+autopilot_iterations.autopilot_controller_id -> autopilot_controllers  [CASCADE]  ralph_iterations_ralph_pod_id_fkey
+block_embeddings.block_id -> blocks  [CASCADE]  block_embeddings_block_id_fkey
+block_ops.workspace_id -> block_workspaces  [CASCADE]  block_ops_workspace_id_fkey
+block_refs.created_by -> users  [NO ACTION]  block_refs_created_by_fkey
+block_refs.from_id -> blocks  [CASCADE]  block_refs_from_id_fkey
+block_refs.to_id -> blocks  [NO ACTION]  block_refs_to_id_fkey
+block_refs.workspace_id -> block_workspaces  [CASCADE]  block_refs_workspace_id_fkey
+block_workspaces.created_by -> users  [NO ACTION]  block_workspaces_created_by_fkey
+block_workspaces.organization_id -> organizations  [CASCADE]  block_workspaces_organization_id_fkey
+block_workspaces.root_block_id -> blocks  [SET NULL]  fk_block_workspaces_root
+blocks.created_by -> users  [NO ACTION]  blocks_created_by_fkey
+blocks.workspace_id -> block_workspaces  [CASCADE]  blocks_workspace_id_fkey
+channel_message_edits.editor_user_id -> users  [NO ACTION]  channel_message_edits_editor_user_id_fkey
+channel_messages.channel_id -> channels  [CASCADE]  channel_messages_channel_id_fkey
+channel_messages.sender_user_id -> users  [NO ACTION]  channel_messages_sender_user_id_fkey
+channels.ticket_id -> tickets  [SET NULL]  fk_channels_ticket
+custom_agents.organization_id -> organizations  [CASCADE]  custom_agent_types_organization_id_fkey
+files.organization_id -> organizations  [CASCADE]  files_organization_id_fkey
+files.uploader_id -> users  [CASCADE]  files_uploader_id_fkey
+git_providers.organization_id -> organizations  [CASCADE]  git_providers_organization_id_fkey
+git_providers.ssh_key_id -> ssh_keys  [SET NULL]  git_providers_ssh_key_id_fkey
+installed_mcp_servers.installed_by -> users  [SET NULL]  installed_mcp_servers_installed_by_fkey
+installed_mcp_servers.market_item_id -> mcp_market_items  [SET NULL]  installed_mcp_servers_market_item_id_fkey
+installed_mcp_servers.organization_id -> organizations  [CASCADE]  installed_mcp_servers_organization_id_fkey
+installed_mcp_servers.repository_id -> repositories  [CASCADE]  installed_mcp_servers_repository_id_fkey
+installed_skills.installed_by -> users  [SET NULL]  installed_skills_installed_by_fkey
+installed_skills.market_item_id -> skill_market_items  [SET NULL]  installed_skills_market_item_id_fkey
+installed_skills.organization_id -> organizations  [CASCADE]  installed_skills_organization_id_fkey
+installed_skills.repository_id -> repositories  [CASCADE]  installed_skills_repository_id_fkey
+invitations.invited_by -> users  [NO ACTION]  invitations_invited_by_fkey
+invitations.organization_id -> organizations  [CASCADE]  invitations_organization_id_fkey
+invoices.organization_id -> organizations  [CASCADE]  invoices_organization_id_fkey
+invoices.payment_order_id -> payment_orders  [NO ACTION]  invoices_payment_order_id_fkey
+labels.organization_id -> organizations  [CASCADE]  labels_organization_id_fkey
+labels.repository_id -> repositories  [CASCADE]  labels_repository_id_fkey
+licenses.activated_org_id -> organizations  [NO ACTION]  licenses_activated_org_id_fkey
+organization_agent_configs.agent_slug -> agents  [NO ACTION]  organization_agent_configs_agent_slug_fkey
+organization_agent_configs.organization_id -> organizations  [CASCADE]  organization_agent_configs_organization_id_fkey
+organization_agents.agent_slug -> agents  [NO ACTION]  organization_agents_agent_slug_fkey
+organization_agents.organization_id -> organizations  [CASCADE]  organization_agents_organization_id_fkey
+organization_members.organization_id -> organizations  [CASCADE]  organization_members_organization_id_fkey
+organization_members.user_id -> users  [CASCADE]  organization_members_user_id_fkey
+payment_orders.created_by_id -> users  [NO ACTION]  payment_orders_created_by_id_fkey
+payment_orders.organization_id -> organizations  [CASCADE]  payment_orders_organization_id_fkey
+payment_orders.plan_id -> subscription_plans  [NO ACTION]  payment_orders_plan_id_fkey
+payment_transactions.payment_order_id -> payment_orders  [CASCADE]  payment_transactions_payment_order_id_fkey
+plan_prices.plan_id -> subscription_plans  [CASCADE]  plan_prices_plan_id_fkey
+pod_bindings.organization_id -> organizations  [CASCADE]  pod_bindings_organization_id_fkey
+pods.created_by_id -> users  [NO ACTION]  pods_created_by_id_fkey
+pods.organization_id -> organizations  [CASCADE]  pods_organization_id_fkey
+pods.repository_id -> repositories  [SET NULL]  pods_repository_id_fkey
+pods.runner_id -> runners  [CASCADE]  pods_runner_id_fkey
+pods.ticket_id -> tickets  [SET NULL]  fk_pods_ticket
+promo_code_redemptions.organization_id -> organizations  [CASCADE]  promo_code_redemptions_organization_id_fkey
+promo_code_redemptions.promo_code_id -> promo_codes  [RESTRICT]  promo_code_redemptions_promo_code_id_fkey
+promo_code_redemptions.user_id -> users  [NO ACTION]  promo_code_redemptions_user_id_fkey
+promo_codes.created_by_id -> users  [NO ACTION]  promo_codes_created_by_id_fkey
+repositories.imported_by_user_id -> users  [NO ACTION]  repositories_imported_by_user_id_fkey
+repositories.organization_id -> organizations  [CASCADE]  repositories_organization_id_fkey
+resource_grants.granted_by -> users  [NO ACTION]  resource_grants_granted_by_fkey
+resource_grants.organization_id -> organizations  [NO ACTION]  resource_grants_organization_id_fkey
+resource_grants.user_id -> users  [CASCADE]  resource_grants_user_id_fkey
+runner_certificates.runner_id -> runners  [CASCADE]  runner_certificates_runner_id_fkey
+runner_grpc_registration_tokens.created_by -> users  [NO ACTION]  runner_grpc_registration_tokens_created_by_fkey
+runner_grpc_registration_tokens.created_by_id -> users  [NO ACTION]  runner_registration_tokens_created_by_id_fkey
+runner_grpc_registration_tokens.organization_id -> organizations  [CASCADE]  runner_registration_tokens_organization_id_fkey
+runner_logs.organization_id -> organizations  [CASCADE]  runner_logs_organization_id_fkey
+runner_logs.requested_by_id -> users  [NO ACTION]  runner_logs_requested_by_id_fkey
+runner_logs.runner_id -> runners  [CASCADE]  runner_logs_runner_id_fkey
+runner_reactivation_tokens.created_by -> users  [NO ACTION]  runner_reactivation_tokens_created_by_fkey
+runner_reactivation_tokens.runner_id -> runners  [CASCADE]  runner_reactivation_tokens_runner_id_fkey
+runners.organization_id -> organizations  [CASCADE]  runners_organization_id_fkey
+skill_market_items.registry_id -> skill_registries  [CASCADE]  skill_market_items_registry_id_fkey
+skill_registries.organization_id -> organizations  [CASCADE]  skill_registries_organization_id_fkey
+skill_registry_overrides.organization_id -> organizations  [CASCADE]  skill_registry_overrides_organization_id_fkey
+skill_registry_overrides.registry_id -> skill_registries  [CASCADE]  skill_registry_overrides_registry_id_fkey
+ssh_keys.organization_id -> organizations  [CASCADE]  ssh_keys_organization_id_fkey
+sso_configs.created_by -> users  [SET NULL]  sso_configs_created_by_fkey
+subscriptions.organization_id -> organizations  [CASCADE]  subscriptions_organization_id_fkey
+subscriptions.plan_id -> subscription_plans  [NO ACTION]  subscriptions_plan_id_fkey
+support_ticket_attachments.message_id -> support_ticket_messages  [CASCADE]  support_ticket_attachments_message_id_fkey
+support_ticket_attachments.ticket_id -> support_tickets  [CASCADE]  support_ticket_attachments_ticket_id_fkey
+support_ticket_attachments.uploader_id -> users  [NO ACTION]  support_ticket_attachments_uploader_id_fkey
+support_ticket_messages.ticket_id -> support_tickets  [CASCADE]  support_ticket_messages_ticket_id_fkey
+support_ticket_messages.user_id -> users  [NO ACTION]  support_ticket_messages_user_id_fkey
+support_tickets.assigned_admin_id -> users  [NO ACTION]  support_tickets_assigned_admin_id_fkey
+support_tickets.user_id -> users  [NO ACTION]  support_tickets_user_id_fkey
+system_admin_audit_logs.admin_user_id -> users  [NO ACTION]  system_admin_audit_logs_admin_user_id_fkey
+ticket_assignees.ticket_id -> tickets  [CASCADE]  ticket_assignees_ticket_id_fkey
+ticket_assignees.user_id -> users  [CASCADE]  ticket_assignees_user_id_fkey
+ticket_commits.organization_id -> organizations  [CASCADE]  ticket_commits_organization_id_fkey
+ticket_commits.pod_id -> pods  [SET NULL]  ticket_commits_pod_id_fkey
+ticket_commits.repository_id -> repositories  [CASCADE]  ticket_commits_repository_id_fkey
+ticket_commits.ticket_id -> tickets  [CASCADE]  ticket_commits_ticket_id_fkey
+ticket_labels.label_id -> labels  [CASCADE]  ticket_labels_label_id_fkey
+ticket_labels.ticket_id -> tickets  [CASCADE]  ticket_labels_ticket_id_fkey
+ticket_merge_requests.organization_id -> organizations  [CASCADE]  ticket_merge_requests_organization_id_fkey
+ticket_merge_requests.pod_id -> pods  [SET NULL]  ticket_merge_requests_pod_id_fkey
+ticket_merge_requests.ticket_id -> tickets  [CASCADE]  ticket_merge_requests_ticket_id_fkey
+ticket_relations.organization_id -> organizations  [CASCADE]  ticket_relations_organization_id_fkey
+ticket_relations.source_ticket_id -> tickets  [CASCADE]  ticket_relations_source_ticket_id_fkey
+ticket_relations.target_ticket_id -> tickets  [CASCADE]  ticket_relations_target_ticket_id_fkey
+tickets.organization_id -> organizations  [CASCADE]  tickets_organization_id_fkey
+tickets.parent_ticket_id -> tickets  [CASCADE]  tickets_parent_ticket_id_fkey
+tickets.reporter_id -> users  [NO ACTION]  tickets_reporter_id_fkey
+tickets.repository_id -> repositories  [CASCADE]  tickets_repository_id_fkey
+token_usages.organization_id -> organizations  [CASCADE]  token_usages_organization_id_fkey
+token_usages.pod_id -> pods  [SET NULL]  token_usages_pod_id_fkey
+token_usages.runner_id -> runners  [SET NULL]  token_usages_runner_id_fkey
+token_usages.user_id -> users  [SET NULL]  token_usages_user_id_fkey
+usage_records.organization_id -> organizations  [CASCADE]  usage_records_organization_id_fkey
+user_agent_configs.user_id -> users  [CASCADE]  user_agent_configs_user_id_fkey
+user_git_credentials.repository_provider_id -> user_repository_providers  [CASCADE]  user_git_credentials_repository_provider_id_fkey
+user_git_credentials.user_id -> users  [CASCADE]  user_git_credentials_user_id_fkey
+user_identities.user_id -> users  [CASCADE]  user_identities_user_id_fkey
+user_repository_providers.identity_id -> user_identities  [SET NULL]  user_repository_providers_identity_id_fkey
+user_repository_providers.user_id -> users  [CASCADE]  user_repository_providers_user_id_fkey
+users.default_git_credential_id -> user_git_credentials  [SET NULL]  users_default_git_credential_id_fkey

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
-	"strings"
 	"sync"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/blockstore"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/dberr"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -56,14 +56,6 @@ func workspaceLockKey(workspaceID uuid.UUID) int64 {
 	return int64(h.Sum64())
 }
 
-func isUniqueViolation(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return strings.Contains(msg, "SQLSTATE 23505") || strings.Contains(msg, "duplicate key value")
-}
-
 func (r *Repository) CreateWorkspace(ctx context.Context, ws *blockstore.BlockWorkspace) error {
 	err := r.db.WithContext(ctx).Create(ws).Error
 	if err == nil {
@@ -72,7 +64,7 @@ func (r *Repository) CreateWorkspace(ctx context.Context, ws *blockstore.BlockWo
 	// Translate Postgres UNIQUE(org_id, slug) collision to a domain sentinel
 	// so EnsureDefaultWorkspace can react to races idempotently. Any other
 	// error surfaces as-is.
-	if isUniqueViolation(err) {
+	if dberr.IsUniqueViolation(err) {
 		return blockstore.ErrWorkspaceAlreadyExists
 	}
 	return err

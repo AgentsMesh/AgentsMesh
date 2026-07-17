@@ -15,6 +15,7 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/database"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/email"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/eventbus"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/tasks"
 	"github.com/anthropics/agentsmesh/backend/internal/job"
 	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
 	"github.com/anthropics/agentsmesh/backend/internal/service/relay"
@@ -63,6 +64,7 @@ func waitForShutdown(
 	loopScheduler LoopSchedulerStopper,
 	orgAwareness *instance.OrgAwarenessService,
 	relayManager *relay.Manager,
+	registrationGC *tasks.Scheduler,
 	services *serviceContainer,
 	db *gorm.DB,
 	redisClient *redis.Client,
@@ -103,6 +105,10 @@ func waitForShutdown(
 
 	if relayManager != nil {
 		relayManager.Stop()
+	}
+
+	if registrationGC != nil {
+		registrationGC.Stop()
 	}
 
 	if services != nil {

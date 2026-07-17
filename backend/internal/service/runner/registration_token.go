@@ -5,12 +5,14 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
 	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	"gorm.io/gorm"
 )
 
 func (s *Service) GenerateGRPCRegistrationToken(ctx context.Context, orgID, userID int64, req *GenerateGRPCRegistrationTokenRequest, serverURL string) (*GenerateGRPCRegistrationTokenResponse, error) {
@@ -100,13 +102,9 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		}
 	}
 
-	nodeID := req.NodeID
-	if nodeID == "" {
-		nodeIDBytes := make([]byte, 8)
-		if _, err := rand.Read(nodeIDBytes); err != nil {
-			return nil, fmt.Errorf("failed to generate node ID: %w", err)
-		}
-		nodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
+	nodeID, err := resolveNodeID(req.NodeID, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	exists, err := s.repo.ExistsByNodeIDAndOrg(ctx, regToken.OrganizationID, nodeID)
@@ -143,6 +141,9 @@ func (s *Service) RegisterWithToken(ctx context.Context, req *RegisterWithTokenR
 		keyPEM = certInfo.KeyPEM
 		return nil
 	}); err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, ErrRunnerAlreadyExists
+		}
 		slog.ErrorContext(ctx, "runner registration with token failed", "org_id", regToken.OrganizationID, "node_id", nodeID, "error", err)
 		return nil, err
 	}

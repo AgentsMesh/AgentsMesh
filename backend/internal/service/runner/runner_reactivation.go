@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -86,24 +87,12 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 		return nil, ErrInvalidToken
 	}
 
-	rowsAffected, err := s.repo.ClaimReactivationToken(ctx, reactivationToken.ID)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to claim reactivation token", "token_id", reactivationToken.ID, "error", err)
-		return nil, fmt.Errorf("failed to claim token: %w", err)
-	}
-	if rowsAffected == 0 {
+	// Cheap pre-check for a clean error before the runner/org reads; the atomic
+	// claim inside ReactivateWithTokenAtomic is the authoritative race-safe guard.
+	if reactivationToken.IsExpired() || reactivationToken.IsUsed() {
 		slog.WarnContext(ctx, "reactivation token expired or already used", "token_id", reactivationToken.ID)
 		return nil, ErrTokenExpired
 	}
-
-	succeeded := false
-	defer func() {
-		if !succeeded {
-			unclaimCtx, unclaimCancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer unclaimCancel()
-			_ = s.repo.UnclaimReactivationToken(unclaimCtx, reactivationToken.ID)
-		}
-	}()
 
 	r, err := s.repo.GetByID(ctx, reactivationToken.RunnerID)
 	if err != nil {
@@ -124,42 +113,46 @@ func (s *Service) Reactivate(ctx context.Context, req *ReactivateRequest, pkiSer
 		return nil, fmt.Errorf("organization not found")
 	}
 
-	certInfo, err := pkiService.IssueRunnerCertificate(r.NodeID, orgSlug)
+	cert := &runner.Certificate{}
+	var certPEM, keyPEM []byte
+	err = s.repo.ReactivateWithTokenAtomic(ctx, reactivationToken.ID, r.ID, cert, func() error {
+		certInfo, err := pkiService.IssueRunnerCertificate(r.NodeID, orgSlug)
+		if err != nil {
+			return fmt.Errorf("failed to issue certificate: %w", err)
+		}
+		cert.SerialNumber = certInfo.SerialNumber
+		cert.Fingerprint = certInfo.Fingerprint
+		cert.IssuedAt = certInfo.IssuedAt
+		cert.ExpiresAt = certInfo.ExpiresAt
+		certPEM = certInfo.CertPEM
+		keyPEM = certInfo.KeyPEM
+		return nil
+	})
+	if errors.Is(err, runner.ErrReactivationUnavailable) {
+		slog.WarnContext(ctx, "reactivation token expired or already used", "token_id", reactivationToken.ID)
+		return nil, ErrTokenExpired
+	}
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to issue certificate during reactivation", "runner_id", r.ID, "node_id", r.NodeID, "error", err)
-		return nil, fmt.Errorf("failed to issue certificate: %w", err)
-	}
-
-	cert := &runner.Certificate{
-		RunnerID:     r.ID,
-		SerialNumber: certInfo.SerialNumber,
-		Fingerprint:  certInfo.Fingerprint,
-		IssuedAt:     certInfo.IssuedAt,
-		ExpiresAt:    certInfo.ExpiresAt,
-	}
-	if err := s.repo.CreateCertificate(ctx, cert); err != nil {
-		slog.ErrorContext(ctx, "failed to save certificate during reactivation", "runner_id", r.ID, "error", err)
-		return nil, fmt.Errorf("failed to save certificate: %w", err)
-	}
-
-	if err := s.repo.UpdateFields(ctx, r.ID, map[string]interface{}{
-		"cert_serial_number": certInfo.SerialNumber,
-		"cert_expires_at":    certInfo.ExpiresAt,
-	}); err != nil {
-		slog.ErrorContext(ctx, "failed to update runner after reactivation", "runner_id", r.ID, "error", err)
-		return nil, fmt.Errorf("failed to update runner: %w", err)
+		slog.ErrorContext(ctx, "failed to reactivate runner", "runner_id", r.ID, "error", err)
+		return nil, err
 	}
 
 	slog.InfoContext(ctx, "runner reactivated successfully", "runner_id", r.ID, "node_id", r.NodeID, "org_slug", orgSlug)
 
-	succeeded = true
 	return &ReactivateResponse{
-		Certificate:   string(certInfo.CertPEM),
-		PrivateKey:    string(certInfo.KeyPEM),
+		Certificate:   string(certPEM),
+		PrivateKey:    string(keyPEM),
 		CACertificate: string(pkiService.CACertPEM()),
 	}, nil
 }
 
 func (s *Service) CleanupExpiredReactivationTokens(ctx context.Context) error {
-	return s.repo.CleanupExpiredReactivationTokens(ctx)
+	deleted, err := s.repo.CleanupExpiredReactivationTokens(ctx)
+	if err != nil {
+		return err
+	}
+	if deleted > 0 {
+		slog.InfoContext(ctx, "purged expired reactivation tokens", "deleted", deleted)
+	}
+	return nil
 }

@@ -17,7 +17,8 @@ func runnerTableDDLs() []string {
 			registered_by_user_id INTEGER,
 			cert_serial_number TEXT, cert_fingerprint TEXT, cert_expires_at DATETIME,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(organization_id, node_id)
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_runners_organization_id ON runners(organization_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_runners_status ON runners(status)`,

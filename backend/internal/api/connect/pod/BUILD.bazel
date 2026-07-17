@@ -17,7 +17,7 @@ go_library(
         "pod_convert_custom.go",
         "queries.go",
         "server.go",
-        ":pod_convert_amesh",
+        ":pod_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/pod",
     visibility = ["//backend:__subpackages__"],

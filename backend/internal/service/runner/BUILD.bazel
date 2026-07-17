@@ -42,6 +42,7 @@ go_library(
         "query_eligible.go",
         "registration.go",
         "registration_interactive.go",
+        "registration_status.go",
         "registration_token.go",
         "relay_connections.go",
         "runner_reactivation.go",

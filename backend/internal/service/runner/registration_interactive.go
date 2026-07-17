@@ -4,12 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
-	"github.com/anthropics/agentsmesh/backend/internal/interfaces"
+	"github.com/anthropics/agentsmesh/backend/internal/service/billing"
+	"gorm.io/gorm"
 )
 
 func (s *Service) RequestAuthURL(ctx context.Context, req *RequestAuthURLRequest, frontendURL string) (*RequestAuthURLResponse, error) {
@@ -49,93 +51,6 @@ func (s *Service) RequestAuthURL(ctx context.Context, req *RequestAuthURLRequest
 	}, nil
 }
 
-func (s *Service) GetAuthStatus(ctx context.Context, authKey string, pkiService interfaces.PKICertificateIssuer) (*AuthStatusResponse, error) {
-	pendingAuth, err := s.repo.GetPendingAuthByKey(ctx, authKey)
-	if err != nil {
-		return nil, err
-	}
-	if pendingAuth == nil {
-		return nil, ErrAuthRequestNotFound
-	}
-
-	if pendingAuth.IsExpired() {
-		return &AuthStatusResponse{Status: "expired"}, nil
-	}
-
-	if !pendingAuth.Authorized {
-		resp := &AuthStatusResponse{
-			Status:    "pending",
-			ExpiresAt: pendingAuth.ExpiresAt.Format(time.RFC3339),
-		}
-		if pendingAuth.NodeID != nil {
-			resp.NodeID = *pendingAuth.NodeID
-		}
-		return resp, nil
-	}
-
-	if pendingAuth.RunnerID == nil {
-		return nil, fmt.Errorf("runner not created yet")
-	}
-
-	r, err := s.repo.GetByID(ctx, *pendingAuth.RunnerID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get runner: %w", err)
-	}
-	if r == nil {
-		return nil, fmt.Errorf("runner not found")
-	}
-
-	if r.CertSerialNumber != nil && *r.CertSerialNumber != "" {
-		_ = s.repo.RevokeCertificate(ctx, *r.CertSerialNumber, "re-issued: prior poll response lost")
-	}
-
-	rowsAffected, err := s.repo.DeleteClaimedPendingAuth(ctx, pendingAuth.ID)
-	if err != nil {
-		return nil, err
-	}
-	if rowsAffected == 0 {
-		return &AuthStatusResponse{Status: "pending"}, nil
-	}
-
-	var orgSlug string
-	if pendingAuth.OrganizationID != nil {
-		orgSlug, _ = s.repo.GetOrgSlug(ctx, *pendingAuth.OrganizationID)
-	}
-
-	nodeID := r.NodeID
-	certInfo, err := pkiService.IssueRunnerCertificate(nodeID, orgSlug)
-	if err != nil {
-		return nil, fmt.Errorf("failed to issue certificate: %w", err)
-	}
-
-	cert := &runner.Certificate{
-		RunnerID:     r.ID,
-		SerialNumber: certInfo.SerialNumber,
-		Fingerprint:  certInfo.Fingerprint,
-		IssuedAt:     certInfo.IssuedAt,
-		ExpiresAt:    certInfo.ExpiresAt,
-	}
-	if err := s.repo.CreateCertificate(ctx, cert); err != nil {
-		return nil, fmt.Errorf("failed to save certificate: %w", err)
-	}
-
-	if err := s.repo.UpdateFields(ctx, r.ID, map[string]interface{}{
-		"cert_serial_number": certInfo.SerialNumber,
-		"cert_expires_at":    certInfo.ExpiresAt,
-	}); err != nil {
-		return nil, fmt.Errorf("failed to update runner certificate info: %w", err)
-	}
-
-	return &AuthStatusResponse{
-		Status:        "authorized",
-		RunnerID:      r.ID,
-		Certificate:   string(certInfo.CertPEM),
-		PrivateKey:    string(certInfo.KeyPEM),
-		CACertificate: string(pkiService.CACertPEM()),
-		OrgSlug:       orgSlug,
-	}, nil
-}
-
 func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int64, userID int64, nodeID string) (*runner.Runner, error) {
 	pendingAuth, err := s.repo.GetPendingAuthByKey(ctx, authKey)
 	if err != nil {
@@ -149,38 +64,31 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		return nil, ErrAuthRequestExpired
 	}
 
-	rowsAffected, err := s.repo.ClaimPendingAuth(ctx, pendingAuth.ID, orgID)
+	finalNodeID, err := resolveNodeID(nodeID, pendingAuth.NodeID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to claim auth request: %w", err)
-	}
-	if rowsAffected == 0 {
-		return nil, ErrAuthRequestAlreadyAuthorized
+		return nil, err
 	}
 
-	finalNodeID := nodeID
-	if finalNodeID == "" && pendingAuth.NodeID != nil {
-		finalNodeID = *pendingAuth.NodeID
-	}
-	if finalNodeID == "" {
-		nodeIDBytes := make([]byte, 8)
-		if _, err := rand.Read(nodeIDBytes); err != nil {
-			return nil, fmt.Errorf("failed to generate node ID: %w", err)
-		}
-		finalNodeID = fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes))
-	}
-
-	if s.billingService != nil {
-		if err := s.billingService.CheckQuota(ctx, orgID, "runners", 1); err != nil {
-			return nil, ErrRunnerQuotaExceeded
-		}
-	}
-
+	// The exists-check is read-only and deliberately runs before the claim:
+	// rejecting after claiming would leave authorized=true with no runner, and the
+	// claim predicate only matches authorized=false — the auth key would be
+	// unusable for the rest of its TTL with no way to retry.
 	exists, err := s.repo.ExistsByNodeIDAndOrg(ctx, orgID, finalNodeID)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
 		return nil, ErrRunnerAlreadyExists
+	}
+
+	// Resolve the limit here but enforce the count inside the tx (under a per-org
+	// lock): a check-then-create here would let concurrent authorizes overshoot.
+	runnerLimit := billing.UnlimitedQuota
+	if s.billingService != nil {
+		runnerLimit, err = s.billingService.ResourceLimit(ctx, orgID, "runners")
+		if err != nil {
+			return nil, ErrRunnerQuotaExceeded
+		}
 	}
 
 	r := &runner.Runner{
@@ -192,13 +100,40 @@ func (s *Service) AuthorizeRunner(ctx context.Context, authKey string, orgID int
 		RegisteredByUserID: &userID,
 	}
 
-	if err := s.repo.Create(ctx, r); err != nil {
-		return nil, fmt.Errorf("failed to create runner: %w", err)
+	claimed, err := s.repo.AuthorizeAndCreateRunner(ctx, pendingAuth.ID, orgID, r, runnerLimit)
+	switch {
+	case errors.Is(err, gorm.ErrDuplicatedKey):
+		// A concurrent authorize won the (org, node_id) uniqueness race after our
+		// pre-check; report it as the same conflict the pre-check would have.
+		return nil, ErrRunnerAlreadyExists
+	case err != nil:
+		slog.ErrorContext(ctx, "authorize runner transaction failed", "auth_key_id", pendingAuth.ID, "error", err)
+		return nil, fmt.Errorf("failed to authorize runner: %w", err)
 	}
-
-	if err := s.repo.UpdatePendingAuthRunnerID(ctx, pendingAuth.ID, r.ID); err != nil {
-		slog.WarnContext(ctx, "Failed to update pending auth runner ID", "error", err)
+	if claimed == 0 {
+		// The claim predicate (authorized=false AND expires_at>now) matched
+		// nothing for one of two reasons; re-read to tell them apart rather than
+		// always blaming a concurrent authorize. A purge may have removed an
+		// expired row, so a missing row also means expired.
+		if fresh, _ := s.repo.GetPendingAuthByKey(ctx, authKey); fresh == nil || fresh.IsExpired() {
+			return nil, ErrAuthRequestExpired
+		}
+		return nil, ErrAuthRequestAlreadyAuthorized
 	}
 
 	return r, nil
+}
+
+func resolveNodeID(requested string, pendingNodeID *string) (string, error) {
+	if requested != "" {
+		return requested, nil
+	}
+	if pendingNodeID != nil && *pendingNodeID != "" {
+		return *pendingNodeID, nil
+	}
+	nodeIDBytes := make([]byte, 8)
+	if _, err := rand.Read(nodeIDBytes); err != nil {
+		return "", fmt.Errorf("failed to generate node ID: %w", err)
+	}
+	return fmt.Sprintf("runner-%s", hex.EncodeToString(nodeIDBytes)), nil
 }

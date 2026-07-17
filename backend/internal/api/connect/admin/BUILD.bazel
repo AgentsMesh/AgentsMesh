@@ -22,7 +22,7 @@ go_library(
         "handlers_users_actions.go",
         "handlers_users_query.go",
         "server.go",
-        ":admin_convert_amesh",
+        ":admin_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin",
     visibility = ["//backend:__subpackages__"],

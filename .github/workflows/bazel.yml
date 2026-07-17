@@ -57,6 +57,72 @@ jobs:
             fi
           done
 
+  schema:
+    name: Schema (FK contract)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: pw
+          POSTGRES_DB: fkgate
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres -d fkgate"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:pw@localhost:5432/fkgate?sslmode=disable
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Apply migrations
+        run: |
+          docker run --rm --network host -v "$PWD/backend/migrations:/m:ro" \
+            migrate/migrate:v4.19.0 -path=/m -database "$DATABASE_URL" up
+      - name: FK contract (allowlist matches the schema)
+        run: bash backend/migrations/check_fk_allowlist.sh
+      - name: FK allowlist may only shrink
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          export LC_ALL=C
+          list=backend/migrations/fk_allowlist.txt
+          # Fail hard if the base commit is missing (force-pushed base); only
+          # skip when the file genuinely does not exist there yet.
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "::error::base commit $BASE_SHA is not in this clone"
+            exit 1
+          fi
+          if ! git cat-file -e "$BASE_SHA:$list" 2>/dev/null; then
+            echo "$list is new on this branch; nothing to ratchet against."
+            exit 0
+          fi
+          # Counts, not diff lines and not entry sets: a table rename rewrites
+          # its entry (the key carries the table name) without adding an FK, and
+          # this repo has done exactly that -- see the ralph_pods_* constraint
+          # names still on autopilot_controllers. Both finer-grained checks fail
+          # such a PR with no escape hatch. Counting enforces what the contract
+          # actually claims (只减不增); check_fk_allowlist.sh separately pins the
+          # list to the real schema, so the count cannot be faked.
+          entries() { grep -cvE '^[[:space:]]*(#|$)' || :; }
+          base_n="$(git cat-file -p "$BASE_SHA:$list" | entries)"
+          head_n="$(entries < "$list")"
+          if [ "$head_n" -gt "$base_n" ]; then
+            echo "::error::fk_allowlist.txt grew from $base_n to $head_n entries. This system"
+            echo "::error::does not use FKs (CLAUDE.md 外键契约) -- the list may only shrink."
+            echo "::error::Do not silence the schema check by appending to it."
+            git diff "$BASE_SHA" -- "$list" | sed 's/^/    /'
+            exit 1
+          fi
+          echo "OK: allowlist did not grow ($base_n -> $head_n)."
+
   go:
     name: Go (tests)
     runs-on: ubuntu-latest
@@ -133,6 +199,31 @@ jobs:
       # — putting that under Bazel's test sandbox would mean
       # re-materializing every transitive Go file as runfiles.
       - run: bazel run //${{ matrix.module }}:lint
+
+      # Deliberately after lint, and only on backend: the lint runner copies the
+      # amesh_proto_convert outputs into the source tree for golangci-lint's
+      # typecheck, and that polluted tree is the state gazelle actually breaks on
+      # for developers. Running this in a job that never lints would exercise the
+      # `# keep` markers but never the `# gazelle:exclude` that handles those
+      # copies -- i.e. it could not catch the regression it exists to catch.
+      - name: Gazelle is idempotent (post-lint tree)
+        if: matrix.module == 'backend'
+        run: |
+          set -euo pipefail
+          bazel run //:gazelle
+          # --porcelain, not `git diff`: gazelle's most common miss is generating
+          # a BUILD.bazel for a brand-new package, which is untracked and so
+          # invisible to git diff. Scoped to BUILD.bazel so bazel's own
+          # MODULE.bazel.lock churn is not misreported as gazelle's doing.
+          drift="$(git status --porcelain -- '**/BUILD.bazel' 'BUILD.bazel')"
+          if [ -n "$drift" ]; then
+            echo "::error::Running gazelle changed BUILD files. Either commit its output, or"
+            echo "::error::-- if it stripped a generated src/dep it cannot see -- mark that line '# keep'."
+            echo "$drift"
+            git diff -- '**/BUILD.bazel' 'BUILD.bazel'
+            exit 1
+          fi
+          echo "OK: gazelle is a no-op on the post-lint tree."
 
   go-windows:
     name: Runner Tests (Windows)

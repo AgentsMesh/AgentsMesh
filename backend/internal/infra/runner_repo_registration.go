@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/runner"
+	"github.com/anthropics/agentsmesh/backend/internal/infra/dberr"
 	"gorm.io/gorm"
 )
 
@@ -48,22 +49,6 @@ func (r *runnerRepository) GetPendingAuthByKey(ctx context.Context, authKey stri
 	return &pa, nil
 }
 
-func (r *runnerRepository) ClaimPendingAuth(ctx context.Context, id int64, orgID int64) (int64, error) {
-	result := r.db.WithContext(ctx).Model(&runner.PendingAuth{}).
-		Where("id = ? AND authorized = false AND expires_at > ?", id, time.Now()).
-		Updates(map[string]interface{}{
-			"authorized":      true,
-			"organization_id": orgID,
-		})
-	return result.RowsAffected, result.Error
-}
-
-func (r *runnerRepository) UpdatePendingAuthRunnerID(ctx context.Context, id int64, runnerID int64) error {
-	return r.db.WithContext(ctx).Model(&runner.PendingAuth{}).
-		Where("id = ?", id).
-		Update("runner_id", runnerID).Error
-}
-
 func (r *runnerRepository) DeleteClaimedPendingAuth(ctx context.Context, id int64) (int64, error) {
 	result := r.db.WithContext(ctx).
 		Where("id = ? AND authorized = true", id).
@@ -71,10 +56,11 @@ func (r *runnerRepository) DeleteClaimedPendingAuth(ctx context.Context, id int6
 	return result.RowsAffected, result.Error
 }
 
-func (r *runnerRepository) CleanupExpiredPendingAuths(ctx context.Context) error {
-	return r.db.WithContext(ctx).
+func (r *runnerRepository) CleanupExpiredPendingAuths(ctx context.Context) (int64, error) {
+	result := r.db.WithContext(ctx).
 		Where("expires_at < ?", time.Now()).
-		Delete(&runner.PendingAuth{}).Error
+		Delete(&runner.PendingAuth{})
+	return result.RowsAffected, result.Error
 }
 
 func (r *runnerRepository) CreateRegistrationToken(ctx context.Context, token *runner.GRPCRegistrationToken) error {
@@ -128,6 +114,9 @@ func (r *runnerRepository) RegisterWithTokenAtomic(ctx context.Context, tokenID 
 		}
 
 		if err := tx.Create(rn).Error; err != nil {
+			if dberr.IsUniqueViolation(err) {
+				return gorm.ErrDuplicatedKey
+			}
 			return err
 		}
 
@@ -160,22 +149,50 @@ func (r *runnerRepository) GetReactivationTokenByHash(ctx context.Context, hash 
 	return &token, nil
 }
 
-func (r *runnerRepository) ClaimReactivationToken(ctx context.Context, id int64) (int64, error) {
-	now := time.Now()
-	result := r.db.WithContext(ctx).Model(&runner.ReactivationToken{}).
-		Where("id = ? AND used_at IS NULL AND expires_at > ?", id, now).
-		Update("used_at", now)
-	return result.RowsAffected, result.Error
+// ReactivateWithTokenAtomic claims the token, issues+stores a fresh cert, and
+// links it to the runner in one transaction. The claim UPDATE locks the token
+// row for the tx, so a concurrent purge blocks and any failure rolls the claim
+// back — no external unclaim, no settle window. issueCert (local crypto)
+// populates cert before it is written.
+func (r *runnerRepository) ReactivateWithTokenAtomic(ctx context.Context, tokenID, runnerID int64, cert *runner.Certificate, issueCert func() error) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+		claim := tx.Model(&runner.ReactivationToken{}).
+			Where("id = ? AND used_at IS NULL AND expires_at > ?", tokenID, now).
+			Update("used_at", now)
+		if claim.Error != nil {
+			return claim.Error
+		}
+		if claim.RowsAffected == 0 {
+			return runner.ErrReactivationUnavailable
+		}
+
+		if err := issueCert(); err != nil {
+			return err
+		}
+
+		cert.RunnerID = runnerID
+		if err := tx.Create(cert).Error; err != nil {
+			return err
+		}
+
+		return tx.Model(&runner.Runner{}).
+			Where("id = ?", runnerID).
+			Updates(map[string]interface{}{
+				"cert_serial_number": cert.SerialNumber,
+				"cert_expires_at":    cert.ExpiresAt,
+			}).Error
+	})
 }
 
-func (r *runnerRepository) UnclaimReactivationToken(ctx context.Context, id int64) error {
-	return r.db.WithContext(ctx).Model(&runner.ReactivationToken{}).
-		Where("id = ?", id).
-		Update("used_at", nil).Error
-}
-
-func (r *runnerRepository) CleanupExpiredReactivationTokens(ctx context.Context) error {
-	return r.db.WithContext(ctx).
+// Consumed tokens go promptly: each pins its creator via a NO ACTION FK
+// (runner_reactivation_tokens.created_by -> users), so retaining them widens the
+// window in which deleting that user fails with 23503. A used_at is only ever set
+// inside ReactivateWithTokenAtomic's committed tx, so `used_at IS NOT NULL` never
+// races an in-flight claim.
+func (r *runnerRepository) CleanupExpiredReactivationTokens(ctx context.Context) (int64, error) {
+	result := r.db.WithContext(ctx).
 		Where("expires_at < ? OR used_at IS NOT NULL", time.Now()).
-		Delete(&runner.ReactivationToken{}).Error
+		Delete(&runner.ReactivationToken{})
+	return result.RowsAffected, result.Error
 }

@@ -17,7 +17,7 @@ go_library(
         "handlers_query.go",
         "handlers_status.go",
         "server.go",
-        ":billing_admin_convert_amesh",
+        ":billing_admin_convert_amesh",  # keep
     ],
     importpath = "github.com/anthropics/agentsmesh/backend/internal/api/connect/admin/subscription",
     visibility = ["//backend:__subpackages__"],
@@ -28,7 +28,7 @@ go_library(
         "//backend/internal/infra/database",
         "//backend/internal/service/admin",
         "//backend/internal/service/billing",
-        "//backend/pkg/protoconv",
+        "//backend/pkg/protoconv",  # keep
         "//proto/billing/v1:billing_go_proto",
         "@com_connectrpc_connect//:connect",
     ],
