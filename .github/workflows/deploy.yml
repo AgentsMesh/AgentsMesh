@@ -200,7 +200,7 @@ jobs:
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
-          ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-01 --pull"
+          ssh aliyun-us-west-relay-001 "cd /opt/agentsmesh && git pull --rebase --autostash origin main && cd relay && ./deploy.sh uswest-relay-01 --pull"
 
   deploy-uswest-relay-beijing-02:
     name: Deploy US West Relay Beijing 02
@@ -209,7 +209,7 @@ jobs:
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
-          ssh aliyun-agentsmesh-us-relay-beijing-002 "cd /opt/agentsmesh/relay && ./deploy.sh uswest-relay-beijing-02 --pull"
+          ssh aliyun-agentsmesh-us-relay-beijing-002 "cd /opt/agentsmesh && git pull --rebase --autostash origin main && cd relay && ./deploy.sh uswest-relay-beijing-02 --pull"
 
   migrate-uswest:
     name: Migrate US West
@@ -251,7 +251,7 @@ jobs:
     runs-on: [self-hosted, deploy]
     steps:
       - run: |
-          ssh aliyun-cn-relay-01 "cd /opt/agentsmesh/relay && ./deploy.sh cn-relay-01 --pull"
+          ssh aliyun-cn-relay-01 "cd /opt/agentsmesh && git pull --rebase --autostash origin main && cd relay && ./deploy.sh cn-relay-01 --pull"
 
   migrate-cn:
     name: Migrate CN
