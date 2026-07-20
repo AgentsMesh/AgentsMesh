@@ -11,16 +11,24 @@ import (
 )
 
 // =============================================================================
-// injectPATIntoURL
+// httpsBasicAuth
 // =============================================================================
 
-func TestInjectPATIntoURL_Success(t *testing.T) {
-	result, err := injectPATIntoURL("https://github.com/owner/repo.git", "ghp_mytoken123")
+func TestHTTPSBasicAuth_GitHubPAT(t *testing.T) {
+	auth, err := httpsBasicAuth("https://github.com/owner/repo.git", "ghp_mytoken123", "")
 	require.NoError(t, err)
-	assert.Equal(t, "https://ghp_mytoken123@github.com/owner/repo.git", result)
+	assert.Equal(t, "ghp_mytoken123", auth.Username)
+	assert.Equal(t, "", auth.Password)
 }
 
-func TestInjectPATIntoURL_NonHTTPS(t *testing.T) {
+func TestHTTPSBasicAuth_GitLabPAT(t *testing.T) {
+	auth, err := httpsBasicAuth("https://gitlab.com/owner/repo.git", "oauth2", "glpat-mytoken456")
+	require.NoError(t, err)
+	assert.Equal(t, "oauth2", auth.Username)
+	assert.Equal(t, "glpat-mytoken456", auth.Password)
+}
+
+func TestHTTPSBasicAuth_NonHTTPS(t *testing.T) {
 	tests := []struct {
 		name string
 		url  string
@@ -34,38 +42,7 @@ func TestInjectPATIntoURL_NonHTTPS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := injectPATIntoURL(tt.url, "token")
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "PAT auth requires https:// URL")
-		})
-	}
-}
-
-// =============================================================================
-// injectGitLabPATIntoURL
-// =============================================================================
-
-func TestInjectGitLabPATIntoURL_Success(t *testing.T) {
-	result, err := injectGitLabPATIntoURL("https://gitlab.com/owner/repo.git", "glpat-mytoken456")
-	require.NoError(t, err)
-	assert.Equal(t, "https://oauth2:glpat-mytoken456@gitlab.com/owner/repo.git", result)
-}
-
-func TestInjectGitLabPATIntoURL_NonHTTPS(t *testing.T) {
-	tests := []struct {
-		name string
-		url  string
-	}{
-		{"http URL", "http://gitlab.com/owner/repo.git"},
-		{"ssh URL", "ssh://git@gitlab.com/owner/repo.git"},
-		{"file URL", "file:///local/path/repo"},
-		{"git protocol", "git://gitlab.com/owner/repo.git"},
-		{"bare path", "/some/local/path"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, err := injectGitLabPATIntoURL(tt.url, "token")
+			_, err := httpsBasicAuth(tt.url, "token", "")
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), "PAT auth requires https:// URL")
 		})

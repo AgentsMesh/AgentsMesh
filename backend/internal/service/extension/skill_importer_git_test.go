@@ -259,3 +259,37 @@ func TestGitCloneWithSSHKey_SuccessfulClone_WithBranch(t *testing.T) {
 
 	assert.True(t, fileExists(filepath.Join(targetDir, "branch-file.txt")))
 }
+
+// TestGitCloneWithSSHKey_TagRef_LocalRepo pins the branch->tag fallback: a
+// Branch that names a tag (not a head) must still clone, matching the old
+// `git clone --branch <tag>`.
+func TestGitCloneWithSSHKey_TagRef_LocalRepo(t *testing.T) {
+	sourceDir := t.TempDir()
+	for _, args := range [][]string{
+		{"git", "init"},
+		{"git", "config", "user.email", "test@test.com"},
+		{"git", "config", "user.name", "Test"},
+	} {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir = sourceDir
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, "git setup failed: %s", string(out))
+	}
+
+	require.NoError(t, os.WriteFile(filepath.Join(sourceDir, "tagged.txt"), []byte("tag content"), 0644))
+	for _, args := range [][]string{
+		{"git", "add", "."},
+		{"git", "commit", "-m", "initial"},
+		{"git", "tag", "v1.0.0"},
+	} {
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Dir = sourceDir
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, "git tag setup failed: %s", string(out))
+	}
+
+	targetDir := filepath.Join(t.TempDir(), "cloned")
+	err := gitCloneWithSSHKey(context.Background(), sourceDir, "v1.0.0", targetDir, "fake-ssh-key")
+	require.NoError(t, err, "clone of a tag ref should succeed via the branch->tag fallback")
+	assert.True(t, fileExists(filepath.Join(targetDir, "tagged.txt")))
+}

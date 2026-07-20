@@ -2,11 +2,18 @@ package extension
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"strings"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	gitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	xssh "golang.org/x/crypto/ssh"
 
 	"github.com/anthropics/agentsmesh/backend/internal/domain/extension"
 )
@@ -22,46 +29,46 @@ func validateGitBranch(branch string) error {
 	return nil
 }
 
+func validateBranchIfSet(branch string) error {
+	if branch == "" {
+		return nil
+	}
+	if err := validateGitBranch(branch); err != nil {
+		return fmt.Errorf("invalid branch: %w", err)
+	}
+	return nil
+}
+
 func gitCloneWithAuth(ctx context.Context, repoURL, branch, targetDir, authType, credential string) error {
 	slog.InfoContext(ctx, "git clone with auth", "auth_type", authType, "branch", branch)
 	switch authType {
 	case extension.AuthTypeGitHubPAT:
-		authedURL, err := injectPATIntoURL(repoURL, credential)
-		if err != nil {
-			return fmt.Errorf("failed to build authenticated URL: %w", err)
-		}
-		return gitClone(ctx, authedURL, branch, targetDir)
-
+		return cloneHTTPS(ctx, repoURL, branch, targetDir, credential, "")
 	case extension.AuthTypeGitLabPAT:
-		authedURL, err := injectGitLabPATIntoURL(repoURL, credential)
-		if err != nil {
-			return fmt.Errorf("failed to build authenticated URL: %w", err)
-		}
-		return gitClone(ctx, authedURL, branch, targetDir)
-
+		return cloneHTTPS(ctx, repoURL, branch, targetDir, "oauth2", credential)
 	case extension.AuthTypeSSHKey:
 		return gitCloneWithSSHKey(ctx, repoURL, branch, targetDir, credential)
-
 	default:
 		return gitClone(ctx, repoURL, branch, targetDir)
 	}
 }
 
-func injectPATIntoURL(repoURL, token string) (string, error) {
+// httpsBasicAuth builds explicit BasicAuth for an https repo. Credentials go
+// through go-git's Auth, never embedded in the clone URL, so they cannot leak
+// into go-git errors, the persisted sync_error, or logs.
+func httpsBasicAuth(repoURL, username, password string) (*githttp.BasicAuth, error) {
 	if !strings.HasPrefix(repoURL, "https://") {
-		return "", fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
+		return nil, fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
 	}
-	rest := strings.TrimPrefix(repoURL, "https://")
-	return fmt.Sprintf("https://%s@%s", token, rest), nil
+	return &githttp.BasicAuth{Username: username, Password: password}, nil
 }
 
-// injectGitLabPATIntoURL uses the oauth2 username form GitLab requires.
-func injectGitLabPATIntoURL(repoURL, token string) (string, error) {
-	if !strings.HasPrefix(repoURL, "https://") {
-		return "", fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
+func cloneHTTPS(ctx context.Context, repoURL, branch, targetDir, username, password string) error {
+	auth, err := httpsBasicAuth(repoURL, username, password)
+	if err != nil {
+		return fmt.Errorf("failed to build authenticated URL: %w", err)
 	}
-	rest := strings.TrimPrefix(repoURL, "https://")
-	return fmt.Sprintf("https://oauth2:%s@%s", token, rest), nil
+	return cloneRef(ctx, targetDir, repoURL, branch, auth, true, "git clone failed")
 }
 
 func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey string) error {
@@ -70,100 +77,87 @@ func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey 
 	if !isGitSSH && !isLocalPath {
 		return fmt.Errorf("SSH key auth requires git@ URL, got: %s", repoURL)
 	}
-
-	tmpKeyFile, err := os.CreateTemp("", "skill-ssh-key-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp SSH key file: %w", err)
-	}
-	defer os.Remove(tmpKeyFile.Name())
-
-	if _, err := tmpKeyFile.WriteString(sshKey); err != nil {
-		tmpKeyFile.Close()
-		return fmt.Errorf("failed to write SSH key: %w", err)
-	}
-	tmpKeyFile.Close()
-
-	if err := os.Chmod(tmpKeyFile.Name(), 0600); err != nil {
-		return fmt.Errorf("failed to set SSH key permissions: %w", err)
+	if err := validateBranchIfSet(branch); err != nil {
+		return err
 	}
 
-	if branch != "" {
-		if err := validateGitBranch(branch); err != nil {
-			return fmt.Errorf("invalid branch: %w", err)
+	// Local-path clones (tests, file:// sources) never touch SSH, so an
+	// unparseable key must not fail them — only remote git@ uses auth.
+	var auth transport.AuthMethod
+	if isGitSSH {
+		keys, err := gitssh.NewPublicKeys("git", []byte(sshKey), "")
+		if err != nil {
+			return fmt.Errorf("git clone with SSH key failed: %w", err)
 		}
+		keys.HostKeyCallback = xssh.InsecureIgnoreHostKey()
+		auth = keys
 	}
 
-	args := []string{"clone", "--depth", "1"}
-	if branch != "" {
-		args = append(args, "--branch", branch)
+	return cloneRef(ctx, targetDir, repoURL, branch, auth, !isLocalPath, "git clone with SSH key failed")
+}
+
+func gitClone(ctx context.Context, rawURL, branch, targetDir string) error {
+	if !strings.HasPrefix(rawURL, "https://") {
+		return fmt.Errorf("only https:// URLs are allowed for git clone, got: %s", rawURL)
 	}
-	args = append(args, "--", repoURL, targetDir)
+	return cloneRef(ctx, targetDir, rawURL, branch, nil, true, "git clone failed")
+}
 
-	cmd := exec.CommandContext(ctx, "git", args...)
-	sshCommand := fmt.Sprintf("ssh -i %s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null", tmpKeyFile.Name())
-	cmd.Env = append(os.Environ(),
-		"GIT_TERMINAL_PROMPT=0",
-		"GIT_SSH_COMMAND="+sshCommand,
-	)
+// cloneRef clones url into targetDir. A non-empty branch is resolved as a branch
+// first and, if the remote has no such head, retried as a tag — matching
+// `git clone --branch`, which accepts either (go-git needs the exact ref form).
+func cloneRef(ctx context.Context, targetDir, url, branch string, auth transport.AuthMethod, shallow bool, errPrefix string) error {
+	if err := validateBranchIfSet(branch); err != nil {
+		return err
+	}
+	if branch == "" {
+		return runClone(ctx, targetDir, cloneOptions(url, "", auth, shallow), errPrefix)
+	}
+	err := runClone(ctx, targetDir, cloneOptions(url, plumbing.NewBranchReferenceName(branch), auth, shallow), errPrefix)
+	if errors.Is(err, git.NoMatchingRefSpecError{}) {
+		_ = os.RemoveAll(targetDir) // go-git leaves a partial repo on the failed head fetch
+		return runClone(ctx, targetDir, cloneOptions(url, plumbing.NewTagReferenceName(branch), auth, shallow), errPrefix)
+	}
+	return err
+}
 
-	output, err := cmd.CombinedOutput()
+// cloneOptions mirrors `git clone --depth 1 --single-branch`. Tags:NoTags is
+// explicit because go-git's Validate() otherwise defaults to AllTags, fetching
+// every tag on each sync — the old CLI fetched none.
+func cloneOptions(cloneURL string, ref plumbing.ReferenceName, auth transport.AuthMethod, shallow bool) *git.CloneOptions {
+	opts := &git.CloneOptions{URL: cloneURL, Auth: auth, Tags: git.NoTags}
+	if shallow {
+		opts.Depth = 1
+	}
+	if ref != "" {
+		opts.SingleBranch = true
+		opts.ReferenceName = ref
+	}
+	return opts
+}
+
+// runClone treats an empty remote as success (0 skills), mirroring `git clone`
+// exiting 0 on an empty repo. go-git checkout runs no Git-LFS smudge or
+// autocrlf/.gitattributes filters, so skill sources must be plain-text repos.
+func runClone(ctx context.Context, targetDir string, opts *git.CloneOptions, errPrefix string) error {
+	_, err := git.PlainCloneContext(ctx, targetDir, false, opts)
+	if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+		return nil
+	}
 	if err != nil {
-		sanitized := sanitizeGitOutput(string(output))
-		slog.ErrorContext(ctx, "git clone with SSH key failed", "error", err)
-		return fmt.Errorf("git clone with SSH key failed: %s: %w", sanitized, err)
+		return fmt.Errorf("%s: %w", errPrefix, err)
 	}
 	return nil
 }
 
-func gitClone(ctx context.Context, url, branch, targetDir string) error {
-	if !strings.HasPrefix(url, "https://") {
-		return fmt.Errorf("only https:// URLs are allowed for git clone, got: %s", url)
-	}
-
-	if branch != "" {
-		if err := validateGitBranch(branch); err != nil {
-			return fmt.Errorf("invalid branch: %w", err)
-		}
-	}
-
-	args := []string{"clone", "--depth", "1"}
-	if branch != "" {
-		args = append(args, "--branch", branch)
-	}
-	args = append(args, "--", url, targetDir)
-
-	cmd := exec.CommandContext(ctx, "git", args...)
-	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		sanitized := sanitizeGitOutput(string(output))
-		slog.ErrorContext(ctx, "git clone failed", "branch", branch, "error", err)
-		return fmt.Errorf("git clone failed: %s: %w", sanitized, err)
-	}
-	return nil
-}
-
-// sanitizeGitOutput redacts PAT tokens embedded in HTTPS URLs (https://<token>@host).
-func sanitizeGitOutput(output string) string {
-	lines := strings.Split(output, "\n")
-	for i, line := range lines {
-		if idx := strings.Index(line, "https://"); idx >= 0 {
-			if atIdx := strings.Index(line[idx:], "@"); atIdx > 8 {
-				lines[i] = line[:idx] + "https://[REDACTED]" + line[idx+atIdx:]
-			}
-		}
-	}
-	return strings.Join(lines, "\n")
-}
-
-func gitHead(ctx context.Context, repoDir string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
-	cmd.Dir = repoDir
-
-	output, err := cmd.Output()
+func gitHead(_ context.Context, repoDir string) (string, error) {
+	repo, err := git.PlainOpen(repoDir)
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(output)), nil
+	head, err := repo.Head()
+	if err != nil {
+		return "", err
+	}
+	return head.Hash().String(), nil
 }
