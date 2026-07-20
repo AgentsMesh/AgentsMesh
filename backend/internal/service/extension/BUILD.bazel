@@ -30,8 +30,14 @@ go_library(
         "//backend/internal/domain/extension",
         "//backend/internal/infra/storage",
         "//backend/pkg/crypto",
+        "@com_github_go_git_go_git_v5//:go-git",
+        "@com_github_go_git_go_git_v5//plumbing",
+        "@com_github_go_git_go_git_v5//plumbing/transport",
+        "@com_github_go_git_go_git_v5//plumbing/transport/http",
+        "@com_github_go_git_go_git_v5//plumbing/transport/ssh",
         "@com_github_google_uuid//:uuid",
         "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+        "@org_golang_x_crypto//ssh",
     ],
 )
 
