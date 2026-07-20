@@ -2,9 +2,10 @@ package extension
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
-	"net/url"
+	"os"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
@@ -42,78 +43,32 @@ func gitCloneWithAuth(ctx context.Context, repoURL, branch, targetDir, authType,
 	slog.InfoContext(ctx, "git clone with auth", "auth_type", authType, "branch", branch)
 	switch authType {
 	case extension.AuthTypeGitHubPAT:
-		authedURL, err := injectPATIntoURL(repoURL, credential)
-		if err != nil {
-			return fmt.Errorf("failed to build authenticated URL: %w", err)
-		}
-		return gitClone(ctx, authedURL, branch, targetDir)
-
+		return cloneHTTPS(ctx, repoURL, branch, targetDir, credential, "")
 	case extension.AuthTypeGitLabPAT:
-		authedURL, err := injectGitLabPATIntoURL(repoURL, credential)
-		if err != nil {
-			return fmt.Errorf("failed to build authenticated URL: %w", err)
-		}
-		return gitClone(ctx, authedURL, branch, targetDir)
-
+		return cloneHTTPS(ctx, repoURL, branch, targetDir, "oauth2", credential)
 	case extension.AuthTypeSSHKey:
 		return gitCloneWithSSHKey(ctx, repoURL, branch, targetDir, credential)
-
 	default:
 		return gitClone(ctx, repoURL, branch, targetDir)
 	}
 }
 
-func injectPATIntoURL(repoURL, token string) (string, error) {
+// httpsBasicAuth builds explicit BasicAuth for an https repo. Credentials go
+// through go-git's Auth, never embedded in the clone URL, so they cannot leak
+// into go-git errors, the persisted sync_error, or logs.
+func httpsBasicAuth(repoURL, username, password string) (*githttp.BasicAuth, error) {
 	if !strings.HasPrefix(repoURL, "https://") {
-		return "", fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
+		return nil, fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
 	}
-	rest := strings.TrimPrefix(repoURL, "https://")
-	return fmt.Sprintf("https://%s@%s", token, rest), nil
+	return &githttp.BasicAuth{Username: username, Password: password}, nil
 }
 
-// injectGitLabPATIntoURL uses the oauth2 username form GitLab requires.
-func injectGitLabPATIntoURL(repoURL, token string) (string, error) {
-	if !strings.HasPrefix(repoURL, "https://") {
-		return "", fmt.Errorf("PAT auth requires https:// URL, got: %s", repoURL)
-	}
-	rest := strings.TrimPrefix(repoURL, "https://")
-	return fmt.Sprintf("https://oauth2:%s@%s", token, rest), nil
-}
-
-// splitBasicAuth pulls userinfo out of an https URL into an explicit
-// go-git BasicAuth, returning a credential-free URL. Keeping creds off the
-// clone URL means they can never leak into go-git error messages.
-func splitBasicAuth(rawURL string) (string, transport.AuthMethod, error) {
-	u, err := url.Parse(rawURL)
+func cloneHTTPS(ctx context.Context, repoURL, branch, targetDir, username, password string) error {
+	auth, err := httpsBasicAuth(repoURL, username, password)
 	if err != nil {
-		return "", nil, fmt.Errorf("invalid repository URL: %w", err)
+		return fmt.Errorf("failed to build authenticated URL: %w", err)
 	}
-	if u.User == nil {
-		return rawURL, nil, nil
-	}
-	password, _ := u.User.Password()
-	auth := &githttp.BasicAuth{Username: u.User.Username(), Password: password}
-	u.User = nil
-	return u.String(), auth, nil
-}
-
-func cloneOptions(cloneURL, branch string, auth transport.AuthMethod, shallow bool) *git.CloneOptions {
-	opts := &git.CloneOptions{URL: cloneURL, Auth: auth}
-	if shallow {
-		opts.Depth = 1
-	}
-	if branch != "" {
-		opts.SingleBranch = true
-		opts.ReferenceName = plumbing.NewBranchReferenceName(branch)
-	}
-	return opts
-}
-
-func runClone(ctx context.Context, targetDir string, opts *git.CloneOptions, errPrefix string) error {
-	if _, err := git.PlainCloneContext(ctx, targetDir, false, opts); err != nil {
-		return fmt.Errorf("%s: %w", errPrefix, err)
-	}
-	return nil
+	return cloneRef(ctx, targetDir, repoURL, branch, auth, true, "git clone failed")
 }
 
 func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey string) error {
@@ -126,8 +81,8 @@ func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey 
 		return err
 	}
 
-	// Local-path clones (used in tests and file:// sources) never touch SSH,
-	// so an unparseable key must not fail them — only remote git@ uses auth.
+	// Local-path clones (tests, file:// sources) never touch SSH, so an
+	// unparseable key must not fail them — only remote git@ uses auth.
 	var auth transport.AuthMethod
 	if isGitSSH {
 		keys, err := gitssh.NewPublicKeys("git", []byte(sshKey), "")
@@ -138,21 +93,61 @@ func gitCloneWithSSHKey(ctx context.Context, repoURL, branch, targetDir, sshKey 
 		auth = keys
 	}
 
-	return runClone(ctx, targetDir, cloneOptions(repoURL, branch, auth, !isLocalPath), "git clone with SSH key failed")
+	return cloneRef(ctx, targetDir, repoURL, branch, auth, !isLocalPath, "git clone with SSH key failed")
 }
 
 func gitClone(ctx context.Context, rawURL, branch, targetDir string) error {
 	if !strings.HasPrefix(rawURL, "https://") {
 		return fmt.Errorf("only https:// URLs are allowed for git clone, got: %s", rawURL)
 	}
+	return cloneRef(ctx, targetDir, rawURL, branch, nil, true, "git clone failed")
+}
+
+// cloneRef clones url into targetDir. A non-empty branch is resolved as a branch
+// first and, if the remote has no such head, retried as a tag — matching
+// `git clone --branch`, which accepts either (go-git needs the exact ref form).
+func cloneRef(ctx context.Context, targetDir, url, branch string, auth transport.AuthMethod, shallow bool, errPrefix string) error {
 	if err := validateBranchIfSet(branch); err != nil {
 		return err
 	}
-	cloneURL, auth, err := splitBasicAuth(rawURL)
-	if err != nil {
-		return fmt.Errorf("git clone failed: %w", err)
+	if branch == "" {
+		return runClone(ctx, targetDir, cloneOptions(url, "", auth, shallow), errPrefix)
 	}
-	return runClone(ctx, targetDir, cloneOptions(cloneURL, branch, auth, true), "git clone failed")
+	err := runClone(ctx, targetDir, cloneOptions(url, plumbing.NewBranchReferenceName(branch), auth, shallow), errPrefix)
+	if errors.Is(err, git.NoMatchingRefSpecError{}) {
+		_ = os.RemoveAll(targetDir) // go-git leaves a partial repo on the failed head fetch
+		return runClone(ctx, targetDir, cloneOptions(url, plumbing.NewTagReferenceName(branch), auth, shallow), errPrefix)
+	}
+	return err
+}
+
+// cloneOptions mirrors `git clone --depth 1 --single-branch`. Tags:NoTags is
+// explicit because go-git's Validate() otherwise defaults to AllTags, fetching
+// every tag on each sync — the old CLI fetched none.
+func cloneOptions(cloneURL string, ref plumbing.ReferenceName, auth transport.AuthMethod, shallow bool) *git.CloneOptions {
+	opts := &git.CloneOptions{URL: cloneURL, Auth: auth, Tags: git.NoTags}
+	if shallow {
+		opts.Depth = 1
+	}
+	if ref != "" {
+		opts.SingleBranch = true
+		opts.ReferenceName = ref
+	}
+	return opts
+}
+
+// runClone treats an empty remote as success (0 skills), mirroring `git clone`
+// exiting 0 on an empty repo. go-git checkout runs no Git-LFS smudge or
+// autocrlf/.gitattributes filters, so skill sources must be plain-text repos.
+func runClone(ctx context.Context, targetDir string, opts *git.CloneOptions, errPrefix string) error {
+	_, err := git.PlainCloneContext(ctx, targetDir, false, opts)
+	if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("%s: %w", errPrefix, err)
+	}
+	return nil
 }
 
 func gitHead(_ context.Context, repoDir string) (string, error) {
