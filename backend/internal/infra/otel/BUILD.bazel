@@ -33,9 +33,13 @@ alias(
 go_test(
     name = "otel_test",
     srcs = [
+        "metrics_test.go",
         "provider_test.go",
         "trace_context_handler_test.go",
     ],
     embed = [":otel"],
-    deps = ["@io_opentelemetry_go_otel_sdk//trace"],
+    deps = [
+        "@io_opentelemetry_go_otel_metric//noop",
+        "@io_opentelemetry_go_otel_sdk//trace",
+    ],
 )

@@ -12,6 +12,10 @@ var (
 	GRPCMessagesRecv  metric.Int64Counter       = noop.Int64Counter{}
 	PodCreateDuration metric.Float64Histogram   = noop.Float64Histogram{}
 
+	HeartbeatProcessDuration metric.Float64Histogram = noop.Float64Histogram{}
+	PodDispatchDuration      metric.Float64Histogram = noop.Float64Histogram{}
+	GRPCMessageDuration      metric.Float64Histogram = noop.Float64Histogram{}
+
 	BlockstoreOpsApplied     metric.Int64Counter       = noop.Int64Counter{}
 	BlockstoreOpsDuration    metric.Float64Histogram   = noop.Float64Histogram{}
 	BlockstoreEmbedQueue     metric.Int64UpDownCounter = noop.Int64UpDownCounter{}
@@ -26,6 +30,16 @@ func InitMetrics() {
 	GRPCMessagesRecv, _ = m.Int64Counter("agentsmesh.backend.grpc.messages.received")
 	PodCreateDuration, _ = m.Float64Histogram("agentsmesh.backend.pod.create.duration",
 		metric.WithUnit("ms"))
+
+	HeartbeatProcessDuration, _ = m.Float64Histogram("agentsmesh.backend.heartbeat.process.duration",
+		metric.WithUnit("ms"),
+		metric.WithDescription("Time to process a runner heartbeat end-to-end"))
+	PodDispatchDuration, _ = m.Float64Histogram("agentsmesh.backend.pod.dispatch.duration",
+		metric.WithUnit("ms"),
+		metric.WithDescription("Time to dispatch create_pod command to runner via gRPC"))
+	GRPCMessageDuration, _ = m.Float64Histogram("agentsmesh.backend.grpc.message.duration",
+		metric.WithUnit("ms"),
+		metric.WithDescription("Time to process a single runner gRPC message by type"))
 
 	BlockstoreOpsApplied, _ = m.Int64Counter("agentsmesh.backend.blockstore.ops.applied")
 	BlockstoreOpsDuration, _ = m.Float64Histogram("agentsmesh.backend.blockstore.ops.duration",

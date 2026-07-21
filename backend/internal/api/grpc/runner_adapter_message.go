@@ -13,6 +13,12 @@ import (
 
 func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int64, conn *runner.GRPCConnection, msg *runnerv1.RunnerMessage) {
 	msgType := extractMessageType(msg)
+	msgStart := time.Now()
+	defer func() {
+		otelinit.GRPCMessageDuration.Record(ctx, float64(time.Since(msgStart).Milliseconds()),
+			metric.WithAttributes(attribute.String("message.type", msgType)))
+	}()
+
 	if !isHighFrequencyMessage(msgType) {
 		otelinit.GRPCMessagesRecv.Add(ctx, 1, metric.WithAttributes(attribute.String("message.type", msgType)))
 	}
