@@ -17,6 +17,7 @@ sync:github:
   script:
     - |
       set -euo pipefail
+      git config --global --add safe.directory "$CI_PROJECT_DIR"
       git fetch --no-tags --force \
         https://github.com/AgentsMesh/AgentsMesh.git \
         main:refs/remotes/github/main
