@@ -1,9 +1,45 @@
 stages:
+  - sync
   - build
   - deploy
 
 variables:
   USE_BAZEL_VERSION: "8.2.1"
+
+sync:github:
+  stage: sync
+  image:
+    name: "$BAZEL_BUILDER_IMAGE"
+    entrypoint: [""]
+  tags:
+    - docker
+    - x86
+  script:
+    - |
+      set -euo pipefail
+      git fetch --no-tags --force \
+        https://github.com/AgentsMesh/AgentsMesh.git \
+        main:refs/remotes/github/main
+
+      github_sha="$(git rev-parse refs/remotes/github/main)"
+      if [ "$github_sha" = "$CI_COMMIT_SHA" ]; then
+        echo "GitLab main already matches GitHub main: $github_sha"
+        exit 0
+      fi
+
+      git push \
+        --force-with-lease="refs/heads/main:$CI_COMMIT_SHA" \
+        "$CI_REPOSITORY_URL" \
+        "$github_sha:refs/heads/main"
+
+      curl --fail-with-body --silent --show-error \
+        --request POST \
+        --form "token=$CI_JOB_TOKEN" \
+        --form "ref=main" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/trigger/pipeline" \
+        >/dev/null
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
 
 build:images:
   stage: build
@@ -36,9 +72,11 @@ build:images:
     - |
       set -euo pipefail
       : "${CORP_REGISTRY:?CORP_REGISTRY is required}"
+      : "${BAZEL_REGISTRY_MIRROR:?BAZEL_REGISTRY_MIRROR is required}"
 
       downloader_config="$CI_PROJECT_DIR/.gitlab-downloader.cfg"
       printf '%s\n' \
+        "rewrite bcr.bazel.build/(.*) ${BAZEL_REGISTRY_MIRROR}/\$1" \
         'rewrite registry.npmjs.org/(.*) repo.huaweicloud.com/repository/npm/$1' \
         'rewrite static.crates.io/crates/([^/]+)/([^/]+)/download rsproxy.cn/api/v1/crates/$1/$2/download' \
         > "$downloader_config"
@@ -54,7 +92,7 @@ build:images:
         --workspace_status_command=build_defs/workspace_status.sh \
         "$TARGET" -- --repository="${CORP_REGISTRY}/${REPOSITORY_PATH}"
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CORP_REGISTRY != ""'
+    - if: '$CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CORP_REGISTRY != ""'
   retry:
     max: 1
     when:
@@ -83,7 +121,7 @@ deploy:internal:
       ssh -o BatchMode=yes -o ConnectTimeout=10 "$INTERNAL_DEPLOY_HOST" \
         "cd '$INTERNAL_DEPLOY_DIR' && git pull --ff-only origin main && ./deploy.sh internal --version '$version'"
   rules:
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $AUTO_DEPLOY_INTERNAL == "true"'
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $AUTO_DEPLOY_INTERNAL == "true"'
+    - if: '$CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: manual
       allow_failure: true
