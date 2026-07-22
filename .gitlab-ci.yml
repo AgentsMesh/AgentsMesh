@@ -1,0 +1,89 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  USE_BAZEL_VERSION: "8.2.1"
+
+build:images:
+  stage: build
+  image:
+    name: "$BAZEL_BUILDER_IMAGE"
+    entrypoint: [""]
+    docker:
+      user: "0"
+  tags:
+    - docker
+    - x86
+  parallel:
+    matrix:
+      - SERVICE: backend
+        TARGET: //backend/cmd/server:image_push_agentsmesh
+        REPOSITORY_PATH: agentsmesh/backend
+      - SERVICE: runner
+        TARGET: //runner/cmd/runner:image_push_agentsmesh
+        REPOSITORY_PATH: agentsmesh/runner
+      - SERVICE: relay
+        TARGET: //relay/cmd/relay:image_push_agentsmesh
+        REPOSITORY_PATH: agentsmesh/relay
+      - SERVICE: web
+        TARGET: //clients/web:image_push_agentsmesh
+        REPOSITORY_PATH: agentsmesh/web
+      - SERVICE: web-admin
+        TARGET: //clients/web-admin:image_push_agentsmesh
+        REPOSITORY_PATH: agentsmesh/web-admin
+  script:
+    - |
+      set -euo pipefail
+      : "${CORP_REGISTRY:?CORP_REGISTRY is required}"
+
+      downloader_config="$CI_PROJECT_DIR/.gitlab-downloader.cfg"
+      printf '%s\n' \
+        'rewrite registry.npmjs.org/(.*) repo.huaweicloud.com/repository/npm/$1' \
+        'rewrite static.crates.io/crates/([^/]+)/([^/]+)/download rsproxy.cn/api/v1/crates/$1/$2/download' \
+        > "$downloader_config"
+
+      short_sha="$(printf '%.7s' "$CI_COMMIT_SHA")"
+      export IMAGE_VERSION="sha-${short_sha}"
+      export IMAGE_MINOR="main"
+      bazel run \
+        --config=ci \
+        --stamp \
+        --action_env=ELECTRON_MIRROR \
+        --downloader_config="$downloader_config" \
+        --workspace_status_command=build_defs/workspace_status.sh \
+        "$TARGET" -- --repository="${CORP_REGISTRY}/${REPOSITORY_PATH}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CORP_REGISTRY != ""'
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+deploy:internal:
+  stage: deploy
+  needs:
+    - build:images
+  tags:
+    - deploy
+    - linux
+  resource_group: agentsmesh-internal
+  interruptible: false
+  environment:
+    name: internal
+    url: "$INTERNAL_ENVIRONMENT_URL"
+  script:
+    - |
+      set -euo pipefail
+      : "${INTERNAL_DEPLOY_HOST:?INTERNAL_DEPLOY_HOST is required}"
+      : "${INTERNAL_DEPLOY_DIR:?INTERNAL_DEPLOY_DIR is required}"
+
+      version="sha-$(printf '%.7s' "$CI_COMMIT_SHA")"
+      ssh -o BatchMode=yes -o ConnectTimeout=10 "$INTERNAL_DEPLOY_HOST" \
+        "cd '$INTERNAL_DEPLOY_DIR' && git pull --ff-only origin main && ./deploy.sh internal --version '$version'"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $AUTO_DEPLOY_INTERNAL == "true"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
