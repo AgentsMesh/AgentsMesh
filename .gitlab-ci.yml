@@ -81,6 +81,45 @@ build:images:
         'rewrite static.crates.io/crates/([^/]+)/([^/]+)/download rsproxy.cn/api/v1/crates/$1/$2/download' \
         > "$downloader_config"
 
+      case "$SERVICE" in
+        web|web-admin)
+          : "${ELECTRON_MIRROR:?ELECTRON_MIRROR is required for frontend images}"
+          electron_version="33.4.11"
+          electron_get_version="2.0.3"
+          electron_sha256="212d431c7c916292311c797cd91f84467c5abd6e6983cf24b162efff64cee8a9"
+
+          if ! grep -Fqx "electronVersion: ${electron_version}" clients/desktop/electron-builder.yml || \
+              ! grep -Fqx "  electron@${electron_version}:" pnpm-lock.yaml || \
+              ! grep -Fqx "  '@electron/get@${electron_get_version}':" pnpm-lock.yaml || \
+              ! grep -Fqx "      '@electron/get': ${electron_get_version}" pnpm-lock.yaml; then
+            echo "Electron cache pins no longer match the resolved dependencies; update this CI block."
+            exit 1
+          fi
+
+          electron_artifact="electron-v${electron_version}-linux-x64.zip"
+          # The hermetic lifecycle sees Electron's default URL, so the cache key must use it.
+          electron_release="https://github.com/electron/electron/releases/download/v${electron_version}"
+          electron_cache_key="$(printf '%s' "$electron_release" | sha256sum | awk '{print $1}')"
+          electron_cache_dir="/root/.cache/electron/${electron_cache_key}"
+          electron_cache_file="${electron_cache_dir}/${electron_artifact}"
+
+          mkdir -p "$electron_cache_dir"
+          if [ ! -f "$electron_cache_file" ] || \
+              ! printf '%s  %s\n' "$electron_sha256" "$electron_cache_file" | sha256sum --check --status; then
+            electron_tmp="$(mktemp "${electron_cache_file}.tmp.XXXXXX")"
+            trap 'rm -f "$electron_tmp"' EXIT
+            curl --fail --location --silent --show-error \
+              --connect-timeout 10 --max-time 300 \
+              --retry 3 --retry-delay 2 \
+              --output "$electron_tmp" \
+              "${ELECTRON_MIRROR%/}/v${electron_version}/${electron_artifact}"
+            printf '%s  %s\n' "$electron_sha256" "$electron_tmp" | sha256sum --check
+            mv "$electron_tmp" "$electron_cache_file"
+            trap - EXIT
+          fi
+          ;;
+      esac
+
       short_sha="$(printf '%.7s' "$CI_COMMIT_SHA")"
       export IMAGE_VERSION="sha-${short_sha}"
       export IMAGE_MINOR="main"
