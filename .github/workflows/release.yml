@@ -26,7 +26,7 @@ jobs:
       version: ${{ steps.compute.outputs.version }}
       minor: ${{ steps.compute.outputs.minor }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - id: compute
         run: |
           set -euo pipefail
@@ -50,7 +50,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: bazel-contrib/setup-bazel@0.9.1
@@ -257,7 +257,7 @@ jobs:
           # matrix entry rather than maintain a Bazel-managed fpm
           # toolchain just for installer parity.
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true

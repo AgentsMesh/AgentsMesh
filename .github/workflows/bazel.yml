@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -79,7 +79,7 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:pw@localhost:5432/fkgate?sslmode=disable
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Apply migrations
@@ -131,7 +131,7 @@ jobs:
     timeout-minutes: 45
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -158,7 +158,7 @@ jobs:
     timeout-minutes: 45
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -188,7 +188,7 @@ jobs:
       matrix:
         module: [backend, runner, relay]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -233,7 +233,7 @@ jobs:
     timeout-minutes: 25
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -267,7 +267,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -371,7 +371,7 @@ jobs:
     timeout-minutes: 20
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -397,7 +397,7 @@ jobs:
     timeout-minutes: 20
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -437,7 +437,7 @@ jobs:
           - service: web-admin
             target: //clients/web-admin:image
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -454,7 +454,7 @@ jobs:
     timeout-minutes: 35
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -528,7 +528,7 @@ jobs:
     timeout-minutes: 30
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Select Xcode
         # macos-26 ships Xcode 26 by default at /Applications/Xcode.app.
         # Pin via xcode-select so any later image revisions stay
@@ -632,7 +632,7 @@ jobs:
     env:
       AGENTSMESH_WORKTREE_NAME: head-shard${{ matrix.shard }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -810,7 +810,7 @@ jobs:
     timeout-minutes: 30
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -921,7 +921,7 @@ jobs:
     timeout-minutes: 60
     needs: smoke
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
