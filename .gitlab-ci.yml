@@ -33,7 +33,8 @@ sync:github:
         "$CI_REPOSITORY_URL" \
         "$github_sha:refs/heads/main"
 
-      curl --fail-with-body --silent --show-error \
+      # The pinned Bazel builder ships curl without --fail-with-body.
+      curl --fail --silent --show-error \
         --request POST \
         --form "token=$CI_JOB_TOKEN" \
         --form "ref=main" \
