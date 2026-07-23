@@ -13,7 +13,7 @@ http:
     # Backend API
     # =========================================================================
     api:
-      rule: "PathPrefix(`/api`) || PathPrefix(`/health`)"
+      rule: "PathPrefix(`/api`) || PathPrefix(`/health`) || PathPrefix(`/proto.`)"
       entryPoints:
         - web
       service: backend
