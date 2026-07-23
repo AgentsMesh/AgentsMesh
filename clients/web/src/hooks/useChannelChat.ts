@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, useRef } from "react";
-import { useCurrentUser, useAuthStore } from "@/stores/auth";
+import { useEffect, useCallback, useMemo, useState } from "react";
+import { useCurrentUser } from "@/stores/auth";
 import { useChannelStore, useChannelMessageStore, useCurrentChannel, useChannelMembers } from "@/stores/channel";
 import { EMPTY_CACHE, LOAD_MORE_MESSAGE_LIMIT, useChannelMessages } from "@/stores/channelMessageStore";
 import { useMeshStore, useTopology } from "@/stores/mesh";
 import { transformMessage } from "@/components/channel/transformMessage";
 import { useChannelEntryAnchor } from "@/components/channel/useChannelEntryAnchor";
+import { useChannelEntryMarkRead } from "./useChannelEntryMarkRead";
 import type { TransformedMessage } from "@/components/channel/types";
 import type { MessageSendPayload, MessageEditPayload } from "@/lib/viewModels/channelMessage";
 
@@ -25,6 +26,7 @@ interface UseChannelChatReturn {
   transformedMessages: TransformedMessage[];
   hasMore: boolean;
   firstUnreadId: number | null;
+  entryAnchorResolved: boolean;
   roleByUserId: Map<number, string>;
   currentUserId: number | undefined;
   handlePodsChanged: () => void;
@@ -56,6 +58,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   const editMessage = useChannelMessageStore((s) => s.editMessage);
   const deleteMessage = useChannelMessageStore((s) => s.deleteMessage);
   const markRead = useChannelMessageStore((s) => s.markRead);
+  const fetchUnreadCounts = useChannelMessageStore((s) => s.fetchUnreadCounts);
 
   const topology = useTopology();
   const fetchTopology = useMeshStore((s) => s.fetchTopology);
@@ -71,35 +74,16 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
   }, [channelId, fetchChannel, fetchMessages, setCurrentChannel]);
 
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
-  const prevLastMsgIdRef = useRef<number | null>(null);
-  const markReadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastMessageIdRef = useRef(lastMessageId);
-  lastMessageIdRef.current = lastMessageId;
-
-  useEffect(() => {
-    if (lastMessageId !== null && lastMessageId !== prevLastMsgIdRef.current) {
-      prevLastMsgIdRef.current = lastMessageId;
-      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
-      markReadTimerRef.current = setTimeout(() => {
-        markRead(channelId, lastMessageId);
-      }, 300);
-    }
-    return () => {
-      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
-    };
-  }, [lastMessageId, channelId, markRead]);
-
-  useEffect(() => {
-    return () => {
-      if (markReadTimerRef.current) {
-        clearTimeout(markReadTimerRef.current);
-        if (lastMessageIdRef.current !== null) {
-          markRead(channelId, lastMessageIdRef.current);
-        }
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelId]);
+  // Tagged with channelId: `attempted` only counts for the channel it was set
+  // on, so switching away derives false without a reset effect. (A→B→A re-entry
+  // reuses a stale attempted=true, but only matters if the cursor is unknown
+  // again on return, which mark-read on the prior visit makes vanishingly rare.)
+  const [unreadSummaryState, setUnreadSummaryState] = useState({
+    channelId: null as number | null,
+    attempted: false,
+  });
+  const unreadSummaryAttempted =
+    unreadSummaryState.channelId === channelId && unreadSummaryState.attempted;
 
   const channelInfo = topology?.channels.find((c: { id: number }) => c.id === channelId);
   const agentCount = currentChannel?.agent_count ?? channelInfo?.pod_keys.length ?? 0;
@@ -149,7 +133,26 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     [messages]
   );
 
-  const firstUnreadId = useChannelEntryAnchor(channelId, transformedMessages);
+  const entryAnchor = useChannelEntryAnchor(channelId, transformedMessages, unreadSummaryAttempted);
+  const firstUnreadId = entryAnchor.firstUnreadId;
+
+  useEffect(() => {
+    if (!entryAnchor.needsUnreadSummary || unreadSummaryAttempted) return;
+    let cancelled = false;
+    fetchUnreadCounts().finally(() => {
+      if (!cancelled) setUnreadSummaryState({ channelId, attempted: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [channelId, entryAnchor.needsUnreadSummary, fetchUnreadCounts, unreadSummaryAttempted]);
+
+  useChannelEntryMarkRead({
+    channelId,
+    lastMessageId,
+    entryAnchorResolved: entryAnchor.resolved,
+    markRead,
+  });
 
   const members = useChannelMembers(channelId);
   const roleByUserId = useMemo(
@@ -168,6 +171,7 @@ export function useChannelChat({ channelId }: UseChannelChatOptions): UseChannel
     transformedMessages,
     hasMore,
     firstUnreadId,
+    entryAnchorResolved: entryAnchor.resolved,
     roleByUserId,
     currentUserId,
     handlePodsChanged,

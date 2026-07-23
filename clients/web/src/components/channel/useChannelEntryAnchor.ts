@@ -1,39 +1,84 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getChannelState } from "@/lib/wasm-core";
 import type { TransformedMessage } from "./types";
 
-/**
- * Freeze the last-read cursor the first time a channel is opened — before the
- * 300ms markRead advances it — so the "new messages" boundary stays put while
- * the user reads. Returns the id of the first message after that cursor (the
- * divider + scroll anchor), or null when the channel is fully read.
- */
+export interface ChannelEntryAnchor {
+  firstUnreadId: number | null;
+  resolved: boolean;
+  needsUnreadSummary: boolean;
+}
+
+interface EntrySnapshot {
+  channelId: number | null;
+  lastReadId: number | null;
+  unknownResolved: boolean;
+}
+
+function readCursor(channelId: number): number | null {
+  const lastReadId = getChannelState().get_last_read_id(BigInt(channelId));
+  return lastReadId >= 0 ? lastReadId : null;
+}
+
+function makeSnapshot(channelId: number): EntrySnapshot {
+  const cursor = channelId ? readCursor(channelId) : null;
+  return {
+    channelId,
+    lastReadId: cursor,
+    unknownResolved: cursor != null || !channelId,
+  };
+}
+
 export function useChannelEntryAnchor(
   channelId: number,
   messages: TransformedMessage[],
-): number | null {
-  const snapRef = useRef<Map<number, number>>(new Map());
-  // Re-snapshot on each fresh (re-)entry — drop a stale snapshot for this
-  // channel so the divider reflects the CURRENT last-read cursor, not the one
-  // frozen on a prior visit. Stays frozen while we remain in the channel.
-  const enteredRef = useRef<number | null>(null);
-  if (channelId !== enteredRef.current) {
-    snapRef.current.delete(channelId);
-    enteredRef.current = channelId;
-  }
-  if (channelId && !snapRef.current.has(channelId)) {
-    snapRef.current.set(channelId, getChannelState().get_last_read_id(BigInt(channelId)));
-  }
-  const lastReadId = channelId ? snapRef.current.get(channelId) ?? -1 : -1;
+  unreadSummaryAttempted = false,
+): ChannelEntryAnchor {
+  const [snapshot, setSnapshot] = useState<EntrySnapshot>(() => makeSnapshot(channelId));
+
+  useEffect(() => {
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setSnapshot(makeSnapshot(channelId));
+    });
+    return () => { cancelled = true; };
+  }, [channelId]);
+
+  useEffect(() => {
+    if (!channelId || snapshot.channelId !== channelId || snapshot.lastReadId != null || snapshot.unknownResolved) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      const cursor = readCursor(channelId);
+      setSnapshot((current) => {
+        if (current.channelId !== channelId || current.lastReadId != null || current.unknownResolved) return current;
+        if (cursor != null) return { channelId, lastReadId: cursor, unknownResolved: true };
+        return unreadSummaryAttempted ? { ...current, unknownResolved: true } : current;
+      });
+    });
+    return () => { cancelled = true; };
+    // Retry re-runs when unreadSummaryAttempted flips after fetchUnreadCounts;
+    // that fetch writes the Rust cursor BEFORE resolving, so we read the fresh
+    // value here without subscribing to the global _unreadTick (which would
+    // re-run this on unread changes for unrelated channels).
+  }, [channelId, snapshot.channelId, snapshot.lastReadId, snapshot.unknownResolved, unreadSummaryAttempted]);
 
   return useMemo(() => {
-    // -1 = no known cursor (channel never reported by a summary fetch) → no
-    // divider. A genuine 0 cursor ("read nothing yet") is kept: every message id
-    // is > 0, so the divider correctly anchors at the first (all-unread) message.
-    if (lastReadId < 0) return null;
-    const first = messages.find((m) => m.id > lastReadId);
-    return first ? first.id : null;
-  }, [messages, lastReadId]);
+    if (!channelId) return { firstUnreadId: null, resolved: true, needsUnreadSummary: false };
+    if (snapshot.channelId !== channelId) return { firstUnreadId: null, resolved: false, needsUnreadSummary: false };
+    if (snapshot.lastReadId == null) {
+      return {
+        firstUnreadId: null,
+        resolved: snapshot.unknownResolved,
+        needsUnreadSummary: !snapshot.unknownResolved,
+      };
+    }
+    const first = messages.find((m) => m.id > snapshot.lastReadId!);
+    return {
+      firstUnreadId: first ? first.id : null,
+      resolved: true,
+      needsUnreadSummary: false,
+    };
+  }, [channelId, messages, snapshot]);
 }

@@ -108,6 +108,7 @@ export function MobileChannelChat({ channelId, onClose }: MobileChannelChatProps
             currentUserId={chat.currentUserId}
             channelId={channelId}
             firstUnreadId={chat.firstUnreadId}
+            entryAnchorResolved={chat.entryAnchorResolved}
             roleByUserId={chat.roleByUserId}
             onEditMessage={chat.handleEditMessage}
             onDeleteMessage={chat.handleDeleteMessage}

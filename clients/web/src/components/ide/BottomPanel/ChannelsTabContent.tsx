@@ -11,7 +11,6 @@ export function ChannelsTabContent({
   selectedChannelId,
   onChannelClick,
   onBackToList,
-  onPodsChanged,
   t,
 }: ChannelsTabContentProps) {
   if (selectedChannelId) {
@@ -19,7 +18,6 @@ export function ChannelsTabContent({
       <ChannelDetailView
         channelId={selectedChannelId}
         onBack={onBackToList}
-        onPodsChanged={onPodsChanged}
         t={t}
       />
     );

@@ -3,12 +3,11 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useIDEStore, type BottomPanelTab } from "@/stores/ide";
-import { useChannelStore } from "@/stores/channel";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, MessageSquare, Activity, Bot, GitPullRequest, Info } from "lucide-react";
 import { AutopilotPanelContent } from "@/components/autopilot";
-import { useCurrentOrg, useAuthStore } from "@/stores/auth";
+import { useCurrentOrg } from "@/stores/auth";
 import { useBottomPanelData } from "./useBottomPanelData";
 import { ChannelsTabContent, ActivityTabContent, DeliveryTabContent, InfoTabContent } from "./BottomPanel/index";
 
@@ -37,8 +36,11 @@ export function BottomPanel({ className }: { className?: string }) {
     podChannels, incomingBindings, outgoingBindings, getPodInfo,
   } = useBottomPanelData();
 
+  // Channel selection here is panel-local — the docked panel is an ephemeral
+  // peek surface. Deliberately NOT wired to the app-global selectedChannelId
+  // (that drives /channels + the sidebar); closing/collapsing the panel must
+  // not wipe those. useChannelChat inside the detail view already marks-read.
   const [selectedChannelId, setSelectedChannelId] = useState<number | null>(null);
-  const setCurrentChannel = useChannelStore((s) => s.setCurrentChannel);
   const resizeRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -56,8 +58,7 @@ export function BottomPanel({ className }: { className?: string }) {
   }, [isResizing, setBottomPanelHeight]);
 
   const handleChannelClick = useCallback((id: number) => setSelectedChannelId(id), []);
-  const handleBackToChannelList = useCallback(() => { setSelectedChannelId(null); setCurrentChannel(null); }, [setCurrentChannel]);
-  const handlePodsChanged = useCallback(() => fetchTopology(), [fetchTopology]);
+  const handleBackToChannelList = useCallback(() => setSelectedChannelId(null), []);
   const handleTabClick = useCallback((tabId: BottomPanelTab, shouldOpen = false) => {
     setBottomPanelTab(tabId);
     if (shouldOpen) setBottomPanelOpen(true);
@@ -105,7 +106,7 @@ export function BottomPanel({ className }: { className?: string }) {
         <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setBottomPanelOpen(false)}><X className="w-4 h-4" /></Button>
       </div>
       <div className="flex-1 overflow-auto p-2">
-        {bottomPanelTab === "channels" && <ChannelsTabContent selectedPodKey={selectedPodKey} podChannels={podChannels} selectedChannelId={selectedChannelId} onChannelClick={handleChannelClick} onBackToList={handleBackToChannelList} onPodsChanged={handlePodsChanged} t={t} />}
+        {bottomPanelTab === "channels" && <ChannelsTabContent selectedPodKey={selectedPodKey} podChannels={podChannels} selectedChannelId={selectedChannelId} onChannelClick={handleChannelClick} onBackToList={handleBackToChannelList} t={t} />}
         {bottomPanelTab === "activity" && <ActivityTabContent selectedPodKey={selectedPodKey} incomingBindings={incomingBindings} outgoingBindings={outgoingBindings} getPodInfo={getPodInfo} t={t} />}
         {bottomPanelTab === "autopilot" && <AutopilotPanelContent podKey={selectedPodKey} />}
         {bottomPanelTab === "delivery" && <DeliveryTabContent selectedPodKey={selectedPodKey} pod={currentPod} t={t} />}

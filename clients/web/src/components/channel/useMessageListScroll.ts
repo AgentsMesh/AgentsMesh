@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { prefersReducedMotion } from "@/lib/scroll-behavior";
+import { useMessageEntryPosition } from "./useMessageEntryPosition";
 import type { TransformedMessage } from "./types";
 
 interface UseMessageListScrollOptions {
@@ -10,11 +11,13 @@ interface UseMessageListScrollOptions {
   loadingMore?: boolean;
   channelId?: number;
   firstUnreadId?: number | null;
+  entryAnchorResolved?: boolean;
   currentUserId?: number;
 }
 
 interface UseMessageListScrollReturn {
   containerRef: React.RefObject<HTMLDivElement | null>;
+  contentRef: React.RefObject<HTMLDivElement | null>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
   isAtBottom: boolean;
   newMessageCount: number;
@@ -30,25 +33,38 @@ function mentionsMe(m: TransformedMessage, userId?: number): boolean {
   return userId != null && (m.mentions.users?.includes(userId) ?? false);
 }
 
+function isScrolledToBottom(el: HTMLDivElement | null): boolean {
+  if (!el) return true;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+}
+
 export function useMessageListScroll({
   messages,
   loading,
   loadingMore,
   channelId,
   firstUnreadId,
+  entryAnchorResolved = true,
   currentUserId,
 }: UseMessageListScrollOptions): UseMessageListScrollReturn {
   const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [mentionBelowId, setMentionBelowId] = useState<number | null>(null);
 
+  // The append-effect must decide follow-to-bottom from the position held BEFORE
+  // the new message committed. Appends fire no scroll event, so this ref (synced
+  // from the state that scroll + entry-anchor keep current) holds exactly that
+  // pre-append truth — a live DOM read there would measure the post-append gap
+  // and strand a tall message.
+  const isAtBottomRef = useRef(isAtBottom);
+  useEffect(() => { isAtBottomRef.current = isAtBottom; }, [isAtBottom]);
+
   const handleScroll = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    const atBottom = isScrolledToBottom(containerRef.current);
     setIsAtBottom(atBottom);
     if (atBottom) {
       setNewMessageCount(0);
@@ -60,15 +76,50 @@ export function useMessageListScroll({
   const wasLoadingMoreRef = useRef(false);
   const initialLoadDone = useRef(false);
 
-  // Channel switch happens without remount (the panel isn't keyed by id), so
-  // reset entry refs — otherwise the new channel inherits the previous
-  // channel's "already loaded" flag and never anchors or jumps to bottom.
-  // newMessageCount / isAtBottom self-correct on the first scroll event.
   useEffect(() => {
     initialLoadDone.current = false;
     wasLoadingMoreRef.current = false;
     prevStateRef.current = { length: 0 };
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      // Seed at-bottom ONLY when the cursor is resolved AND there is no unread.
+      // An unknown cursor must not seed `true`: a message streamed in during the
+      // unread-summary fetch would then auto-follow to the bottom, trip the entry
+      // hook's scroll listener (userInterrupted), and permanently defeat the
+      // divider once the cursor resolves. onEntryAnchor corrects this once an
+      // anchor actually lands.
+      setIsAtBottom(entryAnchorResolved && firstUnreadId == null);
+      setNewMessageCount(0);
+      setMentionBelowId(null);
+    });
+    return () => { cancelled = true; };
+    // firstUnreadId / entryAnchorResolved intentionally excluded: this seeds on
+    // channel switch only; a late resolve must not re-run and clobber a live
+    // isAtBottom.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelId]);
+
+  // When entry positioning lands an anchor, sync isAtBottom to where it actually
+  // landed so the FAB/pill and the append-follow decision agree with it — in
+  // particular a divider anchored at scrollTop 0 fires no scroll event to correct
+  // a stale seed, which would otherwise hide the FAB and let a stream yank down.
+  const onEntryAnchor = useCallback(() => {
+    setIsAtBottom(isScrolledToBottom(containerRef.current));
+  }, []);
+
+  useMessageEntryPosition({
+    channelId,
+    messages,
+    loading,
+    loadingMore,
+    firstUnreadId,
+    entryAnchorResolved,
+    containerRef,
+    contentRef,
+    bottomRef,
+    onAnchor: onEntryAnchor,
+  });
 
   useEffect(() => {
     if (loadingMore) wasLoadingMoreRef.current = true;
@@ -93,20 +144,13 @@ export function useMessageListScroll({
       }
     } else if (!initialLoadDone.current && messages.length > 0 && !loading) {
       initialLoadDone.current = true;
-      // On entry, position at the first unread (divider) when there is one;
-      // otherwise jump straight to the latest message. No early return — the
-      // prevStateRef sync below must run so the first post-entry message is
-      // counted (and scanned for an @me) instead of being swallowed.
-      const anchor = firstUnreadId != null
-        ? containerRef.current?.querySelector("[data-unread-anchor]")
-        : null;
-      if (anchor) {
-        anchor.scrollIntoView({ block: "start", behavior: "instant" as ScrollBehavior });
-      } else {
-        bottomRef.current?.scrollIntoView({ behavior: "instant" as ScrollBehavior });
-      }
     } else if (messages.length > prev.length && prev.length > 0) {
-      if (isAtBottom) {
+      // Follow the new message only if the user was at the bottom BEFORE it
+      // arrived (isAtBottomRef, kept current by scroll + entry-anchor). A live
+      // DOM read here would measure the post-append gap and wrongly strand a tall
+      // message; on an unread channel the divider anchor keeps this false so the
+      // message shows the pill instead of yanking down.
+      if (isAtBottomRef.current) {
         bottomRef.current?.scrollIntoView({
           behavior: prefersReducedMotion() ? "instant" : "smooth",
         });
@@ -118,7 +162,7 @@ export function useMessageListScroll({
     }
 
     prevStateRef.current = { length: messages.length, firstId };
-  }, [messages, loadingMore, loading, isAtBottom, firstUnreadId, currentUserId]);
+  }, [messages, loadingMore, loading, currentUserId]);
 
   const scrollToBottom = useCallback(() => {
     bottomRef.current?.scrollIntoView({
@@ -135,7 +179,7 @@ export function useMessageListScroll({
   }, []);
 
   return {
-    containerRef, bottomRef, isAtBottom, newMessageCount, mentionBelowId,
+    containerRef, contentRef, bottomRef, isAtBottom, newMessageCount, mentionBelowId,
     handleScroll, scrollToBottom, scrollToMessage,
   };
 }

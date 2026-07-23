@@ -22,6 +22,9 @@ interface MessageListProps {
   currentUserId?: number;
   channelId?: number;
   firstUnreadId?: number | null;
+  // Whether the unread cursor is resolved. Entry positioning waits for this so
+  // an unknown cursor doesn't scroll to the bottom and then jump to the divider.
+  entryAnchorResolved?: boolean;
   roleByUserId?: Map<number, string>;
   onEditMessage?: (messageId: number, payload: MessageEditPayload) => Promise<void>;
   onDeleteMessage?: (messageId: number) => Promise<void>;
@@ -29,15 +32,15 @@ interface MessageListProps {
 
 export function MessageList({
   messages, loading, loadingMore, hasMore, error,
-  onLoadMore, onRetry, currentUserId, channelId, firstUnreadId, roleByUserId,
+  onLoadMore, onRetry, currentUserId, channelId, firstUnreadId, entryAnchorResolved = true, roleByUserId,
   onEditMessage, onDeleteMessage,
 }: MessageListProps) {
   const t = useTranslations("channels.messages");
   const allPods = usePods();
   const {
-    containerRef, bottomRef, isAtBottom, newMessageCount, mentionBelowId,
+    containerRef, contentRef, bottomRef, isAtBottom, newMessageCount, mentionBelowId,
     handleScroll, scrollToBottom, scrollToMessage,
-  } = useMessageListScroll({ messages, loading, loadingMore, channelId, firstUnreadId, currentUserId });
+  } = useMessageListScroll({ messages, loading, loadingMore, channelId, firstUnreadId, entryAnchorResolved, currentUserId });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const onLoadMoreRef = useRef(onLoadMore);
@@ -91,57 +94,59 @@ export function MessageList({
         onScroll={handleScroll}
         data-testid="channel-message-list"
       >
-        {hasMore && <div ref={sentinelRef} className="h-1" />}
-        {loadingMore && (
-          <div className="flex justify-center py-3">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {dateGroups.map((dateGroup) => (
-          <div key={dateGroup.date}>
-            <div className="flex justify-center py-2">
-              <span className="text-[11px] text-muted-foreground">— {dateGroup.date} —</span>
+        <div ref={contentRef} className="flex min-h-full flex-col">
+          {hasMore && <div ref={sentinelRef} className="h-1" />}
+          {loadingMore && (
+            <div className="flex justify-center py-3">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
-            {dateGroup.messages.map((message) => (
-              <Fragment key={message.id}>
-                {firstUnreadId === message.id && <UnreadDivider />}
-                <MessageRow
-                  message={message}
-                  allPods={allPods}
-                  currentUserId={currentUserId}
-                  channelId={channelId}
-                  isFirstInGroup={groupFlags.get(message.id) ?? true}
-                  role={message.user ? roleByUserId?.get(message.user.id) : undefined}
-                  onEditMessage={onEditMessage}
-                  onDeleteMessage={onDeleteMessage}
-                />
-              </Fragment>
-            ))}
-          </div>
-        ))}
+          )}
 
-        {error && !loading && messages.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-            <MessageSquare className="mb-4 h-12 w-12 opacity-30" />
-            <p className="text-sm text-destructive">{error}</p>
-            {onRetry && (
-              <button className="mt-2 text-xs text-primary hover:underline" onClick={onRetry}>
-                {t("loadOlder")}
-              </button>
-            )}
-          </div>
-        )}
+          {dateGroups.map((dateGroup) => (
+            <div key={dateGroup.date}>
+              <div className="flex justify-center py-2">
+                <span className="text-[11px] text-muted-foreground">— {dateGroup.date} —</span>
+              </div>
+              {dateGroup.messages.map((message) => (
+                <Fragment key={message.id}>
+                  {firstUnreadId === message.id && <UnreadDivider />}
+                  <MessageRow
+                    message={message}
+                    allPods={allPods}
+                    currentUserId={currentUserId}
+                    channelId={channelId}
+                    isFirstInGroup={groupFlags.get(message.id) ?? true}
+                    role={message.user ? roleByUserId?.get(message.user.id) : undefined}
+                    onEditMessage={onEditMessage}
+                    onDeleteMessage={onDeleteMessage}
+                  />
+                </Fragment>
+              ))}
+            </div>
+          ))}
 
-        {messages.length === 0 && !loading && !error && (
-          <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-            <MessageSquare className="mb-4 h-12 w-12 opacity-30" />
-            <p className="text-sm">{t("noMessages")}</p>
-            <p className="mt-1 text-xs">{t("startConversation")}</p>
-          </div>
-        )}
+          {error && !loading && messages.length === 0 && (
+            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+              <MessageSquare className="mb-4 h-12 w-12 opacity-30" />
+              <p className="text-sm text-destructive">{error}</p>
+              {onRetry && (
+                <button className="mt-2 text-xs text-primary hover:underline" onClick={onRetry}>
+                  {t("loadOlder")}
+                </button>
+              )}
+            </div>
+          )}
 
-        <div ref={bottomRef} />
+          {messages.length === 0 && !loading && !error && (
+            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
+              <MessageSquare className="mb-4 h-12 w-12 opacity-30" />
+              <p className="text-sm">{t("noMessages")}</p>
+              <p className="mt-1 text-xs">{t("startConversation")}</p>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
       </div>
 
       {mentionBelowId != null && messages.some((m) => m.id === mentionBelowId) && (
