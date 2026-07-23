@@ -13,7 +13,6 @@ export interface ChannelsTabContentProps extends TabContentProps {
   selectedChannelId: number | null;
   onChannelClick: (channelId: number) => void;
   onBackToList: () => void;
-  onPodsChanged?: () => void;
 }
 
 export interface ActivityTabContentProps extends TabContentProps {

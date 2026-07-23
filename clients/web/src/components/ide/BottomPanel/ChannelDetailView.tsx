@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ChannelHeader } from "@/components/channel/ChannelHeader";
 import { ChannelDocument } from "@/components/channel/ChannelDocument";
@@ -12,25 +11,17 @@ import { useChannelChat } from "@/hooks/useChannelChat";
 interface ChannelDetailViewProps {
   channelId: number;
   onBack: () => void;
-  onPodsChanged?: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function ChannelDetailView({
   channelId,
   onBack,
-  onPodsChanged,
   t,
 }: ChannelDetailViewProps) {
   const chat = useChannelChat({ channelId });
-  const { handlePodsChanged: chatPodsChanged } = chat;
   const isMember = chat.currentChannel?.is_member ?? true;
   const visibility = chat.currentChannel?.visibility ?? "public";
-
-  const handlePodsChanged = useCallback(() => {
-    chatPodsChanged();
-    onPodsChanged?.();
-  }, [chatPodsChanged, onPodsChanged]);
 
   return (
     <div className="flex flex-col h-full">
@@ -76,6 +67,7 @@ export function ChannelDetailView({
               currentUserId={chat.currentUserId}
               channelId={channelId}
               firstUnreadId={chat.firstUnreadId}
+              entryAnchorResolved={chat.entryAnchorResolved}
               roleByUserId={chat.roleByUserId}
               onEditMessage={chat.handleEditMessage}
               onDeleteMessage={chat.handleDeleteMessage}
