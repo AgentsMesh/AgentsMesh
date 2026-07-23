@@ -58,6 +58,22 @@ func (s *AIProviderService) formatEnvVars(providerType string, credentials map[s
 		}
 	}
 
+	if providerType == agentpod.AIProviderTypeAtlasCloud {
+		if apiKey := credentials["api_key"]; apiKey != "" {
+			envVars["ATLAS_CLOUD_API_KEY"] = apiKey
+			envVars["OPENAI_API_KEY"] = apiKey
+		}
+
+		baseURL := credentials["base_url"]
+		if baseURL == "" {
+			baseURL = agentpod.AtlasCloudDefaultBaseURL
+		}
+		envVars["ATLASCLOUD_BASE_URL"] = baseURL
+		envVars["ATLASCLOUD_API_BASE"] = baseURL
+		envVars["ATLAS_CLOUD_API_BASE"] = baseURL
+		envVars["OPENAI_BASE_URL"] = baseURL
+	}
+
 	return envVars
 }
 
@@ -74,6 +90,10 @@ func (s *AIProviderService) ValidateCredentials(providerType string, credentials
 	case agentpod.AIProviderTypeGemini:
 		if credentials["api_key"] == "" {
 			return errors.New("gemini provider requires api_key")
+		}
+	case agentpod.AIProviderTypeAtlasCloud:
+		if credentials["api_key"] == "" {
+			return errors.New("atlascloud provider requires api_key")
 		}
 	}
 	return nil

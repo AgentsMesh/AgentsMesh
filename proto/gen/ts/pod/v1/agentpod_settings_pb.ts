@@ -74,7 +74,7 @@ export type AIProvider = Message<"proto.pod.v1.AIProvider"> & {
   id: bigint;
 
   /**
-   * claude | gemini | codex | openai
+   * claude | gemini | codex | openai | atlascloud
    *
    * @generated from field: string provider_type = 2;
    */
