@@ -45,6 +45,8 @@ jobs:
       - run: bazel run //:buildifier_check
       - name: Identifier contract lint
         run: bash tools/identifier-lint/lint.sh
+      - name: Self-hosted Traefik route contract
+        run: bash deploy/traefik_connect_routes_test.sh
       - name: Verify desktop-only crate isolation
         run: |
           set -euo pipefail
