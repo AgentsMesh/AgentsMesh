@@ -204,21 +204,18 @@ describe("MessageList entry scroll", () => {
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalledWith({ block: "start", behavior: "instant" });
   });
 
-  it("does not follow a message that streams in before the unread cursor resolves", async () => {
-    // Unknown cursor: entryAnchorResolved false, firstUnreadId not yet known.
+  it("follows streamed messages by default (at-bottom seed), then anchors the divider on cursor resolve", async () => {
+    // Entry seeds isAtBottom=true so a streamed message follows into view rather
+    // than silently showing only a pill — the v0.44.5 regression was seeding it
+    // false and latching it there via a fragile post-anchor scroll read.
     const { rerender } = renderList({ messages: [msg(10), msg(11), msg(12)], firstUnreadId: null, entryAnchorResolved: false });
-    // Flush the channel-switch seed microtask (setIsAtBottom(false) for an
-    // unknown cursor). In the real app this microtask always runs before the
-    // next macrotask — i.e. before any streamed message can arrive.
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await Promise.resolve(); }); // flush the channel-switch seed microtask
     vi.mocked(Element.prototype.scrollIntoView).mockClear();
 
-    // A message arrives during the fetchUnreadCounts window. It must NOT auto-
-    // follow to the bottom — that would trip userInterrupted and lose the divider.
     rerender(<MessageList messages={[msg(10), msg(11), msg(12), msg(13)]} loading={false} channelId={1} firstUnreadId={null} entryAnchorResolved={false} />);
-    expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
 
-    // Cursor resolves to a divider — entry now anchors straight to it.
+    // Once the cursor resolves to an unread divider, entry positioning anchors it.
     rerender(<MessageList messages={[msg(10), msg(11), msg(12), msg(13)]} loading={false} channelId={1} firstUnreadId={11} entryAnchorResolved />);
     const divider = screen.getByRole("separator");
     expect(divider.scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "instant" });
