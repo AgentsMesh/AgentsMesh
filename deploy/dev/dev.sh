@@ -26,8 +26,7 @@ LEMONSQUEEZY_SEED_FILE="$SCRIPT_DIR/seed/seed_lemonsqueezy.sql"
 E2E_ECHO_SEED_FILE="$SCRIPT_DIR/seed/e2e_echo.sql"
 
 # Source order: leaves (no deps) first, composites last.
-# log → worktree/doctor → config_gen/host_services/bootstrap → lifecycle
-# (lifecycle composes host_services + the rest).
+# log -> worktree/doctor -> config/bootstrap -> frontend/lifecycle.
 # shellcheck source=lib/log.sh
 source "$SCRIPT_DIR/lib/log.sh"
 # shellcheck source=lib/worktree.sh
@@ -40,6 +39,8 @@ source "$SCRIPT_DIR/lib/config_gen.sh"
 source "$SCRIPT_DIR/lib/host_services.sh"
 # shellcheck source=lib/bootstrap.sh
 source "$SCRIPT_DIR/lib/bootstrap.sh"
+# shellcheck source=lib/frontend_services.sh
+source "$SCRIPT_DIR/lib/frontend_services.sh"
 # shellcheck source=lib/lifecycle.sh
 source "$SCRIPT_DIR/lib/lifecycle.sh"
 

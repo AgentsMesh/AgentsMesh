@@ -46,6 +46,7 @@ internal_npm_package(
         "exports": {
             ".": "./src/index.ts",
             "./projections": "./src/projections/index.ts",
+            "./relay-ipc-contract": "./src/relay-ipc-contract.ts",
         },
     },
     main = "src/index.ts",
@@ -69,4 +70,31 @@ vitest_test(
         ["src/**/*.ts"],
         exclude = ["src/**/*.test.ts"],
     ),
+)
+
+# Renderer relay ownership and baseline routing are a focused coverage boundary;
+# older service facades keep their existing package-level test history.
+vitest_test(
+    name = "relay_coverage",
+    size = "small",
+    srcs = [
+        "src/electron-relay-manager.events.test.ts",
+        "src/electron-relay-manager.test.ts",
+    ],
+    config = "vitest.relay-coverage.config.ts",
+    data = [
+        "src/electron-relay-manager.fixture.test.ts",
+        "src/electron-relay-manager.ts",
+        "src/electron-relay-output-routes.ts",
+        "src/invoke.ts",
+        "src/relay-ipc-contract.ts",
+        "tsconfig.json",
+        "vitest.config.ts",
+        "//:node_modules",
+        "//:node_modules/@vitest/coverage-v8",
+    ],
+    extra_args = [
+        "--coverage.enabled",
+        "--coverage.reporter=text",
+    ],
 )

@@ -40,23 +40,19 @@ func TestFrameBuffer_WritePreservesIncrementalFrames(t *testing.T) {
 	}
 }
 
-func TestFrameBuffer_WriteDiscardsOldFramesOnlyWhenFull(t *testing.T) {
-	// Small buffer that can only hold one frame
+func TestFrameBuffer_WriteRejectsWholeStreamOnOverflow(t *testing.T) {
 	frame1 := buildSyncFrame("old frame content here")
 	frame2 := buildSyncFrame("new frame content here")
-
-	// Buffer just big enough for one frame
 	fb := NewFrameBuffer(len(frame1) + 10)
 
-	fb.Write(frame1)
-	fb.Write(frame2)
-
-	// Old frame should be discarded because buffer is full
-	if bytes.Contains(fb.Bytes(), []byte("old frame")) {
-		t.Error("Old frame should be discarded when buffer is full")
+	if !fb.Write(frame1) {
+		t.Fatal("first frame should fit")
 	}
-	if !bytes.Contains(fb.Bytes(), []byte("new frame")) {
-		t.Error("New frame should be kept")
+	if fb.Write(frame2) {
+		t.Fatal("overflow must be reported to the snapshot recovery owner")
+	}
+	if fb.Len() != 0 {
+		t.Fatalf("partial ANSI stream retained after overflow: %q", fb.Bytes())
 	}
 }
 
@@ -64,12 +60,12 @@ func TestFrameBuffer_EnforcesMaxSize(t *testing.T) {
 	maxSize := 100
 	fb := NewFrameBuffer(maxSize)
 
-	// Write more than max size
 	data := bytes.Repeat([]byte("x"), 200)
-	fb.Write(data)
-
-	if fb.Len() > maxSize {
-		t.Errorf("Buffer exceeded max size: %d > %d", fb.Len(), maxSize)
+	if fb.Write(data) {
+		t.Fatal("oversized chunk unexpectedly accepted")
+	}
+	if fb.Len() != 0 {
+		t.Fatalf("oversized chunk left %d bytes behind", fb.Len())
 	}
 }
 

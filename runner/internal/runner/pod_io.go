@@ -40,7 +40,8 @@ type PodIO interface {
 
 	// Teardown cleans up mode-specific infrastructure and returns any
 	// captured error message for inclusion in the termination event.
-	// Must be called BEFORE DisconnectRelay and Stop.
+	// The producer must be stopped or detached first; relay sinks stay connected
+	// until teardown has drained mode-specific output.
 	Teardown() string
 
 	// SetExitHandler registers a callback invoked when the process exits.
@@ -69,9 +70,6 @@ type TerminalAccess interface {
 
 	// GetScreenSnapshot returns the current visible screen content.
 	GetScreenSnapshot() string
-
-	// Redraw triggers a terminal redraw (e.g., after reconnection).
-	Redraw() error
 
 	// WriteOutput writes raw data to the output pipeline for relay forwarding.
 	WriteOutput(data []byte)

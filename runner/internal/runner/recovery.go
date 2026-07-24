@@ -44,7 +44,6 @@ func (r *Runner) recoverDaemonSessions() {
 					_ = r.podDaemonManager.CleanupSession(state.SandboxPath)
 					continue
 				}
-				r.podStore.Put(pod.PodKey, pod)
 				log.Info("perpetual daemon restarted",
 					"pod_key", pod.PodKey, "sandbox", pod.SandboxPath)
 				continue
@@ -56,10 +55,18 @@ func (r *Runner) recoverDaemonSessions() {
 			continue
 		}
 
-		r.podStore.Put(pod.PodKey, pod)
+		current, stillOwned := r.podStore.Get(pod.PodKey)
+		if !stillOwned || current != pod {
+			log.Info("session exited while recovery was committing", "pod_key", pod.PodKey)
+			continue
+		}
 		log.Info("session recovered",
 			"pod_key", pod.PodKey,
-			"pid", pod.IO.GetPID(),
+			"pid", func() int {
+				pid := 0
+				pod.WithActiveIO(func(io PodIO) { pid = io.GetPID() })
+				return pid
+			}(),
 			"sandbox", pod.SandboxPath)
 	}
 }
@@ -95,7 +102,9 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 	virtualTerm := vt.NewVirtualTerminal(state.Cols, state.Rows, state.VTHistoryLimit)
 	virtualTerm.SetOSCHandler(r.messageHandler.createOSCHandler(state.PodKey))
 
-	agg := aggregator.NewSmartAggregator(nil, aggregator.WithFullRedrawThrottling())
+	agg := aggregator.NewSmartAggregator(nil,
+		aggregator.WithFullRedrawThrottling(),
+	)
 
 	var ptyLogger *aggregator.PTYLogger
 	cfg := r.GetConfig()
@@ -128,37 +137,24 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 		TicketSlug:      state.TicketSlug,
 		StartedAt:       state.StartedAt,
 		Status:          PodStatusInitializing,
-		vtProvider:      func() *vt.VirtualTerminal { return virtualTerm },
 	}
 
-	comps := &PTYComponents{Terminal: term, VirtualTerminal: virtualTerm, Aggregator: agg, PTYLogger: ptyLogger}
-
-	// Wire up output handler (shared implementation with circuit breaker + inline recover)
-	term.SetOutputHandler(NewPTYOutputHandler(podKey, comps, pod.NotifyStateDetectorWithScreen))
-
-	// Create PodIO before Start so consumers can use it immediately
-	ptyIO := NewPTYPodIO(podKey, comps, PTYPodIODeps{
-		GetOrCreateDetector: pod.GetOrCreateStateDetector,
-		SubscribeState:      pod.SubscribeStateChange,
-		UnsubscribeState:    pod.UnsubscribeStateChange,
-		GetPTYError:         pod.GetPTYError,
-	})
-	pod.IO = ptyIO
-
-	// Wire PodRelay for mode-specific relay behavior
-	pod.Relay = NewPTYPodRelay(podKey, pod.IO, comps, r.localServer)
+	runtime := assemblePTYRuntime(
+		pod, term, virtualTerm, agg, ptyLogger, r.localServer,
+	)
+	pod.installRuntime(runtime)
 
 	// Set exit and error handlers via PodIO
-	pod.IO.SetExitHandler(r.messageHandler.createExitHandler(podKey))
-	pod.IO.SetIOErrorHandler(r.messageHandler.createPTYErrorHandler(podKey, pod))
+	runtime.IO.SetExitHandler(r.messageHandler.createExitHandler(podKey))
+	runtime.IO.SetIOErrorHandler(r.messageHandler.createPTYErrorHandler(podKey, pod))
+	r.podStore.Put(podKey, pod)
+	pod.lifecycleMu.Lock()
 
-	// Start Terminal I/O (readOutput + waitExit goroutines)
-	if err := pod.IO.Start(); err != nil {
-		if pod.IO != nil {
-			pod.IO.Teardown()
-		}
-		dpty.Close()
-		return nil, fmt.Errorf("start terminal: %w", err)
+	// Start Terminal I/O (readOutput + waitExit goroutines) and commit the
+	// recovered owner. The helper owns rollback and releases lifecycleMu only
+	// on failure; the success path keeps the lock through final registration.
+	if err := startRecoveredRuntime(r.podStore, pod, runtime, func() { _ = dpty.Close() }); err != nil {
+		return nil, err
 	}
 
 	pod.SetStatus(PodStatusRunning)
@@ -168,39 +164,33 @@ func (r *Runner) recoverSingleSession(state *poddaemon.PodDaemonState) (*Pod, er
 		mcpSrv.RegisterPod(podKey, r.conn.GetOrgSlug(), nil, nil, state.Agent)
 	}
 	if agentMon := r.GetAgentMonitor(); agentMon != nil {
-		agentMon.RegisterPod(podKey, pod.IO.GetPID())
+		agentMon.RegisterPod(podKey, runtime.IO.GetPID())
 	}
 
 	// Subscribe to VT state detection events, bridge to gRPC (shared with OnCreatePod)
 	pod.SubscribeAgentStatusBridge(r.conn.SendAgentStatus)
+	pod.lifecycleMu.Unlock()
 
 	return pod, nil
 }
 
-// restartDeadPerpetualDaemon re-creates a daemon session for a perpetual pod
-// whose daemon died. Uses the existing sandbox and state to spawn a new daemon.
-func (r *Runner) restartDeadPerpetualDaemon(state *poddaemon.PodDaemonState) (*Pod, error) {
-	_, updatedState, err := r.podDaemonManager.CreateSession(poddaemon.CreateOpts{
-		PodKey:         state.PodKey,
-		Agent:          state.Agent,
-		Command:        state.Command,
-		Args:           state.Args,
-		WorkDir:        state.WorkDir,
-		Env:            state.Env,
-		Cols:           state.Cols,
-		Rows:           state.Rows,
-		SandboxPath:    state.SandboxPath,
-		RepositoryURL:  state.RepositoryURL,
-		Branch:         state.Branch,
-		TicketSlug:     state.TicketSlug,
-		VTHistoryLimit: state.VTHistoryLimit,
-		Perpetual:      true,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create daemon session: %w", err)
+// startRecoveredRuntime starts a runtime while the caller holds pod.lifecycleMu.
+// On failure it rolls back store ownership, tears the runtime down, closes the
+// attached session, and releases lifecycleMu. On success ownership of the lock
+// remains with the caller so status and sidecar registration commit atomically.
+func startRecoveredRuntime(
+	store PodStore,
+	pod *Pod,
+	runtime PodRuntime,
+	closeAttached func(),
+) error {
+	if err := runtime.IO.Start(); err != nil {
+		store.DeleteIf(pod.PodKey, pod)
+		pod.lifecycleMu.Unlock()
+		runtime.IO.Stop()
+		runtime.IO.Teardown()
+		closeAttached()
+		return fmt.Errorf("start terminal: %w", err)
 	}
-
-	// recoverSingleSession will AttachSession (new TCP conn). The CreateSession
-	// connection is implicitly replaced by daemon's single-client model.
-	return r.recoverSingleSession(updatedState)
+	return nil
 }

@@ -1,0 +1,16 @@
+sh_binary(
+    name = "go_diff_coverage",
+    srcs = ["go_diff_coverage.sh"],
+    data = [
+        "go_diff_coverage_git.sh",
+        "go_diff_coverage_lcov.sh",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "go_diff_coverage_test",
+    size = "small",
+    srcs = ["go_diff_coverage_test.sh"],
+    data = [":go_diff_coverage"],
+)

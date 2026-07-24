@@ -58,8 +58,9 @@ func TestAlternativeScreenBuffer(t *testing.T) {
 	vt.Feed([]byte("\x1b[?1049h")) // Enter alt screen
 	vt.Feed([]byte("Alt Screen"))
 	display := vt.GetDisplay()
-	if display != "Alt Screen" {
-		t.Errorf("expected 'Alt Screen', got '%s'", display)
+	// xterm carries the active cursor into a newly activated alternate buffer.
+	if display != "           Alt Screen" {
+		t.Errorf("expected alternate output at the inherited cursor, got %q", display)
 	}
 
 	vt.Feed([]byte("\x1b[?1049l")) // Exit alt screen
@@ -190,6 +191,35 @@ func TestResize(t *testing.T) {
 	vt.Resize(40, 12)
 	if vt.Cols() != 40 || vt.Rows() != 12 {
 		t.Errorf("expected 40x12, got %dx%d", vt.Cols(), vt.Rows())
+	}
+}
+
+func TestResizeSameSizePreservesBothScreenBuffers(t *testing.T) {
+	vt := NewVirtualTerminal(20, 4, 1000)
+	vt.Feed([]byte("main content"))
+	mainBefore := vt.GetDisplay()
+	mainRow, mainCol := vt.CursorPosition()
+
+	vt.Feed([]byte("\x1b[?1049h"))
+	vt.Feed([]byte("alternate content"))
+	altBefore := vt.GetDisplay()
+	altRow, altCol := vt.CursorPosition()
+
+	vt.Resize(20, 4)
+
+	if got := vt.GetDisplay(); got != altBefore {
+		t.Fatalf("same-size resize cleared alternate screen: got %q, want %q", got, altBefore)
+	}
+	if row, col := vt.CursorPosition(); row != altRow || col != altCol {
+		t.Fatalf("same-size resize moved alternate cursor: got (%d,%d), want (%d,%d)", row, col, altRow, altCol)
+	}
+
+	vt.Feed([]byte("\x1b[?1049l"))
+	if got := vt.GetDisplay(); got != mainBefore {
+		t.Fatalf("same-size resize damaged saved main screen: got %q, want %q", got, mainBefore)
+	}
+	if row, col := vt.CursorPosition(); row != mainRow || col != mainCol {
+		t.Fatalf("same-size resize moved main cursor: got (%d,%d), want (%d,%d)", row, col, mainRow, mainCol)
 	}
 }
 

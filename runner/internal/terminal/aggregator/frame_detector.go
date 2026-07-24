@@ -1,12 +1,6 @@
 // Package terminal provides terminal management for PTY sessions.
 package aggregator
 
-import (
-	"bytes"
-
-	"github.com/anthropics/agentsmesh/runner/internal/logger"
-)
-
 // FrameDetector detects Synchronized Output frame boundaries.
 // It ensures complete frames are preserved during aggregation and flushing.
 //
@@ -31,10 +25,6 @@ type FrameBoundary struct {
 
 	// HasSyncFrames indicates if sync output sequences were found.
 	HasSyncFrames bool
-
-	// ClearScreenPos is the position of the last clear screen sequence.
-	// -1 if not found.
-	ClearScreenPos int
 }
 
 // AnalyzeFrameBoundaries finds complete and incomplete frame boundaries in data.
@@ -47,7 +37,6 @@ func (d *FrameDetector) AnalyzeFrameBoundaries(data []byte) FrameBoundary {
 	result := FrameBoundary{
 		CompleteEnd:     -1,
 		IncompleteStart: -1,
-		ClearScreenPos:  -1,
 	}
 
 	if len(data) == 0 {
@@ -59,11 +48,6 @@ func (d *FrameDetector) AnalyzeFrameBoundaries(data []byte) FrameBoundary {
 	endPositions := findAllPositions(data, syncOutputEndSeq)
 
 	result.HasSyncFrames = len(startPositions) > 0 || len(endPositions) > 0
-
-	// Also check for clear screen (fallback)
-	if idx := bytes.LastIndex(data, clearScreenSeq); idx >= 0 {
-		result.ClearScreenPos = idx
-	}
 
 	if len(startPositions) == 0 {
 		// No sync frames found
@@ -106,140 +90,6 @@ func (d *FrameDetector) AnalyzeFrameBoundaries(data []byte) FrameBoundary {
 	}
 
 	return result
-}
-
-// DiscardOldFrames intelligently removes old frames based on content analysis.
-//
-// Strategy:
-//   - If a frame contains "full redraw" sequences (ESC[2J clear screen, ESC[H cursor home),
-//     it's safe to discard everything before that frame.
-//   - If frames only contain incremental updates (relative cursor movement), we keep them
-//     because they depend on previous terminal state.
-//
-// This is critical for Claude Code which uses both patterns:
-// - Full redraws when the UI layout changes significantly
-// - Incremental updates for animations (spinner, typing effects)
-//
-// Returns the number of bytes discarded.
-func (d *FrameDetector) DiscardOldFrames(buffer *bytes.Buffer) int {
-	data := buffer.Bytes()
-	if len(data) == 0 {
-		return 0
-	}
-
-	boundary := d.AnalyzeFrameBoundaries(data)
-
-	// If we have sync frames, use content-aware discard logic
-	if boundary.HasSyncFrames {
-		return d.discardWithSyncFramesContentAware(buffer, data, boundary)
-	}
-
-	// Fallback: use clear screen sequence (outside sync frames)
-	if boundary.ClearScreenPos > 0 {
-		discardLen := boundary.ClearScreenPos
-		newData := make([]byte, len(data)-discardLen)
-		copy(newData, data[discardLen:])
-		buffer.Reset()
-		buffer.Write(newData)
-		logger.TerminalTrace().Trace("FrameDetector: discarded old frames (clear screen)",
-			"discarded_bytes", discardLen, "kept_bytes", len(newData))
-		return discardLen
-	}
-
-	return 0
-}
-
-// IsFullRedrawFrame checks if a frame contains sequences that indicate a full screen redraw.
-// Full redraw frames contain ESC[2J (clear screen) or ESC[H (cursor home at start).
-//
-// Detection criteria:
-//   - Contains ESC[2J (clear entire screen)
-//   - Starts with ESC[H or ESC[;H (cursor home at beginning of frame content)
-//   - Frame size > 1KB (large frames are typically full redraws)
-//
-// This is used by:
-//   - DiscardOldFrames: to determine which frames can be safely discarded
-//   - FullRedrawThrottler: to detect high-frequency redraw patterns
-func (d *FrameDetector) IsFullRedrawFrame(frameData []byte) bool {
-	// Check for clear screen
-	if bytes.Contains(frameData, eraseScreenSeq) {
-		return true
-	}
-
-	// Check for cursor home at the beginning of frame content
-	// (after the sync start sequence)
-	frameContent := frameData
-	if idx := bytes.Index(frameData, syncOutputStartSeq); idx >= 0 {
-		frameContent = frameData[idx+len(syncOutputStartSeq):]
-	}
-
-	// If frame starts with cursor home, it's a full redraw
-	if bytes.HasPrefix(frameContent, cursorHomeSeq) || bytes.HasPrefix(frameContent, cursorHomeSeq2) {
-		return true
-	}
-
-	// Large frames (>1KB) are likely full redraws
-	if len(frameData) > 1024 {
-		return true
-	}
-
-	return false
-}
-
-// discardWithSyncFramesContentAware discards old frames based on content analysis.
-func (d *FrameDetector) discardWithSyncFramesContentAware(buffer *bytes.Buffer, data []byte, boundary FrameBoundary) int {
-	// Find all frame boundaries
-	startPositions := findAllPositions(data, syncOutputStartSeq)
-	endPositions := findAllPositions(data, syncOutputEndSeq)
-
-	if len(startPositions) == 0 {
-		return 0
-	}
-
-	// Find the last "full redraw" frame - we can discard everything before it
-	lastFullRedrawStart := -1
-
-	for i := len(startPositions) - 1; i >= 0; i-- {
-		startPos := startPositions[i]
-
-		// Find the corresponding end
-		endPos := -1
-		for _, ep := range endPositions {
-			if ep > startPos {
-				endPos = ep
-				break
-			}
-		}
-
-		if endPos < 0 {
-			// This is an incomplete frame at the end - keep it
-			continue
-		}
-
-		// Check if this frame is a full redraw
-		frameData := data[startPos : endPos+len(syncOutputEndSeq)]
-		if d.IsFullRedrawFrame(frameData) {
-			lastFullRedrawStart = startPos
-			break
-		}
-	}
-
-	// If no full redraw frame found, keep everything
-	if lastFullRedrawStart <= 0 {
-		return 0
-	}
-
-	// Discard everything before the last full redraw frame
-	discardLen := lastFullRedrawStart
-	newData := make([]byte, len(data)-discardLen)
-	copy(newData, data[discardLen:])
-	buffer.Reset()
-	buffer.Write(newData)
-
-	logger.TerminalTrace().Trace("FrameDetector: discarded old frames (content-aware)",
-		"discarded_bytes", discardLen, "kept_bytes", len(newData))
-
-	return discardLen
 }
 
 // FindFlushBoundary determines how much data can be safely flushed.

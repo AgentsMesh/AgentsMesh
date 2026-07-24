@@ -20,7 +20,7 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 			func() { resumeCalled = true },
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Initial state
 	if agg.IsPaused() {
@@ -63,8 +63,8 @@ func TestSmartAggregator_Backpressure(t *testing.T) {
 	agg.Stop()
 }
 
-// TestSmartAggregator_SetRelayClient tests relay client configuration
-func TestSmartAggregator_SetRelayClient(t *testing.T) {
+// TestSmartAggregator_SetOutputDestination tests relay client configuration
+func TestSmartAggregator_SetOutputDestination(t *testing.T) {
 	agg := NewSmartAggregator(
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
@@ -76,7 +76,7 @@ func TestSmartAggregator_SetRelayClient(t *testing.T) {
 
 	// Set relay client (connected)
 	relay := newMockRelayWriter(true)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write with relay - should go to relay
 	agg.Write([]byte("relay"))
@@ -111,7 +111,7 @@ func TestSmartAggregator_TimerFlushPaused(t *testing.T) {
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write data then pause
 	agg.Write([]byte("data"))
@@ -144,7 +144,7 @@ func TestSmartAggregator_TimerFlushCriticalLoad(t *testing.T) {
 		WithSmartBaseDelay(20*time.Millisecond),
 		WithSmartMaxDelay(100*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write data under critical load
 	agg.Write([]byte("data"))
@@ -173,7 +173,7 @@ func TestSmartAggregator_FlushWithIncompleteFrame(t *testing.T) {
 		func() float64 { return 0.0 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write complete frame + incomplete frame
 	syncStart := "\x1b[?2026h"
@@ -224,7 +224,7 @@ func TestSmartAggregator_WriteAfterStop(t *testing.T) {
 	agg := NewSmartAggregator(
 		func() float64 { return 0.0 },
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	agg.Stop()
 	initialLen := len(relay.getData())

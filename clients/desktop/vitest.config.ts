@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    exclude: ["src/**/*.fixture.test.ts"],
     include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
     reporters: ["default", "junit"],
     outputFile: { junit: "./report.xml" },

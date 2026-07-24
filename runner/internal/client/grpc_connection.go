@@ -113,6 +113,9 @@ type GRPCConnection struct {
 	// podQueue serializes commands per pod to eliminate race conditions
 	// (e.g., create_autopilot arriving before create_pod finishes).
 	podQueue *PodCommandQueue
+	// podRelayIntents admits Subscribe/Unsubscribe synchronously from the read
+	// loop while CreatePod is queued or building.
+	podRelayIntents *podRelayIntentRegistry
 
 	// loopWg tracks the connectionLoop goroutine for clean shutdown.
 	loopWg sync.WaitGroup
@@ -144,6 +147,7 @@ func NewGRPCConnection(endpoint, nodeID, orgSlug, certFile, keyFile, caFile stri
 		terminalRateLimit:        50 * 1024, // Default: 50KB/s (conservative for shared bandwidth)
 		agentProbe:               NewAgentProbe(),
 		podQueue:                 NewPodCommandQueue(),
+		podRelayIntents:          newPodRelayIntentRegistry(),
 	}
 
 	for _, opt := range opts {

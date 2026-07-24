@@ -20,6 +20,7 @@ func newTestConnection() *GRPCConnection {
 		initResultCh:      make(chan *runnerv1.InitializeResult, 1),
 		heartbeatInterval: 30 * time.Second,
 		podQueue:          NewPodCommandQueue(),
+		podRelayIntents:   newPodRelayIntentRegistry(),
 	}
 }
 

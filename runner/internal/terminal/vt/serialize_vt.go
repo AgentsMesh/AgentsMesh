@@ -43,42 +43,6 @@ func (vt *VirtualTerminal) Serialize(opts SerializeOptions) string {
 	return handler.serializeWithHistory(startRow, endRow, historyLen, false)
 }
 
-// serializeNoLock is like Serialize but assumes the lock is already held.
-func (vt *VirtualTerminal) serializeNoLock(opts SerializeOptions) string {
-	if !vt.hasData {
-		return ""
-	}
-
-	historyLen := len(vt.historyStyled)
-	totalRows := historyLen + vt.rows
-
-	var startRow, endRow int
-	if opts.Range != nil {
-		startRow = opts.Range.Start
-		endRow = opts.Range.End
-		if startRow < 0 {
-			startRow = 0
-		}
-		if endRow >= totalRows {
-			endRow = totalRows - 1
-		}
-	} else {
-		if opts.ScrollbackLines > 0 && historyLen > opts.ScrollbackLines {
-			startRow = historyLen - opts.ScrollbackLines
-		} else {
-			startRow = 0
-		}
-		endRow = totalRows - 1
-	}
-
-	if startRow > endRow {
-		return ""
-	}
-
-	handler := newStringSerializeHandler(vt)
-	return handler.serializeWithHistory(startRow, endRow, historyLen, false)
-}
-
 // SerializeSimple returns a simple serialization without style information.
 func (vt *VirtualTerminal) SerializeSimple(scrollbackLines int) string {
 	vt.mu.RLock()

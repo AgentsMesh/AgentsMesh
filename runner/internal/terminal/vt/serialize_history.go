@@ -51,15 +51,9 @@ func (h *StringSerializeHandler) serializeWithHistory(startRow, endRow, historyL
 
 // rowEndWithWrap handles end of row processing with explicit wrap info
 func (h *StringSerializeHandler) rowEndWithWrap(row int, isLastRow bool, currentWrapped bool, hasNextRow bool) {
-	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
-	}
-
-	rowSeparator := ""
-
+	var nextLineWrapped bool
 	if !isLastRow && hasNextRow {
 		historyLen := len(h.vt.historyStyled)
-		var nextLineWrapped bool
 		if row+1 < historyLen {
 			nextLineWrapped = h.vt.historyIsWrapped[row+1]
 		} else {
@@ -68,7 +62,17 @@ func (h *StringSerializeHandler) rowEndWithWrap(row int, isLastRow bool, current
 				nextLineWrapped = h.vt.isWrapped[screenRow]
 			}
 		}
+	}
+	if nextLineWrapped {
+		h.materializeTrailingNullCellsForWrap()
+	}
+	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
+		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
+	}
 
+	rowSeparator := ""
+
+	if !isLastRow && hasNextRow {
 		if !nextLineWrapped {
 			rowSeparator = "\r\n"
 			h.lastCursorRow = row + 1

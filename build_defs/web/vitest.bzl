@@ -19,7 +19,8 @@ def vitest_test(
         size = "medium",
         timeout = None,
         tags = None,
-        chdir = None):
+        chdir = None,
+        extra_args = None):
     """Run `vitest run` against a set of sources as a Bazel test.
 
     Args:
@@ -33,6 +34,7 @@ def vitest_test(
         timeout: Optional timeout string.
         tags: Bazel tags forwarded verbatim.
         chdir: Working directory (defaults to package path).
+        extra_args: Optional Vitest CLI arguments, for example coverage flags.
     """
     kwargs = {}
     if timeout:
@@ -48,7 +50,7 @@ def vitest_test(
             config,
             "--reporter=default",
             "--no-color",
-        ],
+        ] + (extra_args or []),
         data = (data or []) + srcs + [config] + (deps or []) + [
             "//:node_modules/vitest",
         ],

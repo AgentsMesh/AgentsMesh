@@ -7,10 +7,12 @@ require (
 	github.com/NdoleStudio/lemonsqueezy-go v1.3.1
 	github.com/UserExistsError/conpty v0.1.4
 	github.com/alicebob/miniredis/v2 v2.37.0
+	github.com/clipperhouse/uax29/v2 v2.2.0
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/config v1.32.8
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0
+	github.com/bazelbuild/rules_go v0.59.0
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/creack/pty v1.1.24
 	github.com/creativeprojects/go-selfupdate v1.5.2
@@ -99,7 +101,6 @@ require (
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect

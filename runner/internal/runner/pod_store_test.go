@@ -167,6 +167,31 @@ func TestInMemoryPodStoreUpdate(t *testing.T) {
 	}
 }
 
+func TestInMemoryPodStoreReplaceIfPreservesNewerOwner(t *testing.T) {
+	store := NewInMemoryPodStore()
+	placeholder := &Pod{PodKey: "pod-1", Status: PodStatusInitializing}
+	built := &Pod{PodKey: "pod-1", Status: PodStatusInitializing}
+	newer := &Pod{PodKey: "pod-1", Status: PodStatusInitializing}
+	store.Put("pod-1", placeholder)
+
+	if !store.ReplaceIf("pod-1", placeholder, built) {
+		t.Fatal("expected placeholder replacement to succeed")
+	}
+	if got, _ := store.Get("pod-1"); got != built {
+		t.Fatal("built pod was not published")
+	}
+	store.Put("pod-1", newer)
+	if store.ReplaceIf("pod-1", built, placeholder) {
+		t.Fatal("stale build replaced a newer pod owner")
+	}
+	if got, _ := store.Get("pod-1"); got != newer {
+		t.Fatal("newer pod owner was not preserved")
+	}
+	if store.Count() != 1 {
+		t.Fatalf("replacement changed logical pod count: %d", store.Count())
+	}
+}
+
 // Benchmarks
 
 func BenchmarkInMemoryPodStoreGet(b *testing.B) {

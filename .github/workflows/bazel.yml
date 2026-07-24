@@ -49,6 +49,8 @@ jobs:
         run: bash tools/identifier-lint/lint.sh
       - name: Self-hosted Traefik route contract
         run: bash deploy/traefik_connect_routes_test.sh
+      - name: Dev frontend lifecycle contract
+        run: bash deploy/dev/frontend_services_test.sh
       - name: Verify desktop-only crate isolation
         run: |
           set -euo pipefail
@@ -134,6 +136,8 @@ jobs:
     needs: smoke
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: bazel-contrib/setup-bazel@0.9.1
         with:
           bazelisk-cache: true
@@ -153,6 +157,63 @@ jobs:
       # invoke them explicitly here. Failures here mean a real fork/exec
       # path regressed.
       - run: bazel test --flaky_test_attempts=2 //runner/internal/poddaemon:poddaemon_integration_test
+      - name: Go architecture changed-line coverage (>=95% per changed production file)
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          bazel test //tools/coverage:go_diff_coverage_test
+          bazel coverage \
+            --combined_report=lcov \
+            --instrument_test_targets \
+            '--instrumentation_filter=//(runner/internal/(terminal|client|relay|runner|agents/mockagent)|relay/internal/protocol|clients/web/scripts/runewidth-profile)' \
+            --cache_test_results=no \
+            //runner/internal/terminal/vt:vt_test \
+            //runner/internal/terminal:terminal_test \
+            //runner/internal/terminal/aggregator:aggregator_test \
+            //runner/internal/terminal/detector:detector_test \
+            //runner/internal/agents/mockagent:mockagent_test \
+            //runner/internal/client:client_test \
+            //runner/internal/relay:relay_test \
+            //runner/internal/runner:runner_test \
+            //relay/internal/protocol:protocol_test \
+            //clients/web/scripts/runewidth-profile:generated_profile_check
+
+          base_sha="$PR_BASE_SHA"
+          if [[ -z "$base_sha" ]]; then
+            base_sha="$PUSH_BASE_SHA"
+          fi
+          if [[ -z "$base_sha" || "$base_sha" =~ ^0+$ ]] || \
+              ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            base_sha=$(git rev-parse HEAD^)
+          fi
+
+          check_changed_coverage() {
+            local prefix="$1"
+            shift
+            tools/coverage/go_diff_coverage.sh \
+              --lcov bazel-out/_coverage/_coverage_report.dat \
+              --base "$base_sha" \
+              --include "$prefix" \
+              --threshold 95 \
+              "$@"
+          }
+
+          check_changed_coverage runner/internal/runner
+          check_changed_coverage runner/internal/client
+          check_changed_coverage runner/internal/relay
+          check_changed_coverage runner/internal/terminal --exact-directory
+          check_changed_coverage runner/internal/terminal/vt --exact-directory
+          check_changed_coverage runner/internal/terminal/aggregator --exact-directory
+          check_changed_coverage runner/internal/terminal/detector --exact-directory
+          # The no-op fallback is selected only on non-Unix targets and is
+          # therefore absent from Ubuntu's LCOV by construction. Keep the
+          # platform exclusion explicit; the Unix implementation remains
+          # subject to the same per-file >=95% gate as every other owner.
+          check_changed_coverage runner/internal/agents/mockagent \
+            --exclude-prefix runner/internal/agents/mockagent/pty_render_resize_other.go
+          check_changed_coverage relay/internal/protocol --exact-directory
+          check_changed_coverage clients/web/scripts/runewidth-profile --exact-directory
 
   rust:
     name: Rust Core (clients/core)
@@ -173,6 +234,20 @@ jobs:
       # tagged `manual + requires-darwin`, wasm_pkg needs wasm-bindgen —
       # both get filtered out here and own their own jobs.
       - run: bazel test --build_tests_only //clients/core/crates/...
+      - name: Relay production coverage (>=95% aggregate and per file)
+        run: |
+          bazel coverage \
+            --combined_report=lcov \
+            --instrument_test_targets \
+            --instrumentation_filter=//clients/core/crates/relay \
+            --cache_test_results=no \
+            //clients/core/crates/relay:relay_test
+          clients/core/crates/relay/check_lcov_coverage.sh \
+            bazel-out/_coverage/_coverage_report.dat \
+            95 \
+            95
+      - name: Node Bridge relay readiness ABI
+        run: bazel test //clients/desktop:relay_node_bridge_integration
 
   # ===========================================================================
   # Mixed Bazel / shell — these jobs use Bazel under the hood (lint /
@@ -383,15 +458,17 @@ jobs:
       # `bazel build :src` — the latter only transpiles (no_emit) and stays green
       # on type errors, so it never gated. The typecheck test is the real gate.
       - name: Lint + Type-check + Vitest (Bazel)
-        run: bazel test //clients/web:lint //clients/web:unit //clients/web:src_typecheck_test //clients/web-admin:src_typecheck_test
+        run: bazel test //clients/web:lint //clients/web:unit //clients/web:relay_coverage //clients/web:src_typecheck_test //clients/web-admin:src_typecheck_test
       # Desktop renderer reuses clients/web but routes Connect RPCs through the
       # electron-adapter proxy. Enforce its type-check + unit tests, and the
       # fail-closed routing guard that catches a desktop-only 404 (a wasm verb
       # diverging from its proto name with no override map) at CI instead of prod.
       - name: Desktop adapter (type-check + unit + connect-routing guard)
         run: |
-          bazel test //packages/electron-adapter:unit //packages/electron-adapter:electron_adapter_typecheck_test
+          bazel test //packages/electron-adapter:unit //packages/electron-adapter:relay_coverage //packages/electron-adapter:electron_adapter_typecheck_test
           python3 packages/electron-adapter/scripts/check-connect-routing.py
+      - name: Desktop relay coverage ratchet
+        run: bazel test //clients/desktop:relay_coverage
 
   web-admin:
     name: Web-Admin (lint + vitest)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/relay"
+	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
 )
 
 func (r *PTYPodRelay) inputHandler() func([]byte) {
@@ -43,56 +44,54 @@ func (r *PTYPodRelay) resizeHandler() func([]byte) {
 	}
 }
 
-func (r *PTYPodRelay) installLocalHandlers() {
+func (r *PTYPodRelay) installLocalHandlers(guard RelayInboundGuard) {
 	if r.localServer == nil {
 		return
 	}
-	r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeInput, r.inputHandler())
-	r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeResize, r.resizeHandler())
-	r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeSnapshotRequest, func(_ []byte) {
-		r.sendSnapshotToLocal()
+	input := r.inputHandler()
+	resize := r.resizeHandler()
+	r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeInput, func(payload []byte) {
+		guard.runLocal(func(RelayInboundContext) { input(payload) })
+	})
+	r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeResize, func(payload []byte) {
+		guard.runLocal(func(RelayInboundContext) { resize(payload) })
+	})
+	r.localServer.SetRequestHandler(r.podKey, relay.MsgTypeSnapshotRequest, func(_ []byte, reply relay.ReplyFunc) {
+		guard.runLocal(func(RelayInboundContext) { r.sendSnapshotToLocal(reply) })
 	})
 }
 
-func (r *PTYPodRelay) sendSnapshotToLocal() {
-	if r.localServer == nil {
-		return
-	}
-	data := r.materializeSnapshot()
-	if data == nil {
-		return
-	}
-	_ = r.localServer.Send(r.podKey, relay.MsgTypeSnapshot, data)
+type ptySnapshotEnvelope struct {
+	*vt.TerminalSnapshot
+	ResetAll bool `json:"reset_all"`
 }
 
-// materializeSnapshot returns a JSON-encoded VT snapshot, falling back to the
-// last cached payload when the live VT has nothing meaningful to render
-// (i.e. before any output is written).
+// materializeSnapshot returns the current JSON-encoded VT snapshot. Empty and
+// short snapshots are authoritative: they clear stale client content and carry
+// the current dimensions and screen-buffer mode.
 func (r *PTYPodRelay) materializeSnapshot() []byte {
+	return r.materializeSnapshotEnvelope(false)
+}
+
+func (r *PTYPodRelay) materializeSnapshotEnvelope(resetAll bool) []byte {
 	log := logger.Pod()
-	vt := r.components.VirtualTerminal
-	if vt == nil {
+	vterm := r.components.VirtualTerminal
+	if vterm == nil {
 		return nil
 	}
-	snapshot := vt.GetSnapshot()
+	snapshot := vterm.GetSnapshot()
 	if snapshot == nil {
 		return nil
 	}
 
-	hasContent := len(snapshot.SerializedContent) > 20
-
-	data, err := json.Marshal(snapshot)
+	data, err := json.Marshal(ptySnapshotEnvelope{
+		TerminalSnapshot: snapshot,
+		ResetAll:         resetAll,
+	})
 	if err != nil {
 		log.Error("Failed to marshal VT snapshot", "pod_key", r.podKey, "error", err)
 		return nil
 	}
 
-	r.lastSnapshotMu.Lock()
-	if hasContent {
-		r.lastSnapshot = data
-	} else if r.lastSnapshot != nil {
-		data = r.lastSnapshot
-	}
-	r.lastSnapshotMu.Unlock()
 	return data
 }

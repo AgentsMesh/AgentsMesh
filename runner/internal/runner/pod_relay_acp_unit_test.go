@@ -17,10 +17,10 @@ func TestACPPodRelay_SetupHandlers_Command(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 
 	var receivedPayload []byte
-	r := NewACPPodRelay("pod-1", nil, func(payload []byte) {
+	r := NewACPPodRelay("pod-1", nil, func(_ RelayInboundContext, payload []byte) {
 		receivedPayload = payload
 	}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Simulate browser sending ACP command.
 	cmdPayload := []byte(`{"type":"prompt","data":{"prompt":"hello"}}`)
@@ -49,7 +49,7 @@ func TestACPPodRelay_SetupHandlers_SnapshotRequest(t *testing.T) {
 	mc.SetConnected(true)
 
 	r := NewACPPodRelay("pod-1", nil, nil, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	mc.SimulateMessage(relay.MsgTypeSnapshotRequest, nil)
 
@@ -61,14 +61,14 @@ func TestACPPodRelay_SetupHandlers_SnapshotRequest(t *testing.T) {
 func TestACPPodRelay_OnRelayConnected_NoPanic(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 	r := NewACPPodRelay("pod-1", nil, nil, nil)
-	// No-op — should not panic.
+	// A missing ACP session has no baseline to send and must not panic.
 	r.OnRelayConnected(mc)
 }
 
 func TestACPPodRelay_OnRelayDisconnected_NoPanic(t *testing.T) {
 	r := NewACPPodRelay("pod-1", nil, nil, nil)
 	// No-op — should not panic.
-	r.OnRelayDisconnected()
+	r.OnRelayDisconnected(nil)
 }
 
 // --- sendAcpViaRelay ---

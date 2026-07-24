@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/anthropics/agentsmesh/runner/internal/envfilter"
@@ -17,68 +16,6 @@ const (
 	// after sending SIGTERM before escalating to SIGKILL.
 	gracefulStopTimeout = 5 * time.Second
 )
-
-// PTYFactory is a function that creates a PtyProcess.
-// When set in Options, it replaces the default platform-specific startPTY.
-// This enables dependency injection for Pod Daemon mode.
-type PTYFactory func(command string, args []string, workDir string, env []string, cols, rows int) (PtyProcess, error)
-
-// Options for creating a new terminal.
-type Options struct {
-	Command  string
-	Args     []string
-	WorkDir  string
-	Env      map[string]string
-	Rows     int
-	Cols     int
-	Label    string // Identifier for log correlation (e.g., pod_key)
-	OnOutput func([]byte)
-	OnExit   func(int)
-
-	// PTYFactory overrides the default platform PTY creation.
-	// Used by Pod Daemon to inject daemonPTY instead of direct PTY.
-	PTYFactory PTYFactory
-}
-
-// Terminal represents a PTY terminal session.
-type Terminal struct {
-	// Command configuration (set in New, consumed in Start)
-	command string
-	args    []string
-	workDir string
-	env     []string
-	label   string // Identifier for log correlation (e.g., pod_key)
-
-	// PTY process handle (set in Start)
-	proc ptyProcess
-
-	// Custom PTY factory (nil = use default platform startPTY)
-	ptyFactory PTYFactory
-
-	mu       sync.Mutex
-	closed   bool
-	onOutput func([]byte)
-	onExit   func(int)
-
-	// onPTYError is called when readOutput encounters a fatal I/O error
-	// (not timeout, not EOF, not normal close). This allows the runner to
-	// send an error message to the frontend before the process is killed.
-	onPTYError func(error)
-
-	// Terminal size (set at creation, used when starting PTY)
-	rows int
-	cols int
-
-	// Lifecycle synchronization
-	doneCh       chan struct{} // Closed when process exits (signaled by waitExit)
-	ptyCloseOnce sync.Once     // Ensures PTY file descriptor is closed exactly once
-
-	// Backpressure control (ttyd-style flow control)
-	// When paused, readOutput() blocks to prevent unbounded memory growth
-	readPaused  bool          // Whether PTY reading is paused
-	readPauseMu sync.RWMutex  // Protects readPaused flag
-	resumeCh    chan struct{} // Signal to resume reading
-}
 
 // New creates a new terminal instance.
 func New(opts Options) (*Terminal, error) {
@@ -128,28 +65,36 @@ func New(opts Options) (*Terminal, error) {
 		"rows", rows)
 
 	return &Terminal{
-		command:    opts.Command,
-		args:       opts.Args,
-		workDir:    opts.WorkDir,
-		env:        env,
-		label:      opts.Label,
-		ptyFactory: opts.PTYFactory,
-		onOutput:   opts.OnOutput,
-		onExit:     opts.OnExit,
-		rows:       rows,
-		cols:       cols,
-		doneCh:     make(chan struct{}),
-		resumeCh:   make(chan struct{}, 1), // Buffered to avoid blocking
+		command:        opts.Command,
+		args:           opts.Args,
+		workDir:        opts.WorkDir,
+		env:            env,
+		label:          opts.Label,
+		ptyFactory:     opts.PTYFactory,
+		onOutput:       opts.OnOutput,
+		onExit:         opts.OnExit,
+		rows:           rows,
+		cols:           cols,
+		doneCh:         make(chan struct{}),
+		readDoneCh:     make(chan struct{}),
+		readActiveCh:   make(chan struct{}),
+		readProgressCh: make(chan struct{}, 1),
+		resumeCh:       make(chan struct{}, 1), // Buffered to avoid blocking
 	}, nil
 }
 
 // Start starts the terminal process
 func (t *Terminal) Start() error {
+	t.lifecycleMu.Lock()
+	defer t.lifecycleMu.Unlock()
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.closed {
+	if t.closed || t.stopping {
 		return fmt.Errorf("terminal is closed")
+	}
+	if t.proc != nil || t.readStarted {
+		return fmt.Errorf("terminal is already started")
 	}
 
 	log := logger.Terminal()
@@ -167,6 +112,7 @@ func (t *Terminal) Start() error {
 		return fmt.Errorf("failed to start pty: %w", err)
 	}
 	t.proc = proc
+	t.readStarted = true
 
 	log.Debug("PTY started", "pid", t.proc.Pid(), "cols", t.cols, "rows", t.rows)
 
@@ -179,82 +125,4 @@ func (t *Terminal) Start() error {
 	log.Info("Terminal started", "pid", t.proc.Pid(), "cols", t.cols, "rows", t.rows)
 
 	return nil
-}
-
-// Stop stops the terminal with graceful shutdown.
-// It sends a graceful stop signal first and waits up to gracefulStopTimeout
-// for the process to exit. If the process doesn't exit in time, it is killed.
-// This ensures AI agents (Claude Code, Aider, etc.) have time to perform cleanup
-// operations like saving state and releasing git locks.
-func (t *Terminal) Stop() {
-	log := logger.Terminal()
-	log.Info("Terminal stopping")
-
-	t.mu.Lock()
-	if t.closed {
-		t.mu.Unlock()
-		return
-	}
-	t.closed = true
-	proc := t.proc
-	t.mu.Unlock()
-
-	if proc != nil {
-		// Graceful shutdown: signal → wait → kill
-		pid := proc.Pid()
-		log.Debug("Sending graceful stop signal", "pid", pid)
-		if err := proc.GracefulStop(); err != nil {
-			log.Debug("Graceful stop failed (process may have already exited)", "error", err)
-		}
-
-		// Wait for process to exit or timeout
-		select {
-		case <-t.doneCh:
-			log.Debug("Process exited gracefully")
-		case <-time.After(gracefulStopTimeout):
-			log.Warn("Process did not exit after graceful stop, killing",
-				"pid", pid, "timeout", gracefulStopTimeout)
-			if err := proc.Kill(); err != nil {
-				log.Debug("Kill failed (process may have already exited)", "error", err)
-			}
-			// Wait briefly for waitExit to detect the kill
-			select {
-			case <-t.doneCh:
-			case <-time.After(1 * time.Second):
-				log.Warn("Process did not exit after kill", "pid", pid)
-			}
-		}
-	}
-
-	// Close PTY (safe to call concurrently via sync.Once)
-	t.closePTY()
-
-	log.Info("Terminal stopped")
-}
-
-// closePTY closes the PTY exactly once.
-// Safe to call from multiple goroutines (Stop and waitExit).
-func (t *Terminal) closePTY() {
-	t.ptyCloseOnce.Do(func() {
-		if t.proc != nil {
-			t.proc.Close()
-		}
-	})
-}
-
-// Detach disconnects from the PTY without killing the underlying process.
-// Used during Runner shutdown to keep Pod Daemon processes alive for recovery.
-// For daemonPTY, Close() sends a Detach message (daemon stays running).
-// For direct PTY, this is equivalent to closePTY (process may receive SIGHUP).
-func (t *Terminal) Detach() {
-	t.mu.Lock()
-	if t.closed {
-		t.mu.Unlock()
-		return
-	}
-	t.closed = true
-	t.mu.Unlock()
-
-	logger.Terminal().Info("Terminal detaching (daemon stays alive)")
-	t.closePTY()
 }

@@ -3,17 +3,14 @@ package aggregator
 
 import "sync"
 
-// BackpressureController manages backpressure state for flow control.
-// When paused, producers should stop or slow down data production.
-//
-// Implements ttyd-style flow control where backpressure propagates
-// from consumer (network/gRPC) all the way to producer (PTY).
+// BackpressureController manages explicit pause/resume state. Destination lane
+// health does not drive it; callers must opt in and coordinate the producer.
 type BackpressureController struct {
 	mu       sync.RWMutex
 	paused   bool
 	resumeCh chan struct{}
 
-	// Callbacks for propagating backpressure to upstream (e.g., Terminal.PauseRead)
+	// Optional callbacks for an explicitly coordinated upstream producer.
 	onPause  func()
 	onResume func()
 }

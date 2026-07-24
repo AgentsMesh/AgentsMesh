@@ -1,36 +1,25 @@
-import { getPodConnection } from "@/lib/api/facade/podConnect";
-import { readCurrentOrg } from "@/stores/auth";
-import { getLocalRunnerService, getRelayManager } from "@agentsmesh/service-runtime";
-import { probeRelayOpen } from "./relayProbe";
-import type {
-  ConnectionStatus, ConnectionHandle, RelayStatusInfo, StatusListener,
-} from "./relayConnectionTypes";
+import { getRelayManager } from "@agentsmesh/service-runtime";
+import { selectRelayEndpoint } from "./relayEndpointSelection";
+import { RelayPodSession, type RelayResizeRequest } from "./relayPodSession";
+import { RelayPodRegistry } from "./relayPodRegistry";
+import { RelayConnectionEvents } from "./relayConnectionEvents";
+import { relayAbortError, waitForRelayWithAbort } from "./relaySubscriptionAbort";
+import type { ConnectionStatus, ConnectionHandle, StatusListener } from "./relayConnectionTypes";
 
 export type { ConnectionStatus, ConnectionHandle, RelayStatusInfo } from "./relayConnectionTypes";
 
 type OnMessage = (data: Uint8Array | string) => void;
 type AcpListener = (msgType: number, payload: unknown) => void;
-type StatusInfoRaw = { status: string; runnerDisconnected: boolean };
 
-const NONE: RelayStatusInfo = { status: "none", runnerDisconnected: false };
-
-// Thin adapter over the Rust relay pool (via getRelayManager(): WasmRelayManager
-// on web, ElectronRelayManager → main-process pool on desktop). All connection
-// management — reconnect/backoff, input dedup, resize debounce, snapshot replay,
-// codec — lives in the Rust pool now. This layer keeps two web-only concerns:
-//   1. endpoint selection (local-relay-first routing via getPodConnection +
-//      isSameHostRunner + probeRelayOpen), which is platform-specific routing;
-//   2. the legacy "none" status baseline + per-pod listener fan-out — the
-//      managers expose no off_* method, so we register one upstream listener per
-//      pod and fan out here, mirroring the previous pool's public contract.
+// Thin web/Electron adapter over the Rust relay pool. It owns endpoint selection,
+// the legacy "none" status fan-out, and pre-baseline resize retention; transport,
+// reconnect, codec, snapshot replay, dedup, and debounce remain in Rust.
 class RelayConnectionPool {
-  private statusListeners = new Map<string, Set<StatusListener>>();
-  private acpListeners = new Map<string, Set<AcpListener>>();
-  private statusCache = new Map<string, RelayStatusInfo>();
-  private connectedPods = new Set<string>();
-  private statusUpstream = new Set<string>();
-  private acpUpstream = new Set<string>();
-  private disconnectHookWired = false;
+  private readonly pods = new RelayPodRegistry();
+  private readonly events = new RelayConnectionEvents(
+    this.pods,
+    (podKey, session) => this.flushPendingResize(podKey, session),
+  );
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -42,25 +31,68 @@ class RelayConnectionPool {
     return getRelayManager();
   }
 
-  async subscribe(podKey: string, subscriptionId: string, onMessage: OnMessage): Promise<ConnectionHandle> {
-    this.ensureStatusUpstream(podKey);
-    const { url, token } = await this.selectEndpoint(podKey);
-    this.connectedPods.add(podKey);
-    await this.mgr().subscribe(podKey, subscriptionId, url, token, onMessage);
-    return {
-      send: (data) => this.send(podKey, data),
-      unsubscribe: () => this.unsubscribe(podKey, subscriptionId),
-    };
-  }
-
-  private async selectEndpoint(podKey: string): Promise<{ url: string; token: string }> {
-    const info = await getPodConnection(readCurrentOrg()?.slug ?? "", podKey);
-    if (info.local_relay_url && info.local_token && (await isSameHostRunner(info.local_relay_node_id))) {
-      if (await probeRelayOpen(info.local_relay_url, info.local_token, 1000)) {
-        return { url: info.local_relay_url, token: info.local_token };
+  async subscribe(
+    podKey: string,
+    subscriptionId: string,
+    onMessage: OnMessage,
+    signal?: AbortSignal,
+  ): Promise<ConnectionHandle> {
+    this.events.ensureStatusUpstream(podKey);
+    const session = this.pods.getOrCreate(podKey);
+    const attempt = session.beginSubscription(subscriptionId);
+    let managerStarted = false;
+    const cancel = () => {
+      if (!session.removeSubscription(subscriptionId, attempt)) return;
+      if (managerStarted) {
+        const unsubscribe = this.mgr().unsubscribe(podKey, subscriptionId);
+        // Enqueue removal in the manager before a ready sibling can release a
+        // queued resize. The Rust actor is the final baseline gate, while this
+        // preserves the same ordering at the adapter boundary.
+        this.flushPendingResize(podKey, session);
+        void unsubscribe;
+      } else {
+        this.flushPendingResize(podKey, session);
       }
+    };
+    signal?.addEventListener("abort", cancel, { once: true });
+    try {
+      if (signal?.aborted) {
+        cancel();
+        throw relayAbortError();
+      }
+      const endpoint = selectRelayEndpoint(podKey);
+      const { url, token } = signal
+        ? await waitForRelayWithAbort(endpoint, signal)
+        : await endpoint;
+      if (signal?.aborted) throw relayAbortError();
+      managerStarted = session.markManagerStarted(attempt);
+      if (!managerStarted) {
+        throw new DOMException("Relay subscription cancelled", "AbortError");
+      }
+      // Both WASM and Electron resolve subscribe only after this subscriber's
+      // baseline has been delivered. Resizes before then would mutate the
+      // Runner VT before the recovery snapshot is materialized.
+      await this.mgr().subscribe(podKey, subscriptionId, url, token, onMessage);
+      if (signal?.aborted) {
+        cancel();
+        throw relayAbortError();
+      }
+      if (!session.markSubscriptionReady(attempt)) {
+        throw new DOMException("Relay subscription superseded", "AbortError");
+      }
+      this.flushPendingResize(podKey, session);
+      return {
+        send: (data) => this.send(podKey, data),
+        unsubscribe: cancel,
+      };
+    } catch (error) {
+      if (session.removeSubscription(subscriptionId, attempt)) {
+        this.flushPendingResize(podKey, session);
+      }
+      throw error;
+    } finally {
+      signal?.removeEventListener("abort", cancel);
     }
-    return { url: info.relay_url, token: info.token };
   }
 
   send(podKey: string, data: string): void {
@@ -68,48 +100,37 @@ class RelayConnectionPool {
   }
 
   sendResize(podKey: string, cols: number, rows: number): void {
-    if (cols > 0 && rows > 0) void this.mgr().send_resize(podKey, cols, rows);
+    this.sendOrQueueResize(podKey, cols, rows, false);
   }
 
   forceResize(podKey: string, cols: number, rows: number): void {
-    if (cols > 0 && rows > 0) void this.mgr().force_resize(podKey, cols, rows);
+    this.sendOrQueueResize(podKey, cols, rows, true);
   }
 
   unsubscribe(podKey: string, subscriptionId: string): void {
-    void this.mgr().unsubscribe(podKey, subscriptionId);
+    const session = this.pods.get(podKey);
+    const removed = session?.removeSubscription(subscriptionId) === true;
+    const unsubscribe = this.mgr().unsubscribe(podKey, subscriptionId);
+    if (removed) this.flushPendingResize(podKey, session);
+    void unsubscribe;
   }
 
   disconnect(podKey: string): void {
-    this.connectedPods.delete(podKey);
+    this.pods.clear(podKey);
     void this.mgr().disconnect(podKey);
   }
 
   disconnectAll(): void {
-    this.connectedPods.clear();
+    this.pods.clearAll();
     void this.mgr().disconnect_all();
   }
 
   onStatusChange(podKey: string, listener: StatusListener): () => void {
-    let set = this.statusListeners.get(podKey);
-    if (!set) { set = new Set(); this.statusListeners.set(podKey, set); }
-    set.add(listener);
-    this.ensureStatusUpstream(podKey);
-    listener(this.statusCache.get(podKey) ?? NONE);
-    return () => {
-      set!.delete(listener);
-      if (set!.size === 0) this.statusListeners.delete(podKey);
-    };
+    return this.events.onStatusChange(podKey, listener);
   }
 
   onAcpMessage(podKey: string, listener: AcpListener): () => void {
-    let set = this.acpListeners.get(podKey);
-    if (!set) { set = new Set(); this.acpListeners.set(podKey, set); }
-    set.add(listener);
-    this.ensureAcpUpstream(podKey);
-    return () => {
-      set!.delete(listener);
-      if (set!.size === 0) this.acpListeners.delete(podKey);
-    };
+    return this.events.onAcpMessage(podKey, listener);
   }
 
   sendAcpCommand(podKey: string, command: Record<string, unknown>): void {
@@ -117,15 +138,15 @@ class RelayConnectionPool {
   }
 
   getStatus(podKey: string): ConnectionStatus | "none" {
-    return this.statusCache.get(podKey)?.status ?? "none";
+    return this.events.getStatus(podKey);
   }
 
   isConnected(podKey: string): boolean {
-    return this.statusCache.get(podKey)?.status === "connected";
+    return this.events.isConnected(podKey);
   }
 
   isRunnerDisconnected(podKey: string): boolean {
-    return this.statusCache.get(podKey)?.runnerDisconnected ?? false;
+    return this.events.isRunnerDisconnected(podKey);
   }
 
   getPodSize(): { rows: number; cols: number } | undefined {
@@ -133,46 +154,28 @@ class RelayConnectionPool {
     return undefined;
   }
 
-  // The Rust pool clears a pod's status/ACP listeners on full teardown
-  // (disconnect_inner) and fires this once. Drop our register-once guard so the
-  // next subscribe re-registers the upstream listeners; local listeners persist
-  // (the terminal component stays mounted across a transient drop).
-  private ensureDisconnectHook(): void {
-    if (this.disconnectHookWired) return;
-    this.disconnectHookWired = true;
-    void this.mgr().on_pod_disconnected((podKey: string) => {
-      this.statusUpstream.delete(podKey);
-      this.acpUpstream.delete(podKey);
-      this.statusCache.delete(podKey);
-    });
+  private sendOrQueueResize(
+    podKey: string,
+    cols: number,
+    rows: number,
+    force: boolean,
+  ): void {
+    if (cols <= 0 || rows <= 0) return;
+    const resize = this.pods.get(podKey)?.scheduleResize({ cols, rows, force });
+    if (resize) this.dispatchResize(podKey, resize);
   }
 
-  private ensureStatusUpstream(podKey: string): void {
-    this.ensureDisconnectHook();
-    if (this.statusUpstream.has(podKey)) return;
-    this.statusUpstream.add(podKey);
-    void this.mgr().on_status_change(podKey, (raw: StatusInfoRaw) => {
-      // The pool reports "disconnected" for a pod that has never connected;
-      // preserve the legacy "none" baseline so the terminal stays "connecting"
-      // (yellow) instead of flashing "disconnected" (red) before first connect.
-      const info: RelayStatusInfo =
-        raw.status === "disconnected" && !this.connectedPods.has(podKey)
-          ? { status: "none", runnerDisconnected: raw.runnerDisconnected }
-          : { status: raw.status as ConnectionStatus, runnerDisconnected: raw.runnerDisconnected };
-      this.statusCache.set(podKey, info);
-      const set = this.statusListeners.get(podKey);
-      if (set) for (const l of set) l(info);
-    });
+  private flushPendingResize(podKey: string, session: RelayPodSession): void {
+    const resize = session.takeFlushableResize();
+    if (resize) this.dispatchResize(podKey, resize);
   }
 
-  private ensureAcpUpstream(podKey: string): void {
-    this.ensureDisconnectHook();
-    if (this.acpUpstream.has(podKey)) return;
-    this.acpUpstream.add(podKey);
-    void this.mgr().on_acp_message(podKey, (msgType: number, payload: unknown) => {
-      const set = this.acpListeners.get(podKey);
-      if (set) for (const l of set) l(msgType, payload);
-    });
+  private dispatchResize(podKey: string, resize: RelayResizeRequest): void {
+    if (resize.force) {
+      void this.mgr().force_resize(podKey, resize.cols, resize.rows);
+    } else {
+      void this.mgr().send_resize(podKey, resize.cols, resize.rows);
+    }
   }
 }
 
@@ -186,34 +189,6 @@ function getOrCreatePool(): RelayConnectionPool {
   const pool = new RelayConnectionPool();
   (globalThis as Record<string, unknown>)[key] = pool;
   return pool;
-}
-
-// Cache only resolved non-empty IDs — pre-onboarding null must not pin renderer to "different host".
-let cachedNodeIdPromise: Promise<string | null> | null = null;
-
-async function resolveLocalNodeId(): Promise<string | null> {
-  const svc = getLocalRunnerService();
-  if (!svc) return null;
-  if (!cachedNodeIdPromise) {
-    cachedNodeIdPromise = svc.local_node_id().then(
-      (id: string | null) => {
-        if (!id) cachedNodeIdPromise = null;
-        return id;
-      },
-      () => {
-        cachedNodeIdPromise = null;
-        return null;
-      },
-    );
-  }
-  return cachedNodeIdPromise;
-}
-
-async function isSameHostRunner(advertisedNodeID: string | undefined): Promise<boolean> {
-  if (!advertisedNodeID) return true;
-  if (!getLocalRunnerService()) return false;
-  const myNodeID = await resolveLocalNodeId();
-  return myNodeID !== null && myNodeID === advertisedNodeID;
 }
 
 export const relayPool = getOrCreatePool();

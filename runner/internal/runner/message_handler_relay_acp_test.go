@@ -11,17 +11,22 @@ import (
 // mockPodIO records calls to SendInput, RespondToPermission, CancelSession, and new control methods.
 // Implements both PodIO and SessionAccess for ACP relay command tests.
 type mockPodIO struct {
-	mu            sync.Mutex
-	inputs        []string
-	permResps     []permResp
-	cancelled     bool
-	interrupted   bool
-	permMode      string
-	model         string
-	controlReqs   []controlReq
-	cancelErr     error
-	sendErr       error
-	permErr       error
+	mu           sync.Mutex
+	inputs       []string
+	permResps    []permResp
+	cancelled    bool
+	interrupted  bool
+	permMode     string
+	model        string
+	controlReqs  []controlReq
+	cancelErr    error
+	sendErr      error
+	permErr      error
+	interruptErr error
+	permModeErr  error
+	modelErr     error
+	controlErr   error
+	controlNil   bool
 }
 
 type permResp struct {
@@ -77,28 +82,31 @@ func (m *mockPodIO) Interrupt() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.interrupted = true
-	return nil
+	return m.interruptErr
 }
 
 func (m *mockPodIO) SetPermissionMode(mode string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.permMode = mode
-	return nil
+	return m.permModeErr
 }
 
 func (m *mockPodIO) SetModel(model string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.model = model
-	return nil
+	return m.modelErr
 }
 
 func (m *mockPodIO) SendControlRequest(subtype string, payload map[string]any) (map[string]any, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.controlReqs = append(m.controlReqs, controlReq{subtype, payload})
-	return map[string]any{"ok": true}, nil
+	if m.controlNil {
+		return nil, m.controlErr
+	}
+	return map[string]any{"ok": true}, m.controlErr
 }
 
 // newTestHandler creates a minimal RunnerMessageHandler for relay tests.

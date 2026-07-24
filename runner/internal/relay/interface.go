@@ -1,5 +1,7 @@
 package relay
 
+import "context"
+
 // RelayClient defines the interface for a relay WebSocket client.
 // This is a generic message pipe — zero protocol knowledge.
 // All mode-specific encoding/decoding lives in the consumer (PodRelay).
@@ -17,6 +19,9 @@ type RelayClient interface {
 
 	// Generic message I/O (replaces all mode-specific methods)
 	Send(msgType byte, payload []byte) error
+	// Flush waits until the socket writer has processed every message accepted
+	// before this call. It is bounded by ctx and fails if that connection ends.
+	Flush(ctx context.Context) error
 	SetMessageHandler(msgType byte, handler func(payload []byte))
 
 	// Lifecycle callbacks

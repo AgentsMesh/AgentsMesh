@@ -22,6 +22,20 @@ import (
 //
 // Returns process exit code (0 on clean EOF).
 func RunPTY(scenario string, logger *slog.Logger) int {
+	if scenario == "terminal_render" {
+		writeEnvDump(os.Environ())
+		resizeSignals, stopResizeSignals := watchTerminalResize()
+		defer stopResizeSignals()
+		terminalRenderLoopWithResize(
+			os.Stdin,
+			os.Stdout,
+			terminalRenderChunkDelay,
+			terminalRenderAltHold,
+			resizeSignals,
+			stdoutTerminalSize,
+		)
+		return 0
+	}
 	return runPTYWithIO(scenario, os.Stdin, os.Stdout, os.Environ(), logger)
 }
 
@@ -52,6 +66,14 @@ func runPTYWithIO(scenario string, in io.Reader, out io.Writer, env []string, lo
 		writeEnvDump(env)
 		_, _ = fmt.Fprint(out, autopilotPrompt)
 		promptEchoLoop(in, out, autopilotTurnDelay)
+		return 0
+	case "terminal_render":
+		writeEnvDump(env)
+		terminalRenderLoop(in, out, terminalRenderChunkDelay, terminalRenderAltHold)
+		return 0
+	case "terminal_alt_snapshot":
+		writeEnvDump(env)
+		terminalAltSnapshotLoop(in, out, terminalRenderChunkDelay)
 		return 0
 	default:
 		_, _ = fmt.Fprintf(out, "unknown PTY scenario: %s\n", scenario)

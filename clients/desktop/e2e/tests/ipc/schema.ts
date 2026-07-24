@@ -821,6 +821,18 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "channelGetMessageReadByConnect",
+    "group": "channel",
+    "params": [
+      {
+        "name": "request",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
     "name": "channelListChannelMembersConnect",
     "group": "channel",
     "params": [
@@ -858,6 +870,42 @@ export const ipcSchema: IpcMethodSchema[] = [
   },
   {
     "name": "channelMarkChannelReadConnect",
+    "group": "channel",
+    "params": [
+      {
+        "name": "request",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
+    "name": "channelMarkChannelUnreadConnect",
+    "group": "channel",
+    "params": [
+      {
+        "name": "request",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
+    "name": "channelMuteChannelConnect",
+    "group": "channel",
+    "params": [
+      {
+        "name": "request",
+        "type": "Array<number>"
+      }
+    ],
+    "returnType": "Array<number>",
+    "ipcExposable": true
+  },
+  {
+    "name": "channelPinChannelConnect",
     "group": "channel",
     "params": [
       {
@@ -2267,6 +2315,22 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "appChannelAdvanceLastRead",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      },
+      {
+        "name": "messageId",
+        "type": "number"
+      }
+    ],
+    "returnType": "void",
+    "ipcExposable": true
+  },
+  {
     "name": "appChannelApplyFetchedChannel",
     "group": "uncategorized",
     "params": [
@@ -2376,6 +2440,18 @@ export const ipcSchema: IpcMethodSchema[] = [
       }
     ],
     "returnType": "void",
+    "ipcExposable": true
+  },
+  {
+    "name": "appChannelGetLastReadId",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "channelId",
+        "type": "number"
+      }
+    ],
+    "returnType": "number",
     "ipcExposable": true
   },
   {
@@ -2787,6 +2863,30 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
+    "name": "relayBindPodListeners",
+    "group": "uncategorized",
+    "params": [
+      {
+        "name": "podKey",
+        "type": "string"
+      },
+      {
+        "name": "onStatus",
+        "type": "(err: unknown, arg: string) => void"
+      },
+      {
+        "name": "onAcp",
+        "type": "(err: unknown, arg: string) => void"
+      },
+      {
+        "name": "listenerLeaseId",
+        "type": "string"
+      }
+    ],
+    "returnType": "number",
+    "ipcExposable": false
+  },
+  {
     "name": "relayDisconnect",
     "group": "uncategorized",
     "params": [
@@ -2862,43 +2962,11 @@ export const ipcSchema: IpcMethodSchema[] = [
     "ipcExposable": true
   },
   {
-    "name": "relayOnAcpMessage",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "podKey",
-        "type": "string"
-      },
-      {
-        "name": "onAcp",
-        "type": "(err: unknown, arg: string) => void"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": false
-  },
-  {
     "name": "relayOnPodDisconnected",
     "group": "uncategorized",
     "params": [
       {
         "name": "onDisconnect",
-        "type": "(err: unknown, arg: string) => void"
-      }
-    ],
-    "returnType": "void",
-    "ipcExposable": false
-  },
-  {
-    "name": "relayOnStatusChange",
-    "group": "uncategorized",
-    "params": [
-      {
-        "name": "podKey",
-        "type": "string"
-      },
-      {
-        "name": "onStatus",
         "type": "(err: unknown, arg: string) => void"
       }
     ],
@@ -2980,6 +3048,22 @@ export const ipcSchema: IpcMethodSchema[] = [
       {
         "name": "onOutput",
         "type": "(err: unknown, arg: Array<number>) => void"
+      },
+      {
+        "name": "onStatus",
+        "type": "(err: unknown, arg: string) => void"
+      },
+      {
+        "name": "onAcp",
+        "type": "(err: unknown, arg: string) => void"
+      },
+      {
+        "name": "onBound",
+        "type": "(err: unknown, arg: number) => void"
+      },
+      {
+        "name": "listenerLeaseId",
+        "type": "string"
       }
     ],
     "returnType": "void",

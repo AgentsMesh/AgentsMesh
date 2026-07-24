@@ -6,8 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -26,6 +24,25 @@ const (
 // CloseHandler is called when the connection is closed
 type CloseHandler func()
 
+// clientSocket is the one-reader/one-writer WebSocket surface owned by Client.
+// Keeping the socket behind this narrow interface lets delivery barriers test
+// the actual writer boundary without replacing the queueing mechanism.
+type clientSocket interface {
+	ReadMessage() (messageType int, p []byte, err error)
+	WriteMessage(messageType int, data []byte) error
+	SetReadLimit(limit int64)
+	SetReadDeadline(t time.Time) error
+	SetWriteDeadline(t time.Time) error
+	SetPongHandler(h func(appData string) error)
+	Close() error
+}
+
+type outboundItem struct {
+	data       []byte
+	flush      chan error
+	generation uint64
+}
+
 // Client is a WebSocket client for connecting to the Relay service
 // Note: sessionID has been removed - channels are now identified by PodKey only
 type Client struct {
@@ -35,7 +52,7 @@ type Client struct {
 	token    string // JWT token for authentication
 
 	// WebSocket connection
-	conn   *websocket.Conn
+	conn   clientSocket
 	connMu sync.RWMutex
 
 	// Handlers
@@ -56,13 +73,23 @@ type Client struct {
 	writeExitCh    chan struct{} // Closed when writeLoop exits; used by reconnectLoop
 	stopOnce       sync.Once
 	closeOnce      sync.Once // Ensures onClose callback fires at most once
-	sendCh         chan []byte
+	sendCh         chan outboundItem
 	logger         *slog.Logger
 	ctx            context.Context
 	cancel         context.CancelFunc
 	wg             sync.WaitGroup
 	wgMu           sync.Mutex // Protects wg.Add() to ensure atomicity with stopped check
 	reconnectMu    sync.Mutex
+
+	// outboundMu linearizes queue acceptance with connection generation
+	// teardown. Every reconnect gets a fresh queue; an old writer drains and
+	// fails its own markers before the new generation becomes accepting.
+	outboundMu         sync.Mutex
+	outboundGeneration uint64
+	outboundAccepting  bool
+	outboundDoneCh     chan struct{}
+	outboundDoneOnce   *sync.Once
+	outboundWriteExit  chan struct{}
 }
 
 // NewClient creates a new Relay WebSocket client
@@ -77,14 +104,14 @@ func NewClient(parentCtx context.Context, relayURL, podKey, token string, logger
 	ctx, cancel := context.WithCancel(parentCtx)
 
 	client := &Client{
-		relayURL:   relayURL,
-		podKey:     podKey,
-		token:      token,
-		stopCh:     make(chan struct{}),
-		connDoneCh: make(chan struct{}),
+		relayURL:    relayURL,
+		podKey:      podKey,
+		token:       token,
+		stopCh:      make(chan struct{}),
+		connDoneCh:  make(chan struct{}),
 		writeExitCh: make(chan struct{}),
-		sendCh:     make(chan []byte, 256), // Buffered send channel
-		handlers:   make(map[byte]func([]byte)),
+		sendCh:      make(chan outboundItem, 256), // Buffered send channel
+		handlers:    make(map[byte]func([]byte)),
 		logger: logger.With(
 			"component", "relay_client",
 			"pod_key", podKey,
@@ -92,6 +119,9 @@ func NewClient(parentCtx context.Context, relayURL, podKey, token string, logger
 		ctx:    ctx,
 		cancel: cancel,
 	}
+	client.outboundDoneCh = client.connDoneCh
+	client.outboundDoneOnce = &sync.Once{}
+	client.outboundWriteExit = client.writeExitCh
 
 	client.logger.Info("Relay client created", "relay_url", relayURL)
 	return client

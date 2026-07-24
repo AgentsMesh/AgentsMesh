@@ -28,6 +28,13 @@ exports_files(
     visibility = ["//backend/pkg/slugkit:__pkg__"],
 )
 
+# Generated from the Runner's pinned go-runewidth dependency and consumed by
+# the hermetic freshness check in the nested generator package.
+exports_files(
+    ["src/lib/terminal/runewidthUnicode17Ranges.ts"],
+    visibility = ["//clients/web/scripts/runewidth-profile:__pkg__"],
+)
+
 # TypeScript sources — everything under src/. tsc runs via the pinned
 # TypeScript from MODULE.bazel, not the one in node_modules, so builds
 # stay hermetic. `:src` is a type-check gate (legacy type errors
@@ -284,6 +291,62 @@ vitest_test(
             "src/**/*.test.tsx",
         ],
     ),
+)
+
+# Focused coverage ratchet for the browser relay/PTY ownership boundary. The
+# historical Web suite remains outside this gate; every executable owner added
+# by the terminal lifecycle repair must independently satisfy the thresholds in
+# vitest.relay-coverage.config.ts.
+vitest_test(
+    name = "relay_coverage",
+    size = "medium",
+    srcs = [
+        "src/hooks/__tests__/useAcpRelay.test.ts",
+        "src/hooks/__tests__/useTerminalConnection-selfheal.test.ts",
+        "src/hooks/__tests__/useTerminalInit.safeFit.test.ts",
+        "src/hooks/__tests__/useTerminalInit.test.ts",
+        "src/hooks/__tests__/useTerminalInit.unicode.test.ts",
+        "src/hooks/__tests__/xtermUnicodeWidth.test.ts",
+        "src/lib/e2e/relayReadinessProbe.test.ts",
+        "src/lib/terminal/runnerUnicodeGraphemes.test.ts",
+        "src/stores/__tests__/relayConnection.direct.test.ts",
+        "src/stores/__tests__/relayConnection.node.test.ts",
+        "src/stores/__tests__/relayConnection.resize-status.test.ts",
+        "src/stores/__tests__/relayConnection.test.ts",
+        "src/stores/__tests__/relayConnectionEvents.test.ts",
+        "src/stores/__tests__/relayEndpointSelection.test.ts",
+        "src/stores/__tests__/relayPodRegistry.test.ts",
+        "src/stores/__tests__/relayPodSession.test.ts",
+        "src/stores/__tests__/relayProbe.test.ts",
+        "src/stores/__tests__/relaySubscriptionAbort.test.ts",
+    ],
+    config = "vitest.relay-coverage.config.ts",
+    data = [
+        "src/stores/__tests__/relayConnection.fixture.test.ts",
+        "tsconfig.json",
+        "vitest.config.ts",
+        "//:node_modules",
+        "//:node_modules/@agentsmesh/electron-adapter",
+        "//:node_modules/@agentsmesh/service-interface",
+        "//:node_modules/@agentsmesh/service-runtime",
+        "//:node_modules/@vitest/coverage-v8",
+        "//:node_modules/agentsmesh-wasm",
+        "//:package_json_bin",
+        "//proto:proto_gen_ts",
+    ] + glob(
+        [
+            "src/**/*.ts",
+            "src/**/*.tsx",
+            "src/**/*.json",
+            "src/**/*.css",
+        ],
+        allow_empty = True,
+        exclude = [
+            "src/**/*.test.ts",
+            "src/**/*.test.tsx",
+        ],
+    ),
+    extra_args = ["--coverage.enabled"],
 )
 
 # `bazel test //clients/web:lint` — equivalent to running ESLint at

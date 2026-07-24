@@ -23,10 +23,13 @@ func NewPodController(pod *Pod, runner *Runner) *PodController {
 
 // SendInput sends text to the pod via PodIO.
 func (c *PodController) SendInput(text string) error {
-	if c.pod.IO == nil {
+	var sendErr error
+	if !c.pod.WithActiveIO(func(io PodIO) {
+		sendErr = io.SendInput(text + "\n")
+	}) {
 		return fmt.Errorf("pod IO not available for pod %s", c.pod.PodKey)
 	}
-	return c.pod.IO.SendInput(text + "\n")
+	return sendErr
 }
 
 // GetWorkDir returns the pod's working directory.
@@ -47,16 +50,12 @@ func (c *PodController) GetAgentStatus() string {
 
 // SubscribeStateChange delegates to PodIO for mode-agnostic state change events.
 func (c *PodController) SubscribeStateChange(id string, cb func(newStatus string)) {
-	if c.pod.IO != nil {
-		c.pod.IO.SubscribeStateChange(id, cb)
-	}
+	c.pod.WithActiveIO(func(io PodIO) { io.SubscribeStateChange(id, cb) })
 }
 
 // UnsubscribeStateChange removes a state change subscription.
 func (c *PodController) UnsubscribeStateChange(id string) {
-	if c.pod.IO != nil {
-		c.pod.IO.UnsubscribeStateChange(id)
-	}
+	c.pod.WithActiveIO(func(io PodIO) { io.UnsubscribeStateChange(id) })
 }
 
 // Compile-time interface check

@@ -5,6 +5,7 @@ package terminal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"syscall"
@@ -52,7 +53,18 @@ func startPTY(command string, args []string, workDir string, env []string, cols,
 }
 
 func (p *unixPTY) Read(buf []byte) (int, error) {
-	return p.ptyFile.Read(buf)
+	n, err := p.ptyFile.Read(buf)
+	return n, normalizePTYReadError(err)
+}
+
+func normalizePTYReadError(err error) error {
+	// Unix PTY masters report EIO when the slave side closes. Treat it as EOF;
+	// otherwise scheduler ordering between Read and Wait can misclassify a
+	// normal process exit as a fatal terminal failure.
+	if errors.Is(err, syscall.EIO) {
+		return io.EOF
+	}
+	return err
 }
 
 func (p *unixPTY) Write(data []byte) (int, error) {

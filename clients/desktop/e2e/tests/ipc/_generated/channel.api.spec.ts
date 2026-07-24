@@ -29,6 +29,10 @@ test.describe("IPC · channel", () => {
     await invokeIpcContract(sharedPage, { method: "channelGetChannelUnreadCountsConnect", returnType: "Array<number>" }, []);
   });
 
+  test("channelGetMessageReadByConnect", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "channelGetMessageReadByConnect", returnType: "Array<number>" }, []);
+  });
+
   test("channelListChannelMembersConnect", async ({ sharedPage }) => {
     await invokeIpcContract(sharedPage, { method: "channelListChannelMembersConnect", returnType: "Array<number>" }, []);
   });
@@ -43,6 +47,18 @@ test.describe("IPC · channel", () => {
 
   test("channelMarkChannelReadConnect", async ({ sharedPage }) => {
     await invokeIpcContract(sharedPage, { method: "channelMarkChannelReadConnect", returnType: "Array<number>" }, []);
+  });
+
+  test("channelMarkChannelUnreadConnect", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "channelMarkChannelUnreadConnect", returnType: "Array<number>" }, []);
+  });
+
+  test("channelMuteChannelConnect", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "channelMuteChannelConnect", returnType: "Array<number>" }, []);
+  });
+
+  test("channelPinChannelConnect", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "channelPinChannelConnect", returnType: "Array<number>" }, []);
   });
 
   test("channelSendChannelMessageConnect", async ({ sharedPage }) => {

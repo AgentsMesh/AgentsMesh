@@ -1,7 +1,6 @@
 package vt
 
 import (
-	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -9,11 +8,6 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
-
-// OSCHandler is a callback for handling OSC (Operating System Command) sequences.
-// oscType is the OSC code (e.g., 777 for notify, 9 for message, 0/2 for title).
-// params are the semicolon-separated parameters after the OSC code.
-type OSCHandler func(oscType int, params []string)
 
 // VirtualTerminal provides a virtual terminal emulator
 // that converts raw PTY output with ANSI escape sequences
@@ -69,24 +63,39 @@ type VirtualTerminal struct {
 	firstDataFired bool
 
 	// Escape sequence parsing state
-	escState   escapeState
-	escBuffer  []byte
-	escParams  []int
-	escPrivate byte
-	escRawSeq  []byte // Raw sequence for SGR parsing with colons
+	escState        escapeState
+	escBuffer       []byte
+	escParams       []int
+	escPrivate      byte
+	escRawSeq       []byte // Raw sequence for SGR parsing with colons
+	utf8Pending     []byte
+	discardSawESC   bool
+	canJoinGrapheme bool
 
-	// Saved cursor position
-	savedCursorX int
-	savedCursorY int
+	// Client-visible modes that must survive snapshot recovery.
+	privateModes      map[int]bool
+	mouseTrackingMode int
+	mouseEncodingMode int
+
+	// Saved cursor registers are buffer-local in xterm.
+	savedCursor [2]cursorState
 
 	// Alternative screen buffer support
-	altScreen       [][]rune
-	altCells        [][]Cell
-	altCursorX      int
-	altCursorY      int
-	useAltScreen    bool
-	savedMainScreen [][]rune
-	savedMainCells  [][]Cell
+	altScreen        [][]rune
+	altCells         [][]Cell
+	altIsWrapped     []bool
+	altCursorX       int
+	altCursorY       int
+	altScreenMode    int
+	useAltScreen     bool
+	savedMainScreen  [][]rune
+	savedMainCells   [][]Cell
+	savedMainWrapped []bool
+	savedMainFg      Color
+	savedMainBg      Color
+	savedMainAttrs   CellAttrs
+	savedMainUlStyle UnderlineStyle
+	savedMainUlColor Color
 
 	// OSC sequence handler callback
 	oscHandler OSCHandler
@@ -112,31 +121,9 @@ func NewVirtualTerminal(cols, rows, maxHistory int) *VirtualTerminal {
 		historyStyled:    make([][]Cell, 0),
 		historyIsWrapped: make([]bool, 0),
 	}
+	vt.resetTerminalModes()
 	vt.initScreen()
 	return vt
-}
-
-// initScreen initializes/resets the screen buffer
-func (vt *VirtualTerminal) initScreen() {
-	vt.screen = make([][]rune, vt.rows)
-	vt.cells = make([][]Cell, vt.rows)
-	vt.isWrapped = make([]bool, vt.rows)
-	for i := range vt.screen {
-		vt.screen[i] = make([]rune, vt.cols)
-		vt.cells[i] = make([]Cell, vt.cols)
-		vt.isWrapped[i] = false
-		for j := range vt.screen[i] {
-			vt.screen[i][j] = ' '
-			vt.cells[i][j] = NewCell(' ')
-		}
-	}
-	vt.cursorX = 0
-	vt.cursorY = 0
-	vt.currentFg = DefaultColor()
-	vt.currentBg = DefaultColor()
-	vt.currentAttrs = AttrNone
-	vt.currentUnderlineStyle = UnderlineNone
-	vt.currentUnderlineColor = DefaultColor()
 }
 
 // Feed processes raw PTY data with proper UTF-8 support.
@@ -155,6 +142,7 @@ func (vt *VirtualTerminal) Feed(data []byte) []string {
 
 	wasHasData := vt.hasData
 	vt.hasData = true
+	data = vt.prependPendingUTF8(data)
 	if !wasHasData {
 		// Trigger first data callback (in goroutine to avoid blocking)
 		vt.onFirstDataMu.Lock()
@@ -189,6 +177,10 @@ func (vt *VirtualTerminal) Feed(data []byte) []string {
 		// Normal characters: decode UTF-8 properly
 		r, size := utf8.DecodeRune(data)
 		if r == utf8.RuneError && size == 1 {
+			if !utf8.FullRune(data) {
+				vt.utf8Pending = append(vt.utf8Pending[:0], data...)
+				break
+			}
 			// Invalid UTF-8 byte, skip it
 			data = data[1:]
 			continue
@@ -200,48 +192,4 @@ func (vt *VirtualTerminal) Feed(data []byte) []string {
 	// Return current screen lines for downstream consumers (single-direction data flow)
 	// This is done inside the lock to ensure consistency
 	return vt.getLinesLocked()
-}
-
-// getLinesLocked returns screen lines. Caller must hold vt.mu.
-func (vt *VirtualTerminal) getLinesLocked() []string {
-	screen := vt.screen
-	lines := make([]string, vt.rows)
-	for row := 0; row < vt.rows; row++ {
-		var line strings.Builder
-		if row < len(screen) {
-			for _, ch := range screen[row] {
-				if ch == 0 {
-					line.WriteRune(' ')
-				} else {
-					line.WriteRune(ch)
-				}
-			}
-		}
-		lines[row] = strings.TrimRight(line.String(), " ")
-	}
-	return lines
-}
-
-// Resize resizes the terminal
-func (vt *VirtualTerminal) Resize(cols, rows int) {
-	lockStart := time.Now()
-	vt.mu.Lock()
-	lockWait := time.Since(lockStart)
-	defer vt.mu.Unlock()
-
-	if lockWait > 10*time.Millisecond {
-		logger.Terminal().Warn("VT Resize lock acquisition slow",
-			"lock_wait", lockWait, "cols", cols, "rows", rows)
-	}
-
-	if cols <= 0 {
-		cols = 80
-	}
-	if rows <= 0 {
-		rows = 24
-	}
-
-	vt.cols = cols
-	vt.rows = rows
-	vt.initScreen()
 }

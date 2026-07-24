@@ -56,7 +56,7 @@ func (c *Client) reconnectLoop() {
 	// connDoneCh was closed by readLoop, which tells writeLoop to return.
 	// writeExitCh is closed by writeLoop on exit — we wait on it directly,
 	// avoiding wg.Wait() which would deadlock (reconnectLoop is in the same wg).
-	writeExit := c.writeExitCh
+	_, _, _, _, writeExit := c.snapshotOutbound()
 	select {
 	case <-writeExit:
 		// writeLoop has fully exited
@@ -174,13 +174,16 @@ func (c *Client) reconnectLoop() {
 			return
 		}
 
-		// Mark as connected only after confirming not stopped (under wgMu lock)
-		c.connected.Store(true)
-		c.connectedAt.Store(time.Now().UnixMilli())
-
-		// Create new per-connection channels for the new connection
-		c.connDoneCh = make(chan struct{})
-		c.writeExitCh = make(chan struct{})
+		// Create new per-connection channels under the same lock used by Flush
+		// and the loops when they snapshot connection lifecycle signals.
+		newDoneCh := make(chan struct{})
+		newWriteExitCh := make(chan struct{})
+		newSendCh := make(chan outboundItem, 256)
+		c.connMu.Lock()
+		c.connDoneCh = newDoneCh
+		c.writeExitCh = newWriteExitCh
+		c.connMu.Unlock()
+		c.activateOutbound(newSendCh, newDoneCh, newWriteExitCh)
 
 		// Restart read/write loops
 		c.wg.Add(2)

@@ -1,34 +1,19 @@
 package terminal
 
 import (
-	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 	"time"
 
-	"github.com/anthropics/agentsmesh/runner/internal/config"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-)
-
-const (
-	// handlerBlockedThreshold is the duration after which the handler is
-	// considered stuck and a goroutine-level warning is emitted.
-	handlerBlockedThreshold = 5 * time.Second
-
-	// handlerSlowWarnThreshold logs a warning when handler exceeds this.
-	handlerSlowWarnThreshold = 50 * time.Millisecond
-
-	// handlerSlowErrorThreshold logs an error when handler exceeds this.
-	handlerSlowErrorThreshold = 1 * time.Second
 )
 
 // readOutput reads output from the PTY and sends to handler.
 // Implements ttyd-style backpressure: when paused, blocks until resumed.
 // This prevents unbounded memory growth when consumer can't keep up.
 func (t *Terminal) readOutput() {
+	defer t.signalReadDone()
+
 	log := logger.TerminalTrace()
 	label := t.label
 	buf := make([]byte, 4096)
@@ -52,14 +37,18 @@ func (t *Terminal) readOutput() {
 				// Resumed, continue reading
 				log.Trace("PTY read loop resumed from backpressure")
 			case <-time.After(100 * time.Millisecond):
-				// Periodic check - verify terminal isn't closed
+				// A naturally exited process must bypass backpressure so buffered
+				// tail bytes can drain before the exit callback runs.
 				t.mu.Lock()
 				closed := t.closed
+				processExited := t.processExited
 				t.mu.Unlock()
 				if closed {
 					return
 				}
-				continue // Re-check paused state
+				if !processExited {
+					continue // Re-check paused state
+				}
 			}
 		}
 
@@ -74,10 +63,36 @@ func (t *Terminal) readOutput() {
 			return
 		}
 
-		// Read from PTY with timeout to allow periodic backpressure checks
-		// This ensures we can respond to pause signals even during slow output
-		proc.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-		n, err := proc.Read(buf)
+		// Read and dispatch are one ordered transaction. Resize and teardown use
+		// the same external boundary, so bytes cannot cross a geometry or
+		// lifecycle transition after the PTY has handed them to this reader.
+		var n int
+		var err error
+		var stopped bool
+		t.withReadOrder(func() {
+			t.mu.Lock()
+			stopped = t.closed || t.proc != proc
+			t.mu.Unlock()
+			if stopped {
+				return
+			}
+
+			// A short deadline lets the loop observe backpressure and shutdown.
+			t.signalReadActive()
+			_ = proc.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+			n, err = proc.Read(buf)
+			if n > 0 {
+				readCount++
+				timeoutCount = 0
+				lastOutputTime = time.Now()
+				data := append([]byte(nil), buf[:n]...)
+				t.dispatchOutput(data, readCount)
+				t.signalReadProgress()
+			}
+		})
+		if stopped {
+			return
+		}
 
 		if err != nil {
 			// Check if it's just a timeout (expected during backpressure checks)
@@ -98,10 +113,10 @@ func (t *Terminal) readOutput() {
 			if err != io.EOF {
 				// Fatal PTY I/O error (not a normal close)
 				t.mu.Lock()
-				closed := t.closed
+				expectedClose := t.closed || t.processExited
 				ptyErrorHandler := t.onPTYError
 				t.mu.Unlock()
-				if !closed {
+				if !expectedClose {
 					log.Error("PTY read error", "label", label, "error", err, "read_count", readCount)
 
 					// Notify the runner about the fatal PTY error so it can
@@ -124,84 +139,6 @@ func (t *Terminal) readOutput() {
 			}
 			break
 		}
-
-		readCount++
-		timeoutCount = 0            // Reset timeout counter on successful read
-		lastOutputTime = time.Now() // Update last output time
-		if n > 0 {
-			// Log every read for debugging (Trace level - high frequency)
-			log.Trace("PTY read SUCCESS",
-				"label", label,
-				"read_num", readCount,
-				"bytes", n)
-
-			// Make a copy of the data
-			data := make([]byte, n)
-			copy(data, buf[:n])
-
-			// Get handler with lock to prevent race condition
-			t.mu.Lock()
-			handler := t.onOutput
-			t.mu.Unlock()
-
-			if handler != nil {
-				startHandler := time.Now()
-
-				// Watchdog: detect handler blocking in a separate goroutine.
-				// If the handler doesn't return within the threshold, emit a
-				// high-severity log so we can correlate with pprof goroutine dumps.
-				watchdogDone := make(chan struct{})
-				go func() {
-					select {
-					case <-watchdogDone:
-						return
-					case <-time.After(handlerBlockedThreshold):
-						elapsed := time.Since(startHandler)
-
-						// Capture goroutine stacks and write to temp file for post-mortem analysis.
-						// Writing to a file avoids bloating the structured log with 64KB+ of stack data.
-						stackBuf := make([]byte, 64*1024)
-						stackLen := runtime.Stack(stackBuf, true) // true = all goroutines
-
-						dumpPath := ""
-						stackDumpDir := config.TempBaseDir()
-						os.MkdirAll(stackDumpDir, 0755)
-						dumpFile := filepath.Join(stackDumpDir, fmt.Sprintf("blocked-%s-%d.stacks",
-							label, time.Now().Unix()))
-						if err := os.WriteFile(dumpFile, stackBuf[:stackLen], 0644); err == nil {
-							dumpPath = dumpFile
-						}
-
-						logger.Terminal().Error("PTY output handler BLOCKED — possible deadlock",
-							"label", label,
-							"read_num", readCount,
-							"bytes", n,
-							"blocked_for", elapsed,
-							"goroutine_dump", dumpPath)
-					}
-				}()
-
-				handler(data)
-				close(watchdogDone)
-
-				handlerTime := time.Since(startHandler)
-				if handlerTime > handlerSlowErrorThreshold {
-					logger.Terminal().Error("PTY output handler extremely slow",
-						"label", label,
-						"read_num", readCount,
-						"bytes", n,
-						"handler_time", handlerTime)
-				} else if handlerTime > handlerSlowWarnThreshold {
-					log.Warn("PTY output handler slow",
-						"label", label,
-						"read_num", readCount,
-						"bytes", n,
-						"handler_time", handlerTime)
-				}
-			} else {
-				log.Warn("No output handler set", "label", label, "read_num", readCount)
-			}
-		}
 	}
 }
 
@@ -217,52 +154,28 @@ func (t *Terminal) waitExit() {
 	pid := t.proc.Pid()
 	log.Info("Process exited", "label", t.label, "pid", pid, "exit_code", exitCode)
 
-	// Signal that the process has exited (unblocks Stop() if waiting)
-	close(t.doneCh)
+	t.mu.Lock()
+	t.processExited = true
+	t.mu.Unlock()
+	// Backpressure no longer has a consumer-protection purpose after process
+	// exit; release it so all already-buffered PTY output can drain promptly.
+	t.ResumeRead()
+
+	// The exit callback owns runner teardown. It must not overtake buffered PTY
+	// output or an output handler that is still using the stream pipeline.
+	t.drainReadOutput()
+	t.closePTY()
 
 	t.mu.Lock()
 	t.closed = true
-	t.mu.Unlock()
-
-	// Close PTY via sync.Once (safe if Stop() also calls closePTY)
-	t.closePTY()
-
-	// Get handler with lock to prevent race condition
-	t.mu.Lock()
 	handler := t.onExit
 	t.mu.Unlock()
 
+	// Signal only after the reader is joined, so Stop cannot return while an
+	// output callback is still running.
+	close(t.doneCh)
+
 	if handler != nil {
 		handler(exitCode)
-	}
-}
-
-// CleanupOldStackDumps removes stack dump files older than maxAge from the
-// temp directory. Should be called at startup to prevent unbounded growth
-// of diagnostic files written by the readOutput watchdog.
-func CleanupOldStackDumps(maxAge time.Duration) {
-	dir := config.TempBaseDir()
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return // Directory may not exist yet
-	}
-
-	cutoff := time.Now().Add(-maxAge)
-	removed := 0
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".stacks") {
-			continue
-		}
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		if info.ModTime().Before(cutoff) {
-			os.Remove(filepath.Join(dir, entry.Name()))
-			removed++
-		}
-	}
-	if removed > 0 {
-		logger.Terminal().Info("Cleaned up old stack dump files", "removed", removed)
 	}
 }

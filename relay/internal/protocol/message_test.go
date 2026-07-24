@@ -6,7 +6,10 @@ import (
 )
 
 func TestEncodeDecodeMessage(t *testing.T) {
-	tests := []struct{ msgType byte; payload []byte }{
+	tests := []struct {
+		msgType byte
+		payload []byte
+	}{
 		{MsgTypeOutput, nil}, {MsgTypeOutput, []byte("hello")}, {MsgTypeOutput, make([]byte, 1024)},
 		{MsgTypeSnapshot, []byte("{}")}, {MsgTypeInput, []byte("test")}, {MsgTypeResize, []byte{0, 80, 0, 24}},
 		{MsgTypePing, nil}, {MsgTypePong, nil},
@@ -30,30 +33,6 @@ func TestDecodeMessage_EmptyData(t *testing.T) {
 	}
 	if _, err := DecodeMessage(nil); err != ErrEmptyMessage {
 		t.Error("expected ErrEmptyMessage for nil")
-	}
-}
-
-func TestEncodeDecodeSnapshot(t *testing.T) {
-	snapshot := &TerminalSnapshot{Cols: 80, Rows: 24, Lines: []string{"line1", "line2"},
-		SerializedContent: "\x1b[32mHello\x1b[0m", CursorX: 5, CursorY: 2, CursorVisible: true}
-	encoded, err := EncodeSnapshot(snapshot)
-	if err != nil || encoded[0] != MsgTypeSnapshot {
-		t.Fatalf("EncodeSnapshot failed: %v", err)
-	}
-	msg, _ := DecodeMessage(encoded)
-	decoded, err := DecodeSnapshot(msg.Payload)
-	if err != nil {
-		t.Fatalf("DecodeSnapshot failed: %v", err)
-	}
-	if decoded.Cols != 80 || decoded.Rows != 24 || len(decoded.Lines) != 2 ||
-		decoded.CursorX != 5 || decoded.CursorY != 2 || !decoded.CursorVisible {
-		t.Error("snapshot fields mismatch")
-	}
-}
-
-func TestDecodeSnapshot_InvalidJSON(t *testing.T) {
-	if _, err := DecodeSnapshot([]byte("invalid")); err == nil {
-		t.Error("expected error for invalid JSON")
 	}
 }
 
@@ -113,7 +92,7 @@ func TestMessageConstants(t *testing.T) {
 		MsgTypeSnapshot: 0x01, MsgTypeOutput: 0x02, MsgTypeInput: 0x03, MsgTypeResize: 0x04,
 		MsgTypePing: 0x05, MsgTypePong: 0x06, MsgTypeControl: 0x07,
 		MsgTypeRunnerDisconnected: 0x08, MsgTypeRunnerReconnected: 0x09,
-		MsgTypeResync: 0x0A,
+		MsgTypeResync:   0x0A,
 		MsgTypeAcpEvent: 0x0B, MsgTypeAcpCommand: 0x0C, MsgTypeAcpSnapshot: 0x0D,
 	}
 	for got, want := range expected {

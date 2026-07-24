@@ -13,10 +13,12 @@ const E2E_AGENT_SLUG = "e2e-echo";
 
 export type MockAgentMode = "pty" | "acp";
 
-// Scenario names registered in //runner/internal/agents/mockagent/scenarios.go.
-// Keep in sync with that file and backend/migrations/000151..000153.
+// Scenario names implemented by the mock agent's PTY runtime or ACP registry.
+// Keep in sync with the dev seed's AgentFile enum.
 export type MockAgentScenario =
   | "echo"
+  | "terminal_render"
+  | "terminal_alt_snapshot"
   | "autopilot"
   | "autopilot_fs"
   | "streaming_3"

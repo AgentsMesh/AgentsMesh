@@ -17,13 +17,17 @@ import (
 // browsers). Drops silently when no listener is connected. Payload is flat JSON
 // {"type":..,"sessionId":..,...} with the data struct merged into the top level.
 func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
-	if pod.Relay == nil {
+	payload := marshalAcpRelayEvent(eventType, sessionID, data)
+	if payload == nil {
 		return
 	}
+	pod.BroadcastRelayEvent(relay.MsgTypeAcpEvent, payload)
+}
 
+func marshalAcpRelayEvent(eventType, sessionID string, data any) []byte {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
-		return
+		return nil
 	}
 	var flat map[string]any
 	if err := json.Unmarshal(dataBytes, &flat); err != nil || flat == nil {
@@ -34,10 +38,9 @@ func sendAcpViaRelay(pod *Pod, eventType, sessionID string, data any) {
 
 	payload, err := json.Marshal(flat)
 	if err != nil {
-		return
+		return nil
 	}
-
-	pod.Relay.BroadcastEvent(pod.GetRelayClient(), relay.MsgTypeAcpEvent, payload)
+	return payload
 }
 
 // wireAndStartACPPod creates the ACPClient with Relay-forwarding callbacks,
@@ -86,9 +89,11 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 				// UI state notification via Relay only.
 				sendAcpViaRelay(pod, "sessionState", "", map[string]string{"state": newState})
 				// Notify PodIO subscribers (e.g. Autopilot StateDetectorCoordinator).
-				if sa, ok := pod.IO.(SessionAccess); ok {
-					sa.NotifyStateChange(newState)
-				}
+				pod.WithActiveIO(func(io PodIO) {
+					if sa, ok := io.(SessionAccess); ok {
+						sa.NotifyStateChange(newState)
+					}
+				})
 			},
 			OnLog: func(level, message string) {
 				sendAcpViaRelay(pod, "log", "", map[string]string{
@@ -113,18 +118,25 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// these flags (codex/gemini variants).
 	acpClient.SeedConfiguration(parseClaudeInitialConfig(pod.LaunchArgs))
 
-	// Wire client into pod
-	pod.IO = NewACPPodIO(acpClient, podKey)
-	pod.Relay = NewACPPodRelay(podKey, acpClient, func(payload []byte) {
-		h.handleAcpRelayCommand(pod, payload)
+	// Publish the complete runtime atomically for early subscribe requests.
+	acpIO := NewACPPodIO(acpClient, podKey)
+	acpRelay := NewACPPodRelay(podKey, acpClient, func(ctx RelayInboundContext, payload []byte) {
+		h.handleAcpRelayCommandInGeneration(pod, ctx, payload)
 	}, h.runner.GetLocalRelayServer())
+	runtime := PodRuntime{IO: acpIO, Relay: acpRelay}
+	pod.lifecycleMu.Lock()
+	current, owned := h.podStore.Get(podKey)
+	if !owned || current != pod {
+		pod.lifecycleMu.Unlock()
+		return fmt.Errorf("pod %s was terminated before ACP start", podKey)
+	}
+	pod.installRuntime(runtime)
 
 	// Start the ACP client (launches subprocess, performs initialize handshake)
 	if err := acpClient.Start(); err != nil {
-		h.podStore.Delete(cmd.PodKey)
-		if pod.IO != nil {
-			pod.IO.Teardown()
-		}
+		h.podStore.DeleteIf(cmd.PodKey, pod)
+		pod.lifecycleMu.Unlock()
+		h.cleanupFailedPodRuntime(pod)
 		if pod.SandboxPath != "" {
 			os.RemoveAll(pod.SandboxPath)
 		}
@@ -167,6 +179,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 
 	h.sendPodCreated(cmd.PodKey, 0, pod.SandboxPath, pod.Branch, uint16(cols), uint16(rows))
 	log.Info("Pod created (ACP)", "pod_key", cmd.PodKey, "sandbox", pod.SandboxPath)
+	pod.lifecycleMu.Unlock()
 	return nil
 }
 

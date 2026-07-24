@@ -113,9 +113,9 @@ func (a *SmartAggregator) flushLocked() {
 		a.ptyLogger.WriteAggregated(data)
 	}
 
-	// Route output (async to avoid holding lock)
-	dataCopy := data
-	go a.router.Route(dataCopy)
+	// Enqueue in flush order. The router performs relay I/O asynchronously so
+	// this never blocks on the network while the aggregator lock is held.
+	a.router.enqueue(data)
 }
 
 // forceFlushLocked flushes all data including incomplete frames.
@@ -152,7 +152,7 @@ func (a *SmartAggregator) forceFlushLocked() {
 
 	logger.TerminalTrace().Trace("SmartAggregator force flushing", "bytes", len(data))
 
-	// Route output (async to avoid holding lock)
-	dataCopy := data
-	go a.router.Route(dataCopy)
+	// Enqueue in flush order. The router performs relay I/O asynchronously so
+	// this never blocks on the network while the aggregator lock is held.
+	a.router.enqueue(data)
 }

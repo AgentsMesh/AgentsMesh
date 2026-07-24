@@ -16,12 +16,10 @@ func TestSmartAggregator_Stop(t *testing.T) {
 		func() float64 { return 0 },
 		WithSmartBaseDelay(1*time.Second),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	agg.Write([]byte("pending data"))
 	agg.Stop()
-
-	time.Sleep(100 * time.Millisecond)
 
 	if string(relay.getData()) != "pending data" {
 		t.Errorf("Expected 'pending data', got '%s'", string(relay.getData()))
@@ -40,7 +38,7 @@ func TestSmartAggregator_ConcurrentWrites(t *testing.T) {
 		func() float64 { return 0 },
 		WithSmartBaseDelay(5*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	var wg sync.WaitGroup
 	numWriters := 10
@@ -59,8 +57,6 @@ func TestSmartAggregator_ConcurrentWrites(t *testing.T) {
 	wg.Wait()
 	agg.Stop()
 
-	time.Sleep(50 * time.Millisecond)
-
 	expected := int64(numWriters * bytesPerWriter)
 	totalBytes := int64(len(relay.getData()))
 	if totalBytes != expected {
@@ -77,7 +73,7 @@ func TestSmartAggregator_LargeChunkExceedsMaxSize(t *testing.T) {
 		WithSmartMaxSize(maxSize),
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	agg.Write([]byte("prefix"))
 	largeChunk := bytes.Repeat([]byte("L"), 200)

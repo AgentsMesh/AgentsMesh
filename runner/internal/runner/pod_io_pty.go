@@ -107,6 +107,16 @@ func (p *PTYPodIO) SendKeys(keys []string) error {
 }
 
 func (p *PTYPodIO) Resize(cols, rows int) (bool, error) {
+	// A resize is one stream transaction: output read before this lock is fed at
+	// the old geometry, while output read after it is fed at the new geometry.
+	// This prevents PTY redraw bytes from being applied to a VT that is then
+	// cleared or resized out from under them.
+	p.components.readMu.Lock()
+	defer p.components.readMu.Unlock()
+
+	p.components.streamMu.Lock()
+	defer p.components.streamMu.Unlock()
+
 	if err := p.components.Terminal.Resize(cols, rows); err != nil {
 		logger.Pod().Error("PTY resize failed", "pod_key", p.podKey, "cols", cols, "rows", rows, "error", err)
 		return false, err

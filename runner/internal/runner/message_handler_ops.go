@@ -45,13 +45,17 @@ func (h *RunnerMessageHandler) OnPodInput(req client.PodInputRequest) error {
 		log.Warn("Pod not found for PTY input", "pod_key", req.PodKey)
 		return fmt.Errorf("pod not found: %s", req.PodKey)
 	}
-	if pod.IO == nil {
+	var sendErr error
+	available := pod.WithActiveIO(func(io PodIO) {
+		sendErr = io.SendInput(string(req.Data))
+	})
+	if !available {
 		log.Warn("PodIO not available for input", "pod_key", req.PodKey)
 		return fmt.Errorf("pod IO not available for pod: %s", req.PodKey)
 	}
-	if err := pod.IO.SendInput(string(req.Data)); err != nil {
-		log.Error("Failed to write pod input", "pod_key", req.PodKey, "error", err)
-		return err
+	if sendErr != nil {
+		log.Error("Failed to write pod input", "pod_key", req.PodKey, "error", sendErr)
+		return sendErr
 	}
 	return nil
 }
@@ -87,28 +91,30 @@ func (h *RunnerMessageHandler) OnObservePod(req client.ObservePodRequest) error 
 		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod not found")
 	}
 
-	if pod.IO == nil {
-		log.Warn("No PodIO for observe PTY", "pod_key", req.PodKey)
-		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod IO not available")
-	}
-
 	lines := req.Lines
 	if lines <= 0 {
 		lines = 100
 	}
 
-	output, err := pod.IO.GetSnapshot(lines)
-	if err != nil {
-		log.Error("Failed to get snapshot for observe PTY", "pod_key", req.PodKey, "error", err)
-		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, err.Error())
-	}
+	var output, screen string
 	var cursorY, cursorX int
-	var screen string
-	if ta, ok := pod.IO.(TerminalAccess); ok {
-		cursorY, cursorX = ta.CursorPosition()
-		if req.IncludeScreen {
-			screen = ta.GetScreenSnapshot()
+	var snapshotErr error
+	available := pod.WithActiveIO(func(io PodIO) {
+		output, snapshotErr = io.GetSnapshot(lines)
+		if ta, ok := io.(TerminalAccess); ok {
+			cursorY, cursorX = ta.CursorPosition()
+			if req.IncludeScreen {
+				screen = ta.GetScreenSnapshot()
+			}
 		}
+	})
+	if !available {
+		log.Warn("No active PodIO for observe PTY", "pod_key", req.PodKey)
+		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, "pod IO not available")
+	}
+	if snapshotErr != nil {
+		log.Error("Failed to get snapshot for observe PTY", "pod_key", req.PodKey, "error", snapshotErr)
+		return h.conn.SendObservePodResult(req.RequestID, req.PodKey, "", "", 0, 0, 0, false, snapshotErr.Error())
 	}
 
 	// Count total lines in output to determine hasMore
@@ -142,22 +148,24 @@ func (h *RunnerMessageHandler) OnSendPrompt(cmd *runnerv1.SendPromptCommand) err
 		log.Warn("Pod not found for send_prompt", "pod_key", cmd.PodKey)
 		return fmt.Errorf("pod not found: %s", cmd.PodKey)
 	}
-	if pod.IO == nil {
+	var sendErr error
+	available := pod.WithActiveIO(func(io PodIO) {
+		if sendErr = io.SendInput(cmd.Prompt); sendErr != nil {
+			return
+		}
+		if ta, ok := io.(TerminalAccess); ok {
+			time.Sleep(ptySubmitGap)
+			sendErr = ta.SendKeys([]string{"enter"})
+		}
+	})
+	if !available {
 		log.Warn("PodIO not available for send_prompt", "pod_key", cmd.PodKey)
 		return fmt.Errorf("pod IO not available: %s", cmd.PodKey)
 	}
-	// ACP: echo user message to Relay so it appears in the chat panel.
 	if pod.IsACPMode() {
 		sendAcpViaRelay(pod, "content_chunk", "", map[string]string{
 			"text": cmd.Prompt, "role": "user",
 		})
 	}
-	if err := pod.IO.SendInput(cmd.Prompt); err != nil {
-		return err
-	}
-	if ta, ok := pod.IO.(TerminalAccess); ok {
-		time.Sleep(ptySubmitGap)
-		return ta.SendKeys([]string{"enter"})
-	}
-	return nil
+	return sendErr
 }

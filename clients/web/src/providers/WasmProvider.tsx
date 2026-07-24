@@ -20,7 +20,13 @@ export function WasmProvider({ children }: { children: React.ReactNode }) {
       Promise.resolve().then(() => setReady(true));
       return;
     }
-    initWasmCore().then(() => setReady(true));
+    initWasmCore().then(async () => {
+      if (process.env.NEXT_PUBLIC_E2E === "true") {
+        const { installRelayReadinessProbe } = await import("@/lib/e2e/relayReadinessProbe");
+        installRelayReadinessProbe(window);
+      }
+      setReady(true);
+    });
   }, []);
 
   if (!ready) return null;

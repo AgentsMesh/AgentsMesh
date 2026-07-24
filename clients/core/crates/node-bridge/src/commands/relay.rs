@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
-use agentsmesh_protocol::MsgType;
-use agentsmesh_relay::{AcpCallback, DisconnectCallback, OutputCallback, RelayStatusInfo, StatusCallback};
-use napi::threadsafe_function::{ThreadsafeFunction, ThreadsafeFunctionCallMode};
+use napi::threadsafe_function::ThreadsafeFunction;
 use napi_derive::napi;
 
 use crate::AppState;
+
+mod listener_callbacks;
 
 // Terminal data-plane relay surface over the shared `RelayConnectionPool` (the
 // SSOT). The pool runs natively in the main process; `main/relay.ts` provides
@@ -27,15 +25,44 @@ impl AppState {
         relay_url: String,
         token: String,
         on_output: ThreadsafeFunction<Vec<u8>>,
+        on_status: ThreadsafeFunction<String>,
+        on_acp: ThreadsafeFunction<String>,
+        on_bound: ThreadsafeFunction<u32>,
+        listener_lease_id: String,
     ) -> napi::Result<()> {
-        let cb = Arc::new(on_output);
-        let output_cb: OutputCallback = Arc::new(move |data: Vec<u8>| {
-            cb.call(Ok(data), ThreadsafeFunctionCallMode::NonBlocking);
-        });
         self.relay
-            .subscribe(&pod_key, &subscription_id, &relay_url, &token, output_cb)
-            .await;
+            .subscribe_ready_with_listeners(
+                &pod_key,
+                &subscription_id,
+                &relay_url,
+                &token,
+                listener_callbacks::output(on_output),
+                &listener_lease_id,
+                listener_callbacks::generation_status(on_status),
+                listener_callbacks::generation_acp(on_acp),
+                listener_callbacks::bound(on_bound),
+            )
+            .await
+            .map_err(err)?;
         Ok(())
+    }
+
+    /// Rebind the desktop fan-out callbacks to the currently active driver.
+    /// Returns 0 when a subscribe has not published that driver yet.
+    #[napi]
+    pub async fn relay_bind_pod_listeners(
+        &self,
+        pod_key: String,
+        on_status: ThreadsafeFunction<String>,
+        on_acp: ThreadsafeFunction<String>,
+        listener_lease_id: String,
+    ) -> u32 {
+        self.relay.bind_listeners_if_active(
+            &pod_key,
+            &listener_lease_id,
+            listener_callbacks::generation_status(on_status),
+            listener_callbacks::generation_acp(on_acp),
+        )
     }
 
     #[napi]
@@ -59,9 +86,16 @@ impl AppState {
     }
 
     #[napi]
-    pub async fn relay_send_acp_command(&self, pod_key: String, command: String) -> napi::Result<()> {
+    pub async fn relay_send_acp_command(
+        &self,
+        pod_key: String,
+        command: String,
+    ) -> napi::Result<()> {
         let val: serde_json::Value = serde_json::from_str(&command).map_err(err)?;
-        self.relay.send_acp_command(&pod_key, &val).await.map_err(err)
+        self.relay
+            .send_acp_command(&pod_key, &val)
+            .await
+            .map_err(err)
     }
 
     #[napi]
@@ -94,61 +128,17 @@ impl AppState {
             .unwrap_or_default()
     }
 
-    /// Status callback delivers `{"status","runnerDisconnected"}` JSON; main
-    /// forwards to the renderer as a `relay:status` IPC event.
-    #[napi]
-    pub async fn relay_on_status_change(
-        &self,
-        pod_key: String,
-        on_status: ThreadsafeFunction<String>,
-    ) -> napi::Result<()> {
-        let cb = Arc::new(on_status);
-        let listener: StatusCallback = Arc::new(move |info: RelayStatusInfo| {
-            let json = serde_json::json!({
-                "status": info.status.to_string(),
-                "runnerDisconnected": info.runner_disconnected,
-            })
-            .to_string();
-            cb.call(Ok(json), ThreadsafeFunctionCallMode::NonBlocking);
-        });
-        self.relay.on_status_change(&pod_key, listener).await;
-        Ok(())
-    }
-
-    /// ACP callback delivers `{"msgType","payload"}` JSON; main forwards as a
-    /// `relay:acp` IPC event for the renderer's ACP dispatcher.
-    #[napi]
-    pub async fn relay_on_acp_message(
-        &self,
-        pod_key: String,
-        on_acp: ThreadsafeFunction<String>,
-    ) -> napi::Result<()> {
-        let cb = Arc::new(on_acp);
-        let listener: AcpCallback = Arc::new(move |msg_type: MsgType, payload: serde_json::Value| {
-            let json = serde_json::json!({
-                "msgType": msg_type as u8,
-                "payload": payload,
-            })
-            .to_string();
-            cb.call(Ok(json), ThreadsafeFunctionCallMode::NonBlocking);
-        });
-        self.relay.on_acp_message(&pod_key, listener).await;
-        Ok(())
-    }
-
-    /// Pod-disconnected sink — `(podKey: string) => void`; main forwards as a
-    /// `relay:pod-disconnected` IPC event so the renderer adapter resets its
-    /// register-once guard and re-wires status/ACP on the next subscribe.
+    /// Pod-disconnected sink delivers `{"podKey","generation"}` JSON so main
+    /// can reject teardown notifications from an older driver generation.
     #[napi]
     pub async fn relay_on_pod_disconnected(
         &self,
         on_disconnect: ThreadsafeFunction<String>,
     ) -> napi::Result<()> {
-        let cb = Arc::new(on_disconnect);
-        let listener: DisconnectCallback = Arc::new(move |pod_key: String| {
-            cb.call(Ok(pod_key), ThreadsafeFunctionCallMode::NonBlocking);
-        });
-        self.relay.set_on_pod_disconnected(listener);
+        self.relay
+            .set_on_pod_generation_disconnected(listener_callbacks::generation_disconnect(
+                on_disconnect,
+            ));
         Ok(())
     }
 }

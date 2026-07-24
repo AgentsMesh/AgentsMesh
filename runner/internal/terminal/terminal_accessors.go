@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"fmt"
+	"sync"
 
 	"golang.org/x/term"
 )
@@ -29,6 +30,16 @@ func (t *Terminal) SetOutputHandler(handler func([]byte)) {
 	t.onOutput = handler
 }
 
+// SetReadOrderLocker installs the ordering boundary held across each PTY read
+// and its output callback. It must be configured before Start.
+func (t *Terminal) SetReadOrderLocker(locker sync.Locker) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.proc == nil {
+		t.readOrder = locker
+	}
+}
+
 // SetExitHandler sets the exit handler callback.
 // Must be called before Start().
 func (t *Terminal) SetExitHandler(handler func(int)) {
@@ -51,7 +62,7 @@ func (t *Terminal) Write(data []byte) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if t.closed || t.proc == nil {
+	if t.closed || t.stopping || t.proc == nil {
 		return fmt.Errorf("terminal is not running")
 	}
 

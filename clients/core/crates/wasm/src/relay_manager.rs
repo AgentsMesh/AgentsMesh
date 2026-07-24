@@ -36,16 +36,13 @@ impl WasmRelayManager {
     ) -> Result<(), String> {
         let output_cb = make_output_callback(callback);
         self.pool
-            .subscribe(&pod_key, &subscription_id, &relay_url, &token, output_cb)
-            .await;
+            .subscribe_ready(&pod_key, &subscription_id, &relay_url, &token, output_cb)
+            .await
+            .map_err(|error| error.to_string())?;
         Ok(())
     }
 
-    pub async fn unsubscribe(
-        &self,
-        pod_key: String,
-        subscription_id: String,
-    ) {
+    pub async fn unsubscribe(&self, pod_key: String, subscription_id: String) {
         self.pool.unsubscribe(&pod_key, &subscription_id).await;
     }
 
@@ -53,29 +50,15 @@ impl WasmRelayManager {
         self.pool.send(&pod_key, &data).await;
     }
 
-    pub async fn send_resize(
-        &self,
-        pod_key: String,
-        cols: u16,
-        rows: u16,
-    ) {
+    pub async fn send_resize(&self, pod_key: String, cols: u16, rows: u16) {
         self.pool.send_resize(&pod_key, cols, rows).await;
     }
 
-    pub async fn force_resize(
-        &self,
-        pod_key: String,
-        cols: u16,
-        rows: u16,
-    ) {
+    pub async fn force_resize(&self, pod_key: String, cols: u16, rows: u16) {
         self.pool.force_resize(&pod_key, cols, rows).await;
     }
 
-    pub async fn send_acp_command(
-        &self,
-        pod_key: String,
-        command: String,
-    ) -> Result<(), String> {
+    pub async fn send_acp_command(&self, pod_key: String, command: String) -> Result<(), String> {
         let val: serde_json::Value =
             serde_json::from_str(&command).map_err(agentsmesh_services::wire)?;
         self.pool
@@ -84,20 +67,12 @@ impl WasmRelayManager {
             .map_err(agentsmesh_services::wire)
     }
 
-    pub async fn on_status_change(
-        &self,
-        pod_key: String,
-        callback: js_sys::Function,
-    ) {
+    pub async fn on_status_change(&self, pod_key: String, callback: js_sys::Function) {
         let cb = make_status_callback(callback);
         self.pool.on_status_change(&pod_key, cb).await;
     }
 
-    pub async fn on_acp_message(
-        &self,
-        pod_key: String,
-        callback: js_sys::Function,
-    ) {
+    pub async fn on_acp_message(&self, pod_key: String, callback: js_sys::Function) {
         let cb = make_acp_callback(callback);
         self.pool.on_acp_message(&pod_key, cb).await;
     }
@@ -142,5 +117,46 @@ impl WasmRelayManager {
 impl Default for WasmRelayManager {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn missing_pod_state_and_commands_are_safe_on_the_host() {
+        let manager = WasmRelayManager::new();
+        assert_eq!(
+            manager.get_status("missing".to_string()).await,
+            "disconnected"
+        );
+        assert!(!manager.is_runner_disconnected("missing".to_string()).await);
+        manager
+            .send("missing".to_string(), "input".to_string())
+            .await;
+        manager.send_resize("missing".to_string(), 80, 24).await;
+        manager.force_resize("missing".to_string(), 100, 30).await;
+        manager
+            .unsubscribe("missing".to_string(), "sub".to_string())
+            .await;
+        manager.disconnect("missing".to_string()).await;
+        manager.disconnect_all().await;
+    }
+
+    #[tokio::test]
+    async fn acp_command_rejects_invalid_json_and_disconnected_pods() {
+        let manager = WasmRelayManager::new();
+        assert!(manager
+            .send_acp_command("missing".to_string(), "not-json".to_string())
+            .await
+            .is_err());
+        assert!(manager
+            .send_acp_command(
+                "missing".to_string(),
+                serde_json::json!({"command": "prompt"}).to_string(),
+            )
+            .await
+            .is_err());
     }
 }

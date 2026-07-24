@@ -38,6 +38,32 @@ func TestSetHandler(t *testing.T) {
 	assert.Equal(t, handler, conn.handler)
 }
 
+func TestStopCancelsOpenRelayIntentBeforeWaitingForHandlers(t *testing.T) {
+	conn := newTestConnection()
+	handler := newRelayIntentDispatchHandler()
+	conn.handler = handler
+
+	intent, admission, _ := conn.podRelayIntents.OfferSubscribe(SubscribePodRequest{
+		PodKey:      "stop-open-intent",
+		RelayURL:    "wss://relay.example.com",
+		RunnerToken: "secret",
+	})
+	if admission != relayIntentStart {
+		t.Fatalf("first subscription admission = %v, want start", admission)
+	}
+	drainEpoch, claimed := intent.claimDrain()
+	if !claimed {
+		t.Fatal("failed to claim initial relay intent drain")
+	}
+	conn.podRelayIntents.Drain(intent, drainEpoch, func(SubscribePodRequest) {})
+
+	conn.Stop()
+	waitUnsubscribe(t, handler.unsubscribeCalls)
+	if got := conn.podRelayIntents.get("stop-open-intent"); got != nil {
+		t.Fatalf("Stop retained relay intent: %+v", got)
+	}
+}
+
 func TestOrgSlug_SetGet(t *testing.T) {
 	conn := NewGRPCConnection("localhost:9443", "node-1", "org-1", "", "", "")
 	assert.Equal(t, "org-1", conn.GetOrgSlug())

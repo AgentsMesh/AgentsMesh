@@ -40,6 +40,9 @@ func NewPTYOutputHandler(
 			}
 		}()
 
+		comps.streamMu.Lock()
+		defer comps.streamMu.Unlock()
+
 		var screenLines []string
 		if virtualTerm != nil {
 			startFeed := time.Now()

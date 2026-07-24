@@ -11,23 +11,31 @@ import (
 type escapeState int
 
 const (
-	stateNormal escapeState = iota
-	stateEscape             // After ESC
-	stateCSI                // After ESC [
-	stateOSC                // After ESC ]
-	stateDCS                // After ESC P
+	stateNormal     escapeState = iota
+	stateEscape                 // After ESC
+	stateCSI                    // After ESC [
+	stateOSC                    // After ESC ]
+	stateDCS                    // After ESC P
+	stateCSIDiscard             // Oversized CSI, ignore through final byte
+	stateOSCDiscard             // Oversized OSC, ignore through BEL/ST
+	stateDCSDiscard             // Oversized DCS, ignore through ST
 )
 
 // processByte processes a single byte through the state machine
 func (vt *VirtualTerminal) processByte(b byte) {
+	if (b == 0x18 || b == 0x1a) && vt.escState != stateNormal { // CAN/SUB
+		vt.resetEscapeParser()
+		return
+	}
+	if b == 0x1b && (vt.escState == stateEscape || vt.escState == stateCSI || vt.escState == stateCSIDiscard) {
+		vt.beginEscape()
+		return
+	}
+
 	switch vt.escState {
 	case stateNormal:
 		if b == 0x1b { // ESC
-			vt.escState = stateEscape
-			vt.escBuffer = nil
-			vt.escParams = nil
-			vt.escPrivate = 0
-			vt.escRawSeq = nil
+			vt.beginEscape()
 		} else {
 			vt.processChar(rune(b))
 		}
@@ -46,7 +54,7 @@ func (vt *VirtualTerminal) processByte(b byte) {
 			vt.escBuffer = vt.escBuffer[:0]
 		} else if b == 0x1b {
 			// ST (ESC \) starts with ESC, need to track for next byte
-			vt.escBuffer = append(vt.escBuffer, b)
+			vt.appendParserByte(&vt.escBuffer, b)
 		} else if len(vt.escBuffer) > 0 && vt.escBuffer[len(vt.escBuffer)-1] == 0x1b && b == '\\' {
 			// ST (ESC \) completes OSC sequence
 			vt.escBuffer = vt.escBuffer[:len(vt.escBuffer)-1] // Remove trailing ESC
@@ -54,18 +62,21 @@ func (vt *VirtualTerminal) processByte(b byte) {
 			vt.escState = stateNormal
 			vt.escBuffer = vt.escBuffer[:0]
 		} else {
-			vt.escBuffer = append(vt.escBuffer, b)
+			vt.appendParserByte(&vt.escBuffer, b)
 		}
 
 	case stateDCS:
 		// DCS sequences end with ST (ESC \)
 		if b == 0x1b {
-			vt.escBuffer = append(vt.escBuffer, b)
+			vt.appendParserByte(&vt.escBuffer, b)
 		} else if len(vt.escBuffer) > 0 && vt.escBuffer[len(vt.escBuffer)-1] == 0x1b && b == '\\' {
-			vt.escState = stateNormal
+			vt.resetEscapeParser()
 		} else {
-			vt.escBuffer = append(vt.escBuffer, b)
+			vt.appendParserByte(&vt.escBuffer, b)
 		}
+
+	case stateCSIDiscard, stateOSCDiscard, stateDCSDiscard:
+		vt.processParserDiscardByte(b)
 	}
 }
 
@@ -82,15 +93,15 @@ func (vt *VirtualTerminal) processEscapeByte(b byte) {
 		vt.escState = stateDCS
 		vt.escBuffer = nil
 	case '7': // Save cursor (DECSC)
-		vt.savedCursorX = vt.cursorX
-		vt.savedCursorY = vt.cursorY
+		vt.saveCursor()
 		vt.escState = stateNormal
 	case '8': // Restore cursor (DECRC)
-		vt.cursorX = vt.savedCursorX
-		vt.cursorY = vt.savedCursorY
+		vt.restoreCursor()
 		vt.escState = stateNormal
 	case 'c': // Reset (RIS)
 		vt.initScreen()
+		vt.resetCursorRegisters()
+		vt.resetTerminalModes()
 		vt.escState = stateNormal
 	case 'D': // Index (IND) - move down
 		vt.cursorY++
@@ -118,6 +129,25 @@ func (vt *VirtualTerminal) processEscapeByte(b byte) {
 		// Unknown escape sequence, return to normal
 		vt.escState = stateNormal
 	}
+}
+
+func (vt *VirtualTerminal) beginEscape() {
+	vt.canJoinGrapheme = false
+	vt.escState = stateEscape
+	vt.escBuffer = nil
+	vt.escParams = nil
+	vt.escPrivate = 0
+	vt.escRawSeq = nil
+	vt.discardSawESC = false
+}
+
+func (vt *VirtualTerminal) resetEscapeParser() {
+	vt.escState = stateNormal
+	vt.escBuffer = nil
+	vt.escParams = nil
+	vt.escPrivate = 0
+	vt.escRawSeq = nil
+	vt.discardSawESC = false
 }
 
 // handleOSC processes an OSC (Operating System Command) sequence.

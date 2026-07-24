@@ -88,6 +88,15 @@ func TestFrameBuffer_IsLastFrameFullRedraw_IncompleteFrame(t *testing.T) {
 	}
 }
 
+func TestFrameBuffer_IsLastFrameFullRedraw_OrphanEnd(t *testing.T) {
+	fb := NewFrameBuffer(1000)
+	fb.Write(append([]byte("orphan"), syncOutputEndSeq...))
+
+	if fb.IsLastFrameFullRedraw() {
+		t.Error("orphan synchronized-output end must not report a full redraw")
+	}
+}
+
 // TestFrameBuffer_IsLastFrameFullRedraw_MultipleFrames tests with multiple frames
 func TestFrameBuffer_IsLastFrameFullRedraw_MultipleFrames(t *testing.T) {
 	fb := NewFrameBuffer(2000)

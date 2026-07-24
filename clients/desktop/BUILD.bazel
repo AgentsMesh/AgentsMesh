@@ -149,6 +149,7 @@ vitest_test(
             "scripts/**/*.test.ts",
         ],
         allow_empty = True,
+        exclude = ["src/**/*.integration.test.ts"],
     ),
     config = "vitest.config.ts",
     data = [
@@ -158,12 +159,63 @@ vitest_test(
         [
             "src/shared/**/*.ts",
             "src/main/**/*.ts",
+            "src/preload/**/*.ts",
             "scripts/**/*.mjs",
             "scripts/**/*.cjs",
         ],
         allow_empty = True,
         exclude = ["src/**/*.test.ts"],
     ),
+)
+
+# Loads the actual N-API addon and verifies readiness rejection across the
+# Rust -> ThreadsafeFunction -> JavaScript Promise boundary. This is separate
+# from :unit because it intentionally builds and executes the native `.node`.
+vitest_test(
+    name = "relay_node_bridge_integration",
+    size = "medium",
+    srcs = ["src/main/relay_node_bridge.integration.test.ts"],
+    config = "vitest.node-bridge-integration.config.ts",
+    data = [
+        "tsconfig.json",
+        "//:node_modules",
+        "//:node_modules/@agentsmesh/node-bridge",
+    ],
+)
+
+# Focused ratchet for the main-process relay ownership boundary. Keeping this
+# separate from :unit avoids making unrelated historical desktop code satisfy a
+# new global threshold while preventing these lifecycle owners from regressing.
+vitest_test(
+    name = "relay_coverage",
+    size = "small",
+    srcs = [
+        "src/main/relay.test.ts",
+        "src/main/relay_listener_events.test.ts",
+        "src/main/relay_listener_lease.test.ts",
+        "src/main/relay_listener_wiring.test.ts",
+        "src/main/relay_output_subscriptions.test.ts",
+        "src/preload/relay_push_api.test.ts",
+    ],
+    config = "vitest.relay-coverage.config.ts",
+    data = [
+        "src/main/relay.ts",
+        "src/main/relay_bridge.fixture.test.ts",
+        "src/main/relay_listener_events.ts",
+        "src/main/relay_listener_wiring.ts",
+        "src/main/relay_output_subscriptions.ts",
+        "src/main/window_registry.ts",
+        "src/preload/relay_push_api.ts",
+        "tsconfig.json",
+        "vitest.config.ts",
+        "//:node_modules",
+        "//:node_modules/@agentsmesh/electron-adapter",
+        "//:node_modules/@vitest/coverage-v8",
+    ],
+    extra_args = [
+        "--coverage.enabled",
+        "--coverage.reporter=text",
+    ],
 )
 
 # `bazel test //clients/desktop:lint` — ESLint over main + preload +

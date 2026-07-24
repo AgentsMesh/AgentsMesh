@@ -115,7 +115,12 @@ func (c *GRPCConnection) Stop() {
 		// Wait for connectionLoop to exit before cleaning up resources
 		c.loopWg.Wait()
 
-		// Wait for in-flight async handlers (handleCreatePod, etc.)
+		if c.podRelayIntents != nil {
+			for _, podKey := range c.podRelayIntents.CancelAll() {
+				c.handleUnsubscribePod(&runnerv1.UnsubscribePodCommand{PodKey: podKey})
+			}
+		}
+		// Wait for in-flight async handlers (handleCreatePod, relay drain, etc.)
 		c.handlerWg.Wait()
 
 		c.mu.Lock()

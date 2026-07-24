@@ -21,7 +21,7 @@ func TestSmartAggregator_FullRedrawThrottling_Enabled(t *testing.T) {
 			WithThrottlerMinDelay(100*time.Millisecond),
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Send multiple full redraw frames rapidly
@@ -68,7 +68,7 @@ func TestSmartAggregator_FullRedrawThrottling_IncrementalNotThrottled(t *testing
 			WithThrottlerMinDelay(200*time.Millisecond),
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Send incremental frames (small, no clear screen)
@@ -102,7 +102,7 @@ func TestSmartAggregator_FullRedrawThrottling_Disabled(t *testing.T) {
 		WithSmartBaseDelay(10*time.Millisecond),
 		// No WithFullRedrawThrottling
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Send full redraw frames rapidly

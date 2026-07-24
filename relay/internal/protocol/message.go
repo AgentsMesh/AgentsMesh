@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 )
 
@@ -36,18 +35,6 @@ type Message struct {
 	Payload []byte
 }
 
-// TerminalSnapshot represents a complete terminal state
-type TerminalSnapshot struct {
-	Cols              uint16   `json:"cols"`
-	Rows              uint16   `json:"rows"`
-	Lines             []string `json:"lines"`               // Plain text lines (kept for compatibility)
-	SerializedContent string   `json:"serialized_content"`  // ANSI-escaped serialized content for xterm.js
-	CursorX           int      `json:"cursor_x"`
-	CursorY           int      `json:"cursor_y"`
-	CursorVisible     bool     `json:"cursor_visible"`
-	IsAltScreen       bool     `json:"is_alt_screen"` // Whether in alternate screen mode (TUI apps)
-}
-
 // ResizeMessage represents a terminal resize request
 type ResizeMessage struct {
 	Cols uint16 `json:"cols"`
@@ -72,24 +59,6 @@ func DecodeMessage(data []byte) (*Message, error) {
 		Type:    data[0],
 		Payload: data[1:],
 	}, nil
-}
-
-// EncodeSnapshot encodes a terminal snapshot
-func EncodeSnapshot(snapshot *TerminalSnapshot) ([]byte, error) {
-	payload, err := json.Marshal(snapshot)
-	if err != nil {
-		return nil, err
-	}
-	return EncodeMessage(MsgTypeSnapshot, payload), nil
-}
-
-// DecodeSnapshot decodes a terminal snapshot from message payload
-func DecodeSnapshot(payload []byte) (*TerminalSnapshot, error) {
-	var snapshot TerminalSnapshot
-	if err := json.Unmarshal(payload, &snapshot); err != nil {
-		return nil, err
-	}
-	return &snapshot, nil
 }
 
 // EncodeOutput encodes terminal output data

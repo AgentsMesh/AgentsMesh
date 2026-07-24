@@ -1,16 +1,15 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use futures_channel::mpsc;
 use futures_channel::mpsc::UnboundedReceiver;
 use futures_util::StreamExt;
-use js_sys::{ArrayBuffer, Uint8Array};
-use tracing::{debug, warn};
-use wasm_bindgen::prelude::*;
-use web_sys::{BinaryType, CloseEvent, ErrorEvent, MessageEvent, WebSocket};
+use tracing::debug;
+use web_sys::{BinaryType, WebSocket};
 
 use crate::error::TransportError;
 use crate::message::WsMessage;
+
+mod callbacks;
+
+use callbacks::{attach_callbacks, wait_for_open, WsCallbacks};
 
 pub struct WebSocketConnection {
     ws: WebSocket,
@@ -19,21 +18,15 @@ pub struct WebSocketConnection {
     callbacks: WsCallbacks,
 }
 
-struct WsCallbacks {
-    _on_message: Closure<dyn FnMut(MessageEvent)>,
-    _on_error: Closure<dyn FnMut(ErrorEvent)>,
-    _on_close: Closure<dyn FnMut(CloseEvent)>,
-}
-
 impl WebSocketConnection {
     pub async fn connect(url: &str) -> Result<Self, TransportError> {
-        let ws = WebSocket::new(url)
-            .map_err(|e| TransportError::ConnectionFailed(format!("{e:?}")))?;
+        let ws =
+            WebSocket::new(url).map_err(|e| TransportError::ConnectionFailed(format!("{e:?}")))?;
         ws.set_binary_type(BinaryType::Arraybuffer);
 
+        wait_for_open(&ws).await?;
         let (read_tx, read_rx) = mpsc::unbounded::<WsMessage>();
         let callbacks = attach_callbacks(&ws, read_tx)?;
-        wait_for_open(&ws).await?;
 
         debug!("websocket connected to {url}");
         Ok(Self {
@@ -64,14 +57,18 @@ impl WebSocketConnection {
     }
 
     pub fn is_closed(&self) -> bool {
-        self.ws.ready_state() == WebSocket::CLOSED
-            || self.ws.ready_state() == WebSocket::CLOSING
+        self.ws.ready_state() == WebSocket::CLOSED || self.ws.ready_state() == WebSocket::CLOSING
     }
 
     pub fn into_split(self) -> (WsSender, WsReceiver) {
         (
-            WsSender { ws: self.ws.clone(), _callbacks: self.callbacks },
-            WsReceiver { read_rx: self.read_rx },
+            WsSender {
+                ws: self.ws.clone(),
+                _callbacks: self.callbacks,
+            },
+            WsReceiver {
+                read_rx: self.read_rx,
+            },
         )
     }
 }
@@ -84,16 +81,20 @@ pub struct WsSender {
 
 impl WsSender {
     pub fn send_binary(&self, data: Vec<u8>) -> Result<(), TransportError> {
-        self.ws.send_with_u8_array(&data)
+        self.ws
+            .send_with_u8_array(&data)
             .map_err(|e| TransportError::SendFailed(format!("{e:?}")))
     }
 
     pub fn send_text(&self, text: String) -> Result<(), TransportError> {
-        self.ws.send_with_str(&text)
+        self.ws
+            .send_with_str(&text)
             .map_err(|e| TransportError::SendFailed(format!("{e:?}")))
     }
 
-    pub fn close(&self) { let _ = self.ws.close(); }
+    pub fn close(&self) {
+        let _ = self.ws.close();
+    }
 }
 
 pub struct WsReceiver {
@@ -104,73 +105,4 @@ impl WsReceiver {
     pub async fn recv(&mut self) -> Result<WsMessage, TransportError> {
         self.read_rx.next().await.ok_or(TransportError::Closed)
     }
-}
-
-fn attach_callbacks(
-    ws: &WebSocket,
-    read_tx: mpsc::UnboundedSender<WsMessage>,
-) -> Result<WsCallbacks, TransportError> {
-    let tx = read_tx.clone();
-    let on_message = Closure::wrap(Box::new(move |e: MessageEvent| {
-        let data = e.data();
-        if let Ok(buf) = data.clone().dyn_into::<ArrayBuffer>() {
-            let array = Uint8Array::new(&buf);
-            let _ = tx.unbounded_send(WsMessage::Binary(array.to_vec()));
-        } else if let Some(text) = data.as_string() {
-            let _ = tx.unbounded_send(WsMessage::Text(text));
-        }
-    }) as Box<dyn FnMut(MessageEvent)>);
-
-    let on_error = Closure::wrap(Box::new(move |e: ErrorEvent| {
-        warn!("websocket error: {:?}", e.message());
-    }) as Box<dyn FnMut(ErrorEvent)>);
-
-    let tx = read_tx;
-    let on_close = Closure::wrap(Box::new(move |e: CloseEvent| {
-        debug!("websocket closed");
-        let _ = tx.unbounded_send(WsMessage::Close(Some(e.code())));
-    }) as Box<dyn FnMut(CloseEvent)>);
-
-    ws.set_onmessage(Some(on_message.as_ref().unchecked_ref()));
-    ws.set_onerror(Some(on_error.as_ref().unchecked_ref()));
-    ws.set_onclose(Some(on_close.as_ref().unchecked_ref()));
-
-    Ok(WsCallbacks {
-        _on_message: on_message,
-        _on_error: on_error,
-        _on_close: on_close,
-    })
-}
-
-async fn wait_for_open(ws: &WebSocket) -> Result<(), TransportError> {
-    let (tx, rx) = futures_channel::oneshot::channel::<Result<(), String>>();
-    let tx = Rc::new(RefCell::new(Some(tx)));
-
-    let tx_open = tx.clone();
-    let on_open = Closure::once(move || {
-        if let Some(tx) = tx_open.borrow_mut().take() {
-            let _ = tx.send(Ok(()));
-        }
-    });
-
-    let tx_err = tx;
-    let on_error = Closure::once(move |e: ErrorEvent| {
-        if let Some(tx) = tx_err.borrow_mut().take() {
-            let _ = tx.send(Err(e.message()));
-        }
-    });
-
-    ws.set_onopen(Some(on_open.as_ref().unchecked_ref()));
-    let prev_onerror = ws.onerror();
-    ws.set_onerror(Some(on_error.as_ref().unchecked_ref()));
-
-    let result = rx
-        .await
-        .map_err(|_| TransportError::ConnectionFailed("open cancelled".into()))?
-        .map_err(TransportError::ConnectionFailed);
-
-    ws.set_onopen(None);
-    ws.set_onerror(prev_onerror.as_ref());
-
-    result
 }

@@ -26,6 +26,26 @@ func TestFrameBuffer_FlushAll_UTF8Boundary(t *testing.T) {
 	}
 }
 
+func TestFrameBuffer_OverflowRetainsUTF8ContinuationOwnership(t *testing.T) {
+	fb := NewFrameBuffer(1)
+	prefix := []byte{0xe4, 0xb8}
+
+	if fb.Write(prefix) {
+		t.Fatal("split rune prefix should overflow the one-byte bulk buffer")
+	}
+	if !bytes.Equal(fb.Bytes(), prefix) {
+		t.Fatalf("overflow lost UTF-8 continuation ownership: %x", fb.Bytes())
+	}
+	if !fb.Write([]byte{0xad}) {
+		t.Fatal("UTF-8 boundary headroom did not accept the completing suffix")
+	}
+
+	data, remaining := fb.FlushAll()
+	if remaining != 0 || !bytes.Equal(data, []byte("中")) {
+		t.Fatalf("completed rune = %x, remaining = %d", data, remaining)
+	}
+}
+
 func TestAlignToUTF8Boundary(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -89,6 +109,16 @@ func TestFindLastValidUTF8Boundary(t *testing.T) {
 			data:     []byte{'h', 'i', 0xe4, 0xb8}, // "hi" + incomplete 中
 			expected: 2,                            // truncate before incomplete
 		},
+		{
+			name:     "single three-byte rune lead",
+			data:     []byte{0xe4},
+			expected: 0,
+		},
+		{
+			name:     "single four-byte rune lead",
+			data:     []byte{0xf0},
+			expected: 0,
+		},
 	}
 
 	for _, tc := range tests {
@@ -109,7 +139,7 @@ func TestFrameBuffer_FlushComplete_UTF8Boundary(t *testing.T) {
 	completeText := []byte("hello 中文")
 	incompleteUTF8 := []byte{0xe4, 0xb8} // incomplete 中
 
-	// Write directly to buffer to avoid frame discard
+	// Write directly to exercise the buffer's UTF-8 boundary handling.
 	fb.buffer.Write(completeText)
 	fb.buffer.Write(incompleteUTF8)
 

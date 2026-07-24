@@ -73,6 +73,10 @@ test.describe("IPC · uncategorized", () => {
     await invokeIpcContract(sharedPage, { method: "appAvailableRunnersProto", returnType: "Array<number>" });
   });
 
+  test("appChannelAdvanceLastRead", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "appChannelAdvanceLastRead", returnType: "void" }, 0, 0);
+  });
+
   test("appChannelApplyFetchedChannel", async ({ sharedPage }) => {
     await invokeIpcContract(sharedPage, { method: "appChannelApplyFetchedChannel", returnType: "void" }, []);
   });
@@ -103,6 +107,10 @@ test.describe("IPC · uncategorized", () => {
 
   test("appChannelClearUnread", async ({ sharedPage }) => {
     await invokeIpcContract(sharedPage, { method: "appChannelClearUnread", returnType: "void" }, 0);
+  });
+
+  test("appChannelGetLastReadId", async ({ sharedPage }) => {
+    await invokeIpcContract(sharedPage, { method: "appChannelGetLastReadId", returnType: "number" }, 0);
   });
 
   test("appChannelInsertChannel", async ({ sharedPage }) => {

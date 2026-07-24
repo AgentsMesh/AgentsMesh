@@ -60,6 +60,7 @@ rust_test(
     name = "wasm_lib_test",
     crate = ":wasm_lib",
     edition = "2021",
+    deps = ["@crates//:tokio"],
 )
 
 # Phase 3a — produces the ESM `pkg/` directory consumed by `clients/web`

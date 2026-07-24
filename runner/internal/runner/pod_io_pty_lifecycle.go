@@ -32,14 +32,6 @@ func (p *PTYPodIO) SetIOErrorHandler(handler func(error)) {
 	}
 }
 
-func (p *PTYPodIO) Redraw() error {
-	if p.components.Terminal == nil {
-		logger.Pod().Error("PTY Redraw failed: terminal not initialized", "pod_key", p.podKey)
-		return fmt.Errorf("terminal not initialized")
-	}
-	return p.components.Terminal.Redraw()
-}
-
 func (p *PTYPodIO) Detach() {
 	logger.Pod().Info("PTY detaching", "pod_key", p.podKey)
 	if p.components.Terminal != nil {
@@ -48,6 +40,11 @@ func (p *PTYPodIO) Detach() {
 }
 
 func (p *PTYPodIO) WriteOutput(data []byte) {
+	p.components.streamMu.Lock()
+	defer p.components.streamMu.Unlock()
+	if p.components.VirtualTerminal != nil {
+		p.components.VirtualTerminal.Feed(data)
+	}
 	if p.components.Aggregator != nil {
 		p.components.Aggregator.Write(data)
 	}
@@ -55,6 +52,11 @@ func (p *PTYPodIO) WriteOutput(data []byte) {
 
 func (p *PTYPodIO) Teardown() string {
 	logger.Pod().Info("PTY teardown starting", "pod_key", p.podKey)
+	p.components.readMu.Lock()
+	defer p.components.readMu.Unlock()
+	p.components.streamMu.Lock()
+	defer p.components.streamMu.Unlock()
+
 	if p.components.Aggregator != nil {
 		p.components.Aggregator.Stop()
 	}

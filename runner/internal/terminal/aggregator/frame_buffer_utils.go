@@ -29,15 +29,13 @@ func findLastValidUTF8Boundary(data []byte) int {
 	// Check if data already ends on a valid UTF-8 boundary
 	for i := len(data) - 1; i >= 0 && i >= len(data)-4; i-- {
 		if utf8.RuneStart(data[i]) {
-			// Found the start of a UTF-8 character
-			// Check if the remaining bytes form a complete character
-			r, size := utf8.DecodeRune(data[i:])
-			if r != utf8.RuneError || size == len(data)-i {
-				// Complete character or valid single byte
-				return len(data)
+			// FullRune distinguishes an incomplete lead byte from an invalid byte.
+			// Invalid bytes remain part of the raw terminal stream, while an incomplete
+			// rune stays owned by the next PTY chunk.
+			if !utf8.FullRune(data[i:]) {
+				return i
 			}
-			// Incomplete character - truncate before it
-			return i
+			return len(data)
 		}
 	}
 
@@ -50,4 +48,31 @@ func findLastValidUTF8Boundary(data []byte) int {
 
 	// No valid UTF-8 start byte found - return all data
 	return len(data)
+}
+
+// trailingIncompleteUTF8 returns only the incomplete rune prefix at the end of
+// the concatenated stream. A UTF-8 rune can own at most three pending bytes, so
+// inspecting the final UTFMax-1 bytes is sufficient without copying the stream.
+func trailingIncompleteUTF8(buffer, data []byte) []byte {
+	const maxPending = utf8.UTFMax - 1
+	tail := make([]byte, 0, maxPending)
+	if len(data) < maxPending {
+		needed := maxPending - len(data)
+		start := len(buffer) - needed
+		if start < 0 {
+			start = 0
+		}
+		tail = append(tail, buffer[start:]...)
+	}
+	start := len(data) - maxPending
+	if start < 0 {
+		start = 0
+	}
+	tail = append(tail, data[start:]...)
+
+	boundary := findLastValidUTF8Boundary(tail)
+	if boundary == len(tail) {
+		return nil
+	}
+	return append([]byte(nil), tail[boundary:]...)
 }

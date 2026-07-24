@@ -23,7 +23,7 @@ func TestSmartAggregator_FullRedrawThrottling_Recovery(t *testing.T) {
 			WithThrottlerMinDelay(50*time.Millisecond),
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Phase 1: High frequency full redraws
@@ -72,7 +72,7 @@ func TestSmartAggregator_FullRedrawThrottling_ContentPreserved(t *testing.T) {
 			WithThrottlerMinDelay(100*time.Millisecond),
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Write frames with unique identifiers
@@ -118,7 +118,7 @@ func TestSmartAggregator_FullRedrawThrottling_SerializeModeBypassed(t *testing.T
 			WithThrottlerMinDelay(200*time.Millisecond),
 		),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// In serialize mode, Write() just marks pending data

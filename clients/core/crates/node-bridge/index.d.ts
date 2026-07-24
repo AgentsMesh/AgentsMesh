@@ -41,6 +41,7 @@ export class AppState {
   appAutopilotUpdateThinkingProto(reqBytes: Array<number>): void
   appAvailableRunnersJson(): string
   appAvailableRunnersProto(): Array<number>
+  appChannelAdvanceLastRead(channelId: number, messageId: number): void
   appChannelApplyFetchedChannel(respBytes: Array<number>): void
   appChannelApplyFetchedChannels(respBytes: Array<number>): void
   appChannelApplyFetchedMembers(channelId: number, respBytes: Array<number>): void
@@ -49,6 +50,7 @@ export class AppState {
   appChannelApplyFetchedPods(channelId: number, respBytes: Array<number>): void
   appChannelApplyMessageEdited(reqBytes: Array<number>): void
   appChannelClearUnread(channelId: number): void
+  appChannelGetLastReadId(channelId: number): number
   appChannelInsertChannel(reqBytes: Array<number>): void
   appChannelInsertMessage(reqBytes: Array<number>): void
   appChannelMentionCountsJson(): string
@@ -156,10 +158,14 @@ export class AppState {
   channelEditChannelMessageConnect(request: Array<number>): Promise<Array<number>>
   channelGetChannelConnect(request: Array<number>): Promise<Array<number>>
   channelGetChannelUnreadCountsConnect(request: Array<number>): Promise<Array<number>>
+  channelGetMessageReadByConnect(request: Array<number>): Promise<Array<number>>
   channelListChannelMembersConnect(request: Array<number>): Promise<Array<number>>
   channelListChannelMessagesConnect(request: Array<number>): Promise<Array<number>>
   channelListChannelsConnect(request: Array<number>): Promise<Array<number>>
   channelMarkChannelReadConnect(request: Array<number>): Promise<Array<number>>
+  channelMarkChannelUnreadConnect(request: Array<number>): Promise<Array<number>>
+  channelMuteChannelConnect(request: Array<number>): Promise<Array<number>>
+  channelPinChannelConnect(request: Array<number>): Promise<Array<number>>
   channelSendChannelMessageConnect(request: Array<number>): Promise<Array<number>>
   channelUnarchiveChannelConnect(request: Array<number>): Promise<Array<number>>
   channelUpdateChannelConnect(request: Array<number>): Promise<Array<number>>
@@ -227,19 +233,18 @@ export class AppState {
   promocodeGetRedemptionHistoryConnect(request: Array<number>): Promise<Array<number>>
   promocodeRedeemPromoCodeConnect(request: Array<number>): Promise<Array<number>>
   promocodeValidatePromoCodeConnect(request: Array<number>): Promise<Array<number>>
+  relayBindPodListeners(podKey: string, onStatus: (err: unknown, arg: string) => void, onAcp: (err: unknown, arg: string) => void, listenerLeaseId: string): Promise<number>
   relayDisconnect(podKey: string): Promise<void>
   relayDisconnectAll(): Promise<void>
   relayForceResize(podKey: string, cols: number, rows: number): Promise<void>
   relayGetPodSize(podKey: string): Promise<Array<number>>
   relayGetStatus(podKey: string): Promise<string>
   relayIsRunnerDisconnected(podKey: string): Promise<boolean>
-  relayOnAcpMessage(podKey: string, onAcp: (err: unknown, arg: string) => void): Promise<void>
   relayOnPodDisconnected(onDisconnect: (err: unknown, arg: string) => void): Promise<void>
-  relayOnStatusChange(podKey: string, onStatus: (err: unknown, arg: string) => void): Promise<void>
   relaySend(podKey: string, data: string): Promise<void>
   relaySendAcpCommand(podKey: string, command: string): Promise<void>
   relaySendResize(podKey: string, cols: number, rows: number): Promise<void>
-  relaySubscribe(podKey: string, subscriptionId: string, relayUrl: string, token: string, onOutput: (err: unknown, arg: Array<number>) => void): Promise<void>
+  relaySubscribe(podKey: string, subscriptionId: string, relayUrl: string, token: string, onOutput: (err: unknown, arg: Array<number>) => void, onStatus: (err: unknown, arg: string) => void, onAcp: (err: unknown, arg: string) => void, onBound: (err: unknown, arg: number) => void, listenerLeaseId: string): Promise<void>
   relayUnsubscribe(podKey: string, subscriptionId: string): Promise<void>
   runnerAuthorizeRunner(requestBytes: Array<number>): Promise<Array<number>>
   runnerGetAuthStatus(requestBytes: Array<number>): Promise<Array<number>>

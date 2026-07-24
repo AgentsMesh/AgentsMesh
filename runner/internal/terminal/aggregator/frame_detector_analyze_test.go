@@ -1,9 +1,6 @@
 package aggregator
 
-import (
-	"bytes"
-	"testing"
-)
+import "testing"
 
 func TestFrameDetector_AnalyzeFrameBoundaries_NoFrames(t *testing.T) {
 	fd := NewFrameDetector()
@@ -114,24 +111,6 @@ func TestFrameDetector_AnalyzeFrameBoundaries_OrphanEnd(t *testing.T) {
 	}
 }
 
-func TestFrameDetector_AnalyzeFrameBoundaries_ClearScreen(t *testing.T) {
-	fd := NewFrameDetector()
-
-	// Data with clear screen but no sync frames
-	data := append([]byte("old content"), clearScreenSeq...)
-	data = append(data, []byte("new content")...)
-
-	result := fd.AnalyzeFrameBoundaries(data)
-
-	if result.HasSyncFrames {
-		t.Error("Should not detect sync frames")
-	}
-	expectedPos := len("old content")
-	if result.ClearScreenPos != expectedPos {
-		t.Errorf("Expected ClearScreenPos=%d, got %d", expectedPos, result.ClearScreenPos)
-	}
-}
-
 func TestFrameDetector_AnalyzeFrameBoundaries_OnlyEnds(t *testing.T) {
 	fd := NewFrameDetector()
 
@@ -165,39 +144,5 @@ func TestFrameDetector_NestedFrames(t *testing.T) {
 	// Should handle without panic
 	if !result.HasSyncFrames {
 		t.Error("Should detect sync frames")
-	}
-}
-
-func TestFrameDetector_MixedContent(t *testing.T) {
-	fd := NewFrameDetector()
-
-	// Text before a full redraw frame - prefix should be discarded
-	data := []byte("prefix text")
-	data = append(data, buildFullRedrawFrame("frame content")...)
-	data = append(data, []byte("suffix text")...)
-
-	buffer := bytes.NewBuffer(data)
-	discarded := fd.DiscardOldFrames(buffer)
-
-	// Should discard prefix because there's a full redraw frame
-	if discarded != len("prefix text") {
-		t.Errorf("Expected to discard prefix, discarded %d bytes", discarded)
-	}
-}
-
-func TestFrameDetector_MixedContent_IncrementalFrame(t *testing.T) {
-	fd := NewFrameDetector()
-
-	// Text before an incremental frame - nothing should be discarded
-	data := []byte("prefix text")
-	data = append(data, buildSyncFrame("frame content")...)
-	data = append(data, []byte("suffix text")...)
-
-	buffer := bytes.NewBuffer(data)
-	discarded := fd.DiscardOldFrames(buffer)
-
-	// Should NOT discard anything - incremental frames don't trigger discard
-	if discarded != 0 {
-		t.Errorf("Expected not to discard with incremental frame, discarded %d bytes", discarded)
 	}
 }
