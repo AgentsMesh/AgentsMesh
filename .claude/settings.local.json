@@ -8,5 +8,9 @@
       "mcp__chrome-devtools__wait_for",
       "mcp__chrome-devtools__take_snapshot"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "chrome-devtools"
+  ],
+  "enableAllProjectMcpServers": true
 }
