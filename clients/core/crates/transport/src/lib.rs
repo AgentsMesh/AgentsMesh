@@ -2,6 +2,9 @@ mod error;
 mod message;
 pub mod runtime;
 
+#[cfg(any(target_arch = "wasm32", test))]
+mod callback_owner;
+
 #[cfg(not(target_arch = "wasm32"))]
 mod native;
 #[cfg(target_arch = "wasm32")]

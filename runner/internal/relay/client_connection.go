@@ -20,10 +20,17 @@ func (c *Client) Connect() error {
 		return err
 	}
 
-	// Mark as connected after successful dial
-	// For reconnectLoop, connected is set inside wgMu lock to prevent race with Stop()
-	c.connected.Store(true)
-	c.connectedAt.Store(time.Now().UnixMilli())
+	// Publish this connection's outbound generation only after the dial has
+	// succeeded. Start() will snapshot this exact queue and lifecycle signals.
+	if !c.activateOutbound(c.sendCh, c.connDoneCh, c.writeExitCh) {
+		c.connMu.Lock()
+		if c.conn != nil {
+			_ = c.conn.Close()
+			c.conn = nil
+		}
+		c.connMu.Unlock()
+		return errRelayClientStopped
+	}
 	return nil
 }
 
@@ -126,6 +133,7 @@ func (c *Client) Stop() {
 
 		close(c.stopCh)
 		c.cancel()
+		c.deactivateOutbound(0)
 
 		// Close connection to unblock readLoop immediately
 		c.connMu.Lock()
@@ -149,6 +157,8 @@ func (c *Client) Stop() {
 		case <-time.After(5 * time.Second):
 			c.logger.Warn("Timeout waiting for relay loops to exit")
 		}
+		queue, _, _, _, _ := c.snapshotOutbound()
+		discardOutbound(queue, errRelayClientStopped)
 
 		// Clean up connection reference
 		c.connMu.Lock()

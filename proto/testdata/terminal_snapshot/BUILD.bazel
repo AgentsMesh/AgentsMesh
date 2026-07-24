@@ -1,0 +1,8 @@
+filegroup(
+    name = "fixtures",
+    srcs = glob(["*.json"]),
+    visibility = [
+        "//clients/core/crates/relay:__pkg__",
+        "//runner/internal/runner:__pkg__",
+    ],
+)

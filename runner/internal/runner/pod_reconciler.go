@@ -66,11 +66,10 @@ func (r *PodReconciler) reconcile() {
 			continue
 		}
 
-		if pod.IO == nil {
+		pid := 0
+		if !pod.WithActiveIO(func(io PodIO) { pid = io.GetPID() }) {
 			continue
 		}
-
-		pid := pod.IO.GetPID()
 		if pid <= 0 {
 			continue // ACP mode or not yet started
 		}

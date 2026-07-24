@@ -1,7 +1,6 @@
 package terminal
 
 import (
-	"os"
 	"runtime"
 	"sync"
 	"testing"
@@ -213,75 +212,5 @@ func TestSetHandlersBeforeStart(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Error("timeout waiting for exit handler")
 		term.Stop()
-	}
-}
-
-// --- Test Redraw ---
-
-func TestTerminalRedrawNotStarted(t *testing.T) {
-	cmd, args := testutil.EchoCommand("test")
-	opts := Options{
-		Command: cmd,
-		Args:    args,
-	}
-
-	term, _ := New(opts)
-
-	err := term.Redraw()
-	if err == nil {
-		t.Error("expected error when redrawing not started terminal")
-	}
-}
-
-func TestTerminalRedrawClosed(t *testing.T) {
-	cmd, args := testutil.SleepCommand(60)
-	opts := Options{
-		Command: cmd,
-		Args:    args,
-		WorkDir: os.TempDir(),
-	}
-
-	term, err := New(opts)
-	if err != nil {
-		t.Fatalf("New error: %v", err)
-	}
-
-	err = term.Start()
-	if err != nil {
-		t.Fatalf("Start error: %v", err)
-	}
-
-	term.Stop()
-
-	// Redraw should fail after close
-	err = term.Redraw()
-	if err == nil {
-		t.Error("Redraw after close should error")
-	}
-}
-
-func TestTerminalRedrawSuccess(t *testing.T) {
-	cmd, args := testutil.SleepCommand(5)
-	opts := Options{
-		Command: cmd,
-		Args:    args,
-		WorkDir: os.TempDir(),
-	}
-
-	term, err := New(opts)
-	if err != nil {
-		t.Fatalf("New error: %v", err)
-	}
-
-	err = term.Start()
-	if err != nil {
-		t.Fatalf("Start error: %v", err)
-	}
-	defer term.Stop()
-
-	// Redraw should succeed on running terminal
-	err = term.Redraw()
-	if err != nil {
-		t.Errorf("Redraw error: %v", err)
 	}
 }

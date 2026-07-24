@@ -1,12 +1,11 @@
 package vt
 
-import "strings"
-
 // clearLine clears part of a line
 func (vt *VirtualTerminal) clearLine(row, startCol, endCol int) {
 	if row < 0 || row >= vt.rows {
 		return
 	}
+	startCol, endCol = completeCellRange(vt.cells[row], startCol, endCol)
 	for i := startCol; i < endCol && i < vt.cols; i++ {
 		if i >= 0 {
 			vt.screen[row][i] = ' '
@@ -65,6 +64,7 @@ func (vt *VirtualTerminal) deleteChars(n int) {
 			cellRow[i] = NewCell(' ')
 		}
 	}
+	sanitizeResizedRow(row, cellRow)
 }
 
 // insertChars inserts n blank characters at cursor position
@@ -79,6 +79,19 @@ func (vt *VirtualTerminal) insertChars(n int) {
 		row[vt.cursorX+i] = ' '
 		cellRow[vt.cursorX+i] = NewCell(' ')
 	}
+	sanitizeResizedRow(row, cellRow)
+}
+
+func completeCellRange(cells []Cell, startCol, endCol int) (int, int) {
+	startCol = min(max(startCol, 0), len(cells))
+	endCol = min(max(endCol, startCol), len(cells))
+	if startCol < len(cells) && cells[startCol].IsPlaceholder() && startCol > 0 {
+		startCol--
+	}
+	if endCol > startCol && cells[endCol-1].Width == 2 && endCol < len(cells) {
+		endCol++
+	}
+	return startCol, endCol
 }
 
 // scrollDown scrolls the screen down (reverse scroll)
@@ -101,34 +114,26 @@ func (vt *VirtualTerminal) scrollDown() {
 
 // scroll scrolls the screen up by one line
 func (vt *VirtualTerminal) scroll() {
-	// Save top line to history (skip placeholder cells)
-	var lineBuilder strings.Builder
-	for colIdx, ch := range vt.screen[0] {
-		if vt.cells[0][colIdx].Width == 0 {
-			continue // Skip placeholder after wide char
+	if !vt.useAltScreen {
+		line := vt.screenLineLocked(0)
+		if line != "" {
+			vt.history = append(vt.history, line)
+			// Trim history if too large
+			if len(vt.history) > vt.maxHistory {
+				vt.history = vt.history[1:]
+			}
 		}
-		lineBuilder.WriteRune(ch)
-	}
-	line := strings.TrimRight(lineBuilder.String(), " ")
-	if line != "" {
-		vt.history = append(vt.history, line)
-		// Trim history if too large
-		if len(vt.history) > vt.maxHistory {
-			vt.history = vt.history[1:]
+
+		// Save styled history line (cells with color/attribute info)
+		styledLine := append([]Cell(nil), vt.cells[0]...)
+		vt.historyStyled = append(vt.historyStyled, styledLine)
+		vt.historyIsWrapped = append(vt.historyIsWrapped, vt.isWrapped[0])
+
+		// Trim styled history if too large
+		if len(vt.historyStyled) > vt.maxHistory {
+			vt.historyStyled = vt.historyStyled[1:]
+			vt.historyIsWrapped = vt.historyIsWrapped[1:]
 		}
-	}
-
-	// Save styled history line (cells with color/attribute info)
-	// Make a copy of the cells array
-	styledLine := make([]Cell, len(vt.cells[0]))
-	copy(styledLine, vt.cells[0])
-	vt.historyStyled = append(vt.historyStyled, styledLine)
-	vt.historyIsWrapped = append(vt.historyIsWrapped, vt.isWrapped[0])
-
-	// Trim styled history if too large
-	if len(vt.historyStyled) > vt.maxHistory {
-		vt.historyStyled = vt.historyStyled[1:]
-		vt.historyIsWrapped = vt.historyIsWrapped[1:]
 	}
 
 	// Scroll screen up
@@ -146,55 +151,4 @@ func (vt *VirtualTerminal) scroll() {
 		vt.screen[vt.rows-1][j] = ' '
 		vt.cells[vt.rows-1][j] = NewCell(' ')
 	}
-}
-
-// enterAltScreen switches to alternative screen buffer
-func (vt *VirtualTerminal) enterAltScreen() {
-	if vt.useAltScreen {
-		return
-	}
-	// Save main screen
-	vt.savedMainScreen = make([][]rune, vt.rows)
-	vt.savedMainCells = make([][]Cell, vt.rows)
-	for i := range vt.screen {
-		vt.savedMainScreen[i] = make([]rune, len(vt.screen[i]))
-		vt.savedMainCells[i] = make([]Cell, len(vt.cells[i]))
-		copy(vt.savedMainScreen[i], vt.screen[i])
-		copy(vt.savedMainCells[i], vt.cells[i])
-	}
-	// Initialize alt screen
-	vt.altScreen = make([][]rune, vt.rows)
-	vt.altCells = make([][]Cell, vt.rows)
-	for i := range vt.altScreen {
-		vt.altScreen[i] = make([]rune, vt.cols)
-		vt.altCells[i] = make([]Cell, vt.cols)
-		for j := range vt.altScreen[i] {
-			vt.altScreen[i][j] = ' '
-			vt.altCells[i][j] = NewCell(' ')
-		}
-	}
-	vt.altCursorX = vt.cursorX
-	vt.altCursorY = vt.cursorY
-	vt.screen = vt.altScreen
-	vt.cells = vt.altCells
-	vt.cursorX = 0
-	vt.cursorY = 0
-	vt.useAltScreen = true
-}
-
-// exitAltScreen switches back to main screen buffer
-func (vt *VirtualTerminal) exitAltScreen() {
-	if !vt.useAltScreen {
-		return
-	}
-	// Restore main screen
-	if vt.savedMainScreen != nil {
-		vt.screen = vt.savedMainScreen
-		vt.cells = vt.savedMainCells
-		vt.savedMainScreen = nil
-		vt.savedMainCells = nil
-	}
-	vt.cursorX = vt.altCursorX
-	vt.cursorY = vt.altCursorY
-	vt.useAltScreen = false
 }

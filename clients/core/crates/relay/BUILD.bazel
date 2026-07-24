@@ -30,8 +30,9 @@ rust_library(
 rust_test(
     name = "relay_test",
     crate = ":relay",
+    data = ["//proto/testdata/terminal_snapshot:fixtures"],
     edition = "2021",
-    # integration_tests.rs spins a real tokio + tungstenite WS server per test
+    # Integration tests spin up a real tokio + tungstenite WS server per test.
     # (one current-thread runtime per #[tokio::test] thread). Under the default
     # all-at-once parallelism these contend for the CPU and the server-drop
     # reconnect test starves past its wall-clock budget. Serialize: the 76 unit
@@ -43,4 +44,17 @@ rust_test(
         "@crates//:tokio-test",
         "@crates//:tokio-tungstenite",
     ],
+)
+
+sh_binary(
+    name = "check_lcov_coverage",
+    srcs = ["check_lcov_coverage.sh"],
+    data = glob(["src/**/*.rs"]),
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "check_lcov_coverage_test",
+    srcs = ["check_lcov_coverage_test.sh"],
+    data = [":check_lcov_coverage"],
 )

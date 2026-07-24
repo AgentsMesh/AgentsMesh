@@ -1,9 +1,11 @@
 package aggregator
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 // mockRelayWriter implements RelayWriter for testing.
@@ -32,6 +34,8 @@ func (m *mockRelayWriter) SendOutput(data []byte) error {
 	return nil
 }
 
+func (m *mockRelayWriter) FlushOutput(context.Context) error { return nil }
+
 func (m *mockRelayWriter) IsConnected() bool {
 	return m.connected.Load()
 }
@@ -46,12 +50,19 @@ func (m *mockRelayWriter) sendCount() int32 {
 	return m.calls.Load()
 }
 
+func waitForRouter(t *testing.T, router *OutputRouter) {
+	t.Helper()
+	if !router.barrier().wait(time.Second) {
+		t.Fatal("output router did not drain")
+	}
+}
+
 func TestOutputRouter_New(t *testing.T) {
 	or := NewOutputRouter()
 	if or == nil {
 		t.Fatal("NewOutputRouter should not return nil")
 	}
-	if or.HasRelayClient() {
+	if len(or.Health()) != 0 {
 		t.Error("should not have relay initially")
 	}
 }
@@ -59,10 +70,10 @@ func TestOutputRouter_New(t *testing.T) {
 func TestOutputRouter_Route_EmptyData(t *testing.T) {
 	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
+	or.SetDestination(OutputDestinationCloud, relay)
 
-	or.Route(nil)
-	or.Route([]byte{})
+	or.enqueue(nil)
+	or.enqueue([]byte{})
 
 	if len(relay.getData()) != 0 {
 		t.Error("Route should not send empty data")
@@ -72,9 +83,10 @@ func TestOutputRouter_Route_EmptyData(t *testing.T) {
 func TestOutputRouter_Route_SendsToRelay(t *testing.T) {
 	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
+	or.SetDestination(OutputDestinationCloud, relay)
 
-	or.Route([]byte("hello"))
+	or.enqueue([]byte("hello"))
+	waitForRouter(t, or)
 	if string(relay.getData()) != "hello" {
 		t.Errorf("Expected 'hello', got '%s'", relay.getData())
 	}
@@ -83,31 +95,35 @@ func TestOutputRouter_Route_SendsToRelay(t *testing.T) {
 func TestOutputRouter_Route_DropsWhenNoRelay(t *testing.T) {
 	or := NewOutputRouter()
 	// No relay set — data should be silently dropped (no panic)
-	or.Route([]byte("dropped"))
+	or.enqueue([]byte("dropped"))
 }
 
 func TestOutputRouter_Route_DropsWhenDisconnected(t *testing.T) {
 	or := NewOutputRouter()
 	relay := newMockRelayWriter(false) // disconnected
-	or.SetRelayClient(relay)
+	or.SetDestination(OutputDestinationCloud, relay)
 
-	or.Route([]byte("dropped"))
+	or.enqueue([]byte("dropped"))
+	waitForRouter(t, or)
 	if len(relay.getData()) > 0 {
 		t.Error("disconnected relay should not receive data")
 	}
+	if health := or.Health(); len(health) != 1 || health[0].Desynced {
+		t.Fatalf("inactive destination should remain healthy: %+v", health)
+	}
 }
 
-func TestOutputRouter_SetRelayClient(t *testing.T) {
+func TestOutputRouter_SetDestination(t *testing.T) {
 	or := NewOutputRouter()
 
 	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
-	if !or.HasRelayClient() {
-		t.Error("should have relay after SetRelayClient")
+	or.SetDestination(OutputDestinationCloud, relay)
+	if len(or.Health()) == 0 {
+		t.Error("should have relay after SetDestination")
 	}
 
-	or.SetRelayClient(nil)
-	if or.HasRelayClient() {
+	or.RemoveDestination(OutputDestinationCloud)
+	if len(or.Health()) != 0 {
 		t.Error("should not have relay after clearing")
 	}
 }
@@ -115,24 +131,28 @@ func TestOutputRouter_SetRelayClient(t *testing.T) {
 func TestOutputRouter_RelayDisconnectAndReconnect(t *testing.T) {
 	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
+	or.SetDestination(OutputDestinationCloud, relay)
 
 	// Connected — data goes to relay
-	or.Route([]byte("a"))
+	or.enqueue([]byte("a"))
+	waitForRouter(t, or)
 	if string(relay.getData()) != "a" {
 		t.Errorf("Expected 'a', got '%s'", relay.getData())
 	}
 
 	// Disconnect — data is dropped
 	relay.connected.Store(false)
-	or.Route([]byte("dropped"))
+	or.enqueue([]byte("dropped"))
+	waitForRouter(t, or)
 	if string(relay.getData()) != "a" {
 		t.Error("disconnected relay should not receive new data")
 	}
 
-	// Reconnect — data flows again
+	// Reconnect installs a fresh generation before deltas flow again.
 	relay.connected.Store(true)
-	or.Route([]byte("b"))
+	or.SetDestination(OutputDestinationCloud, relay)
+	or.enqueue([]byte("b"))
+	waitForRouter(t, or)
 	if string(relay.getData()) != "ab" {
 		t.Errorf("Expected 'ab', got '%s'", relay.getData())
 	}
@@ -142,14 +162,15 @@ func TestOutputRouter_StaleClientReplacement(t *testing.T) {
 	or := NewOutputRouter()
 
 	oldRelay := newMockRelayWriter(true)
-	or.SetRelayClient(oldRelay)
+	or.SetDestination(OutputDestinationCloud, oldRelay)
 
 	newRelay := newMockRelayWriter(true)
-	or.SetRelayClient(newRelay)
+	or.SetDestination(OutputDestinationCloud, newRelay)
 
 	oldRelay.connected.Store(false)
 
-	or.Route([]byte("test"))
+	or.enqueue([]byte("test"))
+	waitForRouter(t, or)
 	if string(newRelay.getData()) != "test" {
 		t.Errorf("Expected new relay to receive 'test', got '%s'", newRelay.getData())
 	}
@@ -158,7 +179,7 @@ func TestOutputRouter_StaleClientReplacement(t *testing.T) {
 func TestOutputRouter_Concurrent(t *testing.T) {
 	or := NewOutputRouter()
 	relay := newMockRelayWriter(true)
-	or.SetRelayClient(relay)
+	or.SetDestination(OutputDestinationCloud, relay)
 
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
@@ -166,7 +187,7 @@ func TestOutputRouter_Concurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
-				or.Route([]byte("x"))
+				or.enqueue([]byte("x"))
 			}
 		}()
 	}
@@ -175,9 +196,9 @@ func TestOutputRouter_Concurrent(t *testing.T) {
 	go func() {
 		for i := 0; i < 50; i++ {
 			r := newMockRelayWriter(true)
-			or.SetRelayClient(r)
+			or.SetDestination(OutputDestinationCloud, r)
 		}
-		or.SetRelayClient(relay) // restore original
+		or.SetDestination(OutputDestinationCloud, relay) // restore original
 	}()
 
 	wg.Wait()

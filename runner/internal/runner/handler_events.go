@@ -5,8 +5,6 @@ import (
 
 	"github.com/anthropics/agentsmesh/runner/internal/client"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
-	"github.com/anthropics/agentsmesh/runner/internal/poddaemon"
-	"github.com/anthropics/agentsmesh/runner/internal/safego"
 )
 
 // createPTYErrorHandler creates a handler for fatal PTY read errors.
@@ -26,12 +24,12 @@ func (h *RunnerMessageHandler) createPTYErrorHandler(podKey string, pod *Pod) fu
 
 		// Write a visible error message to the output pipeline so it appears
 		// in the frontend terminal via relay. Use ANSI red color for visibility.
-		if pod.IO != nil {
-			if ta, ok := pod.IO.(TerminalAccess); ok {
+		pod.WithActiveIO(func(io PodIO) {
+			if ta, ok := io.(TerminalAccess); ok {
 				visibleMsg := fmt.Sprintf("\r\n\x1b[1;31m[Terminal Error] PTY read failed: %v\x1b[0m\r\n", err)
 				ta.WriteOutput([]byte(visibleMsg))
 			}
-		}
+		})
 
 		// Send error event via gRPC so backend can update pod status.
 		h.sendPodErrorWithCode(podKey, &client.PodError{
@@ -55,104 +53,19 @@ func (h *RunnerMessageHandler) createExitHandler(podKey string) func(int) {
 // natural exits have IO already stopped.
 func (h *RunnerMessageHandler) cleanupPodExit(podKey string, exitCode int, stopIO bool) {
 	log := logger.Pod()
-
-	pod := h.podStore.Delete(podKey)
-	if pod == nil {
+	pod, ok := h.podStore.Get(podKey)
+	if !ok {
 		log.Info("Pod already removed, skipping cleanup", "pod_key", podKey)
 		return
 	}
 
-	// Perpetual pod: clean exit + not user-terminated → restart in place.
-	// Re-insert into store so the pod remains visible during restart.
-	if !stopIO && pod.Perpetual && isCleanExit(exitCode) {
-		h.podStore.Put(podKey, pod)
-		h.restartPerpetualPod(pod, exitCode)
+	if transition, handled := h.preparePerpetualRestart(pod, exitCode, stopIO); handled {
+		if transition != 0 {
+			h.restartPerpetualPod(pod, exitCode, transition)
+		}
 		return
 	}
-
-	// Drop the local-relay lane: the pod is gone for good. Without this the
-	// lane (token + handlers + conn map) leaks until the runner exits.
-	if local := h.runner.GetLocalRelayServer(); local != nil {
-		local.UnregisterPod(podKey)
-	}
-
-	// Clean up associated Autopilot if any (before terminal teardown)
-	if ac := h.runner.GetAutopilotByPodKey(podKey); ac != nil {
-		ac.Stop()
-		if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-			agentMon.Unsubscribe("autopilot-" + ac.Key())
-		}
-		h.runner.RemoveAutopilot(ac.Key())
-	}
-
-	pod.SetStatus(PodStatusStopped)
-	pod.StopStateDetector()
-
-	// Mode-specific infrastructure cleanup (aggregator, loggers, etc.).
-	// Must happen BEFORE DisconnectRelay so the aggregator's final flush
-	// can still reach the browser via relay.
-	var earlyOutput string
-	if pod.IO != nil {
-		earlyOutput = pod.IO.Teardown()
-		if earlyOutput != "" {
-			log.Info("Captured early output from teardown", "pod_key", podKey, "bytes", len(earlyOutput))
-		}
-	}
-
-	pod.DisconnectRelay()
-
-	if stopIO && pod.IO != nil {
-		pod.IO.Stop()
-	}
-
-	// Clean up Pod Daemon state file
-	if pod.SandboxPath != "" {
-		_ = poddaemon.DeleteState(pod.SandboxPath)
-	}
-
-	// Unregister from MCP server and agent monitor
-	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
-		mcpSrv.UnregisterPod(podKey)
-	}
-	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-		agentMon.UnregisterPod(podKey)
-	}
-
-	// Send termination event with early output / error reason.
-	// Runner owns the status decision.
-	// Exit code conventions (Unix):
-	//   0       = success → completed
-	//   1-127   = process-reported error → error
-	//   >= 128  = killed by signal (128 + signal number) → completed
-	//   -1      = server-initiated terminate → completed
-	podStatus := "completed"
-	errorMsg := earlyOutput
-	if exitCode > 0 && exitCode < 128 {
-		podStatus = "error"
-		if errorMsg == "" {
-			errorMsg = fmt.Sprintf("process exited with code %d", exitCode)
-		}
-	}
-
-	// PTY error takes precedence (e.g., disk full causing I/O error).
-	if ptyErr := pod.GetPTYError(); ptyErr != "" {
-		podStatus = "error"
-		errorMsg = ptyErr
-	}
-
-	if h.conn != nil {
-		if err := h.conn.SendPodTerminated(podKey, int32(exitCode), errorMsg, podStatus); err != nil {
-			log.Error("Failed to send pod terminated event", "error", err)
-		}
-	}
-
-	// Async token usage collection
-	agent := pod.Agent
-	sandboxPath := pod.SandboxPath
-	podStartedAt := pod.StartedAt
-	safego.Go("token-usage-exit", func() {
-		h.collectAndSendTokenUsage(podKey, agent, sandboxPath, podStartedAt)
-	})
+	h.finalizePodExit(podKey, pod, exitCode, stopIO)
 }
 
 // Event sending methods

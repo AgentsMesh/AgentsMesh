@@ -58,6 +58,9 @@ type SubscribePodRequest struct {
 	LocalToken      string `json:"local_token"`  // Token shared with renderer for the local relay; "" when no local relay is in play.
 	IncludeSnapshot bool   `json:"include_snapshot"`
 	SnapshotHistory int32  `json:"snapshot_history"`
+	// IntentValid is set by the gRPC relay-intent dispatcher. Runner checks it
+	// after acquiring lifecycle tickets so newer S/U intent always wins.
+	IntentValid func() bool `json:"-"`
 }
 
 // UnsubscribePodRequest is sent when all browsers have disconnected from the pod.

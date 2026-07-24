@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { usePodStore } from "@/stores/pod";
@@ -15,6 +15,7 @@ export function WorkspacePage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const panes = useWorkspaceStore((s) => s.panes);
   const addPane = useWorkspaceStore((s) => s.addPane);
   const _hasHydrated = useWorkspaceStore((s) => s._hasHydrated);
@@ -50,9 +51,9 @@ export function WorkspacePage() {
           description: `Pod: ${getShortPodKey(podKey)}`,
         });
       }
-      router.replace(window.location.pathname);
+      router.replace(pathname);
     }
-  }, [_hasHydrated, searchParams, panes, router, t, handleOpenPod]);
+  }, [_hasHydrated, searchParams, panes, router, pathname, t, handleOpenPod]);
 
   if (!_hasHydrated) {
     return <CenteredSpinner />;

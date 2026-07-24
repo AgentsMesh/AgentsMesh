@@ -2,33 +2,24 @@ use agentsmesh_protocol::MsgType;
 use serde::Deserialize;
 use tracing::warn;
 
+use crate::dispatch_snapshot::decode_snapshot;
+pub use crate::dispatch_snapshot::SnapshotPayload;
 use crate::types::OutputCallback;
-
-pub(crate) const ANSI_CLEAR: &[u8] = b"\x1b[2J\x1b[H\x1b[3J";
 
 #[derive(Debug, PartialEq)]
 pub enum DispatchAction {
     None,
     Snapshot(SnapshotPayload),
-    PodResized { cols: u16, rows: u16 },
+    PodResized {
+        cols: u16,
+        rows: u16,
+    },
     RunnerDisconnected,
     RunnerReconnected,
-    AcpMessage { msg_type: MsgType, payload: serde_json::Value },
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SnapshotPayload {
-    pub cols: u16,
-    pub rows: u16,
-}
-
-#[derive(Deserialize)]
-struct SnapshotJson {
-    serialized_content: Option<String>,
-    #[serde(default)]
-    cols: u16,
-    #[serde(default)]
-    rows: u16,
+    AcpMessage {
+        msg_type: MsgType,
+        payload: serde_json::Value,
+    },
 }
 
 #[derive(Deserialize)]
@@ -51,7 +42,9 @@ pub fn dispatch_message(
             broadcast(subscribers, payload);
             DispatchAction::None
         }
-        MsgType::Snapshot => handle_snapshot(payload, subscribers),
+        MsgType::Snapshot => decode_snapshot(payload)
+            .map(DispatchAction::Snapshot)
+            .unwrap_or(DispatchAction::None),
         MsgType::Control => handle_control(payload),
         MsgType::RunnerDisconnected => {
             let msg = b"\r\n\x1b[33mRunner disconnected. Waiting for reconnection...\x1b[0m\r\n";
@@ -83,35 +76,12 @@ pub fn dispatch_message(
     }
 }
 
-fn handle_snapshot(payload: &[u8], subscribers: &[&OutputCallback]) -> DispatchAction {
-    match serde_json::from_slice::<SnapshotJson>(payload) {
-        Ok(snap) => {
-            if let Some(content) = &snap.serialized_content {
-                broadcast(subscribers, ANSI_CLEAR);
-                broadcast(subscribers, content.as_bytes());
-            }
-            // serialized_content is broadcast above; the action only carries the
-            // dimensions (the driver reads cols/rows, never the content again).
-            DispatchAction::Snapshot(SnapshotPayload {
-                cols: snap.cols,
-                rows: snap.rows,
-            })
-        }
-        Err(e) => {
-            warn!("failed to parse snapshot: {e}");
-            DispatchAction::None
-        }
-    }
-}
-
 fn handle_control(payload: &[u8]) -> DispatchAction {
     match serde_json::from_slice::<ControlJson>(payload) {
-        Ok(ctrl) if ctrl.msg_type.as_deref() == Some("pod_resized") => {
-            DispatchAction::PodResized {
-                cols: ctrl.cols,
-                rows: ctrl.rows,
-            }
-        }
+        Ok(ctrl) if ctrl.msg_type.as_deref() == Some("pod_resized") => DispatchAction::PodResized {
+            cols: ctrl.cols,
+            rows: ctrl.rows,
+        },
         Ok(_) => DispatchAction::None,
         Err(e) => {
             warn!("failed to parse control message: {e}");

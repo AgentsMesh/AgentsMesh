@@ -38,10 +38,24 @@ type Pod struct {
 	// Perpetual mode: auto-restart on clean exit
 	Perpetual    bool
 	RestartCount int
+	lifecycleMu  sync.Mutex // Serializes exit, restart, terminate, and shutdown.
 
 	// Relay client (mode-agnostic, protected by relayMu)
 	RelayClient relay.RelayClient
 	relayMu     sync.RWMutex
+	// relayTransitionMu serializes pointer ownership with mode-specific
+	// publisher attach/detach and runtime replacement.
+	relayTransitionMu   sync.Mutex
+	relayEpoch          uint64
+	relayRuntimeEpoch   uint64
+	relayRuntimeBlocked bool
+	relayLocalEpoch     uint64
+	relayLocalActive    bool
+	relayTransportEpoch uint64
+	relayTransportBlock bool
+	runtimeActivity     *podActivity
+	cloudActivity       *podActivity
+	localActivity       *podActivity
 
 	StartedAt  time.Time
 	Status     string       // Pod status - use statusMu for thread-safe access
@@ -114,46 +128,4 @@ func (p *Pod) GetStatus() string {
 	p.statusMu.RLock()
 	defer p.statusMu.RUnlock()
 	return p.Status
-}
-
-// SetRelayClient sets the relay client in a thread-safe manner
-func (p *Pod) SetRelayClient(client relay.RelayClient) {
-	p.relayMu.Lock()
-	defer p.relayMu.Unlock()
-	p.RelayClient = client
-}
-
-// GetRelayClient returns the relay client in a thread-safe manner
-func (p *Pod) GetRelayClient() relay.RelayClient {
-	p.relayMu.RLock()
-	defer p.relayMu.RUnlock()
-	return p.RelayClient
-}
-
-// LockRelay acquires the relay write lock for atomic check-and-set operations.
-func (p *Pod) LockRelay()   { p.relayMu.Lock() }
-func (p *Pod) UnlockRelay() { p.relayMu.Unlock() }
-
-// HasRelayClient returns whether a relay client is connected
-func (p *Pod) HasRelayClient() bool {
-	p.relayMu.RLock()
-	defer p.relayMu.RUnlock()
-	return p.RelayClient != nil && p.RelayClient.IsConnected()
-}
-
-// DisconnectRelay disconnects and clears the relay client.
-func (p *Pod) DisconnectRelay() {
-	p.relayMu.Lock()
-	rc := p.RelayClient
-	if rc != nil {
-		p.RelayClient = nil
-	}
-	p.relayMu.Unlock()
-	if rc != nil {
-		logger.Pod().Debug("Disconnecting relay client", "pod_key", p.PodKey)
-		rc.Stop()
-	}
-	if p.Relay != nil {
-		p.Relay.OnRelayDisconnected()
-	}
 }

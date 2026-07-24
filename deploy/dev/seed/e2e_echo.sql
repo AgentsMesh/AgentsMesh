@@ -32,7 +32,7 @@ INSERT INTO agents (
     true,
     true,
     'pty,acp',
-    E'# === Identity ===\nAGENT e2e-mock-agent\nEXECUTABLE e2e-mock-agent\n\n# === Mode ===\nMODE pty\nMODE acp "--mode=acp"\n\n# === Configuration ===\n# Scenario name maps to a behavior registered in the mockagent package.\n# Keep this enum in sync with //runner/internal/agents/mockagent/scenarios.go.\nCONFIG scenario SELECT("echo", "streaming_3", "thinking_then_answer", "tool_call_edit", "permission_request_edit", "config_change_plan", "fail_after_1s", "malformed_json", "tool_call_failed", "log_warnings") = "echo"\n\n# === Capabilities ===\nMCP ON\n\n# === Build Logic ===\n# PTY mode uses the binary with no extra args (default mode=pty).\n# ACP mode is selected by the MODE acp "--mode=acp" line above.\n# The scenario flag applies to both modes.\narg "--scenario" config.scenario when config.scenario != ""\n'
+    E'# === Identity ===\nAGENT e2e-mock-agent\nEXECUTABLE e2e-mock-agent\n\n# === Mode ===\nMODE pty\nMODE acp "--mode=acp"\n\n# === Configuration ===\n# Scenario name maps to a behavior implemented by the mockagent PTY runtime or ACP registry.\nCONFIG scenario SELECT("echo", "terminal_render", "terminal_alt_snapshot", "streaming_3", "thinking_then_answer", "tool_call_edit", "permission_request_edit", "config_change_plan", "fail_after_1s", "malformed_json", "tool_call_failed", "log_warnings") = "echo"\n\n# === Capabilities ===\nMCP ON\n\n# === Build Logic ===\n# PTY mode uses the binary with no extra args (default mode=pty).\n# ACP mode is selected by the MODE acp "--mode=acp" line above.\n# The scenario flag applies to both modes.\narg "--scenario" config.scenario when config.scenario != ""\n'
 )
 ON CONFLICT (slug) DO UPDATE SET
     name             = EXCLUDED.name,

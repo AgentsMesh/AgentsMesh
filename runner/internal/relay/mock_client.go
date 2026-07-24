@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -27,6 +28,7 @@ type MockClient struct {
 	ConnectCalled    bool
 	StartCalled      bool
 	StopCalled       bool
+	FlushCalls       int
 	UpdateTokenCalls []string
 	SentMessages     []MockSentMessage // Tracks all Send() calls
 
@@ -126,6 +128,15 @@ func (m *MockClient) Send(msgType byte, payload []byte) error {
 	return nil
 }
 
+// Flush implements RelayClient. Mock Send calls are synchronous, so there is
+// no downstream queue left to drain.
+func (m *MockClient) Flush(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.FlushCalls++
+	return nil
+}
+
 // SetMessageHandler implements RelayClient.
 func (m *MockClient) SetMessageHandler(msgType byte, handler func([]byte)) {
 	m.mu.Lock()
@@ -184,6 +195,7 @@ func (m *MockClient) Reset() {
 	m.ConnectCalled = false
 	m.StartCalled = false
 	m.StopCalled = false
+	m.FlushCalls = 0
 	m.UpdateTokenCalls = nil
 	m.SentMessages = nil
 }

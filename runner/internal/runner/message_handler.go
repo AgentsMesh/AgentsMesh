@@ -3,7 +3,6 @@ package runner
 import (
 	"fmt"
 	"log/slog"
-	"os"
 	"sync"
 
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
@@ -14,10 +13,12 @@ import (
 
 // RunnerMessageHandler implements client.MessageHandler interface.
 type RunnerMessageHandler struct {
-	runner             MessageHandlerContext
-	podStore           PodStore
-	conn               client.Connection
-	relayClientFactory func(url, podKey, token string, logger *slog.Logger) relay.RelayClient
+	runner                  MessageHandlerContext
+	podStore                PodStore
+	conn                    client.Connection
+	relayClientFactory      func(url, podKey, token string, logger *slog.Logger) relay.RelayClient
+	perpetualSessionFactory perpetualSessionFactory
+	perpetualRuntimeFactory perpetualRuntimeFactory
 
 	// agentUpgradeMu serializes OnUpgradeAgent: concurrent package-manager
 	// installs on one runner race on the manager's global cache lock.
@@ -27,7 +28,7 @@ type RunnerMessageHandler struct {
 // NewRunnerMessageHandler creates a new message handler.
 func NewRunnerMessageHandler(runner MessageHandlerContext, store PodStore, conn client.Connection) *RunnerMessageHandler {
 	logger.Runner().Debug("Creating message handler")
-	return &RunnerMessageHandler{
+	handler := &RunnerMessageHandler{
 		runner:   runner,
 		podStore: store,
 		conn:     conn,
@@ -35,118 +36,9 @@ func NewRunnerMessageHandler(runner MessageHandlerContext, store PodStore, conn 
 			return relay.NewClient(runner.GetRunContext(), url, podKey, token, logger)
 		},
 	}
-}
-
-// OnCreatePod handles create pod requests from server.
-func (h *RunnerMessageHandler) OnCreatePod(cmd *runnerv1.CreatePodCommand) error {
-	log := logger.Pod()
-	log.Info("Creating pod", "pod_key", cmd.PodKey, "command", cmd.LaunchCommand,
-		"args", cmd.LaunchArgs)
-
-	ctx := h.runner.GetRunContext()
-
-	// Register pending placeholder to prevent race with TerminatePod during Build
-	h.podStore.Put(cmd.PodKey, &Pod{
-		PodKey: cmd.PodKey,
-		Status: PodStatusInitializing,
-	})
-
-	// ACK: tell Backend we received the command before heavy work
-	_ = h.conn.SendPodInitProgress(cmd.PodKey, "received", 1, "Pod command received by runner")
-
-	cols := int(cmd.Cols)
-	rows := int(cmd.Rows)
-	if cols <= 0 {
-		cols = 80
-	}
-	if rows <= 0 {
-		rows = 24
-	}
-
-	cfg := h.runner.GetConfig()
-	builder := h.runner.NewPodBuilder().
-		WithCommand(cmd).
-		WithPtySize(cols, rows).
-		WithOSCHandler(h.createOSCHandler(cmd.PodKey))
-
-	if cfg.LogPTY {
-		builder.WithPTYLogging(cfg.GetLogPTYDir())
-	}
-
-	pod, err := builder.Build(ctx)
-	if err != nil {
-		h.podStore.Delete(cmd.PodKey)
-		if podErr, ok := err.(*client.PodError); ok {
-			h.sendPodErrorWithCode(cmd.PodKey, podErr)
-		} else {
-			h.sendPodError(cmd.PodKey, fmt.Sprintf("failed to build pod: %v", err))
-		}
-		return fmt.Errorf("failed to build pod: %w", err)
-	}
-
-	// Check if pod was terminated during Build
-	if _, ok := h.podStore.Get(cmd.PodKey); !ok {
-		log.InfoContext(ctx, "Pod was terminated during build, cleaning up", "pod_key", cmd.PodKey)
-		if pod.IO != nil {
-			pod.IO.Teardown()
-			pod.IO.Stop()
-		}
-		if pod.SandboxPath != "" {
-			os.RemoveAll(pod.SandboxPath)
-		}
-		return fmt.Errorf("pod %s was terminated during build", cmd.PodKey)
-	}
-
-	h.podStore.Put(cmd.PodKey, pod)
-
-	if pod.IsACPMode() {
-		if err := h.wireAndStartACPPod(pod, cmd, cols, rows); err != nil {
-			return err
-		}
-	} else {
-		if err := h.wireAndStartPTYPod(pod, cmd, cols, rows); err != nil {
-			return err
-		}
-	}
-
-	if mcpSrv := h.runner.GetMCPServer(); mcpSrv != nil {
-		orgSlug := h.conn.GetOrgSlug()
-		mcpSrv.RegisterPod(cmd.PodKey, orgSlug, nil, nil, cmd.LaunchCommand)
-	}
-
-	return nil
-}
-
-// wireAndStartPTYPod wires up PTY-specific handlers and starts the terminal.
-func (h *RunnerMessageHandler) wireAndStartPTYPod(pod *Pod, cmd *runnerv1.CreatePodCommand, cols, rows int) error {
-	log := logger.Pod()
-
-	pod.IO.SetExitHandler(h.createExitHandler(cmd.PodKey))
-	pod.IO.SetIOErrorHandler(h.createPTYErrorHandler(cmd.PodKey, pod))
-
-	if err := pod.IO.Start(); err != nil {
-		h.podStore.Delete(cmd.PodKey)
-		if pod.IO != nil {
-			pod.IO.Teardown()
-		}
-		if pod.SandboxPath != "" {
-			os.RemoveAll(pod.SandboxPath)
-		}
-		h.sendPodError(cmd.PodKey, fmt.Sprintf("failed to start terminal: %v", err))
-		return fmt.Errorf("failed to start terminal: %w", err)
-	}
-
-	pod.SetStatus(PodStatusRunning)
-
-	if agentMon := h.runner.GetAgentMonitor(); agentMon != nil {
-		agentMon.RegisterPod(cmd.PodKey, pod.IO.GetPID())
-	}
-
-	pod.SubscribeAgentStatusBridge(h.conn.SendAgentStatus)
-
-	h.sendPodCreated(cmd.PodKey, pod.IO.GetPID(), pod.SandboxPath, pod.Branch, uint16(cols), uint16(rows))
-	log.Info("Pod created (PTY)", "pod_key", cmd.PodKey, "pid", pod.IO.GetPID(), "sandbox", pod.SandboxPath)
-	return nil
+	handler.perpetualSessionFactory = defaultPerpetualSessionFactory
+	handler.perpetualRuntimeFactory = handler.buildPerpetualPTYRuntime
+	return handler
 }
 
 // OnTerminatePod handles terminate pod requests from server.
@@ -172,8 +64,9 @@ func (h *RunnerMessageHandler) OnUpdatePodPerpetual(cmd *runnerv1.UpdatePodPerpe
 		log.Warn("Pod not found for perpetual update", "pod_key", cmd.PodKey)
 		return fmt.Errorf("pod not found: %s", cmd.PodKey)
 	}
+	pod.lifecycleMu.Lock()
 	pod.Perpetual = cmd.Perpetual
-	h.podStore.Put(cmd.PodKey, pod)
+	pod.lifecycleMu.Unlock()
 	log.Info("Pod perpetual mode updated", "pod_key", cmd.PodKey, "perpetual", cmd.Perpetual)
 	return nil
 }
@@ -189,9 +82,7 @@ func (h *RunnerMessageHandler) OnListPods() []client.PodInfo {
 			Status:      s.GetStatus(),
 			AgentStatus: h.getAgentStatusFromDetector(s),
 		}
-		if s.IO != nil {
-			info.Pid = s.IO.GetPID()
-		}
+		s.WithActiveIO(func(io PodIO) { info.Pid = io.GetPID() })
 		result = append(result, info)
 	}
 
@@ -199,10 +90,9 @@ func (h *RunnerMessageHandler) OnListPods() []client.PodInfo {
 }
 
 func (h *RunnerMessageHandler) getAgentStatusFromDetector(pod *Pod) string {
-	if pod.IO != nil {
-		return pod.IO.GetAgentStatus()
-	}
-	return "idle"
+	status := "idle"
+	pod.WithActiveIO(func(io PodIO) { status = io.GetAgentStatus() })
+	return status
 }
 
 var _ client.MessageHandler = (*RunnerMessageHandler)(nil)

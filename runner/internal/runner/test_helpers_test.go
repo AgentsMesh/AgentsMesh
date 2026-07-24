@@ -84,5 +84,17 @@ func testNewPTYPod(podKey string, vterm *vt.VirtualTerminal) *Pod {
 		UnsubscribeState:    pod.UnsubscribeStateChange,
 		GetPTYError:         pod.GetPTYError,
 	})
+	pod.Relay = NewPTYPodRelay(podKey, pod.IO, comps, nil)
 	return pod
+}
+
+// testRelayInboundGuard explicitly opts isolated PodRelay unit tests out of Pod
+// lifecycle ownership. Production code must obtain guards from
+// WithRelayHandlerGeneration.
+func testRelayInboundGuard() RelayInboundGuard {
+	run := func(callback func(RelayInboundContext)) bool {
+		callback(RelayInboundContext{})
+		return true
+	}
+	return RelayInboundGuard{cloud: run, local: run}
 }

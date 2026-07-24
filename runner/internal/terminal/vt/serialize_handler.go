@@ -3,6 +3,7 @@ package vt
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 )
 
 // StringSerializeHandler implements xterm.js-compatible terminal serialization.
@@ -16,7 +17,8 @@ type StringSerializeHandler struct {
 	rowIndex         int
 
 	// Null cell optimization
-	nullCellCount int
+	nullCellCount   int
+	pendingNullCell Cell
 
 	// Current cursor style
 	cursorStyle    Cell
@@ -32,6 +34,7 @@ type StringSerializeHandler struct {
 	lastCursorCol        int
 	lastContentCursorRow int
 	lastContentCursorCol int
+	previousContent      string
 }
 
 // newStringSerializeHandler creates a new handler
@@ -76,18 +79,19 @@ func (h *StringSerializeHandler) serialize(startRow, endRow int, excludeFinalCur
 
 // nextCell processes a single cell
 func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
-	if cell.GetWidth() == 0 {
+	if cell.IsPlaceholder() {
 		return
 	}
 
-	isEmptyCell := cell.Char == ' ' || cell.Char == 0
+	standaloneZeroWidth := cell.Width == 0
+	isEmptyCell := !cell.HasContent
 	sgrSeq := h.diffStyle(cell, h.cursorStyle)
 
-	styleChanged := false
+	styleChanged := standaloneZeroWidth
 	if isEmptyCell {
-		styleChanged = !cell.Bg.Equals(h.cursorStyle.Bg)
+		styleChanged = styleChanged || !cell.Bg.Equals(h.cursorStyle.Bg)
 	} else {
-		styleChanged = len(sgrSeq) > 0
+		styleChanged = styleChanged || len(sgrSeq) > 0
 	}
 
 	if styleChanged {
@@ -104,7 +108,9 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 		h.lastCursorRow = row
 		h.lastCursorCol = col
 
-		if len(sgrSeq) > 0 {
+		if standaloneZeroWidth {
+			h.vt.appendAbsoluteStyle(&h.currentRow, cell)
+		} else if len(sgrSeq) > 0 {
 			h.currentRow.WriteString("\x1b[")
 			h.currentRow.WriteString(strings.Join(sgrSeq, ";"))
 			h.currentRow.WriteString("m")
@@ -116,10 +122,12 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 	}
 
 	if isEmptyCell {
+		h.previousContent = ""
 		width := cell.GetWidth()
 		if width == 0 {
 			width = 1
 		}
+		h.pendingNullCell = cell
 		h.nullCellCount += int(width)
 	} else {
 		if h.nullCellCount > 0 {
@@ -130,13 +138,12 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 				fmt.Fprintf(&h.currentRow, "\x1b[%dC", h.nullCellCount)
 			}
 			h.nullCellCount = 0
+			h.previousContent = ""
 		}
+		h.preserveGraphemeCellBoundary(cell)
 
-		if cell.Char != 0 {
-			h.currentRow.WriteRune(cell.Char)
-		} else {
-			h.currentRow.WriteRune(' ')
-		}
+		h.currentRow.WriteString(cell.Text())
+		h.previousContent = cell.Text()
 
 		width := cell.GetWidth()
 		if width == 0 {
@@ -149,103 +156,36 @@ func (h *StringSerializeHandler) nextCell(cell, oldCell Cell, row, col int) {
 	}
 }
 
-// rowEnd handles end of row processing
-func (h *StringSerializeHandler) rowEnd(row int, isLastRow bool) {
-	if h.nullCellCount > 0 && !h.cursorStyle.Bg.Equals(h.backgroundCell.Bg) {
-		fmt.Fprintf(&h.currentRow, "\x1b[%dX", h.nullCellCount)
+// preserveGraphemeCellBoundary prevents snapshot replay from joining two cells
+// that were separated by a control sequence in the original PTY stream. SGR is
+// display-neutral here because the exact cell style is immediately restored.
+func (h *StringSerializeHandler) preserveGraphemeCellBoundary(cell Cell) {
+	if h.previousContent == "" {
+		return
 	}
-
-	rowSeparator := ""
-	if !isLastRow {
-		if !h.vt.isLineWrappedNoLock(row + 1) {
-			rowSeparator = "\r\n"
-			h.lastCursorRow = row + 1
-			h.lastCursorCol = 0
-		} else {
-			h.lastContentCursorRow = row + 1
-			h.lastContentCursorCol = 0
-			h.lastCursorRow = row + 1
-			h.lastCursorCol = 0
-		}
+	text := cell.Text()
+	first, _ := utf8.DecodeRuneInString(text)
+	if first == utf8.RuneError || !graphemeJoins(h.previousContent, first) {
+		return
 	}
+	h.vt.appendAbsoluteStyle(&h.currentRow, cell)
+	h.cursorStyle = cell
+}
 
-	h.allRows[h.rowIndex] = h.currentRow.String()
-	h.allRowSeparators[h.rowIndex] = rowSeparator
-	h.rowIndex++
-	h.currentRow.Reset()
+// materializeTrailingNullCellsForWrap advances through the physical row with
+// printable blanks. Cursor movement alone cannot create xterm's delayed-wrap
+// state, so a snapshot of a non-reflowed cursor line must write the final blank
+// before replaying its wrapped continuation.
+func (h *StringSerializeHandler) materializeTrailingNullCellsForWrap() {
+	if h.nullCellCount == 0 {
+		return
+	}
+	h.vt.appendAbsoluteStyle(&h.currentRow, h.pendingNullCell)
+	h.cursorStyle = h.pendingNullCell
+	h.currentRow.WriteString(strings.Repeat(" ", h.nullCellCount))
+	// These null cells become printable blanks in the replay stream. Track the
+	// final blank as emitted content so the next physical row cannot absorb a
+	// leading Extend/ZWJ code point that was a separate source cell.
+	h.previousContent = " "
 	h.nullCellCount = 0
-}
-
-// serializeString builds the final serialized string
-func (h *StringSerializeHandler) serializeString(startRow, endRow int, excludeFinalCursorPosition bool) string {
-	var content strings.Builder
-
-	rowEnd := len(h.allRows)
-	bufferLength := endRow - startRow + 1
-	if bufferLength <= h.vt.rows {
-		rowEnd = h.lastContentCursorRow + 1 - h.firstRow
-		if rowEnd < 0 {
-			rowEnd = 0
-		}
-		if rowEnd > len(h.allRows) {
-			rowEnd = len(h.allRows)
-		}
-		h.lastCursorCol = h.lastContentCursorCol
-		h.lastCursorRow = h.lastContentCursorRow
-	}
-
-	for i := 0; i < rowEnd; i++ {
-		content.WriteString(h.allRows[i])
-		if i+1 < rowEnd {
-			content.WriteString(h.allRowSeparators[i])
-		}
-	}
-
-	if !excludeFinalCursorPosition {
-		cursorRow := h.vt.cursorY
-		cursorCol := h.vt.cursorX
-		fmt.Fprintf(&content, "\x1b[%d;%dH", cursorRow+1, cursorCol+1)
-	}
-
-	curFg, curBg, curAttrs, curUlStyle, curUlColor := h.vt.getCurrentStyleNoLock()
-	curCell := NewFullStyledCell(' ', curFg, curBg, curAttrs, 1, curUlStyle, curUlColor)
-	sgrSeq := h.diffStyle(curCell, h.cursorStyle)
-	if len(sgrSeq) > 0 {
-		content.WriteString("\x1b[")
-		content.WriteString(strings.Join(sgrSeq, ";"))
-		content.WriteString("m")
-	}
-
-	return content.String()
-}
-
-// diffStyle generates SGR parameters for style transition
-func (h *StringSerializeHandler) diffStyle(cell, oldCell Cell) []string {
-	var sgrSeq []string
-
-	fgChanged := !cell.Fg.Equals(oldCell.Fg)
-	bgChanged := !cell.Bg.Equals(oldCell.Bg)
-	flagsChanged := !equalFlags(cell, oldCell)
-
-	if !fgChanged && !bgChanged && !flagsChanged {
-		return nil
-	}
-
-	if cell.IsAttributeDefault() {
-		if !oldCell.IsAttributeDefault() {
-			sgrSeq = append(sgrSeq, "0")
-		}
-	} else {
-		if fgChanged {
-			sgrSeq = append(sgrSeq, buildFgColorSGR(cell.Fg)...)
-		}
-		if bgChanged {
-			sgrSeq = append(sgrSeq, buildBgColorSGR(cell.Bg)...)
-		}
-		if flagsChanged {
-			sgrSeq = append(sgrSeq, buildFlagsSGR(cell, oldCell)...)
-		}
-	}
-
-	return sgrSeq
 }

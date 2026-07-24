@@ -25,11 +25,12 @@ type LocalServer struct {
 	listener   net.Listener
 	logger     *slog.Logger
 
-	mu      sync.RWMutex
-	pods    map[string]*localPodLane
-	closed  bool
-	urlOnce sync.Once
-	url     string
+	mu       sync.RWMutex
+	pods     map[string]*localPodLane
+	closed   bool
+	stopDone chan struct{}
+	urlOnce  sync.Once
+	url      string
 }
 
 // ReplyFunc writes one framed message back to a single browser connection.
@@ -45,12 +46,8 @@ type localPodLane struct {
 	expectedTokens map[string]struct{}
 	handlers       map[byte]func([]byte)
 	reqHandlers    map[byte]RequestHandler
-	conns          map[*websocket.Conn]struct{}
+	conns          map[*localConn]struct{}
 	mu             sync.RWMutex
-	// writeMu serializes WriteMessage: Send (event/aggregator goroutine) and
-	// SetRequestHandler replies (readLoop goroutine) can target the same conn,
-	// and gorilla/websocket forbids concurrent writers on one connection.
-	writeMu sync.Mutex
 }
 
 const (
@@ -77,8 +74,9 @@ func NewLocalServer(logger *slog.Logger) *LocalServer {
 		logger = slog.Default()
 	}
 	return &LocalServer{
-		logger: logger.With("component", "local_relay_server"),
-		pods:   make(map[string]*localPodLane),
+		logger:   logger.With("component", "local_relay_server"),
+		pods:     make(map[string]*localPodLane),
+		stopDone: make(chan struct{}),
 	}
 }
 
@@ -126,21 +124,26 @@ func (s *LocalServer) Start(ctx context.Context) (string, error) {
 func (s *LocalServer) Stop() {
 	s.mu.Lock()
 	if s.closed {
+		stopDone := s.stopDone
 		s.mu.Unlock()
+		<-stopDone
 		return
 	}
 	s.closed = true
 	pods := s.pods
 	s.pods = make(map[string]*localPodLane)
 	s.mu.Unlock()
+	defer close(s.stopDone)
 
+	var conns []*localConn
 	for _, lane := range pods {
-		lane.mu.Lock()
-		for c := range lane.conns {
-			_ = c.Close()
-		}
-		lane.conns = nil
-		lane.mu.Unlock()
+		conns = append(conns, lane.shutdown()...)
+	}
+	for _, c := range conns {
+		c.close()
+	}
+	for _, c := range conns {
+		c.waitWriter()
 	}
 
 	if s.httpServer != nil {

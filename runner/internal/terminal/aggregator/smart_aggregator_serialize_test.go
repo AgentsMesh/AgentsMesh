@@ -29,7 +29,7 @@ func TestSmartAggregator_SerializeMode(t *testing.T) {
 			return serializedOutput
 		}),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write with nil data - in serialize mode, data is ignored
 	agg.Write(nil)
@@ -59,7 +59,7 @@ func TestSmartAggregator_SerializeModeNoPendingData(t *testing.T) {
 			return []byte("should not be called if no pending data")
 		}),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Force flush without any Write() - should not flush
 	agg.Flush()
@@ -90,7 +90,7 @@ func TestSmartAggregator_SerializeModeMultipleWrites(t *testing.T) {
 			return []byte("serialized")
 		}),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Multiple rapid writes should be aggregated
 	for i := 0; i < 10; i++ {
@@ -129,7 +129,7 @@ func TestSmartAggregator_SerializeModeEmptyCallback(t *testing.T) {
 			return nil
 		}),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	agg.Write(nil)
 	time.Sleep(20 * time.Millisecond)
@@ -157,7 +157,7 @@ func TestSmartAggregator_SerializeModeCriticalLoad(t *testing.T) {
 			return []byte("data")
 		}),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write under critical load
 	agg.Write(nil)

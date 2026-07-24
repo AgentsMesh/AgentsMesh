@@ -10,6 +10,8 @@ export interface TerminalConnection {
   unsubscribe: () => void;
 }
 
+let terminalSubscriptionAttempt = 0;
+
 // Self-healing: 404 → drop pane to stop stale-snapshot reconnect loops.
 export function setupConnection(
   podKey: string,
@@ -26,13 +28,24 @@ export function setupConnection(
     }
   };
 
-  const subscriptionId = `terminal-${podKey}`;
+  // The subscription ID is also the unsubscribe ownership token in the relay
+  // pool. A stale aborted attempt may resolve after its replacement; reusing a
+  // pod-scoped ID would let the stale handle remove the replacement subscription.
+  const subscriptionId = `terminal-${podKey}-${++terminalSubscriptionAttempt}`;
   const abort = new AbortController();
 
   (async () => {
     try {
-      const handle = await relayPool.subscribe(podKey, subscriptionId, handleMessage);
-      if (abort.signal.aborted) return;
+      const handle = await relayPool.subscribe(
+        podKey,
+        subscriptionId,
+        handleMessage,
+        abort.signal,
+      );
+      if (abort.signal.aborted) {
+        handle.unsubscribe();
+        return;
+      }
       connectionRef.current = handle;
     } catch (error) {
       if (abort.signal.aborted) return;
@@ -73,6 +86,9 @@ export function setupDataHandlers(
   });
 
   const resizeDisposable = term.onResize(({ rows, cols }) => {
+    if (term.hasSelection()) {
+      term.clearSelection();
+    }
     relayPool.sendResize(podKey, cols, rows);
   });
 

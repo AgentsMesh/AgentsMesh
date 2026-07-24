@@ -66,26 +66,13 @@ func (c *GRPCConnection) handleServerMessage(ctx context.Context, msg *runnerv1.
 	// Same pod's commands execute sequentially (create_pod before create_autopilot).
 	// Different pods execute concurrently. Tracked by handlerWg for clean shutdown.
 	case *runnerv1.ServerMessage_CreatePod:
-		c.handlerWg.Add(1)
-		c.podQueue.Enqueue(payload.CreatePod.PodKey, func() {
-			defer c.handlerWg.Done()
-			c.handleCreatePod(payload.CreatePod)
-		})
+		c.admitCreatePod(payload.CreatePod)
 
 	case *runnerv1.ServerMessage_TerminatePod:
-		c.handlerWg.Add(1)
-		c.podQueue.Enqueue(payload.TerminatePod.PodKey, func() {
-			defer c.handlerWg.Done()
-			c.handleTerminatePod(payload.TerminatePod)
-			c.podQueue.Remove(payload.TerminatePod.PodKey)
-		})
+		c.admitTerminatePod(payload.TerminatePod)
 
 	case *runnerv1.ServerMessage_SubscribePod:
-		c.handlerWg.Add(1)
-		go func() {
-			defer c.handlerWg.Done()
-			c.handleSubscribePod(payload.SubscribePod)
-		}()
+		c.admitSubscribePod(payload.SubscribePod)
 
 	case *runnerv1.ServerMessage_CreateAutopilot:
 		c.handlerWg.Add(1)
@@ -102,7 +89,7 @@ func (c *GRPCConnection) handleServerMessage(ctx context.Context, msg *runnerv1.
 		c.handleSendPrompt(payload.SendPrompt)
 
 	case *runnerv1.ServerMessage_UnsubscribePod:
-		c.handleUnsubscribePod(payload.UnsubscribePod)
+		c.admitUnsubscribePod(payload.UnsubscribePod)
 
 	case *runnerv1.ServerMessage_QuerySandboxes:
 		c.handleQuerySandboxes(payload.QuerySandboxes)
@@ -164,19 +151,21 @@ func (c *GRPCConnection) handleInitializeResult(result *runnerv1.InitializeResul
 
 // handleCreatePod handles create_pod command from server.
 // Passes Proto type directly to handler for zero-copy message passing.
-func (c *GRPCConnection) handleCreatePod(cmd *runnerv1.CreatePodCommand) {
+func (c *GRPCConnection) handleCreatePod(cmd *runnerv1.CreatePodCommand) bool {
 	log := logger.GRPC()
 	log.Info("Received create_pod", "pod_key", cmd.PodKey)
 	if c.handler == nil {
 		log.Warn("No handler set, ignoring create_pod")
-		return
+		return false
 	}
 
 	// Pass Proto type directly - no conversion needed
 	if err := c.handler.OnCreatePod(cmd); err != nil {
 		log.Error("Failed to create pod", "pod_key", cmd.PodKey, "error", err)
 		c.sendError(cmd.PodKey, "create_pod_failed", err.Error())
+		return false
 	}
+	return true
 }
 
 // handleTerminatePod handles terminate_pod command from server.

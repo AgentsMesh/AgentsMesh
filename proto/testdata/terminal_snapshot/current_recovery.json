@@ -1,0 +1,29 @@
+{
+	"snapshot_version": 2,
+	"cols": 20,
+	"rows": 4,
+	"lines": ["recovery-screen", "", "", ""],
+	"serialized_content": "\u0018\u001b[?1049l\u001b[3J\u001b[0m\u001b[2J\u001b[H\u001b[?7hrecovery-screen\r\n\r\n\r\n\u001b[1;16H\u001b[?1l\u001b[?7h\u001b[?25h\u001b[?1004l\u001b[?2004l\u001b[?2026l\u001b[?9l\u001b[?1000l\u001b[?1002l\u001b[?1003l\u001b[?1006l\u001b[?1016l\u001b[1;1H\u001b[0m\u001b7\u001b[1;16H\u001b[0m\u001b[1;15H\u001b[0mn",
+	"serialized_active_content": "recovery-screen\r\n\r\n\r\n\u001b[1;16H",
+  "cursor_x": 15,
+  "cursor_y": 0,
+  "cursor_visible": true,
+  "is_alt_screen": false,
+  "saved_cursor_replay": "\u001b[1;1H\u001b[0m\u001b7\u001b[1;16H\u001b[0m",
+  "preceding_join_replay": "\u001b[1;15H\u001b[0mn",
+  "terminal_modes": [
+    "\u001b[?1l",
+    "\u001b[?7h",
+    "\u001b[?25h",
+    "\u001b[?1004l",
+    "\u001b[?2004l",
+    "\u001b[?2026l",
+    "\u001b[?9l",
+    "\u001b[?1000l",
+    "\u001b[?1002l",
+    "\u001b[?1003l",
+    "\u001b[?1006l",
+    "\u001b[?1016l"
+  ],
+  "reset_all": true
+}

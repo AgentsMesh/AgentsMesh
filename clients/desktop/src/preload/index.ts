@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 import { type ServerConfig } from "../shared/server-config-types";
 import { type UpdaterSnapshot } from "../shared/updater-reducer";
 import { windowTraits, type WindowKind } from "../shared/window-kind";
+import { relayPushApi } from "./relay_push_api";
 
 // Sync IPC by design: renderer code (env.ts, OAuth URL builders, WS connect) is synchronous.
 // Reading at preload (before any renderer code runs) blocks no UI thread; mainWindow.reload()
@@ -68,26 +69,7 @@ const api = {
   },
   // Relay (terminal data plane) push channels: the main-process Rust pool fans
   // PTY output / status / ACP to the renderer. ElectronRelayManager subscribes.
-  onRelayOutput: (handler: (payload: { podKey: string; data: Uint8Array }) => void) => {
-    const listener = (_e: IpcRendererEvent, payload: { podKey: string; data: Uint8Array }) => handler(payload);
-    ipcRenderer.on("relay:output", listener);
-    return () => ipcRenderer.removeListener("relay:output", listener);
-  },
-  onRelayStatus: (handler: (payload: { podKey: string; json: string }) => void) => {
-    const listener = (_e: IpcRendererEvent, payload: { podKey: string; json: string }) => handler(payload);
-    ipcRenderer.on("relay:status", listener);
-    return () => ipcRenderer.removeListener("relay:status", listener);
-  },
-  onRelayAcp: (handler: (payload: { podKey: string; json: string }) => void) => {
-    const listener = (_e: IpcRendererEvent, payload: { podKey: string; json: string }) => handler(payload);
-    ipcRenderer.on("relay:acp", listener);
-    return () => ipcRenderer.removeListener("relay:acp", listener);
-  },
-  onRelayPodDisconnected: (handler: (payload: { podKey: string }) => void) => {
-    const listener = (_e: IpcRendererEvent, payload: { podKey: string }) => handler(payload);
-    ipcRenderer.on("relay:pod-disconnected", listener);
-    return () => ipcRenderer.removeListener("relay:pod-disconnected", listener);
-  },
+  ...relayPushApi,
   serverConfig: {
     snapshot: serverConfigSnapshot,
     get: () => ipcRenderer.invoke("serverConfig:get"),

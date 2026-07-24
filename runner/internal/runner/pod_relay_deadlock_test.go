@@ -68,7 +68,7 @@ func TestDisconnectRelay_ConcurrentWithSubscribe(t *testing.T) {
 		return mc
 	}
 
-	pod := &Pod{PodKey: "pod-concurrent-ds", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-concurrent-ds", PodStatusRunning)
 	store.Put(pod.PodKey, pod)
 
 	// Set an initial relay client.

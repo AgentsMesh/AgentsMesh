@@ -5,6 +5,7 @@ import { SearchAddon } from "@xterm/addon-search";
 import { MutableRefObject } from "react";
 import { terminalRegistry } from "@/stores/workspace";
 import { TerminalWriteScheduler } from "@/lib/terminalScheduler";
+import { RunnerUnicodeGraphemesAddon } from "@/lib/terminal/runnerUnicodeGraphemes";
 
 export { setupConnection, setupDataHandlers } from "./useTerminalConnection";
 export type { TerminalConnection } from "./useTerminalConnection";
@@ -67,6 +68,7 @@ export function setupTerminal(
   });
 
   const fitAddon = new FitAddon();
+  term.loadAddon(new RunnerUnicodeGraphemesAddon());
   term.loadAddon(fitAddon);
   term.loadAddon(new WebLinksAddon());
   term.loadAddon(new SearchAddon());

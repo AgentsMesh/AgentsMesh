@@ -15,7 +15,7 @@ func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
 		func() float64 { return 0.3 }, // Moderate pressure
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	// Write incremental sync frames - all should be preserved
@@ -31,7 +31,7 @@ func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
 
 	received := relay.getData()
 
-	// All incremental frames should be preserved (content-aware discard)
+	// Every incremental frame must remain in raw stream order.
 	if !bytes.Contains(received, []byte("frame 1")) {
 		t.Error("Frame 1 should be preserved for incremental updates")
 	}
@@ -43,8 +43,8 @@ func TestSmartAggregator_PreservesIncrementalFrames(t *testing.T) {
 	}
 }
 
-// TestSmartAggregator_SynchronizedOutputFrameBoundary tests frame boundary detection
-// with content-aware discard: old frames are only discarded when a full redraw frame arrives
+// TestSmartAggregator_SynchronizedOutputFrameBoundary verifies that ED2 never
+// discards earlier parser state from the raw stream.
 func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
 	relay := newMockRelayWriter(true)
 
@@ -52,16 +52,14 @@ func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
 		func() float64 { return 0.3 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	syncStart := "\x1b[?2026h"
 	syncEnd := "\x1b[?2026l"
-	clearScreen := "\x1b[2J" // ESC[2J marks a full redraw frame
+	clearScreen := "\x1b[2J"
 
-	// Write Frame 1 (old incremental frame - will be discarded when full redraw arrives)
 	agg.Write([]byte(syncStart + "old frame content" + syncEnd))
-	// Write Frame 2 (full redraw frame with ESC[2J - triggers discard of old frame)
 	agg.Write([]byte(syncStart + clearScreen + "new frame content" + syncEnd))
 
 	time.Sleep(200 * time.Millisecond)
@@ -77,14 +75,13 @@ func TestSmartAggregator_SynchronizedOutputFrameBoundary(t *testing.T) {
 	if !bytes.Contains(received, []byte("new frame content")) {
 		t.Errorf("Expected 'new frame content' in result")
 	}
-	// Old frame should be discarded because a full redraw frame was written
-	if bytes.Contains(received, []byte("old frame content")) {
-		t.Errorf("Old frame should be discarded when full redraw frame arrives")
+	if !bytes.Contains(received, []byte("old frame content")) {
+		t.Errorf("ED2 discarded earlier terminal parser state")
 	}
 }
 
-// TestSmartAggregator_SyncOutputPriorityOverClearScreen tests that full redraw frame
-// discards content before it (content-aware discard)
+// TestSmartAggregator_SyncOutputPreservesPrefixBeforeClearScreen verifies that
+// synchronized output is a paint boundary, not a terminal-state baseline.
 func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
 	relay := newMockRelayWriter(true)
 
@@ -92,16 +89,14 @@ func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
 		func() float64 { return 0.3 },
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	syncStart := "\x1b[?2026h"
 	syncEnd := "\x1b[?2026l"
 	clearScreen := "\x1b[2J"
 
-	// Write content before sync frame
 	agg.Write([]byte(clearScreen + "after clear"))
-	// Write a full redraw sync frame (contains ESC[2J inside)
 	agg.Write([]byte(syncStart + clearScreen + "sync frame" + syncEnd))
 
 	time.Sleep(200 * time.Millisecond)
@@ -114,8 +109,7 @@ func TestSmartAggregator_SyncOutputPriorityOverClearScreen(t *testing.T) {
 	if !bytes.Contains(received, []byte("sync frame")) {
 		t.Errorf("Expected 'sync frame' in result")
 	}
-	// Content before the full redraw sync frame should be discarded
-	if bytes.Contains(received, []byte("after clear")) {
-		t.Errorf("Content before full redraw sync frame should be discarded")
+	if !bytes.Contains(received, []byte("after clear")) {
+		t.Errorf("content before synchronized ED2 frame was discarded")
 	}
 }

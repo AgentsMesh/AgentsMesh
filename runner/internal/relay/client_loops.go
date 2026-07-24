@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -9,27 +10,23 @@ import (
 func (c *Client) readLoop() {
 	c.logger.Debug("Read loop starting")
 
-	// Capture connDoneCh at loop start so that even if reconnectLoop replaces
-	// c.connDoneCh with a new channel, we only close the one belonging to
-	// this connection iteration.
-	doneCh := c.connDoneCh
+	// Capture one immutable outbound generation. A reconnect publishes a fresh
+	// queue, so this loop can never consume or acknowledge the next socket's
+	// frames.
+	_, generation, doneCh, doneOnce, _ := c.snapshotOutbound()
 
 	defer func() {
 		// IMPORTANT: Call wg.Done() FIRST to ensure Stop() doesn't wait unnecessarily
 		// This must happen before any callbacks that might block
 		c.wg.Done()
 
-		c.connected.Store(false)
 		c.logger.Info("Read loop exited")
 
-		// Signal writeLoop that this connection is done
-		// Safe to close multiple times via select
-		select {
-		case <-doneCh:
-			// Already closed
-		default:
-			close(doneCh)
-		}
+		// Closing done first unblocks a Flush that may be waiting for queue
+		// capacity while holding outboundMu. The generation check then prevents
+		// this old reader from deactivating a replacement connection.
+		signalConnectionDone(doneCh, doneOnce)
+		c.deactivateOutbound(generation)
 
 		// Check if this is a graceful shutdown (Stop() called) or unexpected disconnect
 		select {
@@ -106,27 +103,19 @@ func (c *Client) readLoop() {
 }
 
 func (c *Client) writeLoop() {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+	c.writeLoopWithPing(ticker.C)
+}
+
+func (c *Client) writeLoopWithPing(ping <-chan time.Time) {
 	c.logger.Debug("Write loop starting")
 	defer c.wg.Done()
 	defer c.logger.Info("Write loop exited")
 
 	// Signal reconnectLoop that writeLoop has fully exited.
-	exitCh := c.writeExitCh
-	defer func() {
-		select {
-		case <-exitCh:
-		default:
-			close(exitCh)
-		}
-	}()
-
-	// Capture connDoneCh at loop start — matches readLoop pattern.
-	// If reconnectLoop replaces c.connDoneCh, we only listen to the one
-	// belonging to this connection iteration.
-	doneCh := c.connDoneCh
-
-	ticker := time.NewTicker(pingPeriod)
-	defer ticker.Stop()
+	queue, generation, doneCh, doneOnce, exitCh := c.snapshotOutbound()
+	defer c.finishOutboundWriter(queue, generation, exitCh)
 
 	for {
 		select {
@@ -137,36 +126,72 @@ func (c *Client) writeLoop() {
 			// Connection is done (readLoop exited), stop writeLoop
 			return
 
-		case data := <-c.sendCh:
+		case item := <-queue:
+			if item.generation != generation {
+				if item.flush != nil {
+					item.flush <- errRelayGenerationEnded
+				}
+				continue
+			}
+			if item.flush != nil {
+				item.flush <- nil
+				continue
+			}
 			c.connMu.RLock()
 			conn := c.conn
 			c.connMu.RUnlock()
 
 			if conn == nil {
+				signalConnectionDone(doneCh, doneOnce)
 				return
 			}
 
 			conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
+			if err := conn.WriteMessage(websocket.BinaryMessage, item.data); err != nil {
 				c.logger.Error("Write error", "error", err)
+				signalConnectionDone(doneCh, doneOnce)
+				_ = conn.Close()
 				return
 			}
 
-		case <-ticker.C:
+		case <-ping:
 			c.connMu.RLock()
 			conn := c.conn
 			c.connMu.RUnlock()
 
 			if conn == nil {
+				signalConnectionDone(doneCh, doneOnce)
 				return
 			}
 
 			conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				c.logger.Error("Ping error", "error", err)
+				signalConnectionDone(doneCh, doneOnce)
+				_ = conn.Close()
 				return
 			}
 		}
+	}
+}
+
+func signalConnectionDone(ch chan struct{}, once *sync.Once) {
+	if ch == nil || once == nil {
+		return
+	}
+	once.Do(func() { close(ch) })
+}
+
+func (c *Client) finishOutboundWriter(queue chan outboundItem, generation uint64, exitCh chan struct{}) {
+	c.deactivateOutbound(generation)
+	discardOutbound(queue, errRelayGenerationEnded)
+	if exitCh == nil {
+		return
+	}
+	select {
+	case <-exitCh:
+	default:
+		close(exitCh)
 	}
 }
 

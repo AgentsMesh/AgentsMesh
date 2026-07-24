@@ -9,7 +9,7 @@ func buildSyncFrame(content string) []byte {
 	return append(append(syncOutputStartSeq, []byte(content)...), syncOutputEndSeq...)
 }
 
-// Helper to build full redraw frame (contains ESC[2J - triggers discard of previous frames)
+// Helper to build a synchronized full-redraw frame for throttling tests.
 func buildFullRedrawFrame(content string) []byte {
 	// Full redraw frames contain ESC[2J (clear screen) followed by actual content
 	frameContent := append(eraseScreenSeq, []byte(content)...)

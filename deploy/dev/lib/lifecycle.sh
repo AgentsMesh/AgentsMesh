@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# shellcheck disable=SC1090
 # lifecycle.sh — start / stop / status / banner.
 #
 # Frontend launch (web + admin) goes through Bazel's `next_dev` so the
@@ -100,12 +101,33 @@ reset_runners() {
     build_runner_binary || return 1
     build_mock_agent_binary || return 1
 
-    cd "$SCRIPT_DIR"
+    cd "$SCRIPT_DIR" || return 1
     info "重建并重启 runner 容器..."
     docker compose up -d --build runner 2>&1 | grep -v "^#" | grep -v warning || true
     success "Runner 容器已重启 (binary 来自 bazel build)"
 
     echo ""
+}
+
+# Bazel may leave read-only directories in an output base. A failed cache
+# removal must not abort the rest of clean() under dev.sh's top-level set -e.
+_remove_frontend_bazel_output_base() {
+    local output_base="$1"
+
+    if rm -rf -- "$output_base" 2>/dev/null; then
+        return 0
+    fi
+
+    warn "Bazel cache removal failed; repairing owner permissions and retrying: $output_base"
+    if [[ -d "$output_base" ]]; then
+        chmod u+rwx -- "$output_base" 2>/dev/null || true
+        find "$output_base" -type d -exec chmod u+rwx {} + 2>/dev/null || true
+    fi
+
+    if ! rm -rf -- "$output_base" 2>/dev/null; then
+        warn "Unable to remove Bazel cache; continuing teardown: $output_base"
+    fi
+    return 0
 }
 
 # Tear down everything dev.sh creates: host service pids, frontend port
@@ -133,13 +155,25 @@ clean() {
         success "Admin Console 已停止"
     fi
 
+    # next_dev is a long-running Bazel invocation. Web and Admin use isolated
+    # output bases so normal builds/tests cannot evict them; shut those servers
+    # down explicitly before removing their caches.
+    local frontend frontend_output_base
+    for frontend in web web-admin; do
+        frontend_output_base=$(_frontend_bazel_output_base "$frontend")
+        if [[ -d "$frontend_output_base" ]]; then
+            bazel --output_base="$frontend_output_base" shutdown >/dev/null 2>&1 || true
+            _remove_frontend_bazel_output_base "$frontend_output_base"
+        fi
+    done
+
     rm -f "$SCRIPT_DIR/web.log"
     rm -f "$SCRIPT_DIR/web-admin.log"
     rm -rf "$(_runtime_dir)"
 
     if [[ -f "$ENV_FILE" ]]; then
         info "清理 Docker 环境: ${COMPOSE_PROJECT_NAME:-agentsmesh}..."
-        cd "$SCRIPT_DIR"
+        cd "$SCRIPT_DIR" || return 1
         docker compose down -v --remove-orphans 2>/dev/null || true
         rm -f "$ENV_FILE"
         success "清理完成"
@@ -183,161 +217,4 @@ show_result() {
     echo "  停止: ./dev.sh --clean"
     echo "  仅重 build runner: ./dev.sh --rebuild-runner"
     echo ""
-}
-
-# Reusable lockfile-driven pnpm install: skips if node_modules is in sync
-# with pnpm-lock.yaml (md5 fingerprint), reinstalls otherwise. Returns
-# non-zero on install failure so callers can decide fail-vs-skip.
-_install_root_deps_if_needed() {
-    local context="$1"            # human label for logs ("前端依赖" / "Admin Console 依赖")
-    local stale_cache_dir="$2"    # .next/cache to wipe on reinstall
-    local root_dir="$SCRIPT_DIR/../.."
-    local lockfile="$root_dir/pnpm-lock.yaml"
-    local lockfile_hash_file="$root_dir/node_modules/.pnpm-lock-hash"
-    local current_hash="" cached_hash=""
-    [[ -f "$lockfile" ]] && current_hash=$(md5 -q "$lockfile" 2>/dev/null || md5sum "$lockfile" | cut -d' ' -f1)
-    [[ -f "$lockfile_hash_file" ]] && cached_hash=$(cat "$lockfile_hash_file")
-
-    if [[ -d "$root_dir/node_modules" && "$current_hash" == "$cached_hash" ]]; then
-        return 0
-    fi
-
-    info "安装 ${context}（根 workspace）..."
-    if ! (cd "$root_dir" && pnpm install --frozen-lockfile); then
-        error "${context} 安装失败"
-        return 1
-    fi
-    echo "$current_hash" > "$lockfile_hash_file"
-    rm -rf "$stale_cache_dir"
-    success "${context} 安装完成"
-}
-
-# Common pre-flight for both Next.js dev servers: clear stale lockfile +
-# port squatters. Returns 1 if the port is held by something we can't
-# safely kick (i.e., not our own stale Next.js process).
-_prepare_next_port() {
-    local label="$1"      # "前端" / "Admin Console"
-    local web_dir="$2"    # absolute path to clients/web or web-admin
-    local web_port="$3"
-    local stale_lock=false
-
-    local lock_file="$web_dir/.next/dev/lock"
-    if [[ -f "$lock_file" ]]; then
-        warn "检测到残留的 ${label}锁文件，清理中..."
-        # Only kill `next dev` process for the web frontend — admin keeps
-        # using the lsof fallback because both frontends share the same
-        # `next dev` process name and we don't want one cleanup to kill
-        # the other.
-        if [[ "$label" == "前端" ]]; then
-            pkill -f "next dev" 2>/dev/null || true
-        fi
-        lsof -ti :"$web_port" 2>/dev/null | xargs kill -9 2>/dev/null || true
-        sleep 1
-        rm -f "$lock_file"
-        rm -rf "$web_dir/.next/cache"
-        success "${label}锁文件和缓存已清理"
-        stale_lock=true
-    fi
-
-    if [[ "$stale_lock" == false ]] && lsof -i :"$web_port" &>/dev/null; then
-        warn "端口 $web_port 已被占用，跳过${label}启动"
-        return 1
-    fi
-    return 0
-}
-
-# Launch the Next.js web frontend via Bazel's `next_dev` devserver. We
-# can't use plain `next dev` from clients/web/ because the
-# `@agentsmesh/*` internal packages are linked at the workspace root
-# via Bazel `npm_link_package`, not by pnpm — so Next.js running outside
-# Bazel's sandbox can't resolve them.
-start_frontend() {
-    source "$ENV_FILE"
-    local web_dir="$SCRIPT_DIR/../../clients/web"
-    local web_port="${WEB_PORT:-3000}"
-
-    _prepare_next_port "前端" "$web_dir" "$web_port" || return 0
-
-    if ! command -v bazel &>/dev/null; then
-        error "未找到 bazel"
-        return 1
-    fi
-    if ! command -v pnpm &>/dev/null; then
-        error "未找到 pnpm，请先安装: npm install -g pnpm"
-        return 1
-    fi
-
-    _install_root_deps_if_needed "前端依赖" "$web_dir/.next/cache" || return 1
-
-    local log_file="$SCRIPT_DIR/web.log"
-    local root_dir="$SCRIPT_DIR/../.."
-    info "启动前端服务 (端口: $web_port, Bazel devserver)..."
-    local saved_dir="$PWD"
-    cd "$root_dir"
-    # API_PROXY_TARGET drives next.config.ts rewrites: /api/* → traefik
-    # → host backend. Without it, /api/auth/login 404s and the UI can't
-    # log in. HTTP_PORT is traefik's worktree-allocated entrypoint.
-    #
-    # NEXT_PUBLIC_E2E=true enables build-time conditional registration of
-    # test-only UI surfaces (e.g. the e2e-echo credential form). Production
-    # builds never see this flag, so the e2e form is tree-shaken out. See
-    # clients/web/src/components/settings/AgentCredentialsSettings/
-    # credentialForms/index.ts.
-    API_PROXY_TARGET="http://localhost:$HTTP_PORT" \
-    NEXT_PUBLIC_E2E="true" \
-        bazel run //clients/web:next_dev -- --port "$web_port" > "$log_file" 2>&1 < /dev/null &
-    disown $!
-    cd "$saved_dir"
-
-    local max_wait=60
-    for ((i=1; i<=max_wait; i++)); do
-        if curl -s "http://localhost:$web_port" &>/dev/null; then
-            success "前端服务已启动 (http://localhost:$web_port)"
-            return 0
-        fi
-        sleep 1
-    done
-
-    warn "前端服务启动中，请稍后访问 http://localhost:$web_port"
-    echo "  查看日志: tail -f $log_file"
-}
-
-start_admin_frontend() {
-    source "$ENV_FILE"
-    local web_admin_dir="$SCRIPT_DIR/../../clients/web-admin"
-    local web_admin_port="${WEB_ADMIN_PORT:-3001}"
-
-    _prepare_next_port "Admin Console" "$web_admin_dir" "$web_admin_port" || return 0
-
-    if ! command -v pnpm &>/dev/null; then
-        error "未找到 pnpm，跳过 Admin Console 启动"
-        return 0
-    fi
-
-    _install_root_deps_if_needed "Admin Console 依赖" "$web_admin_dir/.next/cache" || return 0
-
-    local log_file="$SCRIPT_DIR/web-admin.log"
-    local root_dir="$SCRIPT_DIR/../.."
-    info "启动 Admin Console (端口: $web_admin_port, Bazel devserver)..."
-    local saved_dir="$PWD"
-    cd "$root_dir"
-    # web-admin's next.config rewrites use PRIMARY_DOMAIN to compute the
-    # backend URL (its fallback is the prod-only localhost:10000, which
-    # never matches a worktree). Pin it to traefik so /api/* proxies.
-    PRIMARY_DOMAIN="localhost:$HTTP_PORT" \
-        bazel run //clients/web-admin:next_dev -- --port "$web_admin_port" > "$log_file" 2>&1 < /dev/null &
-    disown $!
-    cd "$saved_dir"
-
-    local max_wait=60
-    for ((i=1; i<=max_wait; i++)); do
-        if curl -s "http://localhost:$web_admin_port" &>/dev/null; then
-            success "Admin Console 已启动 (http://localhost:$web_admin_port)"
-            return 0
-        fi
-        sleep 1
-    done
-
-    warn "Admin Console 启动中，请稍后访问 http://localhost:$web_admin_port"
-    echo "  查看日志: tail -f $log_file"
 }

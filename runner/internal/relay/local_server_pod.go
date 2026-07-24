@@ -1,10 +1,8 @@
 package relay
 
 import (
-	"net/http"
-	"time"
-
-	"github.com/gorilla/websocket"
+	"context"
+	"errors"
 )
 
 // RegisterPod records an accepted token for a pod. Subsequent incoming
@@ -24,7 +22,7 @@ func (s *LocalServer) RegisterPod(podKey, expectedToken string) {
 			expectedTokens: make(map[string]struct{}),
 			handlers:       make(map[byte]func([]byte)),
 			reqHandlers:    make(map[byte]RequestHandler),
-			conns:          make(map[*websocket.Conn]struct{}),
+			conns:          make(map[*localConn]struct{}),
 		}
 		s.pods[podKey] = lane
 	}
@@ -48,15 +46,13 @@ func (s *LocalServer) UnregisterPod(podKey string) {
 	if !ok {
 		return
 	}
-	lane.mu.Lock()
-	for c := range lane.conns {
-		_ = c.Close()
+	conns := lane.shutdown()
+	for _, c := range conns {
+		c.close()
 	}
-	lane.conns = nil
-	lane.handlers = nil
-	lane.reqHandlers = nil
-	lane.expectedTokens = nil
-	lane.mu.Unlock()
+	for _, c := range conns {
+		c.waitWriter()
+	}
 }
 
 // SetMessageHandler registers an inbound handler for a given message type on
@@ -94,27 +90,11 @@ func (s *LocalServer) SetRequestHandler(podKey string, msgType byte, handler Req
 	lane.reqHandlers[msgType] = handler
 }
 
-// writeFrame writes one pre-encoded frame to a single browser connection,
-// serialized by the lane's writeMu so concurrent Send / reply goroutines never
-// call WriteMessage on the same conn at once (gorilla forbids it).
-func (l *localPodLane) writeFrame(conn *websocket.Conn, frame []byte) error {
-	l.writeMu.Lock()
-	defer l.writeMu.Unlock()
-	_ = conn.SetWriteDeadline(time.Now().Add(localWriteTimeout))
-	return conn.WriteMessage(websocket.BinaryMessage, frame)
-}
-
-// writeConn frames then writes one message to a single connection. Used by the
-// per-connection reply path; broadcast (Send) encodes once and calls writeFrame.
-func (l *localPodLane) writeConn(conn *websocket.Conn, msgType byte, payload []byte) error {
-	return l.writeFrame(conn, EncodeMessage(msgType, payload))
-}
-
 // Send broadcasts a message to every browser connected for this pod. The frame
 // is encoded once and shared (read-only) across conns, avoiding a per-conn
-// re-encode on the hot PTY-output fanout path. Returns nil even when there are
-// no listeners — output drops are expected. On per-conn write error we close the
-// conn so the read loop drops it from lane.conns immediately.
+// re-encode on the hot PTY-output fanout path. Enqueue is non-blocking and one
+// overloaded connection cannot delay or fail healthy peers. Returns nil even
+// when there are no listeners or an individual connection is closed.
 func (s *LocalServer) Send(podKey string, msgType byte, payload []byte) error {
 	lane := s.lookupLane(podKey)
 	if lane == nil {
@@ -122,11 +102,38 @@ func (s *LocalServer) Send(podKey string, msgType byte, payload []byte) error {
 	}
 	frame := EncodeMessage(msgType, payload)
 	for _, c := range lane.snapshotConns() {
-		if err := lane.writeFrame(c, frame); err != nil {
-			_ = c.Close()
-		}
+		c.enqueue(frame)
 	}
 	return nil
+}
+
+// Flush waits until every currently connected browser socket writer has
+// processed all frames accepted before this call. Connections flush in
+// parallel so one slow browser cannot prevent a healthy peer from receiving
+// its marker before the shared context deadline.
+func (s *LocalServer) Flush(ctx context.Context, podKey string) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	lane := s.lookupLane(podKey)
+	if lane == nil {
+		return nil
+	}
+	conns := lane.snapshotConns()
+	results := make(chan error, len(conns))
+	for _, conn := range conns {
+		go func(c *localConn) {
+			results <- c.flush(ctx)
+		}(conn)
+	}
+
+	var flushErr error
+	for range conns {
+		if err := <-results; err != nil {
+			flushErr = errors.Join(flushErr, err)
+		}
+	}
+	return flushErr
 }
 
 // IsPodConnected reports whether at least one browser is currently connected
@@ -147,96 +154,34 @@ func (s *LocalServer) lookupLane(podKey string) *localPodLane {
 	return s.pods[podKey]
 }
 
-// handleBrowser is the WebSocket entry point for browser connections.
-// Path: /browser/relay?token=<jwt>&pod=<pod_key>
-func (s *LocalServer) handleBrowser(w http.ResponseWriter, r *http.Request) {
-	podKey := r.URL.Query().Get("pod")
-	token := r.URL.Query().Get("token")
-	if podKey == "" || token == "" {
-		http.Error(w, "pod and token required", http.StatusBadRequest)
-		return
-	}
-
-	lane := s.lookupLane(podKey)
-	if lane == nil {
-		http.Error(w, "unknown pod", http.StatusNotFound)
-		return
-	}
-	lane.mu.RLock()
-	_, accepted := lane.expectedTokens[token]
-	lane.mu.RUnlock()
-	if !accepted {
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return
-	}
-
-	conn, err := localUpgrader.Upgrade(w, r, nil)
-	if err != nil {
-		s.logger.Warn("Local relay upgrade failed", "pod_key", podKey, "error", err)
-		return
-	}
-	conn.SetReadLimit(localReadLimitBytes)
-	_ = conn.SetReadDeadline(time.Now().Add(localReadTimeout))
-	conn.SetPongHandler(func(string) error {
-		return conn.SetReadDeadline(time.Now().Add(localReadTimeout))
-	})
-
-	lane.mu.Lock()
-	if lane.conns == nil {
-		lane.mu.Unlock()
-		_ = conn.Close()
-		return
-	}
-	lane.conns[conn] = struct{}{}
-	lane.mu.Unlock()
-
-	s.logger.Info("Local relay browser connected", "pod_key", podKey)
-
-	go s.readLoop(podKey, lane, conn)
-}
-
-func (s *LocalServer) readLoop(podKey string, lane *localPodLane, conn *websocket.Conn) {
-	defer func() {
-		lane.mu.Lock()
-		delete(lane.conns, conn)
-		lane.mu.Unlock()
-		_ = conn.Close()
-		s.logger.Info("Local relay browser disconnected", "pod_key", podKey)
-	}()
-
-	for {
-		mt, data, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-		_ = conn.SetReadDeadline(time.Now().Add(localReadTimeout))
-		if mt != websocket.BinaryMessage || len(data) < 1 {
-			continue
-		}
-		msgType := data[0]
-		payload := data[1:]
-		lane.mu.RLock()
-		reqHandler := lane.reqHandlers[msgType]
-		handler := lane.handlers[msgType]
-		lane.mu.RUnlock()
-		if reqHandler != nil {
-			reqHandler(payload, func(mt byte, p []byte) {
-				if err := lane.writeConn(conn, mt, p); err != nil {
-					_ = conn.Close()
-				}
-			})
-		} else if handler != nil {
-			handler(payload)
-		}
-	}
-}
-
-func (l *localPodLane) snapshotConns() []*websocket.Conn {
+func (l *localPodLane) snapshotConns() []*localConn {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
-	out := make([]*websocket.Conn, 0, len(l.conns))
+	out := make([]*localConn, 0, len(l.conns))
 	for c := range l.conns {
 		out = append(out, c)
 	}
 	return out
+}
+
+func (l *localPodLane) removeConn(conn *localConn) {
+	l.mu.Lock()
+	if l.conns != nil {
+		delete(l.conns, conn)
+	}
+	l.mu.Unlock()
+}
+
+func (l *localPodLane) shutdown() []*localConn {
+	l.mu.Lock()
+	conns := make([]*localConn, 0, len(l.conns))
+	for c := range l.conns {
+		conns = append(conns, c)
+	}
+	l.conns = nil
+	l.handlers = nil
+	l.reqHandlers = nil
+	l.expectedTokens = nil
+	l.mu.Unlock()
+	return conns
 }

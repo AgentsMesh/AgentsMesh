@@ -51,11 +51,10 @@ func (p *ptyTerminalMock) SendKeys(keys []string) error {
 	return p.keysErr
 }
 
-func (p *ptyTerminalMock) Resize(int, int) (bool, error)             { return true, nil }
-func (p *ptyTerminalMock) CursorPosition() (int, int)                { return 0, 0 }
-func (p *ptyTerminalMock) GetScreenSnapshot() string                 { return "" }
-func (p *ptyTerminalMock) Redraw() error                             { return nil }
-func (p *ptyTerminalMock) WriteOutput([]byte)                        {}
+func (p *ptyTerminalMock) Resize(int, int) (bool, error) { return true, nil }
+func (p *ptyTerminalMock) CursorPosition() (int, int)    { return 0, 0 }
+func (p *ptyTerminalMock) GetScreenSnapshot() string     { return "" }
+func (p *ptyTerminalMock) WriteOutput([]byte)            {}
 
 // stubPodIOZero satisfies PodIO with no-ops so each test mock only overrides
 // the methods it cares about.

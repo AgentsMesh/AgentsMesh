@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// TestSmartAggregator_HighLoadFrameDropping verifies frame dropping under high load.
-func TestSmartAggregator_HighLoadFrameDropping(t *testing.T) {
+func TestSmartAggregatorHighLoadPreservesRawStream(t *testing.T) {
 	relay := newMockRelayWriter(true)
 
 	// Simulate high queue pressure (80%)
@@ -18,31 +17,24 @@ func TestSmartAggregator_HighLoadFrameDropping(t *testing.T) {
 		func() float64 { return queueUsage },
 		WithSmartBaseDelay(5*time.Millisecond), // Faster for testing
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
-	// Send multiple frames with clear screen sequences
+	var expected bytes.Buffer
 	for i := 0; i < 10; i++ {
-		// Old content (should be discarded under high load)
-		agg.Write([]byte("old frame content that should be dropped"))
-		// Clear screen
-		agg.Write([]byte("\x1b[2J"))
-		// New content (should be kept)
-		agg.Write([]byte("new frame"))
+		for _, part := range [][]byte{
+			[]byte("old frame content"), clearScreenSeq, []byte("new frame"),
+		} {
+			agg.Write(part)
+			expected.Write(part)
+		}
 	}
 
 	agg.Stop()
 	time.Sleep(50 * time.Millisecond) // Wait for async flush
 
-	lastData := relay.getData()
-
-	// Last data should start with clear screen (old content discarded)
-	if !bytes.HasPrefix(lastData, clearScreenSeq) {
-		t.Errorf("Expected last data to start with clear screen sequence")
+	if got := relay.getData(); !bytes.Equal(got, expected.Bytes()) {
+		t.Fatalf("raw stream changed under load: got %d bytes, want %d", len(got), expected.Len())
 	}
-
-	t.Logf("High load frame dropping test:")
-	t.Logf("   Last data length: %d (starts with ESC[2J: %v)",
-		len(lastData), bytes.HasPrefix(lastData, clearScreenSeq))
 }
 
 // TestSmartAggregator_AdaptiveDelayUnderPressure verifies delay increases with load.
@@ -68,7 +60,7 @@ func TestSmartAggregator_AdaptiveDelayUnderPressure(t *testing.T) {
 		WithSmartMaxDelay(100*time.Millisecond),
 	)
 	relay := newMockRelayWriter(true)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Test at different load levels
 	testCases := []struct {
@@ -106,7 +98,7 @@ func TestSmartAggregator_ConcurrentHighVolume(t *testing.T) {
 		func() float64 { return 0.3 }, // Moderate pressure
 		WithSmartBaseDelay(5*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	var wg sync.WaitGroup
 	numWriters := 10
@@ -152,7 +144,7 @@ func TestSmartAggregator_RapidStartStop(t *testing.T) {
 			func() float64 { return 0 },
 			WithSmartBaseDelay(1*time.Millisecond),
 		)
-		agg.SetRelayClient(relay)
+		agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 		agg.Write([]byte("quick data"))
 		agg.Stop()
@@ -169,17 +161,9 @@ func TestSmartAggregator_RapidStartStop(t *testing.T) {
 	t.Logf("Rapid start/stop test: %d bytes captured (no data loss)", finalBytes)
 }
 
-// TestSmartAggregator_ClearScreenDetection verifies ESC[2J detection accuracy.
-func TestSmartAggregator_ClearScreenDetection(t *testing.T) {
-	relay := newMockRelayWriter(true)
-
-	agg := NewSmartAggregator(
-		func() float64 { return 0.8 }, // High pressure to trigger discard
-		WithSmartBaseDelay(5*time.Millisecond),
-	)
-	agg.SetRelayClient(relay)
-
-	// Test various clear screen sequences
+// TestSmartAggregator_ClearScreenPreservesRawState verifies that ED2 never
+// discards parser state or earlier raw bytes.
+func TestSmartAggregator_ClearScreenPreservesRawState(t *testing.T) {
 	testCases := []struct {
 		name  string
 		input [][]byte
@@ -190,23 +174,22 @@ func TestSmartAggregator_ClearScreenDetection(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		// Reset relay for each test case
-		newRelay := newMockRelayWriter(true)
-		agg.SetRelayClient(newRelay)
-
-		for _, data := range tc.input {
-			agg.Write(data)
-		}
-		agg.Flush()
-		time.Sleep(20 * time.Millisecond)
-
-		result := newRelay.getData()
-
-		t.Logf("   %s: input=%d parts, output=%d bytes", tc.name, len(tc.input), len(result))
+		t.Run(tc.name, func(t *testing.T) {
+			relay := newMockRelayWriter(true)
+			agg := NewSmartAggregator(func() float64 { return 0.8 })
+			defer agg.Stop()
+			agg.SetOutputDestination(OutputDestinationCloud, relay)
+			for _, data := range tc.input {
+				agg.Write(data)
+			}
+			if !agg.FlushAndWait(time.Second) {
+				t.Fatal("raw stream did not drain")
+			}
+			if got, want := relay.getData(), bytes.Join(tc.input, nil); !bytes.Equal(got, want) {
+				t.Fatalf("raw stream changed: got %q, want %q", got, want)
+			}
+		})
 	}
-
-	agg.Stop()
-	t.Logf("Clear screen detection test completed")
 }
 
 // BenchmarkSmartAggregator_Write measures write throughput.
@@ -231,7 +214,7 @@ func BenchmarkSmartAggregator_WriteUnderPressure(b *testing.B) {
 	)
 	defer agg.Stop()
 
-	// Include clear screen to trigger frame discard
+	// Include clear screen in the raw ANSI workload.
 	data := append([]byte("old content"), clearScreenSeq...)
 	data = append(data, []byte("new content")...)
 

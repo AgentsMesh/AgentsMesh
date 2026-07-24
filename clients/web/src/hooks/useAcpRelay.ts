@@ -4,11 +4,14 @@ import { dispatchAcpRelayEvent } from "@/stores/acpEventDispatcher";
 import { dispatchLoopalRelayEvent } from "@/stores/loopalDispatcher";
 import { isResourceNotFound, isPodNotConnectable } from "@/lib/errors/serviceError";
 
+let acpSubscriptionAttempt = 0;
+
 export function useAcpRelay(podKey: string, paneId: string, active: boolean): void {
   useEffect(() => {
     if (!active) return;
 
-    const subscriptionId = `acp-${paneId}`;
+    const subscriptionId = `acp-${paneId}-${++acpSubscriptionAttempt}`;
+    const abort = new AbortController();
 
     // Subscribe to share the WebSocket; terminal output is irrelevant for ACP.
     // subscribe() is async — handle its rejection (mirrors useTerminalConnection)
@@ -16,7 +19,8 @@ export function useAcpRelay(podKey: string, paneId: string, active: boolean): vo
     // not-found / not-yet-connectable are benign lifecycle transients (the
     // `active` dep re-runs this effect when pod status changes); only surface a
     // genuine connection failure.
-    relayPool.subscribe(podKey, subscriptionId, () => {}).catch((error: unknown) => {
+    relayPool.subscribe(podKey, subscriptionId, () => {}, abort.signal).catch((error: unknown) => {
+      if (abort.signal.aborted) return;
       if (isResourceNotFound(error) || isPodNotConnectable(error)) return;
       console.error("ACP relay subscribe failed:", error);
     });
@@ -27,6 +31,7 @@ export function useAcpRelay(podKey: string, paneId: string, active: boolean): vo
     });
 
     return () => {
+      abort.abort();
       relayPool.unsubscribe(podKey, subscriptionId);
       unsubAcp();
     };

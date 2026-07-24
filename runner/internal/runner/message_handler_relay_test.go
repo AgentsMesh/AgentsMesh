@@ -49,7 +49,7 @@ func TestOnSubscribePod_AlreadyConnectedSameRelay(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	// Create a mock relay client that is already connected
@@ -100,7 +100,7 @@ func TestOnSubscribePod_ConnectedToDifferentRelay(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod with a mock relay client connected to a different URL
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	oldMockClient := relay.NewMockClient("wss://old-relay.example.com")
@@ -134,7 +134,7 @@ func TestOnSubscribePod_ExistingClientNotConnected(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod with a relay client that is NOT connected
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	oldMockClient := relay.NewMockClient("wss://relay.example.com")
@@ -167,7 +167,7 @@ func TestOnSubscribePod_NoExistingClient(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod without any relay client
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	// Verify no existing client
@@ -219,7 +219,7 @@ func TestOnUnsubscribePod_DisconnectsRelay(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod with a mock relay client
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	mockRelayClient := relay.NewMockClient("wss://relay.example.com")
@@ -263,7 +263,7 @@ func TestOnSubscribePod_MultipleClientsScenario(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
 	// Create a pod
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	relayURL := "wss://relay.example.com"
@@ -345,7 +345,7 @@ func TestOnSubscribePod_ReconnectAfterDisconnect(t *testing.T) {
 
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	pod := &Pod{PodKey: "pod-1", Status: PodStatusRunning}
+	pod := newRelayReadyTestPod("pod-1", PodStatusRunning)
 	store.Put("pod-1", pod)
 
 	relayURL := "wss://relay.example.com"
@@ -413,7 +413,10 @@ func TestOnSubscribePod_AllowsInitializingPod(t *testing.T) {
 		return mc
 	}
 
-	pod := &Pod{PodKey: "pod-init", Status: PodStatusInitializing}
+	pod := &Pod{
+		PodKey: "pod-init", Status: PodStatusInitializing,
+		Relay: &orderedLifecycleRelay{events: &lifecycleEvents{}},
+	}
 	store.Put(pod.PodKey, pod)
 
 	err := handler.OnSubscribePod(client.SubscribePodRequest{

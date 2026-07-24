@@ -2,12 +2,10 @@ package runner
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/thejerf/suture/v4"
 
-	"github.com/anthropics/agentsmesh/runner/internal/autopilot"
 	"github.com/anthropics/agentsmesh/runner/internal/lifecycle"
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 	"github.com/anthropics/agentsmesh/runner/internal/terminal"
@@ -116,92 +114,4 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 
 	return err
-}
-
-// stopAllPods stops all active autopilots and pods during shutdown.
-// Pods are stopped in parallel with a global timeout to fit within
-// Windows SCM's 20s shutdown limit.
-func (r *Runner) stopAllPods() {
-	log := logger.Runner()
-
-	// Stop all autopilot controllers first (they depend on pods).
-	// DrainAll atomically removes all controllers and returns them
-	// so we can stop them in parallel without holding the lock.
-	var autopilotsCopy []*autopilot.AutopilotController
-	if r.autopilotStore != nil {
-		autopilotsCopy = r.autopilotStore.DrainAll()
-	}
-
-	if len(autopilotsCopy) > 0 {
-		log.Info("Stopping all autopilots in parallel", "count", len(autopilotsCopy))
-		var apWg sync.WaitGroup
-		for _, ac := range autopilotsCopy {
-			apWg.Add(1)
-			go func(a *autopilot.AutopilotController) {
-				defer apWg.Done()
-				a.Stop()
-			}(ac)
-		}
-		apWg.Wait()
-	}
-
-	// Stop all pods in parallel
-	pods := r.podStore.All()
-	if len(pods) == 0 {
-		return
-	}
-	log.Info("Stopping all pods in parallel", "count", len(pods))
-
-	var wg sync.WaitGroup
-	for _, pod := range pods {
-		wg.Add(1)
-		go func(p *Pod) {
-			defer wg.Done()
-			log.Debug("Detaching pod (daemon stays alive)", "pod_key", p.PodKey)
-
-			// Capture metadata before cleanup for token usage collection.
-			podKey := p.PodKey
-			agent := p.Agent
-			sandboxPath := p.SandboxPath
-			podStartedAt := p.StartedAt
-
-			p.StopStateDetector()
-			// Mode-specific infrastructure cleanup (aggregator, loggers).
-			// Must happen BEFORE DisconnectRelay so the final flush reaches the browser.
-			if p.IO != nil {
-				p.IO.Teardown()
-			}
-			p.DisconnectRelay()
-			if p.IO != nil {
-				// Detach instead of Stop: daemon + child process stay alive
-				// so the session can be recovered after Runner restart.
-				p.IO.Detach()
-			}
-			r.podStore.Delete(p.PodKey)
-
-			// Collect token usage synchronously (best-effort).
-			// Token files live in HOME (~/.claude/, ~/.codex/), not in sandbox,
-			// so they survive Terminal.Detach(). gRPC is still alive at this point.
-			if r.messageHandler != nil {
-				r.messageHandler.collectAndSendTokenUsage(podKey, agent, sandboxPath, podStartedAt)
-			}
-		}(pod)
-	}
-
-	// Total timeout: fits within Windows SCM 20s limit
-	// (leaves headroom for autopilot stop + supervisor teardown).
-	// Use a timer so we can stop it on success, preventing the
-	// wg.Wait goroutine from leaking on timeout.
-	timer := time.NewTimer(15 * time.Second)
-	defer timer.Stop()
-
-	done := make(chan struct{})
-	go func() { wg.Wait(); close(done) }()
-
-	select {
-	case <-done:
-		log.Info("All pods stopped successfully")
-	case <-timer.C:
-		log.Warn("Timeout waiting for pods to stop — some token usage data may be lost", "count", len(pods))
-	}
 }

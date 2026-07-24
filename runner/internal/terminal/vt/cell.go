@@ -1,74 +1,5 @@
 package vt
 
-// Color represents a terminal color.
-// It can be a default color, a 256-color palette index, or a true RGB color.
-type Color struct {
-	// ColorType: 0=default, 1=palette (256 colors), 2=RGB (true color)
-	colorType uint8
-	// For palette colors: the color index (0-255)
-	// For RGB: packed as index (unused, use r/g/b fields)
-	index uint8
-	// RGB components (only used when colorType == 2)
-	r, g, b uint8
-}
-
-// DefaultColor returns the default terminal color
-func DefaultColor() Color {
-	return Color{colorType: 0}
-}
-
-// PaletteColor creates a color from a 256-color palette index
-func PaletteColor(index uint8) Color {
-	return Color{colorType: 1, index: index}
-}
-
-// RGBColor creates a true color from RGB components
-func RGBColor(r, g, b uint8) Color {
-	return Color{colorType: 2, r: r, g: g, b: b}
-}
-
-// IsDefault returns true if this is the default color
-func (c Color) IsDefault() bool {
-	return c.colorType == 0
-}
-
-// IsPalette returns true if this is a palette color
-func (c Color) IsPalette() bool {
-	return c.colorType == 1
-}
-
-// IsRGB returns true if this is a true color
-func (c Color) IsRGB() bool {
-	return c.colorType == 2
-}
-
-// Index returns the palette index (only valid for palette colors)
-func (c Color) Index() uint8 {
-	return c.index
-}
-
-// RGB returns the RGB components (only valid for RGB colors)
-func (c Color) RGB() (r, g, b uint8) {
-	return c.r, c.g, c.b
-}
-
-// Equals compares two colors for equality
-func (c Color) Equals(other Color) bool {
-	if c.colorType != other.colorType {
-		return false
-	}
-	switch c.colorType {
-	case 0:
-		return true
-	case 1:
-		return c.index == other.index
-	case 2:
-		return c.r == other.r && c.g == other.g && c.b == other.b
-	default:
-		return false
-	}
-}
-
 // CellAttrs represents text attributes (bold, italic, etc.)
 type CellAttrs uint16
 
@@ -103,10 +34,14 @@ func (a CellAttrs) Has(attr CellAttrs) bool {
 	return a&attr != 0
 }
 
-// Cell represents a single character cell in the terminal with its style.
-// This structure is designed to match xterm.js BufferCell for accurate serialization.
+// Cell represents one terminal buffer slot with its style. A grapheme cluster
+// is owned by one content cell and may be followed by a width-zero placeholder.
+// HasContent distinguishes a printed space from a null/erased cell, matching
+// xterm's HAS_CONTENT bit.
 type Cell struct {
 	Char           rune
+	Combining      string
+	HasContent     bool
 	Fg             Color
 	Bg             Color
 	Attrs          CellAttrs
@@ -119,6 +54,7 @@ type Cell struct {
 func NewCell(ch rune) Cell {
 	return Cell{
 		Char:           ch,
+		HasContent:     ch != 0 && ch != ' ',
 		Fg:             DefaultColor(),
 		Bg:             DefaultColor(),
 		Attrs:          AttrNone,
@@ -132,6 +68,7 @@ func NewCell(ch rune) Cell {
 func NewStyledCell(ch rune, fg, bg Color, attrs CellAttrs) Cell {
 	return Cell{
 		Char:           ch,
+		HasContent:     ch != 0 && ch != ' ',
 		Fg:             fg,
 		Bg:             bg,
 		Attrs:          attrs,
@@ -145,6 +82,7 @@ func NewStyledCell(ch rune, fg, bg Color, attrs CellAttrs) Cell {
 func NewFullStyledCell(ch rune, fg, bg Color, attrs CellAttrs, width uint8, ulStyle UnderlineStyle, ulColor Color) Cell {
 	return Cell{
 		Char:           ch,
+		HasContent:     ch != 0 && ch != ' ',
 		Fg:             fg,
 		Bg:             bg,
 		Attrs:          attrs,
@@ -156,7 +94,25 @@ func NewFullStyledCell(ch rune, fg, bg Color, attrs CellAttrs, width uint8, ulSt
 
 // IsEmpty returns true if the cell is empty (space with default styling)
 func (c Cell) IsEmpty() bool {
-	return c.Char == ' ' && c.Fg.IsDefault() && c.Bg.IsDefault() && c.Attrs == AttrNone
+	return !c.HasContent && c.Char == ' ' && c.Combining == "" &&
+		c.Fg.IsDefault() && c.Bg.IsDefault() && c.Attrs == AttrNone
+}
+
+// Text returns the complete code-point sequence owned by this cell.
+func (c Cell) Text() string {
+	if !c.HasContent || c.Char == 0 {
+		return ""
+	}
+	if c.Combining == "" {
+		return string(c.Char)
+	}
+	return string(c.Char) + c.Combining
+}
+
+// IsPlaceholder distinguishes a wide-character continuation from a real
+// zero-width code point stored in its own terminal slot.
+func (c Cell) IsPlaceholder() bool {
+	return c.Width == 0 && !c.HasContent && c.Char == 0
 }
 
 // StyleEquals compares only the style (not the character)

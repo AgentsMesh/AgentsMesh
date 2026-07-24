@@ -12,7 +12,9 @@ import (
 type PodStore interface {
 	Get(podKey string) (*Pod, bool)
 	Put(podKey string, pod *Pod)
+	ReplaceIf(podKey string, expected, replacement *Pod) bool
 	Delete(podKey string) *Pod
+	DeleteIf(podKey string, expected *Pod) bool
 	Count() int
 	All() []*Pod
 }
@@ -42,9 +44,27 @@ func (s *InMemoryPodStore) Get(podKey string) (*Pod, bool) {
 func (s *InMemoryPodStore) Put(podKey string, pod *Pod) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	_, existed := s.pods[podKey]
 	s.pods[podKey] = pod
-	otelinit.PodActiveCount.Add(context.Background(), 1)
+	if !existed {
+		otelinit.PodActiveCount.Add(context.Background(), 1)
+	}
 	logger.Pod().Debug("Pod stored", "pod_key", podKey, "total_pods", len(s.pods))
+}
+
+// ReplaceIf atomically publishes a built pod only while the store still owns
+// the placeholder that reserved its key. A concurrent terminate or newer
+// create cannot be overwritten by a stale build completion.
+func (s *InMemoryPodStore) ReplaceIf(podKey string, expected, replacement *Pod) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	current, ok := s.pods[podKey]
+	if !ok || current != expected {
+		return false
+	}
+	s.pods[podKey] = replacement
+	logger.Pod().Debug("Pod replaced in store", "pod_key", podKey, "total_pods", len(s.pods))
+	return true
 }
 
 // Delete removes and returns a pod.
@@ -58,6 +78,20 @@ func (s *InMemoryPodStore) Delete(podKey string) *Pod {
 		logger.Pod().Debug("Pod removed from store", "pod_key", podKey, "remaining_pods", len(s.pods))
 	}
 	return pod
+}
+
+// DeleteIf removes a pod only when the store still owns the expected object.
+func (s *InMemoryPodStore) DeleteIf(podKey string, expected *Pod) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	pod, ok := s.pods[podKey]
+	if !ok || pod != expected {
+		return false
+	}
+	delete(s.pods, podKey)
+	otelinit.PodActiveCount.Add(context.Background(), -1)
+	logger.Pod().Debug("Pod removed from store", "pod_key", podKey, "remaining_pods", len(s.pods))
+	return true
 }
 
 // Count returns the number of pods.

@@ -99,7 +99,7 @@ function parseParams(raw: string): IpcMethod["params"] {
   for (let i = 0; i < raw.length; i++) {
     const c = raw[i];
     if (c === "<" || c === "(" || c === "{" || c === "[") depth++;
-    else if (c === ">" || c === ")" || c === "}" || c === "]") depth--;
+    else if ((c === ">" && raw[i - 1] !== "=") || c === ")" || c === "}" || c === "]") depth--;
     else if (c === "," && depth === 0) {
       parts.push(raw.slice(start, i).trim());
       start = i + 1;

@@ -36,30 +36,6 @@ func (c *GRPCConnection) handleSendPrompt(cmd *runnerv1.SendPromptCommand) {
 	}
 }
 
-// handleSubscribePod handles subscribe_pod command from server.
-// This notifies the Runner that a browser wants to observe the pod via Relay.
-// Channel is identified by PodKey (not session ID).
-func (c *GRPCConnection) handleSubscribePod(cmd *runnerv1.SubscribePodCommand) {
-	log := logger.GRPC()
-	log.Info("Received subscribe_pod", "pod_key", cmd.PodKey, "relay_url", cmd.RelayUrl)
-	if c.handler == nil {
-		log.Warn("No handler set, ignoring subscribe_pod")
-		return
-	}
-
-	req := SubscribePodRequest{
-		PodKey:          cmd.PodKey,
-		RelayURL:        cmd.RelayUrl,
-		RunnerToken:     cmd.RunnerToken,
-		LocalToken:      cmd.LocalToken,
-		IncludeSnapshot: cmd.IncludeSnapshot,
-		SnapshotHistory: cmd.SnapshotHistory,
-	}
-	if err := c.handler.OnSubscribePod(req); err != nil {
-		log.Error("Failed to subscribe pod", "pod_key", cmd.PodKey, "error", err)
-	}
-}
-
 // handleUnsubscribePod handles unsubscribe_pod command from server.
 // This notifies the Runner that all browsers have disconnected.
 func (c *GRPCConnection) handleUnsubscribePod(cmd *runnerv1.UnsubscribePodCommand) {

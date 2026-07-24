@@ -32,6 +32,7 @@ pub fn compute_reconnect_delay(attempt: u32, base_delay_ms: u64) -> Duration {
     Duration::from_millis(delay)
 }
 
+// LCOV_EXCL_START: test-only code
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -82,8 +83,14 @@ mod tests {
             min_seen = min_seen.min(ms);
             max_seen = max_seen.max(ms);
         }
-        assert!(min_seen < 1000, "jitter should go below base: min={min_seen}");
-        assert!(max_seen > 1000, "jitter should go above base: max={max_seen}");
+        assert!(
+            min_seen < 1000,
+            "jitter should go below base: min={min_seen}"
+        );
+        assert!(
+            max_seen > 1000,
+            "jitter should go above base: max={max_seen}"
+        );
     }
 
     #[test]
@@ -108,3 +115,4 @@ mod tests {
         assert_eq!(INPUT_DEDUP_WINDOW_MS, 50);
     }
 }
+// LCOV_EXCL_STOP

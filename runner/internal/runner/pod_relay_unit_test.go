@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -30,12 +31,22 @@ func TestPTYPodIO_Mode(t *testing.T) {
 	}
 }
 
-// --- fanoutRelayWriter tests ---
+func TestPTYPodIOWriteOutputFeedsVirtualTerminal(t *testing.T) {
+	vterm := vt.NewVirtualTerminal(80, 24, 100)
+	io := NewPTYPodIO("write-output", &PTYComponents{VirtualTerminal: vterm}, PTYPodIODeps{})
 
-func TestFanoutRelayWriter_SendOutput(t *testing.T) {
+	io.WriteOutput([]byte("rendered output"))
+	if got := vterm.GetOutput(1); got != "rendered output" {
+		t.Fatalf("virtual terminal output = %q, want rendered output", got)
+	}
+}
+
+// --- cloudOutputWriter tests ---
+
+func TestCloudOutputWriter_SendOutput(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
 	mc.SetConnected(true)
-	adapter := &fanoutRelayWriter{cloud: mc}
+	adapter := &cloudOutputWriter{client: mc}
 
 	data := []byte("hello terminal output")
 	if err := adapter.SendOutput(data); err != nil {
@@ -55,9 +66,20 @@ func TestFanoutRelayWriter_SendOutput(t *testing.T) {
 	}
 }
 
-func TestFanoutRelayWriter_IsConnected(t *testing.T) {
+func TestCloudOutputWriter_FlushOutput(t *testing.T) {
 	mc := relay.NewMockClient("wss://relay.example.com")
-	adapter := &fanoutRelayWriter{cloud: mc}
+	adapter := &cloudOutputWriter{client: mc}
+	if err := adapter.FlushOutput(context.Background()); err != nil {
+		t.Fatalf("FlushOutput: %v", err)
+	}
+	if mc.FlushCalls != 1 {
+		t.Fatalf("relay Flush calls=%d, want 1", mc.FlushCalls)
+	}
+}
+
+func TestCloudOutputWriter_IsConnected(t *testing.T) {
+	mc := relay.NewMockClient("wss://relay.example.com")
+	adapter := &cloudOutputWriter{client: mc}
 
 	mc.SetConnected(false)
 	if adapter.IsConnected() {
@@ -84,7 +106,7 @@ func TestPTYPodRelay_SetupHandlers_Input(t *testing.T) {
 	}
 
 	r := NewPTYPodRelay("pod-1", io, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Simulate browser sending input via relay.
 	mc.SimulateMessage(relay.MsgTypeInput, []byte("ls -la\n"))
@@ -107,7 +129,7 @@ func TestPTYPodRelay_SetupHandlers_Resize(t *testing.T) {
 	}
 
 	r := NewPTYPodRelay("pod-1", io, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Encode resize as 4-byte big-endian payload (cols=120, rows=40).
 	mc.SimulateMessage(relay.MsgTypeResize, encodeResizePayload(120, 40))
@@ -129,7 +151,7 @@ func TestPTYPodRelay_SetupHandlers_Resize_InvalidPayload(t *testing.T) {
 	}
 
 	r := NewPTYPodRelay("pod-1", io, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Send invalid resize payload (too short).
 	mc.SimulateMessage(relay.MsgTypeResize, []byte{0x00, 0x50})
@@ -173,7 +195,7 @@ func TestPTYPodRelay_OnRelayConnected_SetsAdapter(t *testing.T) {
 	// PTYPodRelay without aggregator — OnRelayConnected should not panic.
 	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{}, nil)
 	r.OnRelayConnected(mc) // no-op, no panic
-	r.OnRelayDisconnected()
+	r.OnRelayDisconnected(mc)
 }
 
 // --- MockClient helper tests ---
@@ -218,7 +240,7 @@ func TestPTYPodRelay_SetupHandlers_NilIO(t *testing.T) {
 
 	// io is nil — handlers should be registered but silently no-op.
 	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Must not panic.
 	mc.SimulateMessage(relay.MsgTypeInput, []byte("data"))
@@ -235,7 +257,7 @@ func TestPTYPodRelay_SetupHandlers_InputError(t *testing.T) {
 	}
 
 	r := NewPTYPodRelay("pod-1", io, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Should not panic — error is logged, not propagated.
 	mc.SimulateMessage(relay.MsgTypeInput, []byte("data"))
@@ -251,7 +273,7 @@ func TestPTYPodRelay_SetupHandlers_ResizeError(t *testing.T) {
 	}
 
 	r := NewPTYPodRelay("pod-1", io, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	// Should not panic — error is logged, not propagated.
 	mc.SimulateMessage(relay.MsgTypeResize, encodeResizePayload(80, 24))
@@ -279,7 +301,7 @@ func TestPTYPodRelay_SetupHandlers_SnapshotRequest(t *testing.T) {
 	vterm.Feed([]byte("Hello\r\n"))
 
 	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{VirtualTerminal: vterm}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	mc.SimulateMessage(relay.MsgTypeSnapshotRequest, nil)
 
@@ -293,7 +315,7 @@ func TestPTYPodRelay_SetupHandlers_SnapshotRequest_NilVTerm(t *testing.T) {
 	mc.SetConnected(true)
 
 	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{}, nil)
-	r.SetupHandlers(mc)
+	r.SetupHandlers(mc, testRelayInboundGuard())
 
 	mc.SimulateMessage(relay.MsgTypeSnapshotRequest, nil)
 
@@ -309,11 +331,12 @@ func TestPTYPodRelay_OnRelayConnected_WithAggregator(t *testing.T) {
 	mc.SetConnected(true)
 
 	agg := aggregator.NewSmartAggregator(func() float64 { return 0 })
+	vterm := vt.NewVirtualTerminal(80, 24, 100)
 
-	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{Aggregator: agg}, nil)
+	r := NewPTYPodRelay("pod-1", nil, &PTYComponents{VirtualTerminal: vterm, Aggregator: agg}, nil)
 	r.OnRelayConnected(mc)
 
-	r.OnRelayDisconnected()
+	r.OnRelayDisconnected(mc)
 
 	agg.Stop()
 }
@@ -353,7 +376,6 @@ type stubPodIOWithTerminal struct {
 func (s *stubPodIOWithTerminal) SendKeys([]string) error    { return nil }
 func (s *stubPodIOWithTerminal) CursorPosition() (int, int) { return 0, 0 }
 func (s *stubPodIOWithTerminal) GetScreenSnapshot() string  { return "" }
-func (s *stubPodIOWithTerminal) Redraw() error              { return nil }
 func (s *stubPodIOWithTerminal) WriteOutput([]byte)         {}
 func (s *stubPodIOWithTerminal) Resize(cols, rows int) (bool, error) {
 	if s.onResize != nil {

@@ -20,16 +20,15 @@ func WithSmartMaxDelay(d time.Duration) SmartAggregatorOption {
 	}
 }
 
-// WithSmartMaxSize sets the maximum buffer size.
+// WithSmartMaxSize sets the bulk buffer cap. UTF-8 boundary headroom is fixed.
 func WithSmartMaxSize(size int) SmartAggregatorOption {
 	return func(a *SmartAggregator) {
 		a.buffer.SetMaxSize(size)
 	}
 }
 
-// WithBackpressureCallbacks sets the callbacks for ttyd-style backpressure propagation.
-// onPause is called when aggregator is paused (should call Terminal.PauseRead)
-// onResume is called when aggregator is resumed (should call Terminal.ResumeRead)
+// WithBackpressureCallbacks opts into callbacks for explicit Pause/Resume calls.
+// Destination queue pressure and desynchronization never invoke them automatically.
 func WithBackpressureCallbacks(onPause, onResume func()) SmartAggregatorOption {
 	return func(a *SmartAggregator) {
 		a.backpressure.SetCallbacks(onPause, onResume)

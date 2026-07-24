@@ -12,13 +12,18 @@ import (
 type ACPPodRelay struct {
 	podKey      string
 	acpClient   *acp.ACPClient
-	onCommand   func([]byte) // closure bound to pod ref at creation
+	onCommand   func(RelayInboundContext, []byte)
 	localServer LocalRelayBroker
 }
 
 // NewACPPodRelay creates a PodRelay for ACP mode.
 // localServer is the runner-wide local relay server (nil to disable local fanout).
-func NewACPPodRelay(podKey string, acpClient *acp.ACPClient, onCommand func([]byte), localServer LocalRelayBroker) *ACPPodRelay {
+func NewACPPodRelay(
+	podKey string,
+	acpClient *acp.ACPClient,
+	onCommand func(RelayInboundContext, []byte),
+	localServer LocalRelayBroker,
+) *ACPPodRelay {
 	return &ACPPodRelay{
 		podKey:      podKey,
 		acpClient:   acpClient,
@@ -27,15 +32,27 @@ func NewACPPodRelay(podKey string, acpClient *acp.ACPClient, onCommand func([]by
 	}
 }
 
-func (r *ACPPodRelay) SetupHandlers(rc relay.RelayClient) {
-	rc.SetMessageHandler(relay.MsgTypeAcpCommand, r.onCommand)
+func (r *ACPPodRelay) SetupHandlers(rc relay.RelayClient, guard RelayInboundGuard) {
+	rc.SetMessageHandler(relay.MsgTypeAcpCommand, func(payload []byte) {
+		guard.runCloud(func(ctx RelayInboundContext) {
+			if r.onCommand != nil {
+				r.onCommand(ctx, payload)
+			}
+		})
+	})
 	rc.SetMessageHandler(relay.MsgTypeSnapshotRequest, func(_ []byte) {
-		r.SendSnapshot(rc)
+		guard.runCloud(func(RelayInboundContext) { r.SendSnapshot(rc) })
 	})
 	if r.localServer != nil {
-		r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeAcpCommand, r.onCommand)
+		r.localServer.SetMessageHandler(r.podKey, relay.MsgTypeAcpCommand, func(payload []byte) {
+			guard.runLocal(func(ctx RelayInboundContext) {
+				if r.onCommand != nil {
+					r.onCommand(ctx, payload)
+				}
+			})
+		})
 		r.localServer.SetRequestHandler(r.podKey, relay.MsgTypeSnapshotRequest, func(_ []byte, reply relay.ReplyFunc) {
-			r.replySnapshot(reply)
+			guard.runLocal(func(RelayInboundContext) { r.replySnapshot(reply) })
 		})
 	}
 }
@@ -51,6 +68,10 @@ func (r *ACPPodRelay) SendSnapshot(rc relay.RelayClient) {
 			_ = rc.Send(relay.MsgTypeAcpEvent, loopalData)
 		}
 	}
+}
+
+func (r *ACPPodRelay) RecoverSnapshot(rc relay.RelayClient) {
+	r.SendSnapshot(rc)
 }
 
 // replySnapshot answers a single browser's snapshot request (ACP session +
@@ -82,10 +103,10 @@ func (r *ACPPodRelay) materializeSnapshot() []byte {
 }
 
 func (r *ACPPodRelay) OnRelayConnected(rc relay.RelayClient) {
-	// No-op: ACP mode has no aggregator to wire
+	r.SendSnapshot(rc)
 }
 
-func (r *ACPPodRelay) OnRelayDisconnected() {
+func (r *ACPPodRelay) OnRelayDisconnected(relay.RelayClient) {
 	// No-op: ACP mode has no aggregator to clear
 }
 

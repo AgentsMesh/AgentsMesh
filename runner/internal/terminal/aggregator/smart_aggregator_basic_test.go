@@ -14,7 +14,7 @@ func TestSmartAggregator_BasicAggregation(t *testing.T) {
 		func() float64 { return 0 }, // No queue pressure
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	// Write some data
 	agg.Write([]byte("hello"))
@@ -69,7 +69,7 @@ func TestSmartAggregator_NilQueueUsageFn(t *testing.T) {
 		nil,
 		WithSmartBaseDelay(10*time.Millisecond),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 
 	agg.Write([]byte("test"))
 
@@ -89,7 +89,7 @@ func TestSmartAggregator_Flush(t *testing.T) {
 		func() float64 { return 0 },
 		WithSmartBaseDelay(1*time.Second),
 	)
-	agg.SetRelayClient(relay)
+	agg.SetOutputDestination(OutputDestinationCloud, relay)
 	defer agg.Stop()
 
 	agg.Write([]byte("data"))

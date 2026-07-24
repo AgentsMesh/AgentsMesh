@@ -1,14 +1,13 @@
-// Package terminal provides terminal management for PTY sessions.
 package aggregator
 
 import (
 	"bytes"
+	"unicode/utf8"
 
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// FrameBuffer manages terminal output buffering with frame-aware operations.
-// It uses FrameDetector to ensure frame integrity during discard and flush operations.
+// FrameBuffer preserves an exact, bounded prefix of the raw terminal stream.
 type FrameBuffer struct {
 	buffer   bytes.Buffer
 	maxSize  int
@@ -18,7 +17,8 @@ type FrameBuffer struct {
 // NewFrameBuffer creates a new frame buffer.
 //
 // Parameters:
-// - maxSize: maximum buffer size (hard cap to prevent unbounded memory growth)
+//   - maxSize: bulk buffer cap; an incomplete UTF-8 boundary may use up to three
+//     additional bytes so a later chunk can complete the owned rune
 func NewFrameBuffer(maxSize int) *FrameBuffer {
 	return &FrameBuffer{
 		maxSize:  maxSize,
@@ -26,30 +26,29 @@ func NewFrameBuffer(maxSize int) *FrameBuffer {
 	}
 }
 
-// Write adds data to the buffer.
-// Uses content-aware discard strategy and enforces size limits.
+// Write appends the complete chunk or clears all recoverable delta bytes on
+// overflow. A trailing incomplete UTF-8 rune is retained because its suffix is
+// owned by a later PTY chunk. The buffer may use at most utf8.UTFMax-1 bytes of
+// boundary headroom beyond maxSize to complete that rune.
 //
-// The discard strategy is intelligent:
-// - Full redraw frames (contain ESC[2J or ESC[H): discard everything before them
-// - Incremental frames (small, relative cursor movement): keep them all
-//
-// This is critical for Claude Code which uses both patterns.
-func (b *FrameBuffer) Write(data []byte) {
+// False means the caller must recover every downstream stream from an
+// authoritative snapshot; no suffix of a truncated ANSI stream is usable.
+func (b *FrameBuffer) Write(data []byte) bool {
 	if len(data) == 0 {
-		return
+		return true
 	}
-
-	// Enforce buffer size limit before adding new data
-	b.enforceLimit(len(data))
-
+	capacity := b.maxSize
+	if findLastValidUTF8Boundary(b.buffer.Bytes()) < b.buffer.Len() {
+		capacity += utf8.UTFMax - 1
+	}
+	if b.maxSize <= 0 || len(data) > capacity-b.buffer.Len() {
+		continuation := trailingIncompleteUTF8(b.buffer.Bytes(), data)
+		b.buffer.Reset()
+		b.buffer.Write(continuation)
+		return false
+	}
 	b.buffer.Write(data)
-
-	// Content-aware discard: only discard if there's a full redraw frame
-	// Incremental frames are preserved
-	b.detector.DiscardOldFrames(&b.buffer)
-
-	// Enforce limit again after write (handles case where data itself exceeds limit)
-	b.enforceLimitAfterWrite()
+	return true
 }
 
 // FlushComplete returns data that can be safely flushed (complete frames only).
@@ -88,10 +87,6 @@ func (b *FrameBuffer) FlushComplete() (data []byte, remaining int) {
 	// Copy data to flush
 	data = make([]byte, flushEnd)
 	copy(data, allData[:flushEnd])
-
-	// Strip redundant sequences (ESC[2J, ESC[H) from inside sync frames
-	// This prevents xterm.js from jumping to top after resize
-	data = b.detector.StripRedundantSequencesInFrames(data)
 
 	// Keep remaining data in buffer
 	if keepFrom < len(allData) {
@@ -132,10 +127,6 @@ func (b *FrameBuffer) FlushAll() (data []byte, remaining int) {
 	data = make([]byte, validLen)
 	copy(data, allData[:validLen])
 
-	// Strip redundant sequences (ESC[2J, ESC[H) from inside sync frames
-	// This prevents xterm.js from jumping to top after resize
-	data = b.detector.StripRedundantSequencesInFrames(data)
-
 	// Keep any trailing incomplete UTF-8 bytes
 	if validLen < len(allData) {
 		remainingData := make([]byte, len(allData)-validLen)
@@ -175,61 +166,3 @@ func (b *FrameBuffer) MaxSize() int {
 func (b *FrameBuffer) SetMaxSize(size int) {
 	b.maxSize = size
 }
-
-// IsLastFrameFullRedraw checks if the last complete frame in the buffer is a full-screen redraw.
-// This is used by FullRedrawThrottler to detect high-frequency redraw patterns.
-//
-// Returns true if:
-//   - The buffer contains sync frames (ESC[?2026h ... ESC[?2026l)
-//   - The last complete frame is a full redraw (contains ESC[2J, starts with ESC[H, or is large)
-//
-// Returns false if:
-//   - Buffer is empty
-//   - No sync frames in buffer
-//   - Last frame is not a full redraw (e.g., incremental update)
-func (b *FrameBuffer) IsLastFrameFullRedraw() bool {
-	data := b.buffer.Bytes()
-	if len(data) == 0 {
-		return false
-	}
-
-	boundary := b.detector.AnalyzeFrameBoundaries(data)
-	if !boundary.HasSyncFrames {
-		return false
-	}
-
-	// Find all frame boundaries
-	startPositions := findAllPositions(data, syncOutputStartSeq)
-	endPositions := findAllPositions(data, syncOutputEndSeq)
-
-	if len(startPositions) == 0 {
-		return false
-	}
-
-	// Find the last complete frame (match starts with ends)
-	var lastCompleteFrameStart = -1
-	var lastCompleteFrameEnd = -1
-	usedEnds := make(map[int]bool)
-
-	for _, startPos := range startPositions {
-		for _, endPos := range endPositions {
-			if endPos > startPos && !usedEnds[endPos] {
-				usedEnds[endPos] = true
-				lastCompleteFrameStart = startPos
-				lastCompleteFrameEnd = endPos + len(syncOutputEndSeq)
-				break
-			}
-		}
-	}
-
-	if lastCompleteFrameStart < 0 || lastCompleteFrameEnd <= lastCompleteFrameStart {
-		// No complete frame found
-		return false
-	}
-
-	// Check if this frame is a full redraw
-	frameData := data[lastCompleteFrameStart:lastCompleteFrameEnd]
-	return b.detector.IsFullRedrawFrame(frameData)
-}
-
-// Note: enforceLimit and enforceLimitAfterWrite are in frame_buffer_limit.go

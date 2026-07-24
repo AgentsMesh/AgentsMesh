@@ -8,29 +8,17 @@ import (
 	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
-// SmartAggregator intelligently aggregates TUI output with adaptive frame rate.
-//
-// Key features:
-// - Time-window aggregation (base 50ms = 20 FPS)
-// - Frame boundary detection with complete frame preservation:
-//   - Primary: Synchronized Output (ESC[?2026h / ESC[?2026l) - used by Claude Code
-//   - Fallback: Clear screen (ESC[2J) - used by traditional apps
-//
-// - Frame-aware flushing: incomplete frames are kept in buffer until complete
-// - Adaptive delay based on queue pressure (50ms → 500ms)
-// - Backpressure: pauses when consumer signals overload
-// - ttyd-style flow control: propagates backpressure to PTY layer
-// - Relay output: sends flushed data via WebSocket to connected terminal viewers
-// - Serialize mode: use VirtualTerminal.Serialize() for bandwidth optimization
-// - Full redraw throttling: detects high-frequency redraws and reduces transmission rate
-//
-// Design principle: TUI apps (like Claude Code) use Synchronized Output mode
-// (ESC[?2026h to start, ESC[?2026l to end) for atomic frame updates.
-// We preserve complete frames and don't flush incomplete frames to avoid screen tearing.
+const defaultOutputDrainTimeout = 2 * time.Second
+
+// SmartAggregator preserves raw ANSI order while batching output. Synchronized
+// output sequences define atomic flush boundaries; they do not replace terminal
+// state. Each destination is delivered through its own bounded recovery lane.
 type SmartAggregator struct {
-	mu      sync.Mutex
-	stopped bool
-	timer   *time.Timer
+	mu           sync.Mutex
+	stopped      bool
+	timer        *time.Timer
+	stopDone     chan struct{}
+	drainTimeout time.Duration
 
 	// Composed components (SRP: each handles one responsibility)
 	buffer       *FrameBuffer
@@ -63,17 +51,25 @@ func NewSmartAggregator(queueUsageFn func() float64, opts ...SmartAggregatorOpti
 	maxDelay := 500 * time.Millisecond // 2 FPS - allow more buffering under load
 	maxSize := 1024 * 1024             // 1MB - generous buffer to avoid any truncation issues
 
+	router := NewOutputRouter()
+	if queueUsageFn == nil {
+		// Destination queues are isolated failure domains. Feeding their maximum
+		// back into the shared aggregation timer would let one slow sink delay every
+		// healthy sink; bounded lanes recover independently through snapshots.
+		queueUsageFn = func() float64 { return 0 }
+	}
 	a := &SmartAggregator{
 		buffer:       NewFrameBuffer(maxSize),
 		delay:        NewAdaptiveDelay(baseDelay, maxDelay, queueUsageFn),
 		backpressure: NewBackpressureController(nil, nil),
-		router:       NewOutputRouter(),
+		router:       router,
+		stopDone:     make(chan struct{}),
+		drainTimeout: defaultOutputDrainTimeout,
 	}
 
 	for _, opt := range opts {
 		opt(a)
 	}
-
 	logger.Terminal().Debug("SmartAggregator created",
 		"base_delay", baseDelay,
 		"max_delay", maxDelay,
@@ -84,7 +80,7 @@ func NewSmartAggregator(queueUsageFn func() float64, opts ...SmartAggregatorOpti
 
 // Pause signals the aggregator to pause flushing (called by consumer when overloaded).
 // The aggregator will continue buffering data but won't flush until Resume is called.
-// Also propagates backpressure to the PTY layer via onPause callback (ttyd-style).
+// Explicit callbacks may propagate this state to an upstream producer.
 func (a *SmartAggregator) Pause() {
 	logger.Terminal().Debug("SmartAggregator pausing")
 	a.backpressure.Pause()
@@ -92,7 +88,7 @@ func (a *SmartAggregator) Pause() {
 
 // Resume signals the aggregator to resume flushing (called by consumer when ready).
 // This triggers an immediate flush attempt if there's buffered data.
-// Also releases backpressure on the PTY layer via onResume callback (ttyd-style).
+// Explicit callbacks may propagate this state to an upstream producer.
 func (a *SmartAggregator) Resume() {
 	logger.Terminal().Debug("SmartAggregator resuming")
 	if a.backpressure.Resume() {
@@ -108,7 +104,8 @@ func (a *SmartAggregator) IsPaused() bool {
 
 // Write adds data to the aggregation buffer.
 // Thread-safe: can be called from multiple goroutines.
-// Buffer is hard-capped at maxSize to prevent unbounded memory growth.
+// Bulk buffering is capped at maxSize; UTF-8 completion has fixed three-byte
+// boundary headroom so overflow recovery cannot split continuation ownership.
 //
 // In serialize mode (when serializeCallback is set):
 // - The data parameter is ignored (can be nil)
@@ -154,7 +151,12 @@ func (a *SmartAggregator) Write(data []byte) {
 	}
 
 	// Legacy mode: buffer raw data with frame-aware management
-	a.buffer.Write(data)
+	if !a.buffer.Write(data) {
+		logger.Terminal().Warn("SmartAggregator raw buffer overflow; scheduling snapshot recovery",
+			"data_len", len(data), "max_size", a.buffer.MaxSize())
+		a.router.desynchronizeAll(OutputDesyncBuffer, nil)
+		return
+	}
 
 	logger.TerminalTrace().Trace("SmartAggregator Write (legacy mode)",
 		"data_len", len(data), "buffer_len", a.buffer.Len(),
@@ -182,66 +184,4 @@ func (a *SmartAggregator) Write(data []byte) {
 	}
 }
 
-// Note: timerFlush and flushLocked are in smart_aggregator_flush.go
-
-// Flush forces an immediate flush of the buffer.
-// Thread-safe: can be called from any goroutine.
-func (a *SmartAggregator) Flush() {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if !a.stopped {
-		a.forceFlushLocked()
-	}
-}
-
-// Note: forceFlushLocked is in smart_aggregator_flush.go
-
-// Stop stops the aggregator and flushes remaining data.
-// After Stop(), Write() calls are ignored.
-func (a *SmartAggregator) Stop() {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.stopped {
-		return
-	}
-	a.stopped = true
-	logger.Terminal().Info("SmartAggregator stopped")
-	a.forceFlushLocked()
-}
-
-// IsStopped returns whether the aggregator has been stopped.
-func (a *SmartAggregator) IsStopped() bool {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.stopped
-}
-
-// BufferLen returns the current buffer length (for testing/debugging).
-func (a *SmartAggregator) BufferLen() int {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.buffer.Len()
-}
-
-// SetRelayClient sets the relay client reference for output routing.
-// When set and connected, flushed data is sent through Relay WebSocket.
-// When not connected, output is dropped (no one is observing the terminal).
-// Pass nil to disable relay output.
-// Thread-safe: can be called from any goroutine.
-func (a *SmartAggregator) SetRelayClient(client RelayWriter) {
-	a.router.SetRelayClient(client)
-}
-
-// SetPTYLogger sets the PTY logger for debugging.
-// When set, raw input and aggregated output are logged to files.
-func (a *SmartAggregator) SetPTYLogger(logger *PTYLogger) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.ptyLogger = logger
-}
-
-// calculateDelay is kept for backward compatibility with tests.
-// Delegates to AdaptiveDelay component.
-func (a *SmartAggregator) calculateDelay(usage float64) time.Duration {
-	return a.delay.CalculateForUsage(usage)
-}
+// Flush and lifecycle methods are in smart_aggregator_lifecycle.go.

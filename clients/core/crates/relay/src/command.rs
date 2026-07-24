@@ -1,3 +1,4 @@
+use futures::channel::oneshot;
 use serde_json::Value;
 
 use crate::types::OutputCallback;
@@ -9,10 +10,24 @@ use crate::types::OutputCallback;
 /// registered before the driver exists, so they live pool-side in `PoolRouter`
 /// and the driver fans out by reading the router.
 pub(crate) enum Command {
-    AddSubscriber { sub_id: String, cb: OutputCallback },
-    RemoveSubscriber { sub_id: String },
-    Send { data: String },
-    Resize { cols: u16, rows: u16, force: bool },
-    SendAcp { command: Value },
+    AddSubscriber {
+        sub_id: String,
+        cb: OutputCallback,
+        ready: Option<oneshot::Sender<()>>,
+    },
+    RemoveSubscriber {
+        sub_id: String,
+    },
+    Send {
+        data: String,
+    },
+    Resize {
+        cols: u16,
+        rows: u16,
+        force: bool,
+    },
+    SendAcp {
+        command: Value,
+    },
     Disconnect,
 }

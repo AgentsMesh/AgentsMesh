@@ -1,8 +1,6 @@
 use std::time::Duration;
 
-use agentsmesh_protocol::{
-    decode_message, encode_json_message, encode_message, encode_resize, MsgType,
-};
+use agentsmesh_protocol::{encode_json_message, encode_message, encode_resize, MsgType};
 use agentsmesh_transport::runtime::Runtime;
 use agentsmesh_transport::{WsMessage, WsReceiver, WsSender};
 use futures::channel::mpsc;
@@ -11,9 +9,7 @@ use web_time::Instant;
 
 use super::{Driver, SessionEnd, IDLE_TICK_MS};
 use crate::command::Command;
-use crate::dispatch::{dispatch_message, DispatchAction};
 use crate::retry;
-use crate::types::{OutputCallback, RelayStatus};
 
 impl<R: Runtime> Driver<R> {
     /// One connected session: pump inbound frames, fire periodic timers
@@ -40,8 +36,13 @@ impl<R: Runtime> Driver<R> {
                 c = cmd => match c {
                     None => return SessionEnd::Shutdown,
                     Some(cmd) => {
+                        let requests_baseline = matches!(&cmd, Command::AddSubscriber { .. });
                         if let Some(end) = self.handle_command(sender, cmd) {
                             return end;
+                        }
+                        if requests_baseline {
+                            last_resync = Instant::now();
+                            resync_count = 0;
                         }
                     }
                 },
@@ -54,7 +55,7 @@ impl<R: Runtime> Driver<R> {
             }
 
             let now = Instant::now();
-            if !self.snapshot_received && elapsed_ms(now, last_resync) >= retry::SNAPSHOT_TIMEOUT_MS {
+            if self.needs_baseline() && elapsed_ms(now, last_resync) >= retry::SNAPSHOT_TIMEOUT_MS {
                 resync_count += 1;
                 if resync_count > retry::SNAPSHOT_GIVEUP_ATTEMPTS {
                     // Connected but data never arrived: rebuild the link so it
@@ -65,12 +66,7 @@ impl<R: Runtime> Driver<R> {
                 let _ = sender.send_binary(encode_message(MsgType::Resync, &[]));
                 last_resync = now;
             }
-            if let Some((c, r, at)) = self.pending_resize {
-                if elapsed_ms(now, at) >= retry::RESIZE_DEBOUNCE_MS {
-                    let _ = sender.send_binary(encode_resize(c, r));
-                    self.pending_resize = None;
-                }
-            }
+            self.flush_pending_resize_if_ready(sender, now);
             if let Some(at) = self.grace_deadline {
                 if now >= at {
                     self.grace_deadline = None;
@@ -87,11 +83,16 @@ impl<R: Runtime> Driver<R> {
     fn next_timer(&self, last_resync: Instant) -> Duration {
         let now = Instant::now();
         let mut next = Duration::from_millis(IDLE_TICK_MS);
-        if !self.snapshot_received {
+        if self.needs_baseline() {
             next = next.min(remaining(now, last_resync, retry::SNAPSHOT_TIMEOUT_MS));
         }
-        if let Some((_, _, at)) = self.pending_resize {
-            next = next.min(remaining(now, at, retry::RESIZE_DEBOUNCE_MS));
+        if !self.needs_baseline() {
+            if let Some((_, _, at, force)) = self.pending_resize {
+                if force {
+                    return Duration::ZERO;
+                }
+                next = next.min(remaining(now, at, retry::RESIZE_DEBOUNCE_MS));
+            }
         }
         if let Some(at) = self.grace_deadline {
             next = next.min(at.saturating_duration_since(now));
@@ -99,76 +100,11 @@ impl<R: Runtime> Driver<R> {
         next
     }
 
-    fn handle_frame(&mut self, data: &[u8]) {
-        let Ok((msg_type, payload)) = decode_message(data) else {
-            return;
-        };
-        let subs: Vec<&OutputCallback> = self.subscribers.values().collect();
-        match dispatch_message(msg_type, payload, &subs) {
-            DispatchAction::Snapshot(snap) => {
-                self.snapshot_received = true;
-                // Data-ready (snapshot in hand), not the bare handshake, resets backoff.
-                self.reconnect_attempts = 0;
-                if snap.cols > 0 && snap.rows > 0 {
-                    self.pod_size = Some((snap.cols, snap.rows));
-                    // Explicit: set_status(Connected) below short-circuits when
-                    // already Connected, so flush the new size to the mirror here.
-                    self.write_snapshot();
-                }
-                // Only now is the link truly Connected — the connection light goes
-                // green on real data-ready, not the bare WS handshake (kills the
-                // "green but blank" gap).
-                self.set_status(RelayStatus::Connected);
-                tracing::info!(target: "relay", pod_key = %self.pod_key, "data ready → connected");
-            }
-            DispatchAction::PodResized { cols, rows } => {
-                self.pod_size = Some((cols, rows));
-                self.write_snapshot();
-            }
-            DispatchAction::RunnerDisconnected => {
-                self.runner_disconnected = true;
-                tracing::warn!(target: "relay", pod_key = %self.pod_key, "runner disconnected");
-                self.write_snapshot();
-                self.notify_status();
-            }
-            DispatchAction::RunnerReconnected => {
-                self.runner_disconnected = false;
-                tracing::info!(target: "relay", pod_key = %self.pod_key, "runner reconnected");
-                self.write_snapshot();
-                self.notify_status();
-            }
-            DispatchAction::AcpMessage { msg_type, payload } => {
-                // AcpSnapshot is the ACP pod's data-ready signal: ACP pods send
-                // MsgType::AcpSnapshot on subscribe (pod_relay_acp.go), never the
-                // PTY MsgType::Snapshot. Treat it like the Snapshot arm so an ACP
-                // link reaches Connected — without this it sits Connecting forever
-                // and send_acp_command (gated on Connected) always rejects.
-                if msg_type == MsgType::AcpSnapshot {
-                    self.snapshot_received = true;
-                    self.reconnect_attempts = 0;
-                    self.set_status(RelayStatus::Connected);
-                }
-                let listener = {
-                    let router = self.router.read();
-                    router.acp_listeners.get(&self.pod_key).cloned()
-                };
-                if let Some(l) = listener {
-                    // Isolate a panicking ACP listener (same rationale as
-                    // notify_status); native only, wasm is panic=abort.
-                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                        l(msg_type, payload)
-                    }));
-                }
-            }
-            DispatchAction::None => {}
-        }
-    }
-
     /// Returns `Some(end)` when the command terminates the driver.
     fn handle_command(&mut self, sender: &WsSender, cmd: Command) -> Option<SessionEnd> {
         match cmd {
-            Command::AddSubscriber { sub_id, cb } => {
-                self.subscribers.insert(sub_id, cb);
+            Command::AddSubscriber { sub_id, cb, ready } => {
+                self.insert_pending_subscriber(sub_id, cb, ready);
                 self.grace_deadline = None;
                 // Replay the current screen to the freshly-joined subscriber.
                 let _ = sender.send_binary(encode_message(MsgType::Resync, &[]));
@@ -186,11 +122,11 @@ impl<R: Runtime> Driver<R> {
                 if cols == 0 || rows == 0 {
                     return None;
                 }
-                if force {
+                if force && !self.needs_baseline() {
                     let _ = sender.send_binary(encode_resize(cols, rows));
                     self.pending_resize = None;
                 } else {
-                    self.pending_resize = Some((cols, rows, Instant::now()));
+                    self.queue_resize(cols, rows, force);
                 }
             }
             Command::SendAcp { command } => {
@@ -235,3 +171,116 @@ fn elapsed_ms(now: Instant, since: Instant) -> u64 {
 fn remaining(now: Instant, since: Instant, window_ms: u64) -> Duration {
     Duration::from_millis(window_ms).saturating_sub(now.saturating_duration_since(since))
 }
+
+// LCOV_EXCL_START: test-only code
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    use agentsmesh_transport::runtime::PlatformRuntime;
+    use agentsmesh_transport::WebSocketConnection;
+    use parking_lot::RwLock;
+
+    use super::*;
+    use crate::pool::PoolRouter;
+    use crate::types::{RelayStatus, StatusSnapshot};
+
+    fn driver() -> Driver<PlatformRuntime> {
+        Driver {
+            runtime: PlatformRuntime,
+            router: Arc::new(RwLock::new(PoolRouter {
+                pods: HashMap::new(),
+                next_generation: 0,
+                status_listeners: HashMap::new(),
+                acp_listeners: HashMap::new(),
+                on_pod_disconnected: None,
+                on_pod_generation_disconnected: None,
+            })),
+            pod_key: "pod-1".to_string(),
+            generation: 1,
+            relay_url: "ws://127.0.0.1:1".to_string(),
+            relay_token: "token".to_string(),
+            snapshot: Arc::new(RwLock::new(StatusSnapshot::default())),
+            status: RelayStatus::Connected,
+            snapshot_received: true,
+            reconnect_attempts: 0,
+            runner_disconnected: false,
+            pod_size: None,
+            subscribers: HashMap::new(),
+            last_input: None,
+            pending_resize: None,
+            grace_deadline: None,
+        }
+    }
+
+    async fn connected_transport() -> (WsSender, WsReceiver, tokio::task::JoinHandle<()>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind session test relay");
+        let url = format!("ws://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.expect("accept session test client");
+            let websocket = tokio_tungstenite::accept_async(stream)
+                .await
+                .expect("complete session test handshake");
+            futures::future::pending::<()>().await;
+            drop(websocket);
+        });
+        let connection = WebSocketConnection::connect(&url)
+            .await
+            .expect("connect session test transport");
+        let (sender, receiver) = connection.into_split();
+        (sender, receiver, server)
+    }
+
+    #[test]
+    fn force_resize_and_expired_grace_are_immediate_timers() {
+        let mut state = driver();
+        state.pending_resize = Some((100, 30, Instant::now(), true));
+        assert_eq!(state.next_timer(Instant::now()), Duration::ZERO);
+
+        state.pending_resize = None;
+        state.grace_deadline = Some(Instant::now());
+        assert_eq!(state.next_timer(Instant::now()), Duration::ZERO);
+    }
+
+    #[tokio::test]
+    async fn expired_empty_grace_shuts_down_the_session() {
+        let mut state = driver();
+        state.grace_deadline = Some(Instant::now());
+        let (sender, mut receiver, server) = connected_transport().await;
+        let (cmd_tx, mut cmd_rx) = mpsc::unbounded();
+
+        let end = tokio::time::timeout(
+            Duration::from_secs(1),
+            state.run_session(&sender, &mut receiver, &mut cmd_rx),
+        )
+        .await
+        .expect("expired grace must be handled without a wall-clock wait");
+
+        assert!(matches!(end, SessionEnd::Shutdown));
+        assert!(state.grace_deadline.is_none());
+        drop(cmd_tx);
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn closed_command_channel_shuts_down_the_session() {
+        let mut state = driver();
+        let (sender, mut receiver, server) = connected_transport().await;
+        let (cmd_tx, mut cmd_rx) = mpsc::unbounded();
+        drop(cmd_tx);
+
+        let end = tokio::time::timeout(
+            Duration::from_secs(1),
+            state.run_session(&sender, &mut receiver, &mut cmd_rx),
+        )
+        .await
+        .expect("closed command channel must stop the session immediately");
+
+        assert!(matches!(end, SessionEnd::Shutdown));
+        server.abort();
+    }
+}
+// LCOV_EXCL_STOP

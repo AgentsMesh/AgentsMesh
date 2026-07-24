@@ -154,9 +154,9 @@ func TestOnSubscribePod_ConcurrentSubscribes(t *testing.T) {
 	}
 }
 
-// TestOnSubscribePod_RaceConditionTwoSubscribers verifies that when two
-// goroutines concurrently complete Phase 2 (Connect + Start), only one wins
-// the Phase 3 pointer swap and the loser's client is properly stopped.
+// TestOnSubscribePod_RaceConditionTwoSubscribers verifies that two candidates
+// may both prepare handlers before either installs, while the eventual winner
+// retains its own live inbound generation and the loser is stopped.
 func TestOnSubscribePod_RaceConditionTwoSubscribers(t *testing.T) {
 	store := NewInMemoryPodStore()
 	mockConn := client.NewMockConnection()
@@ -164,22 +164,37 @@ func TestOnSubscribePod_RaceConditionTwoSubscribers(t *testing.T) {
 	runner := &Runner{cfg: &config.Config{}}
 	handler := NewRunnerMessageHandler(runner, store, mockConn)
 
-	// Track all created clients to verify cleanup.
-	var clientsMu sync.Mutex
-	var allClients []*relay.MockClient
+	releaseConnect := make(chan struct{})
+	clients := []*gatedConnectRelayClient{
+		{
+			MockClient: relay.NewMockClient("wss://relay.example.com"),
+			started:    make(chan struct{}),
+			release:    releaseConnect,
+		},
+		{
+			MockClient: relay.NewMockClient("wss://relay.example.com"),
+			started:    make(chan struct{}),
+			release:    releaseConnect,
+		},
+	}
+	var factoryMu sync.Mutex
+	nextClient := 0
 
 	handler.relayClientFactory = func(url, podKey, token string, logger *slog.Logger) relay.RelayClient {
-		mc := relay.NewMockClient(url)
-		clientsMu.Lock()
-		allClients = append(allClients, mc)
-		clientsMu.Unlock()
-		return mc
+		factoryMu.Lock()
+		defer factoryMu.Unlock()
+		candidate := clients[nextClient]
+		nextClient++
+		return candidate
 	}
 
-	pod := &Pod{
-		PodKey: "pod-race",
-		Status: PodStatusRunning,
-	}
+	inputs := make(chan string, 2)
+	io := &stubPodIO{onSendInput: func(text string) error {
+		inputs <- text
+		return nil
+	}}
+	pod := &Pod{PodKey: "pod-race", Status: PodStatusRunning, IO: io}
+	pod.Relay = NewPTYPodRelay(pod.PodKey, io, nil, nil)
 	store.Put(pod.PodKey, pod)
 
 	var wg sync.WaitGroup
@@ -197,6 +212,14 @@ func TestOnSubscribePod_RaceConditionTwoSubscribers(t *testing.T) {
 			})
 		}()
 	}
+	for i, candidate := range clients {
+		select {
+		case <-candidate.started:
+		case <-time.After(2 * time.Second):
+			t.Fatalf("candidate %d did not prepare handlers before Connect", i)
+		}
+	}
+	close(releaseConnect)
 
 	allDone := make(chan struct{})
 	go func() {
@@ -211,29 +234,42 @@ func TestOnSubscribePod_RaceConditionTwoSubscribers(t *testing.T) {
 		t.Fatal("deadlock detected: two concurrent subscribers blocked for 5s")
 	}
 
-	// Exactly one client should be active.
-	if pod.GetRelayClient() == nil {
+	winner, ok := pod.GetRelayClient().(*gatedConnectRelayClient)
+	if !ok || winner == nil {
 		t.Fatal("expected a relay client to be set")
 	}
 
-	// Verify no leaked clients: every client that lost the race should have Stop() called.
-	clientsMu.Lock()
-	defer clientsMu.Unlock()
-
-	var stoppedCount int32
-	for _, mc := range allClients {
-		if mc.StopCalled {
-			stoppedCount++
+	var loser *gatedConnectRelayClient
+	for _, candidate := range clients {
+		if candidate == winner {
+			if candidate.StopCalled {
+				t.Fatal("winning relay candidate was stopped")
+			}
+		} else {
+			loser = candidate
+			if !candidate.StopCalled {
+				t.Fatal("losing relay candidate was not stopped")
+			}
 		}
 	}
 
-	// With 2 clients created, at most 1 should remain (the winner).
-	// The loser(s) must have been stopped.
-	activeCount := int32(len(allClients)) - stoppedCount
-	if activeCount > 1 {
-		t.Errorf("relay client leak: %d clients active (expected at most 1), %d total created, %d stopped",
-			activeCount, len(allClients), stoppedCount)
+	winner.SimulateMessage(relay.MsgTypeInput, []byte("winner-input"))
+	select {
+	case got := <-inputs:
+		if got != "winner-input" {
+			t.Fatalf("winning candidate delivered %q, want winner-input", got)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("winning candidate's prepared inbound generation was retired")
 	}
+
+	loser.SimulateMessage(relay.MsgTypeInput, []byte("loser-input"))
+	select {
+	case got := <-inputs:
+		t.Fatalf("losing candidate executed stale inbound handler: %q", got)
+	default:
+	}
+	pod.TeardownRelayTransports(nil)
 }
 
 // TestOnSubscribePod_SnapshotSentOnSuccess verifies that Send(MsgTypeSnapshot, ...)
