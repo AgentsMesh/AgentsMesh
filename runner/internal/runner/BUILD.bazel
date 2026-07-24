@@ -243,6 +243,7 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@io_opentelemetry_go_otel_sdk//trace",
+        "@rules_go//go/runfiles",
     ],
 )
 

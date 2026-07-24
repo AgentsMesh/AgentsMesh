@@ -49,6 +49,8 @@ go_test(
         "control_decision_engine_test.go",
         "env_dump_test.go",
         "mcp_client_test.go",
+        "pty_render_resize_other_test.go",
+        "pty_render_resize_unix_test.go",
         "pty_runtime_test.go",
         "scenarios_test.go",
     ],

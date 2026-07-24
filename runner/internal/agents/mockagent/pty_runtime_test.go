@@ -181,14 +181,6 @@ func TestTerminalRenderLoopEarlyEOFAndClosedResizeChannel(t *testing.T) {
 	writeTerminalChunks(io.Discard, time.Nanosecond, []byte("delayed"))
 }
 
-func TestWatchTerminalResizeLifecycle(t *testing.T) {
-	signals, stop := watchTerminalResize()
-	if signals == nil {
-		t.Fatal("Unix resize watcher returned nil channel")
-	}
-	stop()
-}
-
 func TestTerminalRenderLoop_EmitsChangedPTYSizeAfterResizeSignal(t *testing.T) {
 	reader, writer := io.Pipe()
 	resizeSignals := make(chan os.Signal, 2)

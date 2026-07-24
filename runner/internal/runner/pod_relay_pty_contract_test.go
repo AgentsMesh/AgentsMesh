@@ -3,11 +3,13 @@ package runner
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/anthropics/agentsmesh/runner/internal/terminal/vt"
+	"github.com/bazelbuild/rules_go/go/runfiles"
 )
 
 func TestPTYSnapshotCurrentFixturesMatchProducerShape(t *testing.T) {
@@ -72,15 +74,12 @@ func readSnapshotFixture(t *testing.T, name string) map[string]any {
 
 func snapshotFixturePath(t *testing.T, name string) string {
 	t.Helper()
-	relative := filepath.Join("proto", "testdata", "terminal_snapshot", name+".json")
-	if srcdir := os.Getenv("TEST_SRCDIR"); srcdir != "" {
-		workspace := os.Getenv("TEST_WORKSPACE")
-		if workspace == "" {
-			workspace = "_main"
-		}
-		return filepath.Join(srcdir, workspace, relative)
+	runfile := path.Join("agentsmesh", "proto", "testdata", "terminal_snapshot", name+".json")
+	if resolved, err := runfiles.Rlocation(runfile); err == nil {
+		return resolved
 	}
 
+	relative := filepath.FromSlash(path.Join("proto", "testdata", "terminal_snapshot", name+".json"))
 	directory, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
