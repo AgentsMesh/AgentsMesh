@@ -98,5 +98,8 @@ go_test(
         "terminal_struct_test.go",
     ],
     embed = [":terminal"],
-    deps = ["//runner/internal/testutil"],
+    deps = [
+        "//runner/internal/config",
+        "//runner/internal/testutil",
+    ],
 )

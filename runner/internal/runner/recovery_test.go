@@ -27,7 +27,7 @@ func (s *recoveryOwnershipStore) Put(podKey string, pod *Pod) {
 func (s *recoveryOwnershipStore) Get(podKey string) (*Pod, bool) {
 	if s.dropAfterPut && s.lastPut != nil && s.lastPut.PodKey == podKey {
 		s.dropAfterPut = false
-		s.InMemoryPodStore.DeleteIf(podKey, s.lastPut)
+		s.DeleteIf(podKey, s.lastPut)
 		return nil, false
 	}
 	return s.InMemoryPodStore.Get(podKey)

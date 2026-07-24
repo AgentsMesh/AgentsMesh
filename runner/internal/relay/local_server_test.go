@@ -94,6 +94,7 @@ func TestLocalServerRejectsMissingParametersAndUpgradeFailure(t *testing.T) {
 		t.Fatalf("non-hijacking upgrade status = %d", upgrade.Code)
 	}
 
+	//nolint:staticcheck // Explicit nil exercises server Flush context normalization.
 	if err := srv.Flush(nil, "missing"); err != nil {
 		t.Fatalf("nil-context empty Flush: %v", err)
 	}

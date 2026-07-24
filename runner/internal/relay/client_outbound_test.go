@@ -10,6 +10,7 @@ import (
 
 func TestClientFlushPreflightFailures(t *testing.T) {
 	disconnected := NewClient(context.Background(), "ws://relay", "pod", "token", nil)
+	//nolint:staticcheck // Explicit nil exercises Flush context normalization.
 	if err := disconnected.Flush(nil); err == nil || err.Error() != "not connected" {
 		t.Fatalf("disconnected Flush = %v", err)
 	}

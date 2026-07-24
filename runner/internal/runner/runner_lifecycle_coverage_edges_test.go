@@ -33,7 +33,7 @@ func TestStopAllPodsSkipsPodWhoseStoreOwnershipChanged(t *testing.T) {
 	current, found := store.Get(pod.PodKey)
 	require.True(t, found)
 	require.Same(t, pod, current)
-	store.InMemoryPodStore.Delete(pod.PodKey)
+	store.Delete(pod.PodKey)
 }
 
 func TestFinalizePodExitRejectsLostStoreOwnership(t *testing.T) {
@@ -44,7 +44,7 @@ func TestFinalizePodExitRejectsLostStoreOwnership(t *testing.T) {
 	handler := NewRunnerMessageHandler(runner, store, client.NewMockConnection())
 
 	require.False(t, handler.finalizePodExit(pod.PodKey, pod, 0, false))
-	store.InMemoryPodStore.Delete(pod.PodKey)
+	store.Delete(pod.PodKey)
 }
 
 func TestStopPodDependentsRemovesAutopilot(t *testing.T) {

@@ -233,6 +233,7 @@ go_test(
         "//runner/internal/poddaemon",
         "//runner/internal/processmgr",
         "//runner/internal/relay",
+        "//runner/internal/terminal",
         "//runner/internal/terminal/aggregator",
         "//runner/internal/terminal/detector",
         "//runner/internal/terminal/vt",

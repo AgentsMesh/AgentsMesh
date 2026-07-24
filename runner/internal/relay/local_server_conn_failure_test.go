@@ -13,6 +13,7 @@ func TestLocalConnClosedAndQueueAdmissionFailures(t *testing.T) {
 	if closed.enqueue([]byte("frame")) {
 		t.Fatal("closed connection accepted a frame")
 	}
+	//nolint:staticcheck // Explicit nil exercises local Flush context normalization.
 	if err := closed.flush(nil); !errors.Is(err, errLocalConnClosed) {
 		t.Fatalf("closed Flush = %v", err)
 	}

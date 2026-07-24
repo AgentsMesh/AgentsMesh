@@ -72,9 +72,6 @@ func TestAssemblePTYRuntimeNormalizesTypedNilLocalRelay(t *testing.T) {
 
 	var server *relay.LocalServer
 	var broker LocalRelayBroker = server
-	if broker == nil {
-		t.Fatal("test precondition failed: typed nil must produce a non-nil interface")
-	}
 
 	pod.installRuntime(assemblePTYRuntime(pod, term, virtualTerm, agg, nil, broker))
 	ptyRelay, ok := pod.Relay.(*PTYPodRelay)
