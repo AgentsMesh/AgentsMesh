@@ -1,7 +1,6 @@
 package relay
 
 import (
-	"context"
 	"sync"
 	"time"
 )
@@ -128,15 +127,6 @@ func (m *MockClient) Send(msgType byte, payload []byte) error {
 	return nil
 }
 
-// Flush implements RelayClient. Mock Send calls are synchronous, so there is
-// no downstream queue left to drain.
-func (m *MockClient) Flush(context.Context) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.FlushCalls++
-	return nil
-}
-
 // SetMessageHandler implements RelayClient.
 func (m *MockClient) SetMessageHandler(msgType byte, handler func([]byte)) {
 	m.mu.Lock()
@@ -188,18 +178,6 @@ func (m *MockClient) GetToken() string {
 	return m.token
 }
 
-// Reset clears all tracking state.
-func (m *MockClient) Reset() {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.ConnectCalled = false
-	m.StartCalled = false
-	m.StopCalled = false
-	m.FlushCalls = 0
-	m.UpdateTokenCalls = nil
-	m.SentMessages = nil
-}
-
 // SimulateMessage triggers the handler for the given message type (for testing).
 func (m *MockClient) SimulateMessage(msgType byte, payload []byte) {
 	m.mu.RLock()
@@ -208,19 +186,6 @@ func (m *MockClient) SimulateMessage(msgType byte, payload []byte) {
 	if h != nil {
 		h(payload)
 	}
-}
-
-// CountSentByType returns the number of sent messages of the given type.
-func (m *MockClient) CountSentByType(msgType byte) int {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-	count := 0
-	for _, msg := range m.SentMessages {
-		if msg.Type == msgType {
-			count++
-		}
-	}
-	return count
 }
 
 // Ensure MockClient implements RelayClient interface

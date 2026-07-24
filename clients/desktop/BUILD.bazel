@@ -192,6 +192,7 @@ vitest_test(
     srcs = [
         "src/main/relay.test.ts",
         "src/main/relay_listener_events.test.ts",
+        "src/main/relay_listener_lease.test.ts",
         "src/main/relay_listener_wiring.test.ts",
         "src/main/relay_output_subscriptions.test.ts",
         "src/preload/relay_push_api.test.ts",
@@ -199,6 +200,7 @@ vitest_test(
     config = "vitest.relay-coverage.config.ts",
     data = [
         "src/main/relay.ts",
+        "src/main/relay_bridge.fixture.test.ts",
         "src/main/relay_listener_events.ts",
         "src/main/relay_listener_wiring.ts",
         "src/main/relay_output_subscriptions.ts",

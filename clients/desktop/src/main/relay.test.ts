@@ -16,59 +16,17 @@ vi.mock("electron", () => ({ ipcMain: ipc }));
 vi.mock("@agentsmesh/node-bridge", () => ({ logEvent: vi.fn() }));
 
 import { setupRelayBridge } from "./relay";
+import {
+  createRelayBridgeTestHarness,
+  flushOutput,
+  makeAppState,
+} from "./relay_bridge.fixture.test";
 
-function makeAppState() {
-  return {
-    relaySubscribe: vi.fn().mockImplementation((...args: unknown[]) => {
-      const onBound = args[7] as (_error: unknown, generation: number) => void;
-      onBound(null, 1);
-      return Promise.resolve();
-    }),
-    relayUnsubscribe: vi.fn().mockResolvedValue(undefined),
-    relayBindPodListeners: vi.fn().mockResolvedValue(0),
-    relayOnPodDisconnected: vi.fn().mockResolvedValue(undefined),
-    relayDisconnect: vi.fn().mockResolvedValue(undefined),
-    relayDisconnectAll: vi.fn().mockResolvedValue(undefined),
-    relaySend: vi.fn().mockResolvedValue(undefined),
-    relaySendResize: vi.fn().mockResolvedValue(undefined),
-    relayForceResize: vi.fn().mockResolvedValue(undefined),
-    relaySendAcpCommand: vi.fn().mockResolvedValue(undefined),
-    relayGetStatus: vi.fn().mockResolvedValue("connected"),
-    relayIsRunnerDisconnected: vi.fn().mockResolvedValue(false),
-    relayGetPodSize: vi.fn().mockResolvedValue([80, 24]),
-  };
-}
-
-function event(wcId: number) {
-  return { sender: { id: wcId } };
-}
-
-async function invoke(channel: string, wcId: number, ...args: unknown[]) {
-  const handler = ipc.handlers.get(channel);
-  if (!handler) throw new Error(`missing IPC handler ${channel}`);
-  return handler(event(wcId), ...args);
-}
-
-let nextAttempt = 0;
-const subscribe = (wcId: number, podKey: string, subId: string) =>
-  invoke(
-    "relay:subscribe",
-    wcId,
-    podKey,
-    subId,
-    `attempt:${++nextAttempt}`,
-    "wss://relay",
-    "token",
-  );
-
-const flushOutput = () => new Promise<void>((resolve) => setImmediate(resolve));
+const { invoke, reset: resetRelayBridgeFixture, subscribe } =
+  createRelayBridgeTestHarness(ipc);
 
 describe("relay main-process bridge", () => {
-  beforeEach(() => {
-    ipc.handlers.clear();
-    vi.clearAllMocks();
-    nextAttempt = 0;
-  });
+  beforeEach(resetRelayBridgeFixture);
 
   it("keeps a distinct Rust subscriber and output route per renderer subscription", async () => {
     const appState = makeAppState();
@@ -419,5 +377,4 @@ describe("relay main-process bridge", () => {
     expect(appState.relayUnsubscribe).toHaveBeenCalledExactlyOnceWith("pod-1", firstId);
     expect(appState.relayDisconnect).not.toHaveBeenCalled();
   });
-
 });

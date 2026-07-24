@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
-
 usage() {
   echo "usage: $0 <combined-lcov-file> [minimum-aggregate-line-percent] [minimum-file-line-percent]" >&2
   exit 2
 }
-
 [[ $# -ge 1 && $# -le 3 ]] || usage
-
 report=$1
 aggregate_threshold=${2:-95}
 file_threshold=${3:-95}
@@ -29,7 +25,6 @@ for threshold_name in aggregate file; do
     exit 2
   }
 done
-
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [[ -n "${TEST_SRCDIR:-}" && -n "${TEST_WORKSPACE:-}" && -d "${TEST_SRCDIR}/${TEST_WORKSPACE}/clients/core/crates/relay/src" ]]; then
   workspace="${TEST_SRCDIR}/${TEST_WORKSPACE}"
@@ -43,10 +38,8 @@ source_root="$workspace/clients/core/crates/relay/src"
   echo "relay source directory does not exist: $source_root" >&2
   exit 2
 }
-
 manifest=$(mktemp "${TMPDIR:-/tmp}/agentsmesh-relay-coverage.XXXXXX")
 trap 'rm -f "$manifest"' EXIT
-
 while IFS= read -r source; do
   relative=${source#"$workspace/"}
   printf 'F\t%s\n' "$relative" >>"$manifest"
@@ -81,7 +74,6 @@ while IFS= read -r source; do
     }
   ' "$source" >>"$manifest"
 done < <(find -L "$source_root" -type f -name '*.rs' -print | sort)
-
 # A missed line in a tiny adapter can represent its entire failure path. Such
 # files require full coverage instead of being rounded through the 95% floor.
 awk -F '\t' \

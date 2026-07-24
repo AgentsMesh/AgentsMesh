@@ -41,6 +41,27 @@ _frontend_bazel_output_base() {
     echo "${root%/}/${worktree_name}-bazel-${frontend}"
 }
 
+# Bazel output trees contain read-only directories. Cache cleanup is
+# best-effort because it must never abort the remaining dev teardown.
+_remove_frontend_bazel_output_base() {
+    local output_base="$1"
+
+    if rm -rf -- "$output_base" 2>/dev/null; then
+        return 0
+    fi
+
+    warn "Bazel cache removal failed; repairing owner permissions and retrying: $output_base"
+    if [[ -d "$output_base" ]]; then
+        chmod u+rwx -- "$output_base" 2>/dev/null || true
+        find "$output_base" -type d -exec chmod u+rwx {} + 2>/dev/null || true
+    fi
+
+    if ! rm -rf -- "$output_base" 2>/dev/null; then
+        warn "Unable to remove Bazel cache; continuing teardown: $output_base"
+    fi
+    return 0
+}
+
 # Common pre-flight for both Next.js dev servers: clear stale lockfile and port
 # squatters. Returns 1 if the port belongs to a process this worktree cannot own.
 _prepare_next_port() {

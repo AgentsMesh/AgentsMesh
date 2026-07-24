@@ -109,27 +109,6 @@ reset_runners() {
     echo ""
 }
 
-# Bazel may leave read-only directories in an output base. A failed cache
-# removal must not abort the rest of clean() under dev.sh's top-level set -e.
-_remove_frontend_bazel_output_base() {
-    local output_base="$1"
-
-    if rm -rf -- "$output_base" 2>/dev/null; then
-        return 0
-    fi
-
-    warn "Bazel cache removal failed; repairing owner permissions and retrying: $output_base"
-    if [[ -d "$output_base" ]]; then
-        chmod u+rwx -- "$output_base" 2>/dev/null || true
-        find "$output_base" -type d -exec chmod u+rwx {} + 2>/dev/null || true
-    fi
-
-    if ! rm -rf -- "$output_base" 2>/dev/null; then
-        warn "Unable to remove Bazel cache; continuing teardown: $output_base"
-    fi
-    return 0
-}
-
 # Tear down everything dev.sh creates: host service pids, frontend port
 # squatters, docker volumes, .env. Safe to re-run.
 clean() {

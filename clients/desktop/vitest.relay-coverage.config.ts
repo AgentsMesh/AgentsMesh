@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       "src/main/relay.test.ts",
       "src/main/relay_listener_events.test.ts",
+      "src/main/relay_listener_lease.test.ts",
       "src/main/relay_listener_wiring.test.ts",
       "src/main/relay_output_subscriptions.test.ts",
       "src/preload/relay_push_api.test.ts",

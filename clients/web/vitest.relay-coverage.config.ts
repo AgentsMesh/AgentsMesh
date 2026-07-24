@@ -13,6 +13,7 @@ const relayOwnerTests = [
   "src/lib/e2e/relayReadinessProbe.test.ts",
   "src/stores/__tests__/relayConnection.direct.test.ts",
   "src/stores/__tests__/relayConnection.node.test.ts",
+  "src/stores/__tests__/relayConnection.resize-status.test.ts",
   "src/stores/__tests__/relayConnection.test.ts",
   "src/stores/__tests__/relayConnectionEvents.test.ts",
   "src/stores/__tests__/relayEndpointSelection.test.ts",

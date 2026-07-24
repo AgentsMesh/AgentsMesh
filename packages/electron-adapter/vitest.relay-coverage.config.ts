@@ -6,7 +6,10 @@ export default defineConfig({
   ...baseConfig,
   test: {
     ...baseConfig.test,
-    include: ["src/electron-relay-manager.test.ts"],
+    include: [
+      "src/electron-relay-manager.events.test.ts",
+      "src/electron-relay-manager.test.ts",
+    ],
     coverage: {
       enabled: true,
       provider: "v8",

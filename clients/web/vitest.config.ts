@@ -17,6 +17,7 @@ export default defineConfig({
     // effectively automatic.
     pool: 'threads',
     setupFiles: ['./src/test/setup.ts'],
+    exclude: ['src/**/*.fixture.test.ts'],
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {
       provider: 'v8',

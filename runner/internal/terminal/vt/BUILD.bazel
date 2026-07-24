@@ -80,6 +80,7 @@ go_test(
         "vt_snapshot_cursor_state_test.go",
         "vt_snapshot_grapheme_boundary_test.go",
         "vt_snapshot_parser_limit_test.go",
+        "vt_snapshot_resize_test.go",
         "vt_snapshot_state_test.go",
         "vt_snapshot_test.go",
         "vt_wide_cell_invariant_test.go",

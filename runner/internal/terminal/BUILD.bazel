@@ -15,6 +15,7 @@ go_library(
         "terminal_pty_windows.go",
         "terminal_read_lifecycle.go",
         "terminal_resize.go",
+        "terminal_state.go",
     ],
     importpath = "github.com/anthropics/agentsmesh/runner/internal/terminal",
     visibility = ["//runner:__subpackages__"],

@@ -5,6 +5,7 @@
 mod acp_lifecycle;
 mod connection_lifecycle;
 mod listener_rebinding;
+mod session_lifecycle;
 mod subscriber_readiness;
 
 use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
