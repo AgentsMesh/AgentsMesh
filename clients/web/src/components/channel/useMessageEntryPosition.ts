@@ -15,9 +15,6 @@ interface UseMessageEntryPositionOptions {
   containerRef: RefObject<HTMLDivElement | null>;
   contentRef: RefObject<HTMLDivElement | null>;
   bottomRef: RefObject<HTMLDivElement | null>;
-  // Fires when an anchor lands, so the caller can sync at-bottom state to the
-  // real landed position (a divider at scrollTop 0 emits no correcting scroll).
-  onAnchor?: () => void;
 }
 
 // Entry "settles" once content height holds steady this long (a ResizeObserver
@@ -34,7 +31,6 @@ export function useMessageEntryPosition({
   containerRef,
   contentRef,
   bottomRef,
-  onAnchor,
 }: UseMessageEntryPositionOptions) {
   const firstId = messages[0]?.id ?? null;
   const lastId = messages[messages.length - 1]?.id ?? null;
@@ -110,8 +106,7 @@ export function useMessageEntryPosition({
     state.lastAppliedKey = anchorKey;
     state.anchoredLastId = lastId;
     state.target = target;
-    onAnchor?.();
-  }, [anchorKey, bottomRef, channelId, containerRef, entryAnchorResolved, firstUnreadId, lastId, loading, loadingMore, messages.length, onAnchor]);
+  }, [anchorKey, bottomRef, channelId, containerRef, entryAnchorResolved, firstUnreadId, lastId, loading, loadingMore, messages.length]);
 
   // Re-anchor on content growth (late images/embeds) and mark settled once the
   // reflow goes quiet — a debounced quiescence signal, reset on every resize.
@@ -132,10 +127,7 @@ export function useMessageEntryPosition({
         state.resizeFrame = null;
         if (state.userInterrupted || state.settled) return;
         const target = scrollToEntryAnchor(containerRef.current, bottomRef.current, liveRef.current.firstUnreadId, state);
-        if (target) {
-          state.target = target;
-          onAnchor?.();
-        }
+        if (target) state.target = target;
       });
     });
     observer.observe(content);
@@ -145,5 +137,5 @@ export function useMessageEntryPosition({
       if (state.resizeFrame != null) cancelAnimationFrame(state.resizeFrame);
       state.resizeFrame = null;
     };
-  }, [bottomRef, channelId, containerRef, contentRef, onAnchor]);
+  }, [bottomRef, channelId, containerRef, contentRef]);
 }

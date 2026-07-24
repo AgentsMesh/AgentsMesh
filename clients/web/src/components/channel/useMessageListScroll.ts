@@ -83,30 +83,16 @@ export function useMessageListScroll({
     let cancelled = false;
     queueMicrotask(() => {
       if (cancelled) return;
-      // Seed at-bottom ONLY when the cursor is resolved AND there is no unread.
-      // An unknown cursor must not seed `true`: a message streamed in during the
-      // unread-summary fetch would then auto-follow to the bottom, trip the entry
-      // hook's scroll listener (userInterrupted), and permanently defeat the
-      // divider once the cursor resolves. onEntryAnchor corrects this once an
-      // anchor actually lands.
-      setIsAtBottom(entryAnchorResolved && firstUnreadId == null);
+      // Default to at-bottom so a streamed message follows into view; real scroll
+      // events (handleScroll) flip it to false once the user scrolls up. Entry
+      // positioning owns WHERE the viewport lands (divider vs bottom); it must not
+      // also suppress follow-to-bottom, or new messages silently stop appearing.
+      setIsAtBottom(true);
       setNewMessageCount(0);
       setMentionBelowId(null);
     });
     return () => { cancelled = true; };
-    // firstUnreadId / entryAnchorResolved intentionally excluded: this seeds on
-    // channel switch only; a late resolve must not re-run and clobber a live
-    // isAtBottom.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelId]);
-
-  // When entry positioning lands an anchor, sync isAtBottom to where it actually
-  // landed so the FAB/pill and the append-follow decision agree with it — in
-  // particular a divider anchored at scrollTop 0 fires no scroll event to correct
-  // a stale seed, which would otherwise hide the FAB and let a stream yank down.
-  const onEntryAnchor = useCallback(() => {
-    setIsAtBottom(isScrolledToBottom(containerRef.current));
-  }, []);
 
   useMessageEntryPosition({
     channelId,
@@ -118,7 +104,6 @@ export function useMessageListScroll({
     containerRef,
     contentRef,
     bottomRef,
-    onAnchor: onEntryAnchor,
   });
 
   useEffect(() => {
