@@ -4,16 +4,11 @@ import (
 	"context"
 	"time"
 
-	otelinit "github.com/anthropics/agentsmesh/backend/internal/infra/otel"
 	runnerv1 "github.com/anthropics/agentsmesh/proto/gen/go/runner/v1"
 )
 
 func (pc *PodCoordinator) handleHeartbeat(runnerID int64, data *runnerv1.HeartbeatData) {
 	ctx := context.Background()
-	start := time.Now()
-	defer func() {
-		otelinit.HeartbeatProcessDuration.Record(ctx, float64(time.Since(start).Milliseconds()))
-	}()
 
 	if err := pc.heartbeatBatcher.RecordHeartbeat(
 		ctx,

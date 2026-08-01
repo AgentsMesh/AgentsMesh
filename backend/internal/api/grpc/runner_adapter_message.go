@@ -13,14 +13,14 @@ import (
 
 func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int64, conn *runner.GRPCConnection, msg *runnerv1.RunnerMessage) {
 	msgType := extractMessageType(msg)
-	msgStart := time.Now()
-	defer func() {
-		otelinit.GRPCMessageDuration.Record(ctx, float64(time.Since(msgStart).Milliseconds()),
-			metric.WithAttributes(attribute.String("message.type", msgType)))
-	}()
-
 	if !isHighFrequencyMessage(msgType) {
 		otelinit.GRPCMessagesRecv.Add(ctx, 1, metric.WithAttributes(attribute.String("message.type", msgType)))
+		if otelinit.GRPCMessageHandleDuration.Enabled(ctx) {
+			msgStart := time.Now()
+			defer func() {
+				otelinit.RecordGRPCMessageHandleDuration(ctx, time.Since(msgStart), msgType)
+			}()
+		}
 	}
 
 	switch payload := msg.Payload.(type) {
@@ -31,6 +31,12 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 		a.handleInitialized(ctx, runnerID, conn, payload.Initialized)
 
 	case *runnerv1.RunnerMessage_Heartbeat:
+		recordDuration := otelinit.HeartbeatProcessDuration.Enabled(ctx)
+		var heartbeatStart time.Time
+		if recordDuration {
+			heartbeatStart = time.Now()
+		}
+
 		a.connManager.HandleHeartbeat(runnerID, payload.Heartbeat)
 
 		ack := &runnerv1.ServerMessage{
@@ -47,6 +53,9 @@ func (a *GRPCRunnerAdapter) handleProtoMessage(ctx context.Context, runnerID int
 
 		if len(payload.Heartbeat.AgentVersions) > 0 {
 			a.handleHeartbeatAgentVersions(ctx, runnerID, payload.Heartbeat.AgentVersions)
+		}
+		if recordDuration {
+			otelinit.RecordHeartbeatProcessDuration(ctx, time.Since(heartbeatStart))
 		}
 
 	case *runnerv1.RunnerMessage_PodCreated:

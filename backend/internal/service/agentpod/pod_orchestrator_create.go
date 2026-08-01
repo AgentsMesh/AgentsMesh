@@ -173,21 +173,8 @@ func (o *PodOrchestrator) CreatePod(ctx context.Context, req *OrchestrateCreateP
 		return nil, errors.Join(ErrConfigBuildFailed, err)
 	}
 
-	if o.podCoordinator != nil {
-		slog.InfoContext(ctx, "dispatching create_pod to runner", "runner_id", req.RunnerID, "pod_key", pod.PodKey, "session_id", sessionID, "resume", isResumeMode)
-		dispatchStart := time.Now()
-		if err := o.podCoordinator.CreatePod(ctx, req.RunnerID, podCmd); err != nil {
-			slog.ErrorContext(ctx, "failed to dispatch create_pod", "pod_key", pod.PodKey, "error", err)
-			if markErr := o.podService.MarkInitFailed(ctx, pod.PodKey, errCodeRunnerUnreachable,
-				"Failed to dispatch pod to runner: "+err.Error()); markErr != nil {
-				slog.ErrorContext(ctx, "failed to mark pod as init failed", "pod_key", pod.PodKey, "error", markErr)
-			}
-			return nil, ErrRunnerDispatchFailed
-		}
-		otelinit.PodDispatchDuration.Record(ctx, float64(time.Since(dispatchStart).Milliseconds()))
-		slog.InfoContext(ctx, "create_pod dispatched", "pod_key", pod.PodKey)
-	} else {
-		slog.WarnContext(ctx, "PodCoordinator is nil, cannot dispatch create_pod", "pod_key", pod.PodKey)
+	if err := o.dispatchPod(ctx, req, pod, podCmd, sessionID, isResumeMode); err != nil {
+		return nil, err
 	}
 
 	return &OrchestrateCreatePodResult{Pod: pod}, nil

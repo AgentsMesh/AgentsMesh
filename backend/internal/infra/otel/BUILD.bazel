@@ -11,6 +11,7 @@ go_library(
     visibility = ["//backend:__subpackages__"],
     deps = [
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//propagation",
         "@io_opentelemetry_go_otel//semconv/v1.26.0:v1_26_0",
         "@io_opentelemetry_go_otel_exporters_otlp_otlpmetric_otlpmetricgrpc//:otlpmetricgrpc",
@@ -39,7 +40,10 @@ go_test(
     ],
     embed = [":otel"],
     deps = [
+        "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//noop",
         "@io_opentelemetry_go_otel_sdk//trace",
+        "@io_opentelemetry_go_otel_sdk_metric//:metric",
+        "@io_opentelemetry_go_otel_sdk_metric//metricdata",
     ],
 )
