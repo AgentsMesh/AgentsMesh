@@ -100,3 +100,59 @@ func TestMigration000157CursorCLIAgent(t *testing.T) {
 		t.Error("down migration must NOT DELETE FROM user_agent_credential_profiles — dropped in 000146")
 	}
 }
+
+// TestMigration000162CopilotCLIAgent locks the same failure modes for the
+// copilot-cli builtin migration that 000157 locks for cursor-cli:
+//   - AgentFile AGENT/EXECUTABLE MUST be the actual binary `copilot`, NOT the
+//     DB slug `copilot-cli`. eval_decl.go writes AGENT into LaunchCommand which
+//     the runner exec()s; using the slug makes every pod fail with ENOENT.
+//   - Copilot is a native ACP agent, so the AgentFile MUST declare
+//     `MODE acp "--acp"` (mirrors loopal 000122).
+//   - Down migration MUST clear referencing rows first or it fails on the
+//     organization_agents FK (000093 declares NO ACTION).
+func TestMigration000162CopilotCLIAgent(t *testing.T) {
+	up, err := FS.ReadFile("000162_add_copilot_agent.up.sql")
+	if err != nil {
+		t.Fatalf("read up migration: %v", err)
+	}
+	upStr := string(up)
+
+	if !strings.Contains(upStr, "AGENT copilot\\n") {
+		t.Error("AgentFile AGENT must declare the binary name `copilot` (not the slug)")
+	}
+	if strings.Contains(upStr, "AGENT copilot-cli") {
+		t.Error("AGENT must NOT be the DB slug `copilot-cli`: that value becomes LaunchCommand and is exec'd; the binary is `copilot`")
+	}
+	if !strings.Contains(upStr, "EXECUTABLE copilot") {
+		t.Error("EXECUTABLE must be `copilot`")
+	}
+	if !strings.Contains(upStr, `MODE acp "--acp"`) {
+		t.Error("AgentFile must declare `MODE acp \"--acp\"`: Copilot is a native ACP agent")
+	}
+	if !strings.Contains(upStr, "'copilot-cli'") {
+		t.Error("DB slug column must be 'copilot-cli' (matches claude-code / codex-cli / gemini-cli / cursor-cli convention)")
+	}
+	if !strings.Contains(upStr, "'copilot'") {
+		t.Error("launch_command / executable columns must be 'copilot'")
+	}
+	if !strings.Contains(upStr, "ENV COPILOT_GITHUB_TOKEN SECRET OPTIONAL") {
+		t.Error("AgentFile must declare COPILOT_GITHUB_TOKEN as an optional secret so the credential UI can render a curated field")
+	}
+
+	down, err := FS.ReadFile("000162_add_copilot_agent.down.sql")
+	if err != nil {
+		t.Fatalf("read down migration: %v", err)
+	}
+	downStr := string(down)
+
+	// Both NO-ACTION-FK tables (000093) must be deleted BEFORE agents.
+	orgConfigsIdx := strings.Index(downStr, "DELETE FROM organization_agent_configs")
+	orgAgentsIdx := strings.Index(downStr, "DELETE FROM organization_agents WHERE")
+	agentsIdx := strings.Index(downStr, "DELETE FROM agents WHERE slug")
+	if orgConfigsIdx < 0 || orgAgentsIdx < 0 || agentsIdx < 0 {
+		t.Fatal("down migration must DELETE from organization_agent_configs, organization_agents, AND agents")
+	}
+	if orgConfigsIdx > agentsIdx || orgAgentsIdx > agentsIdx {
+		t.Error("down migration must clear organization_agent_configs/organization_agents BEFORE agents (FK NO ACTION blocks otherwise)")
+	}
+}

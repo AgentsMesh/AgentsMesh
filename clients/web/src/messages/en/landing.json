@@ -39,7 +39,8 @@
         "community": "Community",
         "selfBuilt": "Self-Built",
         "yourOwn": "Your Own",
-        "anysphere": "Anysphere"
+        "anysphere": "Anysphere",
+        "github": "GitHub"
       }
     },
     "paradigmShift": {

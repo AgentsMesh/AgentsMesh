@@ -1,0 +1,42 @@
+-- 000162_add_copilot_agent.up.sql
+-- Register GitHub Copilot CLI as a builtin agent.
+--
+-- The binary on disk is `copilot` (installed via Homebrew cask `copilot-cli`
+-- or `npm i -g @github/copilot`). The DB `slug` keeps the `-cli` suffix to
+-- match the claude-code / codex-cli / gemini-cli / cursor-cli naming
+-- convention, but the AgentFile AGENT/EXECUTABLE fields MUST be the actual
+-- binary name `copilot` (agentfile/eval/eval_decl.go wires AGENT directly into
+-- LaunchCommand, which the runner exec()s). Using AGENT=copilot-cli would make
+-- every pod fail with ENOENT (see migration 000157 for the same reasoning).
+--
+-- Copilot is a native ACP agent: `copilot --acp` starts an Agent Client
+-- Protocol JSON-RPC 2.0 server over stdio (verified: initialize returns
+-- agentCapabilities incl. loadSession). It therefore slots into the same ACP
+-- driver as gemini-cli / opencode / loopal and needs no custom transport. The
+-- MODE acp args are `--acp`, mirroring loopal (000122).
+--
+-- Auto-approve: the brief-verified `--allow-all-tools` (env COPILOT_ALLOW_ALL)
+-- and `--no-ask-user` flags keep a non-interactive PTY pod from blocking on a
+-- permission/ask_user prompt. They are gated to `mode != "acp"` because in ACP
+-- mode tool permissions are negotiated over the protocol (matching codex-cli,
+-- which gates `--ask-for-approval` the same way).
+--
+-- Model passthrough: `CONFIG model STRING` feeds `--model <model>` (verified
+-- global flag; `auto` lets Copilot pick). Applied in both modes.
+--
+-- COPILOT_GITHUB_TOKEN is declared as an OPTIONAL secret: Copilot authenticates
+-- via `copilot login` OAuth (token in HOME, inherited by the pod) by default,
+-- but also honors a GitHub token env var for headless auth. The ENV declaration
+-- is pure schema metadata (agentfile/eval/eval_decl.go skips
+-- `ENV X SECRET OPTIONAL` at eval time); it lets the frontend render a curated
+-- credential field, mirroring cursor-cli's CURSOR_API_KEY.
+--
+-- MCP is intentionally NOT declared (no `MCP ON`): Copilot reads MCP servers
+-- from ~/.copilot/mcp-config.json (HOME), not from a file under the sandbox
+-- work_dir, so declaring MCP would set MCPEnabled=true without any config
+-- landing where Copilot looks for it. Deferred to a follow-up (same first-pass
+-- stance as cursor-cli in 000157).
+
+INSERT INTO agents (slug, name, launch_command, executable, is_builtin, is_active, supported_modes, agentfile_source)
+VALUES ('copilot-cli', 'GitHub Copilot CLI', 'copilot', 'copilot', true, true, 'pty,acp',
+  E'# === Identity ===\nAGENT copilot\nEXECUTABLE copilot\n\n# === Mode ===\nMODE pty\nMODE acp "--acp"\n\n# === Configuration ===\nCONFIG model STRING = ""\n\n# === Environment ===\nENV COPILOT_GITHUB_TOKEN SECRET OPTIONAL\n\n# === Prompt ===\nPROMPT_POSITION prepend\n\n# === Build Logic ===\narg "--model" config.model when config.model != ""\narg "--allow-all-tools" when mode != "acp"\narg "--no-ask-user" when mode != "acp"\n');
