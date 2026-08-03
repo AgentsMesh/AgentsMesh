@@ -12,8 +12,7 @@ sync:github:
     name: "$BAZEL_BUILDER_IMAGE"
     entrypoint: [""]
   tags:
-    - docker
-    - x86
+    - k8s
   script:
     - |
       set -euo pipefail
@@ -51,8 +50,11 @@ build:images:
     docker:
       user: "0"
   tags:
-    - docker
-    - x86
+    - k8s
+  variables:
+    KUBERNETES_CPU_REQUEST: "3"
+    KUBERNETES_MEMORY_REQUEST: "6Gi"
+    KUBERNETES_MEMORY_LIMIT: "10Gi"
   parallel:
     matrix:
       - SERVICE: backend
