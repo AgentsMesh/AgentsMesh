@@ -181,6 +181,10 @@ func (m *MockAIProviderService) ValidateCredentials(providerType string, credent
 		if _, ok := credentials["api_key"]; !ok {
 			return ErrMissingAPIKey
 		}
+	case domain.AIProviderTypeAtlasCloud:
+		if _, ok := credentials["api_key"]; !ok {
+			return ErrMissingAPIKey
+		}
 	}
 	return nil
 }

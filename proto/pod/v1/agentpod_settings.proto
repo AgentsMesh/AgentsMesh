@@ -54,7 +54,7 @@ message AIProvider {
   };
 
   int64 id = 1 [(amesh.codegen.v1.field_rename) = "ID"];
-  // claude | gemini | codex | openai
+  // claude | gemini | codex | openai | atlascloud
   string provider_type = 2;
   string name = 3;
   bool is_default = 4;
