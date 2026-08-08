@@ -11,6 +11,19 @@ type Config struct {
 	NodeID      string `mapstructure:"node_id"`
 	Description string `mapstructure:"description"`
 
+	// DataDir is the persistent state root — certs, plugins, default
+	// lookup root for relative cert paths. Empty -> ~/.agentsmesh.
+	DataDir string `mapstructure:"data_dir"`
+
+	// StateDir is the runtime state root — runner.pid, locks.
+	// Empty -> DataDir -> ~/.agentsmesh. Operators running multiple
+	// runners on one host can point this at /var/run/agentsmesh/<id>
+	// or /tmp/agentsmesh/<id> so the pid file doesn't survive crash + reboot.
+	StateDir string `mapstructure:"state_dir"`
+
+	// ConsolePort overrides the local web-console bind port. 0 -> 19080.
+	ConsolePort int `mapstructure:"console_port"`
+
 	// mTLS Certificate Authentication (gRPC)
 	CertFile     string `mapstructure:"cert_file"`     // Path to client certificate
 	KeyFile      string `mapstructure:"key_file"`      // Path to client private key
