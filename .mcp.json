@@ -10,6 +10,13 @@
         "--disable-features=PasswordLeakDetection",
         "--disable-save-password-bubble"
       ]
+    },
+    "knos": {
+      "command": "python",
+      "args": [
+        "-m",
+        "knos.mcp"
+      ]
     }
   }
 }
