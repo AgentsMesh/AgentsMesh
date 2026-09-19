@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	"github.com/anthropics/agentsmesh/backend/internal/config"
 	notifDomain "github.com/anthropics/agentsmesh/backend/internal/domain/notification"
 	"github.com/anthropics/agentsmesh/backend/internal/infra"
@@ -14,7 +15,6 @@ import (
 	"github.com/anthropics/agentsmesh/backend/internal/infra/logger"
 	otelinit "github.com/anthropics/agentsmesh/backend/internal/infra/otel"
 	"github.com/anthropics/agentsmesh/backend/internal/infra/websocket"
-	"github.com/anthropics/agentsmesh/backend/internal/api/rest"
 	"github.com/anthropics/agentsmesh/backend/internal/service/agentpod"
 	channelService "github.com/anthropics/agentsmesh/backend/internal/service/channel"
 	"github.com/anthropics/agentsmesh/backend/internal/service/instance"
@@ -36,6 +36,9 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 	cfg.WarnInsecureDefaults()
+	if err := cfg.ValidateJWTSecret(); err != nil {
+		log.Fatalf("Refusing to start with insecure JWT configuration: %v", err)
+	}
 
 	appLogger, err := logger.New(logger.Config{
 		Level:      cfg.Log.Level,
