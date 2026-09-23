@@ -1,0 +1,29 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "copilot",
+    srcs = ["register.go"],
+    importpath = "github.com/anthropics/agentsmesh/runner/internal/agents/copilot",
+    visibility = ["//runner:__subpackages__"],
+    deps = [
+        "//runner/internal/agentkit",
+        "//runner/internal/tokenusage",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":copilot",
+    visibility = ["//runner:__subpackages__"],
+)
+
+go_test(
+    name = "copilot_test",
+    srcs = ["register_test.go"],
+    embed = [":copilot"],
+    deps = [
+        "//runner/internal/agentkit",
+        "//runner/internal/tokenusage",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
