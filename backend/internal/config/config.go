@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 )
@@ -63,7 +64,9 @@ func Load() (*Config, error) {
 		},
 
 		JWT: JWTConfig{
-			Secret:          getEnv("JWT_SECRET", "change-me-in-production"),
+			// Empty default: a published shared secret enables token forgery.
+			// Non-debug startup must fail closed (ValidateJWTSecret).
+			Secret:          getEnv("JWT_SECRET", ""),
 			ExpirationHours: getEnvInt("JWT_EXPIRATION_HOURS", 24),
 		},
 
@@ -95,8 +98,8 @@ func Load() (*Config, error) {
 		},
 
 		Log: LogConfig{
-			Level:  getEnv("LOG_LEVEL", "info"),
-			Format: getEnv("LOG_FORMAT", "text"),
+			Level:      getEnv("LOG_LEVEL", "info"),
+			Format:     getEnv("LOG_FORMAT", "text"),
 			FilePath:   getEnv("LOG_FILE", ""),
 			MaxSizeMB:  getEnvInt("LOG_MAX_SIZE_MB", 100),
 			MaxBackups: getEnvInt("LOG_MAX_BACKUPS", 5),
@@ -200,15 +203,31 @@ func Load() (*Config, error) {
 	}, nil
 }
 
+const insecureJWTSecret = "change-me-in-production"
+
+// ValidateJWTSecret fails closed when JWT signing uses an empty or published
+// default key outside debug mode (#472).
+func (c *Config) ValidateJWTSecret() error {
+	secret := c.JWT.Secret
+	if secret == "" || secret == insecureJWTSecret {
+		if c.Server.Debug {
+			slog.Warn("SECURITY: JWT_SECRET is unset or the published default; continuing only because DEBUG is enabled")
+			return nil
+		}
+		return fmt.Errorf("JWT_SECRET is required and must not be the published default; set a strong random secret via environment variable")
+	}
+	return nil
+}
+
 func (c *Config) WarnInsecureDefaults() {
 	if c.Server.InternalAPISecret == "change-me-internal-secret" {
 		slog.Warn("SECURITY: INTERNAL_API_SECRET is using the default value; set a strong random secret via environment variable")
 	}
-	if c.JWT.Secret == "change-me-in-production" {
+	if c.JWT.Secret == "" || c.JWT.Secret == insecureJWTSecret {
 		if c.Server.Debug {
-			slog.Warn("SECURITY: JWT_SECRET is using the default value; set a strong random secret via environment variable")
+			slog.Warn("SECURITY: JWT_SECRET is unset or the published default; set a strong random secret via environment variable")
 		} else {
-			slog.Error("SECURITY: JWT_SECRET is using the default value in non-debug mode; this is a critical security risk — set JWT_SECRET environment variable")
+			slog.Error("SECURITY: JWT_SECRET is unset or the published default in non-debug mode; this is a critical security risk — set JWT_SECRET environment variable")
 		}
 	}
 }
