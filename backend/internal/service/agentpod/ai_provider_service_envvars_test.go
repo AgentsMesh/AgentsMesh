@@ -70,6 +70,56 @@ func TestFormatEnvVars_Gemini(t *testing.T) {
 	}
 }
 
+func TestFormatEnvVars_AtlasCloud(t *testing.T) {
+	service := newTestAIProviderService(nil, nil)
+
+	t.Run("default OpenAI-compatible base URL", func(t *testing.T) {
+		creds := map[string]string{
+			"api_key": "atlas-test-key",
+		}
+
+		envVars := service.formatEnvVars(agentpod.AIProviderTypeAtlasCloud, creds)
+
+		if envVars["ATLASCLOUD_API_KEY"] != "atlas-test-key" {
+			t.Errorf("expected ATLASCLOUD_API_KEY 'atlas-test-key', got '%s'", envVars["ATLASCLOUD_API_KEY"])
+		}
+		if envVars["ATLAS_CLOUD_API_KEY"] != "atlas-test-key" {
+			t.Errorf("expected ATLAS_CLOUD_API_KEY 'atlas-test-key', got '%s'", envVars["ATLAS_CLOUD_API_KEY"])
+		}
+		if envVars["OPENAI_API_KEY"] != "atlas-test-key" {
+			t.Errorf("expected OPENAI_API_KEY 'atlas-test-key', got '%s'", envVars["OPENAI_API_KEY"])
+		}
+		if envVars["OPENAI_BASE_URL"] != agentpod.AtlasCloudDefaultBaseURL {
+			t.Errorf("expected OPENAI_BASE_URL '%s', got '%s'", agentpod.AtlasCloudDefaultBaseURL, envVars["OPENAI_BASE_URL"])
+		}
+		if envVars["ATLASCLOUD_BASE_URL"] != agentpod.AtlasCloudDefaultBaseURL {
+			t.Errorf("expected ATLASCLOUD_BASE_URL '%s', got '%s'", agentpod.AtlasCloudDefaultBaseURL, envVars["ATLASCLOUD_BASE_URL"])
+		}
+		if envVars["ATLASCLOUD_API_BASE"] != agentpod.AtlasCloudDefaultBaseURL {
+			t.Errorf("expected ATLASCLOUD_API_BASE '%s', got '%s'", agentpod.AtlasCloudDefaultBaseURL, envVars["ATLASCLOUD_API_BASE"])
+		}
+		if envVars["ATLAS_CLOUD_API_BASE"] != agentpod.AtlasCloudDefaultBaseURL {
+			t.Errorf("expected ATLAS_CLOUD_API_BASE '%s', got '%s'", agentpod.AtlasCloudDefaultBaseURL, envVars["ATLAS_CLOUD_API_BASE"])
+		}
+	})
+
+	t.Run("custom base URL", func(t *testing.T) {
+		creds := map[string]string{
+			"api_key":  "atlas-test-key",
+			"base_url": "https://atlas.example/v1",
+		}
+
+		envVars := service.formatEnvVars(agentpod.AIProviderTypeAtlasCloud, creds)
+
+		if envVars["OPENAI_BASE_URL"] != "https://atlas.example/v1" {
+			t.Errorf("expected OPENAI_BASE_URL custom value, got '%s'", envVars["OPENAI_BASE_URL"])
+		}
+		if envVars["ATLASCLOUD_BASE_URL"] != "https://atlas.example/v1" {
+			t.Errorf("expected ATLASCLOUD_BASE_URL custom value, got '%s'", envVars["ATLASCLOUD_BASE_URL"])
+		}
+	})
+}
+
 func TestGetAIProviderEnvVars(t *testing.T) {
 	db := setupTestDB(t)
 	service := newTestAIProviderService(db, nil)
@@ -128,6 +178,33 @@ func TestGetAIProviderEnvVarsByID(t *testing.T) {
 
 	if envVars["ANTHROPIC_API_KEY"] != "by-id-key" {
 		t.Errorf("expected ANTHROPIC_API_KEY 'by-id-key', got '%s'", envVars["ANTHROPIC_API_KEY"])
+	}
+}
+
+func TestGetAIProviderEnvVarsByID_AtlasCloud(t *testing.T) {
+	db := setupTestDB(t)
+	service := newTestAIProviderService(db, nil)
+	ctx := context.Background()
+
+	creds := map[string]string{"api_key": "atlas-by-id-key"}
+	provider, err := service.CreateUserProvider(ctx, 1, agentpod.AIProviderTypeAtlasCloud, "Atlas Cloud", creds, true)
+	if err != nil {
+		t.Fatalf("failed to create provider: %v", err)
+	}
+
+	envVars, err := service.GetAIProviderEnvVarsByID(ctx, provider.ID)
+	if err != nil {
+		t.Fatalf("failed to get env vars by ID: %v", err)
+	}
+
+	if envVars["ATLASCLOUD_API_KEY"] != "atlas-by-id-key" {
+		t.Errorf("expected ATLASCLOUD_API_KEY 'atlas-by-id-key', got '%s'", envVars["ATLASCLOUD_API_KEY"])
+	}
+	if envVars["OPENAI_API_KEY"] != "atlas-by-id-key" {
+		t.Errorf("expected OPENAI_API_KEY 'atlas-by-id-key', got '%s'", envVars["OPENAI_API_KEY"])
+	}
+	if envVars["OPENAI_BASE_URL"] != agentpod.AtlasCloudDefaultBaseURL {
+		t.Errorf("expected OPENAI_BASE_URL '%s', got '%s'", agentpod.AtlasCloudDefaultBaseURL, envVars["OPENAI_BASE_URL"])
 	}
 }
 

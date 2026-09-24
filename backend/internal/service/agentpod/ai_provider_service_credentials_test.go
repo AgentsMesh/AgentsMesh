@@ -138,6 +138,18 @@ func TestValidateCredentials(t *testing.T) {
 			credentials:  map[string]string{},
 			expectError:  true,
 		},
+		{
+			name:         "atlascloud with api_key",
+			providerType: agentpod.AIProviderTypeAtlasCloud,
+			credentials:  map[string]string{"api_key": "atlas-test"},
+			expectError:  false,
+		},
+		{
+			name:         "atlascloud without api_key",
+			providerType: agentpod.AIProviderTypeAtlasCloud,
+			credentials:  map[string]string{},
+			expectError:  true,
+		},
 	}
 
 	for _, tt := range tests {

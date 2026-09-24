@@ -46,10 +46,13 @@ func (UserAIProvider) TableName() string {
 }
 
 const (
-	AIProviderTypeClaude = "claude"
-	AIProviderTypeGemini = "gemini"
-	AIProviderTypeCodex  = "codex"
-	AIProviderTypeOpenAI = "openai"
+	AIProviderTypeClaude     = "claude"
+	AIProviderTypeGemini     = "gemini"
+	AIProviderTypeCodex      = "codex"
+	AIProviderTypeOpenAI     = "openai"
+	AIProviderTypeAtlasCloud = "atlascloud"
+
+	AtlasCloudDefaultBaseURL = "https://api.atlascloud.ai/v1"
 )
 
 type ClaudeCredentials struct {
@@ -66,6 +69,11 @@ type OpenAICredentials struct {
 
 type GeminiCredentials struct {
 	APIKey string `json:"api_key"`
+}
+
+type AtlasCloudCredentials struct {
+	APIKey  string `json:"api_key"`
+	BaseURL string `json:"base_url,omitempty"`
 }
 
 var ProviderEnvVarMapping = map[string]map[string]string{
@@ -85,5 +93,9 @@ var ProviderEnvVarMapping = map[string]map[string]string{
 	AIProviderTypeCodex: {
 		"api_key":      "OPENAI_API_KEY",
 		"organization": "OPENAI_ORG_ID",
+	},
+	AIProviderTypeAtlasCloud: {
+		"api_key":  "ATLASCLOUD_API_KEY",
+		"base_url": "ATLASCLOUD_BASE_URL",
 	},
 }

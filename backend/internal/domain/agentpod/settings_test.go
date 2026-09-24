@@ -16,6 +16,7 @@ func TestAIProviderTypeConstants(t *testing.T) {
 		{AIProviderTypeGemini, "gemini"},
 		{AIProviderTypeCodex, "codex"},
 		{AIProviderTypeOpenAI, "openai"},
+		{AIProviderTypeAtlasCloud, "atlascloud"},
 	}
 
 	for _, tt := range tests {
@@ -143,7 +144,13 @@ func TestUserAIProviderStruct(t *testing.T) {
 }
 
 func TestUserAIProviderWithAllProviderTypes(t *testing.T) {
-	types := []string{AIProviderTypeClaude, AIProviderTypeGemini, AIProviderTypeCodex, AIProviderTypeOpenAI}
+	types := []string{
+		AIProviderTypeClaude,
+		AIProviderTypeGemini,
+		AIProviderTypeCodex,
+		AIProviderTypeOpenAI,
+		AIProviderTypeAtlasCloud,
+	}
 
 	for _, pt := range types {
 		p := UserAIProvider{ProviderType: pt}
@@ -201,6 +208,20 @@ func TestGeminiCredentialsStruct(t *testing.T) {
 	}
 }
 
+func TestAtlasCloudCredentialsStruct(t *testing.T) {
+	creds := AtlasCloudCredentials{
+		APIKey:  "atlas-key",
+		BaseURL: AtlasCloudDefaultBaseURL,
+	}
+
+	if creds.APIKey != "atlas-key" {
+		t.Errorf("expected APIKey 'atlas-key', got %s", creds.APIKey)
+	}
+	if creds.BaseURL != AtlasCloudDefaultBaseURL {
+		t.Errorf("expected BaseURL '%s', got %s", AtlasCloudDefaultBaseURL, creds.BaseURL)
+	}
+}
+
 // --- Test ProviderEnvVarMapping ---
 
 func TestProviderEnvVarMappingClaude(t *testing.T) {
@@ -250,8 +271,25 @@ func TestProviderEnvVarMappingCodex(t *testing.T) {
 	}
 }
 
+func TestProviderEnvVarMappingAtlasCloud(t *testing.T) {
+	mapping := ProviderEnvVarMapping[AIProviderTypeAtlasCloud]
+
+	if mapping["api_key"] != "ATLASCLOUD_API_KEY" {
+		t.Errorf("expected 'ATLASCLOUD_API_KEY', got %s", mapping["api_key"])
+	}
+	if mapping["base_url"] != "ATLASCLOUD_BASE_URL" {
+		t.Errorf("expected 'ATLASCLOUD_BASE_URL', got %s", mapping["base_url"])
+	}
+}
+
 func TestProviderEnvVarMappingAllProviders(t *testing.T) {
-	providers := []string{AIProviderTypeClaude, AIProviderTypeOpenAI, AIProviderTypeGemini, AIProviderTypeCodex}
+	providers := []string{
+		AIProviderTypeClaude,
+		AIProviderTypeOpenAI,
+		AIProviderTypeGemini,
+		AIProviderTypeCodex,
+		AIProviderTypeAtlasCloud,
+	}
 
 	for _, provider := range providers {
 		mapping, exists := ProviderEnvVarMapping[provider]
