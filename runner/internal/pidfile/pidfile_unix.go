@@ -17,8 +17,8 @@ import (
 // CleanupStaleProcess finds and kills any leftover runner from a previous run.
 // Safe to call when no stale process exists (no-op).
 // Returns error only if it cannot kill the stale process.
-func CleanupStaleProcess() error {
-	pidPath := GetPath()
+func CleanupStaleProcess(stateDir string) error {
+	pidPath := GetPath(stateDir)
 	if pidPath == "" {
 		return nil
 	}

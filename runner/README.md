@@ -94,6 +94,33 @@ default_agent: claude-code
 log_level: info
 ```
 
+### Multiple runners on one host
+
+Three optional fields let you run several runners side-by-side without
+the per-instance state colliding on `~/.agentsmesh/runner.pid` or the
+console bind port. Empty values fall back to today's defaults, so
+single-instance setups need no change.
+
+```yaml
+# Instance A — ~/.agentsmesh/config-a.yaml
+data_dir: ~/.agentsmesh-a       # certs + plugins
+state_dir: /tmp/agentsmesh-a    # runner.pid + locks (cleared on reboot)
+console_port: 19080
+mcp_port: 19000
+
+# Instance B — ~/.agentsmesh/config-b.yaml
+data_dir: ~/.agentsmesh-b
+state_dir: /tmp/agentsmesh-b
+console_port: 19081
+mcp_port: 19001
+```
+
+Run both:
+```bash
+agentsmesh-runner run --config ~/.agentsmesh/config-a.yaml &
+agentsmesh-runner run --config ~/.agentsmesh/config-b.yaml &
+```
+
 ## Web Console
 
 When using the web console command, a local web UI is available at:

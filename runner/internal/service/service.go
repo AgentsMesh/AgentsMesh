@@ -55,13 +55,15 @@ func NewProgram(cfg *config.Config) *Program {
 func (p *Program) Start(s service.Service) error {
 	log.Info("Service starting")
 
+	stateDir := p.cfg.GetStateDir()
+
 	// Clean up stale process (non-fatal in service mode — manager will retry)
-	if err := pidfile.CleanupStaleProcess(); err != nil {
+	if err := pidfile.CleanupStaleProcess(stateDir); err != nil {
 		log.Warn("Failed to clean up stale process", "error", err)
 	}
 
 	// Write PID file
-	if err := pidfile.Write(); err != nil {
+	if err := pidfile.Write(stateDir); err != nil {
 		log.Warn("Failed to write PID file", "error", err)
 	}
 
@@ -119,7 +121,7 @@ func (p *Program) Stop(s service.Service) error {
 	// shutdown, fail to detect the still-running process, and hit port conflicts.
 	p.wg.Wait()
 
-	pidfile.Remove()
+	pidfile.Remove(p.cfg.GetStateDir())
 
 	p.sendStatus(Status{Running: false})
 	log.Info("Service stopped")

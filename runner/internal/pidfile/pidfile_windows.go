@@ -16,8 +16,8 @@ import (
 // CleanupStaleProcess finds and kills any leftover runner from a previous run.
 // Mirrors the Unix logic: checks if the process is alive, guards against PID reuse,
 // kills the process tree, and waits for exit before removing the PID file.
-func CleanupStaleProcess() error {
-	pidPath := GetPath()
+func CleanupStaleProcess(stateDir string) error {
+	pidPath := GetPath(stateDir)
 	if pidPath == "" {
 		return nil
 	}

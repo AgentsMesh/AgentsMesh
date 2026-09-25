@@ -26,6 +26,8 @@ import (
 )
 
 // DefaultConsolePort is the default port for the web console.
+// Used as the flag default for the `webconsole` subcommand; the runner
+// itself reads cfg.GetConsolePort() so operators can override per-instance.
 const DefaultConsolePort = 19080
 
 func runRunner(args []string) {
@@ -160,8 +162,10 @@ func startRunner(cfg *config.Config) (ok bool) {
 	// Clean up leftover binaries from previous self-update (Windows rename-self strategy)
 	updater.CleanupOldBinaries()
 
+	stateDir := cfg.GetStateDir()
+
 	// Clean up stale runner process from previous run
-	if err := pidfile.CleanupStaleProcess(); err != nil {
+	if err := pidfile.CleanupStaleProcess(stateDir); err != nil {
 		log.Error("Failed to clean up stale runner", "error", err)
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return false
@@ -172,11 +176,11 @@ func startRunner(cfg *config.Config) (ok bool) {
 	mcp.TryReclaimPort(cfg.GetMCPPort())
 
 	// Write PID file for next startup to find us
-	if err := pidfile.Write(); err != nil {
+	if err := pidfile.Write(stateDir); err != nil {
 		log.Warn("Failed to write PID file", "error", err)
 		// Non-fatal: runner works fine without it, just can't auto-cleanup next time
 	}
-	defer pidfile.Remove()
+	defer pidfile.Remove(stateDir)
 
 	// Create runner dependencies (I/O: workspace, gRPC, certs, pod daemon)
 	deps, err := runner.CreateDeps(cfg)
@@ -208,7 +212,7 @@ func startRunner(cfg *config.Config) (ok bool) {
 	r.SetRestartFunc(execRestartFunc(execPath))
 
 	// Create web console (lifecycle managed by Supervisor)
-	consoleServer := console.New(cfg, DefaultConsolePort, version)
+	consoleServer := console.New(cfg, cfg.GetConsolePort(), version)
 	r.AddService(&lifecycle.ConsoleService{Server: consoleServer})
 
 	// Setup context with cancellation

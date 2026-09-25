@@ -246,4 +246,10 @@ type savedGRPCConfig struct {
 	DefaultShell      string `yaml:"default_shell"`
 	HealthCheckPort   int    `yaml:"health_check_port"`
 	LogLevel          string `yaml:"log_level"`
+
+	// Multi-instance knobs — omitted when at default so existing
+	// single-instance setups keep a minimal config.yaml.
+	DataDir     string `yaml:"data_dir,omitempty"`
+	StateDir    string `yaml:"state_dir,omitempty"`
+	ConsolePort int    `yaml:"console_port,omitempty"`
 }
