@@ -53,6 +53,11 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 	// Pre-declare so callbacks can capture it (NewClient returns the same pointer).
 	var acpClient *acp.ACPClient
 
+	// Resolve the workspace-scoped edit policy once per pod: launch args carry
+	// the AgentFile-resolved permission mode, which decides whether edits
+	// inside pod.WorkDir may skip the human approval round-trip.
+	editPolicy := newACPWorkspaceEditPolicy(pod.WorkDir, pod.LaunchArgs)
+
 	// Create ACPClient with event callbacks that forward via Relay.
 	acpClient = acp.NewClient(acp.ClientConfig{
 		Command:       pod.LaunchCommand,
@@ -78,9 +83,7 @@ func (h *RunnerMessageHandler) wireAndStartACPPod(pod *Pod, cmd *runnerv1.Create
 				sendAcpViaRelay(pod, "thinkingUpdate", sessionID, update)
 			},
 			OnPermissionRequest: func(req acp.PermissionRequest) {
-				// Track pending permission for snapshots.
-				acpClient.AddPendingPermission(req)
-				sendAcpViaRelay(pod, "permissionRequest", req.SessionID, req)
+				handleACPPermissionRequest(acpClient, pod, editPolicy, req)
 			},
 			OnStateChange: func(newState string) {
 				// Lifecycle status update via gRPC (backend updates DB).
@@ -193,4 +196,26 @@ func (h *RunnerMessageHandler) handleACPExit(podKey string, exitCode int) {
 func inferTransportType(command string) string {
 	base := strings.TrimSuffix(filepath.Base(command), filepath.Ext(command))
 	return acp.TransportTypeForCommand(base)
+}
+
+// handleACPPermissionRequest routes one agent permission request. Workspace-local
+// file edits are answered inline: ACP mode runs the agent non-interactively, so
+// a request that waits for an attached browser denies every Edit in a headless
+// or autopilot pod (issue #241). Everything else keeps the human-approval flow.
+func handleACPPermissionRequest(acpClient *acp.ACPClient, pod *Pod, policy acpWorkspaceEditPolicy, req acp.PermissionRequest) {
+	if policy.shouldAutoApprove(req) {
+		go func() {
+			if err := acpClient.RespondToPermission(req.RequestID, true, nil); err != nil {
+				logger.Pod().Warn("failed to auto-approve workspace edit",
+					"pod_key", pod.PodKey, "request_id", req.RequestID, "error", err)
+				return
+			}
+			logger.Pod().Info("auto-approved workspace edit",
+				"pod_key", pod.PodKey, "tool", req.ToolName, "request_id", req.RequestID)
+		}()
+		return
+	}
+	// Track pending permission for snapshots.
+	acpClient.AddPendingPermission(req)
+	sendAcpViaRelay(pod, "permissionRequest", req.SessionID, req)
 }

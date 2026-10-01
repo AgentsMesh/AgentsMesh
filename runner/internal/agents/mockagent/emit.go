@@ -1,6 +1,8 @@
 package mockagent
 
 import (
+	"os"
+
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
 )
 
@@ -76,12 +78,18 @@ func emitToolCallUpdate(w *acp.Writer, id, title, status, resultText, errorMessa
 // fixed id so a test scenario can predict & respond to it. The returned
 // id is the same one passed in (helper convenience).
 func emitPermissionRequest(w *acp.Writer, requestID int64, toolCallID, toolTitle string) (int64, error) {
+	toolCall := map[string]any{
+		"toolCallId": toolCallID,
+		"title":      toolTitle,
+	}
+	// Optional target path so a permission consumer can scope the request
+	// (e.g. decide whether the edit stays inside the pod workspace).
+	if path := os.Getenv("ACP_MOCK_EDIT_PATH"); path != "" {
+		toolCall["rawInput"] = map[string]any{"file_path": path}
+	}
 	err := w.WriteRequestWithID(requestID, "session/request_permission", map[string]any{
 		"sessionId": mockSessionID,
-		"toolCall": map[string]any{
-			"toolCallId": toolCallID,
-			"title":      toolTitle,
-		},
+		"toolCall":  toolCall,
 		"options": []map[string]string{
 			{"optionId": "allow_once", "name": "Allow", "kind": "allow_once"},
 			{"optionId": "reject_once", "name": "Deny", "kind": "reject_once"},
