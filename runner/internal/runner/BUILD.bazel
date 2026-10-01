@@ -3,6 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "runner",
     srcs = [
+        "acp_workspace_edit_policy.go",
         "agents_import.go",
         "autopilot_store.go",
         "claude_initial_config.go",
@@ -133,6 +134,7 @@ alias(
 go_test(
     name = "runner_test",
     srcs = [
+        "acp_workspace_edit_policy_test.go",
         "autopilot_store_test.go",
         "claude_initial_config_test.go",
         "copy_dir_selective_test.go",
@@ -227,6 +229,7 @@ go_test(
         "//proto/runner/v1:runner_go_proto",
         "//runner/internal/acp",
         "//runner/internal/agentkit",
+        "//runner/internal/agents/mockagent",
         "//runner/internal/autopilot",
         "//runner/internal/client",
         "//runner/internal/config",
