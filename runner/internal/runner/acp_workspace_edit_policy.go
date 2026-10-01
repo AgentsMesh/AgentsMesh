@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/anthropics/agentsmesh/runner/internal/acp"
+	"github.com/anthropics/agentsmesh/runner/internal/logger"
 )
 
 // acpWorkspaceEditPolicy answers ACP file-edit permission requests that can only
@@ -92,13 +93,53 @@ func pathInsideWorkspace(root, target string) bool {
 	if !filepath.IsAbs(target) {
 		return false
 	}
-	rootAbs, err := filepath.Abs(root)
-	if err != nil {
-		return false
-	}
-	rel, err := filepath.Rel(filepath.Clean(rootAbs), filepath.Clean(target))
-	if err != nil {
+	// Abs and Rel only fail on degenerate input (unusable working directory,
+	// mixed absolute/relative operands). They share one fail-closed guard: an
+	// Abs failure leaves rootAbs empty, which makes Rel fail as well.
+	rootAbs, absErr := filepath.Abs(root)
+	rel, relErr := filepath.Rel(rootAbs, filepath.Clean(target))
+	if absErr != nil || relErr != nil {
 		return false
 	}
 	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))
+}
+
+// acpPermissionResponder is the slice of the ACP client the inline auto-approval
+// needs. Narrowing it keeps the permission routing unit-testable without a live
+// subprocess; *acp.ACPClient satisfies it.
+type acpPermissionResponder interface {
+	RespondToPermission(requestID string, approved bool, updatedInput map[string]any) error
+	AddPendingPermission(req acp.PermissionRequest)
+}
+
+// acpPermissionHandler builds the ACP OnPermissionRequest callback for a pod.
+// The client is captured by reference because NewClient takes its callbacks
+// before it returns the client they must answer through, so the variable is
+// still nil while this handler is constructed.
+func acpPermissionHandler(client **acp.ACPClient, pod *Pod, policy acpWorkspaceEditPolicy) func(acp.PermissionRequest) {
+	return func(req acp.PermissionRequest) {
+		handleACPPermissionRequest(*client, pod, policy, req)
+	}
+}
+
+// handleACPPermissionRequest routes one agent permission request. Workspace-local
+// file edits are answered inline: ACP mode runs the agent non-interactively, so
+// a request that waits for an attached browser denies every Edit in a headless
+// or autopilot pod (issue #241). Everything else keeps the human-approval flow.
+func handleACPPermissionRequest(responder acpPermissionResponder, pod *Pod, policy acpWorkspaceEditPolicy, req acp.PermissionRequest) {
+	if policy.shouldAutoApprove(req) {
+		go func() {
+			if err := responder.RespondToPermission(req.RequestID, true, nil); err != nil {
+				logger.Pod().Warn("failed to auto-approve workspace edit",
+					"pod_key", pod.PodKey, "request_id", req.RequestID, "error", err)
+				return
+			}
+			logger.Pod().Info("auto-approved workspace edit",
+				"pod_key", pod.PodKey, "tool", req.ToolName, "request_id", req.RequestID)
+		}()
+		return
+	}
+	// Track pending permission for snapshots.
+	responder.AddPendingPermission(req)
+	sendAcpViaRelay(pod, "permissionRequest", req.SessionID, req)
 }

@@ -2,6 +2,7 @@ package runner
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -92,6 +93,9 @@ func TestACPPodAutoApprovesWorkspaceEdit(t *testing.T) {
 	var forwarded []acp.PermissionRequest
 	pod := &Pod{PodKey: "mock-edit-pod"}
 	var client *acp.ACPClient
+	// Build the handler the same way wireAndStartACPPod does, so this test
+	// covers the production callback factory rather than a local stand-in.
+	handler := acpPermissionHandler(&client, pod, policy)
 	client = acp.NewClient(acp.ClientConfig{
 		Command: os.Args[0],
 		Args:    []string{"-test.run=^TestACPMockEditAgent$"},
@@ -103,7 +107,7 @@ func TestACPPodAutoApprovesWorkspaceEdit(t *testing.T) {
 				if !policy.shouldAutoApprove(req) {
 					forwarded = append(forwarded, req)
 				}
-				handleACPPermissionRequest(client, pod, policy, req)
+				handler(req)
 			},
 		},
 	})
@@ -134,4 +138,98 @@ func TestACPPodAutoApprovesWorkspaceEdit(t *testing.T) {
 	}
 	t.Fatalf("workspace edit never succeeded; forwarded=%+v tool calls=%+v",
 		forwarded, client.GetSessionSnapshot().ToolCalls)
+}
+
+// A launcher may render the same flag as one token (--input-format=stream-json)
+// instead of two. Both spellings describe an ACP session and must be classified
+// identically, otherwise the workspace edit policy silently stops applying.
+func TestACPWorkspaceEditPolicySingleTokenInputFormat(t *testing.T) {
+	ws := t.TempDir()
+	args := []string{"-p", "--input-format=stream-json"}
+	if !newACPWorkspaceEditPolicy(ws, args).shouldAutoApprove(editRequest(t, filepath.Join(ws, "a.txt"))) {
+		t.Error("--input-format=stream-json must classify as an ACP session")
+	}
+}
+
+// fakeACPResponder stands in for *acp.ACPClient so the permission routing can be
+// exercised without spawning an agent: it records the response, reports whether
+// the request was held for human approval, and can be told to fail the write.
+type fakeACPResponder struct {
+	err       error
+	responded []string
+	pending   []acp.PermissionRequest
+	done      chan struct{}
+}
+
+func (f *fakeACPResponder) RespondToPermission(requestID string, _ bool, _ map[string]any) error {
+	f.responded = append(f.responded, requestID)
+	if f.done != nil {
+		f.done <- struct{}{}
+	}
+	return f.err
+}
+
+func (f *fakeACPResponder) AddPendingPermission(req acp.PermissionRequest) {
+	f.pending = append(f.pending, req)
+}
+
+func (f *fakeACPResponder) waitForResponse(t *testing.T) {
+	t.Helper()
+	select {
+	case <-f.done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("workspace edit was never answered")
+	}
+}
+
+func TestHandleACPPermissionRequestAutoApprovesInWorkspace(t *testing.T) {
+	ws := t.TempDir()
+	responder := &fakeACPResponder{done: make(chan struct{}, 1)}
+	req := editRequest(t, filepath.Join(ws, "src", "component.css"))
+	req.RequestID = "req-inside"
+
+	handleACPPermissionRequest(responder, &Pod{PodKey: "pod-1"}, newACPWorkspaceEditPolicy(ws, claudeACPArgs()), req)
+	responder.waitForResponse(t)
+
+	if len(responder.responded) != 1 || responder.responded[0] != "req-inside" {
+		t.Errorf("expected one inline approval for req-inside, got %v", responder.responded)
+	}
+	if len(responder.pending) != 0 {
+		t.Errorf("auto-approved edit must not stay pending for a human: %+v", responder.pending)
+	}
+}
+
+// A failed inline answer must not silently fall through to the browser flow: the
+// request would then never resolve, which is the behaviour issue #241 reports.
+func TestHandleACPPermissionRequestDropsFailedInlineAnswer(t *testing.T) {
+	ws := t.TempDir()
+	responder := &fakeACPResponder{err: errors.New("transport closed"), done: make(chan struct{}, 1)}
+	req := editRequest(t, filepath.Join(ws, "src", "component.css"))
+	req.RequestID = "req-failed"
+
+	handleACPPermissionRequest(responder, &Pod{PodKey: "pod-2"}, newACPWorkspaceEditPolicy(ws, claudeACPArgs()), req)
+	responder.waitForResponse(t)
+
+	if len(responder.responded) != 1 {
+		t.Errorf("expected one attempted inline approval, got %v", responder.responded)
+	}
+	if len(responder.pending) != 0 {
+		t.Errorf("failed inline approval must not be re-queued for a human: %+v", responder.pending)
+	}
+}
+
+func TestHandleACPPermissionRequestKeepsHumanApprovalOutsideWorkspace(t *testing.T) {
+	ws := t.TempDir()
+	responder := &fakeACPResponder{}
+	req := editRequest(t, filepath.Join(filepath.Dir(ws), "sibling.txt"))
+	req.RequestID = "req-outside"
+
+	handleACPPermissionRequest(responder, &Pod{PodKey: "pod-3"}, newACPWorkspaceEditPolicy(ws, claudeACPArgs()), req)
+
+	if len(responder.responded) != 0 {
+		t.Errorf("out-of-workspace edit must never be auto-approved: %v", responder.responded)
+	}
+	if len(responder.pending) != 1 || responder.pending[0].RequestID != "req-outside" {
+		t.Errorf("out-of-workspace edit must stay pending for a human: %+v", responder.pending)
+	}
 }
