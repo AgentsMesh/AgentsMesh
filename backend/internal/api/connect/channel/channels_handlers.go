@@ -171,6 +171,26 @@ func (s *Server) ArchiveChannel(
 	return connect.NewResponse(&channelv1.ArchiveChannelResponse{Message: "Channel archived"}), nil
 }
 
+func (s *Server) DeleteChannel(
+	ctx context.Context, req *connect.Request[channelv1.DeleteChannelRequest],
+) (*connect.Response[channelv1.DeleteChannelResponse], error) {
+	ctx, _, err := interceptors.ResolveOrgScope(ctx, req.Msg, s.orgSvc)
+	if err != nil {
+		return nil, err
+	}
+	ch, err := s.requireChannelAccess(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !canDeleteChannel(ch, middleware.GetTenant(ctx)) {
+		return nil, connect.NewError(connect.CodePermissionDenied, errors.New("only the channel creator or an organization admin can delete this channel"))
+	}
+	if err := s.channelSvc.DeleteChannel(ctx, ch.ID); err != nil {
+		return nil, mapServiceError(err)
+	}
+	return connect.NewResponse(&channelv1.DeleteChannelResponse{Message: "Channel deleted"}), nil
+}
+
 func (s *Server) UnarchiveChannel(
 	ctx context.Context, req *connect.Request[channelv1.UnarchiveChannelRequest],
 ) (*connect.Response[channelv1.UnarchiveChannelResponse], error) {
@@ -186,6 +206,16 @@ func (s *Server) UnarchiveChannel(
 		return nil, mapServiceError(err)
 	}
 	return connect.NewResponse(&channelv1.UnarchiveChannelResponse{Message: "Channel unarchived"}), nil
+}
+
+func canDeleteChannel(ch *channeldomain.Channel, tenant *middleware.TenantContext) bool {
+	if ch == nil || tenant == nil {
+		return false
+	}
+	if tenant.UserRole == "owner" || tenant.UserRole == "admin" {
+		return true
+	}
+	return ch.CreatedByUserID != nil && *ch.CreatedByUserID == tenant.UserID
 }
 
 // nilIfZeroPtr treats a proto-optional int64 of 0 as "absent" because the

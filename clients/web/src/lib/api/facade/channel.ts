@@ -17,6 +17,7 @@ import {
   updateChannel as updateChannelConnect,
   archiveChannel as archiveChannelConnect,
   unarchiveChannel as unarchiveChannelConnect,
+  deleteChannel as deleteChannelConnect,
   searchChannelMessages as searchChannelMessagesConnect,
   listChannelPods as listChannelPodsConnect,
   listChannelPodsRaw,
@@ -106,6 +107,11 @@ export const channelApi = {
 
   unarchive: async (id: number) => {
     await unarchiveChannelConnect(orgSlug(), id);
+    return { message: "ok" };
+  },
+
+  delete: async (id: number) => {
+    await deleteChannelConnect(orgSlug(), id);
     return { message: "ok" };
   },
 

@@ -129,7 +129,8 @@
       "title": "Channel 设置",
       "tabs": {
         "basic": "基本",
-        "archive": "归档"
+        "archive": "归档",
+        "danger": "危险操作"
       },
       "name": "Channel 名称",
       "description": "描述",
@@ -144,7 +145,11 @@
       "unarchiveHint": "Channel 当前处于归档状态，恢复后成员可重新访问。",
       "archived": "已归档",
       "unarchived": "已恢复",
-      "archiveFailed": "归档操作失败"
+      "archiveFailed": "归档操作失败",
+      "delete": "删除 Channel",
+      "deleteHint": "永久删除此 Channel 及其全部消息，此操作无法撤销。",
+      "deleted": "Channel 已删除",
+      "deleteFailed": "删除 Channel 失败"
     },
     "attachment": {
       "download": "下载附件",

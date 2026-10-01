@@ -45,6 +45,11 @@ impl WasmChannelService {
         self.0.unarchive_channel_connect(request).await
     }
 
+    #[wasm_bindgen(js_name = deleteChannelConnect)]
+    pub async fn delete_channel_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
+        self.0.delete_channel_connect(request).await
+    }
+
     #[wasm_bindgen(js_name = getChannelDocumentConnect)]
     pub async fn get_channel_document_connect(&self, request: &[u8]) -> Result<Vec<u8>, String> {
         self.0.get_channel_document_connect(request).await

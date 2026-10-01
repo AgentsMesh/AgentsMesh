@@ -12,6 +12,7 @@ import {
   updateChannel as updateChannelConnect,
   archiveChannel as archiveChannelConnect,
   unarchiveChannel as unarchiveChannelConnect,
+  deleteChannel as deleteChannelConnect,
   joinChannelPod,
   leaveChannelPod,
   joinChannel as joinChannelConnect,
@@ -58,7 +59,7 @@ interface ChannelState {
     visibility?: "public" | "private"; memberIds?: number[];
   }) => Promise<Channel>;
   updateChannel: (id: number, d: Partial<{ name: string; description: string; document: string }>) => Promise<Channel>;
-  archiveChannel: (id: number) => Promise<void>; unarchiveChannel: (id: number) => Promise<void>;
+  archiveChannel: (id: number) => Promise<void>; unarchiveChannel: (id: number) => Promise<void>; deleteChannel: (id: number) => Promise<void>;
   joinChannel: (channelId: number, podKey: string) => Promise<void>; leaveChannel: (channelId: number, podKey: string) => Promise<void>;
   joinUserChannel: (channelId: number) => Promise<void>;
   leaveUserChannel: (channelId: number) => Promise<void>;
@@ -151,6 +152,21 @@ export const useChannelStore = create<ChannelState>((set, get) => ({
       bump();
     }
     catch (e: unknown) { set({ error: getErrorMessage(e, "Failed to archive channel") }); throw e; }
+  },
+
+  deleteChannel: async (id) => {
+    try {
+      await deleteChannelConnect(orgSlug(), id);
+      await get().fetchChannels({ includeArchived: true });
+      if (get().selectedChannelId === id) {
+        set({ selectedChannelId: null, currentChannel: null });
+        svc().select_channel(undefined as unknown as bigint);
+      }
+      bump();
+    } catch (e: unknown) {
+      set({ error: getErrorMessage(e, "Failed to delete channel") });
+      throw e;
+    }
   },
 
   unarchiveChannel: async (id) => {

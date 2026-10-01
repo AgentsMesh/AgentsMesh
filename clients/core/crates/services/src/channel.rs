@@ -48,6 +48,7 @@ impl ChannelService {
     connect_bridge!(update_channel_connect, UpdateChannelRequest, update_channel_connect);
     connect_bridge!(archive_channel_connect, ArchiveChannelRequest, archive_channel_connect);
     connect_bridge!(unarchive_channel_connect, UnarchiveChannelRequest, unarchive_channel_connect);
+    connect_bridge!(delete_channel_connect, DeleteChannelRequest, delete_channel_connect);
     connect_bridge!(get_channel_document_connect, GetChannelDocumentRequest, get_channel_document_connect);
     connect_bridge!(update_channel_document_connect, UpdateChannelDocumentRequest, update_channel_document_connect);
     connect_bridge!(list_channel_messages_connect, ListChannelMessagesRequest, list_channel_messages_connect);
