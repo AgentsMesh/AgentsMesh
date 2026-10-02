@@ -91,6 +91,29 @@ func TestMapServiceError(t *testing.T) {
 	}
 }
 
+func TestCanDeleteChannel(t *testing.T) {
+	creatorID := int64(42)
+	otherID := int64(99)
+	cases := []struct {
+		name   string
+		ch     *channeldomain.Channel
+		tenant *middleware.TenantContext
+		want   bool
+	}{
+		{name: "creator", ch: &channeldomain.Channel{CreatedByUserID: &creatorID}, tenant: &middleware.TenantContext{UserID: 42, UserRole: "member"}, want: true},
+		{name: "other member", ch: &channeldomain.Channel{CreatedByUserID: &creatorID}, tenant: &middleware.TenantContext{UserID: 99, UserRole: "member"}, want: false},
+		{name: "org admin", ch: &channeldomain.Channel{CreatedByUserID: &otherID}, tenant: &middleware.TenantContext{UserID: 42, UserRole: "admin"}, want: true},
+		{name: "org owner", ch: &channeldomain.Channel{}, tenant: &middleware.TenantContext{UserID: 42, UserRole: "owner"}, want: true},
+		{name: "nil channel", ch: nil, tenant: &middleware.TenantContext{UserID: 42, UserRole: "admin"}, want: false},
+		{name: "nil tenant", ch: &channeldomain.Channel{CreatedByUserID: &creatorID}, tenant: nil, want: false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, canDeleteChannel(tc.ch, tc.tenant))
+		})
+	}
+}
+
 func TestToProtoChannel_AllFieldsPopulated(t *testing.T) {
 	desc := "General chat"
 	doc := "## docs"
@@ -127,7 +150,7 @@ func TestToProtoChannel_AllFieldsPopulated(t *testing.T) {
 
 func TestToProtoChannel_OptionalsAbsent(t *testing.T) {
 	c := &channeldomain.Channel{
-		ID:             1, OrganizationID: 7, Name: "n",
+		ID: 1, OrganizationID: 7, Name: "n",
 		Visibility: "public",
 		CreatedAt:  mustParseTime(t, "2026-05-12T00:00:00Z"),
 		UpdatedAt:  mustParseTime(t, "2026-05-12T00:00:00Z"),

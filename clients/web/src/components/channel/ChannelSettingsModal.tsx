@@ -9,14 +9,16 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { channelApi } from "@/lib/api/facade/channel";
 import { useChannelStore } from "@/stores/channelStore";
+import { useCurrentOrg, useCurrentUser } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 
-type Tab = "basic" | "archive";
+type Tab = "basic" | "archive" | "danger";
 
 interface SettingsChannel {
   id: number;
   name: string;
   description?: string;
+  created_by_user_id?: number;
   is_archived: boolean;
 }
 
@@ -30,11 +32,20 @@ export function ChannelSettingsModal({ open, onOpenChange, channel }: ChannelSet
   const t = useTranslations("channels.settings");
   const [tab, setTab] = useState<Tab>("basic");
   const fetchChannels = useChannelStore((s) => s.fetchChannels);
+  const deleteChannel = useChannelStore((s) => s.deleteChannel);
+  const currentUser = useCurrentUser();
+  const currentOrg = useCurrentOrg();
+  const canDelete = !!channel && (
+    currentOrg?.role === "owner" ||
+    currentOrg?.role === "admin" ||
+    channel.created_by_user_id === currentUser?.id
+  );
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (channel && open) {
@@ -81,6 +92,20 @@ export function ChannelSettingsModal({ open, onOpenChange, channel }: ChannelSet
     }
   };
 
+  const handleDelete = async () => {
+    if (!channel || !canDelete) return;
+    setDeleting(true);
+    try {
+      await deleteChannel(channel.id);
+      toast.success(t("deleted"));
+      onOpenChange(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("deleteFailed"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!channel) return null;
 
   return (
@@ -93,6 +118,11 @@ export function ChannelSettingsModal({ open, onOpenChange, channel }: ChannelSet
           <TabButton active={tab === "archive"} onClick={() => setTab("archive")}>
             {t("tabs.archive")}
           </TabButton>
+          {canDelete && (
+            <TabButton active={tab === "danger"} onClick={() => setTab("danger")}>
+              {t("tabs.danger")}
+            </TabButton>
+          )}
         </div>
 
         {tab === "basic" ? (
@@ -115,7 +145,7 @@ export function ChannelSettingsModal({ open, onOpenChange, channel }: ChannelSet
               />
             </label>
           </div>
-        ) : (
+        ) : tab === "archive" ? (
           <div className="flex flex-col gap-3 px-6 py-4 text-sm">
             <p className="text-muted-foreground">
               {channel.is_archived ? t("unarchiveHint") : t("archiveHint")}
@@ -128,6 +158,19 @@ export function ChannelSettingsModal({ open, onOpenChange, channel }: ChannelSet
             >
               {archiving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {channel.is_archived ? t("unarchive") : t("archive")}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 px-6 py-4 text-sm">
+            <p className="text-muted-foreground">{t("deleteHint")}</p>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+              data-testid="channel-settings-delete"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("delete")}
             </Button>
           </div>
         )}

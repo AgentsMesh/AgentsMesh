@@ -129,7 +129,8 @@
       "title": "Channel settings",
       "tabs": {
         "basic": "Basic",
-        "archive": "Archive"
+        "archive": "Archive",
+        "danger": "Danger"
       },
       "name": "Channel name",
       "description": "Description",
@@ -144,7 +145,11 @@
       "unarchiveHint": "This channel is currently archived. Unarchiving restores member access.",
       "archived": "Archived",
       "unarchived": "Unarchived",
-      "archiveFailed": "Archive operation failed"
+      "archiveFailed": "Archive operation failed",
+      "delete": "Delete channel",
+      "deleteHint": "Permanently deletes this channel and all of its messages. This action cannot be undone.",
+      "deleted": "Channel deleted",
+      "deleteFailed": "Failed to delete channel"
     },
     "attachment": {
       "download": "Download attachment",

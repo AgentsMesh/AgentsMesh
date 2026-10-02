@@ -45,6 +45,13 @@ impl ApiClient {
         connect_call(self, "/proto.channel.v1.ChannelService/UnarchiveChannel", req).await
     }
 
+    pub async fn delete_channel_connect(
+        &self,
+        req: &channel_proto::DeleteChannelRequest,
+    ) -> Result<channel_proto::DeleteChannelResponse, ApiError> {
+        connect_call(self, "/proto.channel.v1.ChannelService/DeleteChannel", req).await
+    }
+
     pub async fn get_channel_document_connect(
         &self, req: &channel_proto::GetChannelDocumentRequest,
     ) -> Result<channel_proto::GetChannelDocumentResponse, ApiError> {

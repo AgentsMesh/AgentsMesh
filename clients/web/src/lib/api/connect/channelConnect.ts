@@ -25,6 +25,8 @@ import {
   ArchiveChannelResponseSchema,
   UnarchiveChannelRequestSchema,
   UnarchiveChannelResponseSchema,
+  DeleteChannelRequestSchema,
+  DeleteChannelResponseSchema,
   GetChannelDocumentRequestSchema,
   GetChannelDocumentResponseSchema,
   UpdateChannelDocumentRequestSchema,
@@ -215,6 +217,13 @@ export async function unarchiveChannel(orgSlug: string, id: number): Promise<str
   const bytes = toBinary(UnarchiveChannelRequestSchema, req);
   const respBytes = await getChannelService().unarchiveChannelConnect(bytes);
   return fromBinary(UnarchiveChannelResponseSchema, new Uint8Array(respBytes)).message;
+}
+
+export async function deleteChannel(orgSlug: string, id: number): Promise<string> {
+  const req = create(DeleteChannelRequestSchema, { orgSlug, id: BigInt(id) });
+  const bytes = toBinary(DeleteChannelRequestSchema, req);
+  const respBytes = await getChannelService().deleteChannelConnect(bytes);
+  return fromBinary(DeleteChannelResponseSchema, new Uint8Array(respBytes)).message;
 }
 
 // ---------------- Document ----------------

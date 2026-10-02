@@ -129,7 +129,8 @@
       "title": "Channel 設定",
       "tabs": {
         "basic": "基本",
-        "archive": "アーカイブ"
+        "archive": "アーカイブ",
+        "danger": "危険"
       },
       "name": "Channel 名",
       "description": "説明",
@@ -144,7 +145,11 @@
       "unarchiveHint": "この Channel は現在アーカイブされています。アーカイブを解除するとメンバーのアクセスが復元されます。",
       "archived": "アーカイブ済み",
       "unarchived": "アーカイブ解除済み",
-      "archiveFailed": "アーカイブ操作に失敗しました"
+      "archiveFailed": "アーカイブ操作に失敗しました",
+      "delete": "Channel を削除",
+      "deleteHint": "この Channel とすべてのメッセージを完全に削除します。この操作は元に戻せません。",
+      "deleted": "Channel を削除しました",
+      "deleteFailed": "Channel の削除に失敗しました"
     },
     "attachment": {
       "download": "添付ファイルをダウンロード",

@@ -129,7 +129,8 @@
       "title": "Configurações do Channel",
       "tabs": {
         "basic": "Básico",
-        "archive": "Arquivar"
+        "archive": "Arquivar",
+        "danger": "Perigo"
       },
       "name": "Nome do Channel",
       "description": "Descrição",
@@ -144,7 +145,11 @@
       "unarchiveHint": "Este Channel está atualmente arquivado. Desarquivar restaura o acesso dos membros.",
       "archived": "Arquivado",
       "unarchived": "Desarquivado",
-      "archiveFailed": "A operação de arquivamento falhou"
+      "archiveFailed": "A operação de arquivamento falhou",
+      "delete": "Excluir Channel",
+      "deleteHint": "Exclui permanentemente este Channel e todas as suas mensagens. Esta ação não pode ser desfeita.",
+      "deleted": "Channel excluído",
+      "deleteFailed": "Falha ao excluir o Channel"
     },
     "attachment": {
       "download": "Baixar anexo",

@@ -129,7 +129,8 @@
       "title": "Channel-Einstellungen",
       "tabs": {
         "basic": "Allgemein",
-        "archive": "Archiv"
+        "archive": "Archiv",
+        "danger": "Gefahr"
       },
       "name": "Channel-Name",
       "description": "Beschreibung",
@@ -144,7 +145,11 @@
       "unarchiveHint": "Dieser Channel ist derzeit archiviert. Das Aufheben der Archivierung stellt den Zugriff für Mitglieder wieder her.",
       "archived": "Archiviert",
       "unarchived": "Archivierung aufgehoben",
-      "archiveFailed": "Archivierungsvorgang fehlgeschlagen"
+      "archiveFailed": "Archivierungsvorgang fehlgeschlagen",
+      "delete": "Channel löschen",
+      "deleteHint": "Löscht diesen Channel und alle seine Nachrichten dauerhaft. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleted": "Channel gelöscht",
+      "deleteFailed": "Channel konnte nicht gelöscht werden"
     },
     "attachment": {
       "download": "Anhang herunterladen",

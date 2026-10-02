@@ -8,11 +8,11 @@
 // — this migration is unary RPC only.
 //
 // Handler shape follows runbook §3:
-//   * ResolveOrgScope reads org_slug + injects TenantContext.
-//   * Single-entity get/create/update return the entity directly.
-//   * List responses follow {items, total, limit, offset} (cursor-paginated
+//   - ResolveOrgScope reads org_slug + injects TenantContext.
+//   - Single-entity get/create/update return the entity directly.
+//   - List responses follow {items, total, limit, offset} (cursor-paginated
 //     ListChannelMessages also carries has_more).
-//   * Errors map to Connect codes (conventions §10).
+//   - Errors map to Connect codes (conventions §10).
 package channelconnect
 
 import (
@@ -36,6 +36,7 @@ const (
 	UpdateChannelProcedure    = "/" + ServiceName + "/UpdateChannel"
 	ArchiveChannelProcedure   = "/" + ServiceName + "/ArchiveChannel"
 	UnarchiveChannelProcedure = "/" + ServiceName + "/UnarchiveChannel"
+	DeleteChannelProcedure    = "/" + ServiceName + "/DeleteChannel"
 
 	GetChannelDocumentProcedure    = "/" + ServiceName + "/GetChannelDocument"
 	UpdateChannelDocumentProcedure = "/" + ServiceName + "/UpdateChannelDocument"
@@ -59,9 +60,9 @@ const (
 	InviteChannelMembersProcedure = "/" + ServiceName + "/InviteChannelMembers"
 	RemoveChannelMemberProcedure  = "/" + ServiceName + "/RemoveChannelMember"
 
-	ListChannelPodsProcedure  = "/" + ServiceName + "/ListChannelPods"
-	JoinChannelPodProcedure   = "/" + ServiceName + "/JoinChannelPod"
-	LeaveChannelPodProcedure  = "/" + ServiceName + "/LeaveChannelPod"
+	ListChannelPodsProcedure = "/" + ServiceName + "/ListChannelPods"
+	JoinChannelPodProcedure  = "/" + ServiceName + "/JoinChannelPod"
+	LeaveChannelPodProcedure = "/" + ServiceName + "/LeaveChannelPod"
 )
 
 // Server implements the ChannelService contract. Mirrors REST's
@@ -98,6 +99,7 @@ func mountChannels(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOptio
 	mux.Handle(UpdateChannelProcedure, connect.NewUnaryHandler(UpdateChannelProcedure, srv.UpdateChannel, opts...))
 	mux.Handle(ArchiveChannelProcedure, connect.NewUnaryHandler(ArchiveChannelProcedure, srv.ArchiveChannel, opts...))
 	mux.Handle(UnarchiveChannelProcedure, connect.NewUnaryHandler(UnarchiveChannelProcedure, srv.UnarchiveChannel, opts...))
+	mux.Handle(DeleteChannelProcedure, connect.NewUnaryHandler(DeleteChannelProcedure, srv.DeleteChannel, opts...))
 }
 
 func mountDocument(mux *http.ServeMux, srv *Server, opts ...connect.HandlerOption) {

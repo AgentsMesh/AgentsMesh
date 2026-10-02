@@ -49,6 +49,7 @@ service ChannelService {
   rpc UpdateChannel(UpdateChannelRequest) returns (Channel);
   rpc ArchiveChannel(ArchiveChannelRequest) returns (ArchiveChannelResponse);
   rpc UnarchiveChannel(UnarchiveChannelRequest) returns (UnarchiveChannelResponse);
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse);
 
   // -- Document --
   rpc GetChannelDocument(GetChannelDocumentRequest) returns (GetChannelDocumentResponse);
@@ -262,6 +263,15 @@ message UnarchiveChannelRequest {
 }
 
 message UnarchiveChannelResponse {
+  string message = 1;
+}
+
+message DeleteChannelRequest {
+  string org_slug = 1;
+  int64 id = 2;
+}
+
+message DeleteChannelResponse {
   string message = 1;
 }
 

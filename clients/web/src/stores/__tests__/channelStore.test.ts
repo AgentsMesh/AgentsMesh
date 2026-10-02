@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   updateChannel: vi.fn(),
   archiveChannel: vi.fn(),
   unarchiveChannel: vi.fn(),
+  deleteChannel: vi.fn(),
   joinChannelPod: vi.fn(),
   leaveChannelPod: vi.fn(),
   inviteChannelMembers: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock("@/lib/api/facade/channelConnect", () => ({
   updateChannel: mocks.updateChannel,
   archiveChannel: mocks.archiveChannel,
   unarchiveChannel: mocks.unarchiveChannel,
+  deleteChannel: mocks.deleteChannel,
   joinChannelPod: mocks.joinChannelPod,
   leaveChannelPod: mocks.leaveChannelPod,
   inviteChannelMembers: mocks.inviteChannelMembers,
@@ -208,6 +210,30 @@ describe("Channel Store (Connect adapter)", () => {
       mocks.unarchiveChannel.mockResolvedValue("ok");
       await act(async () => { await useChannelStore.getState().unarchiveChannel(1); });
       expect(getChannels()[0].is_archived).toBe(false);
+    });
+  });
+
+  describe("deleteChannel", () => {
+    it("deletes a channel and clears it when selected", async () => {
+      seedChannels([mockChannel, mockChannel2], mockChannel);
+      useChannelStore.setState({ selectedChannelId: 1, currentChannel: mockChannel });
+      mocks.deleteChannel.mockResolvedValue("ok");
+      mocks.listChannelsRaw.mockResolvedValue(wireListBytes([mockChannel2]));
+      await act(async () => { await useChannelStore.getState().deleteChannel(1); });
+      expect(mocks.deleteChannel).toHaveBeenCalledWith(orgSlug, 1);
+      expect(getChannels()).toEqual([expect.objectContaining({ id: 2 })]);
+      expect(useChannelStore.getState().selectedChannelId).toBeNull();
+      expect(getCurrentChannel()).toBeNull();
+    });
+
+    it("keeps another selected channel when a different one is deleted", async () => {
+      seedChannels([mockChannel, mockChannel2], mockChannel2);
+      useChannelStore.setState({ selectedChannelId: 2, currentChannel: mockChannel2 });
+      mocks.deleteChannel.mockResolvedValue("ok");
+      mocks.listChannelsRaw.mockResolvedValue(wireListBytes([mockChannel2]));
+      await act(async () => { await useChannelStore.getState().deleteChannel(1); });
+      expect(useChannelStore.getState().selectedChannelId).toBe(2);
+      expect(getCurrentChannel()?.id).toBe(2);
     });
   });
 

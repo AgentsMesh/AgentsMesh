@@ -16,6 +16,7 @@ export {
   updateChannel,
   archiveChannel,
   unarchiveChannel,
+  deleteChannel,
   getChannelDocument,
   updateChannelDocument,
   type ChannelData,
