@@ -129,7 +129,8 @@
       "title": "Channel 설정",
       "tabs": {
         "basic": "기본",
-        "archive": "보관"
+        "archive": "보관",
+        "danger": "위험"
       },
       "name": "Channel 이름",
       "description": "설명",
@@ -144,7 +145,11 @@
       "unarchiveHint": "이 Channel은 현재 보관되어 있습니다. 보관을 해제하면 멤버 접근이 복원됩니다.",
       "archived": "보관됨",
       "unarchived": "보관 해제됨",
-      "archiveFailed": "보관 작업에 실패했습니다"
+      "archiveFailed": "보관 작업에 실패했습니다",
+      "delete": "Channel 삭제",
+      "deleteHint": "이 Channel과 모든 메시지를 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+      "deleted": "Channel이 삭제되었습니다",
+      "deleteFailed": "Channel을 삭제하지 못했습니다"
     },
     "attachment": {
       "download": "첨부 파일 다운로드",

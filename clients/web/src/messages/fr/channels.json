@@ -129,7 +129,8 @@
       "title": "Paramètres du Channel",
       "tabs": {
         "basic": "Général",
-        "archive": "Archiver"
+        "archive": "Archiver",
+        "danger": "Danger"
       },
       "name": "Nom du Channel",
       "description": "Description",
@@ -144,7 +145,11 @@
       "unarchiveHint": "Ce Channel est actuellement archivé. Le désarchiver restaure l'accès des membres.",
       "archived": "Archivé",
       "unarchived": "Désarchivé",
-      "archiveFailed": "L'opération d'archivage a échoué"
+      "archiveFailed": "L'opération d'archivage a échoué",
+      "delete": "Supprimer le Channel",
+      "deleteHint": "Supprime définitivement ce Channel et tous ses messages. Cette action est irréversible.",
+      "deleted": "Channel supprimé",
+      "deleteFailed": "Échec de la suppression du Channel"
     },
     "attachment": {
       "download": "Télécharger la pièce jointe",
