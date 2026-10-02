@@ -24,7 +24,10 @@ alias(
 
 go_test(
     name = "config_test",
-    srcs = ["config_test.go"],
+    srcs = [
+        "config_test.go",
+        "jwt_secret_test.go",
+    ],
     embed = [":config"],
     deps = [
         "@com_github_stretchr_testify//assert",
