@@ -156,8 +156,9 @@ func (h *Handler) HandlePermissionRequest(rpcID int64, params json.RawMessage) {
 	var req struct {
 		SessionID string `json:"sessionId"`
 		ToolCall  struct {
-			ToolCallID string `json:"toolCallId"`
-			Title      string `json:"title"`
+			ToolCallID string          `json:"toolCallId"`
+			Title      string          `json:"title"`
+			RawInput   json.RawMessage `json:"rawInput"`
 		} `json:"toolCall"`
 		Options []struct {
 			OptionID string `json:"optionId"`
@@ -180,11 +181,18 @@ func (h *Handler) HandlePermissionRequest(rpcID int64, params json.RawMessage) {
 		}
 		// Store options so RespondToPermission can select the correct optionId.
 		h.storePermissionOptions(fmt.Sprintf("%d", rpcID), req.Options)
+		// Forward the tool's raw input so consumers can inspect the concrete
+		// target (e.g. an edit's file_path) instead of relying on the title.
+		var argumentsJSON string
+		if len(req.ToolCall.RawInput) > 0 && string(req.ToolCall.RawInput) != "null" {
+			argumentsJSON = string(req.ToolCall.RawInput)
+		}
 		h.callbacks.OnPermissionRequest(PermissionRequest{
-			SessionID:   req.SessionID,
-			RequestID:   fmt.Sprintf("%d", rpcID),
-			ToolName:    toolName,
-			Description: fmt.Sprintf("Tool: %s", req.ToolCall.ToolCallID),
+			SessionID:     req.SessionID,
+			RequestID:     fmt.Sprintf("%d", rpcID),
+			ToolName:      toolName,
+			ArgumentsJSON: argumentsJSON,
+			Description:   fmt.Sprintf("Tool: %s", req.ToolCall.ToolCallID),
 		})
 	}
 }

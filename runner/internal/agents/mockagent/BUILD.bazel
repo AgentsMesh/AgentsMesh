@@ -47,6 +47,7 @@ go_test(
         "acp_runtime_test.go",
         "claude_stream_control_test.go",
         "control_decision_engine_test.go",
+        "emit_test.go",
         "env_dump_test.go",
         "mcp_client_test.go",
         "pty_render_resize_other_test.go",
